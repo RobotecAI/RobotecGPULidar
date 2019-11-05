@@ -21,9 +21,10 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
    `cd optixlidar`  
 * Build the project with cmake  
     `mkdir build`  
-    `cd build`  
-    `cmake ..`
-    `make`  
+    `cd build`   
+    `cmake ..`     
+    `make`
+
 
 ### Building (Windows)
 * **Using Visual Studio (recommended)**
