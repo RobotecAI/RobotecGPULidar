@@ -17,7 +17,7 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
 * Install required packages  
     `sudo apt install libglfw3-dev cmake-curses-gui`  
 * Clone the code  
-    `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidar.git`  
+    `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidarsimulator.git`  
    `cd optixlidar`  
 * Build the project with cmake  
     `mkdir build`  
