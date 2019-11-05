@@ -9,21 +9,40 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
     * Add /usr/local/cuda/bin to your PATH
 * **OptiX 7 SDK**
     * Dowload available here: [NVIDIA-Optix](http://developer.nvidia.com/optix)"
-    * Linux: set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
-      `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`
+    * Linux: 
+        * set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
+        `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`. Best add this line to your ~/.bashrc file.
+        * Install compiler, dkms, libxi, xinerama
+        `apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev`
     * Windows: the installer should automatically put it into the right directory
+* **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
+
+
+#### Build prerequisites: Git LFS
+
+The project contains large files such as model textures and meshes. We use [Git LFS](https://git-lfs.github.com/) (Large File Storage) for the purpose of managing large files in a seamless way. 
+First, you need to install the package:
+*  Ubuntu: `sudo apt-get install git-lfs`
+*  Windows: Download and install [Git LFS](https://git-lfs.github.com/).
+
+Then, in both cases, run the following command in a terminal or Command Prompt: `$ git lfs install`
+
+Git LFS will automatically bootstrap for LFS repositories and dowload all files through the normal `git clone` command. Note that the clone command can now take a while as it needs
+to download all the files, but subsequent updates will be much faster.
+
 
 ### Building (Linux)
 * Install required packages  
     `sudo apt install libglfw3-dev cmake-curses-gui`  
 * Clone the code  
-    `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidar.git`  
+    `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidarsimulator.git`  
    `cd optixlidar`  
 * Build the project with cmake  
     `mkdir build`  
-    `cd build`  
-    `cmake ..`
-    `make`  
+    `cd build`   
+    `cmake ..`     
+    `make`
+
 
 ### Building (Windows)
 * **Using Visual Studio (recommended)**
