@@ -9,7 +9,8 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
     * Add /usr/local/cuda/bin to your PATH
 * **OptiX 7 SDK**
     * Dowload available here: [NVIDIA-Optix](http://developer.nvidia.com/optix)"
-    * Linux: set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.
+    * Linux: set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
+      `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`
     * Windows: the installer should automatically put it into the right directory
 
 ### Building (Linux)
