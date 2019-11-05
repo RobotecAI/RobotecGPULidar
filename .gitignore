@@ -7,7 +7,6 @@ bin
 *.gz
 *.zip
 Session.vim
-/models/*
 *.swp
 [Tt]emp/
 [Oo]bj/
