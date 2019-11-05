@@ -51,12 +51,6 @@ static __forceinline__ __device__ T *getPRD()
   
 //------------------------------------------------------------------------------
 // closest hit and anyhit programs for radiance-type rays.
-//
-// Note eventually we will have to create one pair of those for each
-// ray type and each geometry type we want to render; but this
-// simple example doesn't use any actual geometries yet, so we only
-// create a single, dummy, set of them (we do have to have at least
-// one group of them to set up the SBT)
 //------------------------------------------------------------------------------
   
 extern "C" __global__ void __closesthit__shadow()
@@ -80,8 +74,9 @@ extern "C" __global__ void __closesthit__radiance()
     const float u = optixGetTriangleBarycentrics().x;
     const float v = optixGetTriangleBarycentrics().y;
     
-    vec3f hitPoint = vec3f((1-u-v)*A + u*B + v*C);
+    // this aproach is too slow, must be changed to objects
     
+    vec3f hitPoint = vec3f((1-u-v)*A + u*B + v*C);
     // variable packed in raycasting, for coloring, we have to set it here, so color can be set later in rendering program
     vec3f &prd = *(vec3f*)getPRD<vec3f>(); 
     
@@ -90,8 +85,8 @@ extern "C" __global__ void __closesthit__radiance()
     // if no, continue calculating color
     
     // change points precision
-    vec3i hitPointI = vec3i((int)(hitPoint.x*1), (int)(hitPoint.y*1), (int)(hitPoint.z*1));
-    vec3f hitPointF = vec3f(hitPointI.x/1.f, hitPointI.y/1.f, hitPointI.z/1.f);
+    vec3i hitPointI = vec3i((int)(hitPoint.x/5), (int)(hitPoint.y/5), (int)(hitPoint.z/5));
+    vec3f hitPointF = vec3f(hitPointI.x*5.f, hitPointI.y*5.f, hitPointI.z*5.f);
     
     for (int i = 0; i < optixLaunchParams.frame.lidarSize; ++i)
     {
@@ -144,10 +139,12 @@ extern "C" __global__ void __closesthit__radiance()
     const vec3f lightDir = lightPos - surfPos;
     
     // trace shadow ray:
-    vec3f lightVisibility = 0.f;
+    vec3f lightVisibility = 1.f;
     // the values we store the PRD pointer in:
     uint32_t u0, u1;
     packPointer( &lightVisibility, u0, u1 );
+    
+    // not nice shadowing
 /*
     optixTrace(optixLaunchParams.traversable,
                surfPos + 1e-3f * Ng,
@@ -172,7 +169,7 @@ extern "C" __global__ void __closesthit__radiance()
     // and directional component based on shadowing
     // ------------------------------------------------------------------
     const float cosDN
-        = 1.f
+        = 0.1f
         + .8f*fabsf(dot(rayDir,Ns));
     
     prd = (.1f + (.2f + .8f*lightVisibility) * cosDN) * diffuseColor;
@@ -343,15 +340,16 @@ extern "C" __global__ void __raygen__renderFrame()
     if (u2)
     {
         // change points precision
-        vec3i pixelPositionI = vec3i((int)(pixelPositionPRD.x*1), (int)(pixelPositionPRD.y*1), (int)(pixelPositionPRD.z*1));
-        pixelPositionPRD.x = pixelPositionI.x/1.f;
-        pixelPositionPRD.y = pixelPositionI.y/1.f;
-        pixelPositionPRD.z = pixelPositionI.z/1.f;
+        vec3i pixelPositionI = vec3i((int)(pixelPositionPRD.x/5), (int)(pixelPositionPRD.y/5), (int)(pixelPositionPRD.z/5));
+        pixelPositionPRD.x = pixelPositionI.x*5.f;
+        pixelPositionPRD.y = pixelPositionI.y*5.f;
+        pixelPositionPRD.z = pixelPositionI.z*5.f;
+//printf("pixelPositionPRD %f %f %f\n", pixelPositionPRD.x, pixelPositionPRD.y, pixelPositionPRD.z);
         
-      optixLaunchLidarParams.positionBuffer[ix*3  ] = pixelPositionPRD.x;
-      optixLaunchLidarParams.positionBuffer[ix*3+1] = pixelPositionPRD.y;
-      optixLaunchLidarParams.positionBuffer[ix*3+2] = pixelPositionPRD.z;
-      optixLaunchLidarParams.hitBuffer[ix] = 1;
+        optixLaunchLidarParams.positionBuffer[ix*3  ] = pixelPositionPRD.x;
+        optixLaunchLidarParams.positionBuffer[ix*3+1] = pixelPositionPRD.y;
+        optixLaunchLidarParams.positionBuffer[ix*3+2] = pixelPositionPRD.z;
+        optixLaunchLidarParams.hitBuffer[ix] = 1;
     }
     else
     {

@@ -20,20 +20,15 @@
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 #include "Model.h"
-//#include "common.h"
 #include "gdt/math/AffineSpace.h"
 
   
-  /*! a sample OptiX-7 renderer that demonstrates how to set up
-      context, module, programs, pipeline, SBT, etc, and perform a
-      valid launch that renders some pixel (using a simple test
-      pattern, in this case */
-  class LidarRenderer
-  {
+class LidarRenderer
+{
     // ------------------------------------------------------------------
     // publicly accessible interface
     // ------------------------------------------------------------------
-  public:
+public:
     /*! constructor - performs all setup, including initializing
       optix, creates module, pipeline, programs, SBT, etc. */
     LidarRenderer(const Model *model);
@@ -46,7 +41,7 @@
 
     /*! download lidar hit points */
     void downloadPoints(std::vector<float> &h_points);
-  protected:
+protected:
     // ------------------------------------------------------------------
     // internal helper functions
     // ------------------------------------------------------------------
@@ -84,7 +79,7 @@
     /*! upload textures, and create cuda texture objects for them */
     void createTextures();
 
-  protected:
+protected:
     /*! @{ CUDA device context and stream that optix pipeline will run
         on, as well as device properties for this device */
     CUcontext          cudaContext;
@@ -143,4 +138,4 @@
     std::vector<cudaArray_t>         textureArrays;
     std::vector<cudaTextureObject_t> textureObjects;
     /*! @} */
-  };
+};

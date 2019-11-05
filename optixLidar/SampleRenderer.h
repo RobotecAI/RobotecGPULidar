@@ -20,7 +20,6 @@
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 #include "Model.h"
-//#include "common.h"
 #include "gdt/math/AffineSpace.h"
 
 struct Camera {

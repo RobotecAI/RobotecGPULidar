@@ -560,10 +560,8 @@ void LidarRenderer::render(std::vector<float> &rays)
     // already done:
     if (launchParams.fbSize == 0) return;
     
+    // upload rays data to device
     rayBuffer.upload(rays.data(),rays.size());
-//    std::vector<int> hits;
-//    hits.push_back(0);
-//    hitCountBuffer.upload(hits.data(),hits.size());
 
     launchParamsBuffer.upload(&launchParams,1);
       
@@ -583,8 +581,6 @@ void LidarRenderer::render(std::vector<float> &rays)
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
-    
-//    hitCount = launchParams.hitCount[0];
 }
 
   /*! resize frame buffer to given resolution */
@@ -614,9 +610,6 @@ void LidarRenderer::downloadPoints(std::vector<float> &h_points)
     hitBuffer.download(hits.data(), launchParams.fbSize);
     
     // fill output vector with actual hit points
-    
-//printf("launchParams.fbSize %d\nfinal points:\n", launchParams.fbSize);
-//    std::vector<float> finalPoints;
     for (int i = 0; i < launchParams.fbSize; ++i)
     {
         if (hits[i])
@@ -624,7 +617,6 @@ void LidarRenderer::downloadPoints(std::vector<float> &h_points)
             h_points.push_back(allPoints[i*3+0]);
             h_points.push_back(allPoints[i*3+1]);
             h_points.push_back(allPoints[i*3+2]);
-//        printf("%f %f %f\n", allPoints[i*3], allPoints[i*3+1], allPoints[i*3+2]);
         }
     }
 
