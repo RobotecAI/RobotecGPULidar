@@ -11,6 +11,8 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
     * Dowload available here: [NVIDIA-Optix](http://developer.nvidia.com/optix)"
     * Linux: set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
       `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`. Best add this line to your ~/.bashrc file.
+    * Install compiler, dkms, libxi, xinerama
+      `apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev`
     * Windows: the installer should automatically put it into the right directory
 * **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
 
