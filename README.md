@@ -13,6 +13,24 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
       `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`. Best add this line to your ~/.bashrc file.
     * Windows: the installer should automatically put it into the right directory
 
+
+### Build prerequisites
+
+* **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
+
+### Build prerequisites: Git LFS
+
+The project contains large files such as model textures and meshes. We use [Git LFS](https://git-lfs.github.com/) (Large File Storage) for the purpose of managing large files in a seamless way. 
+First, you need to install the package:
+*  Ubuntu: `sudo apt-get install git-lfs`
+*  Windows: Download and install [Git LFS](https://git-lfs.github.com/).
+
+Then, in both cases, run the following command in a terminal or Command Prompt: `$ git lfs install`
+
+Git LFS will automatically bootstrap for LFS repositories and dowload all files through the normal `git clone` command. Note that the clone command can now take a while as it needs
+to download all the files, but subsequent updates will be much faster.
+
+
 ### Building (Linux)
 * Install required packages  
     `sudo apt install libglfw3-dev cmake-curses-gui`  
