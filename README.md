@@ -4,7 +4,7 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
 
 ### Dependencies
 
-* **CUDA 10.1**
+* **CUDA 10.1 or later**
     * Downloads available from developer.nvidia.com
     * Add /usr/local/cuda/bin to your PATH
 * **OptiX 7 SDK**
@@ -12,11 +12,11 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
     * Linux: 
         * set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
         `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`. Best add this line to your ~/.bashrc file.
+        * Optix 7.0 requires NVidia drivers version 435 or later. Make sure you update to the version your GPU supports. You may need to uninstall older drivers. Rebooting your machine after such reinstall is necessary.
         * Install compiler, dkms, libxi, xinerama
         `apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev`
     * Windows: the installer should automatically put it into the right directory
 * **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
-
 
 #### Build prerequisites: Git LFS
 
@@ -30,6 +30,17 @@ Then, in both cases, run the following command in a terminal or Command Prompt: 
 Git LFS will automatically bootstrap for LFS repositories and dowload all files through the normal `git clone` command. Note that the clone command can now take a while as it needs
 to download all the files, but subsequent updates will be much faster.
 
+
+### Checking the installation, troubleshooting
+
+To verify that your drivers and libraries are correctly installed, do the following:
+*  Run `nvidia-smi` in your command line and see if the output shows the correct version of driver and CUDA (435+, 10.1+)
+*  Check the CUDA compiler: `nvcc -V` in your command line. It should show the correct version (10.1+).
+*  Run `locate libnvoptix`. It should point to the 435+ version of the library. If you uninstalled the old drivers, run `ubdatedb` first.
+*  Run `ls ${OptiX_INSTALL_DIR}` in your terminal. It should list directories of your OptiX SDK.
+*  Build OptiX SDK and run `./optixHello` from the `${OptiX_INSTALL_DIR}/SDK/build/bin` directory. It should run without error and show green window.
+
+If all of these work correctly, your environment is likely setup correctly. Some problems are solved by restarting your computer (especially after you change/install drivers).
 
 ### Building (Linux)
 * Install required packages  
