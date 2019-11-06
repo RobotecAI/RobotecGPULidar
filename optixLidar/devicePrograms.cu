@@ -328,7 +328,7 @@ extern "C" __global__ void __raygen__renderFrame()
                from, // from
                dir, // direction
                0.f,    // tmin
-               1e20f,  // tmax
+               optixLaunchLidarParams.range,  // tmax
                0.0f,   // rayTime
                OptixVisibilityMask( 255 ),
                OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,

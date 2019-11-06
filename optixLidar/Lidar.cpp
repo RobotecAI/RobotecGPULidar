@@ -1,0 +1,108 @@
+#include "Lidar.h"
+
+Lidar::Lidar(vec3f source, vec3f direction, float width, float height, int resolutionWidth, int resolutionHeight, bool is2D, float range)
+    : source(source), direction(direction), width(width), height(height), 
+      resolutionWidth(resolutionWidth), resolutionHeight(resolutionHeight), is2D(is2D), range(range)
+{
+    generateRays();
+}
+
+
+void Lidar::setResolution(int width, int height)
+{
+    resolutionWidth = width;
+    resolutionHeight = height;
+}
+
+void Lidar::setAngles(int widthAngle, int heightAngle)
+{
+    width = widthAngle;
+    height = heightAngle;
+}
+
+void Lidar::moveX(float step)
+{
+    source.x += step;
+    generateRays();
+}
+
+void Lidar::moveZ(float step)
+{
+    source.z += step;
+    generateRays();
+}
+
+void Lidar::rotateY(float angle)
+{
+    vec3f dirP = vec3f(direction);
+    dirP.x = direction.x*cos(angle) - direction.z*sin(angle);
+    dirP.z = direction.x*sin(angle) + direction.z*cos(angle);
+    
+    direction = dirP;
+    generateRays();
+}
+
+void Lidar::rotateZ(float angle)
+{
+    vec3f dirP = vec3f(direction);
+    dirP.x = direction.x*cos(angle) - direction.y*sin(angle);
+    dirP.y = direction.x*sin(angle) + direction.y*cos(angle);
+    
+    direction = dirP;
+    generateRays();
+}
+
+void Lidar::generateRays()
+{
+    rays.clear();
+    
+    if(is2D) // 2D
+    {
+        for (int i = 0; i < resolutionWidth; ++i)
+        {
+            float angle = i*width/(float)resolutionWidth - width/2;
+            
+            // rotation on y axis
+            vec3f dir = vec3f(direction);
+            dir.x = direction.x*cos(angle) - direction.z*sin(angle);
+            dir.z = direction.x*sin(angle) + direction.z*cos(angle);
+            
+            rays.push_back(source.x);
+            rays.push_back(source.y);
+            rays.push_back(source.z);
+            rays.push_back(dir.x);
+            rays.push_back(dir.y);
+            rays.push_back(dir.z);
+//printf("%f %f %f, %f %f %f\n", lidarSource.x, lidarSource.y, lidarSource.z, dir.x, dir.y, dir.z);
+        }
+    }
+    else // 3D
+    {
+        for (int i = 0; i < resolutionWidth; ++i)
+        {
+            for (int j = 0; j < resolutionHeight; ++j)
+            {
+                float angle1 = i*width/(float)resolutionWidth - width/2;
+                float angle2 = j*height/((float)resolutionHeight) - height/2;
+                
+                // rotation on y axis
+                vec3f dirP = vec3f(direction);
+                dirP.x = direction.x*cos(angle1) - direction.z*sin(angle1);
+                dirP.z = direction.x*sin(angle1) + direction.z*cos(angle1);
+                
+                // rotation on z axis
+                vec3f dir = vec3f(dirP);
+                dir.x = dirP.x*cos(angle2) - dirP.y*sin(angle2);
+                dir.y = dirP.x*sin(angle2) + dirP.y*cos(angle2);
+                
+                rays.push_back(source.x);
+                rays.push_back(source.y);
+                rays.push_back(source.z);
+                rays.push_back(dir.x);
+                rays.push_back(dir.y);
+                rays.push_back(dir.z);
+//printf("%f %f %f, %f %f %f\n", lidarSource.x, lidarSource.y, lidarSource.z, dir.x, dir.y, dir.z);
+            }
+        }
+    }
+}

@@ -24,17 +24,17 @@ add_executable(lidar
   ${embedded_ptx_code}
   optix7.h
   CUDABuffer.h
-#  common.cpp
   SampleRenderer.cpp
   LidarRenderer.cpp
   Model.cpp
+  Lidar.cpp
   main.cpp
   )
 
 target_link_libraries(lidar
   gdt
   # optix dependencies, for rendering
-#  ${optix_LIBRARY}
+  ${optix_LIBRARY}
   ${CUDA_LIBRARIES}
   ${CUDA_CUDA_LIBRARY}
   # glfw and opengl, for display
