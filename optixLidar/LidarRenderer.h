@@ -31,7 +31,7 @@ class LidarRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates module, pipeline, programs, SBT, etc. */
-    LidarRenderer(const Model *model);
+    LidarRenderer(const Model *model, float range);
 
     /*! render one frame */
     void render(std::vector<float> &rays);
@@ -120,6 +120,9 @@ protected:
     CUDABuffer rayBuffer;
     CUDABuffer positionBuffer;
     CUDABuffer hitBuffer;
+    
+    // rays range
+    float range;
     
     /*! the model we are going to trace rays against */
     const Model *model;

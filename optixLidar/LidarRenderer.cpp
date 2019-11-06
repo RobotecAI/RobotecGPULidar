@@ -45,8 +45,8 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) HitgroupRecord
   
   /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
-LidarRenderer::LidarRenderer(const Model *model)
-    : model(model)
+LidarRenderer::LidarRenderer(const Model *model, float range)
+    : range(range), model(model)
 {
     initOptix();
       
@@ -597,6 +597,8 @@ void LidarRenderer::resize(const int newSize)
     launchParams.hitBuffer      = (int*)hitBuffer.d_ptr;
     launchParams.positionBuffer = (float*)positionBuffer.d_ptr;
     launchParams.rayBuffer      = (float*)rayBuffer.d_ptr;
+    
+    launchParams.range         = range;
 }
 
   /*! download the rendered color buffer */

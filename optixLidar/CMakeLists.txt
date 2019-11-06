@@ -24,10 +24,10 @@ add_executable(lidar
   ${embedded_ptx_code}
   optix7.h
   CUDABuffer.h
-#  common.cpp
   SampleRenderer.cpp
   LidarRenderer.cpp
   Model.cpp
+  Lidar.cpp
   main.cpp
   )
 
