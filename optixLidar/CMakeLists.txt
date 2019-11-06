@@ -34,7 +34,7 @@ add_executable(lidar
 target_link_libraries(lidar
   gdt
   # optix dependencies, for rendering
-  ${optix_LIBRARY}
+#  ${optix_LIBRARY}
   ${CUDA_LIBRARIES}
   ${CUDA_CUDA_LIBRARY}
   # glfw and opengl, for display
