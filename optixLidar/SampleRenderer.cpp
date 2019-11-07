@@ -345,7 +345,7 @@ void SampleRenderer::createModule()
     pipelineCompileOptions = {};
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
     pipelineCompileOptions.usesMotionBlur     = false;
-    pipelineCompileOptions.numPayloadValues   = 3;
+    pipelineCompileOptions.numPayloadValues   = 5;
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
@@ -646,7 +646,7 @@ void SampleRenderer::resize(const vec2i &newSize)
 void SampleRenderer::resizeLidar(uint32_t lidarSize)
 {
     // resize our cuda frame buffer
-    lidarBuffer.resize(lidarSize*3*sizeof(uint32_t));
+    lidarBuffer.resize(lidarSize*6*sizeof(uint32_t));
 
     // update the launch parameters that we'll pass to the optix
     // launch:

@@ -342,7 +342,7 @@ void LidarRenderer::createModule()
     pipelineCompileOptions = {};
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
     pipelineCompileOptions.usesMotionBlur     = false;
-    pipelineCompileOptions.numPayloadValues   = 3;
+    pipelineCompileOptions.numPayloadValues   = 5;
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchLidarParams";
@@ -587,7 +587,7 @@ void LidarRenderer::render(std::vector<float> &rays)
 void LidarRenderer::resize(const int newSize)
 {
     // resize our cuda frame buffer
-    positionBuffer.resize(newSize*3*sizeof(float));
+    positionBuffer.resize(newSize*6*sizeof(float));
     rayBuffer.resize(newSize*6*sizeof(float));
     hitBuffer.resize(newSize*sizeof(int));
 
@@ -605,10 +605,10 @@ void LidarRenderer::resize(const int newSize)
 void LidarRenderer::downloadPoints(std::vector<float> &h_points)
 {
     std::vector<float> allPoints;
-    allPoints.resize(launchParams.fbSize*3);
+    allPoints.resize(launchParams.fbSize*6);
     std::vector<int> hits;
     hits.resize(launchParams.fbSize);
-    positionBuffer.download(allPoints.data(), launchParams.fbSize*3);
+    positionBuffer.download(allPoints.data(), launchParams.fbSize*6);
     hitBuffer.download(hits.data(), launchParams.fbSize);
     
     // fill output vector with actual hit points
@@ -616,10 +616,12 @@ void LidarRenderer::downloadPoints(std::vector<float> &h_points)
     {
         if (hits[i])
         {
-            h_points.push_back(allPoints[i*3+0]);
-            h_points.push_back(allPoints[i*3+1]);
-            h_points.push_back(allPoints[i*3+2]);
+            h_points.push_back(allPoints[i*6+0]);
+            h_points.push_back(allPoints[i*6+1]);
+            h_points.push_back(allPoints[i*6+2]);
+            h_points.push_back(allPoints[i*6+3]);
+            h_points.push_back(allPoints[i*6+4]);
+            h_points.push_back(allPoints[i*6+5]);
         }
     }
-
 }
