@@ -299,7 +299,7 @@ extern "C" __global__ void __raygen__renderFrame()
             +         v * sbtData.texcoord[index.z];
       
       vec4f fromTexture = tex2D<float4>(sbtData.texture,tc.x,tc.y);
-      diffuseColor *= (vec3f)fromTexture;
+      diffuseColor = fromTexture.w;
     }
     
     optixSetPayload_4(1);

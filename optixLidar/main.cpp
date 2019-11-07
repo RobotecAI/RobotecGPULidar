@@ -171,44 +171,6 @@ struct SampleWindow : public GLFCameraWindow
             break;
         }
         
-        /*
-        // move source
-        if (key == 265) // forward
-        {
-            lidar.moveX(10.f);
-        }
-        if (key == 264) // back
-        {
-            lidar.moveX(-10.f);
-        }
-        if (key == 263) // left
-        {
-            lidar.moveZ(-10.f);
-        }
-        if (key == 262) // right
-        {
-            lidar.moveZ(10.f);
-        }
-            
-        // rotate source
-        
-        if (key == 65) // a
-        {
-            lidar.rotateY(-0.1f);
-        }
-        if (key == 68) // d
-        {
-            lidar.rotateY(0.1f);
-        }
-        if (key == 83) // s
-        {
-            lidar.rotateZ(-0.1f);
-        }
-        if (key == 87) // w
-        {
-            lidar.rotateZ(0.1f);
-        }
-        */
     }
 
 
