@@ -85,15 +85,15 @@ void Lidar::generateRays()
                 float angle1 = i*width/(float)resolutionWidth - width/2;
                 float angle2 = j*height/((float)resolutionHeight) - height/2;
                 
-                // rotation on y axis
-                vec3f dirP = vec3f(direction);
-                dirP.x = direction.x*cos(angle1) - direction.z*sin(angle1);
-                dirP.z = direction.x*sin(angle1) + direction.z*cos(angle1);
-                
                 // rotation on z axis
+                vec3f dirP = vec3f(direction);
+                dirP.x = direction.x*cos(angle2) - direction.y*sin(angle2);
+                dirP.y = direction.x*sin(angle2) + direction.y*cos(angle2);
+                
+                // rotation on y axis
                 vec3f dir = vec3f(dirP);
-                dir.x = dirP.x*cos(angle2) - dirP.y*sin(angle2);
-                dir.y = dirP.x*sin(angle2) + dirP.y*cos(angle2);
+                dir.x = dirP.x*cos(angle1) - dirP.z*sin(angle1);
+                dir.z = dirP.x*sin(angle1) + dirP.z*cos(angle1);
                 
                 rays.push_back(source.x);
                 rays.push_back(source.y);

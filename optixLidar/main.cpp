@@ -31,7 +31,7 @@ std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
 
-/*
+
 long long current_timestamp()
 {
     struct timeval te;
@@ -39,7 +39,7 @@ long long current_timestamp()
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
     return milliseconds;
 }
-*/
+
 
 struct SampleWindow : public GLFCameraWindow
 {
@@ -78,11 +78,11 @@ struct SampleWindow : public GLFCameraWindow
         lidarRend.render(lidar.rays);
         lidarRend.downloadPoints(points);
         savePointsToFile(points);
-        sample.resizeLidar(points.size()/3);
+        sample.resizeLidar(points.size()/6);
         sample.render(points);
         
-        //printf("%lld\n", current_timestamp()-begin);
-        //begin = current_timestamp();
+//        printf("%lld\n", current_timestamp()-begin);
+//        begin = current_timestamp();
     }
     
     virtual void draw() override
@@ -143,7 +143,35 @@ struct SampleWindow : public GLFCameraWindow
     virtual void key(int key, int mods)
     {
 //        printf("%d %d\n", key, mods);
+        switch(key)
+        {
+        case 235: // forward
+            lidar.moveX(10.f);
+            break;
+        case 264: // back
+            lidar.moveX(-10.f);
+            break;
+        case 262: // right
+            lidar.moveZ(10.f);
+            break;
+        case 263: // left
+            lidar.moveZ(-10.f);
+            break;
+        case 65: // a
+            lidar.rotateY(-0.1f);
+            break;
+        case 68: // d
+            lidar.rotateY(0.1f);
+            break;
+        case 83: // s
+            lidar.rotateZ(-0.1f);
+            break;
+        case 87: // w
+            lidar.rotateZ(0.1f);
+            break;
+        }
         
+        /*
         // move source
         if (key == 265) // forward
         {
@@ -180,6 +208,7 @@ struct SampleWindow : public GLFCameraWindow
         {
             lidar.rotateZ(0.1f);
         }
+        */
     }
 
 
@@ -218,13 +247,22 @@ extern "C" int main(int ac, char **av)
         
         // lidar setting
         vec3f lidarInitialSource = vec3f(-4000.f, 450.f, 0.f);
-        vec3f lidarInitialDirection = vec3f(1.f, 0.06f, 0.f);
-        float lidarInitialWidth = 1.f; // angle in radians
-        float lidarInitialHeight = 0.5f; // angle in radians
+        vec3f lidarInitialDirection = vec3f(1.f, 0.f, 0.f);
+        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
+        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
         int samplingInitialWidth = 30;
         int samplingInitialHeight = 10;
+        
+        /*
+        // this values we need to compare
+        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
+        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
+        int samplingInitialWidth = 1149;
+        int samplingInitialHeight = 240;
+        */
+        
         bool is2D = false;
-        float range = 1500.f;
+        float range = 2000.f; // 40m * 50
 
         SampleWindow *window = new SampleWindow("Optix lidar",
                                                 model, camera, worldScale,
@@ -244,11 +282,20 @@ extern "C" int main(int ac, char **av)
 void savePointsToFile(std::vector<float> &points)
 {
     std::ofstream file(pointsFileName);
-    file << points.size()/3 << "\n\n";
+    file << points.size()/6 << "\n\n";
     
-    for (int i = 0; i < points.size()/3; ++i)
+    for (int i = 0; i < points.size()/6; ++i)
     {
-        file << points[3*i] << " " << points[3*i+1] << " " << points[3*i+2] << '\n';
+        file << points[6*i+0] << " " << points[6*i+1] << " " << points[6*i+2] << " ";
+
+        const int r = int(255.99f*points[6*i+3]);
+        const int g = int(255.99f*points[6*i+3]);
+        const int b = int(255.99f*points[6*i+3]);
+
+        // convert to 32-bit rgba value (alpha set to 0xff)
+        const uint32_t rgba = 0xff000000 | (r<<0) | (g<<8) | (b<<16);
+        file << r << '\n';
+//        file << (points[6*i+3] + points[6*i+4] + points[6*i+5])/3 << '\n';
     }
     file.close();
 }
