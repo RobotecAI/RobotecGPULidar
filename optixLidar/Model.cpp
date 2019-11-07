@@ -43,8 +43,6 @@ namespace std {
     return false;
   }
 }
-  
-
 
   /*! find vertex with given position, normal, texcoord, and return
       its vertex ID, or, if it doesn't exit, add it to the mesh, and
