@@ -40,19 +40,11 @@ void  packPointer( void* ptr, uint32_t& i0, uint32_t& i1 )
     i0 = uptr >> 32;
     i1 = uptr & 0x00000000ffffffff;
 }
-
 template<typename T>
 static __forceinline__ __device__ T *getPRD()
 { 
     const uint32_t u0 = optixGetPayload_0();
     const uint32_t u1 = optixGetPayload_1();
-    return reinterpret_cast<T*>( unpackPointer( u0, u1 ) );
-}
-template<typename T>
-static __forceinline__ __device__ T *getIntensityPRD()
-{ 
-    const uint32_t u0 = optixGetPayload_2();
-    const uint32_t u1 = optixGetPayload_3();
     return reinterpret_cast<T*>( unpackPointer( u0, u1 ) );
 }
   
@@ -94,19 +86,19 @@ extern "C" __global__ void __closesthit__radiance()
     // change points precision
     vec3i hitPointI = vec3i((int)(hitPoint.x/5), (int)(hitPoint.y/5), (int)(hitPoint.z/5));
     vec3f hitPointF = vec3f(hitPointI.x*5.f, hitPointI.y*5.f, hitPointI.z*5.f);
-    
+/*
     for (int i = 0; i < optixLaunchParams.frame.lidarSize; ++i)
     {
-        if ((hitPointF.x == optixLaunchParams.frame.lidarBuffer[i*6+0]) &&
-            (hitPointF.y == optixLaunchParams.frame.lidarBuffer[i*6+1]) &&
-            (hitPointF.z == optixLaunchParams.frame.lidarBuffer[i*6+2]))
+        if ((hitPointF.x == optixLaunchParams.frame.lidarBuffer[i*4+0]) &&
+            (hitPointF.y == optixLaunchParams.frame.lidarBuffer[i*4+1]) &&
+            (hitPointF.z == optixLaunchParams.frame.lidarBuffer[i*4+2]))
         {
 //printf("lidar point!\n%f %f %f\n%f %f %f\n%f %f %f\n\n", hitPoint.x, hitPoint.y, hitPoint.z, hitPointF.x, hitPointF.y, hitPointF.z, optixLaunchParams.frame.lidarBuffer[i*3+0], optixLaunchParams.frame.lidarBuffer[i*3+1], optixLaunchParams.frame.lidarBuffer[i*3+2]);
             prd = vec3f(1.f, 0.f, 0.f);
             return;
         }
     }
-    
+*/
     vec3f Ng = cross(B-A,C-A);
     vec3f Ns = (sbtData.normal)
         ? ((1.f-u-v) * sbtData.normal[index.x]
@@ -263,16 +255,10 @@ extern "C" __global__ void __raygen__renderFrame()
 }
 
 //-------------------------------- lidar part --------------------------------
-
-  template<typename T>
-  static __forceinline__ __device__ T *getHitPRD()
-  { 
-    const uint32_t u2 = optixGetPayload_2();
-    return reinterpret_cast<T*>( unpackPointer( u2 ) );
-  }
   
-  extern "C" __global__ void __closesthit__lidar()
-  {
+extern "C" __global__ void __closesthit__lidar()
+{
+
 //printf("hit\n");
     const TriangleMeshSBTData &sbtData
       = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();
@@ -289,8 +275,7 @@ extern "C" __global__ void __raygen__renderFrame()
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     prd = vec3f((1-u-v)*A + u*B + v*C);
     
-    vec3f &diffuseColor = *(vec3f*)getIntensityPRD<vec3f>();
-    diffuseColor = sbtData.color;
+    float intensity = 0.f;
     if (sbtData.hasTexture && sbtData.texcoord)
     {
         const vec2f tc
@@ -299,37 +284,34 @@ extern "C" __global__ void __raygen__renderFrame()
             +         v * sbtData.texcoord[index.z];
       
       vec4f fromTexture = tex2D<float4>(sbtData.texture,tc.x,tc.y);
-      diffuseColor = fromTexture.w;
+      intensity = fromTexture.w; // only alpha canal
     }
-    
-    optixSetPayload_4(1);
-    
-  }
+        
+    optixSetPayload_2(intensity);
+    optixSetPayload_3(1);
+}
   
-  extern "C" __global__ void __anyhit__lidar()
-  { /*! for this simple example, this will remain empty */ }
+extern "C" __global__ void __anyhit__lidar()
+{ /*! for this simple example, this will remain empty */ }
 
 
-  extern "C" __global__ void __miss__lidar()
-  {
+extern "C" __global__ void __miss__lidar()
+{
 //printf("miss\n");
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
-    // set to constant white as background color
     prd = vec3f(0.f);
-    optixSetPayload_2(0);
-  }
-  
-  extern "C" __global__ void __raygen__renderLidar()
-  {
+    optixSetPayload_3(0);
+}
+
+extern "C" __global__ void __raygen__renderLidar()
+{
     const int ix = optixGetLaunchIndex().x;
 
     vec3f lidarPositionPRD = vec3f(0.f);
-    vec3f lidarIntensityPRD = vec3f(0.f);
 
     // the values we store the PRD pointer in:
-    uint32_t u0, u1, u2, u3, u4;
+    uint32_t u0, u1, u2, u3;
     packPointer( &lidarPositionPRD, u0, u1 );
-    packPointer( &lidarIntensityPRD, u2, u3 );
     
     vec3f from = vec3f(optixLaunchLidarParams.rayBuffer[ix*6], optixLaunchLidarParams.rayBuffer[ix*6+1], optixLaunchLidarParams.rayBuffer[ix*6+2]);
     vec3f dir = vec3f(optixLaunchLidarParams.rayBuffer[ix*6+3], optixLaunchLidarParams.rayBuffer[ix*6+4], optixLaunchLidarParams.rayBuffer[ix*6+5]);
@@ -337,7 +319,6 @@ extern "C" __global__ void __raygen__renderFrame()
 //printf("from %f %f %f\n", from.x, from.y, from.z);
 //printf("direction %f %f %f\n", dir.x, dir.y, dir.z);
     
-    u4 = 0;
 
     optixTrace(optixLaunchLidarParams.traversable,
                from, // from
@@ -350,9 +331,9 @@ extern "C" __global__ void __raygen__renderFrame()
                LIDAR_RAY_TYPE,               // SBT offset
                LIDAR_RAY_TYPE_COUNT,               // SBT stride
                LIDAR_RAY_TYPE,               // missSBTIndex 
-               u0, u1, u2, u3, u4 );
+               u0, u1, u2, u3);
 
-    if (u4)
+    if (u3)
     {
         // change points precision
         vec3i pixelPositionI = vec3i((int)(lidarPositionPRD.x/5), (int)(lidarPositionPRD.y/5), (int)(lidarPositionPRD.z/5));
@@ -361,17 +342,15 @@ extern "C" __global__ void __raygen__renderFrame()
         lidarPositionPRD.z = pixelPositionI.z*5.f;
 //printf("lidarPositionPRD %f %f %f\n", lidarPositionPRD.x, lidarPositionPRD.y, lidarPositionPRD.z);
         
-        optixLaunchLidarParams.positionBuffer[ix*6  ] = lidarPositionPRD.x;
-        optixLaunchLidarParams.positionBuffer[ix*6+1] = lidarPositionPRD.y;
-        optixLaunchLidarParams.positionBuffer[ix*6+2] = lidarPositionPRD.z;
-        optixLaunchLidarParams.positionBuffer[ix*6+3] = lidarIntensityPRD.x;
-        optixLaunchLidarParams.positionBuffer[ix*6+4] = lidarIntensityPRD.y;
-        optixLaunchLidarParams.positionBuffer[ix*6+5] = lidarIntensityPRD.z;
+        optixLaunchLidarParams.positionBuffer[ix*4  ] = lidarPositionPRD.x;
+        optixLaunchLidarParams.positionBuffer[ix*4+1] = lidarPositionPRD.y;
+        optixLaunchLidarParams.positionBuffer[ix*4+2] = lidarPositionPRD.z;
+        optixLaunchLidarParams.positionBuffer[ix*4+3] = u2;
         optixLaunchLidarParams.hitBuffer[ix] = 1;
     }
     else
     {
       optixLaunchLidarParams.hitBuffer[ix] = 0;
     }
-    
-  }
+
+}

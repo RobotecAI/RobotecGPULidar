@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "LidarRenderer.h"
+//#include <cudaProfiler.h>
 
 extern "C" char embedded_ptx_code[];
 
@@ -342,7 +343,7 @@ void LidarRenderer::createModule()
     pipelineCompileOptions = {};
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
     pipelineCompileOptions.usesMotionBlur     = false;
-    pipelineCompileOptions.numPayloadValues   = 5;
+    pipelineCompileOptions.numPayloadValues   = 4;
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchLidarParams";
@@ -556,6 +557,7 @@ void LidarRenderer::buildSBT()
   /*! render one frame */
 void LidarRenderer::render(std::vector<float> &rays)
 {
+//    cuProfilerStart();
     // sanity check: make sure we launch only after first resize is
     // already done:
     if (launchParams.fbSize == 0) return;
@@ -581,13 +583,14 @@ void LidarRenderer::render(std::vector<float> &rays)
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+//    cuProfilerStop();
 }
 
   /*! resize frame buffer to given resolution */
 void LidarRenderer::resize(const int newSize)
 {
     // resize our cuda frame buffer
-    positionBuffer.resize(newSize*6*sizeof(float));
+    positionBuffer.resize(newSize*4*sizeof(float));
     rayBuffer.resize(newSize*6*sizeof(float));
     hitBuffer.resize(newSize*sizeof(int));
 
@@ -601,27 +604,65 @@ void LidarRenderer::resize(const int newSize)
     launchParams.range         = range;
 }
 
+long long current_timestampL()
+{
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
+    return milliseconds;
+}
+
   /*! download the rendered color buffer */
 void LidarRenderer::downloadPoints(std::vector<float> &h_points)
 {
+//    long long begin = current_timestampL();
+    
     std::vector<float> allPoints;
-    allPoints.resize(launchParams.fbSize*6);
+    allPoints.resize(launchParams.fbSize*4);
+        
+//    printf("downloadPoints fbSize %d %lld\n", launchParams.fbSize*4, current_timestampL()-begin);
+//    begin = current_timestampL();
     std::vector<int> hits;
     hits.resize(launchParams.fbSize);
-    positionBuffer.download(allPoints.data(), launchParams.fbSize*6);
+//    printf("downloadPoints %lld\n", current_timestampL()-begin);
+//    begin = current_timestampL();
+    
+    positionBuffer.download(allPoints.data(), launchParams.fbSize*4);
+//    printf("downloadPoints %lld\n", current_timestampL()-begin);
+//    begin = current_timestampL();
     hitBuffer.download(hits.data(), launchParams.fbSize);
+//    printf("downloadPoints %lld\n", current_timestampL()-begin);
+//    begin = current_timestampL();
+    
+    int hitCount = 0;
+    for (int i = 0; i < launchParams.fbSize; ++i)
+    {
+        hitCount += hits[i];
+    }
+    
+//    printf("downloadPoints %lld\n", current_timestampL()-begin);
+//    begin = current_timestampL();
+    
+    h_points.resize(hitCount*4);
+    
+//    printf("downloadPoints hitCount %d %lld\n", hitCount*4, current_timestampL()-begin);
+//    begin = current_timestampL();
+    
+    int index = 0;
     
     // fill output vector with actual hit points
     for (int i = 0; i < launchParams.fbSize; ++i)
     {
         if (hits[i])
         {
-            h_points.push_back(allPoints[i*6+0]);
-            h_points.push_back(allPoints[i*6+1]);
-            h_points.push_back(allPoints[i*6+2]);
-            h_points.push_back(allPoints[i*6+3]);
-            h_points.push_back(allPoints[i*6+4]);
-            h_points.push_back(allPoints[i*6+5]);
+            h_points[index*4+0] = allPoints[i*4+0];
+            h_points[index*4+1] = allPoints[i*4+1];
+            h_points[index*4+2] = allPoints[i*4+2];
+            h_points[index*4+3] = allPoints[i*4+3];
+            index++;
         }
     }
+    
+//    printf("downloadPoints %lld\n", current_timestampL()-begin);
+//    begin = current_timestampL();
 }
