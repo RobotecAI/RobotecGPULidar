@@ -646,7 +646,7 @@ void SampleRenderer::resize(const vec2i &newSize)
 void SampleRenderer::resizeLidar(uint32_t lidarSize)
 {
     // resize our cuda frame buffer
-    lidarBuffer.resize(lidarSize*6*sizeof(uint32_t));
+    lidarBuffer.resize(lidarSize*4*sizeof(uint32_t));
 
     // update the launch parameters that we'll pass to the optix
     // launch:
