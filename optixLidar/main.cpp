@@ -18,6 +18,7 @@
 #include "LidarRenderer.h"
 #include "Lidar.h"
 
+
 // our helper library for window handling
 #include "glfWindow/GLFWindow.h"
 #include <GL/gl.h>
@@ -31,10 +32,32 @@ std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
 
+#if defined(_WIN32)
+#include <chrono>
+#include <time.h>
+
+struct timeval {
+	long tv_sec;
+	long tv_usec;
+};
+
+
+int gettimeofday(struct timeval* tp, struct timezone* tzp) {
+	namespace sc = std::chrono;
+	sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+	sc::seconds s = sc::duration_cast<sc::seconds>(d);
+	tp->tv_sec = s.count();
+	tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+	return 0;
+}
+
+#endif // _WIN32
+
 
 long long current_timestamp()
 {
-    struct timeval te;
+	struct timeval te;
     gettimeofday(&te, NULL); // get current time
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
     return milliseconds;
@@ -101,8 +124,8 @@ struct SampleWindow : public GLFCameraWindow
         
         sample.render(points);
         
-        printf("render 2 %lld\n\n", current_timestamp()-begin);
-        begin = current_timestamp();
+       printf("render 2 %lld\n\n", current_timestamp()-begin);
+       begin = current_timestamp();
     }
     
     virtual void draw() override
@@ -230,20 +253,20 @@ extern "C" int main(int ac, char **av)
         vec3f lidarInitialSource = vec3f(-4000.f, 450.f, 0.f);
         vec3f lidarInitialDirection = vec3f(1.f, 0.f, 0.f);
         
-        /*
+        
         // lidar setting
         float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
         float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
         int samplingInitialWidth = 30;
         int samplingInitialHeight = 10;
-        */
         
+        /*
         // this values we need to compare
         float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
         float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
         int samplingInitialWidth = 1149;
         int samplingInitialHeight = 240;
-        
+        */
         
         bool is2D = false;
         float range = 2000.f; // 40m * 50

@@ -604,13 +604,47 @@ void LidarRenderer::resize(const int newSize)
     launchParams.range         = range;
 }
 
+#if defined(_WIN32)
+#include <chrono>
+#include <time.h>
+
+struct timeval {
+	long tv_sec;
+	long tv_usec;
+};
+
+
+int gettimeofdayWin(struct timeval* tp, struct timezone* tzp) {
+	namespace sc = std::chrono;
+	sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+	sc::seconds s = sc::duration_cast<sc::seconds>(d);
+	tp->tv_sec = s.count();
+	tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+	return 0;
+}
+
 long long current_timestampL()
 {
     struct timeval te;
-    gettimeofday(&te, NULL); // get current time
+    gettimeofdayWin(&te, NULL); // get current time
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
     return milliseconds;
 }
+
+#else
+
+long long current_timestampL()
+{
+	struct timeval te;
+	gettimeofday(&te, NULL); // get current time
+	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
+	return milliseconds;
+}
+
+#endif // _WIN32
+
+
 
   /*! download the rendered color buffer */
 void LidarRenderer::downloadPoints(std::vector<float> &h_points)
