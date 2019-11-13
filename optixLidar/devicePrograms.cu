@@ -86,7 +86,7 @@ extern "C" __global__ void __closesthit__radiance()
     // change points precision
     vec3i hitPointI = vec3i((int)(hitPoint.x/5), (int)(hitPoint.y/5), (int)(hitPoint.z/5));
     vec3f hitPointF = vec3f(hitPointI.x*5.f, hitPointI.y*5.f, hitPointI.z*5.f);
-/*
+
     for (int i = 0; i < optixLaunchParams.frame.lidarSize; ++i)
     {
         if ((hitPointF.x == optixLaunchParams.frame.lidarBuffer[i*4+0]) &&
@@ -98,7 +98,7 @@ extern "C" __global__ void __closesthit__radiance()
             return;
         }
     }
-*/
+
     vec3f Ng = cross(B-A,C-A);
     vec3f Ns = (sbtData.normal)
         ? ((1.f-u-v) * sbtData.normal[index.x]
