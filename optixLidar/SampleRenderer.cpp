@@ -1,19 +1,3 @@
-// ======================================================================== //
-// Copyright 2018-2019 Ingo Wald                                            //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #include "SampleRenderer.h"
 
 extern "C" char embedded_ptx_code[];
@@ -51,10 +35,10 @@ SampleRenderer::SampleRenderer(const Model *model)
     : model(model)
 {
     initOptix();
-      
+
     std::cout << "creating optix context ..." << std::endl;
     createContext();
-      
+
     std::cout << "setting up module ..." << std::endl;
     createModule();
 
@@ -66,7 +50,7 @@ SampleRenderer::SampleRenderer(const Model *model)
     createHitgroupPrograms();
 
     launchParams.traversable = buildAccel();
-    
+
     std::cout << "setting up optix pipeline ..." << std::endl;
     createPipeline();
 
@@ -89,7 +73,7 @@ void SampleRenderer::createTextures()
 
     textureArrays.resize(numTextures);
     textureObjects.resize(numTextures);
-    
+
     for (int textureID = 0; textureID < numTextures; textureID++)
     {
         auto texture = model->textures[textureID];
@@ -107,13 +91,13 @@ void SampleRenderer::createTextures()
         CUDA_CHECK(MallocArray(&pixelArray,
                                &channel_desc,
                                width,height));
-      
+
         CUDA_CHECK(Memcpy2DToArray(pixelArray,
                                    /* offset */0,0,
                                    texture->pixel,
                                    pitch,pitch,height,
                                    cudaMemcpyHostToDevice));
-      
+
         res_desc.resType          = cudaResourceTypeArray;
         res_desc.res.array.array  = pixelArray;
 
@@ -136,7 +120,7 @@ void SampleRenderer::createTextures()
         textureObjects[textureID] = cuda_tex;
     }
 }
-  
+
 OptixTraversableHandle SampleRenderer::buildAccel()
 {
     const int numMeshes = (int)model->meshes.size();
@@ -144,9 +128,9 @@ OptixTraversableHandle SampleRenderer::buildAccel()
     normalBuffer.resize(numMeshes);
     texcoordBuffer.resize(numMeshes);
     indexBuffer.resize(numMeshes);
-    
+
     OptixTraversableHandle asHandle { 0 };
-    
+
     // ==================================================================
     // triangle inputs
     // ==================================================================
@@ -191,21 +175,21 @@ OptixTraversableHandle SampleRenderer::buildAccel()
         // materials:
         triangleInput[meshID].triangleArray.flags               = &triangleInputFlags[meshID];
         triangleInput[meshID].triangleArray.numSbtRecords               = 1;
-        triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer        = 0; 
-        triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes   = 0; 
-        triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0; 
+        triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer        = 0;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes   = 0;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
     }
     // ==================================================================
     // BLAS setup
     // ==================================================================
-    
+
     OptixAccelBuildOptions accelOptions = {};
     accelOptions.buildFlags             = OPTIX_BUILD_FLAG_NONE
         | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
         ;
     accelOptions.motionOptions.numKeys  = 1;
     accelOptions.operation              = OPTIX_BUILD_OPERATION_BUILD;
-    
+
     OptixAccelBufferSizes blasBufferSizes;
     OPTIX_CHECK(optixAccelComputeMemoryUsage
                 (optixContext,
@@ -214,28 +198,28 @@ OptixTraversableHandle SampleRenderer::buildAccel()
                  (int)numMeshes,  // num_build_inputs
                  &blasBufferSizes
                  ));
-    
+
     // ==================================================================
     // prepare compaction
     // ==================================================================
-    
+
     CUDABuffer compactedSizeBuffer;
     compactedSizeBuffer.alloc(sizeof(uint64_t));
-    
+
     OptixAccelEmitDesc emitDesc;
     emitDesc.type   = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
     emitDesc.result = compactedSizeBuffer.d_pointer();
-    
+
     // ==================================================================
     // execute build (main stage)
     // ==================================================================
-    
+
     CUDABuffer tempBuffer;
     tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
-    
+
     CUDABuffer outputBuffer;
     outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
-      
+
     OPTIX_CHECK(optixAccelBuild(optixContext,
                                 /* stream */0,
                                 &accelOptions,
@@ -243,22 +227,22 @@ OptixTraversableHandle SampleRenderer::buildAccel()
                                 (int)numMeshes,
                                 tempBuffer.d_pointer(),
                                 tempBuffer.sizeInBytes,
-                                
+
                                 outputBuffer.d_pointer(),
                                 outputBuffer.sizeInBytes,
-                                
+
                                 &asHandle,
-                                
+
                                 &emitDesc,1
                                 ));
     CUDA_SYNC_CHECK();
-    
+
     // ==================================================================
     // perform compaction
     // ==================================================================
     uint64_t compactedSize;
     compactedSizeBuffer.download(&compactedSize,1);
-    
+
     asBuffer.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
                                   /*stream:*/0,
@@ -267,14 +251,14 @@ OptixTraversableHandle SampleRenderer::buildAccel()
                                   asBuffer.sizeInBytes,
                                   &asHandle));
     CUDA_SYNC_CHECK();
-    
+
     // ==================================================================
     // aaaaaand .... clean up
     // ==================================================================
     outputBuffer.free(); // << the UNcompacted, temporary output buffer
     tempBuffer.free();
     compactedSizeBuffer.free();
-    
+
     return asHandle;
 }
 
@@ -282,7 +266,7 @@ OptixTraversableHandle SampleRenderer::buildAccel()
 void SampleRenderer::initOptix()
 {
     std::cout << "initializing optix..." << std::endl;
-      
+
     // -------------------------------------------------------
     // check for available optix7 capable devices
     // -------------------------------------------------------
@@ -318,14 +302,14 @@ void SampleRenderer::createContext()
     const int deviceID = 0;
     CUDA_CHECK(SetDevice(deviceID));
     CUDA_CHECK(StreamCreate(&stream));
-      
+
     cudaGetDeviceProperties(&deviceProps, deviceID);
     std::cout << "running on device: " << deviceProps.name << std::endl;
-      
+
     CUresult cuRes = cuCtxGetCurrent(&cudaContext);
-    if( cuRes != CUDA_SUCCESS ) 
+    if( cuRes != CUDA_SUCCESS )
         fprintf( stderr, "Error querying current context: error code %d\n", cuRes );
-      
+
     OPTIX_CHECK(optixDeviceContextCreate(cudaContext, 0, &optixContext));
     OPTIX_CHECK(optixDeviceContextSetLogCallback
                 (optixContext,context_log_cb,nullptr,4));
@@ -349,12 +333,12 @@ void SampleRenderer::createModule()
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
-      
+
     pipelineLinkOptions.overrideUsesMotionBlur = false;
     pipelineLinkOptions.maxTraceDepth          = 2;
-      
+
     const std::string ptxCode = embedded_ptx_code;
-      
+
     char log[2048];
     size_t sizeof_log = sizeof( log );
     OPTIX_CHECK(optixModuleCreateFromPTX(optixContext,
@@ -375,11 +359,11 @@ void SampleRenderer::createRaygenPrograms()
 {
     // we do a single ray gen program in this example:
     raygenPGs.resize(1);
-      
+
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc       = {};
     pgDesc.kind                        = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module               = module;           
+    pgDesc.raygen.module               = module;
     pgDesc.raygen.entryFunctionName    = "__raygen__renderFrame";
 
     // OptixProgramGroup raypg;
@@ -400,11 +384,11 @@ void SampleRenderer::createMissPrograms()
 {
     // we do a single ray gen program in this example:
     missPGs.resize(RAY_TYPE_COUNT);
-      
+
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc       = {};
     pgDesc.kind                        = OPTIX_PROGRAM_GROUP_KIND_MISS;
-    pgDesc.miss.module                 = module;           
+    pgDesc.miss.module                 = module;
     pgDesc.miss.entryFunctionName      = "__miss__radiance";
 
     // OptixProgramGroup raypg;
@@ -418,7 +402,7 @@ void SampleRenderer::createMissPrograms()
                                         &missPGs[RADIANCE_RAY_TYPE]
                                         ));
     if (sizeof_log > 1) PRINT(log);
-    
+
     pgDesc.miss.entryFunctionName = "__miss__shadow";
 
     OPTIX_CHECK(optixProgramGroupCreate(optixContext,
@@ -436,12 +420,12 @@ void SampleRenderer::createHitgroupPrograms()
 {
     // for this simple example, we set up a single hit group
     hitgroupPGs.resize(RAY_TYPE_COUNT);
-      
+
     OptixProgramGroupOptions pgOptions  = {};
     OptixProgramGroupDesc pgDesc        = {};
     pgDesc.kind                         = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    pgDesc.hitgroup.moduleCH            = module;           
-    pgDesc.hitgroup.moduleAH            = module;           
+    pgDesc.hitgroup.moduleCH            = module;
+    pgDesc.hitgroup.moduleAH            = module;
     pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
     pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
     // don't need intersection program for now
@@ -456,7 +440,7 @@ void SampleRenderer::createHitgroupPrograms()
                                         &hitgroupPGs[RADIANCE_RAY_TYPE]
                                         ));
     if (sizeof_log > 1) PRINT(log);
-    
+
     pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__shadow";
     pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__shadow";
 
@@ -481,7 +465,7 @@ void SampleRenderer::createPipeline()
         programGroups.push_back(pg);
     for (auto pg : hitgroupPGs)
         programGroups.push_back(pg);
-      
+
     char log[2048];
     size_t sizeof_log = sizeof( log );
     OPTIX_CHECK(optixPipelineCreate(optixContext,
@@ -496,12 +480,12 @@ void SampleRenderer::createPipeline()
 
     OPTIX_CHECK(optixPipelineSetStackSize
                 (/* [in] The pipeline to configure the stack size for */
-                 pipeline, 
+                 pipeline,
                  /* [in] The direct stack size requirement for direct
                     callables invoked from IS or AH. */
                  2*1024,
                  /* [in] The direct stack size requirement for direct
-                    callables invoked from RG, MS, or CH.  */                 
+                    callables invoked from RG, MS, or CH.  */
                  2*1024,
                  /* [in] The continuation stack requirement. */
                  2*1024,
@@ -555,7 +539,7 @@ void SampleRenderer::buildSBT()
         for (int rayID = 0; rayID < RAY_TYPE_COUNT; rayID++)
         {
             auto mesh = model->meshes[meshID];
-          
+
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID],&rec));
             rec.data.color   = mesh->diffuse;
@@ -588,11 +572,11 @@ void SampleRenderer::render(std::vector<float> &lidarPoints)
     // sanity check: make sure we launch only after first resize is
     // already done:
     if (launchParams.frame.size.x == 0) return;
-    
+
     lidarBuffer.upload(lidarPoints.data(),lidarPoints.size());
-      
+
     launchParamsBuffer.upload(&launchParams,1);
-      
+
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline,stream,
                             /*! parameters and SBT */
@@ -626,7 +610,7 @@ void SampleRenderer::setCamera(const Camera &camera)
         = cosFovy * normalize(cross(launchParams.camera.horizontal,
                                     launchParams.camera.direction));
 }
-  
+
 /*! resize frame buffer to given resolution */
 void SampleRenderer::resize(const vec2i &newSize)
 {
@@ -661,4 +645,3 @@ void SampleRenderer::downloadPixels(uint32_t h_pixels[])
                          launchParams.frame.size.x*launchParams.frame.size.y);
 
 }
-
