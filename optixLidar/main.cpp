@@ -1,19 +1,3 @@
-// ======================================================================== //
-// Copyright 2018-2019 Ingo Wald                                            //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #include "SampleRenderer.h"
 #include "LidarRenderer.h"
 #include "Lidar.h"
@@ -30,7 +14,6 @@
 std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
-
 
 long long current_timestamp()
 {
@@ -56,12 +39,12 @@ struct SampleWindow : public GLFCameraWindow
                  bool is2D,
                  float range)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
-          lidarRend(model, range), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth, 
+          lidarRend(model, range), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
           lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, is2D, range)
     {
         sample.setCamera(camera);
     }
-    
+
     virtual void render() override
     {
         // for calculating frame rendering time
@@ -73,44 +56,44 @@ struct SampleWindow : public GLFCameraWindow
                                     cameraFrame.get_up() });
             cameraFrame.modified = false;
         }
-        
+
 //        printf("%lld %d\n", current_timestamp()-begin);
 //        begin = current_timestamp();
         std::vector<float> points;
         lidarRend.resize(lidar.rays.size()/6);
-        
+
 //        printf("         %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
         lidarRend.render(lidar.rays);
-        
+
 //        printf("render   %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
         lidarRend.downloadPoints(points);
-        
+
 //        printf("download %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-        
+
 //printf("rays: %d, points: %d\n", lidar.rays.size(), points.size());
-//        savePointsToFile(points);        
+//        savePointsToFile(points);
 //        printf("save     %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
 
         sample.resizeLidar(points.size()/4);
 //        printf("         %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-        
+
         sample.render(points);
-        
+
         printf("render 2 %lld\n\n", current_timestamp()-begin);
         begin = current_timestamp();
     }
-    
+
     virtual void draw() override
     {
         sample.downloadPixels(pixels.data());
         if (fbTexture == 0)
             glGenTextures(1, &fbTexture);
-      
+
         glBindTexture(GL_TEXTURE_2D, fbTexture);
         GLenum texFormat = GL_RGBA;
         GLenum texelType = GL_UNSIGNED_BYTE;
@@ -152,14 +135,14 @@ struct SampleWindow : public GLFCameraWindow
         }
         glEnd();
     }
-    
-    virtual void resize(const vec2i &newSize) 
+
+    virtual void resize(const vec2i &newSize)
     {
         fbSize = newSize;
         sample.resize(newSize);
         pixels.resize(newSize.x*newSize.y);
     }
-    
+
     virtual void key(int key, int mods)
     {
 //        printf("%d %d\n", key, mods);
@@ -190,7 +173,7 @@ struct SampleWindow : public GLFCameraWindow
             lidar.rotateZ(0.1f);
             break;
         }
-        
+
     }
 
 
@@ -201,24 +184,14 @@ struct SampleWindow : public GLFCameraWindow
     Lidar                 lidar;
     std::vector<uint32_t> pixels;
 };
-  
-  
+
+
 /*! main entry point to this example - initially optix, print hello
 world, then exit */
 extern "C" int main(int ac, char **av)
 {
     try {
-        Model *model = loadOBJ(
-#ifdef _WIN32
-        // on windows, visual studio creates _two_ levels of build dir
-        // (x86/Release)
-        "../models/tunnel.obj"
-#else
-        // on linux, common practice is to have ONE level of build dir
-        // (say, <project>/build/)...
-        "../models/tunnel.obj"
-#endif
-                             );
+        Model *model = loadOBJ("../models/tunnel.obj");
         Camera camera = { /*from*/vec3f(-4000.07f, 450.f, 0.f),
  //                         /* at */model->bounds.center()-vec3f(0,400,0),
                           /* at */vec3f(1,0.06,0),
@@ -226,25 +199,17 @@ extern "C" int main(int ac, char **av)
         // something approximating the scale of the world, so the
         // camera knows how much to move for any given user interaction:
         const float worldScale = length(model->bounds.span());
-        
+
         vec3f lidarInitialSource = vec3f(-4000.f, 450.f, 0.f);
         vec3f lidarInitialDirection = vec3f(1.f, 0.f, 0.f);
-        
-        /*
-        // lidar setting
-        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
-        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
-        int samplingInitialWidth = 30;
-        int samplingInitialHeight = 10;
-        */
-        
+
         // this values we need to compare
         float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
         float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
-        int samplingInitialWidth = 1149;
-        int samplingInitialHeight = 240;
-        
-        
+        int samplingInitialWidth = 30;//1149;
+        int samplingInitialHeight = 10;//240;
+
+
         bool is2D = false;
         float range = 2000.f; // 40m * 50
 
@@ -254,7 +219,7 @@ extern "C" int main(int ac, char **av)
                                                 lidarInitialWidth, lidarInitialHeight, samplingInitialWidth,
                                                 samplingInitialHeight, is2D, range);
         window->run();
-    
+
     } catch (std::runtime_error& e) {
       std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what()
                 << GDT_TERMINAL_DEFAULT << std::endl;
@@ -268,7 +233,7 @@ void savePointsToFile(std::vector<float> &points)
 
     std::ofstream file(pointsFileName);
     file << points.size()/4 << "\n\n";
-    
+
     for (int i = 0; i < points.size()/4; ++i)
     {
         file << points[4*i+0] << " " << points[4*i+1] << " " << points[4*i+2] << " ";
@@ -277,5 +242,5 @@ void savePointsToFile(std::vector<float> &points)
         file << intensity << '\n';
     }
     file.close();
-    
+
 }

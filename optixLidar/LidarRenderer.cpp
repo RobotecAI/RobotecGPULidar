@@ -1,19 +1,3 @@
-// ======================================================================== //
-// Copyright 2018-2019 Ingo Wald                                            //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #include "LidarRenderer.h"
 //#include <cudaProfiler.h>
 
@@ -42,18 +26,18 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) HitgroupRecord
 {
     __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
     TriangleMeshSBTData data;
-};    
-  
+};
+
   /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
 LidarRenderer::LidarRenderer(const Model *model, float range)
     : range(range), model(model)
 {
     initOptix();
-      
+
     std::cout << "creating optix context ..." << std::endl;
     createContext();
-      
+
     std::cout << "setting up module ..." << std::endl;
     createModule();
 
@@ -65,7 +49,7 @@ LidarRenderer::LidarRenderer(const Model *model, float range)
     createHitgroupPrograms();
 
     launchParams.traversable = buildAccel();
-    
+
     std::cout << "setting up optix pipeline ..." << std::endl;
     createPipeline();
 
@@ -87,7 +71,7 @@ void LidarRenderer::createTextures()
     int numTextures = (int)model->textures.size();
     textureArrays.resize(numTextures);
     textureObjects.resize(numTextures);
-    
+
     for (int textureID = 0; textureID < numTextures; textureID++)
     {
         auto texture = model->textures[textureID];
@@ -105,13 +89,13 @@ void LidarRenderer::createTextures()
         CUDA_CHECK(MallocArray(&pixelArray,
                                &channel_desc,
                                width,height));
-      
+
         CUDA_CHECK(Memcpy2DToArray(pixelArray,
                                    /* offset */0,0,
                                    texture->pixel,
                                    pitch,pitch,height,
                                    cudaMemcpyHostToDevice));
-      
+
         res_desc.resType          = cudaResourceTypeArray;
         res_desc.res.array.array  = pixelArray;
 
@@ -134,7 +118,7 @@ void LidarRenderer::createTextures()
         textureObjects[textureID] = cuda_tex;
     }
 }
-  
+
 OptixTraversableHandle LidarRenderer::buildAccel()
 {
     const int numMeshes = (int)model->meshes.size();
@@ -142,9 +126,9 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     normalBuffer.resize(numMeshes);
     texcoordBuffer.resize(numMeshes);
     indexBuffer.resize(numMeshes);
-    
+
     OptixTraversableHandle asHandle { 0 };
-    
+
     // ==================================================================
     // triangle inputs
     // ==================================================================
@@ -189,21 +173,21 @@ OptixTraversableHandle LidarRenderer::buildAccel()
         // materials:
         triangleInput[meshID].triangleArray.flags               = &triangleInputFlags[meshID];
         triangleInput[meshID].triangleArray.numSbtRecords               = 1;
-        triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer        = 0; 
-        triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes   = 0; 
-        triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0; 
+        triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer        = 0;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes   = 0;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
     }
     // ==================================================================
     // BLAS setup
     // ==================================================================
-    
+
     OptixAccelBuildOptions accelOptions = {};
     accelOptions.buildFlags             = OPTIX_BUILD_FLAG_NONE
         | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
         ;
     accelOptions.motionOptions.numKeys  = 1;
     accelOptions.operation              = OPTIX_BUILD_OPERATION_BUILD;
-    
+
     OptixAccelBufferSizes blasBufferSizes;
     OPTIX_CHECK(optixAccelComputeMemoryUsage
                 (optixContext,
@@ -212,28 +196,28 @@ OptixTraversableHandle LidarRenderer::buildAccel()
                  (int)numMeshes,  // num_build_inputs
                  &blasBufferSizes
                  ));
-    
+
     // ==================================================================
     // prepare compaction
     // ==================================================================
-    
+
     CUDABuffer compactedSizeBuffer;
     compactedSizeBuffer.alloc(sizeof(uint64_t));
-    
+
     OptixAccelEmitDesc emitDesc;
     emitDesc.type   = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
     emitDesc.result = compactedSizeBuffer.d_pointer();
-    
+
     // ==================================================================
     // execute build (main stage)
     // ==================================================================
-    
+
     CUDABuffer tempBuffer;
     tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
-    
+
     CUDABuffer outputBuffer;
     outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
-      
+
     OPTIX_CHECK(optixAccelBuild(optixContext,
                                 /* stream */0,
                                 &accelOptions,
@@ -241,22 +225,22 @@ OptixTraversableHandle LidarRenderer::buildAccel()
                                 (int)numMeshes,
                                 tempBuffer.d_pointer(),
                                 tempBuffer.sizeInBytes,
-                                
+
                                 outputBuffer.d_pointer(),
                                 outputBuffer.sizeInBytes,
-                                
+
                                 &asHandle,
-                                
+
                                 &emitDesc,1
                                 ));
     CUDA_SYNC_CHECK();
-    
+
     // ==================================================================
     // perform compaction
     // ==================================================================
     uint64_t compactedSize;
     compactedSizeBuffer.download(&compactedSize,1);
-    
+
     asBuffer.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
                                   /*stream:*/0,
@@ -265,22 +249,22 @@ OptixTraversableHandle LidarRenderer::buildAccel()
                                   asBuffer.sizeInBytes,
                                   &asHandle));
     CUDA_SYNC_CHECK();
-    
+
     // ==================================================================
     // aaaaaand .... clean up
     // ==================================================================
     outputBuffer.free(); // << the UNcompacted, temporary output buffer
     tempBuffer.free();
     compactedSizeBuffer.free();
-    
+
     return asHandle;
 }
-  
+
 /*! helper function that initializes optix and checks for errors */
 void LidarRenderer::initOptix()
 {
     std::cout << "initializing optix..." << std::endl;
-      
+
     // -------------------------------------------------------
     // check for available optix7 capable devices
     // -------------------------------------------------------
@@ -316,14 +300,14 @@ void LidarRenderer::createContext()
     const int deviceID = 0;
     CUDA_CHECK(SetDevice(deviceID));
     CUDA_CHECK(StreamCreate(&stream));
-      
+
     cudaGetDeviceProperties(&deviceProps, deviceID);
     std::cout << "running on device: " << deviceProps.name << std::endl;
-      
+
     CUresult  cuRes = cuCtxGetCurrent(&cudaContext);
-    if( cuRes != CUDA_SUCCESS ) 
+    if( cuRes != CUDA_SUCCESS )
         fprintf( stderr, "Error querying current context: error code %d\n", cuRes );
-      
+
     OPTIX_CHECK(optixDeviceContextCreate(cudaContext, 0, &optixContext));
     OPTIX_CHECK(optixDeviceContextSetLogCallback
                 (optixContext,context_log_cb,nullptr,4));
@@ -347,12 +331,12 @@ void LidarRenderer::createModule()
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchLidarParams";
-      
+
     pipelineLinkOptions.overrideUsesMotionBlur = false;
     pipelineLinkOptions.maxTraceDepth          = 2;
-      
+
     const std::string ptxCode = embedded_ptx_code;
-      
+
     char log[2048];
     size_t sizeof_log = sizeof( log );
     OPTIX_CHECK(optixModuleCreateFromPTX(optixContext,
@@ -365,7 +349,7 @@ void LidarRenderer::createModule()
                                          ));
     if (sizeof_log > 1) PRINT(log);
 }
-    
+
 
 
   /*! does all setup for the raygen program(s) we are going to use */
@@ -373,11 +357,11 @@ void LidarRenderer::createRaygenPrograms()
 {
     // we do a single ray gen program in this example:
     raygenPGs.resize(1);
-      
+
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc    = {};
     pgDesc.kind                     = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module            = module;           
+    pgDesc.raygen.module            = module;
     pgDesc.raygen.entryFunctionName = "__raygen__renderLidar";
 
     // OptixProgramGroup raypg;
@@ -392,17 +376,17 @@ void LidarRenderer::createRaygenPrograms()
                                         ));
     if (sizeof_log > 1) PRINT(log);
 }
-    
+
   /*! does all setup for the miss program(s) we are going to use */
 void LidarRenderer::createMissPrograms()
 {
     // we do a single ray gen program in this example:
     missPGs.resize(LIDAR_RAY_TYPE_COUNT);
-      
+
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc    = {};
     pgDesc.kind                     = OPTIX_PROGRAM_GROUP_KIND_MISS;
-    pgDesc.miss.module            = module;           
+    pgDesc.miss.module            = module;
     pgDesc.miss.entryFunctionName = "__miss__lidar";
 
     // OptixProgramGroup raypg;
@@ -417,19 +401,19 @@ void LidarRenderer::createMissPrograms()
                                         ));
     if (sizeof_log > 1) PRINT(log);
 }
-    
+
   /*! does all setup for the hitgroup program(s) we are going to use */
 void LidarRenderer::createHitgroupPrograms()
 {
     // for this simple example, we set up a single hit group
     hitgroupPGs.resize(LIDAR_RAY_TYPE_COUNT);
-      
+
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc    = {};
     pgDesc.kind                     = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    pgDesc.hitgroup.moduleCH            = module;           
+    pgDesc.hitgroup.moduleCH            = module;
     pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__lidar";
-    pgDesc.hitgroup.moduleAH            = module;           
+    pgDesc.hitgroup.moduleAH            = module;
     pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__lidar";
 
     char log[2048];
@@ -443,7 +427,7 @@ void LidarRenderer::createHitgroupPrograms()
                                         ));
     if (sizeof_log > 1) PRINT(log);
 }
-    
+
 
   /*! assembles the full pipeline of all programs */
 void LidarRenderer::createPipeline()
@@ -455,7 +439,7 @@ void LidarRenderer::createPipeline()
       programGroups.push_back(pg);
     for (auto pg : hitgroupPGs)
       programGroups.push_back(pg);
-      
+
     char log[2048];
     size_t sizeof_log = sizeof( log );
     OPTIX_CHECK(optixPipelineCreate(optixContext,
@@ -470,12 +454,12 @@ void LidarRenderer::createPipeline()
 
     OPTIX_CHECK(optixPipelineSetStackSize
                 (/* [in] The pipeline to configure the stack size for */
-                 pipeline, 
+                 pipeline,
                  /* [in] The direct stack size requirement for direct
                     callables invoked from IS or AH. */
                  2*1024,
                  /* [in] The direct stack size requirement for direct
-                    callables invoked from RG, MS, or CH.  */                 
+                    callables invoked from RG, MS, or CH.  */
                  2*1024,
                  /* [in] The continuation stack requirement. */
                  2*1024,
@@ -527,7 +511,7 @@ void LidarRenderer::buildSBT()
         for (int rayID = 0; rayID < LIDAR_RAY_TYPE_COUNT; rayID++)
         {
             auto mesh = model->meshes[meshID];
-          
+
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID],&rec));
             rec.data.color   = mesh->diffuse;
@@ -561,12 +545,12 @@ void LidarRenderer::render(std::vector<float> &rays)
     // sanity check: make sure we launch only after first resize is
     // already done:
     if (launchParams.fbSize == 0) return;
-    
+
     // upload rays data to device
     rayBuffer.upload(rays.data(),rays.size());
 
     launchParamsBuffer.upload(&launchParams,1);
-      
+
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline,stream,
                             /*! parameters and SBT */
@@ -600,7 +584,7 @@ void LidarRenderer::resize(const int newSize)
     launchParams.hitBuffer      = (int*)hitBuffer.d_ptr;
     launchParams.positionBuffer = (float*)positionBuffer.d_ptr;
     launchParams.rayBuffer      = (float*)rayBuffer.d_ptr;
-    
+
     launchParams.range         = range;
 }
 
@@ -616,40 +600,40 @@ long long current_timestampL()
 void LidarRenderer::downloadPoints(std::vector<float> &h_points)
 {
 //    long long begin = current_timestampL();
-    
+
     std::vector<float> allPoints;
     allPoints.resize(launchParams.fbSize*4);
-        
+
 //    printf("downloadPoints fbSize %d %lld\n", launchParams.fbSize*4, current_timestampL()-begin);
 //    begin = current_timestampL();
     std::vector<int> hits;
     hits.resize(launchParams.fbSize);
 //    printf("downloadPoints %lld\n", current_timestampL()-begin);
 //    begin = current_timestampL();
-    
+
     positionBuffer.download(allPoints.data(), launchParams.fbSize*4);
 //    printf("downloadPoints %lld\n", current_timestampL()-begin);
 //    begin = current_timestampL();
     hitBuffer.download(hits.data(), launchParams.fbSize);
 //    printf("downloadPoints %lld\n", current_timestampL()-begin);
 //    begin = current_timestampL();
-    
+
     int hitCount = 0;
     for (int i = 0; i < launchParams.fbSize; ++i)
     {
         hitCount += hits[i];
     }
-    
+
 //    printf("downloadPoints %lld\n", current_timestampL()-begin);
 //    begin = current_timestampL();
-    
+
     h_points.resize(hitCount*4);
-    
+
 //    printf("downloadPoints hitCount %d %lld\n", hitCount*4, current_timestampL()-begin);
 //    begin = current_timestampL();
-    
+
     int index = 0;
-    
+
     // fill output vector with actual hit points
     for (int i = 0; i < launchParams.fbSize; ++i)
     {
@@ -662,7 +646,7 @@ void LidarRenderer::downloadPoints(std::vector<float> &h_points)
             index++;
         }
     }
-    
+
 //    printf("downloadPoints %lld\n", current_timestampL()-begin);
 //    begin = current_timestampL();
 }
