@@ -1,19 +1,3 @@
-// ======================================================================== //
-// Copyright 2018-2019 Ingo Wald                                            //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #include "Model.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
@@ -33,13 +17,13 @@ namespace std {
   {
     if (a.vertex_index < b.vertex_index) return true;
     if (a.vertex_index > b.vertex_index) return false;
-    
+
     if (a.normal_index < b.normal_index) return true;
     if (a.normal_index > b.normal_index) return false;
-    
+
     if (a.texcoord_index < b.texcoord_index) return true;
     if (a.texcoord_index > b.texcoord_index) return false;
-    
+
     return false;
   }
 }
@@ -58,7 +42,7 @@ int addVertex(TriangleMesh *mesh,
     const vec3f *vertex_array   = (const vec3f*)attributes.vertices.data();
     const vec3f *normal_array   = (const vec3f*)attributes.normals.data();
     const vec2f *texcoord_array = (const vec2f*)attributes.texcoords.data();
-    
+
     int newID = (int)mesh->vertex.size();
     knownVertices[idx] = newID;
 
@@ -80,7 +64,7 @@ int addVertex(TriangleMesh *mesh,
     // just for sanity's sake:
     if (mesh->normal.size() > 0)
       mesh->normal.resize(mesh->vertex.size());
-    
+
     return newID;
 }
 
@@ -94,7 +78,7 @@ int loadTexture(Model *model,
 {
     if (inFileName == "")
         return -1;
-    
+
     if (knownTextures.find(inFileName) != knownTextures.end())
         return knownTextures[inFileName];
 
@@ -136,18 +120,18 @@ int loadTexture(Model *model,
                   << "Could not load texture from " << fileName << "!"
                   << GDT_TERMINAL_DEFAULT << std::endl;
     }
-    
+
     knownTextures[inFileName] = textureID;
     return textureID;
 }
-  
+
 Model *loadOBJ(const std::string &objFile)
 {
     Model *model = new Model;
 
     const std::string modelDir
         = objFile.substr(0,objFile.rfind('/')+1);
-    
+
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -185,14 +169,14 @@ Model *loadOBJ(const std::string &objFile)
         for (int materialID : materialIDs)
         {
             TriangleMesh *mesh = new TriangleMesh;
-            
+
             for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++)
             {
                 if (shape.mesh.material_ids[faceID] != materialID) continue;
                 tinyobj::index_t idx0 = shape.mesh.indices[3*faceID+0];
                 tinyobj::index_t idx1 = shape.mesh.indices[3*faceID+1];
                 tinyobj::index_t idx2 = shape.mesh.indices[3*faceID+2];
-              
+
                 vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
                           addVertex(mesh, attributes, idx1, knownVertices),
                           addVertex(mesh, attributes, idx2, knownVertices));
