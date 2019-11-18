@@ -1,19 +1,3 @@
-// ======================================================================== //
-// Copyright 2018-2019 Ingo Wald                                            //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #pragma once
 
 // our own classes, partly shared between host and device
@@ -22,7 +6,7 @@
 #include "Model.h"
 #include "gdt/math/AffineSpace.h"
 
-  
+
 class LidarRenderer
 {
     // ------------------------------------------------------------------
@@ -48,7 +32,7 @@ protected:
 
     /*! helper function that initializes optix and checks for errors */
     void initOptix();
-  
+
     /*! creates and configures a optix device context (in this simple
       example, only for the primary GPU device) */
     void createContext();
@@ -57,13 +41,13 @@ protected:
       to use. in this simple example, we use a single module from a
       single .cu file, using a single embedded ptx string */
     void createModule();
-    
+
     /*! does all setup for the raygen program(s) we are going to use */
     void createRaygenPrograms();
-    
+
     /*! does all setup for the miss program(s) we are going to use */
     void createMissPrograms();
-    
+
     /*! does all setup for the hitgroup program(s) we are going to use */
     void createHitgroupPrograms();
 
@@ -120,20 +104,20 @@ protected:
     CUDABuffer rayBuffer;
     CUDABuffer positionBuffer;
     CUDABuffer hitBuffer;
-    
+
     // rays range
     float range;
-    
+
     /*! the model we are going to trace rays against */
     const Model *model;
-    
+
     /*! @{ one buffer per input mesh */
     std::vector<CUDABuffer> vertexBuffer;
     std::vector<CUDABuffer> normalBuffer;
     std::vector<CUDABuffer> texcoordBuffer;
     std::vector<CUDABuffer> indexBuffer;
     /*! @} */
-    
+
     //! buffer that keeps the (final, compacted) accel structure
     CUDABuffer asBuffer;
 

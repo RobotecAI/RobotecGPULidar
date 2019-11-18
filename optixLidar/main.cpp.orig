@@ -16,6 +16,7 @@ std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
 
+<<<<<<< HEAD
 #if defined(_WIN32)
 #include <chrono>
 #include <time.h>
@@ -38,6 +39,9 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp) {
 
 #endif // _WIN32
 
+
+=======
+>>>>>>> origin/master
 long long current_timestamp()
 {
 	struct timeval te;
@@ -106,9 +110,15 @@ struct SampleWindow : public GLFCameraWindow
 //        begin = current_timestamp();
 
         sample.render(points);
-
+<<<<<<< HEAD
+        
        printf("render 2 %lld\n\n", current_timestamp()-begin);
        begin = current_timestamp();
+=======
+
+        printf("render 2 %lld\n\n", current_timestamp()-begin);
+        begin = current_timestamp();
+>>>>>>> origin/master
     }
 
     virtual void draw() override
@@ -225,15 +235,33 @@ extern "C" int main(int ac, char **av)
 
         vec3f lidarInitialSource = vec3f(-4000.f, 450.f, 0.f);
         vec3f lidarInitialDirection = vec3f(1.f, 0.f, 0.f);
-
+<<<<<<< HEAD
         
+        
+        // lidar setting
+        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
+        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
+        int samplingInitialWidth = 30;
+        int samplingInitialHeight = 10;
+        
+        /*
+        // this values we need to compare
+        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
+        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
+        int samplingInitialWidth = 1149;
+        int samplingInitialHeight = 240;
+        */
+        
+=======
+
         // this values we need to compare
         float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
         float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
         int samplingInitialWidth = 30;//1149;
         int samplingInitialHeight = 10;//240;
-		
 
+
+>>>>>>> origin/master
         bool is2D = false;
         float range = 2000.f; // 40m * 50
 
