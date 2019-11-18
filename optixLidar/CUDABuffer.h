@@ -1,19 +1,3 @@
-// ======================================================================== //
-// Copyright 2018-2019 Ingo Wald                                            //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #pragma once
 
 #include "optix7.h"
@@ -34,7 +18,7 @@ struct CUDABuffer {
         if (d_ptr) free();
         alloc(size);
     }
-    
+
     //! allocate to given number of bytes
     void alloc(size_t size)
     {
@@ -57,7 +41,7 @@ struct CUDABuffer {
         alloc(vt.size()*sizeof(T));
         upload((const T*)vt.data(),vt.size());
     }
-    
+
     template<typename T>
     void upload(const T *t, size_t count)
     {
@@ -66,7 +50,7 @@ struct CUDABuffer {
         CUDA_CHECK(Memcpy(d_ptr, (void *)t,
                           count*sizeof(T), cudaMemcpyHostToDevice));
     }
-    
+
     template<typename T>
     void download(T *t, size_t count)
     {
@@ -75,7 +59,7 @@ struct CUDABuffer {
         CUDA_CHECK(Memcpy((void *)t, d_ptr,
                           count*sizeof(T), cudaMemcpyDeviceToHost));
     }
-    
+
     size_t sizeInBytes { 0 };
     void  *d_ptr { nullptr };
 };
