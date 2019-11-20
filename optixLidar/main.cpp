@@ -10,8 +10,6 @@
 #include <cmath>
 #include <fstream>
 
-//#define LIDAR_2D
-
 std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
@@ -40,7 +38,7 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp) {
 
 long long current_timestamp()
 {
-	struct timeval te;
+    struct timeval te;
     gettimeofday(&te, NULL); // get current time
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
     return milliseconds;
@@ -50,7 +48,7 @@ long long current_timestamp()
 struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
-                 const Model *model,
+                 Model *model,
                  const Camera &camera,
                  const float worldScale,
                  vec3f lidarInitialSource,
@@ -59,11 +57,10 @@ struct SampleWindow : public GLFCameraWindow
                  float lidarInitialHeight,
                  int samplingInitialWidth,
                  int samplingInitialHeight,
-                 bool is2D,
                  float range)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
           lidarRend(model, range), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
-          lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, is2D, range)
+          lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), model(model)
     {
         sample.setCamera(camera);
     }
@@ -79,6 +76,18 @@ struct SampleWindow : public GLFCameraWindow
                                     cameraFrame.get_up() });
             cameraFrame.modified = false;
         }
+        
+        // move tunnel to right
+        static int counter = 0;
+        if (counter%5 == 0 )
+        {
+            for(int i = 0; i < model->meshes[0]->vertex.size(); ++i)
+            {
+                model->meshes[0]->vertex[i].z += 1;
+            }
+            model->moved = true;
+        }
+        counter++;
 
 //        printf("%lld %d\n", current_timestamp()-begin);
 //        begin = current_timestamp();
@@ -89,8 +98,9 @@ struct SampleWindow : public GLFCameraWindow
 //        begin = current_timestamp();
         lidarRend.render(lidar.rays);
 
-//        printf("render   %lld\n", current_timestamp()-begin);
+//        printf("%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
+ 
         lidarRend.downloadPoints(points);
 
 //        printf("download %lld\n", current_timestamp()-begin);
@@ -107,8 +117,12 @@ struct SampleWindow : public GLFCameraWindow
 
         sample.render(points);
 
-       printf("render 2 %lld\n\n", current_timestamp()-begin);
-       begin = current_timestamp();
+//       printf("render 2 %lld\n\n", current_timestamp()-begin);
+//       printf("%lld\n", current_timestamp()-begin);
+//       begin = current_timestamp();
+        
+        if (model->moved)
+            model->moved = false;
     }
 
     virtual void draw() override
@@ -171,7 +185,7 @@ struct SampleWindow : public GLFCameraWindow
 //        printf("%d %d\n", key, mods);
         switch(key)
         {
-        case 235: // forward
+        case 265: // forward
             lidar.moveX(10.f);
             break;
         case 264: // back
@@ -206,6 +220,7 @@ struct SampleWindow : public GLFCameraWindow
     SampleRenderer        sample;
     Lidar                 lidar;
     std::vector<uint32_t> pixels;
+    Model *               model;
 };
 
 
@@ -233,15 +248,13 @@ extern "C" int main(int ac, char **av)
         int samplingInitialWidth = 30;//1149;
         int samplingInitialHeight = 10;//240;
 		
-
-        bool is2D = false;
         float range = 2000.f; // 40m * 50
 
         SampleWindow *window = new SampleWindow("Optix lidar",
                                                 model, camera, worldScale,
                                                 lidarInitialSource, lidarInitialDirection,
                                                 lidarInitialWidth, lidarInitialHeight, samplingInitialWidth,
-                                                samplingInitialHeight, is2D, range);
+                                                samplingInitialHeight, range);
         window->run();
 
     } catch (std::runtime_error& e) {

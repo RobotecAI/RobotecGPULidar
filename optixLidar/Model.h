@@ -37,6 +37,8 @@ struct Model {
     std::vector<Texture *>      textures;
     //! bounding box of all vertices in the model
     box3f bounds;
+    
+    bool moved;
 };
 
 Model *loadOBJ(const std::string &objFile);

@@ -8,7 +8,7 @@ using namespace gdt;
 struct Lidar
 {
 public:
-    Lidar(vec3f source, vec3f direction, float width, float height, int resolutionWidth, int resolutionHeight, bool is2D, float range);
+    Lidar(vec3f source, vec3f direction, float width, float height, int resolutionWidth, int resolutionHeight, float range);
     
     // set lidar resolution
     void setResolution(int width, int height);
@@ -32,5 +32,4 @@ protected:
     float              height; // angle in radians
     int                resolutionWidth;
     int                resolutionHeight;
-    bool               is2D;
 };
