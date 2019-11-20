@@ -200,6 +200,8 @@ Model *loadOBJ(const std::string &objFile)
     for (auto mesh : model->meshes)
         for (auto vtx : mesh->vertex)
             model->bounds.extend(vtx);
+    
+    model->moved = false;
 
     std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
     return model;
