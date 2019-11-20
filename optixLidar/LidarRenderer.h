@@ -58,7 +58,8 @@ protected:
     void buildSBT();
 
     /*! build an acceleration structure for the given triangle mesh */
-    OptixTraversableHandle buildAccel();
+    // in the future for update reload not whole model, only dynamic part
+    OptixTraversableHandle buildAccel(bool update = false);
 
     /*! upload textures, and create cuda texture objects for them */
     void createTextures();
@@ -120,6 +121,7 @@ protected:
 
     //! buffer that keeps the (final, compacted) accel structure
     CUDABuffer asBuffer;
+    CUDABuffer outputBuffer;
 
     /*! @{ one texture object and pixel array per used texture */
     std::vector<cudaArray_t>         textureArrays;

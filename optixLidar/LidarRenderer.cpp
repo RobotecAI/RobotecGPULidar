@@ -1,5 +1,4 @@
 #include "LidarRenderer.h"
-//#include <cudaProfiler.h>
 
 extern "C" char embedded_ptx_code[];
 
@@ -7,8 +6,7 @@ extern "C" char embedded_ptx_code[];
 struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) RaygenRecord
 {
     __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // just a dummy value - later examples will use more interesting
-    // data here
+    // don't need any data
     void *data;
 };
 
@@ -16,8 +14,7 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) RaygenRecord
 struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) MissRecord
 {
     __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // just a dummy value - later examples will use more interesting
-    // data here
+    // don't need any data
     void *data;
 };
 
@@ -119,9 +116,18 @@ void LidarRenderer::createTextures()
     }
 }
 
-OptixTraversableHandle LidarRenderer::buildAccel()
+OptixTraversableHandle LidarRenderer::buildAccel(bool update)
 {
     const int numMeshes = (int)model->meshes.size();
+    
+    for (int meshID = 0; meshID < vertexBuffer.size(); meshID++)
+    {
+        vertexBuffer[meshID].free();
+        normalBuffer[meshID].free();
+        texcoordBuffer[meshID].free();
+        indexBuffer[meshID].free();
+    }
+
     vertexBuffer.resize(numMeshes);
     normalBuffer.resize(numMeshes);
     texcoordBuffer.resize(numMeshes);
@@ -167,7 +173,7 @@ OptixTraversableHandle LidarRenderer::buildAccel()
         triangleInput[meshID].triangleArray.numIndexTriplets    = (int)mesh.index.size();
         triangleInput[meshID].triangleArray.indexBuffer         = d_indices[meshID];
 
-        triangleInputFlags[meshID] = 0 ;
+        triangleInputFlags[meshID] = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 
         // in this example we have one SBT entry, and no per-primitive
         // materials:
@@ -182,11 +188,16 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     // ==================================================================
 
     OptixAccelBuildOptions accelOptions = {};
-    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_NONE
+    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE 
+        | OPTIX_BUILD_FLAG_ALLOW_UPDATE
         | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
         ;
-    accelOptions.motionOptions.numKeys  = 1;
-    accelOptions.operation              = OPTIX_BUILD_OPERATION_BUILD;
+    accelOptions.motionOptions.numKeys  = 0; // no motion blur
+    
+    if (update)
+        accelOptions.operation          = OPTIX_BUILD_OPERATION_UPDATE;
+    else
+        accelOptions.operation          = OPTIX_BUILD_OPERATION_BUILD;
 
     OptixAccelBufferSizes blasBufferSizes;
     OPTIX_CHECK(optixAccelComputeMemoryUsage
@@ -215,8 +226,14 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     CUDABuffer tempBuffer;
     tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
 
-    CUDABuffer outputBuffer;
-    outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
+    if (!update)
+    {
+        // for update we use existing buffer
+        // in rebuild it should not change size
+        // if size changes, build from begining
+        outputBuffer.free();
+        outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
+    }
 
     OPTIX_CHECK(optixAccelBuild(optixContext,
                                 /* stream */0,
@@ -241,6 +258,7 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     uint64_t compactedSize;
     compactedSizeBuffer.download(&compactedSize,1);
 
+    asBuffer.free();
     asBuffer.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
                                   /*stream:*/0,
@@ -253,7 +271,6 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     // ==================================================================
     // aaaaaand .... clean up
     // ==================================================================
-    outputBuffer.free(); // << the UNcompacted, temporary output buffer
     tempBuffer.free();
     compactedSizeBuffer.free();
 
@@ -483,6 +500,7 @@ void LidarRenderer::buildSBT()
         rec.data = nullptr; /* for now ... */
         raygenRecords.push_back(rec);
     }
+    raygenRecordsBuffer.free();
     raygenRecordsBuffer.alloc_and_upload(raygenRecords);
     sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
 
@@ -496,6 +514,7 @@ void LidarRenderer::buildSBT()
         rec.data = nullptr; /* for now ... */
         missRecords.push_back(rec);
     }
+    missRecordsBuffer.free();
     missRecordsBuffer.alloc_and_upload(missRecords);
     sbt.missRecordBase          = missRecordsBuffer.d_pointer();
     sbt.missRecordStrideInBytes = sizeof(MissRecord);
@@ -530,6 +549,7 @@ void LidarRenderer::buildSBT()
             hitgroupRecords.push_back(rec);
         }
     }
+    hitgroupRecordsBuffer.free();
     hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
     sbt.hitgroupRecordBase          = hitgroupRecordsBuffer.d_pointer();
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
@@ -541,11 +561,16 @@ void LidarRenderer::buildSBT()
   /*! render one frame */
 void LidarRenderer::render(std::vector<float> &rays)
 {
-//    cuProfilerStart();
     // sanity check: make sure we launch only after first resize is
     // already done:
     if (launchParams.fbSize == 0) return;
-
+    
+    if (model->moved)
+    {
+        launchParams.traversable = buildAccel(/*update =*/ true);
+        buildSBT();
+    }
+    
     // upload rays data to device
     rayBuffer.upload(rays.data(),rays.size());
 
@@ -567,7 +592,6 @@ void LidarRenderer::render(std::vector<float> &rays)
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
-//    cuProfilerStop();
 }
 
   /*! resize frame buffer to given resolution */
