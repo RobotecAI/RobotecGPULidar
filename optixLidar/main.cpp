@@ -49,6 +49,7 @@ struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
                  Model *model,
+                 std::vector<Model *>models,
                  const Camera &camera,
                  const float worldScale,
                  vec3f lidarInitialSource,
@@ -58,9 +59,9 @@ struct SampleWindow : public GLFCameraWindow
                  int samplingInitialWidth,
                  int samplingInitialHeight,
                  float range)
-        : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
+        : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), model(model),
           lidarRend(model, range), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
-          lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), model(model)
+          lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), models(models)
     {
         sample.setCamera(camera);
     }
@@ -77,20 +78,48 @@ struct SampleWindow : public GLFCameraWindow
             cameraFrame.modified = false;
         }
         
-        // move tunnel to right
+        
+        
         static int counter = 0;
-        if (counter%5 == 0 )
+        static int moveCounter = 0;
+//        if (counter%10 == 0 )
         {
-            for(int i = 0; i < model->meshes[0]->vertex.size(); ++i)
+            Model * currentModel = new Model;
+            // read tunnel
+            for (int i = 0; i < model->meshes.size(); ++i)
             {
-                model->meshes[0]->vertex[i].z += 1;
+                currentModel->meshes.push_back(model->meshes[i]);
             }
-            model->moved = true;
+            for (int i = 0; i < model->textures.size(); ++i)
+            {
+                currentModel->textures.push_back(model->textures[i]);
+            }
+            // add human
+            for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
+            {
+                currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
+            }
+
+            for (auto mesh : currentModel->meshes)
+                for (auto vtx : mesh->vertex)
+                    currentModel->bounds.extend(vtx);
+            
+            model->moved = false;
+            currentModel->moved = true;
+            
+            // set model in renderers
+            sample.setModel(currentModel);
+            lidarRend.setModel(currentModel);
+            
+            moveCounter++;
+            if (moveCounter == 38)
+                moveCounter = 0;
         }
         counter++;
 
-//        printf("%lld %d\n", current_timestamp()-begin);
-//        begin = current_timestamp();
+
+        printf("%lld\n", current_timestamp()-begin);
+        begin = current_timestamp();
         std::vector<float> points;
         lidarRend.resize(lidar.rays.size()/6);
 
@@ -121,8 +150,6 @@ struct SampleWindow : public GLFCameraWindow
 //       printf("%lld\n", current_timestamp()-begin);
 //       begin = current_timestamp();
         
-        if (model->moved)
-            model->moved = false;
     }
 
     virtual void draw() override
@@ -216,11 +243,12 @@ struct SampleWindow : public GLFCameraWindow
 
     vec2i                 fbSize;
     GLuint                fbTexture {0};
+    Model *               model;
     LidarRenderer         lidarRend;
     SampleRenderer        sample;
     Lidar                 lidar;
     std::vector<uint32_t> pixels;
-    Model *               model;
+    std::vector<Model *>  models;
 };
 
 
@@ -229,14 +257,40 @@ world, then exit */
 extern "C" int main(int ac, char **av)
 {
     try {
-        Model *model = loadOBJ("../models/tunnel.obj");
+        Model *modelStatic = loadOBJ("../models/tunnel.obj");
+        
+        std::vector<Model *> models;
+        for (int i = 1; i <= 38; ++i)
+        {
+            std::string modelName = "../models/optixTestNoMaterial/DAZ_Worker_tmp_0000";
+            if (i < 10)
+                modelName += "0";
+            modelName += std::to_string(i);
+            modelName += ".obj";
+            Model *model = loadOBJ(modelName.c_str());
+            for (int i = 0; i < model->meshes.size(); ++i)
+            {
+                for (int j = 0; j < model->meshes[i]->vertex.size(); ++j)
+                {
+                    model->meshes[i]->vertex[j].x *= 100;
+                    model->meshes[i]->vertex[j].x -= 3000;
+                    model->meshes[i]->vertex[j].y *= 100;
+                    model->meshes[i]->vertex[j].y += 425;
+                    model->meshes[i]->vertex[j].z *= 100;
+                    model->meshes[i]->vertex[j].z -= 100;
+                }
+            }
+            models.push_back(model);
+        }
+        
+//        Camera camera = { /*from*/vec3f(-20.f, 0.f, 0.f),
         Camera camera = { /*from*/vec3f(-4000.07f, 450.f, 0.f),
- //                         /* at */model->bounds.center()-vec3f(0,400,0),
+//                          /* at */model->bounds.center()-vec3f(0,400,0),
                           /* at */vec3f(1,0.06,0),
                           /* up */vec3f(0.f,1.f,0.f) };
         // something approximating the scale of the world, so the
         // camera knows how much to move for any given user interaction:
-        const float worldScale = length(model->bounds.span());
+        const float worldScale = length(models[0]->bounds.span());
 
         vec3f lidarInitialSource = vec3f(-4000.f, 450.f, 0.f);
         vec3f lidarInitialDirection = vec3f(1.f, 0.f, 0.f);
@@ -251,7 +305,7 @@ extern "C" int main(int ac, char **av)
         float range = 2000.f; // 40m * 50
 
         SampleWindow *window = new SampleWindow("Optix lidar",
-                                                model, camera, worldScale,
+                                                modelStatic, models, camera, worldScale,
                                                 lidarInitialSource, lidarInitialDirection,
                                                 lidarInitialWidth, lidarInitialHeight, samplingInitialWidth,
                                                 samplingInitialHeight, range);

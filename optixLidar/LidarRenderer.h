@@ -25,6 +25,8 @@ public:
 
     /*! download lidar hit points */
     void downloadPoints(std::vector<float> &h_points);
+    
+    void setModel(const Model *model) {this->model = model;}
 protected:
     // ------------------------------------------------------------------
     // internal helper functions

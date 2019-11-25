@@ -593,7 +593,7 @@ void SampleRenderer::render(std::vector<float> &lidarPoints)
     
     if (model->moved)
     {
-        launchParams.traversable = buildAccel(/*update = */true);
+        launchParams.traversable = buildAccel(/*update = */ false);
         buildSBT();
     }
 

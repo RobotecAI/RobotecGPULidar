@@ -40,6 +40,8 @@ public:
 
     /*! set camera to render with */
     void setCamera(const Camera &camera);
+    
+    void setModel(const Model *model) {this->model = model;}
 
 protected:
     // ------------------------------------------------------------------
