@@ -567,7 +567,13 @@ void LidarRenderer::render(std::vector<float> &rays)
     
     if (model->moved)
     {
-        launchParams.traversable = buildAccel(/*update =*/ false);
+        if (model->big == true)
+        {
+//printf("Przebudowywanie od poczatku\n");
+            launchParams.traversable = buildAccel(/*update =*/ false);
+        }
+        else
+            launchParams.traversable = buildAccel(/*update =*/ true);
         buildSBT();
     }
     

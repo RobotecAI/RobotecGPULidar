@@ -39,6 +39,7 @@ struct Model {
     box3f bounds;
     
     bool moved;
+    bool big;
 };
 
 Model *loadOBJ(const std::string &objFile);

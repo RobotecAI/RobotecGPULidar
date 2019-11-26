@@ -77,46 +77,52 @@ struct SampleWindow : public GLFCameraWindow
                                     cameraFrame.get_up() });
             cameraFrame.modified = false;
         }
-        
-        
-        
-        static int counter = 0;
+
         static int moveCounter = 0;
-//        if (counter%10 == 0 )
+        static int big = 0;
+        static Model * currentModel = new Model;
+        
+        currentModel->meshes.clear();
+        currentModel->textures.clear();
+        box3f bounds;
+        currentModel->bounds = bounds;
+        
+        for (int i = 0; i < model->meshes.size(); ++i)
         {
-            Model * currentModel = new Model;
-            // read tunnel
-            for (int i = 0; i < model->meshes.size(); ++i)
-            {
-                currentModel->meshes.push_back(model->meshes[i]);
-            }
-            for (int i = 0; i < model->textures.size(); ++i)
-            {
-                currentModel->textures.push_back(model->textures[i]);
-            }
-            // add human
-            for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
-            {
-                currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
-            }
-
-            for (auto mesh : currentModel->meshes)
-                for (auto vtx : mesh->vertex)
-                    currentModel->bounds.extend(vtx);
-            
-            model->moved = false;
-            currentModel->moved = true;
-            
-            // set model in renderers
-            sample.setModel(currentModel);
-            lidarRend.setModel(currentModel);
-            
-            moveCounter++;
-            if (moveCounter == 38)
-                moveCounter = 0;
+            currentModel->meshes.push_back(model->meshes[i]);
         }
-        counter++;
+        for (int i = 0; i < model->textures.size(); ++i)
+        {
+            currentModel->textures.push_back(model->textures[i]);
+        }
+//printf("model = %p, currentModel->meshes.size() = %d, moveCounter = %d\n", currentModel, currentModel->meshes.size(), moveCounter);
+        for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
+        {
+            currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
+        }
 
+//printf("models[moveCounter]->meshes.size() = %d, currentModel->meshes.size() = %d\n", models[moveCounter]->meshes.size(), currentModel->meshes.size());
+        for (auto mesh : currentModel->meshes)
+            for (auto vtx : mesh->vertex)
+                currentModel->bounds.extend(vtx);
+        
+        currentModel->moved = true;
+        if (big == 0)
+        {
+            currentModel->big = true;
+        }
+        else
+            currentModel->big = true;
+        big++;
+        
+        moveCounter++;
+        if (moveCounter == 38)
+            moveCounter = 0;
+
+        // set model in renderers
+        sample.setModel(currentModel);
+        lidarRend.setModel(currentModel);
+        
 
         printf("%lld\n", current_timestamp()-begin);
         begin = current_timestamp();
@@ -260,16 +266,18 @@ extern "C" int main(int ac, char **av)
         Model *modelStatic = loadOBJ("../models/tunnel.obj");
         
         std::vector<Model *> models;
-        for (int i = 1; i <= 38; ++i)
+        for (int k = 1; k <= 38; ++k)
         {
             std::string modelName = "../models/optixTestNoMaterial/DAZ_Worker_tmp_0000";
-            if (i < 10)
+            if (k < 10)
                 modelName += "0";
-            modelName += std::to_string(i);
+            modelName += std::to_string(k);
             modelName += ".obj";
             Model *model = loadOBJ(modelName.c_str());
+//printf("meshes: %d\n", model->meshes.size());
             for (int i = 0; i < model->meshes.size(); ++i)
             {
+//printf("  vertex: %d\n", model->meshes[i]->vertex.size());
                 for (int j = 0; j < model->meshes[i]->vertex.size(); ++j)
                 {
                     model->meshes[i]->vertex[j].x *= 100;
@@ -278,6 +286,8 @@ extern "C" int main(int ac, char **av)
                     model->meshes[i]->vertex[j].y += 425;
                     model->meshes[i]->vertex[j].z *= 100;
                     model->meshes[i]->vertex[j].z -= 100;
+                    
+                    model->meshes[i]->vertex[j].z += 4*k;
                 }
             }
             models.push_back(model);
