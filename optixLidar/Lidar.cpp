@@ -73,9 +73,9 @@ void Lidar::generateRays()
             dir.x = dirP.x*cos(angle1) - dirP.z*sin(angle1);
             dir.z = dirP.x*sin(angle1) + dirP.z*cos(angle1);
             
-//            rays.push_back(source.x);
-//            rays.push_back(source.y);
-//            rays.push_back(source.z);
+            rays.push_back(source.x);
+            rays.push_back(source.y);
+            rays.push_back(source.z);
             rays.push_back(dir.x);
             rays.push_back(dir.y);
             rays.push_back(dir.z);

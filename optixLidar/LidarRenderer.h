@@ -6,9 +6,6 @@
 #include "Model.h"
 #include "gdt/math/AffineSpace.h"
 
-#include "../interface/lidarsource.h"
-#include "../interface/raycastresult.h"
-
 
 class LidarRenderer
 {
@@ -18,19 +15,16 @@ class LidarRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates module, pipeline, programs, SBT, etc. */
-    LidarRenderer(const Model *model);
+    LidarRenderer(const Model *model, float range);
 
     /*! render one frame */
-//    void render(std::vector<float> &rays);
-    void render(std::vector<LidarSource> &lidars);
+    void render(std::vector<float> &rays);
 
     /*! resize frame buffer to given resolution */
-//    void resize(const int newSize);
-    void resize(std::vector<LidarSource> &lidars);
+    void resize(const int newSize);
 
     /*! download lidar hit points */
-//    void downloadPoints(std::vector<float> &h_points);
-    void downloadPoints(RaycastResults &result);
+    void downloadPoints(std::vector<float> &h_points);
     
     void setModel(const Model *model) {this->model = model;}
 protected:
@@ -71,8 +65,6 @@ protected:
 
     /*! upload textures, and create cuda texture objects for them */
     void createTextures();
-    
-    void uploadRays(std::vector<LidarSource> &lidars);
 
 protected:
     /*! @{ CUDA device context and stream that optix pipeline will run
@@ -112,20 +104,12 @@ protected:
     CUDABuffer   launchParamsBuffer;
     /*! @} */
 
-//    CUDABuffer rayBuffer;
-//    CUDABuffer positionBuffer;
-//    CUDABuffer hitBuffer;
-    
-    CUDABuffer raysPerLidarBuffer;
     CUDABuffer rayBuffer;
-    CUDABuffer rangeBuffer;
-    CUDABuffer sourceBuffer;
-    
     CUDABuffer positionBuffer;
     CUDABuffer hitBuffer;
 
     // rays range
-//    float range;
+    float range;
 
     /*! the model we are going to trace rays against */
     const Model *model;

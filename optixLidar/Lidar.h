@@ -20,13 +20,13 @@ public:
     void rotateY(float angle);
     void rotateZ(float angle);
     
-    vec3f              source;
     std::vector<float> rays;
     float              range; //40m
     
 protected:
     void generateRays();
     
+    vec3f              source;
     vec3f              direction;
     float              width; // angle in radians
     float              height; // angle in radians
