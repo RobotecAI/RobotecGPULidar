@@ -18,11 +18,6 @@
       }                                                                 \
     }
 
-#define CUDA_CHECK_NOEXCEPT(call)                                        \
-    {									\
-      cuda##call;                                                       \
-    }
-
 #define OPTIX_CHECK( call )                                             \
   {                                                                     \
     OptixResult res = call;                                             \
