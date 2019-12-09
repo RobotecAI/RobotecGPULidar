@@ -5,19 +5,19 @@
 #include <time.h>
 
 struct timeval {
-	long tv_sec;
-	long tv_usec;
+    long tv_sec;
+    long tv_usec;
 };
 
 
 int gettimeofdayWin(struct timeval* tp, struct timezone* tzp) {
-	namespace sc = std::chrono;
-	sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
-	sc::seconds s = sc::duration_cast<sc::seconds>(d);
-	tp->tv_sec = s.count();
-	tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+    namespace sc = std::chrono;
+    sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+    sc::seconds s = sc::duration_cast<sc::seconds>(d);
+    tp->tv_sec = s.count();
+    tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
 
-	return 0;
+    return 0;
 }
 
 long long current_timestampL()
@@ -32,10 +32,10 @@ long long current_timestampL()
 
 long long current_timestampL()
 {
-	struct timeval te;
+    struct timeval te;
     gettimeofday(&te, nullptr); // get current time
-	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
-	return milliseconds;
+    long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
+    return milliseconds;
 }
 
 #endif // _WIN32
@@ -159,7 +159,7 @@ void LidarRenderer::createTextures()
 OptixTraversableHandle LidarRenderer::buildAccel(bool update)
 {
     const size_t numMeshes = model->meshes.size();
-    
+
     for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
     {
         vertexBuffer[meshID].free();
@@ -228,12 +228,12 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
     // ==================================================================
 
     OptixAccelBuildOptions accelOptions = {};
-    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE 
+    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
         | OPTIX_BUILD_FLAG_ALLOW_UPDATE
         | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
         ;
     accelOptions.motionOptions.numKeys  = 0; // no motion blur
-    
+
     if (update)
         accelOptions.operation          = OPTIX_BUILD_OPERATION_UPDATE;
     else
