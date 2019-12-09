@@ -80,7 +80,7 @@ struct SampleWindow : public GLFCameraWindow
                                     cameraFrame.get_up() });
             cameraFrame.modified = false;
         }
-/*
+
         static int moveCounter = 0;
         static int big = 0;
         static Model * currentModel = new Model;
@@ -98,14 +98,14 @@ struct SampleWindow : public GLFCameraWindow
         {
             currentModel->textures.push_back(model->textures[i]);
         }
-        for (int j = 0; j < 20; ++j)
-        {
+	//       for (int j = 0; j < 20; ++j)
+        //{
 //printf("model = %p, currentModel->meshes.size() = %d, moveCounter = %d\n", currentModel, currentModel->meshes.size(), moveCounter);
-            for (int i = 0; i < models[j]->meshes.size(); ++i)
+            for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
             {
-                currentModel->meshes.push_back(models[j]->meshes[i]);
+                currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
             }
-        }
+	    //}
 
 //printf("models[moveCounter]->meshes.size() = %d, currentModel->meshes.size() = %d\n", models[moveCounter]->meshes.size(), currentModel->meshes.size());
         for (auto mesh : currentModel->meshes)
@@ -129,7 +129,7 @@ struct SampleWindow : public GLFCameraWindow
         sample.setModel(currentModel);
         lidarRend.setModel(currentModel);
         
-*/
+
 //        printf("\n%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
 //        std::vector<float> points;
