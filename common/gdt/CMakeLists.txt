@@ -25,11 +25,7 @@ add_library(gdt
   cmake/configure_build_type.cmake
   cmake/configure_optix.cmake
   cmake/FindOptiX.cmake
-  
   gdt/gdt.h
-  gdt/math/LinearSpace.h
-  gdt/math/AffineSpace.h
-  
   gdt/gdt.cpp
   )
 

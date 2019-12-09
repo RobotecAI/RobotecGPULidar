@@ -4,11 +4,9 @@
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 #include "Model.h"
-#include "gdt/math/AffineSpace.h"
 
 #include "../interface/lidarsource.h"
 #include "../interface/raycastresult.h"
-
 
 class LidarRenderer
 {

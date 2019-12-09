@@ -83,12 +83,12 @@ namespace gdt {
 
   inline __both__ float infty() {
 #ifdef __CUDACC__
-    return CUDART_INF_F; 
+    return CUDART_INF_F;
 #else
-    return std::numeric_limits<float>::infinity(); 
+    return std::numeric_limits<float>::infinity();
 #endif
   }
-  
+
   static struct PosInfTy
   {
 #ifdef __CUDACC__
@@ -144,13 +144,13 @@ namespace gdt {
     template<typename T> static inline __both__ T value_limits_lower(T) { return (T)NegInfTy(); }//{ return -std::numeric_limits<T>::infinity(); }
     template<typename T> static inline __both__ T value_limits_upper(T) { return (T)PosInfTy(); }//{ return +std::numeric_limits<T>::infinity();  }
   };
-  
+
   /*! lower value of a completely *empty* range [+inf..-inf] */
   template<typename T> inline __both__ T empty_bounds_lower()
   {
     return limits_traits<std::numeric_limits<T>::is_integer>::value_limits_upper(T());
   }
-  
+
   /*! upper value of a completely *empty* range [+inf..-inf] */
   template<typename T> inline __both__ T empty_bounds_upper()
   {
@@ -162,7 +162,7 @@ namespace gdt {
   {
     return limits_traits<std::numeric_limits<T>::is_integer>::value_limits_upper(T());
   }
-  
+
   /*! upper value of a completely *empty* range [+inf..-inf] */
   template<typename T> inline __both__ T empty_range_upper()
   {
@@ -180,5 +180,5 @@ namespace gdt {
   {
     return limits_traits<std::numeric_limits<T>::is_integer>::value_limits_upper(T());
   }
-  
+
 } // ::gdt

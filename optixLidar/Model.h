@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gdt/math/AffineSpace.h"
+#include "gdt/math/box.h"
 #include <vector>
 
 using namespace gdt;
