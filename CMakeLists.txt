@@ -30,10 +30,6 @@ set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${gdt_dir}/cmake/")
 include(${gdt_dir}/cmake/configure_build_type.cmake)
 include(${gdt_dir}/cmake/configure_optix.cmake)
-
-#set(glfw_dir ${PROJECT_SOURCE_DIR}/submodules/glfw/)
-#include(${gdt_dir}/cmake/configure_glfw.cmake)
-
 mark_as_advanced(CUDA_SDK_ROOT_DIR)
 
 # ------------------------------------------------------------------
@@ -60,11 +56,5 @@ add_subdirectory(common/glfWindow EXCLUDE_FROM_ALL)
 # ------------------------------------------------------------------
 # and final build rules for the project
 # ------------------------------------------------------------------
-
 set(optix_LIBRARY "")
-
-
-#add_subdirectory(example05_firstSBTData)
 add_subdirectory(optixLidar)
-
-
