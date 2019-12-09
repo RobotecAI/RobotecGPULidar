@@ -4,7 +4,7 @@
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 #include "Model.h"
-#include "gdt/math/AffineSpace.h"
+#include "gdt/math/vec.h"
 
 struct Camera {
     /*! camera position - *from* where we are looking */
