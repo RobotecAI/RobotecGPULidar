@@ -6,7 +6,7 @@
 
 typedef struct RaycastResult
 {
-    chrono::time_point acquisitionTime;
+    std::chrono::system_clock::time_point acquisitionTime;
     std::string lidarID;
     std::vector<LidarPoint> points;
 } RaycastResult;

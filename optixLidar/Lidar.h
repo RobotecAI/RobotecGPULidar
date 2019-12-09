@@ -22,11 +22,11 @@ public:
     
     std::vector<float> rays;
     float              range; //40m
+    vec3f              source;
     
 protected:
     void generateRays();
     
-    vec3f              source;
     vec3f              direction;
     float              width; // angle in radians
     float              height; // angle in radians

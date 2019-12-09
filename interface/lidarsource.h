@@ -5,7 +5,7 @@
 struct LidarSource
 {
     std::string unique_id;
-    Vector3f source; //global coordinates
-    std::vector<Vector3f> directions;
+    Point source; //global coordinates
+    std::vector<Point> directions;
     float range;
 };

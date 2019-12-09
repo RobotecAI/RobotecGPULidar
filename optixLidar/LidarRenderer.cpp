@@ -1,5 +1,45 @@
 #include "LidarRenderer.h"
 
+#if defined(_WIN32)
+#include <chrono>
+#include <time.h>
+
+struct timeval {
+	long tv_sec;
+	long tv_usec;
+};
+
+
+int gettimeofdayWin(struct timeval* tp, struct timezone* tzp) {
+	namespace sc = std::chrono;
+	sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+	sc::seconds s = sc::duration_cast<sc::seconds>(d);
+	tp->tv_sec = s.count();
+	tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+	return 0;
+}
+
+long long current_timestampL()
+{
+    struct timeval te;
+    gettimeofdayWin(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
+    return milliseconds;
+}
+
+#else
+
+long long current_timestampL()
+{
+	struct timeval te;
+	gettimeofday(&te, NULL); // get current time
+	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
+	return milliseconds;
+}
+
+#endif // _WIN32
+
 extern "C" char embedded_ptx_code[];
 
   /*! SBT record for a raygen program */
@@ -27,8 +67,8 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) HitgroupRecord
 
   /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
-LidarRenderer::LidarRenderer(const Model *model, float range)
-    : range(range), model(model)
+LidarRenderer::LidarRenderer(const Model *model)
+    : model(model)
 {
     initOptix();
 
@@ -559,11 +599,12 @@ void LidarRenderer::buildSBT()
 
 
   /*! render one frame */
-void LidarRenderer::render(std::vector<float> &rays)
+//void LidarRenderer::render(std::vector<float> &rays)
+void LidarRenderer::render(std::vector<LidarSource> &lidars)
 {
     // sanity check: make sure we launch only after first resize is
     // already done:
-    if (launchParams.fbSize == 0) return;
+    if (launchParams.rayCount == 0) return;
     
     if (model->moved)
     {
@@ -578,10 +619,12 @@ void LidarRenderer::render(std::vector<float> &rays)
     }
     
     // upload rays data to device
-    rayBuffer.upload(rays.data(),rays.size());
+//    rayBuffer.upload(rays.data(),rays.size());
+    uploadRays(lidars);
 
     launchParamsBuffer.upload(&launchParams,1);
 
+//long long now = current_timestampL();
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline,stream,
                             /*! parameters and SBT */
@@ -589,7 +632,7 @@ void LidarRenderer::render(std::vector<float> &rays)
                             launchParamsBuffer.sizeInBytes,
                             &sbt,
                             /*! dimensions of the launch: */
-                            launchParams.fbSize,
+                            launchParams.rayCount,
                             1,
                             1
                             ));
@@ -598,69 +641,122 @@ void LidarRenderer::render(std::vector<float> &rays)
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+//printf("optixLaunch %lld\n", (current_timestampL() - now));
 }
 
   /*! resize frame buffer to given resolution */
-void LidarRenderer::resize(const int newSize)
+//void LidarRenderer::resize(const int newSize)
+void LidarRenderer::resize(std::vector<LidarSource> &lidars)
 {
+    int lidarCount = lidars.size();
+    int rayCount = 0;
+    for (int i = 0; i < lidarCount; ++i)
+    {
+        rayCount += lidars[i].directions.size();
+    }
+    
     // resize our cuda frame buffer
-    positionBuffer.resize(newSize*4*sizeof(float));
-    rayBuffer.resize(newSize*6*sizeof(float));
-    hitBuffer.resize(newSize*sizeof(int));
+    raysPerLidarBuffer.resize(lidarCount*sizeof(int));
+    rayBuffer.resize(rayCount*3*sizeof(float));
+    rangeBuffer.resize(lidarCount*sizeof(float));
+    sourceBuffer.resize(lidarCount*3*sizeof(float));
+    
+    positionBuffer.resize(rayCount*4*sizeof(float));
+    hitBuffer.resize(rayCount*sizeof(int));
 
     // update the launch parameters that we'll pass to the optix
     // launch:
-    launchParams.fbSize         = newSize;
-    launchParams.hitBuffer      = (int*)hitBuffer.d_ptr;
-    launchParams.positionBuffer = (float*)positionBuffer.d_ptr;
+    launchParams.rayCount       = rayCount;
+    launchParams.lidarCount     = lidarCount;
+    launchParams.raysPerLidarBuffer = (int*)raysPerLidarBuffer.d_ptr;
     launchParams.rayBuffer      = (float*)rayBuffer.d_ptr;
-
-    launchParams.range         = range;
+    launchParams.rangeBuffer    = (float*)rangeBuffer.d_ptr;
+    launchParams.sourceBuffer   = (float*)sourceBuffer.d_ptr;
+    launchParams.positionBuffer = (float*)positionBuffer.d_ptr;
+    launchParams.hitBuffer      = (int*)hitBuffer.d_ptr;
 }
 
-#if defined(_WIN32)
-#include <chrono>
-#include <time.h>
-
-struct timeval {
-	long tv_sec;
-	long tv_usec;
-};
-
-
-int gettimeofdayWin(struct timeval* tp, struct timezone* tzp) {
-	namespace sc = std::chrono;
-	sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
-	sc::seconds s = sc::duration_cast<sc::seconds>(d);
-	tp->tv_sec = s.count();
-	tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
-
-	return 0;
-}
-
-long long current_timestampL()
+void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
 {
-    struct timeval te;
-    gettimeofdayWin(&te, NULL); // get current time
-    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
-    return milliseconds;
+    std::vector<int> raysPerLidar;
+    raysPerLidar.resize(lidars.size());
+    for (int i = 0; i < lidars.size(); ++i)
+    {
+        raysPerLidar[i] = lidars[i].directions.size();
+    }
+    raysPerLidarBuffer.upload(raysPerLidar.data(), raysPerLidar.size());
+    
+    std::vector<float> rays;
+    rays.resize(launchParams.rayCount*3);
+    int index = 0;
+    for (int i = 0; i < lidars.size(); ++i)
+    {
+        for (int j = 0; j < lidars[i].directions.size(); j++)
+        {
+            rays[index++] = lidars[i].directions[j].x;
+            rays[index++] = lidars[i].directions[j].y;
+            rays[index++] = lidars[i].directions[j].z;
+        }
+    }
+    rayBuffer.upload(rays.data(), rays.size());
+    
+    std::vector<float> range;
+    range.resize(lidars.size());
+    for(int i = 0; i < lidars.size(); ++i)
+    {
+        range[i] = lidars[i].range;
+    }
+    rangeBuffer.upload(range.data(), range.size());
+    
+    std::vector<float> source;
+    source.resize(lidars.size()*3);
+    for (int i = 0; i < lidars.size(); ++i)
+    {
+        source[i*3+0] = lidars[i].source.x;
+        source[i*3+1] = lidars[i].source.y;
+        source[i*3+2] = lidars[i].source.z;
+    }
+    sourceBuffer.upload(source.data(), source.size());
 }
-
-#else
-
-long long current_timestampL()
-{
-	struct timeval te;
-	gettimeofday(&te, NULL); // get current time
-	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
-	return milliseconds;
-}
-
-#endif // _WIN32
-
 
 
   /*! download the rendered color buffer */
+void LidarRenderer::downloadPoints(RaycastResults &result)
+{
+    std::vector<float> allPoints;
+    allPoints.resize(launchParams.rayCount*4);
+    std::vector<int> hits;
+    hits.resize(launchParams.rayCount);
+    std::vector<int> raysPerLidar;
+    raysPerLidar.resize(launchParams.lidarCount);
+    
+    positionBuffer.download(allPoints.data(), launchParams.rayCount*4);
+    hitBuffer.download(hits.data(), launchParams.rayCount);
+    raysPerLidarBuffer.download(raysPerLidar.data(), launchParams.lidarCount);
+    
+    // now rewrite to RaycastResults
+    int index = 0;
+    for(int i = 0; i < launchParams.lidarCount; ++i)
+    {
+        RaycastResult res;
+        for(int j = 0; j < raysPerLidar[i]; ++j)
+        {
+            if(hits[index])
+            {
+                LidarPoint point;
+                point.x = allPoints[index*4];
+                point.y = allPoints[index*4+1];
+                point.z = allPoints[index*4+2];
+                point.i = allPoints[index*4+3];
+                res.points.push_back(point);
+            }
+            index++;
+        }
+        
+        result.push_back(res);
+    }
+}
+/*
 void LidarRenderer::downloadPoints(std::vector<float> &h_points)
 {
 //    long long begin = current_timestampL();
@@ -714,3 +810,4 @@ void LidarRenderer::downloadPoints(std::vector<float> &h_points)
 //    printf("downloadPoints %lld\n", current_timestampL()-begin);
 //    begin = current_timestampL();
 }
+*/
