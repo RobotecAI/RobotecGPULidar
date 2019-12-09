@@ -48,6 +48,8 @@ If all of these work correctly, your environment is likely setup correctly. Some
 * Clone the code  
     `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidarsimulator.git`  
    `cd optixlidar`  
+* Download LFS files
+    `git lfs pull`
 * Build the project with cmake  
     `mkdir build`  
     `cd build`   
