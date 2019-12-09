@@ -1,8 +1,8 @@
 #include "Lidar.h"
 
 Lidar::Lidar(vec3f source, vec3f direction, float width, float height, int resolutionWidth, int resolutionHeight, float range)
-    : source(source), direction(direction), width(width), height(height), 
-      resolutionWidth(resolutionWidth), resolutionHeight(resolutionHeight), range(range)
+    : range(range), source(source),  direction(direction), width(width), height(height),
+      resolutionWidth(resolutionWidth), resolutionHeight(resolutionHeight)
 {
     generateRays();
 }

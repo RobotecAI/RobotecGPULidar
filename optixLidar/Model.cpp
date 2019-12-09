@@ -43,7 +43,7 @@ int addVertex(TriangleMesh *mesh,
     const vec3f *normal_array   = (const vec3f*)attributes.normals.data();
     const vec2f *texcoord_array = (const vec2f*)attributes.texcoords.data();
 
-    int newID = (int)mesh->vertex.size();
+    int newID = static_cast<int>(mesh->vertex.size());
     knownVertices[idx] = newID;
 
     mesh->vertex.push_back(vertex_array[idx.vertex_index]);
@@ -106,7 +106,6 @@ int loadTexture(Model *model,
         {
             uint32_t *line_y = texture->pixel + y * res.x;
             uint32_t *mirrored_y = texture->pixel + (res.y-1-y) * res.x;
-            int mirror_y = res.y-1-y;
             for (int x = 0; x < res.x; x++)
             {
                 std::swap(line_y[x],mirrored_y[x]);
@@ -170,7 +169,7 @@ Model *loadOBJ(const std::string &objFile)
         {
             TriangleMesh *mesh = new TriangleMesh;
 
-            for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++)
+            for (size_t faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++)
             {
                 if (shape.mesh.material_ids[faceID] != materialID) continue;
                 tinyobj::index_t idx0 = shape.mesh.indices[3*faceID+0];

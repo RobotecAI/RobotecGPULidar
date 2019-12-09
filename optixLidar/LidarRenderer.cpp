@@ -33,7 +33,7 @@ long long current_timestampL()
 long long current_timestampL()
 {
 	struct timeval te;
-	gettimeofday(&te, NULL); // get current time
+    gettimeofday(&te, nullptr); // get current time
 	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
 	return milliseconds;
 }
@@ -105,11 +105,11 @@ LidarRenderer::LidarRenderer(const Model *model)
 
 void LidarRenderer::createTextures()
 {
-    int numTextures = (int)model->textures.size();
+    size_t numTextures = model->textures.size();
     textureArrays.resize(numTextures);
     textureObjects.resize(numTextures);
 
-    for (int textureID = 0; textureID < numTextures; textureID++)
+    for (size_t textureID = 0; textureID < numTextures; textureID++)
     {
         auto texture = model->textures[textureID];
 
@@ -158,9 +158,9 @@ void LidarRenderer::createTextures()
 
 OptixTraversableHandle LidarRenderer::buildAccel(bool update)
 {
-    const int numMeshes = (int)model->meshes.size();
+    const size_t numMeshes = model->meshes.size();
     
-    for (int meshID = 0; meshID < vertexBuffer.size(); meshID++)
+    for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
     {
         vertexBuffer[meshID].free();
         normalBuffer[meshID].free();
@@ -183,7 +183,7 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
     std::vector<CUdeviceptr> d_indices(numMeshes);
     std::vector<uint32_t> triangleInputFlags(numMeshes);
 
-    for (int meshID = 0; meshID < numMeshes; meshID++)
+    for (size_t meshID = 0; meshID < numMeshes; meshID++)
     {
         // upload the model to the device: the builder
         TriangleMesh &mesh = *model->meshes[meshID];
@@ -534,7 +534,7 @@ void LidarRenderer::buildSBT()
     // build raygen records
     // ------------------------------------------------------------------
     std::vector<RaygenRecord> raygenRecords;
-    for (int i = 0; i < raygenPGs.size(); i++) {
+    for (size_t i = 0; i < raygenPGs.size(); i++) {
         RaygenRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i],&rec));
         rec.data = nullptr; /* for now ... */
@@ -548,7 +548,7 @@ void LidarRenderer::buildSBT()
     // build miss records
     // ------------------------------------------------------------------
     std::vector<MissRecord> missRecords;
-    for (int i = 0; i < missPGs.size(); i++) {
+    for (size_t i = 0; i < missPGs.size(); i++) {
         MissRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i],&rec));
         rec.data = nullptr; /* for now ... */
@@ -677,7 +677,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
 {
     std::vector<int> raysPerLidar;
     raysPerLidar.resize(lidars.size());
-    for (int i = 0; i < lidars.size(); ++i)
+    for (size_t i = 0; i < lidars.size(); ++i)
     {
         raysPerLidar[i] = lidars[i].directions.size();
     }
@@ -686,9 +686,9 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
     std::vector<float> rays;
     rays.resize(launchParams.rayCount*3);
     int index = 0;
-    for (int i = 0; i < lidars.size(); ++i)
+    for (size_t i = 0; i < lidars.size(); ++i)
     {
-        for (int j = 0; j < lidars[i].directions.size(); j++)
+        for (size_t j = 0; j < lidars[i].directions.size(); j++)
         {
             rays[index++] = lidars[i].directions[j].x;
             rays[index++] = lidars[i].directions[j].y;
@@ -699,7 +699,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
     
     std::vector<float> range;
     range.resize(lidars.size());
-    for(int i = 0; i < lidars.size(); ++i)
+    for(size_t i = 0; i < lidars.size(); ++i)
     {
         range[i] = lidars[i].range;
     }
@@ -707,7 +707,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
     
     std::vector<float> source;
     source.resize(lidars.size()*3);
-    for (int i = 0; i < lidars.size(); ++i)
+    for (size_t i = 0; i < lidars.size(); ++i)
     {
         source[i*3+0] = lidars[i].source.x;
         source[i*3+1] = lidars[i].source.y;
