@@ -6,7 +6,7 @@
 using namespace gdt;
 
 // two ray types
-enum { RADIANCE_RAY_TYPE=0, SHADOW_RAY_TYPE, RAY_TYPE_COUNT };
+enum { RADIANCE_RAY_TYPE=0, RAY_TYPE_COUNT };
 enum { LIDAR_RAY_TYPE=0, LIDAR_RAY_TYPE_COUNT };
 
 struct TriangleMeshSBTData {
