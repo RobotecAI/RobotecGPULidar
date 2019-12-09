@@ -42,7 +42,7 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp) {
 long long current_timestamp()
 {
     struct timeval te;
-    gettimeofday(&te, NULL); // get current time
+    gettimeofday(&te, nullptr); // get current time
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
     return milliseconds;
 }
@@ -69,10 +69,12 @@ struct SampleWindow : public GLFCameraWindow
         sample.setCamera(camera);
     }
 
+    virtual ~SampleWindow() {}
+
     virtual void render() override
     {
         // for calculating frame rendering time
-        static long long begin = current_timestamp();
+        //static long long begin = current_timestamp();
 
         if (cameraFrame.modified) {
             sample.setCamera(Camera{cameraFrame.get_from(),
@@ -90,15 +92,15 @@ struct SampleWindow : public GLFCameraWindow
         box3f bounds;
         currentModel->bounds = bounds;
         
-        for (int i = 0; i < model->meshes.size(); ++i)
+        for (size_t i = 0; i < model->meshes.size(); ++i)
         {
             currentModel->meshes.push_back(model->meshes[i]);
         }
-        for (int i = 0; i < model->textures.size(); ++i)
+        for (size_t i = 0; i < model->textures.size(); ++i)
         {
             currentModel->textures.push_back(model->textures[i]);
         }
-        for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
+        for (size_t i = 0; i < models[moveCounter]->meshes.size(); ++i)
         {
             currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
         }
@@ -134,7 +136,7 @@ struct SampleWindow : public GLFCameraWindow
         lid.source.x = lidar.source.x;
         lid.source.y = lidar.source.y;
         lid.source.z = lidar.source.z;
-        for (int i = 0; i < lidar.rays.size()/3; ++i)
+        for (size_t i = 0; i < lidar.rays.size()/3; ++i)
         {
             Point p;
             p.x = lidar.rays[i*3];
@@ -164,9 +166,9 @@ struct SampleWindow : public GLFCameraWindow
 //        begin = current_timestamp();
 
         std::vector<float> points;
-        for (int i = 0; i < result.size(); ++i)
+        for (size_t i = 0; i < result.size(); ++i)
         {
-            for (int j = 0; j < result[i].points.size(); ++j)
+            for (size_t j = 0; j < result[i].points.size(); ++j)
             {
                 points.push_back(result[i].points[j].x);
                 points.push_back(result[i].points[j].y);
@@ -303,9 +305,9 @@ extern "C" int main(int ac, char **av)
             Model *model = loadOBJ(modelName.c_str());
             
             // move model to fit in the tunnel
-            for (int i = 0; i < model->meshes.size(); ++i)
+            for (size_t i = 0; i < model->meshes.size(); ++i)
             {
-                for (int j = 0; j < model->meshes[i]->vertex.size(); ++j)
+                for (size_t j = 0; j < model->meshes[i]->vertex.size(); ++j)
                 {
                     model->meshes[i]->vertex[j].x *= 100;
                     model->meshes[i]->vertex[j].x -= 3000;
@@ -362,7 +364,7 @@ void savePointsToFile(std::vector<float> &points)
     std::ofstream file(pointsFileName);
     file << points.size()/4 << "\n\n";
 
-    for (int i = 0; i < points.size()/4; ++i)
+    for (size_t i = 0; i < points.size()/4; ++i)
     {
         file << points[4*i+0] << " " << points[4*i+1] << " " << points[4*i+2] << " ";
 

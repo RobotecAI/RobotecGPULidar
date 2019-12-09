@@ -121,9 +121,9 @@ void SampleRenderer::createTextures()
 
 OptixTraversableHandle SampleRenderer::buildAccel(bool update)
 {
-    const int numMeshes = (int)model->meshes.size();
+    const size_t numMeshes = model->meshes.size();
     
-    for (int meshID = 0; meshID < vertexBuffer.size(); meshID++)
+    for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
     {
         vertexBuffer[meshID].free();
         normalBuffer[meshID].free();
@@ -146,7 +146,7 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
     std::vector<CUdeviceptr> d_indices(numMeshes);
     std::vector<uint32_t> triangleInputFlags(numMeshes);
 
-    for (int meshID = 0; meshID < numMeshes; meshID++)
+    for (size_t meshID = 0; meshID < numMeshes; meshID++)
     {
         // upload the model to the device: the builder
         TriangleMesh &mesh = *model->meshes[meshID];
@@ -168,12 +168,12 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
 
         triangleInput[meshID].triangleArray.vertexFormat        = OPTIX_VERTEX_FORMAT_FLOAT3;
         triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(vec3f);
-        triangleInput[meshID].triangleArray.numVertices         = (int)mesh.vertex.size();
+        triangleInput[meshID].triangleArray.numVertices         = static_cast<int>(mesh.vertex.size());
         triangleInput[meshID].triangleArray.vertexBuffers       = &d_vertices[meshID];
 
         triangleInput[meshID].triangleArray.indexFormat         = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
         triangleInput[meshID].triangleArray.indexStrideInBytes  = sizeof(vec3i);
-        triangleInput[meshID].triangleArray.numIndexTriplets    = (int)mesh.index.size();
+        triangleInput[meshID].triangleArray.numIndexTriplets    = static_cast<int>(mesh.index.size());
         triangleInput[meshID].triangleArray.indexBuffer         = d_indices[meshID];
 
         triangleInputFlags[meshID] = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
@@ -207,7 +207,7 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
                 (optixContext,
                  &accelOptions,
                  triangleInput.data(),
-                 (int)numMeshes,  // num_build_inputs
+                 static_cast<int>(numMeshes),  // num_build_inputs
                  &blasBufferSizes
                  ));
 
@@ -236,10 +236,10 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
     }
 
     OPTIX_CHECK(optixAccelBuild(optixContext,
-                                /* stream */0,
+                                /* stream */nullptr,
                                 &accelOptions,
                                 triangleInput.data(),
-                                (int)numMeshes,
+                                static_cast<int>(numMeshes),
                                 tempBuffer.d_pointer(),
                                 tempBuffer.sizeInBytes,
 
@@ -261,7 +261,7 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
     asBuffer.free();
     asBuffer.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
-                                  /*stream:*/0,
+                                  /*stream:*/nullptr,
                                   asHandle,
                                   asBuffer.d_pointer(),
                                   asBuffer.sizeInBytes,
@@ -285,7 +285,7 @@ void SampleRenderer::initOptix()
     // -------------------------------------------------------
     // check for available optix7 capable devices
     // -------------------------------------------------------
-    cudaFree(0);
+    cudaFree(nullptr);
     int numDevices;
     cudaGetDeviceCount(&numDevices);
     if (numDevices == 0)
@@ -306,7 +306,7 @@ static void context_log_cb(unsigned int level,
                          const char *message,
                          void *)
 {
-    fprintf( stderr, "[%2d][%12s]: %s\n", (int)level, tag, message );
+    fprintf( stderr, "[%2d][%12s]: %s\n", static_cast<int>(level), tag, message );
 }
 
 /*! creates and configures a optix device context (in this simple
@@ -325,7 +325,7 @@ void SampleRenderer::createContext()
     if( cuRes != CUDA_SUCCESS )
         fprintf( stderr, "Error querying current context: error code %d\n", cuRes );
 
-    OPTIX_CHECK(optixDeviceContextCreate(cudaContext, 0, &optixContext));
+    OPTIX_CHECK(optixDeviceContextCreate(cudaContext, nullptr, &optixContext));
     OPTIX_CHECK(optixDeviceContextSetLogCallback
                 (optixContext,context_log_cb,nullptr,4));
 }
@@ -464,7 +464,7 @@ void SampleRenderer::createPipeline()
                                     &pipelineCompileOptions,
                                     &pipelineLinkOptions,
                                     programGroups.data(),
-                                    (int)programGroups.size(),
+                                    static_cast<int>(programGroups.size()),
                                     log,&sizeof_log,
                                     &pipeline
                                     ));
@@ -495,7 +495,7 @@ void SampleRenderer::buildSBT()
     // build raygen records
     // ------------------------------------------------------------------
     std::vector<RaygenRecord> raygenRecords;
-    for (int i = 0; i < raygenPGs.size(); i++)
+    for (size_t i = 0; i < raygenPGs.size(); i++)
     {
         RaygenRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i],&rec));
@@ -510,7 +510,7 @@ void SampleRenderer::buildSBT()
     // build miss records
     // ------------------------------------------------------------------
     std::vector<MissRecord> missRecords;
-    for (int i = 0; i < missPGs.size(); i++)
+    for (size_t i = 0; i < missPGs.size(); i++)
     {
         MissRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i],&rec));

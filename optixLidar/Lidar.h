@@ -1,5 +1,7 @@
 #pragma once
 
+//TODO Move class to test utils instead
+
 #include <vector>
 #include "gdt/math/AffineSpace.h"
 

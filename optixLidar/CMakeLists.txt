@@ -26,3 +26,5 @@ target_link_libraries(lidar
   glfw
   ${OPENGL_gl_LIBRARY}
   )
+
+target_compile_options(lidar PRIVATE -Wall)
