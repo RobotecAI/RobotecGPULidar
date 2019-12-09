@@ -10,6 +10,9 @@
 #include <cmath>
 #include <fstream>
 
+#include "../interface/lidarsource.h"
+#include "../interface/raycastresult.h"
+
 std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
@@ -60,7 +63,7 @@ struct SampleWindow : public GLFCameraWindow
                  int samplingInitialHeight,
                  float range)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), model(model),
-          lidarRend(model, range), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
+          lidarRend(model), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
           lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), models(models)
     {
         sample.setCamera(camera);
@@ -77,7 +80,7 @@ struct SampleWindow : public GLFCameraWindow
                                     cameraFrame.get_up() });
             cameraFrame.modified = false;
         }
-
+/*
         static int moveCounter = 0;
         static int big = 0;
         static Model * currentModel = new Model;
@@ -95,10 +98,13 @@ struct SampleWindow : public GLFCameraWindow
         {
             currentModel->textures.push_back(model->textures[i]);
         }
-//printf("model = %p, currentModel->meshes.size() = %d, moveCounter = %d\n", currentModel, currentModel->meshes.size(), moveCounter);
-        for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
+        for (int j = 0; j < 20; ++j)
         {
-            currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
+//printf("model = %p, currentModel->meshes.size() = %d, moveCounter = %d\n", currentModel, currentModel->meshes.size(), moveCounter);
+            for (int i = 0; i < models[j]->meshes.size(); ++i)
+            {
+                currentModel->meshes.push_back(models[j]->meshes[i]);
+            }
         }
 
 //printf("models[moveCounter]->meshes.size() = %d, currentModel->meshes.size() = %d\n", models[moveCounter]->meshes.size(), currentModel->meshes.size());
@@ -123,20 +129,37 @@ struct SampleWindow : public GLFCameraWindow
         sample.setModel(currentModel);
         lidarRend.setModel(currentModel);
         
+*/
+//        printf("\n%lld\n", current_timestamp()-begin);
+//        begin = current_timestamp();
+//        std::vector<float> points;
 
-        printf("%lld\n", current_timestamp()-begin);
-        begin = current_timestamp();
-        std::vector<float> points;
-        lidarRend.resize(lidar.rays.size()/6);
+        std::vector<LidarSource> lidars;
+        LidarSource lid;
+        lid.unique_id = "0";
+        lid.source.x = lidar.source.x;
+        lid.source.y = lidar.source.y;
+        lid.source.z = lidar.source.z;
+        for (int i = 0; i < lidar.rays.size()/3; ++i)
+        {
+            Point p;
+            p.x = lidar.rays[i*3];
+            p.y = lidar.rays[i*3+1];
+            p.z = lidar.rays[i*3+2];
+            lid.directions.push_back(p);
+        }
+        lid.range = lidar.range;
+        lidars.push_back(lid);
+        lidarRend.resize(lidars);
 
 //        printf("         %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-        lidarRend.render(lidar.rays);
+        lidarRend.render(lidars);
 
 //        printf("%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
- 
-        lidarRend.downloadPoints(points);
+        RaycastResults result;
+        lidarRend.downloadPoints(result);
 
 //        printf("download %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
@@ -145,6 +168,19 @@ struct SampleWindow : public GLFCameraWindow
 //        savePointsToFile(points);
 //        printf("save     %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
+
+        std::vector<float> points;
+        for (int i = 0; i < result.size(); ++i)
+        {
+            for (int j = 0; j < result[i].points.size(); ++j)
+            {
+                points.push_back(result[i].points[j].x);
+                points.push_back(result[i].points[j].y);
+                points.push_back(result[i].points[j].z);
+                points.push_back(result[i].points[j].i);
+//printf("%f %f %f %f\n", result[i].points[j].x, result[i].points[j].y, result[i].points[j].z, result[i].points[j].i);
+            }
+        }
 
         sample.resizeLidar(points.size()/4);
 //        printf("         %lld\n", current_timestamp()-begin);

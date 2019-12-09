@@ -39,14 +39,17 @@ struct LaunchParams
     OptixTraversableHandle traversable;
 };
 
-
 struct LaunchLidarParams
 {
+    int    rayCount;
+    int    lidarCount;
+    int   *raysPerLidarBuffer;
     float *rayBuffer;
+    float *rangeBuffer;
+    float *sourceBuffer;
+    
     float *positionBuffer;
-    int    fbSize;
     int   *hitBuffer;
-    float range;
 
     OptixTraversableHandle traversable;
 };

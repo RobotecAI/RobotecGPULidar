@@ -61,4 +61,4 @@ class LidarSimInterface
     private:
         LidarSimInterface(const LidarSimInterface &) = delete;
         LidarSimInterface& operator=(LidarSimInterface const&) = delete;
-}
+};
