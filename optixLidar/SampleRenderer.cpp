@@ -417,17 +417,6 @@ void SampleRenderer::createMissPrograms()
                                         &missPGs[RADIANCE_RAY_TYPE]
                                         ));
     if (sizeof_log > 1) PRINT(log);
-
-    pgDesc.miss.entryFunctionName = "__miss__shadow";
-
-    OPTIX_CHECK(optixProgramGroupCreate(optixContext,
-                                        &pgDesc,
-                                        1,
-                                        &pgOptions,
-                                        log,&sizeof_log,
-                                        &missPGs[SHADOW_RAY_TYPE]
-                                        ));
-    if (sizeof_log > 1) PRINT(log);
 }
 
 /*! does all setup for the hitgroup program(s) we are going to use */
@@ -453,18 +442,6 @@ void SampleRenderer::createHitgroupPrograms()
                                         &pgOptions,
                                         log,&sizeof_log,
                                         &hitgroupPGs[RADIANCE_RAY_TYPE]
-                                        ));
-    if (sizeof_log > 1) PRINT(log);
-
-    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__shadow";
-    pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__shadow";
-
-    OPTIX_CHECK(optixProgramGroupCreate(optixContext,
-                                        &pgDesc,
-                                        1,
-                                        &pgOptions,
-                                        log,&sizeof_log,
-                                        &hitgroupPGs[SHADOW_RAY_TYPE]
                                         ));
     if (sizeof_log > 1) PRINT(log);
 }

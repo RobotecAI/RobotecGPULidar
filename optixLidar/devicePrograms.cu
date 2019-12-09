@@ -36,11 +36,6 @@ static __forceinline__ __device__ T *getPRD()
 // closest hit and anyhit programs for radiance-type rays.
 //------------------------------------------------------------------------------
 
-extern "C" __global__ void __closesthit__shadow()
-{
-    /* not going to be used ... */
-}
-
 extern "C" __global__ void __closesthit__radiance()
 {
 
@@ -101,13 +96,6 @@ extern "C" __global__ void __closesthit__radiance()
 
     const vec3f rayDir = optixGetWorldRayDirection();
 
-    if (dot(rayDir,Ng) > 0.f) Ng = -Ng;
-    Ng = normalize(Ng);
-
-    if (dot(Ng,Ns) < 0.f)
-        Ns -= 2.f*dot(Ng,Ns)*Ng;
-    Ns = normalize(Ns);
-
     vec3f diffuseColor = sbtData.color;
     if (sbtData.hasTexture && sbtData.texcoord)
     {
@@ -123,55 +111,16 @@ extern "C" __global__ void __closesthit__radiance()
     // ------------------------------------------------------------------
     // compute shadow
     // ------------------------------------------------------------------
-    const vec3f surfPos
-        = (1.f-u-v) * sbtData.vertex[index.x]
-        +         u * sbtData.vertex[index.y]
-        +         v * sbtData.vertex[index.z];
-    const vec3f lightPos(-907.108f, 2205.875f, -400.0267f);
-    const vec3f lightDir = lightPos - surfPos;
-
-    // trace shadow ray:
-    vec3f lightVisibility = 1.f;
-    // the values we store the PRD pointer in:
-    uint32_t u0, u1;
-    packPointer( &lightVisibility, u0, u1 );
-
-    // not nice shadowing
-/*
-    optixTrace(optixLaunchParams.traversable,
-               surfPos + 1e-3f * Ng,
-               lightDir,
-               1e-3f,      // tmin
-               1.f-1e-3f,  // tmax
-               0.0f,       // rayTime
-               OptixVisibilityMask( 255 ),
-               // For shadow rays: skip any/closest hit shaders and terminate on first
-               // intersection with anything. The miss shader is used to mark if the
-               // light was visible.
-               OPTIX_RAY_FLAG_DISABLE_ANYHIT
-               | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT
-               | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
-               SHADOW_RAY_TYPE,            // SBT offset
-               RAY_TYPE_COUNT,               // SBT stride
-               SHADOW_RAY_TYPE,            // missSBTIndex
-               u0, u1 );
-*/
-    // ------------------------------------------------------------------
-    // final shading: a bit of ambient, a bit of directional ambient,
-    // and directional component based on shadowing
-    // ------------------------------------------------------------------
     const float cosDN
         = 0.1f
         + .8f*fabsf(dot(rayDir,Ns));
 
-    prd = (.1f + (.2f + .8f*lightVisibility) * cosDN) * diffuseColor;
+    prd = (.1f + cosDN) * diffuseColor;
 }
 
 extern "C" __global__ void __anyhit__radiance()
 { /*! for this simple example, this will remain empty */ }
 
-extern "C" __global__ void __anyhit__shadow()
-{ /*! not going to be used */ }
 
 //------------------------------------------------------------------------------
 // miss program that gets called for any ray that did not have a
@@ -184,13 +133,6 @@ extern "C" __global__ void __miss__radiance()
 {
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     // set to constant white as background color
-    prd = vec3f(1.f);
-}
-
-extern "C" __global__ void __miss__shadow()
-{
-    // we didn't hit anything, so the light is visible
-    vec3f &prd = *(vec3f*)getPRD<vec3f>();
     prd = vec3f(1.f);
 }
 
@@ -251,8 +193,6 @@ extern "C" __global__ void __raygen__renderFrame()
 
 extern "C" __global__ void __closesthit__lidar()
 {
-
-//printf("hit\n");
     const TriangleMeshSBTData &sbtData
       = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();
 
@@ -268,18 +208,20 @@ extern "C" __global__ void __closesthit__lidar()
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     prd = vec3f((1-u-v)*A + u*B + v*C);
 
-    float intensity = 0.f;
+    uint32_t intensity = 0;
     if (sbtData.hasTexture && sbtData.texcoord)
     {
+    float intensityFloat = 0.f;
         const vec2f tc
             = (1.f-u-v) * sbtData.texcoord[index.x]
             +         u * sbtData.texcoord[index.y]
             +         v * sbtData.texcoord[index.z];
 
       vec4f fromTexture = tex2D<float4>(sbtData.texture,tc.x,tc.y);
-      intensity = fromTexture.w; // only alpha canal
+      intensityFloat = fromTexture.w; // only alpha canal
+      memcpy(&intensity, &intensityFloat, sizeof(intensityFloat));
     }
-
+    
     optixSetPayload_2(intensity);
     optixSetPayload_3(1);
 }
@@ -290,7 +232,6 @@ extern "C" __global__ void __anyhit__lidar()
 
 extern "C" __global__ void __miss__lidar()
 {
-//printf("miss\n");
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     prd = vec3f(0.f);
     optixSetPayload_3(0);
@@ -307,14 +248,6 @@ extern "C" __global__ void __raygen__renderLidar()
         lidarX -= optixLaunchLidarParams.raysPerLidarBuffer[lidarCount];
         lidarCount++;
     }
-    
-//    thrust::device_vector<LidarStruct> ls(optixLaunchLidarParams.lidars);
-//    LidarStruct l(ls[lidarCount]);
-//    int d = l.directions.size();
-    
-//    float e = ((LidarStruct)optixLaunchLidarParams.lidars[lidarCount]).range;
-    
-//printf("%d - lidar %d, place %d\n", ix, lidarCount, lidarX);
 
     vec3f lidarPositionPRD = vec3f(0.f);
 
@@ -322,15 +255,8 @@ extern "C" __global__ void __raygen__renderLidar()
     uint32_t u0, u1, u2, u3;
     packPointer( &lidarPositionPRD, u0, u1 );
 
-//    vec3f from = vec3f(optixLaunchLidarParams.rayBuffer[ix*6], optixLaunchLidarParams.rayBuffer[ix*6+1], optixLaunchLidarParams.rayBuffer[ix*6+2]);
-//    vec3f dir = vec3f(optixLaunchLidarParams.rayBuffer[ix*6+3], optixLaunchLidarParams.rayBuffer[ix*6+4], optixLaunchLidarParams.rayBuffer[ix*6+5]);
-
     vec3f from = vec3f(optixLaunchLidarParams.sourceBuffer[lidarCount*3], optixLaunchLidarParams.sourceBuffer[lidarCount*3+1], optixLaunchLidarParams.sourceBuffer[lidarCount*3+2]);
     vec3f dir = vec3f(optixLaunchLidarParams.rayBuffer[ix*3], optixLaunchLidarParams.rayBuffer[ix*3+1], optixLaunchLidarParams.rayBuffer[ix*3+2]);
-
-//printf("from %f %f %f\n", from.x, from.y, from.z);
-//printf("direction %f %f %f\n", dir.x, dir.y, dir.z);
-//printf("range %f\n", optixLaunchLidarParams.rangeBuffer[lidarCount]);
 
     optixTrace(optixLaunchLidarParams.traversable,
                from, // from
@@ -341,16 +267,18 @@ extern "C" __global__ void __raygen__renderLidar()
                OptixVisibilityMask( 255 ),
                OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,
                LIDAR_RAY_TYPE,               // SBT offset
-               LIDAR_RAY_TYPE_COUNT,               // SBT stride
+               LIDAR_RAY_TYPE_COUNT,         // SBT stride
                LIDAR_RAY_TYPE,               // missSBTIndex
                u0, u1, u2, u3);
-
+               
+    float intensity;
+    memcpy(&intensity, &u2, sizeof(u2));
     if (u3)
     {
         optixLaunchLidarParams.positionBuffer[ix*4  ] = lidarPositionPRD.x;
         optixLaunchLidarParams.positionBuffer[ix*4+1] = lidarPositionPRD.y;
         optixLaunchLidarParams.positionBuffer[ix*4+2] = lidarPositionPRD.z;
-        optixLaunchLidarParams.positionBuffer[ix*4+3] = u2;
+        optixLaunchLidarParams.positionBuffer[ix*4+3] = intensity;
         optixLaunchLidarParams.hitBuffer[ix] = 1;
     }
     else

@@ -98,32 +98,27 @@ struct SampleWindow : public GLFCameraWindow
         {
             currentModel->textures.push_back(model->textures[i]);
         }
-	//       for (int j = 0; j < 20; ++j)
-        //{
-//printf("model = %p, currentModel->meshes.size() = %d, moveCounter = %d\n", currentModel, currentModel->meshes.size(), moveCounter);
-            for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
-            {
-                currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
-            }
-	    //}
+        for (int i = 0; i < models[moveCounter]->meshes.size(); ++i)
+        {
+            currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
+        }
 
-//printf("models[moveCounter]->meshes.size() = %d, currentModel->meshes.size() = %d\n", models[moveCounter]->meshes.size(), currentModel->meshes.size());
         for (auto mesh : currentModel->meshes)
             for (auto vtx : mesh->vertex)
                 currentModel->bounds.extend(vtx);
-        
+
         currentModel->moved = true;
-        if (big == 0)
-        {
+        if (big == 0) // build from begining
             currentModel->big = true;
-        }
-        else
-            currentModel->big = true;
+        else // only update
+            currentModel->big = false;
         big++;
         
         moveCounter++;
-        if (moveCounter == 38)
+        if (moveCounter == 5)
+        {
             moveCounter = 0;
+        }
 
         // set model in renderers
         sample.setModel(currentModel);
@@ -132,7 +127,6 @@ struct SampleWindow : public GLFCameraWindow
 
 //        printf("\n%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-//        std::vector<float> points;
 
         std::vector<LidarSource> lidars;
         LidarSource lid;
@@ -156,7 +150,7 @@ struct SampleWindow : public GLFCameraWindow
 //        begin = current_timestamp();
         lidarRend.render(lidars);
 
-//        printf("%lld\n", current_timestamp()-begin);
+//        printf("lidar render %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
         RaycastResults result;
         lidarRend.downloadPoints(result);
@@ -178,18 +172,16 @@ struct SampleWindow : public GLFCameraWindow
                 points.push_back(result[i].points[j].y);
                 points.push_back(result[i].points[j].z);
                 points.push_back(result[i].points[j].i);
-//printf("%f %f %f %f\n", result[i].points[j].x, result[i].points[j].y, result[i].points[j].z, result[i].points[j].i);
             }
         }
 
         sample.resizeLidar(points.size()/4);
-//        printf("         %lld\n", current_timestamp()-begin);
+//        printf("resizeLidar %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
 
         sample.render(points);
 
 //       printf("render 2 %lld\n\n", current_timestamp()-begin);
-//       printf("%lld\n", current_timestamp()-begin);
 //       begin = current_timestamp();
         
     }
@@ -251,7 +243,6 @@ struct SampleWindow : public GLFCameraWindow
 
     virtual void key(int key, int mods)
     {
-//        printf("%d %d\n", key, mods);
         switch(key)
         {
         case 265: // forward
@@ -310,10 +301,10 @@ extern "C" int main(int ac, char **av)
             modelName += std::to_string(k);
             modelName += ".obj";
             Model *model = loadOBJ(modelName.c_str());
-//printf("meshes: %d\n", model->meshes.size());
+            
+            // move model to fit in the tunnel
             for (int i = 0; i < model->meshes.size(); ++i)
             {
-//printf("  vertex: %d\n", model->meshes[i]->vertex.size());
                 for (int j = 0; j < model->meshes[i]->vertex.size(); ++j)
                 {
                     model->meshes[i]->vertex[j].x *= 100;

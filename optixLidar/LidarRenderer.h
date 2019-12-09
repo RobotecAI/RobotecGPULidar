@@ -21,15 +21,12 @@ public:
     LidarRenderer(const Model *model);
 
     /*! render one frame */
-//    void render(std::vector<float> &rays);
     void render(std::vector<LidarSource> &lidars);
 
     /*! resize frame buffer to given resolution */
-//    void resize(const int newSize);
     void resize(std::vector<LidarSource> &lidars);
 
     /*! download lidar hit points */
-//    void downloadPoints(std::vector<float> &h_points);
     void downloadPoints(RaycastResults &result);
     
     void setModel(const Model *model) {this->model = model;}
