@@ -599,7 +599,6 @@ void LidarRenderer::buildSBT()
 
 
   /*! render one frame */
-//void LidarRenderer::render(std::vector<float> &rays)
 void LidarRenderer::render(std::vector<LidarSource> &lidars)
 {
     // sanity check: make sure we launch only after first resize is
@@ -614,17 +613,17 @@ void LidarRenderer::render(std::vector<LidarSource> &lidars)
             launchParams.traversable = buildAccel(/*update =*/ false);
         }
         else
+        {
             launchParams.traversable = buildAccel(/*update =*/ true);
+        }
         buildSBT();
     }
     
     // upload rays data to device
-//    rayBuffer.upload(rays.data(),rays.size());
     uploadRays(lidars);
 
     launchParamsBuffer.upload(&launchParams,1);
 
-//long long now = current_timestampL();
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline,stream,
                             /*! parameters and SBT */
@@ -641,11 +640,9 @@ void LidarRenderer::render(std::vector<LidarSource> &lidars)
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
-//printf("optixLaunch %lld\n", (current_timestampL() - now));
 }
 
   /*! resize frame buffer to given resolution */
-//void LidarRenderer::resize(const int newSize)
 void LidarRenderer::resize(std::vector<LidarSource> &lidars)
 {
     int lidarCount = lidars.size();
@@ -756,58 +753,4 @@ void LidarRenderer::downloadPoints(RaycastResults &result)
         result.push_back(res);
     }
 }
-/*
-void LidarRenderer::downloadPoints(std::vector<float> &h_points)
-{
-//    long long begin = current_timestampL();
 
-    std::vector<float> allPoints;
-    allPoints.resize(launchParams.fbSize*4);
-
-//    printf("downloadPoints fbSize %d %lld\n", launchParams.fbSize*4, current_timestampL()-begin);
-//    begin = current_timestampL();
-    std::vector<int> hits;
-    hits.resize(launchParams.fbSize);
-//    printf("downloadPoints %lld\n", current_timestampL()-begin);
-//    begin = current_timestampL();
-
-    positionBuffer.download(allPoints.data(), launchParams.fbSize*4);
-//    printf("downloadPoints %lld\n", current_timestampL()-begin);
-//    begin = current_timestampL();
-    hitBuffer.download(hits.data(), launchParams.fbSize);
-//    printf("downloadPoints %lld\n", current_timestampL()-begin);
-//    begin = current_timestampL();
-
-    int hitCount = 0;
-    for (int i = 0; i < launchParams.fbSize; ++i)
-    {
-        hitCount += hits[i];
-    }
-
-//    printf("downloadPoints %lld\n", current_timestampL()-begin);
-//    begin = current_timestampL();
-
-    h_points.resize(hitCount*4);
-
-//    printf("downloadPoints hitCount %d %lld\n", hitCount*4, current_timestampL()-begin);
-//    begin = current_timestampL();
-
-    int index = 0;
-
-    // fill output vector with actual hit points
-    for (int i = 0; i < launchParams.fbSize; ++i)
-    {
-        if (hits[i])
-        {
-            h_points[index*4+0] = allPoints[i*4+0];
-            h_points[index*4+1] = allPoints[i*4+1];
-            h_points[index*4+2] = allPoints[i*4+2];
-            h_points[index*4+3] = allPoints[i*4+3];
-            index++;
-        }
-    }
-
-//    printf("downloadPoints %lld\n", current_timestampL()-begin);
-//    begin = current_timestampL();
-}
-*/
