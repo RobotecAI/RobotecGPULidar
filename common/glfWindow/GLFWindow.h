@@ -27,7 +27,7 @@ using namespace gdt;
 
 struct GLFWindow {
     GLFWindow(const std::string &title);
-    ~GLFWindow();
+    virtual ~GLFWindow();
 
     /*! put pixels on the screen ... */
     virtual void draw()
