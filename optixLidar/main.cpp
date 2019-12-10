@@ -117,7 +117,7 @@ struct SampleWindow : public GLFCameraWindow
         big++;
         
         moveCounter++;
-        if (moveCounter == 5)
+        if (moveCounter == 38)
         {
             moveCounter = 0;
         }
