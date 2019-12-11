@@ -19,8 +19,10 @@ if (POLICY CMP0048)
 endif (POLICY CMP0048)
 
 project(optixlidar)
-
+set(BUILD_TESTWINDOW ON)
 cmake_minimum_required(VERSION 2.8)
+
+include_directories(common)
 
 # ------------------------------------------------------------------
 # first, include gdt project to do some general configuration stuff
@@ -39,23 +41,10 @@ include_directories(${gdt_dir})
 add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 
 # ------------------------------------------------------------------
-# build glfw
-# ------------------------------------------------------------------
-if (WIN32)
-#  set(glfw_dir ${PROJECT_SOURCE_DIR}/submodules/glfw/)
-  set(glfw_dir ${PROJECT_SOURCE_DIR}/common/3rdParty/glfw/)
-  include_directories(${glfw_dir}/include)
-  add_subdirectory(${glfw_dir} EXCLUDE_FROM_ALL)
-else()
-  find_package(glfw3 REQUIRED)
-endif()
-include_directories(common)
-add_subdirectory(common/glfWindow EXCLUDE_FROM_ALL)
-
-
-# ------------------------------------------------------------------
 # and final build rules for the project
 # ------------------------------------------------------------------
 set(optix_LIBRARY "")
 add_subdirectory(optixLidar)
-add_subdirectory(test)
+if (BUILD_TESTWINDOW)
+    add_subdirectory(test)
+endif()
