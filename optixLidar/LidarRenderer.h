@@ -1,12 +1,12 @@
 #pragma once
 
 // our own classes, partly shared between host and device
-#include "CUDABuffer.h"
+#include "gdt/utils/CUDABuffer.h"
 #include "LaunchParams.h"
 #include "Model.h"
 
-#include "../interface/lidarsource.h"
-#include "../interface/raycastresult.h"
+#include "interface/lidarsource.h"
+#include "interface/raycastresult.h"
 
 class LidarRenderer
 {

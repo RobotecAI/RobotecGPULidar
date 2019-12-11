@@ -58,3 +58,4 @@ add_subdirectory(common/glfWindow EXCLUDE_FROM_ALL)
 # ------------------------------------------------------------------
 set(optix_LIBRARY "")
 add_subdirectory(optixLidar)
+add_subdirectory(test)

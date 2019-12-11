@@ -1,4 +1,7 @@
 #include "SampleRenderer.h"
+// our helper library for window handling
+#include "glfWindow/GLFWindow.h"
+#include <GL/gl.h>
 
 extern "C" char embedded_ptx_code[];
 
@@ -32,8 +35,6 @@ optix, creates module, pipeline, programs, SBT, etc. */
 SampleRenderer::SampleRenderer(const Model *model)
     : model(model)
 {
-    initOptix();
-
     std::cout << "creating optix context ..." << std::endl;
     createContext();
 
@@ -61,7 +62,7 @@ SampleRenderer::SampleRenderer(const Model *model)
     std::cout << "context, module, pipeline, etc, all set up ..." << std::endl;
 
     std::cout << GDT_TERMINAL_GREEN;
-    std::cout << "Optix lidar rendering fully set up" << std::endl;
+    std::cout << "Optix lidar fully set up" << std::endl;
     std::cout << GDT_TERMINAL_DEFAULT;
 }
 
@@ -567,18 +568,17 @@ void SampleRenderer::render(std::vector<float> &lidarPoints)
     // sanity check: make sure we launch only after first resize is
     // already done:
     if (launchParams.frame.size.x == 0) return;
-    
+
     if (model->moved)
     {
         if (model->big == true)
             launchParams.traversable = buildAccel(/*update = */ false);
         else
             launchParams.traversable = buildAccel(/*update = */ true);
+
         buildSBT();
     }
-
     lidarBuffer.upload(lidarPoints.data(),lidarPoints.size());
-
     launchParamsBuffer.upload(&launchParams,1);
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
