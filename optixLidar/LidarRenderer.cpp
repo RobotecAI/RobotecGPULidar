@@ -720,17 +720,24 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
   /*! download the rendered color buffer */
 void LidarRenderer::downloadPoints(RaycastResults &result)
 {
+
     std::vector<float> allPoints;
     allPoints.resize(launchParams.rayCount*4);
     std::vector<int> hits;
     hits.resize(launchParams.rayCount);
     std::vector<int> raysPerLidar;
     raysPerLidar.resize(launchParams.lidarCount);
-    
+
     positionBuffer.download(allPoints.data(), launchParams.rayCount*4);
     hitBuffer.download(hits.data(), launchParams.rayCount);
     raysPerLidarBuffer.download(raysPerLidar.data(), launchParams.lidarCount);
-    
+
+    if (hits.size() != launchParams.rayCount)
+    {
+        std::cerr << "wrong buffer size " << std::endl;
+        return;
+    }
+
     // now rewrite to RaycastResults
     int index = 0;
     for(int i = 0; i < launchParams.lidarCount; ++i)

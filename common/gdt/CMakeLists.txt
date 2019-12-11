@@ -27,5 +27,7 @@ add_library(gdt
   cmake/FindOptiX.cmake
   gdt/gdt.h
   gdt/gdt.cpp
+  utils/optix_macros.h
+  utils/CUDABuffer.h
   )
 

@@ -1,10 +1,9 @@
 #pragma once
 
-// our own classes, partly shared between host and device
-#include "CUDABuffer.h"
+#include "gdt/utils/CUDABuffer.h"
+#include "gdt/math/vec.h"
 #include "LaunchParams.h"
 #include "Model.h"
-#include "gdt/math/vec.h"
 
 struct Camera {
     /*! camera position - *from* where we are looking */

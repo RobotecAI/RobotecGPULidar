@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gdt/math/vec.h"
-#include "optix7.h"
+#include "gdt/utils/optix_macros.h"
 
 using namespace gdt;
 

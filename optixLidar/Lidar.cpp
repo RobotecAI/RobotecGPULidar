@@ -5,6 +5,7 @@ Lidar::Lidar(vec3f source, vec3f direction, float width, float height, int resol
       resolutionWidth(resolutionWidth), resolutionHeight(resolutionHeight)
 {
     generateRays();
+    std::cout << "generated rays" << std::endl;
 }
 
 
@@ -56,6 +57,7 @@ void Lidar::generateRays()
 {
     rays.clear();
     
+    std::cout << "gen rays, " << resolutionWidth << resolutionHeight << std::endl;
     for (int i = 0; i < resolutionWidth; ++i)
     {
         for (int j = 0; j < resolutionHeight; ++j)

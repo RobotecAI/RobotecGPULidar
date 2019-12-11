@@ -2,7 +2,6 @@
 #include "LidarRenderer.h"
 #include "Lidar.h"
 
-
 // our helper library for window handling
 #include "glfWindow/GLFWindow.h"
 #include <GL/gl.h>
@@ -10,42 +9,39 @@
 #include <cmath>
 #include <fstream>
 
-//#define LIDAR_2D
+#include "interface/lidarsource.h"
+#include "interface/raycastresult.h"
 
 std::string pointsFileName = "points.xyz";
 
 void savePointsToFile(std::vector<float> &points);
 
-<<<<<<< HEAD
 #if defined(_WIN32)
 #include <chrono>
 #include <time.h>
 
 struct timeval {
-	long tv_sec;
-	long tv_usec;
+    long tv_sec;
+    long tv_usec;
 };
 
 
 int gettimeofday(struct timeval* tp, struct timezone* tzp) {
-	namespace sc = std::chrono;
-	sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
-	sc::seconds s = sc::duration_cast<sc::seconds>(d);
-	tp->tv_sec = s.count();
-	tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+    namespace sc = std::chrono;
+    sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+    sc::seconds s = sc::duration_cast<sc::seconds>(d);
+    tp->tv_sec = s.count();
+    tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
 
-	return 0;
+    return 0;
 }
 
 #endif // _WIN32
 
-
-=======
->>>>>>> origin/master
 long long current_timestamp()
 {
-	struct timeval te;
-    gettimeofday(&te, NULL); // get current time
+    struct timeval te;
+    gettimeofday(&te, nullptr); // get current time
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
     return milliseconds;
 }
@@ -54,7 +50,8 @@ long long current_timestamp()
 struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
-                 const Model *model,
+                 Model *model,
+                 std::vector<Model *>models,
                  const Camera &camera,
                  const float worldScale,
                  vec3f lidarInitialSource,
@@ -63,19 +60,20 @@ struct SampleWindow : public GLFCameraWindow
                  float lidarInitialHeight,
                  int samplingInitialWidth,
                  int samplingInitialHeight,
-                 bool is2D,
                  float range)
-        : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
-          lidarRend(model, range), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
-          lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, is2D, range)
+        : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), model(model),
+          lidarRend(model), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
+          lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), models(models)
     {
         sample.setCamera(camera);
     }
 
+    virtual ~SampleWindow() {}
+
     virtual void render() override
     {
         // for calculating frame rendering time
-        static long long begin = current_timestamp();
+        //static long long begin = current_timestamp();
 
         if (cameraFrame.modified) {
             sample.setCamera(Camera{cameraFrame.get_from(),
@@ -84,18 +82,80 @@ struct SampleWindow : public GLFCameraWindow
             cameraFrame.modified = false;
         }
 
-//        printf("%lld %d\n", current_timestamp()-begin);
+        static int moveCounter = 0;
+        static int big = 0;
+        static Model * currentModel = new Model;
+
+        currentModel->meshes.clear();
+        currentModel->textures.clear();
+        box3f bounds;
+        currentModel->bounds = bounds;
+
+        for (size_t i = 0; i < model->meshes.size(); ++i)
+        {
+            currentModel->meshes.push_back(model->meshes[i]);
+        }
+        for (size_t i = 0; i < model->textures.size(); ++i)
+        {
+            currentModel->textures.push_back(model->textures[i]);
+        }
+        for (size_t i = 0; i < models[moveCounter]->meshes.size(); ++i)
+        {
+            currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
+        }
+
+        for (auto mesh : currentModel->meshes)
+            for (auto vtx : mesh->vertex)
+                currentModel->bounds.extend(vtx);
+
+        currentModel->moved = true;
+        if (big == 0) // build from begining
+            currentModel->big = true;
+        else // only update
+            currentModel->big = false;
+        big++;
+
+        moveCounter++;
+        if (moveCounter == 38)
+        {
+            moveCounter = 0;
+        }
+
+        // set model in renderers
+        sample.setModel(currentModel);
+        lidarRend.setModel(currentModel);
+
+//        printf("\n%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-        std::vector<float> points;
-        lidarRend.resize(lidar.rays.size()/6);
+
+        std::vector<LidarSource> lidars;
+        LidarSource lid;
+        lid.unique_id = "0";
+        lid.source.x = lidar.source.x;
+        lid.source.y = lidar.source.y;
+        lid.source.z = lidar.source.z;
+        for (size_t i = 0; i < lidar.rays.size()/3; ++i)
+        {
+            Point p;
+            p.x = lidar.rays[i*3];
+            p.y = lidar.rays[i*3+1];
+            p.z = lidar.rays[i*3+2];
+            lid.directions.push_back(p);
+        }
+        lid.range = lidar.range;
+        lidars.push_back(lid);
+        lidarRend.resize(lidars);
+
 
 //        printf("         %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-        lidarRend.render(lidar.rays);
+        lidarRend.render(lidars);
 
-//        printf("render   %lld\n", current_timestamp()-begin);
+
+//        printf("lidar render %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
-        lidarRend.downloadPoints(points);
+        RaycastResults result;
+        lidarRend.downloadPoints(result);
 
 //        printf("download %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
@@ -105,20 +165,26 @@ struct SampleWindow : public GLFCameraWindow
 //        printf("save     %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
 
+        std::vector<float> points;
+        for (size_t i = 0; i < result.size(); ++i)
+        {
+            for (size_t j = 0; j < result[i].points.size(); ++j)
+            {
+                points.push_back(result[i].points[j].x);
+                points.push_back(result[i].points[j].y);
+                points.push_back(result[i].points[j].z);
+                points.push_back(result[i].points[j].i);
+            }
+        }
+
         sample.resizeLidar(points.size()/4);
-//        printf("         %lld\n", current_timestamp()-begin);
+//        printf("resizeLidar %lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
 
         sample.render(points);
-<<<<<<< HEAD
-        
-       printf("render 2 %lld\n\n", current_timestamp()-begin);
-       begin = current_timestamp();
-=======
 
-        printf("render 2 %lld\n\n", current_timestamp()-begin);
-        begin = current_timestamp();
->>>>>>> origin/master
+//       printf("render 2 %lld\n\n", current_timestamp()-begin);
+//       begin = current_timestamp();
     }
 
     virtual void draw() override
@@ -178,10 +244,9 @@ struct SampleWindow : public GLFCameraWindow
 
     virtual void key(int key, int mods)
     {
-//        printf("%d %d\n", key, mods);
         switch(key)
         {
-        case 235: // forward
+        case 265: // forward
             lidar.moveX(10.f);
             break;
         case 264: // back
@@ -209,13 +274,14 @@ struct SampleWindow : public GLFCameraWindow
 
     }
 
-
     vec2i                 fbSize;
     GLuint                fbTexture {0};
+    Model *               model;
     LidarRenderer         lidarRend;
     SampleRenderer        sample;
     Lidar                 lidar;
     std::vector<uint32_t> pixels;
+    std::vector<Model *>  models;
 };
 
 
@@ -224,53 +290,64 @@ world, then exit */
 extern "C" int main(int ac, char **av)
 {
     try {
-        Model *model = loadOBJ("../models/tunnel.obj");
+        Model *modelStatic = loadOBJ("../test/models/tunnel.obj");
+
+        std::vector<Model *> models;
+        for (int k = 1; k <= 38; ++k)
+        {
+            std::string modelName = "../test/models/optixTestNoMaterial/DAZ_Worker_tmp_0000";
+            if (k < 10)
+                modelName += "0";
+            modelName += std::to_string(k);
+            modelName += ".obj";
+            Model *model = loadOBJ(modelName.c_str());
+
+            // move model to fit in the tunnel
+            for (size_t i = 0; i < model->meshes.size(); ++i)
+            {
+                for (size_t j = 0; j < model->meshes[i]->vertex.size(); ++j)
+                {
+                    model->meshes[i]->vertex[j].x *= 100;
+                    model->meshes[i]->vertex[j].x -= 3000;
+                    model->meshes[i]->vertex[j].y *= 100;
+                    model->meshes[i]->vertex[j].y += 425;
+                    model->meshes[i]->vertex[j].z *= 100;
+                    model->meshes[i]->vertex[j].z -= 100;
+
+                    model->meshes[i]->vertex[j].z += 4*k;
+                }
+            }
+            models.push_back(model);
+        }
+
+//        Camera camera = { /*from*/vec3f(-20.f, 0.f, 0.f),
         Camera camera = { /*from*/vec3f(-4000.07f, 450.f, 0.f),
- //                         /* at */model->bounds.center()-vec3f(0,400,0),
+//                          /* at */model->bounds.center()-vec3f(0,400,0),
                           /* at */vec3f(1,0.06,0),
                           /* up */vec3f(0.f,1.f,0.f) };
         // something approximating the scale of the world, so the
         // camera knows how much to move for any given user interaction:
-        const float worldScale = length(model->bounds.span());
+        const float worldScale = length(models[0]->bounds.span());
 
         vec3f lidarInitialSource = vec3f(-4000.f, 450.f, 0.f);
         vec3f lidarInitialDirection = vec3f(1.f, 0.f, 0.f);
-<<<<<<< HEAD
-        
-        
-        // lidar setting
-        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
-        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
-        int samplingInitialWidth = 30;
-        int samplingInitialHeight = 10;
-        
-        /*
-        // this values we need to compare
-        float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
-        float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
-        int samplingInitialWidth = 1149;
-        int samplingInitialHeight = 240;
-        */
-        
-=======
+
 
         // this values we need to compare
         float lidarInitialWidth = 240*M_PI/180.f; // angle in radians
         float lidarInitialHeight = 30*M_PI/180.f; // angle in radians
-        int samplingInitialWidth = 30;//1149;
-        int samplingInitialHeight = 10;//240;
+        int samplingInitialWidth = 10;//1149;
+        int samplingInitialHeight = 30;//240;
 
-
->>>>>>> origin/master
-        bool is2D = false;
         float range = 2000.f; // 40m * 50
 
-        SampleWindow *window = new SampleWindow("Optix lidar",
-                                                model, camera, worldScale,
+
+        SampleWindow window("Optix lidar", modelStatic, models, camera, worldScale,
                                                 lidarInitialSource, lidarInitialDirection,
                                                 lidarInitialWidth, lidarInitialHeight, samplingInitialWidth,
-                                                samplingInitialHeight, is2D, range);
-        window->run();
+                                                samplingInitialHeight, range);
+
+        window.run();
 
     } catch (std::runtime_error& e) {
       std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what()
@@ -286,7 +363,7 @@ void savePointsToFile(std::vector<float> &points)
     std::ofstream file(pointsFileName);
     file << points.size()/4 << "\n\n";
 
-    for (int i = 0; i < points.size()/4; ++i)
+    for (size_t i = 0; i < points.size()/4; ++i)
     {
         file << points[4*i+0] << " " << points[4*i+1] << " " << points[4*i+2] << " ";
 
@@ -294,5 +371,4 @@ void savePointsToFile(std::vector<float> &points)
         file << intensity << '\n';
     }
     file.close();
-
 }

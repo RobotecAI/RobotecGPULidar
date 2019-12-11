@@ -1,13 +1,10 @@
 #pragma once
 
-#include "optix7.h"
-// common std stuff
+#include "optix_macros.h"
 #include <vector>
 #include <assert.h>
 
-
-  /*! simple wrapper for creating, and managing a device-side CUDA
-      buffer */
+//A simple wrapper for creating, and managing a device-side CUDA buffer
 struct CUDABuffer {
     inline CUdeviceptr d_pointer() const
     { return (CUdeviceptr)d_ptr; }
