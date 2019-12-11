@@ -1,9 +1,9 @@
 #include "Model.h"
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "3rdParty/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "3rdParty/stb_image.h"
+#include "stb_image.h"
 
 //std
 #include <set>
