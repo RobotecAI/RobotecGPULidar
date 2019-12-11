@@ -3,7 +3,7 @@ project(testwindow)
 include_directories(${OptiX_INCLUDE})
 include_directories(../optixLidar)
 
-#cuda_compile_and_embed(embedded_ptx_code_2 renderDevicePrograms.cu)
+cuda_compile_and_embed(embedded_ptx_window_render renderDevicePrograms.cu)
 
 # ------------------------------------------------------------------
 # build glfw
@@ -20,7 +20,7 @@ add_subdirectory(glfWindow EXCLUDE_FROM_ALL)
 
 
 add_executable(testwindow
-    #${embedded_ptx_code_2}
+    ${embedded_ptx_window_render}
     SampleRenderer.cpp
     main.cpp
     )

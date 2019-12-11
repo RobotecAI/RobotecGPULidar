@@ -1,9 +1,8 @@
 #include "SampleRenderer.h"
-// our helper library for window handling
 #include "glfWindow/GLFWindow.h"
 #include <GL/gl.h>
 
-extern "C" char embedded_ptx_code[];
+extern "C" char embedded_ptx_window_render[];
 
 /*! SBT record for a raygen program */
 struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) RaygenRecord
@@ -353,7 +352,7 @@ void SampleRenderer::createModule()
     pipelineLinkOptions.overrideUsesMotionBlur = false;
     pipelineLinkOptions.maxTraceDepth          = 2;
 
-    const std::string ptxCode = embedded_ptx_code;
+    const std::string ptxCode = embedded_ptx_window_render;
 
     char log[2048];
     size_t sizeof_log = sizeof( log );
