@@ -28,7 +28,8 @@ public:
     void downloadPoints(RaycastResults &result);
     
     void setModel(const Model *model) {this->model = model;}
-protected:
+
+private:
     // ------------------------------------------------------------------
     // internal helper functions
     // ------------------------------------------------------------------
@@ -69,7 +70,6 @@ protected:
     
     void uploadRays(std::vector<LidarSource> &lidars);
 
-protected:
     /*! @{ CUDA device context and stream that optix pipeline will run
         on, as well as device properties for this device */
     CUcontext          cudaContext;
@@ -107,9 +107,9 @@ protected:
     CUDABuffer   launchParamsBuffer;
     /*! @} */
 
-//    CUDABuffer rayBuffer;
-//    CUDABuffer positionBuffer;
-//    CUDABuffer hitBuffer;
+    //    CUDABuffer rayBuffer;
+    //    CUDABuffer positionBuffer;
+    //    CUDABuffer hitBuffer;
     
     CUDABuffer raysPerLidarBuffer;
     CUDABuffer rayBuffer;
@@ -120,7 +120,7 @@ protected:
     CUDABuffer hitBuffer;
 
     // rays range
-//    float range;
+    //    float range;
 
     /*! the model we are going to trace rays against */
     const Model *model;

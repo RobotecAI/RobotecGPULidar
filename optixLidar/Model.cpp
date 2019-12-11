@@ -1,15 +1,9 @@
 #include "Model.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-//std
 #include <set>
-
-// this include may only appear in a single source file:
-#include <optix_function_table_definition.h>
 
 namespace std {
   inline bool operator<(const tinyobj::index_t &a,
