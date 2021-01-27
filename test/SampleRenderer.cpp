@@ -337,6 +337,8 @@ void SampleRenderer::createContext()
   single .cu file, using a single embedded ptx string */
 void SampleRenderer::createModule()
 {
+    moduleCompileOptions = {};
+    
     moduleCompileOptions.maxRegisterCount  = 100;
     moduleCompileOptions.optLevel          = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0;
     moduleCompileOptions.debugLevel        = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
@@ -349,7 +351,7 @@ void SampleRenderer::createModule()
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
 
-    pipelineLinkOptions.overrideUsesMotionBlur = false;
+    pipelineLinkOptions.debugLevel 	        = OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT;
     pipelineLinkOptions.maxTraceDepth          = 2;
 
     const std::string ptxCode = embedded_ptx_window_render;
