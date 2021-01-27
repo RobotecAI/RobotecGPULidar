@@ -1,20 +1,20 @@
 # Lidar simulator with the use of Nvidia Optix reycast
 
-Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our target is Ubuntu 18.04. It has also been tested with Windows and Visual Studio 2017, 
+Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our target is Ubuntu 20.04. It has also been tested with Windows and Visual Studio 2017, 
 
 ### Dependencies
 
-* **CUDA 10.1 or later**
+* **CUDA 11.2 or later**
     * Downloads available from developer.nvidia.com
     * Add /usr/local/cuda/bin to your PATH
-* **OptiX 7 SDK**
+* **OptiX 7.2 SDK**
     * Dowload available here: [NVIDIA-Optix](http://developer.nvidia.com/optix)"
     * Linux: 
         * set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
-        `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.0 SDK>`. Best add this line to your ~/.bashrc file.
-        * Optix 7.0 requires NVidia drivers version 435 or later. Make sure you update to the version your GPU supports. You may need to uninstall older drivers. Rebooting your machine after such reinstall is necessary.
+        `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.2 SDK>`. Best add this line to your ~/.bashrc file.
+        * Optix 7.2 requires NVidia drivers version 455.28 or later. Make sure you update to the version your GPU supports. You may need to uninstall older drivers. Rebooting your machine after such reinstall is necessary.
         * Install compiler, dkms, libxi, xinerama
-        `apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev`
+        `sudo apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev cmake cmake-curses-gui libxinerama-dev libxcursor-dev`
     * Windows: the installer should automatically put it into the right directory
 * **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
 
@@ -34,17 +34,15 @@ to download all the files, but subsequent updates will be much faster.
 ### Checking the installation, troubleshooting
 
 To verify that your drivers and libraries are correctly installed, do the following:
-*  Run `nvidia-smi` in your command line and see if the output shows the correct version of driver and CUDA (435+, 10.1+)
-*  Check the CUDA compiler: `nvcc -V` in your command line. It should show the correct version (10.1+).
-*  Run `locate libnvoptix`. It should point to the 435+ version of the library. If you uninstalled the old drivers, run `ubdatedb` first.
+*  Run `nvidia-smi` in your command line and see if the output shows the correct version of driver and CUDA (455.28+, 11.2+)
+*  Check the CUDA compiler: `nvcc -V` in your command line. It should show the correct version (11.2+).
+*  Run `locate libnvoptix`. It should point to the 455.28+ version of the library. If you uninstalled the old drivers, run `ubdatedb` first.
 *  Run `ls ${OptiX_INSTALL_DIR}` in your terminal. It should list directories of your OptiX SDK.
 *  Build OptiX SDK and run `./optixHello` from the `${OptiX_INSTALL_DIR}/SDK/build/bin` directory. It should run without error and show green window.
 
 If all of these work correctly, your environment is likely setup correctly. Some problems are solved by restarting your computer (especially after you change/install drivers).
 
 ### Building (Linux)
-* Install required packages  
-    `sudo apt install libglfw3-dev cmake-curses-gui`  
 * Clone the code  
     `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidarsimulator.git`  
    `cd optixlidar`  
@@ -60,13 +58,13 @@ If all of these work correctly, your environment is likely setup correctly. Some
 ### Building (Windows)
 * **Using Visual Studio (recommended)**
     * Install Required Packages
-        * see above: CUDA 10.1, OptiX 7 SDK, latest driver, and cmake
+        * see above: CUDA 11.2, OptiX 7.2 SDK, latest driver, and cmake
     * download or clone the source repository
     *  In Visual Studio choose 'File > Open > CMake' to open CMakeLists.txt file
         *  More details: [Microsoft CMake](https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=vs-2019)
 * **Using CMake GUI**
     * Install Required Packages
-        * see above: CUDA 10.1, OptiX 7 SDK, latest driver, and cmake
+        * see above: CUDA 11.2, OptiX 7.2 SDK, latest driver, and cmake
     * download or clone the source repository
     * Open CMake GUI from your start menu
      * point "source directory" to the downloaded source directory
