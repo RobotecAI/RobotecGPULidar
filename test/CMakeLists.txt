@@ -26,7 +26,7 @@ add_executable(testwindow
     )
 
 target_link_libraries(testwindow
-    lidar
+    gpu_lidar_raycaster
     glfWindow
     glfw
     ${OPENGL_gl_LIBRARY}
