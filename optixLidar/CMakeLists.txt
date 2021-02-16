@@ -1,4 +1,4 @@
-project(gpu_lidar_raycaster)
+project(optixLidar)
 include_directories(${OptiX_INCLUDE})
 
 cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
@@ -19,3 +19,6 @@ target_link_libraries(${PROJECT_NAME}
     )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
+
+set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/interface
+    CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)

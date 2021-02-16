@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="$(MSBuildProjectName.Contains('dotnetcore'))">
+    <BaseIntermediateOutputPath>@CSHARP_BUILDER_OUTPUT_NAME@\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

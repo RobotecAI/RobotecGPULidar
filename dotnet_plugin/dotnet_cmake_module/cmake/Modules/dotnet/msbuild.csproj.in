@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="@MSBUILD_TOOLSET@" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{EED1EB2A-9001-4506-984E-E7DC92C9B237}</ProjectGuid>
+    <OutputType>@CSHARP_BUILDER_OUTPUT_TYPE@</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>@CSHARP_BUILDER_OUTPUT_NAME@</RootNamespace>
+    <AssemblyName>@CSHARP_BUILDER_OUTPUT_NAME@</AssemblyName>
+    <TargetFrameworkVersion>v@CSHARP_TARGET_FRAMEWORK_VERSION@</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoStdLib>false</NoStdLib>
+    <OutputPath>@CSHARP_BUILDER_OUTPUT_PATH@</OutputPath>
+    <PlatformTarget>@CSHARP_PLATFORM@</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoStdLib>false</NoStdLib>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugSymbols>true</DebugSymbols>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    @CSHARP_BUILDER_ADDITIONAL_REFERENCES@
+  </ItemGroup>
+  <ItemGroup>
+    @CSHARP_BUILDER_SOURCES@
+  </ItemGroup>
+  <ItemGroup>
+   <!-- @CSHARP_PACKAGE_REFERENCES@ -->
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  @CSHARP_IMPORTS@
+  <Target Name="GenerateTargetFrameworkMonikerAttribute" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
