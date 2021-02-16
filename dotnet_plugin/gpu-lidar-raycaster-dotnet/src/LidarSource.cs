@@ -1,7 +1,5 @@
-using System
-using System.Numerics.Vectors
-
-using Point3f = System.Numerics.Vector3;
+using System;
+using System.Numerics;
 
 namespace GPULidarRaycaster
 {

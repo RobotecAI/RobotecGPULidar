@@ -48,3 +48,10 @@ add_subdirectory(optixLidar)
 if (BUILD_TESTWINDOW)
     add_subdirectory(test)
 endif()
+
+# -------------------
+# build dotnet
+# -------------------
+add_subdirectory(dotnet_plugin/dotnet_cmake_module)
+add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
+add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)

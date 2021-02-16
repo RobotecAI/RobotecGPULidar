@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+   <TargetFramework>@CSHARP_TARGET_FRAMEWORK@</TargetFramework>
+   <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+   <OutputType>@CSHARP_BUILDER_OUTPUT_TYPE@</OutputType>
+   <OutputPath>@CSHARP_BUILDER_OUTPUT_PATH@</OutputPath>
+   <AssemblyName>@CSHARP_BUILDER_OUTPUT_NAME@</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    @CSHARP_BUILDER_SOURCES@
+  </ItemGroup>
+  <ItemGroup>
+    @CSHARP_BUILDER_ADDITIONAL_REFERENCES@
+  </ItemGroup>
+
+   <ItemGroup>
+    @CSHARP_PACKAGE_REFERENCES@
+  </ItemGroup>
+
+  <PropertyGroup>
+     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+  </PropertyGroup>
+</Project>

@@ -1,4 +1,6 @@
-using System
+using System;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace GPULidarRaycaster
 {
@@ -11,7 +13,7 @@ public class Raycaster : IDisposable
   }
 
   ~Raycaster() {
-    Dispose(false)();
+    Dispose(false);
   }
 
   public void Dispose()
@@ -35,9 +37,11 @@ public class Raycaster : IDisposable
 
   public void AddModel(Model model) {
     NativeHandleCheck();
-    Internal_AddModel(m_NativeRaycaster, model);
+    Internal_AddModel(m_NativeRaycaster, model.vertices, model.normals,
+      model.texture_coordinates, model.indices, model.vertices.Length);
   }
 
+  /*
   public void UpdateModel(Model model) {
     NativeHandleCheck();
     Internal_UpdateModel(m_NativeRaycaster, model);
@@ -47,6 +51,7 @@ public class Raycaster : IDisposable
     NativeHandleCheck();
     Internal_Raycast(m_NativeRaycaster, source, ref result);
   }
+  */
 
   private void NativeHandleCheck() {
     if (m_NativeRaycaster == IntPtr.Zero) {
@@ -56,22 +61,26 @@ public class Raycaster : IDisposable
 
   private void Destroy() {
     if (m_NativeRaycaster != IntPtr.Zero) {
-      Internal_DestroyNativeRaycaster();
+      Internal_DestroyNativeRaycaster(m_NativeRaycaster);
       m_NativeRaycaster = IntPtr.Zero;
     }
   }
 
   //TODO - wrap & optimize
-  [DllImport("gpu-lidar-raycaster")]
+  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern IntPtr Internal_CreateNativeRaycaster();
-  [DllImport("gpu-lidar-raycaster")]
-  private static extern Internal_DestroyNativeRaycaster(IntPtr obj);
-  [DllImport("gpu-lidar-raycaster")]
-  private static extern void Internal_AddModel(IntPtr obj, IntPtr model);
-  [DllImport("gpu-lidar-raycaster")]
+  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
+  private static extern void Internal_DestroyNativeRaycaster(IntPtr obj);
+  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
+  private static extern void Internal_AddModel(IntPtr obj, [In] Vector3f[] vertices,
+    [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices,
+    int size);
+  /*
+  [DllImport("gpu-lidar-raycaster"), CallingConvention = CallingConvention.Cdecl]
   private static extern void Internal_UpdateModel(IntPtr obj, IntPtr model);
-  [DllImport("gpu-lidar-raycaster")]
-  private static extern void Internal_Raycast(IntPtr obj, IntPtr source);
+  [DllImport("gpu-lidar-raycaster"), CallingConvention = CallingConvention.Cdecl]
+  private static extern void Internal_Raycast(IntPtr obj, IntPtr source, ref IntPtr result);
+  */
 
   private bool disposed;
 }
