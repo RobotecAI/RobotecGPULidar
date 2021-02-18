@@ -110,14 +110,14 @@ public class Raycaster : IDisposable
     [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices,
     int size);
 
-  [DllImport("gpu-lidar-raycaster", CallingConvention = CallingConvention.Cdecl)]
+  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern void Internal_UpdateModel(IntPtr obj, IntPtr model);
 
-  [DllImport("gpu-lidar-raycaster", CallingConvention = CallingConvention.Cdecl)]
+  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern void Internal_Raycast(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,
     [In] Point3f[] directions, [In] int directions_count, [In] float range);
 
-  [DllImport("gpu-lidar-raycaster", CallingConvention = CallingConvention.Cdecl)]
+  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern void Internal_GetPoints(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id,
     ref IntPtr results, ref int results_count);
 
