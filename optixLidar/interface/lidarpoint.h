@@ -8,6 +8,6 @@ struct Lidar4DPoint
     CoordinateType y;
     CoordinateType z;
     CoordinateType i;
-};
+} __attribute__((packed));
 
 typedef Lidar4DPoint<float> LidarPoint;

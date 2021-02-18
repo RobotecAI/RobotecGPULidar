@@ -9,6 +9,14 @@ namespace GPULidarRaycaster
 // using Vector3f = System.Numerics.Vector3;
 // using Vector2f = System.Numerics.Vector2;
 
+[StructLayout(LayoutKind.Sequential, Pack=1)]
+public struct Point4f {
+  public float x;
+  public float y;
+  public float z;
+  public float i;
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public struct Vector3f {
   public float x;

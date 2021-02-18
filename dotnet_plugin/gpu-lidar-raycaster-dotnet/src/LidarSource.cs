@@ -4,11 +4,11 @@ using System.Numerics;
 namespace GPULidarRaycaster
 {
 
-struct LidarSource {
-  String id;
-  Point3f source;
-  Point3f[] directions;
-  float range;
+public struct LidarSource {
+  public String source_id;
+  public Point3f source_pos;
+  public Point3f[] directions;
+  public float range;
 }
 
 } // namespace GPULidarRaycaster
