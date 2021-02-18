@@ -51,6 +51,14 @@ public:
 
     // TODO - do the actual raycasting
 
+    // TODO - remove this adding of dummy test points
+    LidarPoint pseudoPoint{1, 2, 3, 5};
+    result->points.push_back(pseudoPoint);
+    result->points.push_back(pseudoPoint);
+    result->points.push_back(pseudoPoint);
+
+    std::vector<LidarPoint> points;
+
     results_[lidar_source.unique_id] = result;
   }
 

@@ -44,7 +44,10 @@ namespace ConsoleApplication
 
             RaycastResults rr = new RaycastResults();
             lidar.Raycast(ls, ref rr);
-            Console.WriteLine("Results  " + rr.points.Length);
+            if (rr.points.Length > 0) {
+              Console.WriteLine("Results len: " + rr.points.Length + " fist point " + rr.points[0].x + ", " + rr.points[0].y +
+                                ", " + rr.points[0].z + ", " + rr.points[0].i);
+            }
             lidar.Dispose();
         }
     }
