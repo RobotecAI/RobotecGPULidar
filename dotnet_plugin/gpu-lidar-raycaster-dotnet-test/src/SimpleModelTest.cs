@@ -27,7 +27,7 @@ namespace ConsoleApplication
                                         }
             };
 
-            Console.WriteLine("Vertices ", m.vertices.Length);
+            //Console.WriteLine("Vertices ", m.vertices.Length);
             lidar.AddModel(m);
             lidar.Dispose();
         }

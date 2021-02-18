@@ -4,9 +4,9 @@ using System.Numerics;
 namespace GPULidarRaycaster
 {
 
-struct RaycastResults {
-  String lidar_id;
-  Point3f[] points;
+public struct RaycastResults {
+  public String lidar_id;
+  public Point4f[] points;
 }
 
 } // namespace GPULidarRaycaster
