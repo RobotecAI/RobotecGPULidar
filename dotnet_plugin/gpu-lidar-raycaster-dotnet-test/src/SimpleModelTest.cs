@@ -2,34 +2,31 @@
 using System;
 using GPULidarRaycaster;
 
-namespace ConsoleApplication
+namespace GPULidarTest
 {
     public class GPULidarSimpleTest
     {
         public static void Main(string[] args)
         {
             Raycaster lidar = new Raycaster();
-            Model m = new Model()
-            {
-              id = "test",
-              vertices = new Vector3f[3] { new Vector3f() { x = 1, y = 2, z = 0},
-                                           new Vector3f() { x = 10, y = 12, z = 3},
-                                           new Vector3f() { x = 1, y = 2, z = 3}
-                                         },
-              normals = new Vector3f[3] { new Vector3f() { x = 1, y = 0, z = 0},
-                                          new Vector3f() { x = 0, y = 1, z = 0},
-                                          new Vector3f() { x = 0, y = 0, z = 1}
-                                        },
-              texture_coordinates = new Vector2f[3],
-              indices = new Vector3i[3] { new Vector3i() { x = 0, y = 0, z = 0},
-                                          new Vector3i() { x = 1, y = 0, z = 0},
-                                          new Vector3i() { x = 2, y = 0, z = 0}
-                                        }
-            };
+            ModelLoader ml = new ModelLoader();
+            
+            ml.LoadModel(AppDomain.CurrentDomain.BaseDirectory + "test.obj");
+            var meshes_num = ml.GetNumberOfMeshes();
 
-            Console.WriteLine("Vertices " + m.vertices.Length);
-            lidar.AddModel(m);
-            lidar.UpdateModel(m);
+            Console.WriteLine("Adding meshes..");
+            for (int i = 0; i < meshes_num; ++i) {
+              Model m = ml.GetMesh(i);
+              m.id = i.ToString();
+              Console.WriteLine("--- Mesh # " + m.id);
+              Console.WriteLine("Vertices " + m.vertices.Length);
+              Console.WriteLine("Normals " + m.normals.Length);
+              Console.WriteLine("Texture coords " + m.texture_coordinates.Length);
+              Console.WriteLine("Indices " + m.indices.Length);
+              lidar.AddModel(m);
+            }
+            Console.WriteLine("---");
+            Console.WriteLine("All meshes added.");
 
             LidarSource ls = new LidarSource()
             {
