@@ -45,8 +45,8 @@ If all of these work correctly, your environment is likely setup correctly. Some
 
 ### Building (Linux)
 * Clone the code  
-    `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidarsimulator.git`  
-   `cd optixlidar`  
+    `git clone git@gitlab.com:robotec.ai/internal/simulation-platform/modules/lidar-raycasting-gpu.git`  
+    `cd lidar-raycasting-gpu`  
 * Download LFS files
     `git lfs pull`
 * Build the project with cmake  
