@@ -10,18 +10,20 @@
 #include "raycast_result.h"
 #include "visibility_control.h"
 
+using namespace gdt;
+
 extern "C" {
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-NativeRaycaster * Internal_CreateNativeRaycaster()
+OptiXLidar * Internal_CreateNativeRaycaster()
 {
-  return new OptixLidar();
+  return new OptiXLidar();
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_DestroyNativeRaycaster(void * obj)
 {
-  delete (OptixLidar *)obj;
+  delete (OptiXLidar *)obj;
 }
 
 // TODO - optimize this POC
@@ -29,9 +31,7 @@ GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * normals,
   vec2f * texture_coordinates, vec3i * indices, int size)
 {
-  auto *ol = (OptixLidar *)obj;
-  if (ol->has_mesh(id))
-    return;
+  auto *ol = (OptiXLidar *)obj;
 
   //Constructor could already use the pointers
   auto tm = std::make_shared<TriangleMesh>();
@@ -56,7 +56,7 @@ GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_Raycast(void * obj, char * source_id, Point source_pos, Point * directions, int directions_count,
   float range)
 {
-  auto *ol = (OptixLidar *)obj;
+  auto *ol = (OptiXLidar *)obj;
   LidarSource ls;
   ls.unique_id = std::string(source_id);
   ls.source = source_pos;
@@ -69,17 +69,17 @@ void Internal_Raycast(void * obj, char * source_id, Point source_pos, Point * di
 GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_GetPoints(void * obj, LidarPoint ** results, int * results_count)
 {
-  auto *ol = (OptixLidar *)obj;
+  auto *ol = (OptiXLidar *)obj;
   ol->get_all_points();
   auto rr = ol->last_results();
-  if (rr.count() == 0) {
+  if (rr.size() == 0) {
     results_count = 0;
     return;
   }
   auto & r = rr[0]; // TODO
 
-  *results_count = r->points.size();
-  *results = r->points.data();
+  *results_count = r.points.size();
+  *results = r.points.data();
 }
 
 } // extern "C"

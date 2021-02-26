@@ -15,6 +15,7 @@ class OptiXLidar
 {
 public:
   OptiXLidar();
+  ~OptiXLidar();
 
   /// <summary>
   /// Adds a mesh if not present, or updates the mesh if present

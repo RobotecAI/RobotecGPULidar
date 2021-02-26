@@ -50,6 +50,9 @@ OptiXLidar::OptiXLidar()
   lidar_impl_ = std::make_unique<LidarImpl>();
 }
 
+// Necessary to declare in cpp for pimpl to work with unique_ptr
+OptiXLidar::~OptiXLidar() = default;
+
 void OptiXLidar::add_or_update_mesh(std::shared_ptr<TriangleMesh> mesh)
 {
   Meshes meshes { mesh };

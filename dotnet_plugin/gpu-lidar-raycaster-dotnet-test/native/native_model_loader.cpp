@@ -5,6 +5,8 @@
 #include "model.h"
 #include "model_utils.h"
 
+using namespace gdt;
+
 extern "C" {
 
 class ModelLoader
@@ -12,13 +14,18 @@ class ModelLoader
 public:
   void load_obj(const std::string & path) {
     model_ = load_model_from_obj_file(path);
+    if (model_) {
+      for (auto mesh_kv : model_->meshes_map) {
+        meshes_.push_back(mesh_kv.second);
+      }
+    }
   }
 
   size_t get_number_of_meshes() {
-    return model_ ? model_->meshes_map.size() : 0;
+    return meshes_.size();
   }
 
-  TriangleMesh * get_triangle_mesh(const uint32_t &mesh_index) {
+  std::shared_ptr<TriangleMesh> get_triangle_mesh(const uint32_t & mesh_index) {
     // DEBUG
     /*
     if (model_) {
@@ -38,11 +45,18 @@ public:
       std::cout << std::endl << std::endl;
     }
     */
-    return model_ ? model_->meshes()[mesh_index] : nullptr;
+
+    //
+
+    if (meshes_.size() < mesh_index)
+      return nullptr;
+
+    return meshes_[mesh_index];
   }
 
   private:
     std::shared_ptr<Model> model_;
+    Meshes meshes_; // For index-based access
 };
 
 MODEL_LOADER_C_EXPORT
@@ -72,7 +86,7 @@ int Internal_GetNumberOfMeshes(void * obj)
 }
 
 MODEL_LOADER_C_EXPORT
-TriangleMesh * Internal_GetTriangleMesh(void * obj, int mesh_id,
+void Internal_GetTriangleMesh(void * obj, int mesh_id,
   vec3f ** vertices, vec3f ** normals, vec2f ** texture_coordinates, vec3i ** indices,
   int * vertices_size, int * normals_size, int * texutres_size, int * indices_size)
 {
@@ -86,6 +100,5 @@ TriangleMesh * Internal_GetTriangleMesh(void * obj, int mesh_id,
   *texutres_size = mesh->texcoord.size();
   *indices = mesh->index.data();
   *indices_size = mesh->index.size();
-  return mesh;
 }
 }

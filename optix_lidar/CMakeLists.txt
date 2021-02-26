@@ -8,6 +8,7 @@ add_library(${PROJECT_NAME} SHARED
     optix_lidar.cpp
     LidarRenderer.cpp
     model_utils.cpp
+    simple_uid_generator.cpp
     Lidar.cpp
     )
 
