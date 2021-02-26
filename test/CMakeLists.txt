@@ -1,7 +1,9 @@
 find_package(OpenGL REQUIRED)
 project(testwindow)
 include_directories(${OptiX_INCLUDE})
-include_directories(../optixLidar)
+message(${OptiX_INCLUDE})
+include_directories(${optix_lidar_INCLUDE_DIRS})
+include_directories(../optix_lidar) #TODO!
 
 cuda_compile_and_embed(embedded_ptx_window_render renderDevicePrograms.cu)
 
@@ -26,7 +28,7 @@ add_executable(testwindow
     )
 
 target_link_libraries(testwindow
-    optixLidar
+    optix_lidar
     glfWindow
     glfw
     ${OPENGL_gl_LIBRARY}

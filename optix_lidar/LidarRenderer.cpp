@@ -67,100 +67,160 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) HitgroupRecord
   TriangleMeshSBTData data;
 };
 
-  /*! constructor - performs all setup, including initializing
-    optix, creates module, pipeline, programs, SBT, etc. */
-LidarRenderer::LidarRenderer(const Model *model)
-    : model(model)
+void LidarRenderer::initialize()
 {
-    initOptix();
+  initOptix();
+  std::cout << "creating optix context ..." << std::endl;
+  createContext();
+  std::cout << "setting up module ..." << std::endl;
+  createModule();
+  std::cout << "creating raygen programs ..." << std::endl;
+  createRaygenPrograms();
+  std::cout << "creating miss programs ..." << std::endl;
+  createMissPrograms();
+  std::cout << "creating hitgroup programs ..." << std::endl;
+  createHitgroupPrograms();
+  std::cout << "setting up optix pipeline ..." << std::endl;
+  createPipeline();
 
-    std::cout << "creating optix context ..." << std::endl;
-    createContext();
+  launchParamsBuffer.alloc(sizeof(launchParams));
 
-    std::cout << "setting up module ..." << std::endl;
-    createModule();
+  std::cout << GDT_TERMINAL_GREEN;
+  std::cout << "Optix lidar fully set up" << std::endl;
+  std::cout << GDT_TERMINAL_DEFAULT;
+}
 
-    std::cout << "creating raygen programs ..." << std::endl;
-    createRaygenPrograms();
-    std::cout << "creating miss programs ..." << std::endl;
-    createMissPrograms();
-    std::cout << "creating hitgroup programs ..." << std::endl;
-    createHitgroupPrograms();
+LidarRenderer::LidarRenderer()
+{
+  initialize();
+}
 
-    launchParams.traversable = buildAccel();
+void LidarRenderer::addTextures(Textures textures)
+{
+  if (textures.size() == 0) {
+    return;
+  }
 
-    std::cout << "setting up optix pipeline ..." << std::endl;
-    createPipeline();
+  for (auto texture : textures) {
+    model.textures_map[texture->texture_id] = texture;
+  }
 
-    createTextures();
+  model.textures_changed = true;
+  model.needs_rebuild = true;
+  model.changed = true;
+}
 
-    std::cout << "building SBT ..." << std::endl;
+void LidarRenderer::addMeshes(Meshes meshes)
+{
+  if (meshes.size() == 0) {
+    return;
+  }
+
+  for (auto mesh : meshes) {
+    if (model.meshes_map.find(mesh->mesh_id) == model.meshes_map.end()) {
+      // The mesh is assumed to be new, otherwise is the old one that moved
+      model.needs_rebuild = true;
+    }
+    model.meshes_map[mesh->mesh_id] = mesh;
+  }
+  model.changed = true;
+}
+
+void LidarRenderer::removeMesh(const std::string & id)
+{
+  if (model.meshes_map.find(id) == model.meshes_map.end()) {
+    return;
+  }
+
+  model.meshes_map.erase(id);
+  model.needs_rebuild = true;
+  model.changed = true;
+}
+
+void LidarRenderer::removeTexture(const std::string & id)
+{
+  if (model.textures_map.find(id) != model.textures_map.end()) {
+    return;
+  }
+  model.textures_map.erase(id);
+  model.needs_rebuild = true;
+  model.textures_changed = true;
+  model.changed = true;
+}
+
+void LidarRenderer::update_structs_for_model()
+{
+  if (model.changed)
+  {
+    launchParams.traversable = buildAccel(model.needs_rebuild);
+    if (model.textures_changed) {
+      createTextures();
+      model.textures_changed = false;
+    }
     buildSBT();
-
-    launchParamsBuffer.alloc(sizeof(launchParams));
-    std::cout << "context, module, pipeline, etc, all set up ..." << std::endl;
-
-    std::cout << GDT_TERMINAL_GREEN;
-    std::cout << "Optix lidar fully set up" << std::endl;
-    std::cout << GDT_TERMINAL_DEFAULT;
+    model.needs_rebuild = false;
+  }
+  model.changed = false;
 }
 
 void LidarRenderer::createTextures()
 {
-    size_t numTextures = model->textures.size();
+    size_t numTextures = model.textures_map.size();
+    textureArrays.clear();
+    textureObjects.clear();
     textureArrays.resize(numTextures);
     textureObjects.resize(numTextures);
 
-    for (size_t textureID = 0; textureID < numTextures; textureID++)
-    {
-        auto texture = model->textures[textureID];
+    size_t index = 0;
+    for (const auto & kv : model.textures_map) {
+      auto texture = kv.second;
+      cudaResourceDesc res_desc = {};
 
-        cudaResourceDesc res_desc = {};
+      cudaChannelFormatDesc channel_desc;
+      int32_t width  = texture->resolution.x;
+      int32_t height = texture->resolution.y;
+      int32_t numComponents = 4;
+      int32_t pitch  = width*numComponents*sizeof(uint8_t);
+      channel_desc = cudaCreateChannelDesc<uchar4>();
 
-        cudaChannelFormatDesc channel_desc;
-        int32_t width  = texture->resolution.x;
-        int32_t height = texture->resolution.y;
-        int32_t numComponents = 4;
-        int32_t pitch  = width*numComponents*sizeof(uint8_t);
-        channel_desc = cudaCreateChannelDesc<uchar4>();
+      cudaArray_t   &pixelArray = textureArrays[index];
+      CUDA_CHECK(MallocArray(&pixelArray,
+                             &channel_desc,
+                             width,height));
 
-        cudaArray_t   &pixelArray = textureArrays[textureID];
-        CUDA_CHECK(MallocArray(&pixelArray,
-                               &channel_desc,
-                               width,height));
+      CUDA_CHECK(Memcpy2DToArray(pixelArray,
+                                 /* offset */0,0,
+                                 texture->pixel,
+                                 pitch,pitch,height,
+                                 cudaMemcpyHostToDevice));
 
-        CUDA_CHECK(Memcpy2DToArray(pixelArray,
-                                   /* offset */0,0,
-                                   texture->pixel,
-                                   pitch,pitch,height,
-                                   cudaMemcpyHostToDevice));
+      res_desc.resType          = cudaResourceTypeArray;
+      res_desc.res.array.array  = pixelArray;
 
-        res_desc.resType          = cudaResourceTypeArray;
-        res_desc.res.array.array  = pixelArray;
+      cudaTextureDesc tex_desc     = {};
+      tex_desc.addressMode[0]      = cudaAddressModeWrap;
+      tex_desc.addressMode[1]      = cudaAddressModeWrap;
+      tex_desc.filterMode          = cudaFilterModeLinear;
+      tex_desc.readMode            = cudaReadModeNormalizedFloat;
+      tex_desc.normalizedCoords    = 1;
+      tex_desc.maxAnisotropy       = 1;
+      tex_desc.maxMipmapLevelClamp = 99;
+      tex_desc.minMipmapLevelClamp = 0;
+      tex_desc.mipmapFilterMode    = cudaFilterModePoint;
+      tex_desc.borderColor[0]      = 1.0f;
+      tex_desc.sRGB                = 0;
 
-        cudaTextureDesc tex_desc     = {};
-        tex_desc.addressMode[0]      = cudaAddressModeWrap;
-        tex_desc.addressMode[1]      = cudaAddressModeWrap;
-        tex_desc.filterMode          = cudaFilterModeLinear;
-        tex_desc.readMode            = cudaReadModeNormalizedFloat;
-        tex_desc.normalizedCoords    = 1;
-        tex_desc.maxAnisotropy       = 1;
-        tex_desc.maxMipmapLevelClamp = 99;
-        tex_desc.minMipmapLevelClamp = 0;
-        tex_desc.mipmapFilterMode    = cudaFilterModePoint;
-        tex_desc.borderColor[0]      = 1.0f;
-        tex_desc.sRGB                = 0;
-
-        // Create texture object
-        cudaTextureObject_t cuda_tex = 0;
-        CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-        textureObjects[textureID] = cuda_tex;
+      // Create texture object
+      cudaTextureObject_t cuda_tex = 0;
+      CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+      textureObjects[index] = cuda_tex;
+      index++;
     }
 }
 
 OptixTraversableHandle LidarRenderer::buildAccel(bool update)
 {
-    const size_t numMeshes = model->meshes.size();
+    const size_t numMeshes = model.meshes_map.size();
 
     for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
     {
@@ -185,45 +245,46 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
     std::vector<CUdeviceptr> d_indices(numMeshes);
     std::vector<uint32_t> triangleInputFlags(numMeshes);
 
-    for (size_t meshID = 0; meshID < numMeshes; meshID++)
-    {
+    size_t mesh_index = 0;
+    for (const auto & kv : model.meshes_map) {
         // upload the model to the device: the builder
-        TriangleMesh &mesh = *model->meshes[meshID];
-        vertexBuffer[meshID].alloc_and_upload(mesh.vertex);
-        indexBuffer[meshID].alloc_and_upload(mesh.index);
-        if (!mesh.normal.empty())
-            normalBuffer[meshID].alloc_and_upload(mesh.normal);
-        if (!mesh.texcoord.empty())
-            texcoordBuffer[meshID].alloc_and_upload(mesh.texcoord);
+        const auto mesh = kv.second;
+        vertexBuffer[mesh_index].alloc_and_upload(mesh->vertex);
+        indexBuffer[mesh_index].alloc_and_upload(mesh->index);
+        if (!mesh->normal.empty())
+            normalBuffer[mesh_index].alloc_and_upload(mesh->normal);
+        if (!mesh->texcoord.empty())
+            texcoordBuffer[mesh_index].alloc_and_upload(mesh->texcoord);
 
-        triangleInput[meshID] = {};
-        triangleInput[meshID].type
+        triangleInput[mesh_index] = {};
+        triangleInput[mesh_index].type
             = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
         // create local variables, because we need a *pointer* to the
         // device pointers
-        d_vertices[meshID] = vertexBuffer[meshID].d_pointer();
-        d_indices[meshID]  = indexBuffer[meshID].d_pointer();
+        d_vertices[mesh_index] = vertexBuffer[mesh_index].d_pointer();
+        d_indices[mesh_index]  = indexBuffer[mesh_index].d_pointer();
 
-        triangleInput[meshID].triangleArray.vertexFormat        = OPTIX_VERTEX_FORMAT_FLOAT3;
-        triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(vec3f);
-        triangleInput[meshID].triangleArray.numVertices         = (int)mesh.vertex.size();
-        triangleInput[meshID].triangleArray.vertexBuffers       = &d_vertices[meshID];
+        triangleInput[mesh_index].triangleArray.vertexFormat        = OPTIX_VERTEX_FORMAT_FLOAT3;
+        triangleInput[mesh_index].triangleArray.vertexStrideInBytes = sizeof(vec3f);
+        triangleInput[mesh_index].triangleArray.numVertices         = (int)mesh->vertex.size();
+        triangleInput[mesh_index].triangleArray.vertexBuffers       = &d_vertices[mesh_index];
 
-        triangleInput[meshID].triangleArray.indexFormat         = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-        triangleInput[meshID].triangleArray.indexStrideInBytes  = sizeof(vec3i);
-        triangleInput[meshID].triangleArray.numIndexTriplets    = (int)mesh.index.size();
-        triangleInput[meshID].triangleArray.indexBuffer         = d_indices[meshID];
+        triangleInput[mesh_index].triangleArray.indexFormat         = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+        triangleInput[mesh_index].triangleArray.indexStrideInBytes  = sizeof(vec3i);
+        triangleInput[mesh_index].triangleArray.numIndexTriplets    = (int)mesh->index.size();
+        triangleInput[mesh_index].triangleArray.indexBuffer         = d_indices[mesh_index];
 
-        triangleInputFlags[meshID] = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
+        triangleInputFlags[mesh_index] = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 
         // in this example we have one SBT entry, and no per-primitive
         // materials:
-        triangleInput[meshID].triangleArray.flags               = &triangleInputFlags[meshID];
-        triangleInput[meshID].triangleArray.numSbtRecords               = 1;
-        triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer        = 0;
-        triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes   = 0;
-        triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+        triangleInput[mesh_index].triangleArray.flags               = &triangleInputFlags[mesh_index];
+        triangleInput[mesh_index].triangleArray.numSbtRecords               = 1;
+        triangleInput[mesh_index].triangleArray.sbtIndexOffsetBuffer        = 0;
+        triangleInput[mesh_index].triangleArray.sbtIndexOffsetSizeInBytes   = 0;
+        triangleInput[mesh_index].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+        mesh_index++;
     }
     // ==================================================================
     // BLAS setup
@@ -380,7 +441,7 @@ void LidarRenderer::createContext()
 void LidarRenderer::createModule()
 {
     moduleCompileOptions = {};
-    
+
     moduleCompileOptions.maxRegisterCount  = 100;
     moduleCompileOptions.optLevel          = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0;
     moduleCompileOptions.debugLevel        = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
@@ -567,14 +628,14 @@ void LidarRenderer::buildSBT()
     // ------------------------------------------------------------------
     // build hitgroup records
     // ------------------------------------------------------------------
-    int numObjects = (int)model->meshes.size();
+    int numObjects = (int)model.meshes_map.size();
     std::vector<HitgroupRecord> hitgroupRecords;
-    for (int meshID = 0; meshID < numObjects; meshID++)
+    int meshID = 0;
+    for (const auto & kv : model.meshes_map)
     {
+        auto mesh = kv.second;
         for (int rayID = 0; rayID < LIDAR_RAY_TYPE_COUNT; rayID++)
         {
-            auto mesh = model->meshes[meshID];
-
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID],&rec));
             rec.data.color   = mesh->diffuse;
@@ -592,6 +653,7 @@ void LidarRenderer::buildSBT()
             rec.data.texcoord = (vec2f*)texcoordBuffer[meshID].d_pointer();
             hitgroupRecords.push_back(rec);
         }
+        meshID++;
     }
     hitgroupRecordsBuffer.free();
     hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
@@ -601,29 +663,15 @@ void LidarRenderer::buildSBT()
 }
 
 
-
   /*! render one frame */
 void LidarRenderer::render(std::vector<LidarSource> &lidars)
 {
     // sanity check: make sure we launch only after first resize is
     // already done:
     if (launchParams.rayCount == 0) return;
-    
-    if (model->moved)
-    {
-        if (model->big == true)
-        {
-//printf("Przebudowywanie od poczatku\n");
-            launchParams.traversable = buildAccel(/*update =*/ false);
-        }
-        else
-        {
-            launchParams.traversable = buildAccel(/*update =*/ true);
-        }
-        buildSBT();
-    }
-    
-    // upload rays data to device
+
+    update_structs_for_model();
+
     uploadRays(lidars);
 
     launchParamsBuffer.upload(&launchParams,1);
@@ -655,13 +703,13 @@ void LidarRenderer::resize(std::vector<LidarSource> &lidars)
     {
         rayCount += lidars[i].directions.size();
     }
-    
+
     // resize our cuda frame buffer
     raysPerLidarBuffer.resize(lidarCount*sizeof(int));
     rayBuffer.resize(rayCount*3*sizeof(float));
     rangeBuffer.resize(lidarCount*sizeof(float));
     sourceBuffer.resize(lidarCount*3*sizeof(float));
-    
+
     positionBuffer.resize(rayCount*4*sizeof(float));
     hitBuffer.resize(rayCount*sizeof(int));
 
@@ -686,7 +734,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
         raysPerLidar[i] = lidars[i].directions.size();
     }
     raysPerLidarBuffer.upload(raysPerLidar.data(), raysPerLidar.size());
-    
+
     std::vector<float> rays;
     rays.resize(launchParams.rayCount*3);
     int index = 0;
@@ -700,7 +748,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
         }
     }
     rayBuffer.upload(rays.data(), rays.size());
-    
+
     std::vector<float> range;
     range.resize(lidars.size());
     for(size_t i = 0; i < lidars.size(); ++i)
@@ -708,7 +756,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
         range[i] = lidars[i].range;
     }
     rangeBuffer.upload(range.data(), range.size());
-    
+
     std::vector<float> source;
     source.resize(lidars.size()*3);
     for (size_t i = 0; i < lidars.size(); ++i)
@@ -760,8 +808,7 @@ void LidarRenderer::downloadPoints(RaycastResults &result)
             }
             index++;
         }
-        
+
         result.push_back(res);
     }
 }
-

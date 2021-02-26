@@ -35,22 +35,22 @@ public class Raycaster : IDisposable
     }
   }
 
-  public void AddModel(Model model) {
+  public void AddMesh(Mesh mesh) {
     NativeHandleCheck();
-    if (Internal_HasModel(m_NativeRaycaster, model.id)) {
+    if (Internal_HasMesh(m_NativeRaycaster, mesh.id)) {
       return;
     }
-    Internal_AddModel(m_NativeRaycaster, model.id, model.vertices, model.normals,
-      model.texture_coordinates, model.indices, model.vertices.Length);
+    Internal_AddMesh(m_NativeRaycaster, mesh.id, mesh.vertices, mesh.normals,
+      mesh.texture_coordinates, mesh.indices, mesh.vertices.Length);
   }
 
-  public void UpdateModel(Model model) {
+  public void UpdateMesh(Mesh mesh) {
     NativeHandleCheck();
-    if (!Internal_HasModel(m_NativeRaycaster, model.id)) {
+    if (!Internal_HasMesh(m_NativeRaycaster, mesh.id)) {
       return;
     }
-    Internal_UpdateModel(m_NativeRaycaster, model.id, model.vertices, model.normals,
-      model.texture_coordinates, model.indices, model.vertices.Length);
+    Internal_UpdateMesh(m_NativeRaycaster, mesh.id, mesh.vertices, mesh.normals,
+      mesh.texture_coordinates, mesh.indices, mesh.vertices.Length);
   }
 
   public void Raycast(LidarSource source, ref RaycastResults res) {
@@ -100,18 +100,9 @@ public class Raycaster : IDisposable
   private static extern void Internal_DestroyNativeRaycaster(IntPtr obj);
 
   [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern bool Internal_HasModel(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id);
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_AddModel(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
+  private static extern void Internal_AddMesh(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
     [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices,
     int size);
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_UpdateModel(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
-    [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices,
-    int size);
-
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_UpdateModel(IntPtr obj, IntPtr model);
 
   [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern void Internal_Raycast(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,

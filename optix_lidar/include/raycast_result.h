@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <chrono>
-#include "lidarpoint.h"
+#include "points.h"
 
 typedef struct RaycastResult
 {

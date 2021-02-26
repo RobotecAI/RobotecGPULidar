@@ -1,6 +1,7 @@
 #include "SampleRenderer.h"
 #include "LidarRenderer.h"
 #include "Lidar.h"
+#include "model_utils.h"
 
 // our helper library for window handling
 #include "glfWindow/GLFWindow.h"
@@ -9,8 +10,8 @@
 #include <cmath>
 #include <fstream>
 
-#include "interface/lidarsource.h"
-#include "interface/raycastresult.h"
+#include "lidar_source.h"
+#include "raycast_result.h"
 
 std::string pointsFileName = "points.xyz";
 
@@ -51,7 +52,7 @@ struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
                  Model *model,
-                 std::vector<Model *>models,
+                 std::vector<std::shared_ptr<Model>> models,
                  const Camera &camera,
                  const float worldScale,
                  vec3f lidarInitialSource,
@@ -62,7 +63,7 @@ struct SampleWindow : public GLFCameraWindow
                  int samplingInitialHeight,
                  float range)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), model(model),
-          lidarRend(model), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
+          lidarRend(), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
           lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), models(models)
     {
         sample.setCamera(camera);
@@ -86,33 +87,27 @@ struct SampleWindow : public GLFCameraWindow
         static int big = 0;
         static Model * currentModel = new Model;
 
-        currentModel->meshes.clear();
-        currentModel->textures.clear();
+        currentModel->meshes_map.clear();
+        currentModel->textures_map.clear();
         box3f bounds;
         currentModel->bounds = bounds;
+        currentModel->meshes_map = model->meshes_map;
+        currentModel->textures_map = model->textures_map;
 
-        for (size_t i = 0; i < model->meshes.size(); ++i)
+        for (const auto & kv : models[moveCounter]->meshes_map)
         {
-            currentModel->meshes.push_back(model->meshes[i]);
-        }
-        for (size_t i = 0; i < model->textures.size(); ++i)
-        {
-            currentModel->textures.push_back(model->textures[i]);
-        }
-        for (size_t i = 0; i < models[moveCounter]->meshes.size(); ++i)
-        {
-            currentModel->meshes.push_back(models[moveCounter]->meshes[i]);
+            currentModel->meshes_map.insert(kv);
         }
 
-        for (auto mesh : currentModel->meshes)
-            for (auto vtx : mesh->vertex)
+        for (auto mesh_kv : currentModel->meshes_map)
+            for (auto vtx : mesh_kv.second->vertex)
                 currentModel->bounds.extend(vtx);
 
-        currentModel->moved = true;
+        currentModel->changed = true;
         if (big == 0) // build from begining
-            currentModel->big = true;
+            currentModel->needs_rebuild = true;
         else // only update
-            currentModel->big = false;
+            currentModel->needs_rebuild = false;
         big++;
 
         moveCounter++;
@@ -123,7 +118,7 @@ struct SampleWindow : public GLFCameraWindow
 
         // set model in renderers
         sample.setModel(currentModel);
-        lidarRend.setModel(currentModel);
+        lidarRend.setModel(*currentModel);
 
 //        printf("\n%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();
@@ -281,7 +276,7 @@ struct SampleWindow : public GLFCameraWindow
     SampleRenderer        sample;
     Lidar                 lidar;
     std::vector<uint32_t> pixels;
-    std::vector<Model *>  models;
+    std::vector<std::shared_ptr<Model>>  models;
 };
 
 
@@ -290,9 +285,9 @@ world, then exit */
 extern "C" int main(int ac, char **av)
 {
     try {
-        Model *modelStatic = loadOBJ("../test/models/tunnel.obj");
+        auto modelStatic = load_model_from_obj_file("../test/models/tunnel.obj");
 
-        std::vector<Model *> models;
+        std::vector<std::shared_ptr<Model>> models;
         for (int k = 1; k <= 38; ++k)
         {
             std::string modelName = "../test/models/optixTestNoMaterial/DAZ_Worker_tmp_0000";
@@ -300,22 +295,25 @@ extern "C" int main(int ac, char **av)
                 modelName += "0";
             modelName += std::to_string(k);
             modelName += ".obj";
-            Model *model = loadOBJ(modelName.c_str());
+            auto model = load_model_from_obj_file(modelName.c_str());
 
             // move model to fit in the tunnel
-            for (size_t i = 0; i < model->meshes.size(); ++i)
+            size_t i = 0;
+            for (auto mesh_kv : model->meshes_map)
             {
-                for (size_t j = 0; j < model->meshes[i]->vertex.size(); ++j)
+                auto mesh = mesh_kv.second;
+                for (size_t j = 0; j < mesh->vertex.size(); ++j)
                 {
-                    model->meshes[i]->vertex[j].x *= 100;
-                    model->meshes[i]->vertex[j].x -= 3000;
-                    model->meshes[i]->vertex[j].y *= 100;
-                    model->meshes[i]->vertex[j].y += 425;
-                    model->meshes[i]->vertex[j].z *= 100;
-                    model->meshes[i]->vertex[j].z -= 100;
+                    mesh->vertex[j].x *= 100;
+                    mesh->vertex[j].x -= 3000;
+                    mesh->vertex[j].y *= 100;
+                    mesh->vertex[j].y += 425;
+                    mesh->vertex[j].z *= 100;
+                    mesh->vertex[j].z -= 100;
 
-                    model->meshes[i]->vertex[j].z += 4*k;
+                    mesh->vertex[j].z += 4*k;
                 }
+                i++;
             }
             models.push_back(model);
         }

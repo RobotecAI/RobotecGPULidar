@@ -3,7 +3,9 @@
 #include "gdt/utils/CUDABuffer.h"
 #include "gdt/math/vec.h"
 #include "LaunchParams.h"
-#include "Model.h"
+#include "model.h"
+
+// TODO - this has way too much common code with LidarRenderer!!!
 
 struct Camera {
     /*! camera position - *from* where we are looking */
@@ -39,7 +41,7 @@ public:
 
     /*! set camera to render with */
     void setCamera(const Camera &camera);
-    
+
     void setModel(const Model *model) {this->model = model;}
 
 protected:
