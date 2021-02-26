@@ -10,20 +10,20 @@ namespace GPULidarTest
         {
             Raycaster lidar = new Raycaster();
             ModelLoader ml = new ModelLoader();
-            
+
             ml.LoadModel(AppDomain.CurrentDomain.BaseDirectory + "test.obj");
             var meshes_num = ml.GetNumberOfMeshes();
 
             Console.WriteLine("Adding meshes..");
             for (int i = 0; i < meshes_num; ++i) {
-              Model m = ml.GetMesh(i);
+              Mesh m = ml.GetMesh(i);
               m.id = i.ToString();
               Console.WriteLine("--- Mesh # " + m.id);
               Console.WriteLine("Vertices " + m.vertices.Length);
               Console.WriteLine("Normals " + m.normals.Length);
               Console.WriteLine("Texture coords " + m.texture_coordinates.Length);
               Console.WriteLine("Indices " + m.indices.Length);
-              lidar.AddModel(m);
+              lidar.AddMesh(m);
             }
             Console.WriteLine("---");
             Console.WriteLine("All meshes added.");

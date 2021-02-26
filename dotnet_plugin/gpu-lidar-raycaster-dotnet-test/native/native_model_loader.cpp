@@ -2,22 +2,20 @@
 #include "visibility_control.h"
 #include <memory>
 
-#include "Model.h"
+#include "model.h"
+#include "model_utils.h"
 
 extern "C" {
 
 class ModelLoader
 {
 public:
-  ModelLoader() : model_(nullptr) {};
-  ~ModelLoader() {};
-
   void load_obj(const std::string & path) {
-    model_.reset(loadOBJ(path));
+    model_ = load_model_from_obj_file(path);
   }
 
   size_t get_number_of_meshes() {
-    return model_ ? model_->meshes.size() : 0;
+    return model_ ? model_->meshes_map.size() : 0;
   }
 
   TriangleMesh * get_triangle_mesh(const uint32_t &mesh_index) {
@@ -40,12 +38,11 @@ public:
       std::cout << std::endl << std::endl;
     }
     */
-    return model_ ? model_->meshes[mesh_index] : nullptr;
+    return model_ ? model_->meshes()[mesh_index] : nullptr;
   }
 
   private:
-  std::shared_ptr<Model> model_;
-
+    std::shared_ptr<Model> model_;
 };
 
 MODEL_LOADER_C_EXPORT

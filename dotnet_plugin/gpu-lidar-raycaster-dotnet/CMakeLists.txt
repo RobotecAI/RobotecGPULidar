@@ -40,7 +40,8 @@ set(CS_SOURCES
   properties/AssemblyInfo.cs
   src/Raycaster.cs
   src/LidarSource.cs
-  src/Model.cs
+  src/Mesh.cs
+  src/Texture.cs
   src/Primitives.cs
   src/RaycastResult.cs
 )

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
-#include "primitives.h"
+#include <vector>
+#include "points.h"
 
 struct LidarSource
 {
