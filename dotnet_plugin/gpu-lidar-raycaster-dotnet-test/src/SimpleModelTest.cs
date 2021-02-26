@@ -23,7 +23,7 @@ namespace GPULidarTest
               Console.WriteLine("Normals " + m.normals.Length);
               Console.WriteLine("Texture coords " + m.texture_coordinates.Length);
               Console.WriteLine("Indices " + m.indices.Length);
-              lidar.AddMesh(m);
+              lidar.AddOrUpdateMesh(m);
             }
             Console.WriteLine("---");
             Console.WriteLine("All meshes added.");

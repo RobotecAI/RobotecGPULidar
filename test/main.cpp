@@ -51,7 +51,7 @@ long long current_timestamp()
 struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
-                 Model *model,
+                 std::shared_ptr<Model> model,
                  std::vector<std::shared_ptr<Model>> models,
                  const Camera &camera,
                  const float worldScale,
@@ -63,7 +63,7 @@ struct SampleWindow : public GLFCameraWindow
                  int samplingInitialHeight,
                  float range)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), model(model),
-          lidarRend(), sample(model), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
+          lidarRend(), sample(model.get()), lidar(lidarInitialSource, lidarInitialDirection, lidarInitialWidth,
           lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), models(models)
     {
         sample.setCamera(camera);
@@ -271,7 +271,7 @@ struct SampleWindow : public GLFCameraWindow
 
     vec2i                 fbSize;
     GLuint                fbTexture {0};
-    Model *               model;
+    std::shared_ptr<Model> model;
     LidarRenderer         lidarRend;
     SampleRenderer        sample;
     Lidar                 lidar;

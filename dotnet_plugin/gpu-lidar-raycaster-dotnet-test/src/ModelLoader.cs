@@ -40,7 +40,7 @@ namespace GPULidarTest
             int normals_size = new int();
             int texture_coordinates_size = new int();
             int indices_size = new int();
-            IntPtr triangleMesh = Internal_GetTriangleMesh(
+            Internal_GetTriangleMesh(
               m_NativeModelLoader,
               mesh_id,
               ref vertices,
@@ -149,7 +149,7 @@ namespace GPULidarTest
         private static extern int Internal_GetNumberOfMeshes(IntPtr obj);
 
         [DllImport("libnative_model_loader.so", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr Internal_GetTriangleMesh(IntPtr obj, [In] int mesh_id,
+        private static extern void Internal_GetTriangleMesh(IntPtr obj, [In] int mesh_id,
           ref IntPtr vertices, ref IntPtr normals, ref IntPtr texture_coordinates, ref IntPtr indices,
           ref int vertices_size, ref int normals_size, ref int texutres_size, ref int indices_size);
 

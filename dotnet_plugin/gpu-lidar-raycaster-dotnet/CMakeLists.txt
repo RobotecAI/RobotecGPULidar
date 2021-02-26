@@ -30,8 +30,8 @@ add_library(
   native_gpu_lidar_raycaster SHARED
   native/native_gpu_lidar_raycaster.cpp
 )
-target_link_libraries(native_gpu_lidar_raycaster optixLidar)
-target_include_directories(native_gpu_lidar_raycaster PUBLIC ${optixLidar_INCLUDE_DIRS})
+target_link_libraries(native_gpu_lidar_raycaster optix_lidar)
+target_include_directories(native_gpu_lidar_raycaster PUBLIC ${optix_lidar_INCLUDE_DIRS})
 configure_csharp_c_extension_library(native_gpu_lidar_raycaster)
 
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
