@@ -10,11 +10,12 @@
 
 class LidarRenderer
 {
-    // ------------------------------------------------------------------
-    // publicly accessible interface
-    // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // publicly accessible interface
+  // ------------------------------------------------------------------
 public:
   LidarRenderer();
+  ~LidarRenderer();
 
   /*! render one frame */
   void render(std::vector<LidarSource> &lidars);
@@ -32,20 +33,18 @@ public:
   void removeMesh(const std::string & mesh_id);
 
 private:
-  void initialize();
-
   void update_structs_for_model();
 
   /*! helper function that initializes optix and checks for errors */
   void initOptix();
 
   /*! creates and configures a optix device context (in this simple
-    example, only for the primary GPU device) */
+  example, only for the primary GPU device) */
   void createContext();
 
   /*! creates the module that contains all the programs we are going
-    to use. in this simple example, we use a single module from a
-    single .cu file, using a single embedded ptx string */
+  to use. in this simple example, we use a single module from a
+  single .cu file, using a single embedded ptx string */
   void createModule();
 
   /*! does all setup for the raygen program(s) we are going to use */
@@ -73,7 +72,7 @@ private:
   void uploadRays(std::vector<LidarSource> &lidars);
 
   /*! @{ CUDA device context and stream that optix pipeline will run
-      on, as well as device properties for this device */
+  on, as well as device properties for this device */
   CUcontext          cudaContext;
   CUstream           stream;
   cudaDeviceProp     deviceProps;
@@ -94,7 +93,7 @@ private:
   /* @} */
 
   /*! vector of all our program(group)s, and the SBT built around
-      them */
+  them */
   std::vector<OptixProgramGroup> raygenPGs;
   CUDABuffer raygenRecordsBuffer;
   std::vector<OptixProgramGroup> missPGs;
@@ -104,14 +103,10 @@ private:
   OptixShaderBindingTable sbt = {};
 
   /*! @{ our launch parameters, on the host, and the buffer to store
-      them on the device */
+  them on the device */
   LaunchLidarParams launchParams;
   CUDABuffer   launchParamsBuffer;
   /*! @} */
-
-  //    CUDABuffer rayBuffer;
-  //    CUDABuffer positionBuffer;
-  //    CUDABuffer hitBuffer;
 
   CUDABuffer raysPerLidarBuffer;
   CUDABuffer rayBuffer;
@@ -120,9 +115,6 @@ private:
 
   CUDABuffer positionBuffer;
   CUDABuffer hitBuffer;
-
-  // rays range
-  //    float range;
 
   /*! the model we are going to trace rays against */
   Model model;
