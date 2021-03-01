@@ -31,9 +31,6 @@ public:
   void addMeshes(Meshes mesh);
   void removeMesh(const std::string & mesh_id);
 
-  //TODO - remove this api, adjust the test
-  void setModel(Model m) { model = m; }
-
 private:
   void initialize();
 

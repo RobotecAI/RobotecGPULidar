@@ -67,6 +67,16 @@ struct SampleWindow : public GLFCameraWindow
           lidarInitialHeight, samplingInitialWidth, samplingInitialHeight, range), models(models)
     {
         sample.setCamera(camera);
+        Meshes meshes;
+        Textures textures;
+        for (auto mesh_kv : model->meshes_map)
+          meshes.push_back(mesh_kv.second);
+
+        for (auto tex_kv : model->textures_map)
+          textures.push_back(tex_kv.second);
+
+        lidarRend.addMeshes(meshes);
+        lidarRend.addTextures(textures);
     }
 
     virtual ~SampleWindow() {}
@@ -118,7 +128,17 @@ struct SampleWindow : public GLFCameraWindow
 
         // set model in renderers
         sample.setModel(currentModel);
-        lidarRend.setModel(*currentModel);
+
+        Meshes meshes;
+        Textures textures;
+        for (auto mesh_kv : currentModel->meshes_map)
+          meshes.push_back(mesh_kv.second);
+
+        for (auto tex_kv : currentModel->textures_map)
+          textures.push_back(tex_kv.second);
+
+        lidarRend.addMeshes(meshes);
+        lidarRend.addTextures(textures);
 
 //        printf("\n%lld\n", current_timestamp()-begin);
 //        begin = current_timestamp();

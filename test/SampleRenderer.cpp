@@ -497,6 +497,7 @@ void SampleRenderer::createPipeline()
 /*! constructs the shader binding table */
 void SampleRenderer::buildSBT()
 {
+    std::cout << "building SBT..." << std::endl;
     // ------------------------------------------------------------------
     // build raygen records
     // ------------------------------------------------------------------
@@ -512,6 +513,7 @@ void SampleRenderer::buildSBT()
     raygenRecordsBuffer.alloc_and_upload(raygenRecords);
     sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
 
+    std::cout << "building SBT miss records..." << std::endl;
     // ------------------------------------------------------------------
     // build miss records
     // ------------------------------------------------------------------
@@ -529,12 +531,14 @@ void SampleRenderer::buildSBT()
     sbt.missRecordStrideInBytes = sizeof(MissRecord);
     sbt.missRecordCount         = (int)missRecords.size();
 
+    std::cout << "building SBT hitgroup records..." << std::endl;
     // ------------------------------------------------------------------
     // build hitgroup records
     // ------------------------------------------------------------------
     int numObjects = (int)model->meshes_map.size();
     std::vector<HitgroupRecord> hitgroupRecords;
     int meshID = 0;
+    std::cout << "meshes map size " << numObjects <<  std::endl;
     for (const auto & kv : model->meshes_map)
     {
         for (int rayID = 0; rayID < RAY_TYPE_COUNT; rayID++)
@@ -550,6 +554,7 @@ void SampleRenderer::buildSBT()
                 rec.data.texture    = textureObjects[mesh->diffuseTextureID];
             } else
             {
+                std::cout << "meshes has texture " << std::endl;
                 rec.data.hasTexture = false;
             }
             rec.data.index    = (vec3i*)indexBuffer[meshID].d_pointer();
@@ -560,6 +565,8 @@ void SampleRenderer::buildSBT()
         }
         meshID++;
     }
+
+    std::cout << "building SBT buffer upload" << std::endl;
     hitgroupRecordsBuffer.free();
     hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
     sbt.hitgroupRecordBase          = hitgroupRecordsBuffer.d_pointer();
