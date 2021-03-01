@@ -29,7 +29,7 @@ void Internal_DestroyNativeRaycaster(void * obj)
 // TODO - optimize this POC
 GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * normals,
-  vec2f * texture_coordinates, vec3i * indices, int size)
+  vec2f * texture_coordinates, vec3i * indices, int indices_size, int size)
 {
   auto *ol = (OptiXLidar *)obj;
 
@@ -45,7 +45,7 @@ void Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * n
   std::vector<vec2f> tc(texture_coordinates, texture_coordinates+size);
   tm->texcoord = tc;
 
-  std::vector<vec3i> ind(indices, indices+size);
+  std::vector<vec3i> ind(indices, indices+indices_size);
   tm->index = ind;
 
   std::string mesh_id(id);

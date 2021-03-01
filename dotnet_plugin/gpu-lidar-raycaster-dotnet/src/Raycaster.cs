@@ -38,7 +38,7 @@ public class Raycaster : IDisposable
   public void AddOrUpdateMesh(Mesh mesh) {
     NativeHandleCheck();
     Internal_AddOrUpdateMesh(m_NativeRaycaster, mesh.id, mesh.vertices, mesh.normals,
-      mesh.texture_coordinates, mesh.indices, mesh.vertices.Length);
+      mesh.texture_coordinates, mesh.indices, mesh.indices.Length, mesh.vertices.Length);
   }
 
   public void Raycast(LidarSource source, ref RaycastResults res) {
@@ -90,7 +90,7 @@ public class Raycaster : IDisposable
   [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern void Internal_AddOrUpdateMesh(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
     [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices,
-    int size);
+    int indices_size, int size);
 
   [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
   private static extern void Internal_Raycast(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,
