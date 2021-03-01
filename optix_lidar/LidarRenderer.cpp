@@ -389,6 +389,8 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
     tempBuffer.free();
     compactedSizeBuffer.free();
 
+  std::cout << "build accel ends" << std::endl;
+
     return asHandle;
 }
 
