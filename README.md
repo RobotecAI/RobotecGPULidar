@@ -55,6 +55,14 @@ If all of these work correctly, your environment is likely setup correctly. Some
     `cmake ..`     
     `make`
 
+## Running tests
+* To run all tests:
+    `make test`
+    or
+    `ctest --output-on-failure` 
+    to see more verbose output on failure.
+* For a certain test:
+    `ctest -R <TEST_NAME> --verbose`
 
 ### Building (Windows)
 * **Using Visual Studio (recommended)**

@@ -54,4 +54,9 @@ endif()
 # -------------------
 add_subdirectory(dotnet_plugin/dotnet_cmake_module)
 add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
+
+# ------------------------------------------------------------------
+# tests
+# ------------------------------------------------------------------
+enable_testing()
 add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
