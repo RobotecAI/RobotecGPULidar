@@ -1,6 +1,6 @@
 #include "SampleRenderer.h"
-#include "LidarRenderer.h"
-#include "Lidar.h"
+#include "lidar_renderer.h"
+#include "lidar.h"
 #include "model_utils.h"
 
 // our helper library for window handling

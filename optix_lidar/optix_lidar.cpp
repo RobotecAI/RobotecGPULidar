@@ -5,7 +5,7 @@
 #include "lidar_source.h"
 #include "raycast_result.h"
 #include "model.h"
-#include "LidarRenderer.h"
+#include "lidar_renderer.h"
 
 class OptiXLidar::LidarImpl
 {

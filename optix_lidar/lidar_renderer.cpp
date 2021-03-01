@@ -1,4 +1,4 @@
-#include "LidarRenderer.h"
+#include "lidar_renderer.h"
 #include <optix_function_table_definition.h> //this include may only appear in a single source file
 
 extern "C" char embedded_ptx_code[];
