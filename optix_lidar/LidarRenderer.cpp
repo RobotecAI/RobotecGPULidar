@@ -112,6 +112,7 @@ void LidarRenderer::addTextures(Textures textures)
 
 void LidarRenderer::addMeshes(Meshes meshes)
 {
+  std::cout << "adding meshes count: " << meshes.size() << std::endl;
   if (meshes.size() == 0) {
     return;
   }
@@ -150,21 +151,28 @@ void LidarRenderer::removeTexture(const std::string & id)
 
 void LidarRenderer::update_structs_for_model()
 {
+  std::cout << "update structs for model " << std::endl;
   if (model.changed)
   {
-    launchParams.traversable = buildAccel(model.needs_rebuild);
+    std::string rebuild = model.needs_rebuild ? " and needs rebuild" : "";
+    std::cout << "update structs: model changed" << rebuild << std::endl;
+    launchParams.traversable = buildAccel(!model.needs_rebuild);
     if (model.textures_changed) {
+      std::cout << "update structs: textures_changed, creating " << std::endl;
       createTextures();
       model.textures_changed = false;
     }
+    std::cout << "building SBT" << std::endl;
     buildSBT();
     model.needs_rebuild = false;
   }
   model.changed = false;
+  std::cout << "update structs for model ends " << std::endl;
 }
 
 void LidarRenderer::createTextures()
 {
+    std::cout << "create textures " << std::endl;
     size_t numTextures = model.textures_map.size();
     textureArrays.clear();
     textureObjects.clear();
@@ -216,11 +224,13 @@ void LidarRenderer::createTextures()
       textureObjects[index] = cuda_tex;
       index++;
     }
+    std::cout << "create textures ends " << std::endl;
 }
 
 OptixTraversableHandle LidarRenderer::buildAccel(bool update)
 {
     const size_t numMeshes = model.meshes_map.size();
+    std::cout << "build accel: " << numMeshes << std::endl;
 
     for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
     {
@@ -337,6 +347,8 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
         outputBuffer.free();
         outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
     }
+
+
 
     OPTIX_CHECK(optixAccelBuild(optixContext,
                                 /* stream */0,
