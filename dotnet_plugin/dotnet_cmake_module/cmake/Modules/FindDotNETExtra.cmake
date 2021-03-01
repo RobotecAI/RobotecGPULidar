@@ -66,7 +66,6 @@ function(add_dotnet_test _TARGET_NAME)
     ${ARGN}
   )
 
-  set(CSHARP_TARGET_FRAMEWORK "netcoreapp2.0")
   set(XUNIT_INCLUDE_REFERENCES
     "Microsoft.NET.Test.Sdk=15.9.0"
     "xunit=2.4.1"
@@ -87,17 +86,13 @@ function(add_dotnet_test _TARGET_NAME)
     ${XUNIT_INCLUDE_REFERENCES}
   )
 
-  if(CSBUILD_PROJECT_DIR)
-      set(CURRENT_TARGET_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CSBUILD_PROJECT_DIR}")
-  else()
-      set(CURRENT_TARGET_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-  endif()
-
-  ament_add_test(
-    ${name}_test
-    GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-    WORKING_DIRECTORY ${CURRENT_TARGET_BINARY_DIR}/${_TARGET_NAME}
-    COMMAND dotnet test "${CURRENT_TARGET_BINARY_DIR}/${_TARGET_NAME}/${_TARGET_NAME}_${CSBUILD_CSPROJ}"
+  add_test(
+    NAME ${_TARGET_NAME}_test
+    COMMAND dotnet test
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}"
+  )
+  set_tests_properties(${_TARGET_NAME}_test PROPERTIES
+      ENVIRONMENT "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_CURRENT_BINARY_DIR}/../../"
   )
 
 endfunction()
