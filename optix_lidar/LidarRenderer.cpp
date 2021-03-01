@@ -1,47 +1,6 @@
 #include "LidarRenderer.h"
 #include <optix_function_table_definition.h> //this include may only appear in a single source file
 
-
-#if defined(_WIN32)
-#include <chrono>
-#include <time.h>
-
-struct timeval {
-    long tv_sec;
-    long tv_usec;
-};
-
-
-int gettimeofdayWin(struct timeval* tp, struct timezone* tzp) {
-    namespace sc = std::chrono;
-    sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
-    sc::seconds s = sc::duration_cast<sc::seconds>(d);
-    tp->tv_sec = s.count();
-    tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
-
-    return 0;
-}
-
-long long current_timestampL()
-{
-    struct timeval te;
-    gettimeofdayWin(&te, NULL); // get current time
-    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
-    return milliseconds;
-}
-
-#else
-
-long long current_timestampL()
-{
-    struct timeval te;
-    gettimeofday(&te, nullptr); // get current time
-    long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
-    return milliseconds;
-}
-
-#endif // _WIN32
-
 extern "C" char embedded_ptx_code[];
 
 /*! SBT record for a raygen program */
@@ -67,7 +26,7 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) HitgroupRecord
   TriangleMeshSBTData data;
 };
 
-void LidarRenderer::initialize()
+LidarRenderer::LidarRenderer()
 {
   initOptix();
   std::cout << "creating optix context ..." << std::endl;
@@ -90,9 +49,31 @@ void LidarRenderer::initialize()
   std::cout << GDT_TERMINAL_DEFAULT;
 }
 
-LidarRenderer::LidarRenderer()
+LidarRenderer::~LidarRenderer()
 {
-  initialize();
+  std::cout << "freeing OptiX resources ..." << std::endl;
+  launchParamsBuffer.free();
+  OPTIX_CHECK(optixPipelineDestroy(pipeline));
+  for (auto & hit_pg : hitgroupPGs) {
+    OPTIX_CHECK(optixProgramGroupDestroy(hit_pg));
+  }
+  for (auto & miss_pg : missPGs) {
+    OPTIX_CHECK(optixProgramGroupDestroy(miss_pg));
+  }
+  for (auto & ray_pg : raygenPGs) {
+    OPTIX_CHECK(optixProgramGroupDestroy(ray_pg));
+  }
+
+  for (auto & texture_object : textureObjects) {
+    cudaDestroyTextureObject(texture_object);
+  }
+
+  for (auto & texture_array : textureArrays) {
+    cudaFreeArray(texture_array);
+  }
+
+  OPTIX_CHECK(optixModuleDestroy(module));
+  OPTIX_CHECK(optixDeviceContextDestroy(optixContext));
 }
 
 void LidarRenderer::addTextures(Textures textures)
@@ -172,59 +153,71 @@ void LidarRenderer::update_structs_for_model()
 
 void LidarRenderer::createTextures()
 {
-    std::cout << "create textures " << std::endl;
-    size_t numTextures = model.textures_map.size();
-    textureArrays.clear();
-    textureObjects.clear();
-    textureArrays.resize(numTextures);
-    textureObjects.resize(numTextures);
+  std::cout << "create textures " << std::endl;
+  size_t numTextures = model.textures_map.size();
+  textureArrays.clear();
+  textureObjects.clear();
+  textureArrays.resize(numTextures);
+  textureObjects.resize(numTextures);
 
-    size_t index = 0;
-    for (const auto & kv : model.textures_map) {
-      auto texture = kv.second;
-      cudaResourceDesc res_desc = {};
+  size_t index = 0;
 
-      cudaChannelFormatDesc channel_desc;
-      int32_t width  = texture->resolution.x;
-      int32_t height = texture->resolution.y;
-      int32_t numComponents = 4;
-      int32_t pitch  = width*numComponents*sizeof(uint8_t);
-      channel_desc = cudaCreateChannelDesc<uchar4>();
+  for (auto & texture_object : textureObjects) {
+    CUDA_CHECK(DestroyTextureObject(texture_object));
+  }
 
-      cudaArray_t   &pixelArray = textureArrays[index];
-      CUDA_CHECK(MallocArray(&pixelArray,
-                             &channel_desc,
-                             width,height));
+  for (auto & texture_array : textureArrays) {
+    CUDA_CHECK(FreeArray(texture_array));
+  }
 
-      CUDA_CHECK(Memcpy2DToArray(pixelArray,
-                                 /* offset */0,0,
-                                 texture->pixel,
-                                 pitch,pitch,height,
-                                 cudaMemcpyHostToDevice));
+  textureObjects.clear();
+  textureArrays.clear();
 
-      res_desc.resType          = cudaResourceTypeArray;
-      res_desc.res.array.array  = pixelArray;
+  for (const auto & kv : model.textures_map) {
+    auto texture = kv.second;
+    cudaResourceDesc res_desc = {};
 
-      cudaTextureDesc tex_desc     = {};
-      tex_desc.addressMode[0]      = cudaAddressModeWrap;
-      tex_desc.addressMode[1]      = cudaAddressModeWrap;
-      tex_desc.filterMode          = cudaFilterModeLinear;
-      tex_desc.readMode            = cudaReadModeNormalizedFloat;
-      tex_desc.normalizedCoords    = 1;
-      tex_desc.maxAnisotropy       = 1;
-      tex_desc.maxMipmapLevelClamp = 99;
-      tex_desc.minMipmapLevelClamp = 0;
-      tex_desc.mipmapFilterMode    = cudaFilterModePoint;
-      tex_desc.borderColor[0]      = 1.0f;
-      tex_desc.sRGB                = 0;
+    cudaChannelFormatDesc channel_desc;
+    int32_t width = texture->resolution.x;
+    int32_t height = texture->resolution.y;
+    int32_t numComponents = 4;
+    int32_t pitch = width*numComponents*sizeof(uint8_t);
+    channel_desc = cudaCreateChannelDesc<uchar4>();
 
-      // Create texture object
-      cudaTextureObject_t cuda_tex = 0;
-      CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-      textureObjects[index] = cuda_tex;
-      index++;
-    }
-    std::cout << "create textures ends " << std::endl;
+    cudaArray_t &pixelArray = textureArrays[index];
+    CUDA_CHECK(MallocArray(&pixelArray,
+                           &channel_desc,
+                           width,height));
+
+    CUDA_CHECK(Memcpy2DToArray(pixelArray,
+                               /* offset */0,0,
+                               texture->pixel,
+                               pitch,pitch,height,
+                               cudaMemcpyHostToDevice));
+
+    res_desc.resType = cudaResourceTypeArray;
+    res_desc.res.array.array = pixelArray;
+
+    cudaTextureDesc tex_desc = {};
+    tex_desc.addressMode[0] = cudaAddressModeWrap;
+    tex_desc.addressMode[1] = cudaAddressModeWrap;
+    tex_desc.filterMode = cudaFilterModeLinear;
+    tex_desc.readMode = cudaReadModeNormalizedFloat;
+    tex_desc.normalizedCoords = 1;
+    tex_desc.maxAnisotropy = 1;
+    tex_desc.maxMipmapLevelClamp = 99;
+    tex_desc.minMipmapLevelClamp = 0;
+    tex_desc.mipmapFilterMode = cudaFilterModePoint;
+    tex_desc.borderColor[0] = 1.0f;
+    tex_desc.sRGB = 0;
+
+    // Create texture object
+    cudaTextureObject_t cuda_tex = 0;
+    CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+    textureObjects[index] = cuda_tex;
+    index++;
+  }
+  std::cout << "create textures ends " << std::endl;
 }
 
 OptixTraversableHandle LidarRenderer::buildAccel(bool update)
@@ -642,7 +635,6 @@ void LidarRenderer::buildSBT()
     // ------------------------------------------------------------------
     // build hitgroup records
     // ------------------------------------------------------------------
-    int numObjects = (int)model.meshes_map.size();
     std::vector<HitgroupRecord> hitgroupRecords;
     int meshID = 0;
     for (const auto & kv : model.meshes_map)
@@ -798,7 +790,7 @@ void LidarRenderer::downloadPoints(RaycastResults &result)
     hitBuffer.download(hits.data(), launchParams.rayCount);
     raysPerLidarBuffer.download(raysPerLidar.data(), launchParams.lidarCount);
 
-    if (hits.size() != launchParams.rayCount)
+    if (hits.size() != static_cast<size_t>(launchParams.rayCount))
     {
         std::cerr << "wrong buffer size " << std::endl;
         return;
