@@ -777,6 +777,7 @@ void LidarRenderer::downloadPoints(RaycastResults &result)
   hits.resize(launchParams.rayCount);
   std::vector<int> raysPerLidar;
   raysPerLidar.resize(launchParams.lidarCount);
+  result.clear();
 
   positionBuffer.download(allPoints.data(), launchParams.rayCount*4);
   hitBuffer.download(hits.data(), launchParams.rayCount);
