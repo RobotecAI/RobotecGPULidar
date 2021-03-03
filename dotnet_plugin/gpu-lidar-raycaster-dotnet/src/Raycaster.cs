@@ -9,7 +9,7 @@ public class Raycaster : IDisposable
 {
   private IntPtr m_NativeRaycaster = IntPtr.Zero;
   public Raycaster() {
-    m_NativeRaycaster = Internal_CreateNativeRaycaster();
+    m_NativeRaycaster = NativeMethods.Internal_CreateNativeRaycaster();
   }
 
   ~Raycaster() {
@@ -37,19 +37,19 @@ public class Raycaster : IDisposable
 
   public void AddOrUpdateMesh(Mesh mesh) {
     NativeHandleCheck();
-    Internal_AddOrUpdateMesh(m_NativeRaycaster, mesh.id, mesh.vertices, mesh.normals,
+    NativeMethods.Internal_AddOrUpdateMesh(m_NativeRaycaster, mesh.id, mesh.vertices, mesh.normals,
       mesh.texture_coordinates, mesh.indices, mesh.indices.Length, mesh.vertices.Length);
   }
 
   public void Raycast(LidarSource source, ref RaycastResults res) {
     NativeHandleCheck();
-    Internal_Raycast(m_NativeRaycaster, source.source_id, source.source_pos, source.directions,
+    NativeMethods.Internal_Raycast(m_NativeRaycaster, source.source_id, source.source_pos, source.directions,
       source.directions.Length, source.range);
 
     // Get points right away - this could also be done in a different time
     IntPtr results_raw = new IntPtr();
     int results_count = 0;
-    Internal_GetPoints(m_NativeRaycaster, ref results_raw, ref results_count);
+    NativeMethods.Internal_GetPoints(m_NativeRaycaster, ref results_raw, ref results_count);
 
     res.lidar_id = source.source_id;
     res.points = new Point4f[results_count];
@@ -76,28 +76,10 @@ public class Raycaster : IDisposable
 
   private void Destroy() {
     if (m_NativeRaycaster != IntPtr.Zero) {
-      Internal_DestroyNativeRaycaster(m_NativeRaycaster);
+      NativeMethods.Internal_DestroyNativeRaycaster(m_NativeRaycaster);
       m_NativeRaycaster = IntPtr.Zero;
     }
   }
-
-  //TODO - wrap & optimize
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern IntPtr Internal_CreateNativeRaycaster();
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_DestroyNativeRaycaster(IntPtr obj);
-
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_AddOrUpdateMesh(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
-    [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices,
-    int indices_size, int size);
-
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_Raycast(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,
-    [In] Point3f[] directions, [In] int directions_count, [In] float range);
-
-  [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_GetPoints(IntPtr obj, ref IntPtr results, ref int results_count);
 
   private bool disposed;
 }

@@ -44,6 +44,8 @@ set(CS_SOURCES
   src/Texture.cs
   src/Primitives.cs
   src/RaycastResult.cs
+  src/DllLoadUtils.cs
+  src/NativeMethods.cs
 )
 
 add_dotnet_library(${PROJECT_NAME}
