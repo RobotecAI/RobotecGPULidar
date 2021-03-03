@@ -101,6 +101,7 @@ void LidarRenderer::addMeshes(Meshes meshes)
   for (auto mesh : meshes) {
     if (model.meshes_map.find(mesh->mesh_id) == model.meshes_map.end()) {
       // The mesh is assumed to be new, otherwise is the old one that moved
+      std::cout << "mesh id: |" << mesh->mesh_id << "|" << std::endl;
       model.needs_rebuild = true;
     }
     model.meshes_map[mesh->mesh_id] = mesh;

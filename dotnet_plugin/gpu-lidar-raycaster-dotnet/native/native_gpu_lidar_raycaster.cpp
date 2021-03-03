@@ -49,6 +49,7 @@ void Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * n
   tm->index = ind;
 
   std::string mesh_id(id);
+  tm->mesh_id = id;
   ol->add_or_update_mesh(tm);
 }
 
