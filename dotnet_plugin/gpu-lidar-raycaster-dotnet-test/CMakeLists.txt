@@ -62,6 +62,8 @@ set(TEST_MODELS
   inverted_sphere
 )
 foreach(test_model ${TEST_MODELS})
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/models/${test_model}.obj ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CSHARP_TARGET_FRAMEWORK}/linux-x64/${test_model}.obj COPYONLY)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/models/${test_model}.mtl ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CSHARP_TARGET_FRAMEWORK}/linux-x64/${test_model}.mtl COPYONLY)
   configure_file(${CMAKE_CURRENT_LIST_DIR}/models/${test_model}.obj ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CSHARP_TARGET_FRAMEWORK}/${test_model}.obj COPYONLY)
   configure_file(${CMAKE_CURRENT_LIST_DIR}/models/${test_model}.mtl ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CSHARP_TARGET_FRAMEWORK}/${test_model}.mtl COPYONLY)
 endforeach(test_model)
