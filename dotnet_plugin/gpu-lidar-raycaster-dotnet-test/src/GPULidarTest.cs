@@ -20,7 +20,7 @@ namespace GPULidarTest
         {
             Raycaster lidar = new Raycaster();
             ModelLoader ml = new ModelLoader();
-            
+
             ml.LoadModel(AppDomain.CurrentDomain.BaseDirectory + "cube.obj");
             var meshes_num = ml.GetNumberOfMeshes();
 
@@ -57,7 +57,7 @@ namespace GPULidarTest
             // Hitpoint is expected to be near (-1,0,0)
             var distance = MathF.Sqrt(
               MathF.Pow((rr.points[0].x + 1), 2) +
-              MathF.Pow((rr.points[0].y), 2) + 
+              MathF.Pow((rr.points[0].y), 2) +
               MathF.Pow((rr.points[0].z), 2)
             );
             Assert.InRange<float>(distance, 0f, 0.01f);
@@ -70,7 +70,7 @@ namespace GPULidarTest
         {
             Raycaster lidar = new Raycaster();
             ModelLoader ml = new ModelLoader();
-            
+
             ml.LoadModel(AppDomain.CurrentDomain.BaseDirectory + "2cubes.obj");
             var meshes_num = ml.GetNumberOfMeshes();
 
@@ -110,9 +110,9 @@ namespace GPULidarTest
         {
             Raycaster lidar = new Raycaster();
             ModelLoader ml = new ModelLoader();
-            
+
             // Inverted sphere is a 1m radius sphere centered in (0,0,0) with normals flipped
-            // inside. 
+            // inside.
             ml.LoadModel(AppDomain.CurrentDomain.BaseDirectory + "inverted_sphere.obj");
             var meshes_num = ml.GetNumberOfMeshes();
 
@@ -140,7 +140,7 @@ namespace GPULidarTest
                 var z_ = random.NextDouble();
                 var norm_distance_ = 1/(MathF.Sqrt(
                   MathF.Pow((float)x_, 2) +
-                  MathF.Pow((float)y_, 2) + 
+                  MathF.Pow((float)y_, 2) +
                   MathF.Pow((float)z_, 2)
                 ));
                 random_directions[i].x = (float)x_ * norm_distance_;
@@ -169,12 +169,12 @@ namespace GPULidarTest
               var expected_point = random_directions[i];
               var distance = MathF.Sqrt(
                 MathF.Pow((rr.points[i].x - expected_point.x), 2) +
-                MathF.Pow((rr.points[i].y - expected_point.y), 2) + 
+                MathF.Pow((rr.points[i].y - expected_point.y), 2) +
                 MathF.Pow((rr.points[i].z - expected_point.z), 2)
               );
               Assert.InRange<float>(distance, 0f, 0.15f);
             }
-            
+
             lidar.Dispose();
         }
     }
