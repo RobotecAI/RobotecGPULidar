@@ -71,7 +71,7 @@ void Internal_GetPoints(void * obj, LidarPoint ** results, int * results_count)
 {
   auto *ol = (OptiXLidar *)obj;
   ol->get_all_points();
-  auto rr = ol->last_results();
+  const RaycastResults& rr = ol->last_results();
   if (rr.size() == 0) {
     results_count = 0;
     return;
@@ -79,7 +79,7 @@ void Internal_GetPoints(void * obj, LidarPoint ** results, int * results_count)
   auto & r = rr[0]; // TODO
 
   *results_count = r.points.size();
-  *results = r.points.data();
+  *results = (LidarPoint*)r.points.data();
 }
 
 } // extern "C"

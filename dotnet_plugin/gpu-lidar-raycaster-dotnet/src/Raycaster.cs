@@ -49,7 +49,7 @@ public class Raycaster : IDisposable
     // Get points right away - this could also be done in a different time
     IntPtr results_raw = new IntPtr();
     int results_count = 0;
-    Internal_GetPoints(m_NativeRaycaster, source.source_id, ref results_raw, ref results_count);
+    Internal_GetPoints(m_NativeRaycaster, ref results_raw, ref results_count);
 
     res.lidar_id = source.source_id;
     res.points = new Point4f[results_count];
@@ -97,8 +97,7 @@ public class Raycaster : IDisposable
     [In] Point3f[] directions, [In] int directions_count, [In] float range);
 
   [DllImport("libnative_gpu_lidar_raycaster.so", CallingConvention = CallingConvention.Cdecl)]
-  private static extern void Internal_GetPoints(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id,
-    ref IntPtr results, ref int results_count);
+  private static extern void Internal_GetPoints(IntPtr obj, ref IntPtr results, ref int results_count);
 
   private bool disposed;
 }

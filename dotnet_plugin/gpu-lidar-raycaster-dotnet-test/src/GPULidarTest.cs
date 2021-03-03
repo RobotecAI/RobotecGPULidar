@@ -7,6 +7,14 @@ namespace GPULidarTest
 {
     public class GPURaycastingTest
     {
+        void PrintHits(RaycastResults rr)
+        {
+            Console.WriteLine("Resulted " + rr.points.Length + " hits:");
+            foreach(var point in rr.points) {
+              Console.WriteLine("Hitpoint: (" + point.x + ',' + point.y + ',' + point.z + ')');
+            }
+        }
+
         [Fact]
         public void SimpleRaycast()
         {
@@ -33,20 +41,22 @@ namespace GPULidarTest
             LidarSource ls = new LidarSource()
             {
               source_id = "test_lidar",
-              source_pos = new Point3f() { x = 2, y = 0, z = 0 },
-              directions = new Point3f[1] {new Point3f() { x = 0, y = 0, z = 0 }},
-              range = 10
+              source_pos = new Point3f() { x = -30.0f, y = 0.0f, z = 0.0f },
+              directions = new Point3f[1] {new Point3f() { x = 1.0f, y = 0.0f, z = 0.0f }},
+              range = 100.0f
             };
 
             RaycastResults rr = new RaycastResults();
             lidar.Raycast(ls, ref rr);
 
+            PrintHits(rr);
+
             // Only one rayhit expected
             Assert.True(1 == rr.points.Length);
 
-            // Hitpoint is expected to be near (1,0,0)
+            // Hitpoint is expected to be near (-1,0,0)
             var distance = MathF.Sqrt(
-              MathF.Pow((rr.points[0].x - 1), 2) +
+              MathF.Pow((rr.points[0].x + 1), 2) +
               MathF.Pow((rr.points[0].y), 2) + 
               MathF.Pow((rr.points[0].z), 2)
             );
@@ -82,13 +92,12 @@ namespace GPULidarTest
             {
               source_id = "test_lidar",
               source_pos = new Point3f() { x = 2, y = 0, z = 0 },
-              directions = new Point3f[1] {new Point3f() { x = 0, y = 0, z = 0 }},
+              directions = new Point3f[1] {new Point3f() { x = -1, y = 0, z = 0 }},
               range = 10
             };
 
             RaycastResults rr = new RaycastResults();
             lidar.Raycast(ls, ref rr);
-
 
             // No hit is expected
             Assert.True(0 == rr.points.Length);
@@ -142,13 +151,15 @@ namespace GPULidarTest
             LidarSource ls = new LidarSource()
             {
               source_id = "test_lidar",
-              source_pos = new Point3f() { x = 2, y = 0, z = 0 },
+              source_pos = new Point3f() { x = 0, y = 0, z = 0 },
               directions = random_directions,
               range = 10
             };
 
             RaycastResults rr = new RaycastResults();
             lidar.Raycast(ls, ref rr);
+
+            PrintHits(rr);
 
             // 100 hits are expected
             Assert.True(100 == rr.points.Length);
