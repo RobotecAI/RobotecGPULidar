@@ -91,16 +91,32 @@ namespace GPULidarTest
             LidarSource ls = new LidarSource()
             {
               source_id = "test_lidar",
-              source_pos = new Point3f() { x = 2, y = 0, z = 0 },
-              directions = new Point3f[1] {new Point3f() { x = -1, y = 0, z = 0 }},
-              range = 10
+              source_pos = new Point3f() { x = -30.0f, y = 0.0f, z = 0.0f },
+              directions = new Point3f[1] {new Point3f() { x = 1.0f, y = 0.0f, z = 0.0f }},
+              range = 100.0f
             };
 
             RaycastResults rr = new RaycastResults();
             lidar.Raycast(ls, ref rr);
+            PrintHits(rr);
 
             // No hit is expected
             Assert.True(0 == rr.points.Length);
+
+            ls = new LidarSource()
+            {
+              source_id = "test_lidar",
+              source_pos = new Point3f() { x = -30.0f, y = 0.0f, z = 2.0f },
+              directions = new Point3f[1] {new Point3f() { x = 1.0f, y = 0.0f, z = 0.0f }},
+              range = 100.0f
+            };
+
+            rr = new RaycastResults();
+            lidar.Raycast(ls, ref rr);
+            PrintHits(rr);
+
+            // One hit is expected
+            Assert.True(1 == rr.points.Length);
 
             lidar.Dispose();
         }
