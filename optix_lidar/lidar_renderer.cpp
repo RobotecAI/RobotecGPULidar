@@ -773,7 +773,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
 void LidarRenderer::downloadPoints(RaycastResults &result)
 {
   result.clear();
-  if (model.mesh_map.size() == 0) return;
+  if (model.meshes_map.size() == 0) return;
 
   std::vector<float> allPoints;
   allPoints.resize(launchParams.rayCount*4);
