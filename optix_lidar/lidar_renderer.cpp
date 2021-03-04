@@ -671,6 +671,7 @@ void LidarRenderer::render(std::vector<LidarSource> &lidars)
   // sanity check: make sure we launch only after first resize is
   // already done:
   if (launchParams.rayCount == 0) return;
+  if (model.meshes_map.size() == 0) return;
 
   update_structs_for_model();
   uploadRays(lidars);
@@ -771,13 +772,15 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
   /*! download the rendered color buffer */
 void LidarRenderer::downloadPoints(RaycastResults &result)
 {
+  result.clear();
+  if (model.mesh_map.size() == 0) return;
+
   std::vector<float> allPoints;
   allPoints.resize(launchParams.rayCount*4);
   std::vector<int> hits;
   hits.resize(launchParams.rayCount);
   std::vector<int> raysPerLidar;
   raysPerLidar.resize(launchParams.lidarCount);
-  result.clear();
 
   positionBuffer.download(allPoints.data(), launchParams.rayCount*4);
   hitBuffer.download(hits.data(), launchParams.rayCount);
@@ -799,10 +802,11 @@ void LidarRenderer::downloadPoints(RaycastResults &result)
       if(hits[index])
       {
         LidarPoint point;
-        point.x = allPoints[index*4];
-        point.y = allPoints[index*4+1];
-        point.z = allPoints[index*4+2];
-        point.i = allPoints[index*4+3];
+        auto offset = index * 4;
+        point.x = allPoints[offset];
+        point.y = allPoints[offset+1];
+        point.z = allPoints[offset+2];
+        point.i = allPoints[offset+3];
         res.points.push_back(point);
       }
       index++;
