@@ -34,9 +34,10 @@ enum GPULIDAR_RETURN_CODE {
 };
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-OptiXLidar * Internal_CreateNativeRaycaster()
+int Internal_CreateNativeRaycaster(OptiXLidar ** lidar)
 {
-  return new OptiXLidar();
+  LIDAR_GPU_TRY_CATCH(*lidar = new OptiXLidar());
+  return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT

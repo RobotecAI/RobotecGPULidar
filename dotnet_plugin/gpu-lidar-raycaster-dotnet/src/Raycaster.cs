@@ -12,7 +12,7 @@ public class Raycaster : IDisposable
   public Raycaster()
   {
     m_flatFloatBuffer = new float[0];
-    m_NativeRaycaster = NativeMethods.Internal_CreateNativeRaycaster();
+    CheckError(NativeMethods.Internal_CreateNativeRaycaster(out m_NativeRaycaster));
   }
 
   ~Raycaster()
