@@ -9,7 +9,7 @@ namespace GPULidarRaycaster
         private static readonly IntPtr native_raycaster_lib = dllLoadUtils.LoadLibraryNoSuffix("native_gpu_lidar_raycaster");
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr Internal_CreateNativeRaycasterType();
+        internal delegate int Internal_CreateNativeRaycasterType(out IntPtr raycaster);
         internal static Internal_CreateNativeRaycasterType
             Internal_CreateNativeRaycaster =
             (Internal_CreateNativeRaycasterType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
