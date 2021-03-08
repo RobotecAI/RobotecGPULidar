@@ -11,8 +11,27 @@
 #include "visibility_control.h"
 
 using namespace gdt;
+static std::string last_gpu_library_error = ""; // no support for multithreading
+
+#define LIDAR_GPU_TRY_CATCH( call )                                                               \
+{                                                                                                 \
+  try {                                                                                           \
+    call;                                                                                         \
+  }                                                                                               \
+  catch (std::runtime_error & err) {                                                              \
+    last_gpu_library_error = err.what();                                                          \
+    fprintf(stderr, "Runtime exception %s", err.what());                                          \
+    return GPULIDAR_ERROR;                                                                        \
+  }                                                                                               \
+}
 
 extern "C" {
+
+// First attempt - on any error the module is deemed unusable
+enum GPULIDAR_RETURN_CODE {
+  GPULIDAR_SUCCESS = 0,
+  GPULIDAR_ERROR
+};
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 OptiXLidar * Internal_CreateNativeRaycaster()
@@ -26,9 +45,15 @@ void Internal_DestroyNativeRaycaster(void * obj)
   delete (OptiXLidar *)obj;
 }
 
+GPU_LIDAR_RAYCASTER_C_EXPORT
+const char * Internal_GetLastError()
+{ // Return pointer to memory of last_gpu_library_error. Interpreted as null-terminated string
+  return last_gpu_library_error.c_str();
+}
+
 // TODO - optimize this POC
 GPU_LIDAR_RAYCASTER_C_EXPORT
-void Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * normals,
+int Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * normals,
   vec2f * texture_coordinates, vec3i * indices, int indices_size, int size)
 {
   auto *ol = (OptiXLidar *)obj;
@@ -50,11 +75,13 @@ void Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * n
 
   std::string mesh_id(id);
   tm->mesh_id = id;
-  ol->add_or_update_mesh(tm);
+
+  LIDAR_GPU_TRY_CATCH(ol->add_or_update_mesh(tm));
+  return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-void Internal_Raycast(void * obj, char * source_id, Point source_pos, Point * directions, int directions_count,
+int Internal_Raycast(void * obj, char * source_id, Point source_pos, Point * directions, int directions_count,
   float range)
 {
   auto *ol = (OptiXLidar *)obj;
@@ -64,23 +91,27 @@ void Internal_Raycast(void * obj, char * source_id, Point source_pos, Point * di
   std::vector<Point> d(directions, directions+directions_count);
   ls.directions = d;
   ls.range = range;
-  ol->raycast(ls);
+  LIDAR_GPU_TRY_CATCH(ol->raycast(ls));
+  return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-void Internal_GetPoints(void * obj, LidarPoint ** results, int * results_count)
+int Internal_GetPoints(void * obj, LidarPoint ** results, int * results_count)
 {
   auto *ol = (OptiXLidar *)obj;
-  ol->get_all_points();
+
+  LIDAR_GPU_TRY_CATCH(ol->get_all_points());
+
   const RaycastResults& rr = ol->last_results();
   if (rr.size() == 0) {
     results_count = 0;
-    return;
+    return GPULIDAR_SUCCESS;
   }
   auto & r = rr[0]; // TODO
 
   *results_count = r.points.size();
   *results = (LidarPoint*)r.points.data();
+  return GPULIDAR_SUCCESS;
 }
 
 } // extern "C"

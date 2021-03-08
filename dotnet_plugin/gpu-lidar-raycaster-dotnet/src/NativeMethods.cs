@@ -27,7 +27,16 @@ namespace GPULidarRaycaster
             typeof(Internal_DestroyNativeRaycasterType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void Internal_AddOrUpdateMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
+        internal delegate IntPtr Internal_GetLastErrorType();
+        internal static Internal_GetLastErrorType
+            Internal_GetLastError =
+            (Internal_GetLastErrorType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            native_raycaster_lib,
+            "Internal_GetLastError"),
+            typeof(Internal_GetLastErrorType));
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int Internal_AddOrUpdateMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
           [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices, int indices_size, int size);
         internal static Internal_AddOrUpdateMeshType
             Internal_AddOrUpdateMesh =
@@ -37,7 +46,7 @@ namespace GPULidarRaycaster
             typeof(Internal_AddOrUpdateMeshType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void Internal_RaycastType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,
+        internal delegate int Internal_RaycastType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,
           [In] Point3f[] directions, [In] int directions_count, [In] float range);
         internal static Internal_RaycastType
             Internal_Raycast =
@@ -47,7 +56,7 @@ namespace GPULidarRaycaster
             typeof(Internal_RaycastType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void Internal_GetPointsType(IntPtr obj, ref IntPtr results, ref int results_count);
+        internal delegate int Internal_GetPointsType(IntPtr obj, ref IntPtr results, ref int results_count);
         internal static Internal_GetPointsType
             Internal_GetPoints =
             (Internal_GetPointsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
