@@ -8,7 +8,7 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
     * Downloads available from developer.nvidia.com
     * Add /usr/local/cuda/bin to your PATH
 * **OptiX 7.2 SDK**
-    * Dowload available here: [NVIDIA-Optix](http://developer.nvidia.com/optix)"
+    * Download available here: [NVIDIA-Optix](http://developer.nvidia.com/optix)
     * Linux: 
         * set the environment variable `OptiX_INSTALL_DIR` to wherever you installed the SDK.  
         `export OptiX_INSTALL_DIR=<wherever you installed OptiX 7.2 SDK>`. Best add this line to your ~/.bashrc file.
@@ -16,6 +16,9 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
         * Install compiler, dkms, libxi, xinerama
         `sudo apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev cmake cmake-curses-gui libxinerama-dev libxcursor-dev`
     * Windows: the installer should automatically put it into the right directory
+* **.net5.0**
+    * Needed for tests only,
+    * Download available here: [.net](https://dotnet.microsoft.com/download/dotnet/)
 * **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
 
 #### Build prerequisites: Git LFS
@@ -45,16 +48,25 @@ If all of these work correctly, your environment is likely setup correctly. Some
 
 ### Building (Linux)
 * Clone the code  
-    `git clone https://gitlab.com/robotec.ai/volvo-cpac/optixlidarsimulator.git`  
-   `cd optixlidar`  
+    `git clone git@gitlab.com:robotec.ai/internal/simulation-platform/modules/lidar-raycasting-gpu.git`  
+    `cd lidar-raycasting-gpu`  
 * Download LFS files
     `git lfs pull`
 * Build the project with cmake  
     `mkdir build`  
     `cd build`   
-    `cmake ..`     
+    `cmake ..` or `cmake .. -DBUILD_TESTS=true` to build with tests     
     `make`
 
+## Running tests
+* Make sure you have tests built:   
+    `cmake .. -DBUILD_TESTS=true`   
+* To run all tests:   
+    `make test`    
+    or   
+    `ctest --output-on-failure` to see more verbose output on failure.
+* For a certain test:   
+    `ctest -R <TEST_NAME> --verbose`
 
 ### Building (Windows)
 * **Using Visual Studio (recommended)**

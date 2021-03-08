@@ -67,14 +67,15 @@ SampleRenderer::SampleRenderer(const Model *model)
 
 void SampleRenderer::createTextures()
 {
-    int numTextures = (int)model->textures.size();
+    int numTextures = (int)model->textures_map.size();
 
     textureArrays.resize(numTextures);
     textureObjects.resize(numTextures);
 
-    for (int textureID = 0; textureID < numTextures; textureID++)
+    int textureIndex = 0;
+    for (const auto & kv : model->textures_map)
     {
-        auto texture = model->textures[textureID];
+        auto texture = kv.second;
 
         cudaResourceDesc res_desc = {};
 
@@ -85,7 +86,7 @@ void SampleRenderer::createTextures()
         int32_t pitch  = width*numComponents*sizeof(uint8_t);
         channel_desc = cudaCreateChannelDesc<uchar4>();
 
-        cudaArray_t   &pixelArray = textureArrays[textureID];
+        cudaArray_t   &pixelArray = textureArrays[textureIndex];
         CUDA_CHECK(MallocArray(&pixelArray,
                                &channel_desc,
                                width,height));
@@ -115,14 +116,15 @@ void SampleRenderer::createTextures()
         // Create texture object
         cudaTextureObject_t cuda_tex = 0;
         CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-        textureObjects[textureID] = cuda_tex;
+        textureObjects[textureIndex] = cuda_tex;
+        textureIndex++;
     }
 }
 
 OptixTraversableHandle SampleRenderer::buildAccel(bool update)
 {
-    const size_t numMeshes = model->meshes.size();
-    
+    const size_t numMeshes = model->meshes_map.size();
+
     for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
     {
         vertexBuffer[meshID].free();
@@ -146,10 +148,11 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
     std::vector<CUdeviceptr> d_indices(numMeshes);
     std::vector<uint32_t> triangleInputFlags(numMeshes);
 
-    for (size_t meshID = 0; meshID < numMeshes; meshID++)
+    size_t meshID = 0;
+    for (const auto & kv : model->meshes_map)
     {
         // upload the model to the device: the builder
-        TriangleMesh &mesh = *model->meshes[meshID];
+        TriangleMesh &mesh = *(kv.second);
         vertexBuffer[meshID].alloc_and_upload(mesh.vertex);
         indexBuffer[meshID].alloc_and_upload(mesh.index);
         if (!mesh.normal.empty())
@@ -185,18 +188,19 @@ OptixTraversableHandle SampleRenderer::buildAccel(bool update)
         triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer        = 0;
         triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes   = 0;
         triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+        meshID++;
     }
     // ==================================================================
     // BLAS setup
     // ==================================================================
 
     OptixAccelBuildOptions accelOptions = {};
-    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE 
+    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
         | OPTIX_BUILD_FLAG_ALLOW_UPDATE
         | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
         ;
     accelOptions.motionOptions.numKeys  = 0; // no motion blur
-    
+
     if (update)
         accelOptions.operation          = OPTIX_BUILD_OPERATION_UPDATE;
     else
@@ -338,7 +342,7 @@ void SampleRenderer::createContext()
 void SampleRenderer::createModule()
 {
     moduleCompileOptions = {};
-    
+
     moduleCompileOptions.maxRegisterCount  = 100;
     moduleCompileOptions.optLevel          = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0;
     moduleCompileOptions.debugLevel        = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
@@ -493,6 +497,7 @@ void SampleRenderer::createPipeline()
 /*! constructs the shader binding table */
 void SampleRenderer::buildSBT()
 {
+    std::cout << "building SBT..." << std::endl;
     // ------------------------------------------------------------------
     // build raygen records
     // ------------------------------------------------------------------
@@ -508,6 +513,7 @@ void SampleRenderer::buildSBT()
     raygenRecordsBuffer.alloc_and_upload(raygenRecords);
     sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
 
+    std::cout << "building SBT miss records..." << std::endl;
     // ------------------------------------------------------------------
     // build miss records
     // ------------------------------------------------------------------
@@ -525,16 +531,19 @@ void SampleRenderer::buildSBT()
     sbt.missRecordStrideInBytes = sizeof(MissRecord);
     sbt.missRecordCount         = (int)missRecords.size();
 
+    std::cout << "building SBT hitgroup records..." << std::endl;
     // ------------------------------------------------------------------
     // build hitgroup records
     // ------------------------------------------------------------------
-    int numObjects = (int)model->meshes.size();
+    int numObjects = (int)model->meshes_map.size();
     std::vector<HitgroupRecord> hitgroupRecords;
-    for (int meshID = 0; meshID < numObjects; meshID++)
+    int meshID = 0;
+    std::cout << "meshes map size " << numObjects <<  std::endl;
+    for (const auto & kv : model->meshes_map)
     {
         for (int rayID = 0; rayID < RAY_TYPE_COUNT; rayID++)
         {
-            auto mesh = model->meshes[meshID];
+            auto mesh = kv.second;
 
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID],&rec));
@@ -545,6 +554,7 @@ void SampleRenderer::buildSBT()
                 rec.data.texture    = textureObjects[mesh->diffuseTextureID];
             } else
             {
+                std::cout << "meshes has texture " << std::endl;
                 rec.data.hasTexture = false;
             }
             rec.data.index    = (vec3i*)indexBuffer[meshID].d_pointer();
@@ -553,7 +563,10 @@ void SampleRenderer::buildSBT()
             rec.data.texcoord = (vec2f*)texcoordBuffer[meshID].d_pointer();
             hitgroupRecords.push_back(rec);
         }
+        meshID++;
     }
+
+    std::cout << "building SBT buffer upload" << std::endl;
     hitgroupRecordsBuffer.free();
     hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
     sbt.hitgroupRecordBase          = hitgroupRecordsBuffer.d_pointer();
@@ -570,13 +583,9 @@ void SampleRenderer::render(std::vector<float> &lidarPoints)
     // already done:
     if (launchParams.frame.size.x == 0) return;
 
-    if (model->moved)
+    if (model->changed)
     {
-        if (model->big == true)
-            launchParams.traversable = buildAccel(/*update = */ false);
-        else
-            launchParams.traversable = buildAccel(/*update = */ true);
-
+        launchParams.traversable = buildAccel(!model->needs_rebuild);
         buildSBT();
     }
     lidarBuffer.upload(lidarPoints.data(),lidarPoints.size());

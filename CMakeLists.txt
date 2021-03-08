@@ -44,7 +44,21 @@ add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 # and final build rules for the project
 # ------------------------------------------------------------------
 set(optix_LIBRARY "")
-add_subdirectory(optixLidar)
+add_subdirectory(optix_lidar)
 if (BUILD_TESTWINDOW)
     add_subdirectory(test)
+endif()
+
+# -------------------
+# build dotnet
+# -------------------
+add_subdirectory(dotnet_plugin/dotnet_cmake_module)
+add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
+
+# ------------------------------------------------------------------
+# tests
+# ------------------------------------------------------------------
+if (BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
 endif()
