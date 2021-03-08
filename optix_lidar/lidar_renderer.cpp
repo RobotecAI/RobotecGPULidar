@@ -50,18 +50,19 @@ LidarRenderer::LidarRenderer()
 }
 
 LidarRenderer::~LidarRenderer()
-{
+{ // using default "noexcept" - the destructor does not use CHECK macros
+  // TODO - is this the behavior we want?
   std::cout << "freeing OptiX resources ..." << std::endl;
   launchParamsBuffer.free();
-  OPTIX_CHECK(optixPipelineDestroy(pipeline));
+  optixPipelineDestroy(pipeline);
   for (auto & hit_pg : hitgroupPGs) {
-    OPTIX_CHECK(optixProgramGroupDestroy(hit_pg));
+    optixProgramGroupDestroy(hit_pg);
   }
   for (auto & miss_pg : missPGs) {
-    OPTIX_CHECK(optixProgramGroupDestroy(miss_pg));
+    optixProgramGroupDestroy(miss_pg);
   }
   for (auto & ray_pg : raygenPGs) {
-    OPTIX_CHECK(optixProgramGroupDestroy(ray_pg));
+    optixProgramGroupDestroy(ray_pg);
   }
 
   for (auto & texture_object : textureObjects) {
@@ -72,8 +73,8 @@ LidarRenderer::~LidarRenderer()
     cudaFreeArray(texture_array);
   }
 
-  OPTIX_CHECK(optixModuleDestroy(module));
-  OPTIX_CHECK(optixDeviceContextDestroy(optixContext));
+  optixModuleDestroy(module);
+  optixDeviceContextDestroy(optixContext);
 }
 
 void LidarRenderer::addTextures(Textures textures)
