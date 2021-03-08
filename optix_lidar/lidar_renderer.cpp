@@ -94,7 +94,7 @@ void LidarRenderer::addTextures(Textures textures)
 
 void LidarRenderer::addMeshes(Meshes meshes)
 {
-  std::cout << "adding meshes count: " << meshes.size() << std::endl;
+  //std::cout << "adding meshes count: " << meshes.size() << std::endl;
   if (meshes.size() == 0) {
     return;
   }
@@ -102,7 +102,7 @@ void LidarRenderer::addMeshes(Meshes meshes)
   for (auto mesh : meshes) {
     if (model.meshes_map.find(mesh->mesh_id) == model.meshes_map.end()) {
       // The mesh is assumed to be new, otherwise is the old one that moved
-      std::cout << "mesh id: |" << mesh->mesh_id << "|" << std::endl;
+      //std::cout << "mesh id: |" << mesh->mesh_id << "|" << std::endl;
       model.needs_rebuild = true;
     }
     model.meshes_map[mesh->mesh_id] = mesh;
@@ -134,28 +134,28 @@ void LidarRenderer::removeTexture(const std::string & id)
 
 void LidarRenderer::update_structs_for_model()
 {
-  std::cout << "update structs for model " << std::endl;
+  //std::cout << "update structs for model " << std::endl;
   if (model.changed)
   {
-    std::string rebuild = model.needs_rebuild ? " and needs rebuild" : "";
-    std::cout << "update structs: model changed" << rebuild << std::endl;
+    //std::string rebuild = model.needs_rebuild ? " and needs rebuild" : "";
+    //std::cout << "update structs: model changed" << rebuild << std::endl;
     launchParams.traversable = buildAccel(!model.needs_rebuild);
     if (model.textures_changed) {
-      std::cout << "update structs: textures_changed, creating " << std::endl;
+      //std::cout << "update structs: textures_changed, creating " << std::endl;
       createTextures();
       model.textures_changed = false;
     }
-    std::cout << "building SBT" << std::endl;
+    //std::cout << "building SBT" << std::endl;
     buildSBT();
     model.needs_rebuild = false;
   }
   model.changed = false;
-  std::cout << "update structs for model ends " << std::endl;
+  //std::cout << "update structs for model ends " << std::endl;
 }
 
 void LidarRenderer::createTextures()
 {
-  std::cout << "create textures " << std::endl;
+  //std::cout << "create textures " << std::endl;
   size_t numTextures = model.textures_map.size();
 
   { // cleaning old textures. TODO - only clean ones that changed or were removed
@@ -217,13 +217,13 @@ void LidarRenderer::createTextures()
     textureObjects[index] = cuda_tex;
     index++;
   }
-  std::cout << "create textures ends " << std::endl;
+  //std::cout << "create textures ends " << std::endl;
 }
 
 OptixTraversableHandle LidarRenderer::buildAccel(bool update)
 {
   const size_t numMeshes = model.meshes_map.size();
-  std::cout << "build accel: " << numMeshes << std::endl;
+  //std::cout << "build accel: " << numMeshes << std::endl;
 
   for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
   {
@@ -382,7 +382,7 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
   tempBuffer.free();
   compactedSizeBuffer.free();
 
-  std::cout << "build accel ends" << std::endl;
+  //std::cout << "build accel ends" << std::endl;
   return asHandle;
 }
 
