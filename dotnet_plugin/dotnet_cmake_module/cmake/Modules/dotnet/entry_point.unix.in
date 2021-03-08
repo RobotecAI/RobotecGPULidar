@@ -1,0 +1,5 @@
+#!/bin/bash
+
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P)"
+
+dotnet ${SCRIPTDIR}/dotnet/@DOTNET_DLL_PATH@
