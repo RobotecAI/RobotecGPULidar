@@ -52,14 +52,14 @@ public class Raycaster : IDisposable
     throw new Exception("Native raycaster exception: [" + error + "]");
   }
 
-  public void AddOrUpdateMesh(Mesh mesh)
+  public void AddOrUpdateMesh(in Mesh mesh)
   {
     NativeHandleCheck();
     CheckError(NativeMethods.Internal_AddOrUpdateMesh(m_NativeRaycaster, mesh.id, mesh.vertices,
       mesh.normals, mesh.texture_coordinates, mesh.indices, mesh.indices.Length, mesh.vertices.Length));
   }
 
-  public void Raycast(LidarSource source, ref RaycastResults res)
+  public void Raycast(in LidarSource source, ref RaycastResults res)
   {
     NativeHandleCheck();
     CheckError(NativeMethods.Internal_Raycast(m_NativeRaycaster, source.source_id,
