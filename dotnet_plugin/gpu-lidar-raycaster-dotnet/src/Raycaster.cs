@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace GPULidarRaycaster
 {
@@ -9,9 +10,14 @@ public class Raycaster : IDisposable
 {
   private IntPtr m_NativeRaycaster = IntPtr.Zero;
   private float[] m_flatFloatBuffer;
+  private IntPtr m_resultsRaw;
+  private Dictionary<string, Point4f[]> m_resultBuffers;
+
   public Raycaster()
   {
     m_flatFloatBuffer = new float[0];
+    m_resultBuffers = new Dictionary<string, Point4f[]>();
+    m_resultsRaw = new IntPtr();
     CheckError(NativeMethods.Internal_CreateNativeRaycaster(out m_NativeRaycaster));
   }
 
@@ -60,19 +66,29 @@ public class Raycaster : IDisposable
      source.source_pos, source.directions, source.directions.Length, source.range));
 
     // Get points right away - this could also be done in a different time
-    IntPtr results_raw = new IntPtr();
+
     int results_count = 0;
-    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, ref results_raw, ref results_count));
+    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, ref m_resultsRaw, ref results_count));
+
+    if (!m_resultBuffers.ContainsKey(source.source_id)) {
+      m_resultBuffers.Add(source.source_id, new Point4f[results_count]);
+    }
+    else {
+      var buffer_size = m_resultBuffers[source.source_id].Length;
+      if (buffer_size < results_count) {
+        m_resultBuffers[source.source_id] = new Point4f[results_count];
+      }
+    }
 
     res.lidar_id = source.source_id;
-    res.points = new Point4f[results_count];
+    res.points = m_resultBuffers[source.source_id];
     if (results_count > 0) {
       int single_point_number_of_floats = Marshal.SizeOf(res.points[0]) / sizeof(float);
       int floats_total = results_count * single_point_number_of_floats;
       if (m_flatFloatBuffer.Length < floats_total) {
         m_flatFloatBuffer = new float[floats_total];
       }
-      Marshal.Copy(results_raw, m_flatFloatBuffer, 0, floats_total);
+      Marshal.Copy(m_resultsRaw, m_flatFloatBuffer, 0, floats_total);
       for (int i = 0; i < results_count; ++i) {
         int flat_offset = i * single_point_number_of_floats;
         res.points[i].x = m_flatFloatBuffer[flat_offset];
