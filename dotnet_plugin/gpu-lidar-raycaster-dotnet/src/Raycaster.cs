@@ -52,11 +52,23 @@ public class Raycaster : IDisposable
     throw new Exception("Native raycaster exception: [" + error + "]");
   }
 
-  public void AddOrUpdateMesh(in Mesh mesh)
+  public void AddMesh(in Mesh mesh)
   {
     NativeHandleCheck();
-    CheckError(NativeMethods.Internal_AddOrUpdateMesh(m_NativeRaycaster, mesh.id, mesh.vertices,
-      mesh.normals, mesh.texture_coordinates, mesh.indices, mesh.indices.Length, mesh.vertices.Length));
+    CheckError(NativeMethods.Internal_AddMesh(m_NativeRaycaster, mesh.id, mesh.transform, mesh.is_global, mesh.vertices,
+      mesh.normals, mesh.texture_coordinates, mesh.indices, mesh.indices.Length, mesh.vertices.Length, mesh.transform.Length));
+  }
+
+  public void RemoveMesh(in string mesh_id)
+  {
+    NativeHandleCheck();
+    CheckError(NativeMethods.Internal_RemoveMesh(m_NativeRaycaster, mesh_id));
+  }
+
+  public void UpdateMeshTransform(in string mesh_id, in float[] transform)
+  {
+    NativeHandleCheck();
+    CheckError(NativeMethods.Internal_UpdateMeshTransform(m_NativeRaycaster, mesh_id, transform, transform.Length));
   }
 
   public void Raycast(in LidarSource source, ref RaycastResults res)
@@ -75,7 +87,7 @@ public class Raycaster : IDisposable
     }
     else {
       var buffer_size = m_resultBuffers[source.source_id].Length;
-      if (buffer_size < results_count) {
+      if (buffer_size != results_count) {
         m_resultBuffers[source.source_id] = new Point4f[results_count];
       }
     }

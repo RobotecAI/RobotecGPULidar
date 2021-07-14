@@ -36,14 +36,33 @@ namespace GPULidarRaycaster
             typeof(Internal_GetLastErrorType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int Internal_AddOrUpdateMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] Vector3f[] vertices,
-          [In] Vector3f[] normals, [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices, int indices_size, int size);
-        internal static Internal_AddOrUpdateMeshType
-            Internal_AddOrUpdateMesh =
-            (Internal_AddOrUpdateMeshType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        internal delegate int Internal_AddMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id,
+          [In] float[] transform, [In] bool is_global, [In] Vector3f[] vertices, [In] Vector3f[] normals,
+          [In] Vector2f[] texture_coordinates, [In] Vector3i[] indices, int indices_size, int mesh_size, int transform_size);
+        internal static Internal_AddMeshType
+            Internal_AddMesh =
+            (Internal_AddMeshType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
             native_raycaster_lib,
-            "Internal_AddOrUpdateMesh"),
-            typeof(Internal_AddOrUpdateMeshType));
+            "Internal_AddMesh"),
+            typeof(Internal_AddMeshType));
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int Internal_RemoveMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id);
+        internal static Internal_RemoveMeshType
+            Internal_RemoveMesh =
+            (Internal_RemoveMeshType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            native_raycaster_lib,
+            "Internal_RemoveMesh"),
+            typeof(Internal_RemoveMeshType));
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int Internal_UpdateMeshTransformType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, [In] float[] transform, int transform_size);
+        internal static Internal_UpdateMeshTransformType
+            Internal_UpdateMeshTransform =
+            (Internal_UpdateMeshTransformType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            native_raycaster_lib,
+            "Internal_UpdateMeshTransform"),
+            typeof(Internal_UpdateMeshTransformType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int Internal_RaycastType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id, [In] Point3f source_pos,
