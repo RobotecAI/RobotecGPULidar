@@ -2,6 +2,10 @@
 #include <cuda_runtime.h>
 #include "LaunchParams.h"
 
+#define NDEBUG
+//#undef NDEBUG
+#include <assert.h>
+
 extern "C" __constant__ LaunchLidarParams optixLaunchLidarParams;
 
 static __forceinline__ __device__
@@ -33,10 +37,14 @@ extern "C" __global__ void __closesthit__lidar()
       = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();
 
     const int   primID = optixGetPrimitiveIndex();
-    const vec3i index  = sbtData.index[primID];
+    assert(primID < sbtData.index_count);
+    const vec3i index = sbtData.index[primID];
     const float u = optixGetTriangleBarycentrics().x;
     const float v = optixGetTriangleBarycentrics().y;
 
+    assert(index.x < sbtData.vertex_count);
+    assert(index.y < sbtData.vertex_count);
+    assert(index.z < sbtData.vertex_count);
     const vec3f &A     = sbtData.vertex[index.x];
     const vec3f &B     = sbtData.vertex[index.y];
     const vec3f &C     = sbtData.vertex[index.z];
@@ -47,18 +55,29 @@ extern "C" __global__ void __closesthit__lidar()
     uint32_t intensity = 0;
     if (sbtData.hasTexture && sbtData.texcoord)
     {
-    float intensityFloat = 0.f;
+        assert(index.x < sbtData.texcoord_count);
+        assert(index.y < sbtData.texcoord_count);
+        assert(index.z < sbtData.texcoord_count);
         const vec2f tc
             = (1.f-u-v) * sbtData.texcoord[index.x]
             +         u * sbtData.texcoord[index.y]
             +         v * sbtData.texcoord[index.z];
 
-      vec4f fromTexture = tex2D<float4>(sbtData.texture,tc.x,tc.y);
-      intensityFloat = fromTexture.w; // only alpha canal
-      memcpy(&intensity, &intensityFloat, sizeof(intensityFloat));
+        // Texture access is resilient to out-of-bounds and is governed by cudaTextureAddressMode.
+        vec4f fromTexture = tex2D<float4>(sbtData.texture,tc.x,tc.y);
+        float intensityFloat = fromTexture.w; // only alpha canal
+        memcpy(&intensity, &intensityFloat, sizeof(intensityFloat));
     }
-    
-    optixSetPayload_2(intensity);
+
+    vec3f rayHitPoint = vec3f(prd.x, prd.y, prd.z);
+    vec3f transformedPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
+
+    const int ix = optixGetLaunchIndex().x;
+
+    optixLaunchLidarParams.positionBuffer[ix*4  ] = transformedPoint.x;
+    optixLaunchLidarParams.positionBuffer[ix*4+1] = transformedPoint.y;
+    optixLaunchLidarParams.positionBuffer[ix*4+2] = transformedPoint.z;
+    optixLaunchLidarParams.positionBuffer[ix*4+3] = intensity;
     optixSetPayload_3(1);
 }
 
@@ -71,6 +90,7 @@ extern "C" __global__ void __miss__lidar()
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     prd = vec3f(0.f);
     optixSetPayload_3(0);
+
 }
 
 extern "C" __global__ void __raygen__renderLidar()
@@ -106,20 +126,10 @@ extern "C" __global__ void __raygen__renderLidar()
                LIDAR_RAY_TYPE_COUNT,         // SBT stride
                LIDAR_RAY_TYPE,               // missSBTIndex
                u0, u1, u2, u3);
-               
-    float intensity;
-    memcpy(&intensity, &u2, sizeof(u2));
-    if (u3)
-    {
-        optixLaunchLidarParams.positionBuffer[ix*4  ] = lidarPositionPRD.x;
-        optixLaunchLidarParams.positionBuffer[ix*4+1] = lidarPositionPRD.y;
-        optixLaunchLidarParams.positionBuffer[ix*4+2] = lidarPositionPRD.z;
-        optixLaunchLidarParams.positionBuffer[ix*4+3] = intensity;
-        optixLaunchLidarParams.hitBuffer[ix] = 1;
-    }
-    else
-    {
-      optixLaunchLidarParams.hitBuffer[ix] = 0;
-    }
 
+    if (u3) {
+        optixLaunchLidarParams.hitBuffer[ix] = 1;
+    } else {
+        optixLaunchLidarParams.hitBuffer[ix] = 0;
+    }
 }

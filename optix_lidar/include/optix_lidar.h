@@ -18,9 +18,14 @@ public:
   ~OptiXLidar();
 
   /// <summary>
-  /// Adds a mesh if not present, or updates the mesh if present
+  /// Adds a mesh if not present
   /// </summary>
-  void add_or_update_mesh(std::shared_ptr<TriangleMesh> mesh);
+  void add_mesh(std::shared_ptr<TriangleMesh> mesh);
+
+  /// <summary>
+  /// Update transform for an existing mesh
+  /// </summary>
+  void update_mesh_transform(const std::string & id, const TransformMatrix & transform);
 
   /// <summary>
   /// Remove model by IDs

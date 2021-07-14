@@ -18,7 +18,7 @@ namespace GPULidarTest
 
           ml.LoadModel(AppDomain.CurrentDomain.BaseDirectory + "2cubes.obj");
           meshes_num = ml.GetNumberOfMeshes();
-          Assert.Equal(3, meshes_num);
+          Assert.Equal(2, meshes_num);
         }
     }
 }

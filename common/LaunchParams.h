@@ -15,6 +15,10 @@ struct TriangleMeshSBTData {
     vec3f *normal;
     vec2f *texcoord;
     vec3i *index;
+    size_t vertex_count;
+    size_t index_count;
+    size_t normal_count;
+    size_t texcoord_count;
     bool                hasTexture;
     cudaTextureObject_t texture;
 };
