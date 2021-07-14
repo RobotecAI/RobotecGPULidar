@@ -30,6 +30,7 @@ public:
   void removeTexture(const std::string & tex_id);
 
   void addMeshes(Meshes mesh);
+  void updateMeshTransform(const std::string & mesh_id, const TransformMatrix & transform);
   void removeMesh(const std::string & mesh_id);
 
 private:
@@ -64,7 +65,7 @@ private:
 
   /*! build an acceleration structure for the given triangle mesh */
   // in the future for update reload not whole model, only dynamic part
-  OptixTraversableHandle buildAccel(bool update = false);
+  OptixTraversableHandle buildAccel();
 
   /*! upload textures, and create cuda texture objects for them */
   void createTextures();
@@ -117,18 +118,21 @@ private:
   CUDABuffer hitBuffer;
 
   /*! the model we are going to trace rays against */
-  Model model;
+  // Model model;
+  InstancesMap m_instances_map;
+  bool needs_root_rebuild = {false};
 
-  /*! @{ one buffer per input mesh */
-  std::vector<CUDABuffer> vertexBuffer;
-  std::vector<CUDABuffer> normalBuffer;
-  std::vector<CUDABuffer> texcoordBuffer;
-  std::vector<CUDABuffer> indexBuffer;
-  /*! @} */
+
+
+  OptixTraversableHandle m_root;  // Scene root
+  CUdeviceptr m_d_ias; // Scene root's IAS (instance acceleration structure).
 
   //! buffer that keeps the (final, compacted) accel structure
   CUDABuffer asBuffer;
   CUDABuffer outputBuffer;
+  OptixTraversableHandle meshHandle;
+  CUDABuffer compactedSizeBuffer;
+  CUDABuffer tempBuffer;
 
   /*! @{ one texture object and pixel array per used texture */
   std::vector<cudaArray_t>         textureArrays;

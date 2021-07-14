@@ -15,6 +15,7 @@ public:
   void load_obj(const std::string & path) {
     model_ = load_model_from_obj_file(path);
     if (model_) {
+      meshes_.clear();
       for (auto mesh_kv : model_->meshes_map) {
         meshes_.push_back(mesh_kv.second);
       }
@@ -86,12 +87,12 @@ int Internal_GetNumberOfMeshes(void * obj)
 }
 
 MODEL_LOADER_C_EXPORT
-void Internal_GetTriangleMesh(void * obj, int mesh_id,
+void Internal_GetTriangleMesh(void * obj, int mesh_index,
   vec3f ** vertices, vec3f ** normals, vec2f ** texture_coordinates, vec3i ** indices,
   int * vertices_size, int * normals_size, int * texutres_size, int * indices_size)
 {
   auto *ml = (ModelLoader *)obj;
-  auto mesh = ml->get_triangle_mesh(mesh_id);
+  auto mesh = ml->get_triangle_mesh(mesh_index);
   *vertices = mesh->vertex.data();
   *vertices_size = mesh->vertex.size();
   *normals = mesh->normal.data();

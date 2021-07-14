@@ -60,6 +60,7 @@ set(TEST_MODELS
   cube 
   test
   inverted_sphere
+  cylinder_stand
 )
 foreach(test_model ${TEST_MODELS})
   configure_file(${CMAKE_CURRENT_LIST_DIR}/models/${test_model}.obj ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CSHARP_TARGET_FRAMEWORK}/linux-x64/${test_model}.obj COPYONLY)

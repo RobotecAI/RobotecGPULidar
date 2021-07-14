@@ -4,6 +4,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include <fmt/color.h>
+
 #include "optix_lidar.h"
 #include "points.h"
 #include "lidar_source.h"
@@ -11,6 +13,7 @@
 #include "visibility_control.h"
 
 using namespace gdt;
+using namespace fmt;
 static std::string last_gpu_library_error = ""; // no support for multithreading
 
 #define LIDAR_GPU_TRY_CATCH( call )                                                               \
@@ -54,21 +57,26 @@ const char * Internal_GetLastError()
 
 // TODO - optimize this POC
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * normals,
-  vec2f * texture_coordinates, vec3i * indices, int indices_size, int size)
+int Internal_AddMesh(void * obj, char * id, float * transform, bool is_global, vec3f * vertices, vec3f * normals,
+  vec2f * texture_coordinates, vec3i * indices, int indices_size, int mesh_size, int transform_size)
 {
+  if (transform_size != TransformMatrix::transform_floats) {
+    print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, TransformMatrix::transform_floats);
+    return GPULIDAR_ERROR;
+  }
+
   auto *ol = (OptiXLidar *)obj;
 
   //Constructor could already use the pointers
   auto tm = std::make_shared<TriangleMesh>();
 
-  std::vector<vec3f> v(vertices, vertices+size);
+  std::vector<vec3f> v(vertices, vertices+mesh_size);
   tm->vertex = v;
 
-  std::vector<vec3f> n(normals, normals+size);
+  std::vector<vec3f> n(normals, normals+mesh_size);
   tm->normal = n;
 
-  std::vector<vec2f> tc(texture_coordinates, texture_coordinates+size);
+  std::vector<vec2f> tc(texture_coordinates, texture_coordinates+mesh_size);
   tm->texcoord = tc;
 
   std::vector<vec3i> ind(indices, indices+indices_size);
@@ -77,7 +85,35 @@ int Internal_AddOrUpdateMesh(void * obj, char * id, vec3f * vertices, vec3f * no
   std::string mesh_id(id);
   tm->mesh_id = id;
 
-  LIDAR_GPU_TRY_CATCH(ol->add_or_update_mesh(tm));
+  memcpy(tm->transform.matrix_flat, transform, TransformMatrix::transform_floats * sizeof(float));
+
+  LIDAR_GPU_TRY_CATCH(ol->add_mesh(tm));
+  return GPULIDAR_SUCCESS;
+}
+
+GPU_LIDAR_RAYCASTER_C_EXPORT
+int Internal_RemoveMesh(void * obj, char * id)
+{
+  auto *ol = (OptiXLidar *)obj;
+
+  std::string mesh_id(id);
+  LIDAR_GPU_TRY_CATCH(ol->remove_mesh(mesh_id));
+  return GPULIDAR_SUCCESS;
+}
+
+GPU_LIDAR_RAYCASTER_C_EXPORT
+int Internal_UpdateMeshTransform(void * obj, char * id, float * transform, int transform_size)
+{
+  if (transform_size != TransformMatrix::transform_floats) {
+    print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, TransformMatrix::transform_floats);
+    return GPULIDAR_ERROR;
+  }
+  auto *ol = (OptiXLidar *)obj;
+
+  std::string mesh_id(id);
+  TransformMatrix m;
+  memcpy(m.matrix_flat, transform, TransformMatrix::transform_floats * sizeof(float));
+  LIDAR_GPU_TRY_CATCH(ol->update_mesh_transform(mesh_id, m));
   return GPULIDAR_SUCCESS;
 }
 

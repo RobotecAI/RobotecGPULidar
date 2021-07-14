@@ -16,6 +16,10 @@ public:
     renderer_->addMeshes(meshes);
   }
 
+  void update_mesh_transform(const std::string & mesh_id, const TransformMatrix & transform) {
+    renderer_->updateMeshTransform(mesh_id, transform);
+  }
+
   void add_textures(Textures textures) {
     renderer_->addTextures(textures);
   }
@@ -53,10 +57,14 @@ OptiXLidar::OptiXLidar()
 // Necessary to declare in cpp for pimpl to work with unique_ptr
 OptiXLidar::~OptiXLidar() = default;
 
-void OptiXLidar::add_or_update_mesh(std::shared_ptr<TriangleMesh> mesh)
+void OptiXLidar::add_mesh(std::shared_ptr<TriangleMesh> mesh)
 {
   Meshes meshes { mesh };
   lidar_impl_->add_meshes(meshes);
+}
+
+void OptiXLidar::update_mesh_transform(const std::string & mesh_id, const TransformMatrix & transform) {
+  lidar_impl_->update_mesh_transform(mesh_id, transform);
 }
 
 void OptiXLidar::remove_mesh(const std::string & id)

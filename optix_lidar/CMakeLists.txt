@@ -10,10 +10,14 @@ add_library(${PROJECT_NAME} SHARED
     model_utils.cpp
     simple_uid_generator.cpp
     lidar.cpp
+    model.cpp
     )
+
+find_package(fmt)
 
 target_link_libraries(${PROJECT_NAME}
     gdt
+    fmt::fmt # FMT Library for a proper string formatting in C++
     # optix dependencies, for rendering
     ${optix_LIBRARY}
     ${CUDA_LIBRARIES}

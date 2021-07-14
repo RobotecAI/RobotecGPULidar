@@ -1,5 +1,9 @@
 #include "lidar_renderer.h"
 #include <optix_function_table_definition.h> //this include may only appear in a single source file
+#include <memory.h>
+#include <fmt/color.h>
+
+using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
 
@@ -73,23 +77,24 @@ LidarRenderer::~LidarRenderer()
     cudaFreeArray(texture_array);
   }
 
+
   optixModuleDestroy(module);
   optixDeviceContextDestroy(optixContext);
 }
 
 void LidarRenderer::addTextures(Textures textures)
 {
-  if (textures.size() == 0) {
-    return;
-  }
+  // if (textures.size() == 0) {
+  //   return;
+  // }
 
-  for (auto texture : textures) {
-    model.textures_map[texture->texture_id] = texture;
-  }
+  // for (auto texture : textures) {
+  //   model.textures_map[texture->texture_id] = texture;
+  // }
 
-  model.textures_changed = true;
-  model.needs_rebuild = true;
-  model.changed = true;
+  // model.textures_changed = true;
+  // model.needs_rebuild = true;
+  // model.changed = true;
 }
 
 void LidarRenderer::addMeshes(Meshes meshes)
@@ -100,265 +105,186 @@ void LidarRenderer::addMeshes(Meshes meshes)
   }
 
   for (auto mesh : meshes) {
-    if (model.meshes_map.find(mesh->mesh_id) == model.meshes_map.end()) {
-      // The mesh is assumed to be new, otherwise is the old one that moved
-      //std::cout << "mesh id: |" << mesh->mesh_id << "|" << std::endl;
-      model.needs_rebuild = true;
+    if (m_instances_map.find(mesh->mesh_id) == m_instances_map.end()) {
+      // std::cout << "Mesh " << mesh->mesh_id << " not in map, creating... " << std::endl;
+      auto modelInstance = std::make_shared<ModelInstance>(mesh);
+      modelInstance->buildGAS(optixContext);
+      m_instances_map[mesh->mesh_id] = modelInstance;
+      needs_root_rebuild = true;
     }
-    model.meshes_map[mesh->mesh_id] = mesh;
   }
-  model.changed = true;
+}
+
+void LidarRenderer::updateMeshTransform(const std::string & mesh_id, const TransformMatrix & transform)
+{
+  if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
+    m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
+    m_instances_map[mesh_id]->needs_rebuild = true;
+    needs_root_rebuild = true;
+  }
 }
 
 void LidarRenderer::removeMesh(const std::string & id)
 {
-  if (model.meshes_map.find(id) == model.meshes_map.end()) {
+  if (m_instances_map.find(id) == m_instances_map.end()) {
     return;
   }
 
-  model.meshes_map.erase(id);
-  model.needs_rebuild = true;
-  model.changed = true;
+  m_instances_map.erase(id);
+  needs_root_rebuild = true;
 }
 
 void LidarRenderer::removeTexture(const std::string & id)
 {
-  if (model.textures_map.find(id) != model.textures_map.end()) {
-    return;
-  }
-  model.textures_map.erase(id);
-  model.needs_rebuild = true;
-  model.textures_changed = true;
-  model.changed = true;
+  // if (m_instances_map.find(id) != m_instances_map.end()) {
+  //   return;
+  // }
+  // model.textures_map.erase(id);
+  // model.needs_rebuild = true;
+  // model.textures_changed = true;
+  // model.changed = true;
 }
 
 void LidarRenderer::update_structs_for_model()
 {
-  //std::cout << "update structs for model " << std::endl;
-  if (model.changed)
+  // std::cout << "update structs for model " << std::endl;
+  if (needs_root_rebuild)
   {
     //std::string rebuild = model.needs_rebuild ? " and needs rebuild" : "";
     //std::cout << "update structs: model changed" << rebuild << std::endl;
-    launchParams.traversable = buildAccel(!model.needs_rebuild);
-    if (model.textures_changed) {
-      //std::cout << "update structs: textures_changed, creating " << std::endl;
-      createTextures();
-      model.textures_changed = false;
-    }
-    //std::cout << "building SBT" << std::endl;
+    launchParams.traversable = buildAccel();
+    // if (model.textures_changed) {
+    //   //std::cout << "update structs: textures_changed, creating " << std::endl;
+    //   createTextures();
+    //   model.textures_changed = false;
+    // }
+    // std::cout << "building SBT" << std::endl;
     buildSBT();
-    model.needs_rebuild = false;
+
+    // model.needs_rebuild = false;
   }
-  model.changed = false;
+  needs_root_rebuild = false;
   //std::cout << "update structs for model ends " << std::endl;
 }
 
 void LidarRenderer::createTextures()
 {
-  //std::cout << "create textures " << std::endl;
-  size_t numTextures = model.textures_map.size();
+  // // std::cout << "create textures " << std::endl;
+  // size_t numTextures = m_instances_map.size();
 
-  { // cleaning old textures. TODO - only clean ones that changed or were removed
-    for (auto & texture_object : textureObjects) {
-      CUDA_CHECK(DestroyTextureObject(texture_object));
-    }
-    for (auto & texture_array : textureArrays) {
-      CUDA_CHECK(FreeArray(texture_array));
-    }
+  // { // cleaning old textures. TODO - only clean ones that changed or were removed
+  //   for (auto & texture_object : textureObjects) {
+  //     CUDA_CHECK(DestroyTextureObject(texture_object));
+  //   }
+  //   for (auto & texture_array : textureArrays) {
+  //     CUDA_CHECK(FreeArray(texture_array));
+  //   }
 
-    textureArrays.clear();
-    textureObjects.clear();
-    textureArrays.resize(numTextures);
-    textureObjects.resize(numTextures);
-  }
+  //   textureArrays.clear();
+  //   textureObjects.clear();
+  //   textureArrays.resize(numTextures);
+  //   textureObjects.resize(numTextures);
+  // }
 
-  int index = 0;
-  for (const auto & kv : model.textures_map) {
-    auto texture = kv.second;
-    cudaResourceDesc res_desc = {};
+  // int index = 0;
+  // for (const auto & kv : m_instances_map) {
+  //   auto texture = kv.second->m_texture;
+  //   cudaResourceDesc res_desc = {};
 
-    cudaChannelFormatDesc channel_desc;
-    int32_t width = texture->resolution.x;
-    int32_t height = texture->resolution.y;
-    int32_t numComponents = 4;
-    int32_t pitch = width*numComponents*sizeof(uint8_t);
-    channel_desc = cudaCreateChannelDesc<uchar4>();
+  //   cudaChannelFormatDesc channel_desc;
+  //   int32_t width = texture->resolution.x;
+  //   int32_t height = texture->resolution.y;
+  //   int32_t numComponents = 4;
+  //   int32_t pitch = width*numComponents*sizeof(uint8_t);
+  //   channel_desc = cudaCreateChannelDesc<uchar4>();
 
-    cudaArray_t &pixelArray = textureArrays[index];
-    CUDA_CHECK(MallocArray(&pixelArray,
-                           &channel_desc,
-                           width,height));
+  //   cudaArray_t &pixelArray = textureArrays[index];
+  //   CUDA_CHECK(MallocArray(&pixelArray,
+  //                          &channel_desc,
+  //                          width,height));
 
-    CUDA_CHECK(Memcpy2DToArray(pixelArray,
-                               /* offset */0,0,
-                               texture->pixel,
-                               pitch,pitch,height,
-                               cudaMemcpyHostToDevice));
+  //   CUDA_CHECK(Memcpy2DToArray(pixelArray,
+  //                              /* offset */0,0,
+  //                              texture->pixel,
+  //                              pitch,pitch,height,
+  //                              cudaMemcpyHostToDevice));
 
-    res_desc.resType = cudaResourceTypeArray;
-    res_desc.res.array.array = pixelArray;
+  //   res_desc.resType = cudaResourceTypeArray;
+  //   res_desc.res.array.array = pixelArray;
 
-    cudaTextureDesc tex_desc = {};
-    tex_desc.addressMode[0] = cudaAddressModeWrap;
-    tex_desc.addressMode[1] = cudaAddressModeWrap;
-    tex_desc.filterMode = cudaFilterModeLinear;
-    tex_desc.readMode = cudaReadModeNormalizedFloat;
-    tex_desc.normalizedCoords = 1;
-    tex_desc.maxAnisotropy = 1;
-    tex_desc.maxMipmapLevelClamp = 99;
-    tex_desc.minMipmapLevelClamp = 0;
-    tex_desc.mipmapFilterMode = cudaFilterModePoint;
-    tex_desc.borderColor[0] = 1.0f;
-    tex_desc.sRGB = 0;
+  //   cudaTextureDesc tex_desc = {};
+  //   tex_desc.addressMode[0] = cudaAddressModeWrap;
+  //   tex_desc.addressMode[1] = cudaAddressModeWrap;
+  //   tex_desc.filterMode = cudaFilterModeLinear;
+  //   tex_desc.readMode = cudaReadModeNormalizedFloat;
+  //   tex_desc.normalizedCoords = 1;
+  //   tex_desc.maxAnisotropy = 1;
+  //   tex_desc.maxMipmapLevelClamp = 99;
+  //   tex_desc.minMipmapLevelClamp = 0;
+  //   tex_desc.mipmapFilterMode = cudaFilterModePoint;
+  //   tex_desc.borderColor[0] = 1.0f;
+  //   tex_desc.sRGB = 0;
 
-    // Create texture object
-    cudaTextureObject_t cuda_tex = 0;
-    CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-    textureObjects[index] = cuda_tex;
-    index++;
-  }
+  //   // Create texture object
+  //   cudaTextureObject_t cuda_tex = 0;
+  //   CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+  //   textureObjects[index] = cuda_tex;
+  //   index++;
+  // }
   //std::cout << "create textures ends " << std::endl;
 }
 
-OptixTraversableHandle LidarRenderer::buildAccel(bool update)
+OptixTraversableHandle LidarRenderer::buildAccel()
 {
-  const size_t numMeshes = model.meshes_map.size();
-  //std::cout << "build accel: " << numMeshes << std::endl;
-
-  for (size_t meshID = 0; meshID < vertexBuffer.size(); meshID++)
+  std::vector<OptixInstance> instances;
+  unsigned int idx = 0;
+  for(const auto &kv : m_instances_map )
   {
-    vertexBuffer[meshID].free();
-    normalBuffer[meshID].free();
-    texcoordBuffer[meshID].free();
-    indexBuffer[meshID].free();
+    const auto mi = kv.second;
+    // std::cout << "build ias " << kv.first << std::endl;
+    auto instance = mi->buildIAS(idx++);
+    // std::cout << "ias " << kv.first  << " done" << std::endl;
+    instances.push_back(instance);
   }
 
-  vertexBuffer.resize(numMeshes);
-  normalBuffer.resize(numMeshes);
-  texcoordBuffer.resize(numMeshes);
-  indexBuffer.resize(numMeshes);
+  const size_t instancesSizeInBytes = sizeof(OptixInstance) * instances.size();
 
-  OptixTraversableHandle asHandle { 0 };
+  CUDABuffer instanceBuffer;
+  instanceBuffer.alloc(instancesSizeInBytes);
+  instanceBuffer.upload(instances.data(), instances.size());
 
-  // ==================================================================
-  // triangle inputs
-  // ==================================================================
-  std::vector<OptixBuildInput> triangleInput(numMeshes);
-  std::vector<CUdeviceptr> d_vertices(numMeshes);
-  std::vector<CUdeviceptr> d_indices(numMeshes);
-  std::vector<uint32_t> triangleInputFlags(numMeshes);
+  OptixBuildInput instanceInput = {};
 
-  size_t mesh_index = 0;
-  for (const auto & kv : model.meshes_map) {
-    // upload the model to the device: the builder
-    const auto mesh = kv.second;
-    vertexBuffer[mesh_index].alloc_and_upload(mesh->vertex);
-    indexBuffer[mesh_index].alloc_and_upload(mesh->index);
-    if (!mesh->normal.empty())
-      normalBuffer[mesh_index].alloc_and_upload(mesh->normal);
-    if (!mesh->texcoord.empty())
-      texcoordBuffer[mesh_index].alloc_and_upload(mesh->texcoord);
+  instanceInput.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+  instanceInput.instanceArray.instances    = instanceBuffer.d_pointer();
+  instanceInput.instanceArray.numInstances = (unsigned int) instances.size();
 
-    triangleInput[mesh_index] = {};
-    triangleInput[mesh_index].type
-        = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+  OptixAccelBuildOptions accelBuildOptions = {};
 
-    // create local variables, because we need a *pointer* to the
-    // device pointers
-    d_vertices[mesh_index] = vertexBuffer[mesh_index].d_pointer();
-    d_indices[mesh_index]  = indexBuffer[mesh_index].d_pointer();
+  accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_ALLOW_UPDATE | OPTIX_BUILD_FLAG_ALLOW_COMPACTION;
+  accelBuildOptions.operation  = OPTIX_BUILD_OPERATION_BUILD;
+  
+  OptixAccelBufferSizes iasBufferSizes = {};
+  OPTIX_CHECK( optixAccelComputeMemoryUsage(optixContext, &accelBuildOptions, &instanceInput, 1, &iasBufferSizes) );
 
-    triangleInput[mesh_index].triangleArray.vertexFormat        = OPTIX_VERTEX_FORMAT_FLOAT3;
-    triangleInput[mesh_index].triangleArray.vertexStrideInBytes = sizeof(vec3f);
-    triangleInput[mesh_index].triangleArray.numVertices         = (int)mesh->vertex.size();
-    triangleInput[mesh_index].triangleArray.vertexBuffers       = &d_vertices[mesh_index];
+  CUDABuffer tempBuffer;
+	tempBuffer.alloc(iasBufferSizes.tempSizeInBytes);
 
-    triangleInput[mesh_index].triangleArray.indexFormat         = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-    triangleInput[mesh_index].triangleArray.indexStrideInBytes  = sizeof(vec3i);
-    triangleInput[mesh_index].triangleArray.numIndexTriplets    = (int)mesh->index.size();
-    triangleInput[mesh_index].triangleArray.indexBuffer         = d_indices[mesh_index];
-
-    triangleInputFlags[mesh_index] = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
-
-    // in this example we have one SBT entry, and no per-primitive
-    // materials:
-    triangleInput[mesh_index].triangleArray.flags               = &triangleInputFlags[mesh_index];
-    triangleInput[mesh_index].triangleArray.numSbtRecords               = 1;
-    triangleInput[mesh_index].triangleArray.sbtIndexOffsetBuffer        = 0;
-    triangleInput[mesh_index].triangleArray.sbtIndexOffsetSizeInBytes   = 0;
-    triangleInput[mesh_index].triangleArray.sbtIndexOffsetStrideInBytes = 0;
-    mesh_index++;
-  }
-  // ==================================================================
-  // BLAS setup
-  // ==================================================================
-
-  OptixAccelBuildOptions accelOptions = {};
-  accelOptions.buildFlags             = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-      | OPTIX_BUILD_FLAG_ALLOW_UPDATE
-      | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
-      ;
-  accelOptions.motionOptions.numKeys  = 0; // no motion blur
-
-  if (update)
-      accelOptions.operation          = OPTIX_BUILD_OPERATION_UPDATE;
-  else
-      accelOptions.operation          = OPTIX_BUILD_OPERATION_BUILD;
-
-  OptixAccelBufferSizes blasBufferSizes;
-  OPTIX_CHECK(optixAccelComputeMemoryUsage
-              (optixContext,
-               &accelOptions,
-               triangleInput.data(),
-               (int)numMeshes,  // num_build_inputs
-               &blasBufferSizes
-               ));
-
-  // ==================================================================
-  // prepare compaction
-  // ==================================================================
+	CUDABuffer outputBuffer;
+	outputBuffer.alloc(iasBufferSizes.outputSizeInBytes);
 
   CUDABuffer compactedSizeBuffer;
   compactedSizeBuffer.alloc(sizeof(uint64_t));
 
   OptixAccelEmitDesc emitDesc;
-  emitDesc.type   = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
+  emitDesc.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
   emitDesc.result = compactedSizeBuffer.d_pointer();
 
-  // ==================================================================
-  // execute build (main stage)
-  // ==================================================================
-
-  CUDABuffer tempBuffer;
-  tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
-
-  if (!update)
-  {
-    // for update we use existing buffer
-    // in rebuild it should not change size
-    // if size changes, build from begining
-    outputBuffer.free();
-    outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
-  }
-
-
-
-  OPTIX_CHECK(optixAccelBuild(optixContext,
-                              /* stream */0,
-                              &accelOptions,
-                              triangleInput.data(),
-                              (int)numMeshes,
-                              tempBuffer.d_pointer(),
-                              tempBuffer.sizeInBytes,
-
-                              outputBuffer.d_pointer(),
-                              outputBuffer.sizeInBytes,
-
-                              &asHandle,
-
-                              &emitDesc,1
-                              ));
-  CUDA_SYNC_CHECK();
+  OPTIX_CHECK( optixAccelBuild(optixContext, 0,
+                              &accelBuildOptions, &instanceInput, 1,
+                              tempBuffer.d_pointer(),   tempBuffer.sizeInBytes,
+                              outputBuffer.d_pointer(), outputBuffer.sizeInBytes,
+                              &m_root, &emitDesc, 1));
 
   // ==================================================================
   // perform compaction
@@ -370,20 +296,22 @@ OptixTraversableHandle LidarRenderer::buildAccel(bool update)
   asBuffer.alloc(compactedSize);
   OPTIX_CHECK(optixAccelCompact(optixContext,
                                 /*stream:*/0,
-                                asHandle,
+                                m_root,
                                 asBuffer.d_pointer(),
                                 asBuffer.sizeInBytes,
-                                &asHandle));
+                                &m_root));
   CUDA_SYNC_CHECK();
 
   // ==================================================================
   // aaaaaand .... clean up
   // ==================================================================
   tempBuffer.free();
+  outputBuffer.free();
   compactedSizeBuffer.free();
+  instanceBuffer.free();
 
   //std::cout << "build accel ends" << std::endl;
-  return asHandle;
+  return m_root;
 }
 
 /*! helper function that initializes optix and checks for errors */
@@ -636,9 +564,10 @@ void LidarRenderer::buildSBT()
   // ------------------------------------------------------------------
   std::vector<HitgroupRecord> hitgroupRecords;
   int meshID = 0;
-  for (const auto & kv : model.meshes_map)
+  for (const auto & kv : m_instances_map)
   {
-    auto mesh = kv.second;
+    auto mesh = kv.second->m_triangle_mesh;
+    auto instance = kv.second;
     for (int rayID = 0; rayID < LIDAR_RAY_TYPE_COUNT; rayID++)
     {
       HitgroupRecord rec;
@@ -650,10 +579,16 @@ void LidarRenderer::buildSBT()
       } else {
         rec.data.hasTexture = false;
       }
-      rec.data.index    = (vec3i*)indexBuffer[meshID].d_pointer();
-      rec.data.vertex   = (vec3f*)vertexBuffer[meshID].d_pointer();
-      rec.data.normal   = (vec3f*)normalBuffer[meshID].d_pointer();
-      rec.data.texcoord = (vec2f*)texcoordBuffer[meshID].d_pointer();
+      rec.data.index    = (vec3i*)instance->m_index_buffer.d_pointer();
+      rec.data.vertex   = (vec3f*)instance->m_vertex_buffer.d_pointer();
+      rec.data.normal   = (vec3f*)instance->m_normal_buffer.d_pointer();
+      rec.data.texcoord = (vec2f*)instance->m_texcoord_buffer.d_pointer();
+
+      rec.data.index_count = instance->m_index_buffer.sizeInBytes / sizeof(vec3i);
+      rec.data.vertex_count = instance->m_vertex_buffer.sizeInBytes / sizeof(vec3f);
+      rec.data.normal_count = instance->m_normal_buffer.sizeInBytes / sizeof(vec3f);
+      rec.data.texcoord_count = instance->m_texcoord_buffer.sizeInBytes / sizeof(vec2f);
+
       hitgroupRecords.push_back(rec);
     }
     meshID++;
@@ -669,10 +604,17 @@ void LidarRenderer::buildSBT()
   /*! render one frame */
 void LidarRenderer::render(std::vector<LidarSource> &lidars)
 {
+  print("Rendering {} lidars\n", lidars.size());
   // sanity check: make sure we launch only after first resize is
   // already done:
-  if (launchParams.rayCount == 0) return;
-  if (model.meshes_map.size() == 0) return;
+  if (launchParams.rayCount == 0) {
+    print(fg(color::yellow),"LidarRender::render called with 0 rays\n");
+    return;
+  }
+  if (m_instances_map.size() == 0) {
+    print(fg(color::yellow),"LidarRender::render called with 0 meshes\n");
+    return;
+  }
 
   update_structs_for_model();
   uploadRays(lidars);
@@ -774,7 +716,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
 void LidarRenderer::downloadPoints(RaycastResults &result)
 {
   result.clear();
-  if (model.meshes_map.size() == 0) return;
+  // if (model.meshes_map.size() == 0) return;
 
   std::vector<float> allPoints;
   allPoints.resize(launchParams.rayCount*4);
