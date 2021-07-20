@@ -138,4 +138,12 @@ private:
   std::vector<cudaArray_t>         textureArrays;
   std::vector<cudaTextureObject_t> textureObjects;
   /*! @} */
+
+
+  // Ex-local buffers moved here to avoid memory allocations
+  std::vector<int> raysPerLidar;
+  std::vector<float> range;
+  std::vector<float> source;
+  std::vector<float> allPoints;
+  std::vector<int> hits;
 };
