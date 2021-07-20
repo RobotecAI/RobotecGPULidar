@@ -3,6 +3,11 @@
 #include <memory.h>
 #include <fmt/color.h>
 
+#include "Clock.hpp"
+
+std::map<std::string, Clock::InternalClock::time_point> Clock::clock_start;
+std::map<std::string, std::vector<double>> Clock::clock_measures;
+
 using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
@@ -32,21 +37,28 @@ struct __align__( OPTIX_SBT_RECORD_ALIGNMENT ) HitgroupRecord
 
 LidarRenderer::LidarRenderer()
 {
-  initOptix();
-  std::cout << "creating optix context ..." << std::endl;
-  createContext();
-  std::cout << "setting up module ..." << std::endl;
-  createModule();
-  std::cout << "creating raygen programs ..." << std::endl;
-  createRaygenPrograms();
-  std::cout << "creating miss programs ..." << std::endl;
-  createMissPrograms();
-  std::cout << "creating hitgroup programs ..." << std::endl;
-  createHitgroupPrograms();
-  std::cout << "setting up optix pipeline ..." << std::endl;
-  createPipeline();
+	{
+		Clock c("init");
+		initOptix();
+		std::cout << "creating optix context ..." << std::endl;
+		createContext();
+		std::cout << "setting up module ..." << std::endl;
+		createModule();
+		std::cout << "creating raygen programs ..." << std::endl;
+		createRaygenPrograms();
+		std::cout << "creating miss programs ..." << std::endl;
+		createMissPrograms();
+		std::cout << "creating hitgroup programs ..." << std::endl;
+		createHitgroupPrograms();
+		std::cout << "setting up optix pipeline ..." << std::endl;
+		createPipeline();
 
-  launchParamsBuffer.alloc(sizeof(launchParams));
+	}
+
+	{
+		Clock c("launch-param-buffers-alloc");
+		launchParamsBuffer.alloc(sizeof(launchParams));
+	}
 
   std::cout << GDT_TERMINAL_GREEN;
   std::cout << "Optix lidar fully set up" << std::endl;
@@ -104,24 +116,28 @@ void LidarRenderer::addMeshes(Meshes meshes)
     return;
   }
 
-  for (auto mesh : meshes) {
-    if (m_instances_map.find(mesh->mesh_id) == m_instances_map.end()) {
-      // std::cout << "Mesh " << mesh->mesh_id << " not in map, creating... " << std::endl;
-      auto modelInstance = std::make_shared<ModelInstance>(mesh);
-      modelInstance->buildGAS(optixContext);
-      m_instances_map[mesh->mesh_id] = modelInstance;
-      needs_root_rebuild = true;
-    }
-  }
+	{
+		Clock c("add-mesh");
+		for (auto mesh : meshes) {
+			if (m_instances_map.find(mesh->mesh_id) == m_instances_map.end()) {
+				// std::cout << "Mesh " << mesh->mesh_id << " not in map, creating... " << std::endl;
+				auto modelInstance = std::make_shared<ModelInstance>(mesh);
+				modelInstance->buildGAS(optixContext);
+				m_instances_map[mesh->mesh_id] = modelInstance;
+				needs_root_rebuild = true;
+			}
+		}
+	}
 }
 
 void LidarRenderer::updateMeshTransform(const std::string & mesh_id, const TransformMatrix & transform)
 {
-  if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
-    m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
-    m_instances_map[mesh_id]->needs_rebuild = true;
-    needs_root_rebuild = true;
-  }
+	if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
+		Clock cc("update-mesh");
+		m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
+		m_instances_map[mesh_id]->needs_rebuild = true;
+		needs_root_rebuild = true;
+	}
 }
 
 void LidarRenderer::removeMesh(const std::string & id)
@@ -600,47 +616,76 @@ void LidarRenderer::buildSBT()
   sbt.hitgroupRecordCount         = (int)hitgroupRecords.size();
 }
 
-
   /*! render one frame */
 void LidarRenderer::render(std::vector<LidarSource> &lidars)
 {
-  print("Rendering {} lidars\n", lidars.size());
-  // sanity check: make sure we launch only after first resize is
-  // already done:
-  if (launchParams.rayCount == 0) {
-    print(fg(color::yellow),"LidarRender::render called with 0 rays\n");
-    return;
-  }
-  if (m_instances_map.size() == 0) {
-    print(fg(color::yellow),"LidarRender::render called with 0 meshes\n");
-    return;
-  }
+	static int renderCallIdx = 0;
+	print("Rendering {} lidars\n", lidars.size());
+	Clock c("render");
+	// sanity check: make sure we launch only after first resize is already done:
+	if (launchParams.rayCount == 0) {
+		print(fg(color::yellow),"LidarRender::render called with 0 rays\n");
+		return;
+	}
+	if (m_instances_map.size() == 0) {
+		print(fg(color::yellow),"LidarRender::render called with 0 meshes\n");
+		return;
+	}
 
-  update_structs_for_model();
-  uploadRays(lidars);
-  launchParamsBuffer.upload(&launchParams,1);
+	{
+		Clock cc("render-update-structs");
+		update_structs_for_model();
+	}
 
-  OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-                          pipeline,stream,
-                          /*! parameters and SBT */
-                          launchParamsBuffer.d_pointer(),
-                          launchParamsBuffer.sizeInBytes,
-                          &sbt,
-                          /*! dimensions of the launch: */
-                          launchParams.rayCount,
-                          1,
-                          1
-                          ));
-  // sync - make sure the frame is rendered before we download and
-  // display (obviously, for a high-performance application you
-  // want to use streams and double-buffering, but for this simple
-  // example, this will have to do)
-  CUDA_SYNC_CHECK();
+	{
+		Clock cc("render-upload-rays");
+		uploadRays(lidars);
+	}
+	{
+		Clock cc("render-launch-params");
+		launchParamsBuffer.uploadAsync(&launchParams,1);
+	}
+
+	{
+		Clock cc("render-gpu");
+		OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
+				pipeline, stream,
+				/*! parameters and SBT */
+				launchParamsBuffer.d_pointer(),
+				launchParamsBuffer.sizeInBytes,
+				&sbt,
+				/*! dimensions of the launch: */
+				launchParams.rayCount,
+				1,
+				1
+		));
+	}
+
+    // Enqueue asynchronous download:
+	{
+		Clock cc("download-resize");
+		allPoints.resize(launchParams.rayCount * 4);
+		hits.resize(launchParams.rayCount);
+		raysPerLidar.resize(launchParams.lidarCount);
+	}
+
+	{
+		Clock cc("download-memcpy");
+		positionBuffer.downloadAsync(allPoints.data(), launchParams.rayCount * 4);
+		hitBuffer.downloadAsync(hits.data(), launchParams.rayCount);
+		raysPerLidarBuffer.downloadAsync(raysPerLidar.data(), launchParams.lidarCount);
+	}
+
+	renderCallIdx++;
+	if (renderCallIdx % 200 == 0) {
+		Clock::printReset();
+	}
 }
 
   /*! resize frame buffer to given resolution */
 void LidarRenderer::resize(std::vector<LidarSource> &lidars)
 {
+  Clock c("resize");
   int lidarCount = lidars.size();
   int rayCount = 0;
   for (int i = 0; i < lidarCount; ++i)
@@ -671,37 +716,28 @@ void LidarRenderer::resize(std::vector<LidarSource> &lidars)
 
 void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
 {
-  std::vector<int> raysPerLidar;
   raysPerLidar.resize(lidars.size());
   for (size_t i = 0; i < lidars.size(); ++i)
   {
     raysPerLidar[i] = lidars[i].directions.size();
   }
-  raysPerLidarBuffer.upload(raysPerLidar.data(), raysPerLidar.size());
+  raysPerLidarBuffer.uploadAsync(raysPerLidar.data(), raysPerLidar.size());
 
-  std::vector<float> rays;
-  rays.resize(launchParams.rayCount*3);
-  int index = 0;
-  for (size_t i = 0; i < lidars.size(); ++i)
-  {
-    for (size_t j = 0; j < lidars[i].directions.size(); j++)
-    {
-      rays[index++] = lidars[i].directions[j].x;
-      rays[index++] = lidars[i].directions[j].y;
-      rays[index++] = lidars[i].directions[j].z;
-    }
+  // TODO(prybicki): urgent optimizations and bold assumptions here :)
+  if (lidars.size() != 1) {
+  	auto message = fmt::format("fixme: unexpected number of lidars: {}\n", lidars.size());
+  	throw std::logic_error(message);
   }
-  rayBuffer.upload(rays.data(), rays.size());
+  // Using the aforementioned assumption, upload rays directly from the given buffer.
+  rayBuffer.uploadAsync(lidars[0].directions.data(), lidars[0].directions.size());
 
-  std::vector<float> range;
   range.resize(lidars.size());
   for(size_t i = 0; i < lidars.size(); ++i)
   {
     range[i] = lidars[i].range;
   }
-  rangeBuffer.upload(range.data(), range.size());
+  rangeBuffer.uploadAsync(range.data(), range.size());
 
-  std::vector<float> source;
   source.resize(lidars.size()*3);
   for (size_t i = 0; i < lidars.size(); ++i)
   {
@@ -709,25 +745,17 @@ void LidarRenderer::uploadRays(std::vector<LidarSource> &lidars)
     source[i*3+1] = lidars[i].source.y;
     source[i*3+2] = lidars[i].source.z;
   }
-  sourceBuffer.upload(source.data(), source.size());
+  sourceBuffer.uploadAsync(source.data(), source.size());
 }
 
   /*! download the rendered color buffer */
 void LidarRenderer::downloadPoints(RaycastResults &result)
 {
+  Clock c("download");
   result.clear();
   // if (model.meshes_map.size() == 0) return;
 
-  std::vector<float> allPoints;
-  allPoints.resize(launchParams.rayCount*4);
-  std::vector<int> hits;
-  hits.resize(launchParams.rayCount);
-  std::vector<int> raysPerLidar;
-  raysPerLidar.resize(launchParams.lidarCount);
-
-  positionBuffer.download(allPoints.data(), launchParams.rayCount*4);
-  hitBuffer.download(hits.data(), launchParams.rayCount);
-  raysPerLidarBuffer.download(raysPerLidar.data(), launchParams.lidarCount);
+  CUDA_CHECK(StreamSynchronize(0));
 
   if (hits.size() != static_cast<size_t>(launchParams.rayCount))
   {
@@ -735,25 +763,26 @@ void LidarRenderer::downloadPoints(RaycastResults &result)
     return;
   }
 
+//  CUDA_CHECK(StreamSynchronize(0));
   // now rewrite to RaycastResults
-  int index = 0;
-  for(int i = 0; i < launchParams.lidarCount; ++i)
-  {
-    RaycastResult res;
-    for(int j = 0; j < raysPerLidar[i]; ++j)
-    {
-      if(hits[index])
-      {
-        LidarPoint point;
-        auto offset = index * 4;
-        point.x = allPoints[offset];
-        point.y = allPoints[offset+1];
-        point.z = allPoints[offset+2];
-        point.i = allPoints[offset+3];
-        res.points.push_back(point);
-      }
-      index++;
-    }
-    result.push_back(res);
-  }
+	{
+		Clock cc("download-rewrite");
+		int index = 0;
+		for (int i = 0; i < launchParams.lidarCount; ++i) {
+			RaycastResult res;
+			for (int j = 0; j < raysPerLidar[i]; ++j) {
+				if (hits[index]) {
+					LidarPoint point;
+					auto offset = index * 4;
+					point.x = allPoints[offset];
+					point.y = allPoints[offset + 1];
+					point.z = allPoints[offset + 2];
+					point.i = allPoints[offset + 3];
+					res.points.push_back(point);
+				}
+				index++;
+			}
+			result.push_back(res);
+		}
+	}
 }
