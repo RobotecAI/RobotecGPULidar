@@ -48,6 +48,15 @@ struct CUDABuffer {
                           count*sizeof(T), cudaMemcpyHostToDevice));
     }
 
+	template<typename T>
+	void uploadAsync(const T *t, size_t count)
+	{
+		assert(d_ptr != nullptr);
+		assert(sizeInBytes == count*sizeof(T));
+		CUDA_CHECK(MemcpyAsync(d_ptr, (void *)t,
+		                  count*sizeof(T), cudaMemcpyHostToDevice, 0));
+	}
+
     template<typename T>
     void download(T *t, size_t count)
     {
@@ -55,6 +64,15 @@ struct CUDABuffer {
         assert(sizeInBytes == count*sizeof(T));
         CUDA_CHECK(Memcpy((void *)t, d_ptr,
                           count*sizeof(T), cudaMemcpyDeviceToHost));
+    }
+
+    template<typename T>
+    void downloadAsync(T *t, size_t count)
+    {
+        assert(d_ptr != nullptr);
+        assert(sizeInBytes == count*sizeof(T));
+        CUDA_CHECK(MemcpyAsync((void *)t, d_ptr,
+                          count*sizeof(T), cudaMemcpyDeviceToHost, 0));
     }
 
     size_t sizeInBytes { 0 };

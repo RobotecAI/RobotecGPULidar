@@ -35,7 +35,7 @@
 
 #define CUDA_SYNC_CHECK()                                               \
   {                                                                     \
-    cudaDeviceSynchronize();                                            \
+    cudaStreamSynchronize(0);                                            \
     cudaError_t error = cudaGetLastError();                             \
     if( error != cudaSuccess )                                          \
       {                                                                 \
