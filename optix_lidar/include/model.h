@@ -60,24 +60,8 @@ struct Texture {
     Texture& operator=(const Texture&) = delete; // non copyable
 };
 
-using MeshesMap = std::unordered_map<std::string, std::shared_ptr<TriangleMesh>>;
-using TexturesMap = std::unordered_map<std::string, std::shared_ptr<Texture>>;
 using Meshes = std::vector<std::shared_ptr<TriangleMesh>>;
 using Textures = std::vector<std::shared_ptr<Texture>>;
-
-struct Model {
-    MeshesMap meshes_map;
-    TexturesMap textures_map;
-
-    //! bounding box of all vertices in the model
-    // TODO - this is a display feature, move away from this struct
-    gdt::box3f bounds;
-
-    // TODO
-    bool changed { false };
-    bool textures_changed { false };
-    bool needs_rebuild { true };
-};
 
 class ModelInstance {
 public:
