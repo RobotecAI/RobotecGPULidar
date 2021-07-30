@@ -3,7 +3,7 @@
 #include <memory.h>
 #include <fmt/color.h>
 
-#include "Clock.hpp"
+#include "Clock.h"
 
 std::map<std::string, Clock::InternalClock::time_point> Clock::clock_start;
 std::map<std::string, std::vector<double>> Clock::clock_measures;
