@@ -12,8 +12,7 @@
 #include <optix_types.h>
 
 struct TransformMatrix {
-    static const size_t transform_floats = 12;
-    float matrix_flat[transform_floats] = { 0 };
+    float matrix_flat[12] = { 0 };
 } __attribute__((packed));
 
 //indexed triangle mesh
