@@ -9,8 +9,7 @@ add_library(${PROJECT_NAME} SHARED
     lidar_renderer.cpp
     model_utils.cpp
     simple_uid_generator.cpp
-    lidar.cpp
-    model.cpp
+        model.cpp
     )
 
 find_package(fmt)
