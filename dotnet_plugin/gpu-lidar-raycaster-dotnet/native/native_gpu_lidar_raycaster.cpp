@@ -60,8 +60,8 @@ GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_AddMesh(void * obj, char * id, float * transform, bool is_global, vec3f * vertices, vec3f * normals,
   vec2f * texture_coordinates, vec3i * indices, int indices_size, int mesh_size, int transform_size)
 {
-  if (transform_size != TransformMatrix::transform_floats) {
-    print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, TransformMatrix::transform_floats);
+  if (transform_size != sizeof(TransformMatrix) / sizeof(float)) {
+    print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, sizeof(TransformMatrix) / sizeof(float));
     return GPULIDAR_ERROR;
   }
 
@@ -85,7 +85,7 @@ int Internal_AddMesh(void * obj, char * id, float * transform, bool is_global, v
   std::string mesh_id(id);
   tm->mesh_id = id;
 
-  memcpy(tm->transform.matrix_flat, transform, TransformMatrix::transform_floats * sizeof(float));
+  memcpy(tm->transform.matrix_flat, transform, sizeof(TransformMatrix));
 
   LIDAR_GPU_TRY_CATCH(ol->add_mesh(tm));
   return GPULIDAR_SUCCESS;
@@ -104,15 +104,15 @@ int Internal_RemoveMesh(void * obj, char * id)
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_UpdateMeshTransform(void * obj, char * id, float * transform, int transform_size)
 {
-  if (transform_size != TransformMatrix::transform_floats) {
-    print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, TransformMatrix::transform_floats);
+  if (transform_size != sizeof(TransformMatrix) / sizeof(float)) {
+    print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, sizeof(TransformMatrix) / sizeof(float));
     return GPULIDAR_ERROR;
   }
   auto *ol = (OptiXLidar *)obj;
 
   std::string mesh_id(id);
   TransformMatrix m;
-  memcpy(m.matrix_flat, transform, TransformMatrix::transform_floats * sizeof(float));
+  memcpy(m.matrix_flat, transform, sizeof(TransformMatrix));
   LIDAR_GPU_TRY_CATCH(ol->update_mesh_transform(mesh_id, m));
   return GPULIDAR_SUCCESS;
 }
