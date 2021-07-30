@@ -59,7 +59,7 @@ SOURCES
 add_custom_command(
   TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy
-          ${CMAKE_CURRENT_BINARY_DIR}/Release/netcoreapp2.0/linux-x64/publish/${PROJECT_NAME}.dll
+          ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/netcoreapp2.0/linux-x64/publish/${PROJECT_NAME}.dll
           ${CMAKE_CURRENT_BINARY_DIR}/)
 
 install_dotnet(${PROJECT_NAME} DESTINATION lib/dotnet)
