@@ -19,7 +19,6 @@ if (POLICY CMP0048)
 endif (POLICY CMP0048)
 
 project(optixlidar)
-set(BUILD_TESTWINDOW ON)
 cmake_minimum_required(VERSION 2.8)
 
 include_directories(common)
@@ -45,9 +44,6 @@ add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 # ------------------------------------------------------------------
 set(optix_LIBRARY "")
 add_subdirectory(optix_lidar)
-if (BUILD_TESTWINDOW)
-    add_subdirectory(test)
-endif()
 
 # -------------------
 # build dotnet
