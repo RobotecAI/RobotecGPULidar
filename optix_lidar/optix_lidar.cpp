@@ -14,7 +14,7 @@ public:
     {
     }
 
-    void add_meshes(Meshes meshes)
+    void add_meshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
     {
         renderer_->addMeshes(meshes);
     }
@@ -24,7 +24,7 @@ public:
         renderer_->updateMeshTransform(mesh_id, transform);
     }
 
-    void add_textures(Textures textures)
+    void add_textures(std::vector<std::shared_ptr<Texture>> textures)
     {
         renderer_->addTextures(textures);
     }
@@ -68,7 +68,7 @@ OptiXLidar::~OptiXLidar() = default;
 
 void OptiXLidar::add_mesh(std::shared_ptr<TriangleMesh> mesh)
 {
-    Meshes meshes { mesh };
+	std::vector<std::shared_ptr<TriangleMesh>> meshes { mesh };
     lidar_impl_->add_meshes(meshes);
 }
 
