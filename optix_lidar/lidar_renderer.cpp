@@ -92,7 +92,7 @@ LidarRenderer::~LidarRenderer()
     optixDeviceContextDestroy(optixContext);
 }
 
-void LidarRenderer::addTextures(Textures textures)
+void LidarRenderer::addTextures(std::vector<std::shared_ptr<Texture>> textures)
 {
     // if (textures.size() == 0) {
     //   return;
@@ -107,7 +107,7 @@ void LidarRenderer::addTextures(Textures textures)
     // model.changed = true;
 }
 
-void LidarRenderer::addMeshes(Meshes meshes)
+void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 {
     //std::cout << "adding meshes count: " << meshes.size() << std::endl;
     if (meshes.size() == 0) {

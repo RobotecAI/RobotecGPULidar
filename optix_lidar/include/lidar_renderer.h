@@ -26,10 +26,10 @@ public:
   /*! download lidar hit points */
   void downloadPoints(RaycastResults &result);
 
-  void addTextures(Textures tex);
+  void addTextures(std::vector<std::shared_ptr<Texture>> tex);
   void removeTexture(const std::string & tex_id);
 
-  void addMeshes(Meshes mesh);
+  void addMeshes(std::vector<std::shared_ptr<TriangleMesh>> mesh);
   void updateMeshTransform(const std::string & mesh_id, const TransformMatrix & transform);
   void removeMesh(const std::string & mesh_id);
 
