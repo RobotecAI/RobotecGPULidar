@@ -60,7 +60,6 @@ struct Texture {
     Texture& operator=(const Texture&) = delete; // non copyable
 };
 
-using Meshes = std::vector<std::shared_ptr<TriangleMesh>>;
 using Textures = std::vector<std::shared_ptr<Texture>>;
 
 class ModelInstance {
