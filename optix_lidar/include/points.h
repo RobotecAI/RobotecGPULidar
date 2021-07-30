@@ -1,16 +1,14 @@
 #pragma once
 
-template<typename CoordinateType>
-struct Point3D
-{
+template <typename CoordinateType>
+struct Point3D {
     CoordinateType x;
     CoordinateType y;
     CoordinateType z;
 } __attribute__((packed));
 
-template<typename CoordinateType>
-struct Lidar4DPoint
-{
+template <typename CoordinateType>
+struct Lidar4DPoint {
     CoordinateType x;
     CoordinateType y;
     CoordinateType z;

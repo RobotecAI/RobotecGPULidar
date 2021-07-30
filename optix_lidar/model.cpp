@@ -1,6 +1,6 @@
 #include "model.h"
-#include <memory.h>
 #include <LaunchParams.h>
+#include <memory.h>
 
 using namespace gdt;
 
@@ -39,7 +39,7 @@ ModelInstance::ModelInstance(std::shared_ptr<TriangleMesh> mesh)
     triangleInput.triangleArray.sbtIndexOffsetStrideInBytes = 0;
 }
 
-void ModelInstance::updateMesh(std::shared_ptr<TriangleMesh> mesh) 
+void ModelInstance::updateMesh(std::shared_ptr<TriangleMesh> mesh)
 {
     m_triangle_mesh = mesh;
     needs_rebuild = true;
@@ -58,10 +58,10 @@ OptixTraversableHandle ModelInstance::buildGAS(OptixDeviceContext optixContext)
 
     OptixAccelBufferSizes blasBufferSizes;
     OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext,
-                                             &accelOptions,
-                                             &triangleInput,
-                                             1, // num_build_inputs
-                                             &blasBufferSizes));
+        &accelOptions,
+        &triangleInput,
+        1, // num_build_inputs
+        &blasBufferSizes));
 
     // ==================================================================
     // prepare compaction
@@ -81,8 +81,7 @@ OptixTraversableHandle ModelInstance::buildGAS(OptixDeviceContext optixContext)
     CUDABuffer tempBuffer;
     tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
 
-    if (!needs_rebuild)
-    {
+    if (!needs_rebuild) {
         // for update we use existing buffer
         // in rebuild it should not change size
         // if size changes, build from begining
@@ -91,32 +90,32 @@ OptixTraversableHandle ModelInstance::buildGAS(OptixDeviceContext optixContext)
     }
 
     OPTIX_CHECK(optixAccelBuild(optixContext,
-                                /* stream */ 0,
-                                &accelOptions,
-                                &triangleInput,
-                                1,
-                                tempBuffer.d_pointer(),
-                                tempBuffer.sizeInBytes,
+        /* stream */ 0,
+        &accelOptions,
+        &triangleInput,
+        1,
+        tempBuffer.d_pointer(),
+        tempBuffer.sizeInBytes,
 
-                                outputBuffer.d_pointer(),
-                                outputBuffer.sizeInBytes,
+        outputBuffer.d_pointer(),
+        outputBuffer.sizeInBytes,
 
-                                &meshHandle,
+        &meshHandle,
 
-                                &emitDesc, 1));
+        &emitDesc, 1));
     CUDA_SYNC_CHECK();
 
     uint64_t compactedSize;
-    compactedSizeBuffer.download(&compactedSize,1);
+    compactedSizeBuffer.download(&compactedSize, 1);
 
     asBuffer.free();
     asBuffer.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
-                                /*stream:*/0,
-                                meshHandle,
-                                asBuffer.d_pointer(),
-                                asBuffer.sizeInBytes,
-                                &meshHandle));
+        /*stream:*/ 0,
+        meshHandle,
+        asBuffer.d_pointer(),
+        asBuffer.sizeInBytes,
+        &meshHandle));
     CUDA_SYNC_CHECK();
 
     tempBuffer.free();
@@ -131,7 +130,7 @@ OptixInstance ModelInstance::buildIAS(unsigned int id)
     instance = {};
     memcpy(instance.transform, m_triangle_mesh->transform.matrix_flat, sizeof(float) * 12);
     // auto t = m_triangle_mesh->transform.matrix_flat;
-    // std::cout << "Transform: \n" 
+    // std::cout << "Transform: \n"
     //     << t[0] << " " << t[1] << " " << t[2] << " " << t[3] << std::endl
     //     << t[4] << " " << t[5] << " " << t[6] << " " << t[7] << std::endl
     //     << t[8] << " " << t[9] << " " << t[10] << " " << t[11] << std::endl;
@@ -144,14 +143,11 @@ OptixInstance ModelInstance::buildIAS(unsigned int id)
     return instance;
 }
 
-ModelInstance::~ModelInstance() {
+ModelInstance::~ModelInstance()
+{
     m_vertex_buffer.free();
     m_normal_buffer.free();
     m_texcoord_buffer.free();
     m_index_buffer.free();
     outputBuffer.free();
 }
-
-
-
-    
