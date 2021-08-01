@@ -1,4 +1,4 @@
-#include "lidar_renderer.h"
+#include "LidarRenderer.h"
 #include <fmt/color.h>
 #include <memory.h>
 #include <optix_function_table_definition.h> //this include may only appear in a single source file
