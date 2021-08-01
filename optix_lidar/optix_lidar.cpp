@@ -1,6 +1,6 @@
 #include "optix_lidar.h"
 
-#include "lidar_renderer.h"
+#include "LidarRenderer.h"
 #include "lidar_source.h"
 #include "model.h"
 #include "raycast_result.h"
