@@ -5,9 +5,6 @@
 
 #include "PerfProbe.h"
 
-std::map<std::string, PerfProbe::InternalClock::time_point> PerfProbe::clock_start;
-std::map<std::string, std::vector<double>> PerfProbe::clock_measures;
-
 using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
@@ -664,7 +661,7 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
 
     renderCallIdx++;
     if (renderCallIdx % 200 == 0) {
-        PerfProbe::printReset();
+	    PerfProbe::saveToFileAndReset();
     }
 }
 
