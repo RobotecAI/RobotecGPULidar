@@ -9,7 +9,7 @@ add_library(${PROJECT_NAME} SHARED
 		src/LidarRenderer.cpp
 		src/simple_uid_generator.cpp
 		src/model.cpp
-    )
+		src/PerfProbe.cpp)
 
 find_package(fmt)
 
