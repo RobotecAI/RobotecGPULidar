@@ -10,13 +10,13 @@
 
 #define PROFILE_GPU_LIDAR 0
 
-struct Clock {
+struct PerfProbe {
     using InternalClock = std::chrono::high_resolution_clock;
 
     static std::map<std::string, InternalClock::time_point> clock_start;
     static std::map<std::string, std::vector<double>> clock_measures;
 
-    Clock(std::string tag)
+    PerfProbe(std::string tag)
         : tag(tag)
     {
         if (!PROFILE_GPU_LIDAR) {
@@ -25,7 +25,7 @@ struct Clock {
         clock_start[tag] = InternalClock::now();
     }
 
-    ~Clock()
+    ~PerfProbe()
     {
         if (!PROFILE_GPU_LIDAR) {
             return;
