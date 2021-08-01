@@ -3,10 +3,10 @@
 #include <memory.h>
 #include <optix_function_table_definition.h> //this include may only appear in a single source file
 
-#include "Clock.h"
+#include "PerfProbe.h"
 
-std::map<std::string, Clock::InternalClock::time_point> Clock::clock_start;
-std::map<std::string, std::vector<double>> Clock::clock_measures;
+std::map<std::string, PerfProbe::InternalClock::time_point> PerfProbe::clock_start;
+std::map<std::string, std::vector<double>> PerfProbe::clock_measures;
 
 using namespace fmt;
 
@@ -38,7 +38,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 LidarRenderer::LidarRenderer()
 {
     {
-        Clock c("init");
+        PerfProbe c("init");
         initOptix();
         std::cout << "creating optix context ..." << std::endl;
         createContext();
@@ -55,7 +55,7 @@ LidarRenderer::LidarRenderer()
     }
 
     {
-        Clock c("launch-param-buffers-alloc");
+        PerfProbe c("launch-param-buffers-alloc");
         launchParamsBuffer.alloc(sizeof(launchParams));
     }
 
@@ -115,7 +115,7 @@ void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
     }
 
     {
-        Clock c("add-mesh");
+        PerfProbe c("add-mesh");
         for (auto mesh : meshes) {
             if (m_instances_map.find(mesh->mesh_id) == m_instances_map.end()) {
                 // std::cout << "Mesh " << mesh->mesh_id << " not in map, creating... " << std::endl;
@@ -131,7 +131,7 @@ void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 void LidarRenderer::updateMeshTransform(const std::string& mesh_id, const TransformMatrix& transform)
 {
     if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
-        Clock cc("update-mesh");
+        PerfProbe cc("update-mesh");
         m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
         m_instances_map[mesh_id]->needs_rebuild = true;
         needs_root_rebuild = true;
@@ -608,7 +608,7 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
 {
     static int renderCallIdx = 0;
     print("Rendering {} lidars\n", lidars.size());
-    Clock c("render");
+    PerfProbe c("render");
     // sanity check: make sure we launch only after first resize is already done:
     if (launchParams.rayCount == 0) {
         print(fg(color::yellow), "LidarRender::render called with 0 rays\n");
@@ -620,21 +620,21 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
     }
 
     {
-        Clock cc("render-update-structs");
+        PerfProbe cc("render-update-structs");
         update_structs_for_model();
     }
 
     {
-        Clock cc("render-upload-rays");
+        PerfProbe cc("render-upload-rays");
         uploadRays(lidars);
     }
     {
-        Clock cc("render-launch-params");
+        PerfProbe cc("render-launch-params");
         launchParamsBuffer.uploadAsync(&launchParams, 1);
     }
 
     {
-        Clock cc("render-gpu");
+        PerfProbe cc("render-gpu");
         OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
             pipeline, stream,
             /*! parameters and SBT */
@@ -649,14 +649,14 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
 
     // Enqueue asynchronous download:
     {
-        Clock cc("download-resize");
+        PerfProbe cc("download-resize");
         allPoints.resize(launchParams.rayCount * 4);
         hits.resize(launchParams.rayCount);
         raysPerLidar.resize(launchParams.lidarCount);
     }
 
     {
-        Clock cc("download-memcpy");
+        PerfProbe cc("download-memcpy");
         positionBuffer.downloadAsync(allPoints.data(), launchParams.rayCount * 4);
         hitBuffer.downloadAsync(hits.data(), launchParams.rayCount);
         raysPerLidarBuffer.downloadAsync(raysPerLidar.data(), launchParams.lidarCount);
@@ -664,14 +664,14 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
 
     renderCallIdx++;
     if (renderCallIdx % 200 == 0) {
-        Clock::printReset();
+        PerfProbe::printReset();
     }
 }
 
 /*! resize frame buffer to given resolution */
 void LidarRenderer::resize(std::vector<LidarSource>& lidars)
 {
-    Clock c("resize");
+    PerfProbe c("resize");
     int lidarCount = lidars.size();
     int rayCount = 0;
     for (int i = 0; i < lidarCount; ++i) {
@@ -733,7 +733,7 @@ void LidarRenderer::uploadRays(std::vector<LidarSource>& lidars)
 /*! download the rendered color buffer */
 void LidarRenderer::downloadPoints(RaycastResults& result)
 {
-    Clock c("download");
+    PerfProbe c("download");
     result.clear();
     // if (model.meshes_map.size() == 0) return;
 
@@ -747,7 +747,7 @@ void LidarRenderer::downloadPoints(RaycastResults& result)
     //  CUDA_CHECK(StreamSynchronize(0));
     // now rewrite to RaycastResults
     {
-        Clock cc("download-rewrite");
+        PerfProbe cc("download-rewrite");
         int index = 0;
         for (int i = 0; i < launchParams.lidarCount; ++i) {
             RaycastResult res;
