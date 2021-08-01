@@ -1,14 +1,14 @@
 project(optix_lidar)
 include_directories(include ${OptiX_INCLUDE})
 
-cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
+cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 
 add_library(${PROJECT_NAME} SHARED
     ${embedded_ptx_code}
-    optix_lidar.cpp
-		LidarRenderer.cpp
-        simple_uid_generator.cpp
-        model.cpp
+		src/optix_lidar.cpp
+		src/LidarRenderer.cpp
+		src/simple_uid_generator.cpp
+		src/model.cpp
     )
 
 find_package(fmt)
