@@ -1,36 +1,15 @@
-#include "LidarRenderer.h"
-#include <fmt/color.h>
 #include <memory.h>
+
+#include <fmt/color.h>
 #include <optix_function_table_definition.h> //this include may only appear in a single source file
 
+#include "LidarRenderer.h"
 #include "PerfProbe.h"
+#include "ShaderBindingTableTypes.h"
 
 using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
-
-/*! SBT record for a raygen program */
-struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord
-{
-    __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // don't need any data
-    void* data;
-};
-
-/*! SBT record for a miss program */
-struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecord
-{
-    __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // don't need any data
-    void* data;
-};
-
-/*! SBT record for a hitgroup program */
-struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
-{
-    __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    TriangleMeshSBTData data;
-};
 
 LidarRenderer::LidarRenderer()
 {
@@ -538,7 +517,6 @@ void LidarRenderer::buildSBT()
     for (size_t i = 0; i < raygenPGs.size(); i++) {
         RaygenRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
-        rec.data = nullptr; /* for now ... */
         raygenRecords.push_back(rec);
     }
     raygenRecordsBuffer.free();
@@ -552,7 +530,6 @@ void LidarRenderer::buildSBT()
     for (size_t i = 0; i < missPGs.size(); i++) {
         MissRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
-        rec.data = nullptr; /* for now ... */
         missRecords.push_back(rec);
     }
     missRecordsBuffer.free();
