@@ -59,21 +59,12 @@ LidarRenderer::~LidarRenderer()
 
 void LidarRenderer::addTextures(std::vector<std::shared_ptr<Texture>> textures)
 {
-    // if (textures.size() == 0) {
-    //   return;
-    // }
-
-    // for (auto texture : textures) {
-    //   model.textures_map[texture->texture_id] = texture;
-    // }
-
-    // model.textures_changed = true;
-    // model.needs_rebuild = true;
-    // model.changed = true;
+    throw std::runtime_error("unimplemented");
 }
 
 void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 {
+    log("[RGL] Adding {} meshes\n", meshes.size());
     //std::cout << "adding meshes count: " << meshes.size() << std::endl;
     if (meshes.size() == 0) {
         return;
