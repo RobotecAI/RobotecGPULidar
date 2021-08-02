@@ -11,61 +11,50 @@ using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
 
+template<typename... Args>
+void log(Args&&... args) { print(stderr, std::forward<Args>(args)...); }
+
 LidarRenderer::LidarRenderer()
 {
-    {
-        PerfProbe c("init");
-        initOptix();
-        std::cout << "creating optix context ..." << std::endl;
-        createContext();
-        std::cout << "setting up module ..." << std::endl;
-        createModule();
-        std::cout << "creating raygen programs ..." << std::endl;
-        createRaygenPrograms();
-        std::cout << "creating miss programs ..." << std::endl;
-        createMissPrograms();
-        std::cout << "creating hitgroup programs ..." << std::endl;
-        createHitgroupPrograms();
-        std::cout << "setting up optix pipeline ..." << std::endl;
-        createPipeline();
-    }
+    PerfProbe c("init");
+    log("[RGL] Initialization started\n");
+    log("[RGL] Running on GPU: {}\n", getCurrentDeviceName());
 
-    {
-        PerfProbe c("launch-param-buffers-alloc");
-        launchParamsBuffer.alloc(sizeof(launchParams));
-    }
+    OPTIX_CHECK(optixInit());
+    OPTIX_CHECK(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &optixContext));
+    OPTIX_CHECK(optixDeviceContextSetLogCallback(optixContext,
+        [](unsigned level, const char* tag, const char* message, void*) {
+            print(stderr, fg(color::red), "[{:2}][{:^12}]: {}\n", (int) level, tag, message);
+        },
+        nullptr, 4
+    ));
 
-    std::cout << GDT_TERMINAL_GREEN;
-    std::cout << "Optix lidar fully set up" << std::endl;
-    std::cout << GDT_TERMINAL_DEFAULT;
+    initializeStaticOptixStructures();
+    launchParamsBuffer.alloc(sizeof(launchParams));
+    log(fg(color::green), "[RGL] Initialization finished successfully\n");
 }
 
 LidarRenderer::~LidarRenderer()
-{ // using default "noexcept" - the destructor does not use CHECK macros
-    // TODO - is this the behavior we want?
-    std::cout << "freeing OptiX resources ..." << std::endl;
-    launchParamsBuffer.free();
+{
+    log("[RGL] Deinitialization started\n");
+
     optixPipelineDestroy(pipeline);
-    for (auto& hit_pg : hitgroupPGs) {
-        optixProgramGroupDestroy(hit_pg);
-    }
-    for (auto& miss_pg : missPGs) {
-        optixProgramGroupDestroy(miss_pg);
-    }
-    for (auto& ray_pg : raygenPGs) {
-        optixProgramGroupDestroy(ray_pg);
+    for (auto&& programGroup : {raygenPG, missPG, hitgroupPG}) {
+        optixProgramGroupDestroy(programGroup);
     }
 
-    for (auto& texture_object : textureObjects) {
+    for (auto&& texture_object : textureObjects) {
         cudaDestroyTextureObject(texture_object);
     }
 
-    for (auto& texture_array : textureArrays) {
+    for (auto&& texture_array : textureArrays) {
         cudaFreeArray(texture_array);
     }
 
     optixModuleDestroy(module);
     optixDeviceContextDestroy(optixContext);
+
+    log(fg(color::green), "[RGL] Deinitialization finished successfully\n");
 }
 
 void LidarRenderer::addTextures(std::vector<std::shared_ptr<Texture>> textures)
@@ -302,223 +291,112 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     return m_root;
 }
 
-/*! helper function that initializes optix and checks for errors */
-void LidarRenderer::initOptix()
-{
-    std::cout << "initializing optix..." << std::endl;
-
-    // -------------------------------------------------------
-    // check for available optix7 capable devices
-    // -------------------------------------------------------
-    cudaFree(0);
-    int numDevices;
-    cudaGetDeviceCount(&numDevices);
-    if (numDevices == 0)
-        throw std::runtime_error("no CUDA capable devices found!");
-    std::cout << "found " << numDevices << " CUDA devices" << std::endl;
-
-    // -------------------------------------------------------
-    // initialize optix
-    // -------------------------------------------------------
-    OPTIX_CHECK(optixInit());
-    std::cout << GDT_TERMINAL_GREEN
-              << "successfully initialized optix... yay!"
-              << GDT_TERMINAL_DEFAULT << std::endl;
-}
-
-static void context_log_cb(unsigned int level,
-    const char* tag,
-    const char* message,
-    void*)
-{
-    fprintf(stderr, "[%2d][%12s]: %s\n", (int)level, tag, message);
-}
-
-/*! creates and configures a optix device context (in this simple
-      example, only for the primary GPU device) */
-void LidarRenderer::createContext()
-{
-    // for this sample, do everything on one device
-    const int deviceID = 0;
-    CUDA_CHECK(SetDevice(deviceID));
-    CUDA_CHECK(StreamCreate(&stream));
-
-    cudaGetDeviceProperties(&deviceProps, deviceID);
-    std::cout << "running on device: " << deviceProps.name << std::endl;
-
-    CUresult cuRes = cuCtxGetCurrent(&cudaContext);
-    if (cuRes != CUDA_SUCCESS)
-        fprintf(stderr, "Error querying current context: error code %d\n", cuRes);
-
-    OPTIX_CHECK(optixDeviceContextCreate(cudaContext, 0, &optixContext));
-    OPTIX_CHECK(optixDeviceContextSetLogCallback(optixContext, context_log_cb, nullptr, 4));
-}
-
 /*! creates the module that contains all the programs we are going
       to use. in this simple example, we use a single module from a
       single .cu file, using a single embedded ptx string */
-void LidarRenderer::createModule()
+void LidarRenderer::initializeStaticOptixStructures()
 {
-    moduleCompileOptions = {};
+    OptixModuleCompileOptions moduleCompileOptions = {
+            .maxRegisterCount = 100,
+            .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
+            .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO
+    };
 
-    moduleCompileOptions.maxRegisterCount = 100;
-    moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0;
-    moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
+    OptixPipelineCompileOptions pipelineCompileOptions = {
+        .usesMotionBlur = false,
+        .traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
+        .numPayloadValues = 4,
+        .numAttributeValues = 2,
+        .exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
+        .pipelineLaunchParamsVariableName = "optixLaunchLidarParams",
+    };
 
-    pipelineCompileOptions = {};
-    pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-    pipelineCompileOptions.usesMotionBlur = false;
-    pipelineCompileOptions.numPayloadValues = 4;
-    pipelineCompileOptions.numAttributeValues = 2;
-    pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
-    pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchLidarParams";
+    OptixPipelineLinkOptions pipelineLinkOptions = {
+        .maxTraceDepth = 2,
+        .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT,
+    };
 
-    pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT;
-    pipelineLinkOptions.maxTraceDepth = 2;
-
-    const std::string ptxCode = embedded_ptx_code;
-
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
+    module = {};
     OPTIX_CHECK(optixModuleCreateFromPTX(optixContext,
         &moduleCompileOptions,
         &pipelineCompileOptions,
-        ptxCode.c_str(),
-        ptxCode.size(),
-        log, &sizeof_log,
-        &module));
-    if (sizeof_log > 1)
-        PRINT(log);
-}
-
-/*! does all setup for the raygen program(s) we are going to use */
-void LidarRenderer::createRaygenPrograms()
-{
-    // we do a single ray gen program in this example:
-    raygenPGs.resize(1);
+        embedded_ptx_code,
+        strlen(embedded_ptx_code),
+        nullptr, nullptr,
+        &module
+    ));
 
     OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module = module;
-    pgDesc.raygen.entryFunctionName = "__raygen__renderLidar";
+    OptixProgramGroupDesc raygenDesc = {
+        .kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
+        .raygen = {
+            .module = module,
+            .entryFunctionName = "__raygen__renderLidar"
+        }
+    };
 
-    // OptixProgramGroup raypg;
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK(optixProgramGroupCreate(optixContext,
-        &pgDesc,
-        1,
-        &pgOptions,
-        log, &sizeof_log,
-        &raygenPGs[LIDAR_RAY_TYPE]));
-    if (sizeof_log > 1)
-        PRINT(log);
-}
+    OPTIX_CHECK(optixProgramGroupCreate(
+        optixContext,&raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG
+    ));
 
-/*! does all setup for the miss program(s) we are going to use */
-void LidarRenderer::createMissPrograms()
-{
-    // we do a single ray gen program in this example:
-    missPGs.resize(LIDAR_RAY_TYPE_COUNT);
+    OptixProgramGroupDesc missDesc = {
+        .kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
+        .miss = {
+            .module = module,
+            .entryFunctionName = "__miss__lidar"
+        },
+    };
 
-    OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-    pgDesc.miss.module = module;
-    pgDesc.miss.entryFunctionName = "__miss__lidar";
+    OPTIX_CHECK(optixProgramGroupCreate(
+        optixContext, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG
+    ));
 
-    // OptixProgramGroup raypg;
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK(optixProgramGroupCreate(optixContext,
-        &pgDesc,
-        1,
-        &pgOptions,
-        log, &sizeof_log,
-        &missPGs[LIDAR_RAY_TYPE]));
-    if (sizeof_log > 1)
-        PRINT(log);
-}
+    OptixProgramGroupDesc hitgroupDesc = {
+        .kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
+        .hitgroup = {
+                .moduleCH = module,
+                .entryFunctionNameCH = "__closesthit__lidar",
+                .moduleAH = module,
+                .entryFunctionNameAH = "__anyhit__lidar",
+        }
+    };
 
-/*! does all setup for the hitgroup program(s) we are going to use */
-void LidarRenderer::createHitgroupPrograms()
-{
-    // for this simple example, we set up a single hit group
-    hitgroupPGs.resize(LIDAR_RAY_TYPE_COUNT);
+    OPTIX_CHECK(optixProgramGroupCreate(
+        optixContext, &hitgroupDesc, 1,  &pgOptions, nullptr, nullptr, &hitgroupPG
+    ));
 
-    OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    pgDesc.hitgroup.moduleCH = module;
-    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__lidar";
-    pgDesc.hitgroup.moduleAH = module;
-    pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__lidar";
+    OptixProgramGroup programGroups[] = {raygenPG, missPG, hitgroupPG};
 
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK(optixProgramGroupCreate(optixContext,
-        &pgDesc,
-        1,
-        &pgOptions,
-        log, &sizeof_log,
-        &hitgroupPGs[LIDAR_RAY_TYPE]));
-    if (sizeof_log > 1)
-        PRINT(log);
-}
-
-/*! assembles the full pipeline of all programs */
-void LidarRenderer::createPipeline()
-{
-    std::vector<OptixProgramGroup> programGroups;
-    for (auto pg : raygenPGs)
-        programGroups.push_back(pg);
-    for (auto pg : missPGs)
-        programGroups.push_back(pg);
-    for (auto pg : hitgroupPGs)
-        programGroups.push_back(pg);
-
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK(optixPipelineCreate(optixContext,
+    OPTIX_CHECK(optixPipelineCreate(
+        optixContext,
         &pipelineCompileOptions,
         &pipelineLinkOptions,
-        programGroups.data(),
-        (int)programGroups.size(),
-        log, &sizeof_log,
-        &pipeline));
-    if (sizeof_log > 1)
-        PRINT(log);
+        programGroups,
+        sizeof(programGroups) / sizeof(*programGroups),
+        nullptr, nullptr,
+        &pipeline
+    ));
 
-    OPTIX_CHECK(optixPipelineSetStackSize(/* [in] The pipeline to configure the stack size for */
+    OPTIX_CHECK(optixPipelineSetStackSize(
         pipeline,
-        /* [in] The direct stack size requirement for direct
-                  callables invoked from IS or AH. */
-        2 * 1024,
-        /* [in] The direct stack size requirement for direct
-                  callables invoked from RG, MS, or CH.  */
-        2 * 1024,
-        /* [in] The continuation stack requirement. */
-        2 * 1024,
-        /* [in] The maximum depth of a traversable graph
-                  passed to trace. */
-        3));
-    if (sizeof_log > 1)
-        PRINT(log);
+        2 * 1024, // directCallableStackSizeFromTraversal
+        2 * 1024, // directCallableStackSizeFromState
+        2 * 1024, // continuationStackSize
+        3         // maxTraversableGraphDepth
+    ));
 }
 
 /*! constructs the shader binding table */
 void LidarRenderer::buildSBT()
 {
+    sbt = {};
     // ------------------------------------------------------------------
     // build raygen records
     // ------------------------------------------------------------------
     std::vector<RaygenRecord> raygenRecords;
-    for (size_t i = 0; i < raygenPGs.size(); i++) {
-        RaygenRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
-        raygenRecords.push_back(rec);
-    }
+    RaygenRecord raygenRecord;
+    OPTIX_CHECK(optixSbtRecordPackHeader(raygenPG, &raygenRecord));
+    raygenRecords.push_back(raygenRecord);
     raygenRecordsBuffer.free();
     raygenRecordsBuffer.alloc_and_upload(raygenRecords);
     sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
@@ -527,11 +405,9 @@ void LidarRenderer::buildSBT()
     // build miss records
     // ------------------------------------------------------------------
     std::vector<MissRecord> missRecords;
-    for (size_t i = 0; i < missPGs.size(); i++) {
-        MissRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
-        missRecords.push_back(rec);
-    }
+    MissRecord missRecord;
+    OPTIX_CHECK(optixSbtRecordPackHeader(missPG, &missRecord));
+    missRecords.push_back(missRecord);
     missRecordsBuffer.free();
     missRecordsBuffer.alloc_and_upload(missRecords);
     sbt.missRecordBase = missRecordsBuffer.d_pointer();
@@ -546,28 +422,26 @@ void LidarRenderer::buildSBT()
     for (const auto& kv : m_instances_map) {
         auto mesh = kv.second->m_triangle_mesh;
         auto instance = kv.second;
-        for (int rayID = 0; rayID < LIDAR_RAY_TYPE_COUNT; rayID++) {
-            HitgroupRecord rec;
-            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID], &rec));
-            rec.data.color = mesh->diffuse;
-            if (mesh->diffuseTextureID >= 0) {
-                rec.data.hasTexture = true;
-                rec.data.texture = textureObjects[mesh->diffuseTextureID];
-            } else {
-                rec.data.hasTexture = false;
-            }
-            rec.data.index = (vec3i*)instance->m_index_buffer.d_pointer();
-            rec.data.vertex = (vec3f*)instance->m_vertex_buffer.d_pointer();
-            rec.data.normal = (vec3f*)instance->m_normal_buffer.d_pointer();
-            rec.data.texcoord = (vec2f*)instance->m_texcoord_buffer.d_pointer();
-
-            rec.data.index_count = instance->m_index_buffer.sizeInBytes / sizeof(vec3i);
-            rec.data.vertex_count = instance->m_vertex_buffer.sizeInBytes / sizeof(vec3f);
-            rec.data.normal_count = instance->m_normal_buffer.sizeInBytes / sizeof(vec3f);
-            rec.data.texcoord_count = instance->m_texcoord_buffer.sizeInBytes / sizeof(vec2f);
-
-            hitgroupRecords.push_back(rec);
+        HitgroupRecord rec;
+        OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPG, &rec));
+        rec.data.color = mesh->diffuse;
+        if (mesh->diffuseTextureID >= 0) {
+            rec.data.hasTexture = true;
+            rec.data.texture = textureObjects[mesh->diffuseTextureID];
+        } else {
+            rec.data.hasTexture = false;
         }
+        rec.data.index = (vec3i*)instance->m_index_buffer.d_pointer();
+        rec.data.vertex = (vec3f*)instance->m_vertex_buffer.d_pointer();
+        rec.data.normal = (vec3f*)instance->m_normal_buffer.d_pointer();
+        rec.data.texcoord = (vec2f*)instance->m_texcoord_buffer.d_pointer();
+
+        rec.data.index_count = instance->m_index_buffer.sizeInBytes / sizeof(vec3i);
+        rec.data.vertex_count = instance->m_vertex_buffer.sizeInBytes / sizeof(vec3f);
+        rec.data.normal_count = instance->m_normal_buffer.sizeInBytes / sizeof(vec3f);
+        rec.data.texcoord_count = instance->m_texcoord_buffer.sizeInBytes / sizeof(vec2f);
+
+        hitgroupRecords.push_back(rec);
         meshID++;
     }
     hitgroupRecordsBuffer.free();
@@ -610,7 +484,7 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
     {
         PerfProbe cc("render-gpu");
         OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-            pipeline, stream,
+            pipeline, nullptr,
             /*! parameters and SBT */
             launchParamsBuffer.d_pointer(),
             launchParamsBuffer.sizeInBytes,
@@ -740,4 +614,29 @@ void LidarRenderer::downloadPoints(RaycastResults& result)
             result.push_back(res);
         }
     }
+}
+
+std::string LidarRenderer::getCurrentDeviceName()
+{
+    int currentDevice = -1;
+    cudaDeviceProp deviceProperties {};
+    CUDA_CHECK(GetDevice(&currentDevice));
+    CUDA_CHECK(GetDeviceProperties(&deviceProperties, currentDevice));
+    return std::string(deviceProperties.name);
+}
+
+CUcontext LidarRenderer::getCurrentDeviceContext()
+{
+    CUcontext cudaContext = {};
+    CUresult status = cuCtxGetCurrent(&cudaContext);
+    if (status != CUDA_SUCCESS) {
+        const char* error = nullptr;
+        cuGetErrorString(status, &error);
+        throw std::runtime_error(format("failed to get current CUDA context: {} \n", error));
+    }
+    if (cudaContext == nullptr) {
+        cudaFree(nullptr); // Force context initialization
+        return getCurrentDeviceContext();
+    }
+    return cudaContext;
 }
