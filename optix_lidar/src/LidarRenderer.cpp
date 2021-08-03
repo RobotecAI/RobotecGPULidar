@@ -65,16 +65,15 @@ void LidarRenderer::addTextures(std::vector<std::shared_ptr<Texture>> textures)
 void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 {
     log("[RGL] Adding {} meshes\n", meshes.size());
-    //std::cout << "adding meshes count: " << meshes.size() << std::endl;
+
     if (meshes.size() == 0) {
         return;
     }
 
     {
         PerfProbe c("add-mesh");
-        for (auto mesh : meshes) {
+        for (auto&& mesh : meshes) {
             if (m_instances_map.find(mesh->mesh_id) == m_instances_map.end()) {
-                // std::cout << "Mesh " << mesh->mesh_id << " not in map, creating... " << std::endl;
                 auto modelInstance = std::make_shared<ModelInstance>(mesh);
                 modelInstance->buildGAS(optixContext);
                 m_instances_map[mesh->mesh_id] = modelInstance;

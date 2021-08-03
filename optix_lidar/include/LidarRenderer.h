@@ -5,8 +5,8 @@
 #include "LaunchParams.h"
 #include "model.h"
 
-#include "lidar_source.h"
-#include "raycast_result.h"
+#include "LidarSource.h"
+#include "RaycastResult.h"
 
 #include <cstring>
 #include <fmt/format.h>

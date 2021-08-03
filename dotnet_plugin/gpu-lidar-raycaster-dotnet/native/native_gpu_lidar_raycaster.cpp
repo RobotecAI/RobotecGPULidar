@@ -6,10 +6,10 @@
 
 #include <fmt/color.h>
 
-#include "lidar_source.h"
+#include "LidarSource.h"
 #include "LidarRenderer.h"
 #include "points.h"
-#include "raycast_result.h"
+#include "RaycastResult.h"
 #include "visibility_control.h"
 
 using namespace gdt;
@@ -101,7 +101,6 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, const LidarPoint** results,
     const RaycastResults* allLidarsResults = nullptr;
 
     LIDAR_GPU_TRY_CATCH(allLidarsResults = lidarRenderer->downloadPoints());
-
 
     if (allLidarsResults == nullptr || allLidarsResults->size() == 0) {
         results_count = nullptr;
