@@ -8,7 +8,7 @@
 
 #include "LidarSource.h"
 #include "LidarRenderer.h"
-#include "points.h"
+#include "PointTypes.h"
 #include "RaycastResult.h"
 #include "visibility_control.h"
 
