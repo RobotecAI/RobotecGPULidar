@@ -60,11 +60,6 @@ GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_AddMesh(LidarRenderer* lidarRenderer, char* mesh_id, float* transform, bool is_global, vec3f* vertices, vec3f* normals,
     vec2f* texture_coordinates, vec3i* indices, int indices_size, int mesh_size, int transform_size)
 {
-    if (transform_size != sizeof(TransformMatrix) / sizeof(float)) {
-        print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, sizeof(TransformMatrix) / sizeof(float));
-        return GPULIDAR_ERROR;
-    }
-
     LIDAR_GPU_TRY_CATCH(lidarRenderer->addMeshRawTmp(mesh_id, mesh_size, vertices, normals, texture_coordinates,
                                                           indices_size, indices, transform_size, transform));
     return GPULIDAR_SUCCESS;
