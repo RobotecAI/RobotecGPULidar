@@ -1,5 +1,5 @@
 #pragma once
-#include "points.h"
+#include "PointTypes.h"
 #include <chrono>
 #include <string>
 #include <vector>
