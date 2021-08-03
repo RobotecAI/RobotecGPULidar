@@ -7,7 +7,7 @@ add_library(${PROJECT_NAME} SHARED
     ${embedded_ptx_code}
 		src/LidarRenderer.cpp
 		src/simple_uid_generator.cpp
-		src/model.cpp
+		src/ModelInstance.cpp
 		src/PerfProbe.cpp)
 
 find_package(fmt)
