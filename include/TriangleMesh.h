@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vector>
-#include "simple_uid_generator.h"
 #include "TransformMatrix.h"
+#include "simple_uid_generator.h"
+#include <vector>
 
 struct TriangleMesh {
     TriangleMesh() { mesh_id = generate_simple_uid(); }
     TriangleMesh(const std::string& id)
-            : mesh_id(id)
+        : mesh_id(id)
     {
     }
 
