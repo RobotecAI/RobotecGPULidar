@@ -5,7 +5,6 @@ cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 
 add_library(${PROJECT_NAME} SHARED
     ${embedded_ptx_code}
-		src/optix_lidar.cpp
 		src/LidarRenderer.cpp
 		src/simple_uid_generator.cpp
 		src/model.cpp
