@@ -3,7 +3,10 @@
 // our own classes, partly shared between host and device
 #include "gdt/utils/CUDABuffer.h"
 #include "LaunchParams.h"
-#include "model.h"
+#include "TriangleMesh.h"
+#include "Texture.h"
+#include "ModelInstance.h"
+#include "TransformMatrix.h"
 
 #include "LidarSource.h"
 #include "RaycastResult.h"
