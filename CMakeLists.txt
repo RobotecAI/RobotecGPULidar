@@ -14,10 +14,7 @@
 # limitations under the License.                                           #
 # ======================================================================== #
 
-if (POLICY CMP0048)
-    cmake_policy(SET CMP0048 OLD)
-endif (POLICY CMP0048)
-
+# TODO(prybicki): rewrite it to modern CMake
 project(RobotecGPULidar)
 cmake_minimum_required(VERSION 2.8)
 
@@ -29,7 +26,6 @@ include_directories(common)
 # ------------------------------------------------------------------
 set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${gdt_dir}/cmake/")
-include(${gdt_dir}/cmake/configure_build_type.cmake)
 include(${gdt_dir}/cmake/configure_optix.cmake)
 mark_as_advanced(CUDA_SDK_ROOT_DIR)
 
@@ -42,7 +38,6 @@ add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 # ------------------------------------------------------------------
 # and final build rules for the project
 # ------------------------------------------------------------------
-set(optix_LIBRARY "")
 include_directories(include ${OptiX_INCLUDE})
 
 cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
@@ -60,13 +55,10 @@ find_package(fmt)
 target_link_libraries(optix_lidar
     gdt
     fmt::fmt # FMT Library for a proper string formatting in C++
-    ${optix_LIBRARY}
     ${CUDA_LIBRARIES}
     ${CUDA_CUDA_LIBRARY}
 )
-
 target_compile_options(optix_lidar PRIVATE -Wall)
-
 
 # -------------------
 # build dotnet
