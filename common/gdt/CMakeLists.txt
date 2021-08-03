@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(gdt 
+add_library(gdt
   cmake/configure_build_type.cmake
   cmake/configure_optix.cmake
   cmake/FindOptiX.cmake

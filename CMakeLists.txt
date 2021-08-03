@@ -15,10 +15,10 @@
 # ======================================================================== #
 
 if (POLICY CMP0048)
-  cmake_policy(SET CMP0048 OLD)
+    cmake_policy(SET CMP0048 OLD)
 endif (POLICY CMP0048)
 
-project(optixlidar)
+project(RobotecGPULidar)
 cmake_minimum_required(VERSION 2.8)
 
 include_directories(common)
@@ -43,7 +43,30 @@ add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 # and final build rules for the project
 # ------------------------------------------------------------------
 set(optix_LIBRARY "")
-add_subdirectory(optix_lidar)
+include_directories(include ${OptiX_INCLUDE})
+
+cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
+
+add_library(optix_lidar SHARED
+    ${embedded_ptx_code}
+        src/LidarRenderer.cpp
+        src/simple_uid_generator.cpp
+        src/ModelInstance.cpp
+        src/PerfProbe.cpp
+)
+
+find_package(fmt)
+
+target_link_libraries(optix_lidar
+    gdt
+    fmt::fmt # FMT Library for a proper string formatting in C++
+    ${optix_LIBRARY}
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUDA_LIBRARY}
+)
+
+target_compile_options(optix_lidar PRIVATE -Wall)
+
 
 # -------------------
 # build dotnet
@@ -55,6 +78,6 @@ add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
 # tests
 # ------------------------------------------------------------------
 if (BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
+    enable_testing()
+    add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
 endif()
