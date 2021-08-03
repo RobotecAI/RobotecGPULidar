@@ -7,7 +7,7 @@
 #include <fmt/color.h>
 
 #include "lidar_source.h"
-#include "optix_lidar.h"
+#include "LidarRenderer.h"
 #include "points.h"
 #include "raycast_result.h"
 #include "visibility_control.h"
@@ -36,27 +36,28 @@ enum GPULIDAR_RETURN_CODE {
 };
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_CreateNativeRaycaster(OptiXLidar** lidar)
+int Internal_CreateNativeRaycaster(LidarRenderer** lidarRenderer)
 {
-    LIDAR_GPU_TRY_CATCH(*lidar = new OptiXLidar());
+    LIDAR_GPU_TRY_CATCH(*lidarRenderer = new LidarRenderer());
     return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-void Internal_DestroyNativeRaycaster(void* obj)
+void Internal_DestroyNativeRaycaster(LidarRenderer* lidarRenderer)
 {
-    delete (OptiXLidar*)obj;
+    delete lidarRenderer;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 const char* Internal_GetLastError()
-{ // Return pointer to memory of last_gpu_library_error. Interpreted as null-terminated string
+{
+    // Return pointer to memory of last_gpu_library_error. Interpreted as null-terminated string
     return last_gpu_library_error.c_str();
 }
 
 // TODO - optimize this POC
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_AddMesh(void* obj, char* id, float* transform, bool is_global, vec3f* vertices, vec3f* normals,
+int Internal_AddMesh(LidarRenderer* lidarRenderer, char* mesh_id, float* transform, bool is_global, vec3f* vertices, vec3f* normals,
     vec2f* texture_coordinates, vec3i* indices, int indices_size, int mesh_size, int transform_size)
 {
     if (transform_size != sizeof(TransformMatrix) / sizeof(float)) {
@@ -64,89 +65,51 @@ int Internal_AddMesh(void* obj, char* id, float* transform, bool is_global, vec3
         return GPULIDAR_ERROR;
     }
 
-    auto* ol = (OptiXLidar*)obj;
-
-    //Constructor could already use the pointers
-    auto tm = std::make_shared<TriangleMesh>();
-
-    std::vector<vec3f> v(vertices, vertices + mesh_size);
-    tm->vertex = v;
-
-    std::vector<vec3f> n(normals, normals + mesh_size);
-    tm->normal = n;
-
-    std::vector<vec2f> tc(texture_coordinates, texture_coordinates + mesh_size);
-    tm->texcoord = tc;
-
-    std::vector<vec3i> ind(indices, indices + indices_size);
-    tm->index = ind;
-
-    std::string mesh_id(id);
-    tm->mesh_id = id;
-
-    memcpy(tm->transform.matrix_flat, transform, sizeof(TransformMatrix));
-
-    LIDAR_GPU_TRY_CATCH(ol->add_mesh(tm));
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->addMeshRawTmp(mesh_id, mesh_size, vertices, normals, texture_coordinates,
+                                                          indices_size, indices, transform_size, transform));
     return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_RemoveMesh(void* obj, char* id)
+int Internal_RemoveMesh(LidarRenderer* lidarRenderer, char* mesh_id)
 {
-    auto* ol = (OptiXLidar*)obj;
-
-    std::string mesh_id(id);
-    LIDAR_GPU_TRY_CATCH(ol->remove_mesh(mesh_id));
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->removeMeshRawTmp(mesh_id));
     return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_UpdateMeshTransform(void* obj, char* id, float* transform, int transform_size)
+int Internal_UpdateMeshTransform(LidarRenderer* lidarRenderer, char* id, float* transform, int transform_size)
 {
-    if (transform_size != sizeof(TransformMatrix) / sizeof(float)) {
-        print(fg(color::red), "Invalid transform size: {} (expected {})\n", transform_size, sizeof(TransformMatrix) / sizeof(float));
-        return GPULIDAR_ERROR;
-    }
-    auto* ol = (OptiXLidar*)obj;
-
-    std::string mesh_id(id);
-    TransformMatrix m;
-    memcpy(m.matrix_flat, transform, sizeof(TransformMatrix));
-    LIDAR_GPU_TRY_CATCH(ol->update_mesh_transform(mesh_id, m));
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->updateMeshTransformRawTmp(id, transform, transform_size));
     return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_Raycast(void* obj, char* source_id, Point source_pos, Point* directions, int directions_count,
-    float range)
+int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, Point source_pos, Point* directions, int directions_count, float range)
 {
-    auto* ol = (OptiXLidar*)obj;
-    LidarSource ls;
-    ls.unique_id = std::string(source_id);
-    ls.source = source_pos;
-    std::vector<Point> d(directions, directions + directions_count);
-    ls.directions = d;
-    ls.range = range;
-    LIDAR_GPU_TRY_CATCH(ol->raycast(ls));
+    LidarSource source {source_id, source_pos, range, directions_count, directions};
+
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->resize({source})); // TODO - resize is not usually required if lidars don't change (?)
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->render({source})); // TODO - support more sources when needed in the higher interface
+
     return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_GetPoints(void* obj, LidarPoint** results, int* results_count)
+int Internal_GetPoints(LidarRenderer* lidarRenderer, const LidarPoint** results, int* results_count)
 {
-    auto* ol = (OptiXLidar*)obj;
+    const RaycastResults* allLidarsResults = nullptr;
 
-    LIDAR_GPU_TRY_CATCH(ol->get_all_points());
+    LIDAR_GPU_TRY_CATCH(allLidarsResults = lidarRenderer->downloadPoints());
 
-    const RaycastResults& rr = ol->last_results();
-    if (rr.size() == 0) {
-        results_count = 0;
+
+    if (allLidarsResults == nullptr || allLidarsResults->size() == 0) {
+        results_count = nullptr;
         return GPULIDAR_SUCCESS;
     }
-    auto& r = rr[0]; // TODO
 
-    *results_count = r.points.size();
-    *results = (LidarPoint*)r.points.data();
+    *results_count = allLidarsResults->at(0).points.size();
+    *results = reinterpret_cast<const LidarPoint*>(allLidarsResults->at(0).points.data());
     return GPULIDAR_SUCCESS;
 }
 

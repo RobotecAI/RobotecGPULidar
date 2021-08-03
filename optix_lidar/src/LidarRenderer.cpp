@@ -24,7 +24,7 @@ LidarRenderer::LidarRenderer()
     OPTIX_CHECK(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &optixContext));
     OPTIX_CHECK(optixDeviceContextSetLogCallback(optixContext,
         [](unsigned level, const char* tag, const char* message, void*) {
-            print(stderr, fg(color::red), "[{:2}][{:^12}]: {}\n", (int) level, tag, message);
+            print(stderr, fg(color::light_blue), "[{:2}][{:^12}]: {}\n", (int) level, tag, message);
         },
         nullptr, 4
     ));
@@ -443,7 +443,7 @@ void LidarRenderer::buildSBT()
 }
 
 /*! render one frame */
-void LidarRenderer::render(std::vector<LidarSource>& lidars)
+void LidarRenderer::render(const std::vector<LidarSource>& lidars)
 {
     static int renderCallIdx = 0;
     print("Rendering {} lidars\n", lidars.size());
@@ -508,7 +508,7 @@ void LidarRenderer::render(std::vector<LidarSource>& lidars)
 }
 
 /*! resize frame buffer to given resolution */
-void LidarRenderer::resize(std::vector<LidarSource>& lidars)
+void LidarRenderer::resize(const std::vector<LidarSource>& lidars)
 {
     PerfProbe c("resize");
     int lidarCount = lidars.size();
@@ -538,7 +538,7 @@ void LidarRenderer::resize(std::vector<LidarSource>& lidars)
     launchParams.hitBuffer = (int*)hitBuffer.d_ptr;
 }
 
-void LidarRenderer::uploadRays(std::vector<LidarSource>& lidars)
+void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
 {
     raysPerLidar.resize(lidars.size());
     for (size_t i = 0; i < lidars.size(); ++i) {
@@ -570,20 +570,21 @@ void LidarRenderer::uploadRays(std::vector<LidarSource>& lidars)
 }
 
 /*! download the rendered color buffer */
-void LidarRenderer::downloadPoints(RaycastResults& result)
+const RaycastResults* LidarRenderer::downloadPoints()
 {
+    log("[RGL] Downloading points\n");
     PerfProbe c("download");
     result.clear();
     // if (model.meshes_map.size() == 0) return;
 
-    CUDA_CHECK(StreamSynchronize(0));
+    CUDA_CHECK(StreamSynchronize(nullptr));
 
+    // TODO(prybicki): investigate this
     if (hits.size() != static_cast<size_t>(launchParams.rayCount)) {
-        std::cerr << "wrong buffer size " << std::endl;
-        return;
+        log(fg(color::orange), "invalid buffer size");
+        return nullptr;
     }
 
-    //  CUDA_CHECK(StreamSynchronize(0));
     // now rewrite to RaycastResults
     {
         PerfProbe cc("download-rewrite");
@@ -591,7 +592,10 @@ void LidarRenderer::downloadPoints(RaycastResults& result)
         for (int i = 0; i < launchParams.lidarCount; ++i) {
             RaycastResult res;
             for (int j = 0; j < raysPerLidar[i]; ++j) {
-                if (hits[index]) {
+                if (hits.size() <= index) {
+                    log("{} / {}\n", index, hits.size());
+                }
+                if (hits.at(index)) {
                     LidarPoint point;
                     auto offset = index * 4;
                     point.x = allPoints[offset];
@@ -605,6 +609,8 @@ void LidarRenderer::downloadPoints(RaycastResults& result)
             result.push_back(res);
         }
     }
+
+    return &result;
 }
 
 std::string LidarRenderer::getCurrentDeviceName()
