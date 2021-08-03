@@ -41,17 +41,12 @@ public:
 
     void raycast(const LidarSource& source)
     {
-        std::vector<LidarSource> lidars { source };
-        // TODO - support more sources when needed in the higher interface
 
-        // TODO - resize is not usually required if lidars don't change (?)
-        renderer_->resize(lidars);
-        renderer_->render(lidars);
     }
 
     void get_all_points(RaycastResults& results)
     {
-        renderer_->downloadPoints(results);
+//        renderer_->downloadPoints(results);
     }
 
 private:
