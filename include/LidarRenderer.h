@@ -41,6 +41,11 @@ public:
         int indicesSize, vec3i* indices,
         int transformSize, float* transform)
     {
+        if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
+            print(fg(fmt::color::red), "Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
+            throw std::invalid_argument("invalid transform size");
+        }
+
         //Constructor could already use the pointers
         auto tm = std::make_shared<TriangleMesh>();
 
