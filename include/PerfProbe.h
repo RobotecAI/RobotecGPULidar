@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <fmt/color.h>
 #include <fmt/os.h>
@@ -7,7 +8,6 @@
 #include <map>
 #include <numeric>
 #include <vector>
-#include <algorithm>
 
 #define PROFILE_GPU_LIDAR 0
 

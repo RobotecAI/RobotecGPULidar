@@ -2,15 +2,14 @@
 
 #include <cstring>
 
-#include "gdt/math/vec.h"
-#include "ModelInstance.h"
 #include "LaunchParams.h"
-
+#include "ModelInstance.h"
+#include "gdt/math/vec.h"
 
 using namespace gdt;
 
 ModelInstance::ModelInstance(std::shared_ptr<TriangleMesh> mesh)
-        : m_triangle_mesh(mesh)
+    : m_triangle_mesh(mesh)
 {
     m_vertex_buffer.alloc_and_upload(mesh->vertex);
     m_index_buffer.alloc_and_upload(mesh->index);
@@ -63,10 +62,10 @@ OptixTraversableHandle ModelInstance::buildGAS(OptixDeviceContext optixContext)
 
     OptixAccelBufferSizes blasBufferSizes;
     OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext,
-                                             &accelOptions,
-                                             &triangleInput,
-                                             1, // num_build_inputs
-                                             &blasBufferSizes));
+        &accelOptions,
+        &triangleInput,
+        1, // num_build_inputs
+        &blasBufferSizes));
 
     // ==================================================================
     // prepare compaction
@@ -95,19 +94,19 @@ OptixTraversableHandle ModelInstance::buildGAS(OptixDeviceContext optixContext)
     }
 
     OPTIX_CHECK(optixAccelBuild(optixContext,
-            /* stream */ 0,
-                                &accelOptions,
-                                &triangleInput,
-                                1,
-                                tempBuffer.d_pointer(),
-                                tempBuffer.sizeInBytes,
+        /* stream */ 0,
+        &accelOptions,
+        &triangleInput,
+        1,
+        tempBuffer.d_pointer(),
+        tempBuffer.sizeInBytes,
 
-                                outputBuffer.d_pointer(),
-                                outputBuffer.sizeInBytes,
+        outputBuffer.d_pointer(),
+        outputBuffer.sizeInBytes,
 
-                                &meshHandle,
+        &meshHandle,
 
-                                &emitDesc, 1));
+        &emitDesc, 1));
     CUDA_SYNC_CHECK();
 
     uint64_t compactedSize;
@@ -116,11 +115,11 @@ OptixTraversableHandle ModelInstance::buildGAS(OptixDeviceContext optixContext)
     asBuffer.free();
     asBuffer.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
-            /*stream:*/ 0,
-                                  meshHandle,
-                                  asBuffer.d_pointer(),
-                                  asBuffer.sizeInBytes,
-                                  &meshHandle));
+        /*stream:*/ 0,
+        meshHandle,
+        asBuffer.d_pointer(),
+        asBuffer.sizeInBytes,
+        &meshHandle));
     CUDA_SYNC_CHECK();
 
     tempBuffer.free();

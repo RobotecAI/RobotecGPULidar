@@ -5,10 +5,10 @@
 
 struct LidarSource {
     LidarSource(const char* id, Point sourcePoint, float range, int directionsCount, Point* directions)
-    : unique_id(id)
-    , source(sourcePoint)
-    , directions(directions, directions + directionsCount)
-    , range(range)
+        : unique_id(id)
+        , source(sourcePoint)
+        , directions(directions, directions + directionsCount)
+        , range(range)
     {
     }
 

@@ -2,7 +2,7 @@
 
 struct Texture {
     Texture(int id)
-            : texture_id(std::to_string(id))
+        : texture_id(std::to_string(id))
     {
     }
 

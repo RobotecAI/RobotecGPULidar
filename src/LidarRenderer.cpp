@@ -11,7 +11,7 @@ using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
 
-template<typename... Args>
+template <typename... Args>
 void log(Args&&... args) { print(stderr, std::forward<Args>(args)...); }
 
 LidarRenderer::LidarRenderer()
@@ -22,12 +22,12 @@ LidarRenderer::LidarRenderer()
 
     OPTIX_CHECK(optixInit());
     OPTIX_CHECK(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &optixContext));
-    OPTIX_CHECK(optixDeviceContextSetLogCallback(optixContext,
+    OPTIX_CHECK(optixDeviceContextSetLogCallback(
+        optixContext,
         [](unsigned level, const char* tag, const char* message, void*) {
-            print(stderr, fg(color::light_blue), "[{:2}][{:^12}]: {}\n", (int) level, tag, message);
+            print(stderr, fg(color::light_blue), "[{:2}][{:^12}]: {}\n", (int)level, tag, message);
         },
-        nullptr, 4
-    ));
+        nullptr, 4));
 
     initializeStaticOptixStructures();
     launchParamsBuffer.alloc(sizeof(launchParams));
@@ -39,7 +39,7 @@ LidarRenderer::~LidarRenderer()
     log("[RGL] Deinitialization started\n");
 
     optixPipelineDestroy(pipeline);
-    for (auto&& programGroup : {raygenPG, missPG, hitgroupPG}) {
+    for (auto&& programGroup : { raygenPG, missPG, hitgroupPG }) {
         optixProgramGroupDestroy(programGroup);
     }
 
@@ -287,9 +287,9 @@ OptixTraversableHandle LidarRenderer::buildAccel()
 void LidarRenderer::initializeStaticOptixStructures()
 {
     OptixModuleCompileOptions moduleCompileOptions = {
-            .maxRegisterCount = 100,
-            .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
-            .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO
+        .maxRegisterCount = 100,
+        .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
+        .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO
     };
 
     OptixPipelineCompileOptions pipelineCompileOptions = {
@@ -313,49 +313,43 @@ void LidarRenderer::initializeStaticOptixStructures()
         embedded_ptx_code,
         strlen(embedded_ptx_code),
         nullptr, nullptr,
-        &module
-    ));
+        &module));
 
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc raygenDesc = {
         .kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
         .raygen = {
             .module = module,
-            .entryFunctionName = "__raygen__renderLidar"
-        }
+            .entryFunctionName = "__raygen__renderLidar" }
     };
 
     OPTIX_CHECK(optixProgramGroupCreate(
-        optixContext,&raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG
-    ));
+        optixContext, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
 
     OptixProgramGroupDesc missDesc = {
         .kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
         .miss = {
             .module = module,
-            .entryFunctionName = "__miss__lidar"
-        },
+            .entryFunctionName = "__miss__lidar" },
     };
 
     OPTIX_CHECK(optixProgramGroupCreate(
-        optixContext, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG
-    ));
+        optixContext, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
 
     OptixProgramGroupDesc hitgroupDesc = {
         .kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
         .hitgroup = {
-                .moduleCH = module,
-                .entryFunctionNameCH = "__closesthit__lidar",
-                .moduleAH = module,
-                .entryFunctionNameAH = "__anyhit__lidar",
+            .moduleCH = module,
+            .entryFunctionNameCH = "__closesthit__lidar",
+            .moduleAH = module,
+            .entryFunctionNameAH = "__anyhit__lidar",
         }
     };
 
     OPTIX_CHECK(optixProgramGroupCreate(
-        optixContext, &hitgroupDesc, 1,  &pgOptions, nullptr, nullptr, &hitgroupPG
-    ));
+        optixContext, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
 
-    OptixProgramGroup programGroups[] = {raygenPG, missPG, hitgroupPG};
+    OptixProgramGroup programGroups[] = { raygenPG, missPG, hitgroupPG };
 
     OPTIX_CHECK(optixPipelineCreate(
         optixContext,
@@ -364,16 +358,15 @@ void LidarRenderer::initializeStaticOptixStructures()
         programGroups,
         sizeof(programGroups) / sizeof(*programGroups),
         nullptr, nullptr,
-        &pipeline
-    ));
+        &pipeline));
 
     OPTIX_CHECK(optixPipelineSetStackSize(
         pipeline,
         2 * 1024, // directCallableStackSizeFromTraversal
         2 * 1024, // directCallableStackSizeFromState
         2 * 1024, // continuationStackSize
-        3         // maxTraversableGraphDepth
-    ));
+        3 // maxTraversableGraphDepth
+        ));
 }
 
 /*! constructs the shader binding table */
@@ -502,7 +495,7 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
 
     renderCallIdx++;
     if (renderCallIdx % 200 == 0) {
-	    PerfProbe::saveToFileAndReset();
+        PerfProbe::saveToFileAndReset();
     }
 }
 
