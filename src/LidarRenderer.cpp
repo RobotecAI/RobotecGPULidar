@@ -114,7 +114,7 @@ void LidarRenderer::removeTexture(const std::string& id)
     // model.changed = true;
 }
 
-void LidarRenderer::update_structs_for_model()
+void LidarRenderer::updateStructsForModel()
 {
     // std::cout << "update structs for model " << std::endl;
     if (needs_root_rebuild) {
@@ -259,14 +259,14 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     uint64_t compactedSize;
     compactedSizeBuffer.download(&compactedSize, 1);
 
-    asBuffer.free();
-    asBuffer.alloc(compactedSize);
+    accelerationStructure.free();
+    accelerationStructure.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
         /*stream:*/ 0,
-        m_root,
-        asBuffer.d_pointer(),
-        asBuffer.sizeInBytes,
-        &m_root));
+                                  m_root,
+                                  accelerationStructure.d_pointer(),
+                                  accelerationStructure.sizeInBytes,
+                                  &m_root));
     CUDA_SYNC_CHECK();
 
     // ==================================================================
@@ -452,7 +452,7 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
 
     {
         PerfProbe cc("render-update-structs");
-        update_structs_for_model();
+        updateStructsForModel();
     }
 
     {
@@ -628,4 +628,49 @@ CUcontext LidarRenderer::getCurrentDeviceContext()
         return getCurrentDeviceContext();
     }
     return cudaContext;
+}
+
+void LidarRenderer::addMeshRawTmp(const char *meshID, int meshSize, vec3f *vertices, vec3f *normals, vec2f *texCoords,
+                                  int indicesSize, vec3i *indices, int transformSize, float *transform) {
+    if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
+        print(fg(fmt::color::red), "Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
+        throw std::invalid_argument("invalid transform size");
+    }
+
+    //Constructor could already use the pointers
+    auto tm = std::make_shared<TriangleMesh>();
+
+    std::vector<vec3f> v(vertices, vertices + meshSize);
+    tm->vertex = v;
+
+    std::vector<vec3f> n(normals, normals + meshSize);
+    tm->normal = n;
+
+    std::vector<vec2f> tc(texCoords, texCoords + meshSize);
+    tm->texcoord = tc;
+
+    std::vector<vec3i> ind(indices, indices + indicesSize);
+    tm->index = ind;
+
+    std::string mesh_id(meshID);
+    tm->mesh_id = meshID;
+
+    memcpy(tm->transform.matrix_flat, transform, sizeof(TransformMatrix));
+
+    addMeshes({ tm });
+}
+
+void LidarRenderer::removeMeshRawTmp(const char *meshID) {
+    removeMesh(std::string(meshID));
+}
+
+void LidarRenderer::updateMeshTransformRawTmp(char *meshID, float *transform, int transformSize) {
+    if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
+        auto message = fmt::format("Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
+        throw std::invalid_argument(message);
+    }
+
+    TransformMatrix transformMatrix;
+    memcpy(transformMatrix.matrix_flat, transform, sizeof(TransformMatrix));
+    updateMeshTransform(std::string(meshID), transformMatrix);
 }

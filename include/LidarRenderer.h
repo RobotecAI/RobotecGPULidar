@@ -39,60 +39,19 @@ public:
     void addMeshRawTmp(const char* meshID,
         int meshSize, vec3f* vertices, vec3f* normals, vec2f* texCoords,
         int indicesSize, vec3i* indices,
-        int transformSize, float* transform)
-    {
-        if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
-            print(fg(fmt::color::red), "Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
-            throw std::invalid_argument("invalid transform size");
-        }
-
-        //Constructor could already use the pointers
-        auto tm = std::make_shared<TriangleMesh>();
-
-        std::vector<vec3f> v(vertices, vertices + meshSize);
-        tm->vertex = v;
-
-        std::vector<vec3f> n(normals, normals + meshSize);
-        tm->normal = n;
-
-        std::vector<vec2f> tc(texCoords, texCoords + meshSize);
-        tm->texcoord = tc;
-
-        std::vector<vec3i> ind(indices, indices + indicesSize);
-        tm->index = ind;
-
-        std::string mesh_id(meshID);
-        tm->mesh_id = meshID;
-
-        memcpy(tm->transform.matrix_flat, transform, sizeof(TransformMatrix));
-
-        addMeshes({ tm });
-    }
+        int transformSize, float* transform);
 
     void removeMesh(const std::string& mesh_id);
-    void removeMeshRawTmp(const char* meshID)
-    {
-        removeMesh(std::string(meshID));
-    }
+    void removeMeshRawTmp(const char* meshID);
 
     void updateMeshTransform(const std::string& meshID, const TransformMatrix& transform);
-    void updateMeshTransformRawTmp(char* meshID, float* transform, int transformSize)
-    {
-        if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
-            auto message = fmt::format("Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
-            throw std::invalid_argument(message);
-        }
-
-        TransformMatrix transformMatrix;
-        memcpy(transformMatrix.matrix_flat, transform, sizeof(TransformMatrix));
-        updateMeshTransform(std::string(meshID), transformMatrix);
-    }
+    void updateMeshTransformRawTmp(char* meshID, float* transform, int transformSize);
 
 private:
     std::string getCurrentDeviceName();
     CUcontext getCurrentDeviceContext();
 
-    void update_structs_for_model();
+    void updateStructsForModel();
 
     void initializeStaticOptixStructures();
 
@@ -140,14 +99,9 @@ private:
     bool needs_root_rebuild = { false };
 
     OptixTraversableHandle m_root; // Scene root
-    CUdeviceptr m_d_ias; // Scene root's IAS (instance acceleration structure).
 
     //! buffer that keeps the (final, compacted) accel structure
-    CUDABuffer asBuffer;
-    CUDABuffer outputBuffer;
-    OptixTraversableHandle meshHandle;
-    CUDABuffer compactedSizeBuffer;
-    CUDABuffer tempBuffer;
+    CUDABuffer accelerationStructure;
 
     /*! @{ one texture object and pixel array per used texture */
     std::vector<cudaArray_t> textureArrays;
