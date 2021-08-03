@@ -57,36 +57,29 @@ LidarRenderer::~LidarRenderer()
     log(fg(color::green), "[RGL] Deinitialization finished successfully\n");
 }
 
-void LidarRenderer::addTextures(std::vector<std::shared_ptr<Texture>> textures)
-{
-    throw std::runtime_error("unimplemented");
-}
-
 void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 {
     log("[RGL] Adding {} meshes\n", meshes.size());
-
     if (meshes.size() == 0) {
         return;
     }
 
-    {
-        PerfProbe c("add-mesh");
-        for (auto&& mesh : meshes) {
-            if (m_instances_map.find(mesh->mesh_id) == m_instances_map.end()) {
-                auto modelInstance = std::make_shared<ModelInstance>(mesh);
-                modelInstance->buildGAS(optixContext);
-                m_instances_map[mesh->mesh_id] = modelInstance;
-                needs_root_rebuild = true;
-            }
+    for (auto&& mesh : meshes) {
+        if (m_instances_map.find(mesh->mesh_id) != m_instances_map.end()) {
+            continue; // Already in the map, skip it.
         }
+        PerfProbe c("add-mesh");
+        auto modelInstance = std::make_shared<ModelInstance>(mesh);
+        modelInstance->buildGAS(optixContext);
+        m_instances_map[mesh->mesh_id] = modelInstance;
+        needs_root_rebuild = true;
     }
 }
 
 void LidarRenderer::updateMeshTransform(const std::string& mesh_id, const TransformMatrix& transform)
 {
     if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
-        PerfProbe cc("update-mesh");
+        PerfProbe c("update-mesh");
         m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
         m_instances_map[mesh_id]->needs_rebuild = true;
         needs_root_rebuild = true;
@@ -103,103 +96,13 @@ void LidarRenderer::removeMesh(const std::string& id)
     needs_root_rebuild = true;
 }
 
-void LidarRenderer::removeTexture(const std::string& id)
-{
-    // if (m_instances_map.find(id) != m_instances_map.end()) {
-    //   return;
-    // }
-    // model.textures_map.erase(id);
-    // model.needs_rebuild = true;
-    // model.textures_changed = true;
-    // model.changed = true;
-}
-
 void LidarRenderer::updateStructsForModel()
 {
-    // std::cout << "update structs for model " << std::endl;
     if (needs_root_rebuild) {
-        //std::string rebuild = model.needs_rebuild ? " and needs rebuild" : "";
-        //std::cout << "update structs: model changed" << rebuild << std::endl;
         launchParams.traversable = buildAccel();
-        // if (model.textures_changed) {
-        //   //std::cout << "update structs: textures_changed, creating " << std::endl;
-        //   createTextures();
-        //   model.textures_changed = false;
-        // }
-        // std::cout << "building SBT" << std::endl;
         buildSBT();
-
-        // model.needs_rebuild = false;
     }
     needs_root_rebuild = false;
-    //std::cout << "update structs for model ends " << std::endl;
-}
-
-void LidarRenderer::createTextures()
-{
-    // // std::cout << "create textures " << std::endl;
-    // size_t numTextures = m_instances_map.size();
-
-    // { // cleaning old textures. TODO - only clean ones that changed or were removed
-    //   for (auto & texture_object : textureObjects) {
-    //     CUDA_CHECK(DestroyTextureObject(texture_object));
-    //   }
-    //   for (auto & texture_array : textureArrays) {
-    //     CUDA_CHECK(FreeArray(texture_array));
-    //   }
-
-    //   textureArrays.clear();
-    //   textureObjects.clear();
-    //   textureArrays.resize(numTextures);
-    //   textureObjects.resize(numTextures);
-    // }
-
-    // int index = 0;
-    // for (const auto & kv : m_instances_map) {
-    //   auto texture = kv.second->m_texture;
-    //   cudaResourceDesc res_desc = {};
-
-    //   cudaChannelFormatDesc channel_desc;
-    //   int32_t width = texture->resolution.x;
-    //   int32_t height = texture->resolution.y;
-    //   int32_t numComponents = 4;
-    //   int32_t pitch = width*numComponents*sizeof(uint8_t);
-    //   channel_desc = cudaCreateChannelDesc<uchar4>();
-
-    //   cudaArray_t &pixelArray = textureArrays[index];
-    //   CUDA_CHECK(MallocArray(&pixelArray,
-    //                          &channel_desc,
-    //                          width,height));
-
-    //   CUDA_CHECK(Memcpy2DToArray(pixelArray,
-    //                              /* offset */0,0,
-    //                              texture->pixel,
-    //                              pitch,pitch,height,
-    //                              cudaMemcpyHostToDevice));
-
-    //   res_desc.resType = cudaResourceTypeArray;
-    //   res_desc.res.array.array = pixelArray;
-
-    //   cudaTextureDesc tex_desc = {};
-    //   tex_desc.addressMode[0] = cudaAddressModeWrap;
-    //   tex_desc.addressMode[1] = cudaAddressModeWrap;
-    //   tex_desc.filterMode = cudaFilterModeLinear;
-    //   tex_desc.readMode = cudaReadModeNormalizedFloat;
-    //   tex_desc.normalizedCoords = 1;
-    //   tex_desc.maxAnisotropy = 1;
-    //   tex_desc.maxMipmapLevelClamp = 99;
-    //   tex_desc.minMipmapLevelClamp = 0;
-    //   tex_desc.mipmapFilterMode = cudaFilterModePoint;
-    //   tex_desc.borderColor[0] = 1.0f;
-    //   tex_desc.sRGB = 0;
-
-    //   // Create texture object
-    //   cudaTextureObject_t cuda_tex = 0;
-    //   CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-    //   textureObjects[index] = cuda_tex;
-    //   index++;
-    // }
-    //std::cout << "create textures ends " << std::endl;
 }
 
 OptixTraversableHandle LidarRenderer::buildAccel()
@@ -208,9 +111,7 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     unsigned int idx = 0;
     for (const auto& kv : m_instances_map) {
         const auto mi = kv.second;
-        // std::cout << "build ias " << kv.first << std::endl;
         auto instance = mi->buildIAS(idx++);
-        // std::cout << "ias " << kv.first  << " done" << std::endl;
         instances.push_back(instance);
     }
 
@@ -253,37 +154,29 @@ OptixTraversableHandle LidarRenderer::buildAccel()
         outputBuffer.d_pointer(), outputBuffer.sizeInBytes,
         &m_root, &emitDesc, 1));
 
-    // ==================================================================
     // perform compaction
-    // ==================================================================
     uint64_t compactedSize;
     compactedSizeBuffer.download(&compactedSize, 1);
 
     accelerationStructure.free();
     accelerationStructure.alloc(compactedSize);
     OPTIX_CHECK(optixAccelCompact(optixContext,
-        /*stream:*/ 0,
-                                  m_root,
-                                  accelerationStructure.d_pointer(),
-                                  accelerationStructure.sizeInBytes,
-                                  &m_root));
+        nullptr,
+        m_root,
+        accelerationStructure.d_pointer(),
+        accelerationStructure.sizeInBytes,
+        &m_root));
     CUDA_SYNC_CHECK();
 
-    // ==================================================================
-    // aaaaaand .... clean up
-    // ==================================================================
+    // clean up
     tempBuffer.free();
     outputBuffer.free();
     compactedSizeBuffer.free();
     instanceBuffer.free();
 
-    //std::cout << "build accel ends" << std::endl;
     return m_root;
 }
 
-/*! creates the module that contains all the programs we are going
-      to use. in this simple example, we use a single module from a
-      single .cu file, using a single embedded ptx string */
 void LidarRenderer::initializeStaticOptixStructures()
 {
     OptixModuleCompileOptions moduleCompileOptions = {
@@ -356,7 +249,7 @@ void LidarRenderer::initializeStaticOptixStructures()
         &pipelineCompileOptions,
         &pipelineLinkOptions,
         programGroups,
-        sizeof(programGroups) / sizeof(*programGroups),
+        sizeof(programGroups) / sizeof(programGroups[0]),
         nullptr, nullptr,
         &pipeline));
 
@@ -369,26 +262,22 @@ void LidarRenderer::initializeStaticOptixStructures()
         ));
 }
 
-/*! constructs the shader binding table */
 void LidarRenderer::buildSBT()
 {
     sbt = {};
-    // ------------------------------------------------------------------
+
     // build raygen records
-    // ------------------------------------------------------------------
     std::vector<RaygenRecord> raygenRecords;
-    RaygenRecord raygenRecord;
+    RaygenRecord raygenRecord {};
     OPTIX_CHECK(optixSbtRecordPackHeader(raygenPG, &raygenRecord));
     raygenRecords.push_back(raygenRecord);
     raygenRecordsBuffer.free();
     raygenRecordsBuffer.alloc_and_upload(raygenRecords);
     sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
 
-    // ------------------------------------------------------------------
     // build miss records
-    // ------------------------------------------------------------------
     std::vector<MissRecord> missRecords;
-    MissRecord missRecord;
+    MissRecord missRecord {};
     OPTIX_CHECK(optixSbtRecordPackHeader(missPG, &missRecord));
     missRecords.push_back(missRecord);
     missRecordsBuffer.free();
@@ -397,9 +286,7 @@ void LidarRenderer::buildSBT()
     sbt.missRecordStrideInBytes = sizeof(MissRecord);
     sbt.missRecordCount = (int)missRecords.size();
 
-    // ------------------------------------------------------------------
     // build hitgroup records
-    // ------------------------------------------------------------------
     std::vector<HitgroupRecord> hitgroupRecords;
     int meshID = 0;
     for (const auto& kv : m_instances_map) {
@@ -434,13 +321,12 @@ void LidarRenderer::buildSBT()
     sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
-/*! render one frame */
 void LidarRenderer::render(const std::vector<LidarSource>& lidars)
 {
     static int renderCallIdx = 0;
     print("Rendering {} lidars\n", lidars.size());
     PerfProbe c("render");
-    // sanity check: make sure we launch only after first resize is already done:
+
     if (launchParams.rayCount == 0) {
         print(fg(color::yellow), "LidarRender::render called with 0 rays\n");
         return;
@@ -454,18 +340,15 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
         PerfProbe cc("render-update-structs");
         updateStructsForModel();
     }
-
     {
         PerfProbe cc("render-upload-rays");
         uploadRays(lidars);
     }
-    {
-        PerfProbe cc("render-launch-params");
-        launchParamsBuffer.uploadAsync(&launchParams, 1);
-    }
+
+    launchParamsBuffer.uploadAsync(&launchParams, 1);
 
     {
-        PerfProbe cc("render-gpu");
+        PerfProbe ccc("render-gpu");
         OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
             pipeline, nullptr,
             /*! parameters and SBT */
@@ -499,12 +382,11 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
     }
 }
 
-/*! resize frame buffer to given resolution */
 void LidarRenderer::resize(const std::vector<LidarSource>& lidars)
 {
     PerfProbe c("resize");
-    int lidarCount = lidars.size();
-    int rayCount = 0;
+    size_t lidarCount = lidars.size();
+    size_t rayCount = 0;
     for (int i = 0; i < lidarCount; ++i) {
         rayCount += lidars[i].directions.size();
     }
@@ -519,7 +401,6 @@ void LidarRenderer::resize(const std::vector<LidarSource>& lidars)
     hitBuffer.resize(rayCount * sizeof(int));
 
     // update the launch parameters that we'll pass to the optix
-    // launch:
     launchParams.rayCount = rayCount;
     launchParams.lidarCount = lidarCount;
     launchParams.raysPerLidarBuffer = (int*)raysPerLidarBuffer.d_ptr;
@@ -543,6 +424,7 @@ void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
         auto message = fmt::format("fixme: unexpected number of lidars: {}\n", lidars.size());
         throw std::logic_error(message);
     }
+
     // Using the aforementioned assumption, upload rays directly from the given buffer.
     rayBuffer.uploadAsync(lidars[0].directions.data(), lidars[0].directions.size());
 
@@ -561,13 +443,11 @@ void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
     sourceBuffer.uploadAsync(source.data(), source.size());
 }
 
-/*! download the rendered color buffer */
 const RaycastResults* LidarRenderer::downloadPoints()
 {
     log("[RGL] Downloading points\n");
     PerfProbe c("download");
     result.clear();
-    // if (model.meshes_map.size() == 0) return;
 
     CUDA_CHECK(StreamSynchronize(nullptr));
 
@@ -577,7 +457,7 @@ const RaycastResults* LidarRenderer::downloadPoints()
         return nullptr;
     }
 
-    // now rewrite to RaycastResults
+    // TODO(prybicki) move it to the GPU
     {
         PerfProbe cc("download-rewrite");
         int index = 0;
@@ -637,7 +517,7 @@ void LidarRenderer::addMeshRawTmp(const char *meshID, int meshSize, vec3f *verti
         throw std::invalid_argument("invalid transform size");
     }
 
-    //Constructor could already use the pointers
+    // TODO(prybicki): upload directly to the GPU
     auto tm = std::make_shared<TriangleMesh>();
 
     std::vector<vec3f> v(vertices, vertices + meshSize);

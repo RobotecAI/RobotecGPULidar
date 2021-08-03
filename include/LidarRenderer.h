@@ -1,6 +1,5 @@
 #pragma once
 
-// our own classes, partly shared between host and device
 #include "LaunchParams.h"
 #include "ModelInstance.h"
 #include "Texture.h"
@@ -14,25 +13,16 @@
 #include <cstring>
 #include <fmt/format.h>
 
-class LidarRenderer {
-    // ------------------------------------------------------------------
-    // publicly accessible interface
-    // ------------------------------------------------------------------
-public:
+struct LidarRenderer {
     LidarRenderer();
     ~LidarRenderer();
 
-    /*! render one frame */
     void render(const std::vector<LidarSource>& lidars);
 
-    /*! resize frame buffer to given resolution */
     void resize(const std::vector<LidarSource>& lidars);
 
     // TODO(prybicki): this return type is temporary and should be changed in the future refactor
     const RaycastResults* downloadPoints();
-
-    void addTextures(std::vector<std::shared_ptr<Texture>> tex);
-    void removeTexture(const std::string& tex_id);
 
     void addMeshes(std::vector<std::shared_ptr<TriangleMesh>> mesh);
 
@@ -50,21 +40,11 @@ public:
 private:
     std::string getCurrentDeviceName();
     CUcontext getCurrentDeviceContext();
-
     void updateStructsForModel();
-
     void initializeStaticOptixStructures();
-
-    /*! constructs the shader binding table */
     void buildSBT();
-
-    /*! build an acceleration structure for the given triangle mesh */
-    // in the future for update reload not whole model, only dynamic part
     OptixTraversableHandle buildAccel();
-
-    /*! upload textures, and create cuda texture objects for them */
     void createTextures();
-
     void uploadRays(const std::vector<LidarSource>& lidars);
 
     OptixModule module;
@@ -79,11 +59,8 @@ private:
     CUDABuffer missRecordsBuffer;
     CUDABuffer hitgroupRecordsBuffer;
 
-    /*! @{ our launch parameters, on the host, and the buffer to store
-  them on the device */
     LaunchLidarParams launchParams;
     CUDABuffer launchParamsBuffer;
-    /*! @} */
 
     CUDABuffer raysPerLidarBuffer;
     CUDABuffer rayBuffer;
@@ -93,20 +70,16 @@ private:
     CUDABuffer positionBuffer;
     CUDABuffer hitBuffer;
 
-    /*! the model we are going to trace rays against */
-    // Model model;
     InstancesMap m_instances_map;
     bool needs_root_rebuild = { false };
 
     OptixTraversableHandle m_root; // Scene root
 
-    //! buffer that keeps the (final, compacted) accel structure
+    // Buffer that keeps the (final, compacted) accel structure
     CUDABuffer accelerationStructure;
 
-    /*! @{ one texture object and pixel array per used texture */
     std::vector<cudaArray_t> textureArrays;
     std::vector<cudaTextureObject_t> textureObjects;
-    /*! @} */
 
     RaycastResults result;
 
