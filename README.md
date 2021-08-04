@@ -1,8 +1,36 @@
-# Lidar simulator with the use of Nvidia Optix reycast
+# Robotec GPU Lidar
 
-Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our target is Ubuntu 20.04. It has also been tested with Windows and Visual Studio 2017, 
+GPU-based implementation of raycasting algorithm employing specialized NVIDIA RTX hardware through  NVIDIA OptiX.
+
+This repository contains:
+- Native source code (C++/CUDA) for the native Robotec GPU Lidar library (currently called liboptix_lidar)
+  - src/
+  - include/
+- C# wrapper
+  - dotnet_module/
+- Helper code from Ingo Wald on Apache License 2.0 (to be removed in the future)
+  - common/
+
+Current features include:
+- [x] Adding meshes to a global map.
+- [x] Removing meshes from a global map.
+- [x] Computing raycast results for a single lidar at a time.
+
+Future plans/ideas include:
+- [ ] (Re)-add support for computing intensity from (intensity or RGB) textures.
+- [ ] Add support for LiDARs in motion (simulating skewed pointcloud).
+- [ ] Add support for bulk computations (multiple LiDARs in a single call).
+- [ ] Offload auxiliary operations like generating ray directions and filtering raycast results to the GPU.
+- [ ] Provide stable C API to allow usage from other languages.
+- [ ] Develop automated tests and benchmarks.
+- [ ] ROS2 integration (automatic PCL publishing).
+- [ ] Optimize out remaining inefficiencies, i.e. copy meshes immediately to the GPU.
+
 
 ### Dependencies
+Our target is Ubuntu 20.04.
+
+**NOTE: Currently Windows support is suspended, but it will be resumed.**
 
 * **CUDA 11.2 or later**
     * Downloads available from developer.nvidia.com
@@ -16,10 +44,12 @@ Application simulating Lidar rays on GPU with Nvidia Optix Technology. Our targe
         * Install compiler, dkms, libxi, xinerama
         `sudo apt -y install build-essential dkms libglfw3-dev pkg-config libglvnd-dev cmake cmake-curses-gui libxinerama-dev libxcursor-dev`
     * Windows: the installer should automatically put it into the right directory
+* **libfmt-dev**
+  * Linux: `sudo apt -y install libfmt-dev`
 * **.net5.0**
-    * Needed for tests only,
-    * Download available here: [.net](https://dotnet.microsoft.com/download/dotnet/)
-* **git-lfs** - note that if you were using simulation before, you have it installed. Otherwise see below
+  * Needed for tests only,
+  * Download available here: [.net](https://dotnet.microsoft.com/download/dotnet/)
+* **git-lfs** - See below.
 
 #### Build prerequisites: Git LFS
 
@@ -32,7 +62,6 @@ Then, in both cases, run the following command in a terminal or Command Prompt: 
 
 Git LFS will automatically bootstrap for LFS repositories and dowload all files through the normal `git clone` command. Note that the clone command can now take a while as it needs
 to download all the files, but subsequent updates will be much faster.
-
 
 ### Checking the installation, troubleshooting
 
@@ -58,33 +87,55 @@ If all of these work correctly, your environment is likely setup correctly. Some
     `cmake ..` or `cmake .. -DBUILD_TESTS=true` to build with tests     
     `make`
 
-## Running tests
-* Make sure you have tests built:   
-    `cmake .. -DBUILD_TESTS=true`   
-* To run all tests:   
-    `make test`    
-    or   
-    `ctest --output-on-failure` to see more verbose output on failure.
-* For a certain test:   
-    `ctest -R <TEST_NAME> --verbose`
+[comment]: <> (## Running tests)
 
-### Building (Windows)
-* **Using Visual Studio (recommended)**
-    * Install Required Packages
-        * see above: CUDA 11.2, OptiX 7.2 SDK, latest driver, and cmake
-    * download or clone the source repository
-    *  In Visual Studio choose 'File > Open > CMake' to open CMakeLists.txt file
-        *  More details: [Microsoft CMake](https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=vs-2019)
-* **Using CMake GUI**
-    * Install Required Packages
-        * see above: CUDA 11.2, OptiX 7.2 SDK, latest driver, and cmake
-    * download or clone the source repository
-    * Open CMake GUI from your start menu
-     * point "source directory" to the downloaded source directory
-     * point "build directory" to /build (agree to create this directory when prompted)
-     * click 'configure', then specify the generator as Visual Studio 2017 or 2019, and the Optional platform as x64. If CUDA, SDK, and compiler are all properly installed this should enable the 'generate' button. If not, make sure all dependencies are properly installed, "clear cache", and re-configure.
-     * click 'generate' (this creates a Visual Studio project and solutions)
-     * click 'open project' (this should open the project in Visual Studio)
+[comment]: <> (* Make sure you have tests built:   )
 
+[comment]: <> (    `cmake .. -DBUILD_TESTS=true`   )
 
+[comment]: <> (* To run all tests:   )
+
+[comment]: <> (    `make test`    )
+
+[comment]: <> (    or   )
+
+[comment]: <> (    `ctest --output-on-failure` to see more verbose output on failure.)
+
+[comment]: <> (* For a certain test:   )
+
+[comment]: <> (    `ctest -R <TEST_NAME> --verbose`)
+
+[comment]: <> (### Building &#40;Windows&#41;)
+
+[comment]: <> (* **Using Visual Studio &#40;recommended&#41;**)
+
+[comment]: <> (    * Install Required Packages)
+
+[comment]: <> (        * see above: CUDA 11.2, OptiX 7.2 SDK, latest driver, and cmake)
+
+[comment]: <> (    * download or clone the source repository)
+
+[comment]: <> (    *  In Visual Studio choose 'File > Open > CMake' to open CMakeLists.txt file)
+
+[comment]: <> (        *  More details: [Microsoft CMake]&#40;https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=vs-2019&#41;)
+
+[comment]: <> (* **Using CMake GUI**)
+
+[comment]: <> (    * Install Required Packages)
+
+[comment]: <> (        * see above: CUDA 11.2, OptiX 7.2 SDK, latest driver, and cmake)
+
+[comment]: <> (    * download or clone the source repository)
+
+[comment]: <> (    * Open CMake GUI from your start menu)
+
+[comment]: <> (     * point "source directory" to the downloaded source directory)
+
+[comment]: <> (     * point "build directory" to /build &#40;agree to create this directory when prompted&#41;)
+
+[comment]: <> (     * click 'configure', then specify the generator as Visual Studio 2017 or 2019, and the Optional platform as x64. If CUDA, SDK, and compiler are all properly installed this should enable the 'generate' button. If not, make sure all dependencies are properly installed, "clear cache", and re-configure.)
+
+[comment]: <> (     * click 'generate' &#40;this creates a Visual Studio project and solutions&#41;)
+
+[comment]: <> (     * click 'open project' &#40;this should open the project in Visual Studio&#41;)
 
