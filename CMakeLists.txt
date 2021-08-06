@@ -44,17 +44,17 @@ cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 
 add_library(optix_lidar SHARED
     ${embedded_ptx_code}
-        src/LidarRenderer.cpp
-        src/simple_uid_generator.cpp
-        src/ModelInstance.cpp
-        src/PerfProbe.cpp
+    src/LidarRenderer.cpp
+    src/simple_uid_generator.cpp
+    src/ModelInstance.cpp
+    src/PerfProbe.cpp
 )
 
 find_package(fmt)
 
 target_link_libraries(optix_lidar
     gdt
-    fmt::fmt # FMT Library for a proper string formatting in C++
+    fmt::fmt-header-only # FMT Library for a proper string formatting in C++
     ${CUDA_LIBRARIES}
     ${CUDA_CUDA_LIBRARY}
 )
