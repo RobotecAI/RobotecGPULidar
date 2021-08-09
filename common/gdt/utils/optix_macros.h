@@ -3,8 +3,13 @@
 // optix 7
 #include <cuda_runtime.h>
 #include <optix.h>
-#include <optix_stubs.h>
 #include <sstream>
+
+#include <DisableWarningUtil.h>
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_MISSING_FIELD_INITIALIZERS
+#include <optix_stubs.h>
+DISABLE_WARNING_POP
 
 #define CUDA_CHECK(call)                                   \
     do {                                                   \

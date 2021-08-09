@@ -353,12 +353,6 @@ using vec3##t = vec_t<T,3>; \
 using vec4##t = vec_t<T,4>; \
 using vec3##t##a = vec3a_t<T>; \
   
-//#define _define_vec_types(T,t)    \
-//  typedef vec_t<T,2> vec2##t;    \
-//  typedef vec_t<T,3> vec3##t;    \
-//  typedef vec_t<T,4> vec4##t;    \
-//  typedef vec3a_t<T> vec3##t##a; \
-
   _define_vec_types(int8_t ,c);
   _define_vec_types(int16_t ,s);
   _define_vec_types(int32_t ,i);
