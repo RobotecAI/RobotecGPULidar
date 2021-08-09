@@ -1,5 +1,3 @@
-#pragma once
-
 #include <cstring>
 
 #include "LaunchParams.h"

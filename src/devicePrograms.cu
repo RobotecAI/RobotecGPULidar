@@ -6,7 +6,7 @@
 //#undef NDEBUG
 #include <assert.h>
 
-extern "C" __constant__ LaunchLidarParams optixLaunchLidarParams;
+extern "C" static __constant__ LaunchLidarParams optixLaunchLidarParams;
 
 static __forceinline__ __device__ void* unpackPointer(uint32_t i0, uint32_t i1)
 {

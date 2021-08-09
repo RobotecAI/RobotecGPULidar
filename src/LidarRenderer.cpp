@@ -385,7 +385,7 @@ void LidarRenderer::resize(const std::vector<LidarSource>& lidars)
     PerfProbe c("resize");
     size_t lidarCount = lidars.size();
     size_t rayCount = 0;
-    for (int i = 0; i < lidarCount; ++i) {
+    for (size_t i = 0; i < lidarCount; ++i) {
         rayCount += lidars[i].directions.size();
     }
 
@@ -458,7 +458,7 @@ const RaycastResults* LidarRenderer::downloadPoints()
     // TODO(prybicki) move it to the GPU
     {
         PerfProbe cc("download-rewrite");
-        int index = 0;
+        size_t index = 0;
         for (int i = 0; i < launchParams.lidarCount; ++i) {
             RaycastResult res;
             for (int j = 0; j < raysPerLidar[i]; ++j) {
