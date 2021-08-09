@@ -69,8 +69,7 @@ void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
             continue; // Already in the map, skip it.
         }
         PerfProbe c("add-mesh");
-        auto modelInstance = std::make_shared<ModelInstance>(mesh);
-        modelInstance->buildGAS(optixContext);
+        auto modelInstance = std::make_shared<ModelInstance>(mesh, optixContext);
         m_instances_map[mesh->mesh_id] = modelInstance;
         needs_root_rebuild = true;
     }
@@ -81,7 +80,6 @@ void LidarRenderer::updateMeshTransform(const std::string& mesh_id, const Transf
     if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
         PerfProbe c("update-mesh");
         m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
-        m_instances_map[mesh_id]->needs_rebuild = true;
         needs_root_rebuild = true;
     }
 }
