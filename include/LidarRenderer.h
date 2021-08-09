@@ -70,7 +70,7 @@ private:
     CUDABuffer positionBuffer;
     CUDABuffer hitBuffer;
 
-    InstancesMap m_instances_map;
+    std::unordered_map<std::string, std::shared_ptr<ModelInstance>> m_instances_map;
     bool needs_root_rebuild = { false };
 
     OptixTraversableHandle m_root; // Scene root
