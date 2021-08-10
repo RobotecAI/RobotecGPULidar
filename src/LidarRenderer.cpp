@@ -11,32 +11,57 @@ using namespace fmt;
 
 extern "C" char embedded_ptx_code[];
 
+#define OPTIX_LOG_LEVEL_NONE 0
+#define OPTIX_LOG_LEVEL_FATAL 1
+#define OPTIX_LOG_LEVEL_ERROR 2
+#define OPTIX_LOG_LEVEL_WARN 3
+#define OPTIX_LOG_LEVEL_INFO 4
+
+
+// Logging writes to stderr because stdout is not saved in Unity's Editor.log / Player.log
+// TODO(prybicki): Consider more real-world logging with ability to set level and redirect to a file.
+
 template <typename... Args>
-void log(Args&&... args) { print(stderr, std::forward<Args>(args)...); }
+void logInfo(Args&&... args) { print(stderr, fg(color::cornflower_blue), std::forward<Args>(args)...); }
+
+template <typename... Args>
+void logWarn(Args&&... args) { print(stderr, fg(color::yellow), std::forward<Args>(args)...); }
+
+template <typename... Args>
+void logError(Args&&... args) { print(stderr, fg(color::red), std::forward<Args>(args)...); }
 
 LidarRenderer::LidarRenderer()
 {
     PerfProbe c("init");
-    log("[RGL] Initialization started\n");
-    log("[RGL] Running on GPU: {}\n", getCurrentDeviceName());
+    logInfo("[RGL] Initialization started\n");
+    logInfo("[RGL] Running on GPU: {}\n", getCurrentDeviceName());
 
     OPTIX_CHECK(optixInit());
     OPTIX_CHECK(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &optixContext));
     OPTIX_CHECK(optixDeviceContextSetLogCallback(
         optixContext,
         [](unsigned level, const char* tag, const char* message, void*) {
-            print(stderr, fg(color::light_blue), "[{:2}][{:^12}]: {}\n", (int)level, tag, message);
+            auto fmt = "[RGL][OptiX][{:2}][{:^12}]: {}\n";
+            if (level == OPTIX_LOG_LEVEL_FATAL || level == OPTIX_LOG_LEVEL_ERROR) {
+                logError(fmt, level, tag, message);
+                return;
+            }
+            if (level == OPTIX_LOG_LEVEL_WARN) {
+                logWarn(fmt, level, tag, message);
+                return;
+            }
+            logInfo(fmt, level, tag, message);
         },
         nullptr, 4));
 
     initializeStaticOptixStructures();
     launchParamsBuffer.alloc(sizeof(launchParams));
-    log(fg(color::green), "[RGL] Initialization finished successfully\n");
+    logInfo("[RGL] Initialization finished successfully\n");
 }
 
 LidarRenderer::~LidarRenderer()
 {
-    log("[RGL] Deinitialization started\n");
+    logInfo("[RGL] Deinitialization started\n");
 
     optixPipelineDestroy(pipeline);
     for (auto&& programGroup : { raygenPG, missPG, hitgroupPG }) {
@@ -54,12 +79,11 @@ LidarRenderer::~LidarRenderer()
     optixModuleDestroy(module);
     optixDeviceContextDestroy(optixContext);
 
-    log(fg(color::green), "[RGL] Deinitialization finished successfully\n");
+    logInfo("[RGL] Deinitialization finished successfully\n");
 }
 
 void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 {
-    log("[RGL] Adding {} meshes\n", meshes.size());
     if (meshes.size() == 0) {
         return;
     }
@@ -68,7 +92,7 @@ void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
         if (m_instances_map.find(mesh->mesh_id) != m_instances_map.end()) {
             continue; // Already in the map, skip it.
         }
-        PerfProbe c("add-mesh");
+        logInfo("[RGL] Adding mesh id={}\n", mesh->mesh_id);
         auto modelInstance = std::make_shared<ModelInstance>(mesh, optixContext);
         m_instances_map[mesh->mesh_id] = modelInstance;
         needs_root_rebuild = true;
@@ -77,11 +101,12 @@ void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
 
 void LidarRenderer::updateMeshTransform(const std::string& mesh_id, const TransformMatrix& transform)
 {
-    if (m_instances_map.find(mesh_id) != m_instances_map.end()) {
-        PerfProbe c("update-mesh");
-        m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
-        needs_root_rebuild = true;
+    if (m_instances_map.find(mesh_id) == m_instances_map.end()) {
+        return;
     }
+    PerfProbe c("updateMeshTransform");
+    m_instances_map[mesh_id]->m_triangle_mesh->transform = transform;
+    needs_root_rebuild = true;
 }
 
 void LidarRenderer::removeMesh(const std::string& id)
@@ -262,6 +287,7 @@ void LidarRenderer::initializeStaticOptixStructures()
 
 void LidarRenderer::buildSBT()
 {
+    PerfProbe c("buildSBT");
     sbt = {};
 
     // build raygen records
@@ -322,7 +348,6 @@ void LidarRenderer::buildSBT()
 void LidarRenderer::render(const std::vector<LidarSource>& lidars)
 {
     static int renderCallIdx = 0;
-    print("Rendering {} lidars\n", lidars.size());
     PerfProbe c("render");
 
     if (launchParams.rayCount == 0) {
@@ -334,14 +359,8 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
         return;
     }
 
-    {
-        PerfProbe cc("render-update-structs");
-        updateStructsForModel();
-    }
-    {
-        PerfProbe cc("render-upload-rays");
-        uploadRays(lidars);
-    }
+    updateStructsForModel();
+    uploadRays(lidars);
 
     launchParamsBuffer.uploadAsync(&launchParams, 1);
 
@@ -411,6 +430,7 @@ void LidarRenderer::resize(const std::vector<LidarSource>& lidars)
 
 void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
 {
+    PerfProbe c("uploadRays");
     raysPerLidar.resize(lidars.size());
     for (size_t i = 0; i < lidars.size(); ++i) {
         raysPerLidar[i] = lidars[i].directions.size();
@@ -443,7 +463,7 @@ void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
 
 const RaycastResults* LidarRenderer::downloadPoints()
 {
-    log("[RGL] Downloading points\n");
+    logInfo("[RGL] Downloading points\n");
     PerfProbe c("download");
     result.clear();
 
@@ -451,7 +471,7 @@ const RaycastResults* LidarRenderer::downloadPoints()
 
     // TODO(prybicki): investigate this
     if (hits.size() != static_cast<size_t>(launchParams.rayCount)) {
-        log(fg(color::orange), "invalid buffer size");
+        logWarn("[RGL] invalid buffer size");
         return nullptr;
     }
 
@@ -462,9 +482,6 @@ const RaycastResults* LidarRenderer::downloadPoints()
         for (int i = 0; i < launchParams.lidarCount; ++i) {
             RaycastResult res;
             for (int j = 0; j < raysPerLidar[i]; ++j) {
-                if (hits.size() <= index) {
-                    log("{} / {}\n", index, hits.size());
-                }
                 if (hits.at(index)) {
                     LidarPoint point;
                     auto offset = index * 4;
@@ -511,7 +528,7 @@ CUcontext LidarRenderer::getCurrentDeviceContext()
 void LidarRenderer::addMeshRawTmp(const char *meshID, int meshSize, vec3f *vertices, vec3f *normals, vec2f *texCoords,
                                   int indicesSize, vec3i *indices, int transformSize, float *transform) {
     if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
-        print(fg(fmt::color::red), "Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
+        logError("[RGL] Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
         throw std::invalid_argument("invalid transform size");
     }
 
