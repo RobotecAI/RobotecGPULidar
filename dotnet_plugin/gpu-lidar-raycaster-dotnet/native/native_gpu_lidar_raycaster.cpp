@@ -61,8 +61,8 @@ int Internal_AddMesh(LidarRenderer* lidarRenderer, char* mesh_id, float* transfo
     vec2f* texture_coordinates, vec3i* indices, int indices_size, int mesh_size, int transform_size)
 {
     (void) is_global;
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->addMeshRawTmp(mesh_id, mesh_size, vertices, normals, texture_coordinates,
-                                                          indices_size, indices, transform_size, transform));
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->addMeshRaw(mesh_id, mesh_size, vertices, normals, texture_coordinates,
+                                                  indices_size, indices, transform_size, transform));
     return GPULIDAR_SUCCESS;
 }
 

@@ -82,21 +82,12 @@ LidarRenderer::~LidarRenderer()
     logInfo("[RGL] Deinitialization finished successfully\n");
 }
 
-void LidarRenderer::addMeshes(std::vector<std::shared_ptr<TriangleMesh>> meshes)
+void LidarRenderer::addMeshUnchecked(std::shared_ptr<TriangleMesh> mesh)
 {
-    if (meshes.size() == 0) {
-        return;
-    }
-
-    for (auto&& mesh : meshes) {
-        if (m_instances_map.find(mesh->mesh_id) != m_instances_map.end()) {
-            continue; // Already in the map, skip it.
-        }
-        logInfo("[RGL] Adding mesh id={}\n", mesh->mesh_id);
-        auto modelInstance = std::make_shared<ModelInstance>(mesh, optixContext);
-        m_instances_map[mesh->mesh_id] = modelInstance;
-        needs_root_rebuild = true;
-    }
+    logInfo("[RGL] Adding mesh id={}\n", mesh->mesh_id);
+    auto modelInstance = std::make_shared<ModelInstance>(mesh, optixContext);
+    m_instances_map[mesh->mesh_id] = modelInstance;
+    needs_root_rebuild = true;
 }
 
 void LidarRenderer::updateMeshTransform(const std::string& mesh_id, const TransformMatrix& transform)
@@ -525,11 +516,16 @@ CUcontext LidarRenderer::getCurrentDeviceContext()
     return cudaContext;
 }
 
-void LidarRenderer::addMeshRawTmp(const char *meshID, int meshSize, vec3f *vertices, vec3f *normals, vec2f *texCoords,
-                                  int indicesSize, vec3i *indices, int transformSize, float *transform) {
+void LidarRenderer::addMeshRaw(const char *meshID, int meshSize, vec3f *vertices, vec3f *normals, vec2f *texCoords,
+                               int indicesSize, vec3i *indices, int transformSize, float *transform) {
     if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
         logError("[RGL] Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
         throw std::invalid_argument("invalid transform size");
+    }
+
+    // Since constructing TriangleMesh is costly, we want to check for its existence early.
+    if (m_instances_map.find(meshID) != m_instances_map.end()) {
+        return; // Already in the map, skip it.
     }
 
     // TODO(prybicki): upload directly to the GPU
@@ -552,7 +548,7 @@ void LidarRenderer::addMeshRawTmp(const char *meshID, int meshSize, vec3f *verti
 
     memcpy(tm->transform.matrix_flat, transform, sizeof(TransformMatrix));
 
-    addMeshes({ tm });
+    addMeshUnchecked({tm});
 }
 
 void LidarRenderer::removeMeshRawTmp(const char *meshID) {
