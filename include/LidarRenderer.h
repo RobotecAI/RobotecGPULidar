@@ -24,12 +24,11 @@ struct LidarRenderer {
     // TODO(prybicki): this return type is temporary and should be changed in the future refactor
     const RaycastResults* downloadPoints();
 
-    void addMeshes(std::vector<std::shared_ptr<TriangleMesh>> mesh);
 
-    void addMeshRawTmp(const char* meshID,
-        int meshSize, vec3f* vertices, vec3f* normals, vec2f* texCoords,
-        int indicesSize, vec3i* indices,
-        int transformSize, float* transform);
+    void addMeshRaw(const char* meshID,
+                    int meshSize, vec3f* vertices, vec3f* normals, vec2f* texCoords,
+                    int indicesSize, vec3i* indices,
+                    int transformSize, float* transform);
 
     void removeMesh(const std::string& mesh_id);
     void removeMeshRawTmp(const char* meshID);
@@ -46,6 +45,7 @@ private:
     OptixTraversableHandle buildAccel();
     void createTextures();
     void uploadRays(const std::vector<LidarSource>& lidars);
+    void addMeshUnchecked(std::shared_ptr<TriangleMesh> meshes);
 
     OptixModule module;
     OptixPipeline pipeline;
