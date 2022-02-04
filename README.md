@@ -3,7 +3,7 @@
 GPU-based implementation of raycasting algorithm employing specialized NVIDIA RTX hardware through  NVIDIA OptiX.
 
 This repository contains:
-- Native source code (C++/CUDA) for the native Robotec GPU Lidar library (currently called liboptix_lidar)
+- Native source code (C++/CUDA) for the native Robotec GPU Lidar library
   - src/
   - include/
 - C# wrapper
