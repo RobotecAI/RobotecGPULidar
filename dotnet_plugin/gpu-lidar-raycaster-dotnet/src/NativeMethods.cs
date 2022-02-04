@@ -6,7 +6,7 @@ namespace GPULidarRaycaster
     internal static class NativeMethods
     {
         private static readonly DllLoadUtils dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
-        private static readonly IntPtr native_raycaster_lib = dllLoadUtils.LoadLibraryNoSuffix("native_gpu_lidar_raycaster");
+        private static readonly IntPtr native_raycaster_lib = dllLoadUtils.LoadLibraryNoSuffix("RobotecGPULidar");
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int Internal_CreateNativeRaycasterType(out IntPtr raycaster);

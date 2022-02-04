@@ -15,51 +15,52 @@
 # ======================================================================== #
 
 # TODO(prybicki): rewrite it to modern CMake
-project(RobotecGPULidar)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.16)
+project(RobotecGPULidar C CXX)
 
-include_directories(common)
+set(CMAKE_CXX_STANDARD 20)
 
-# ------------------------------------------------------------------
-# first, include gdt project to do some general configuration stuff
-# (build modes, glut, optix, etc)
-# ------------------------------------------------------------------
+
+# GDT-Related stuff, to be removed in the future TODO(prybicki)
 set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${gdt_dir}/cmake/")
 include(${gdt_dir}/cmake/configure_build_type.cmake)
 include(${gdt_dir}/cmake/configure_optix.cmake)
-mark_as_advanced(CUDA_SDK_ROOT_DIR)
-
-# ------------------------------------------------------------------
-# import gdt submodule
-# ------------------------------------------------------------------
+include_directories(common)
 include_directories(${gdt_dir})
 add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
+mark_as_advanced(CUDA_SDK_ROOT_DIR)
 
-# ------------------------------------------------------------------
-# and final build rules for the project
-# ------------------------------------------------------------------
-include_directories(include ${OptiX_INCLUDE})
+# Project files
+include_directories(include)
+include_directories(${OptiX_INCLUDE})
+
+if (UNIX AND NOT APPLE)
+    # On Linux, libfmt is expected to be installed separately (apt / compiled from sources)
+    find_package(fmt REQUIRED)
+else()
+    # On Windows, it is easier to clone and build from sources
+    add_subdirectory("fmt-8.0.1")
+endif()
 
 cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 
-add_library(optix_lidar SHARED
+add_library(RobotecGPULidar SHARED
     ${embedded_ptx_code}
     src/LidarRenderer.cpp
     src/simple_uid_generator.cpp
     src/ModelInstance.cpp
     src/PerfProbe.cpp
+    src/legacy_api.cpp
 )
-
-find_package(fmt)
-
-target_link_libraries(optix_lidar
+target_link_libraries(RobotecGPULidar
     gdt
-    fmt::fmt-header-only # FMT Library for a proper string formatting in C++
+    fmt::fmt # FMT Library for a proper string formatting in C++
     ${CUDA_LIBRARIES}
     ${CUDA_CUDA_LIBRARY}
 )
-target_compile_options(optix_lidar PRIVATE -Wall)
+target_compile_options(RobotecGPULidar PRIVATE -Wall)
+
 
 # -------------------
 # build dotnet
@@ -70,7 +71,7 @@ add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
 # ------------------------------------------------------------------
 # tests
 # ------------------------------------------------------------------
-if (BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
-endif()
+ if (BUILD_TESTS)
+     enable_testing()
+     add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
+ endif()
