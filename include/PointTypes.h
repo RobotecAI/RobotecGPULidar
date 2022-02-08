@@ -15,5 +15,5 @@ struct Lidar4DPoint {
     CoordinateType i;
 } __attribute__((packed));
 
-typedef Point3D<float> Point;
+typedef Point3D<float> Point3f;
 typedef Lidar4DPoint<float> LidarPoint;

@@ -6,22 +6,26 @@
 #include <sstream>
 
 #include <DisableWarningUtil.h>
+
 DISABLE_WARNING_PUSH
 DISABLE_WARNING_MISSING_FIELD_INITIALIZERS
+
 #include <optix_stubs.h>
+
 DISABLE_WARNING_POP
 
-#define CUDA_CHECK(call)                                   \
-    do {                                                   \
-        cudaError_t rc = cuda##call;                       \
-        if (rc != cudaSuccess) {                           \
-            std::stringstream txt;                         \
-            cudaError_t err = rc; /*cudaGetLastError();*/  \
-            txt << "CUDA Error " << cudaGetErrorName(err)  \
-                << " (" << cudaGetErrorString(err) << ")"; \
-            throw std::runtime_error(txt.str());           \
-        }                                                  \
-    } while (0)
+#include <fmt/format.h>
+#include <unistd.h>
+
+#define CUDA_CHECK(call)                                                                                     \
+do {                                                                                                         \
+    cudaError_t rc = cuda##call;                                                                             \
+    if (rc != cudaSuccess) {                                                                                 \
+    auto msg = fmt::format("[pid={}] CUDA error: {} (code={}) @ {}:{}",                                      \
+        getpid(), cudaGetErrorName(rc), rc, __FILE__, __LINE__);   \
+        throw std::runtime_error(msg);                                                                       \
+    }                                                                                                        \
+} while (0)
 
 #define CUDA_CHECK_NOEXCEPT(call) \
     {                             \
