@@ -7,8 +7,6 @@
 #include "PerfProbe.h"
 #include "ShaderBindingTableTypes.h"
 
-using namespace fmt;
-
 extern "C" char embedded_ptx_code[];
 
 #define OPTIX_LOG_LEVEL_NONE 0
@@ -17,45 +15,78 @@ extern "C" char embedded_ptx_code[];
 #define OPTIX_LOG_LEVEL_WARN 3
 #define OPTIX_LOG_LEVEL_INFO 4
 
+// TODO: prybicki: this should not be called multiple times
+static CUcontext getCurrentDeviceContext()
+{
+    const char* error = nullptr;
+    CUresult status;
 
-// Logging writes to stderr because stdout is not saved in Unity's Editor.log / Player.log
-// TODO(prybicki): Consider more real-world logging with ability to set level and redirect to a file.
+    cudaFree(0); // Force CUDA runtime initialization
 
-template <typename... Args>
-void logInfo(Args&&... args) { print(stderr, fg(color::cornflower_blue), std::forward<Args>(args)...); }
+    CUdevice device;
+    status = cuDeviceGet(&device, 0);
+    if (status != CUDA_SUCCESS) {
+        cuGetErrorString(status, &error);
+        throw std::runtime_error(format("failed to get current CUDA device: {} ({})\n", error, status));
+    }
 
-template <typename... Args>
-void logWarn(Args&&... args) { print(stderr, fg(color::yellow), std::forward<Args>(args)...); }
+    CUcontext cudaContext = nullptr;
+    CUresult primaryCtxStatus = cuDevicePrimaryCtxRetain(&cudaContext, device);
+    if (primaryCtxStatus != CUDA_SUCCESS) {
+        cuGetErrorString(status, &error);
+        throw std::runtime_error(format("failed to get primary CUDA context: {} ({})\n", error, status));
+    }
+    assert(cudaContext != nullptr);
+    return cudaContext;
+}
 
-template <typename... Args>
-void logError(Args&&... args) { print(stderr, fg(color::red), std::forward<Args>(args)...); }
+OptiXInitializationGuard::OptiXInitializationGuard()
+{
+    OPTIX_CHECK(optixInit());
+    OPTIX_CHECK(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &context));
+
+    auto logCallback = [](unsigned level, const char* tag, const char* message, void*) {
+        auto fmt = "[RGL][OptiX][{:2}][{:^12}]: {}\n";
+        if (level == OPTIX_LOG_LEVEL_FATAL || level == OPTIX_LOG_LEVEL_ERROR) {
+            logError(fmt, level, tag, message);
+            return;
+        }
+        if (level == OPTIX_LOG_LEVEL_WARN) {
+            logWarn(fmt, level, tag, message);
+            return;
+        }
+        logInfo(fmt, level, tag, message);
+    };
+
+    OPTIX_CHECK(optixDeviceContextSetLogCallback(context, logCallback, nullptr, 4));
+}
+
+OptiXInitializationGuard::~OptiXInitializationGuard()
+{
+    if (context) {
+        optixDeviceContextDestroy(context);
+    }
+}
 
 LidarRenderer::LidarRenderer()
+  : optix()
+  , dRayCountOfLidar("dRayCountOfLidar")
+  , dRayDirs("dRayDirs")
+  , dRangeOfLidar("dRangeOfLidar")
+  , dPositionOfLidar("dPositionOfLidar")
+  , dLaunchParams("dLaunchParams")
+  , dHitXYZI("dHitXYZI")
+  , hHitXYZI("hHitXYZI")
+  , dHitIsFinite("dHitIsFinite")
+  , hHitIsFinite("hHitIsFinite")
 {
     PerfProbe c("init");
     logInfo("[RGL] Initialization started\n");
     logInfo("[RGL] Running on GPU: {}\n", getCurrentDeviceName());
-
-    OPTIX_CHECK(optixInit());
-    OPTIX_CHECK(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &optixContext));
-    OPTIX_CHECK(optixDeviceContextSetLogCallback(
-        optixContext,
-        [](unsigned level, const char* tag, const char* message, void*) {
-            auto fmt = "[RGL][OptiX][{:2}][{:^12}]: {}\n";
-            if (level == OPTIX_LOG_LEVEL_FATAL || level == OPTIX_LOG_LEVEL_ERROR) {
-                logError(fmt, level, tag, message);
-                return;
-            }
-            if (level == OPTIX_LOG_LEVEL_WARN) {
-                logWarn(fmt, level, tag, message);
-                return;
-            }
-            logInfo(fmt, level, tag, message);
-        },
-        nullptr, 4));
+    logInfo("[RGL] PID: {}\n", getpid());
 
     initializeStaticOptixStructures();
-    launchParamsBuffer.alloc(sizeof(launchParams));
+
     logInfo("[RGL] Initialization finished successfully\n");
 }
 
@@ -77,7 +108,7 @@ LidarRenderer::~LidarRenderer()
     }
 
     optixModuleDestroy(module);
-    optixDeviceContextDestroy(optixContext);
+
 
     logInfo("[RGL] Deinitialization finished successfully\n");
 }
@@ -85,7 +116,7 @@ LidarRenderer::~LidarRenderer()
 void LidarRenderer::addMeshUnchecked(std::shared_ptr<TriangleMesh> mesh)
 {
     logInfo("[RGL] Adding mesh id={}\n", mesh->mesh_id);
-    auto modelInstance = std::make_shared<ModelInstance>(mesh, optixContext);
+    auto modelInstance = std::make_shared<ModelInstance>(mesh, optix.context);
     m_instances_map[mesh->mesh_id] = modelInstance;
     needs_root_rebuild = true;
 }
@@ -113,8 +144,8 @@ void LidarRenderer::removeMesh(const std::string& id)
 void LidarRenderer::updateStructsForModel()
 {
     if (needs_root_rebuild) {
-        launchParams.traversable = buildAccel();
-        buildSBT();
+        hLaunchParams.traversable = buildAccel();
+        sbt = buildSBT();
     }
     needs_root_rebuild = false;
 }
@@ -147,7 +178,7 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
     OptixAccelBufferSizes iasBufferSizes = {};
-    OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext, &accelBuildOptions, &instanceInput, 1, &iasBufferSizes));
+    OPTIX_CHECK(optixAccelComputeMemoryUsage(optix.context, &accelBuildOptions, &instanceInput, 1, &iasBufferSizes));
 
     CUDABuffer tempBuffer;
     tempBuffer.alloc(iasBufferSizes.tempSizeInBytes);
@@ -162,7 +193,7 @@ OptixTraversableHandle LidarRenderer::buildAccel()
     emitDesc.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
     emitDesc.result = compactedSizeBuffer.d_pointer();
 
-    OPTIX_CHECK(optixAccelBuild(optixContext, 0,
+    OPTIX_CHECK(optixAccelBuild(optix.context, 0,
         &accelBuildOptions, &instanceInput, 1,
         tempBuffer.d_pointer(), tempBuffer.sizeInBytes,
         outputBuffer.d_pointer(), outputBuffer.sizeInBytes,
@@ -174,7 +205,7 @@ OptixTraversableHandle LidarRenderer::buildAccel()
 
     accelerationStructure.free();
     accelerationStructure.alloc(compactedSize);
-    OPTIX_CHECK(optixAccelCompact(optixContext,
+    OPTIX_CHECK(optixAccelCompact(optix.context,
         nullptr,
         m_root,
         accelerationStructure.d_pointer(),
@@ -214,7 +245,7 @@ void LidarRenderer::initializeStaticOptixStructures()
     };
 
     module = {};
-    OPTIX_CHECK(optixModuleCreateFromPTX(optixContext,
+    OPTIX_CHECK(optixModuleCreateFromPTX(optix.context,
         &moduleCompileOptions,
         &pipelineCompileOptions,
         embedded_ptx_code,
@@ -231,7 +262,7 @@ void LidarRenderer::initializeStaticOptixStructures()
     };
 
     OPTIX_CHECK(optixProgramGroupCreate(
-        optixContext, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
+        optix.context, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
 
     OptixProgramGroupDesc missDesc = {
         .kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
@@ -241,7 +272,7 @@ void LidarRenderer::initializeStaticOptixStructures()
     };
 
     OPTIX_CHECK(optixProgramGroupCreate(
-        optixContext, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
+        optix.context, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
 
     OptixProgramGroupDesc hitgroupDesc = {
         .kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
@@ -254,12 +285,12 @@ void LidarRenderer::initializeStaticOptixStructures()
     };
 
     OPTIX_CHECK(optixProgramGroupCreate(
-        optixContext, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
+        optix.context, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
 
     OptixProgramGroup programGroups[] = { raygenPG, missPG, hitgroupPG };
 
     OPTIX_CHECK(optixPipelineCreate(
-        optixContext,
+        optix.context,
         &pipelineCompileOptions,
         &pipelineLinkOptions,
         programGroups,
@@ -276,64 +307,54 @@ void LidarRenderer::initializeStaticOptixStructures()
         ));
 }
 
-void LidarRenderer::buildSBT()
+OptixShaderBindingTable LidarRenderer::buildSBT()
 {
-    PerfProbe c("buildSBT");
-    sbt = {};
+    static DeviceBuffer<HitgroupRecord> dHitgroupRecords("hitgroupRecord");
+    static DeviceBuffer<RaygenRecord> dRaygenRecords("raygenRecord");
+    static DeviceBuffer<MissRecord> dMissRecords("missRecord");
 
-    // build raygen records
-    std::vector<RaygenRecord> raygenRecords;
-    RaygenRecord raygenRecord {};
-    OPTIX_CHECK(optixSbtRecordPackHeader(raygenPG, &raygenRecord));
-    raygenRecords.push_back(raygenRecord);
-    raygenRecordsBuffer.free();
-    raygenRecordsBuffer.alloc_and_upload(raygenRecords);
-    sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
-
-    // build miss records
-    std::vector<MissRecord> missRecords;
-    MissRecord missRecord {};
-    OPTIX_CHECK(optixSbtRecordPackHeader(missPG, &missRecord));
-    missRecords.push_back(missRecord);
-    missRecordsBuffer.free();
-    missRecordsBuffer.alloc_and_upload(missRecords);
-    sbt.missRecordBase = missRecordsBuffer.d_pointer();
-    sbt.missRecordStrideInBytes = sizeof(MissRecord);
-    sbt.missRecordCount = (int)missRecords.size();
-
-    // build hitgroup records
-    std::vector<HitgroupRecord> hitgroupRecords;
-    int meshID = 0;
+    std::vector<HitgroupRecord> hHitgroupRecords;
     for (const auto& kv : m_instances_map) {
         auto mesh = kv.second->m_triangle_mesh;
         auto instance = kv.second;
-        HitgroupRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPG, &rec));
-        rec.data.color = mesh->diffuse;
-        if (mesh->diffuseTextureID >= 0) {
-            rec.data.hasTexture = true;
-            rec.data.texture = textureObjects[mesh->diffuseTextureID];
-        } else {
-            rec.data.hasTexture = false;
-        }
-        rec.data.index = (vec3i*)instance->m_index_buffer.d_pointer();
-        rec.data.vertex = (vec3f*)instance->m_vertex_buffer.d_pointer();
-        rec.data.normal = (vec3f*)instance->m_normal_buffer.d_pointer();
-        rec.data.texcoord = (vec2f*)instance->m_texcoord_buffer.d_pointer();
+        bool hasTexture = (mesh->diffuseTextureID >= 0);
+        hHitgroupRecords.emplace_back();
 
-        rec.data.index_count = instance->m_index_buffer.sizeInBytes / sizeof(vec3i);
-        rec.data.vertex_count = instance->m_vertex_buffer.sizeInBytes / sizeof(vec3f);
-        rec.data.normal_count = instance->m_normal_buffer.sizeInBytes / sizeof(vec3f);
-        rec.data.texcoord_count = instance->m_texcoord_buffer.sizeInBytes / sizeof(vec2f);
-
-        hitgroupRecords.push_back(rec);
-        meshID++;
+        HitgroupRecord* hr = &(*hHitgroupRecords.rbegin());
+        OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPG, hr));
+        hr->data = TriangleMeshSBTData {
+            // .color = mesh->diffuse, // Temporarily comment out to make the struct POD, not used in device code
+            .vertex = reinterpret_cast<vec3f*>(instance->m_vertex_buffer.d_pointer()),
+            .normal = reinterpret_cast<vec3f*>(instance->m_normal_buffer.d_pointer()),
+            .texcoord = reinterpret_cast<vec2f*>(instance->m_texcoord_buffer.d_pointer()),
+            .index = reinterpret_cast<vec3i*>(instance->m_index_buffer.d_pointer()),
+            .vertex_count = instance->m_vertex_buffer.sizeInBytes / sizeof(vec3f),
+            .index_count = instance->m_index_buffer.sizeInBytes / sizeof(vec3i),
+            .normal_count = instance->m_normal_buffer.sizeInBytes / sizeof(vec3f),
+            .texcoord_count = instance->m_texcoord_buffer.sizeInBytes / sizeof(vec2f),
+            .hasTexture = hasTexture,
+            .texture = hasTexture ? textureObjects[mesh->diffuseTextureID] : 0,
+        };
     }
-    hitgroupRecordsBuffer.free();
-    hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
-    sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
-    sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
-    sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
+    dHitgroupRecords.copyFromHost(hHitgroupRecords);
+
+    RaygenRecord hRaygenRecord;
+    OPTIX_CHECK(optixSbtRecordPackHeader(raygenPG, &hRaygenRecord));
+    dRaygenRecords.copyFromHost(&hRaygenRecord, 1);
+
+    MissRecord hMissRecord;
+    OPTIX_CHECK(optixSbtRecordPackHeader(missPG, &hMissRecord));
+    dMissRecords.copyFromHost(&hMissRecord, 1);
+
+    return OptixShaderBindingTable {
+        .raygenRecord = dRaygenRecords.readDeviceRaw(),
+        .missRecordBase = dMissRecords.readDeviceRaw(),
+        .missRecordStrideInBytes = sizeof(MissRecord),
+        .missRecordCount = 1U,
+        .hitgroupRecordBase = dHitgroupRecords.readDeviceRaw(),
+        .hitgroupRecordStrideInBytes = sizeof(HitgroupRecord),
+        .hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords.getElemCount()),
+    };
 }
 
 void LidarRenderer::render(const std::vector<LidarSource>& lidars)
@@ -341,47 +362,37 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
     static int renderCallIdx = 0;
     PerfProbe c("render");
 
-    if (launchParams.rayCount == 0) {
-        print(fg(color::yellow), "LidarRender::render called with 0 rays\n");
+    logInfo("[RGL] render start]\n");
+
+    if (!ensureBuffersPreparedBeforeRender(lidars)) {
         return;
     }
+
     if (m_instances_map.size() == 0) {
-        print(fg(color::yellow), "LidarRender::render called with 0 meshes\n");
+        logWarn("[RGL] LidarRender::render called with 0 meshes\n");
         return;
     }
 
     updateStructsForModel();
-    uploadRays(lidars);
-
-    launchParamsBuffer.uploadAsync(&launchParams, 1);
 
     {
         PerfProbe ccc("render-gpu");
         OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
             pipeline, nullptr,
             /*! parameters and SBT */
-            launchParamsBuffer.d_pointer(),
-            launchParamsBuffer.sizeInBytes,
+            dLaunchParams.readDeviceRaw(),
+            dLaunchParams.getByteSize(),
             &sbt,
             /*! dimensions of the launch: */
-            launchParams.rayCount,
+            hLaunchParams.rayCount,
             1,
             1));
     }
 
-    // Enqueue asynchronous download:
-    {
-        PerfProbe cc("download-resize");
-        allPoints.resize(launchParams.rayCount * 4);
-        hits.resize(launchParams.rayCount);
-        raysPerLidar.resize(launchParams.lidarCount);
-    }
-
     {
         PerfProbe cc("download-memcpy");
-        positionBuffer.downloadAsync(allPoints.data(), launchParams.rayCount * 4);
-        hitBuffer.downloadAsync(hits.data(), launchParams.rayCount);
-        raysPerLidarBuffer.downloadAsync(raysPerLidar.data(), launchParams.lidarCount);
+        hHitXYZI.copyFromDeviceAsync(dHitXYZI);
+        hHitIsFinite.copyFromDeviceAsync(dHitIsFinite);
     }
 
     renderCallIdx++;
@@ -390,43 +401,11 @@ void LidarRenderer::render(const std::vector<LidarSource>& lidars)
     }
 }
 
-void LidarRenderer::resize(const std::vector<LidarSource>& lidars)
+bool LidarRenderer::ensureBuffersPreparedBeforeRender(const std::vector<LidarSource>& lidars)
 {
-    PerfProbe c("resize");
-    size_t lidarCount = lidars.size();
-    size_t rayCount = 0;
-    for (size_t i = 0; i < lidarCount; ++i) {
-        rayCount += lidars[i].directions.size();
-    }
+    PerfProbe c("updateLidarSource");
 
-    // resize our cuda frame buffer
-    raysPerLidarBuffer.resize(lidarCount * sizeof(int));
-    rayBuffer.resize(rayCount * 3 * sizeof(float));
-    rangeBuffer.resize(lidarCount * sizeof(float));
-    sourceBuffer.resize(lidarCount * 3 * sizeof(float));
-
-    positionBuffer.resize(rayCount * 4 * sizeof(float));
-    hitBuffer.resize(rayCount * sizeof(int));
-
-    // update the launch parameters that we'll pass to the optix
-    launchParams.rayCount = rayCount;
-    launchParams.lidarCount = lidarCount;
-    launchParams.raysPerLidarBuffer = (int*)raysPerLidarBuffer.d_ptr;
-    launchParams.rayBuffer = (float*)rayBuffer.d_ptr;
-    launchParams.rangeBuffer = (float*)rangeBuffer.d_ptr;
-    launchParams.sourceBuffer = (float*)sourceBuffer.d_ptr;
-    launchParams.positionBuffer = (float*)positionBuffer.d_ptr;
-    launchParams.hitBuffer = (int*)hitBuffer.d_ptr;
-}
-
-void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
-{
-    PerfProbe c("uploadRays");
-    raysPerLidar.resize(lidars.size());
-    for (size_t i = 0; i < lidars.size(); ++i) {
-        raysPerLidar[i] = lidars[i].directions.size();
-    }
-    raysPerLidarBuffer.uploadAsync(raysPerLidar.data(), raysPerLidar.size());
+    // ########## Ray Count of LiDAR [0] ########## //
 
     // TODO(prybicki): urgent optimizations and bold assumptions here :)
     if (lidars.size() != 1) {
@@ -434,57 +413,65 @@ void LidarRenderer::uploadRays(const std::vector<LidarSource>& lidars)
         throw std::logic_error(message);
     }
 
+    hRayCountOfLidar.resize((lidars.size()));
+    hRayCountOfLidar[0] = static_cast<int>(lidars[0].directions.size());
+
+    auto totalRayCount = hRayCountOfLidar[0];
+    if (totalRayCount == 0) {
+        logWarn("[RGL] LidarRender::render called with 0 rays\n");
+        return false;
+    }
+    dRayCountOfLidar.copyFromHost(hRayCountOfLidar);
+
+    // ########## Ray directions of LiDAR [0] ########## //
     // Using the aforementioned assumption, upload rays directly from the given buffer.
-    rayBuffer.uploadAsync(lidars[0].directions.data(), lidars[0].directions.size());
+    // TODO: after typed buffers are introduced, it should be easy to remove the aforementioned assumption
+    dRayDirs.copyFromHost(lidars[0].directions);
 
-    range.resize(lidars.size());
-    for (size_t i = 0; i < lidars.size(); ++i) {
-        range[i] = lidars[i].range;
-    }
-    rangeBuffer.uploadAsync(range.data(), range.size());
+    // ########## Range of LiDAR [ 0] ########## //
+    dRangeOfLidar.copyFromHost(&lidars[0].range, 1UL);
 
-    source.resize(lidars.size() * 3);
-    for (size_t i = 0; i < lidars.size(); ++i) {
-        source[i * 3 + 0] = lidars[i].source.x;
-        source[i * 3 + 1] = lidars[i].source.y;
-        source[i * 3 + 2] = lidars[i].source.z;
-    }
-    sourceBuffer.uploadAsync(source.data(), source.size());
+    // ########## Position of LiDAR [0] ########## //
+    dPositionOfLidar.copyFromHost(&lidars[0].source, 1UL);
+
+
+    // ########## GPU Output for LiDAR[0] ########## //
+    dHitXYZI.resizeToFit(totalRayCount);
+    dHitIsFinite.resizeToFit(totalRayCount);
+
+    hLaunchParams.rayCount = totalRayCount;
+    hLaunchParams.lidarCount = lidars.size();
+    hLaunchParams.rayCountOfLidar = dRayCountOfLidar.readDevice();
+    hLaunchParams.rayDirs = dRayDirs.readDevice();
+    hLaunchParams.rangeOfLidar = dRangeOfLidar.readDevice();
+    hLaunchParams.positionOfLidar = dPositionOfLidar.readDevice();
+    hLaunchParams.hitXYZI = dHitXYZI.writeDevice();
+    hLaunchParams.hitIsFinite = dHitIsFinite.writeDevice();
+    dLaunchParams.copyFromHost(&hLaunchParams, 1);
+
+    return true;
 }
 
 const RaycastResults* LidarRenderer::downloadPoints()
 {
     logInfo("[RGL] Downloading points\n");
     PerfProbe c("download");
-    result.clear();
 
+    // Finish async downloads scheduled in render()
     CUDA_CHECK(StreamSynchronize(nullptr));
-
-    // TODO(prybicki): investigate this
-    if (hits.size() != static_cast<size_t>(launchParams.rayCount)) {
-        logWarn("[RGL] invalid buffer size");
-        return nullptr;
-    }
+    assert(hRayCountOfLidar.size() == 1);
+    result.resize(1);
 
     // TODO(prybicki) move it to the GPU
     {
         PerfProbe cc("download-rewrite");
-        size_t index = 0;
-        for (int i = 0; i < launchParams.lidarCount; ++i) {
-            RaycastResult res;
-            for (int j = 0; j < raysPerLidar[i]; ++j) {
-                if (hits.at(index)) {
-                    LidarPoint point;
-                    auto offset = index * 4;
-                    point.x = allPoints[offset];
-                    point.y = allPoints[offset + 1];
-                    point.z = allPoints[offset + 2];
-                    point.i = allPoints[offset + 3];
-                    res.points.push_back(point);
-                }
-                index++;
+        const auto* hHitIsFinitePtr = hHitIsFinite.readHost();
+        const auto* hHitXYZIPtr = hHitXYZI.readHost();
+        for (size_t j = 0; j < hHitIsFinite.getElemCount(); ++j) {
+            if (!hHitIsFinitePtr[j]) {
+                continue;
             }
-            result.push_back(res);
+            result[0].points.push_back(hHitXYZIPtr[j]);
         }
     }
 
@@ -498,22 +485,6 @@ std::string LidarRenderer::getCurrentDeviceName()
     CUDA_CHECK(GetDevice(&currentDevice));
     CUDA_CHECK(GetDeviceProperties(&deviceProperties, currentDevice));
     return std::string(deviceProperties.name);
-}
-
-CUcontext LidarRenderer::getCurrentDeviceContext()
-{
-    CUcontext cudaContext = {};
-    CUresult status = cuCtxGetCurrent(&cudaContext);
-    if (status != CUDA_SUCCESS) {
-        const char* error = nullptr;
-        cuGetErrorString(status, &error);
-        throw std::runtime_error(format("failed to get current CUDA context: {} \n", error));
-    }
-    if (cudaContext == nullptr) {
-        cudaFree(nullptr); // Force context initialization
-        return getCurrentDeviceContext();
-    }
-    return cudaContext;
 }
 
 void LidarRenderer::addMeshRaw(const char *meshID, int meshSize, vec3f *vertices, vec3f *normals, vec2f *texCoords,

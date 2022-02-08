@@ -71,10 +71,10 @@ extern "C" __global__ void __closesthit__lidar()
 
     const int ix = optixGetLaunchIndex().x;
 
-    optixLaunchLidarParams.positionBuffer[ix * 4] = transformedPoint.x;
-    optixLaunchLidarParams.positionBuffer[ix * 4 + 1] = transformedPoint.y;
-    optixLaunchLidarParams.positionBuffer[ix * 4 + 2] = transformedPoint.z;
-    optixLaunchLidarParams.positionBuffer[ix * 4 + 3] = intensity;
+    optixLaunchLidarParams.hitXYZI[ix].x = transformedPoint.x;
+    optixLaunchLidarParams.hitXYZI[ix].y = transformedPoint.y;
+    optixLaunchLidarParams.hitXYZI[ix].z = transformedPoint.z;
+    optixLaunchLidarParams.hitXYZI[ix].i = intensity;
     optixSetPayload_3(1);
 }
 
@@ -92,13 +92,15 @@ extern "C" __global__ void __miss__lidar()
 extern "C" __global__ void __raygen__renderLidar()
 {
     const int ix = optixGetLaunchIndex().x;
-    int lidarX = ix;
-    int lidarCount = 0;
+    // int lidarX = ix;
+    int lidarIdx = 0;
 
-    while (optixLaunchLidarParams.raysPerLidarBuffer[lidarCount] < lidarX) {
-        lidarX -= optixLaunchLidarParams.raysPerLidarBuffer[lidarCount];
-        lidarCount++;
-    }
+    // No idea what the hell it computes, but it is not used.
+    // TODO(prybicki): implement multi-lidar calls here
+    // while (optixLaunchLidarParams.rayCountOfLidar[lidarIdx] < lidarX) {
+    //     lidarX -= optixLaunchLidarParams.rayCountOfLidar[lidarIdx];
+    //     lidarIdx++;
+    // }
 
     vec3f lidarPositionPRD = vec3f(0.f);
 
@@ -106,14 +108,14 @@ extern "C" __global__ void __raygen__renderLidar()
     uint32_t u0, u1, u2, u3;
     packPointer(&lidarPositionPRD, u0, u1);
 
-    vec3f from = vec3f(optixLaunchLidarParams.sourceBuffer[lidarCount * 3], optixLaunchLidarParams.sourceBuffer[lidarCount * 3 + 1], optixLaunchLidarParams.sourceBuffer[lidarCount * 3 + 2]);
-    vec3f dir = vec3f(optixLaunchLidarParams.rayBuffer[ix * 3], optixLaunchLidarParams.rayBuffer[ix * 3 + 1], optixLaunchLidarParams.rayBuffer[ix * 3 + 2]);
+    vec3f from = vec3f(optixLaunchLidarParams.positionOfLidar[lidarIdx].x, optixLaunchLidarParams.positionOfLidar[lidarIdx].y, optixLaunchLidarParams.positionOfLidar[lidarIdx].z);
+    vec3f dir = vec3f(optixLaunchLidarParams.rayDirs[ix].x, optixLaunchLidarParams.rayDirs[ix].y, optixLaunchLidarParams.rayDirs[ix].z);
 
     optixTrace(optixLaunchLidarParams.traversable,
         from, // from
         dir, // direction
         0.f, // tmin
-        optixLaunchLidarParams.rangeBuffer[lidarCount], // tmax
+        optixLaunchLidarParams.rangeOfLidar[lidarIdx], // tmax // TODO(prybicki): WTF, this is OOB for > 0!
         0.0f, // rayTime
         OptixVisibilityMask(255),
         OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
@@ -123,8 +125,8 @@ extern "C" __global__ void __raygen__renderLidar()
         u0, u1, u2, u3);
 
     if (u3) {
-        optixLaunchLidarParams.hitBuffer[ix] = 1;
+        optixLaunchLidarParams.hitIsFinite[ix] = 1;
     } else {
-        optixLaunchLidarParams.hitBuffer[ix] = 0;
+        optixLaunchLidarParams.hitIsFinite[ix] = 0;
     }
 }

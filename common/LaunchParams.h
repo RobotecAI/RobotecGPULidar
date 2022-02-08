@@ -2,6 +2,7 @@
 
 #include "gdt/math/vec.h"
 #include "gdt/utils/optix_macros.h"
+#include "PointTypes.h"
 
 using namespace gdt;
 
@@ -10,7 +11,7 @@ enum { RADIANCE_RAY_TYPE=0, RAY_TYPE_COUNT };
 enum { LIDAR_RAY_TYPE=0, LIDAR_RAY_TYPE_COUNT };
 
 struct TriangleMeshSBTData {
-    vec3f  color;
+    // vec3f  color; // NON-POD, to be removed,
     vec3f *vertex;
     vec3f *normal;
     vec2f *texcoord;
@@ -23,37 +24,18 @@ struct TriangleMeshSBTData {
     cudaTextureObject_t texture;
 };
 
-// everything we want to move between host and device must be in this structure
-struct LaunchParams
-{
-    struct {
-        uint32_t *colorBuffer;
-        float    *lidarBuffer; // buffer for lidar data on device
-        vec2i     size;
-        uint32_t  lidarSize;
-    } frame;
-
-    struct {
-        vec3f position;
-        vec3f direction;
-        vec3f horizontal;
-        vec3f vertical;
-    } camera;
-
-    OptixTraversableHandle traversable;
-};
 
 struct LaunchLidarParams
 {
-    int    rayCount;
-    int    lidarCount;
-    int   *raysPerLidarBuffer;
-    float *rayBuffer;
-    float *rangeBuffer;
-    float *sourceBuffer;
+    size_t rayCount;
+    size_t lidarCount;
+    const int* rayCountOfLidar;
+    const Point3f* rayDirs;
+    const float *rangeOfLidar;
+    const Point3f* positionOfLidar;
     
-    float *positionBuffer;
-    int   *hitBuffer;
+    LidarPoint* hitXYZI;
+    int* hitIsFinite;
 
     OptixTraversableHandle traversable;
 };

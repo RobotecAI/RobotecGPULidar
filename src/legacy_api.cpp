@@ -27,6 +27,8 @@ static std::string last_gpu_library_error = ""; // no support for multithreading
         }                                                        \
     }
 
+std::unique_ptr<LidarRenderer> workaround = std::make_unique<LidarRenderer>();
+
 extern "C" {
 
 // First attempt - on any error the module is deemed unusable
@@ -38,6 +40,10 @@ enum GPULIDAR_RETURN_CODE {
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_CreateNativeRaycaster(LidarRenderer** lidarRenderer)
 {
+    if (workaround) {
+        *lidarRenderer = workaround.get();
+        return GPULIDAR_SUCCESS;
+    }
     LIDAR_GPU_TRY_CATCH(*lidarRenderer = new LidarRenderer());
     return GPULIDAR_SUCCESS;
 }
@@ -45,7 +51,8 @@ int Internal_CreateNativeRaycaster(LidarRenderer** lidarRenderer)
 GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_DestroyNativeRaycaster(LidarRenderer* lidarRenderer)
 {
-    delete lidarRenderer;
+    // OK, Boomer.
+    lidarRenderer->softReset();
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
@@ -81,11 +88,10 @@ int Internal_UpdateMeshTransform(LidarRenderer* lidarRenderer, char* id, float* 
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, Point source_pos, Point* directions, int directions_count, float range)
+int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, Point3f source_pos, Point3f* directions, int directions_count, float range)
 {
     LidarSource source {source_id, source_pos, range, directions_count, directions};
 
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->resize({source})); // TODO - resize is not usually required if lidars don't change (?)
     LIDAR_GPU_TRY_CATCH(lidarRenderer->render({source})); // TODO - support more sources when needed in the higher interface
 
     return GPULIDAR_SUCCESS;
@@ -109,3 +115,5 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, const LidarPoint** results,
 }
 
 } // extern "C"
+
+void br() {}

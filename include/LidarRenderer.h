@@ -9,17 +9,29 @@
 
 #include "LidarSource.h"
 #include "RaycastResult.h"
+#include "ShaderBindingTableTypes.h"
+#include "Logging.h"
+
+#include "DeviceBuffer.hpp"
+#include "HostPinnedBuffer.hpp"
 
 #include <cstring>
-#include <fmt/format.h>
+
+// RAII object to (de)initialize OptiX
+struct OptiXInitializationGuard
+{
+    OptiXInitializationGuard();
+    ~OptiXInitializationGuard();
+    OptixDeviceContext context = nullptr;
+};
+
 
 struct LidarRenderer {
+
     LidarRenderer();
     ~LidarRenderer();
 
     void render(const std::vector<LidarSource>& lidars);
-
-    void resize(const std::vector<LidarSource>& lidars);
 
     // TODO(prybicki): this return type is temporary and should be changed in the future refactor
     const RaycastResults* downloadPoints();
@@ -41,35 +53,39 @@ private:
     CUcontext getCurrentDeviceContext();
     void updateStructsForModel();
     void initializeStaticOptixStructures();
-    void buildSBT();
+    OptixShaderBindingTable buildSBT();
     OptixTraversableHandle buildAccel();
     void createTextures();
-    void uploadRays(const std::vector<LidarSource>& lidars);
+    bool ensureBuffersPreparedBeforeRender(const std::vector<LidarSource>& lidars);
     void addMeshUnchecked(std::shared_ptr<TriangleMesh> meshes);
 
+    OptiXInitializationGuard optix;
     OptixModule module;
     OptixPipeline pipeline;
-    OptixDeviceContext optixContext;
+
     OptixProgramGroup raygenPG;
     OptixProgramGroup missPG;
     OptixProgramGroup hitgroupPG;
     OptixShaderBindingTable sbt;
 
-    CUDABuffer raygenRecordsBuffer;
-    CUDABuffer missRecordsBuffer;
-    CUDABuffer hitgroupRecordsBuffer;
+    // GPU INPUT
+    DeviceBuffer<int> dRayCountOfLidar;
+        std::vector<int> hRayCountOfLidar;
+    DeviceBuffer<Point3f> dRayDirs;
+    DeviceBuffer<float> dRangeOfLidar;
+    DeviceBuffer<Point3f> dPositionOfLidar;
 
-    LaunchLidarParams launchParams;
-    CUDABuffer launchParamsBuffer;
+    DeviceBuffer<LaunchLidarParams> dLaunchParams;
+        LaunchLidarParams hLaunchParams;
 
-    CUDABuffer raysPerLidarBuffer;
-    CUDABuffer rayBuffer;
-    CUDABuffer rangeBuffer;
-    CUDABuffer sourceBuffer;
+    // GPU OUTPUT
+    DeviceBuffer<LidarPoint> dHitXYZI;
+        HostPinnedBuffer<LidarPoint> hHitXYZI;
 
-    CUDABuffer positionBuffer;
-    CUDABuffer hitBuffer;
+    DeviceBuffer<int> dHitIsFinite;
+        HostPinnedBuffer<int> hHitIsFinite;
 
+    // MODEL STUFF
     std::unordered_map<std::string, std::shared_ptr<ModelInstance>> m_instances_map;
     bool needs_root_rebuild = { false };
 
@@ -83,10 +99,10 @@ private:
 
     RaycastResults result;
 
-    // Ex-local buffers moved here to avoid memory allocations
-    std::vector<int> raysPerLidar;
-    std::vector<float> range;
-    std::vector<float> source;
-    std::vector<float> allPoints;
-    std::vector<int> hits;
+public:
+    void softReset() {
+        m_instances_map.clear();
+        needs_root_rebuild = true;
+    }
+
 };
