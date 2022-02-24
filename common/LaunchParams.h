@@ -27,18 +27,14 @@ struct TriangleMeshSBTData {
 
 struct LaunchLidarParams
 {
+    float range;
     size_t rayCount;
-    size_t lidarCount;
-    const int* dRayCountOfLidar;
     TransformMatrix lidarPose;
-    TransformMatrix postRaycastTransform;
-    const TransformMatrix* dRayPoses;
-    const int* dLidarArrayRingIds;
-    int lidarArrayRingCount;
-    const float *dRangeOfLidar;
-    Point3f* dHitP3;
-    PCL12* dHitXYZ;
-    int* dHitIsFinite;
-
+    TransformMatrix rosTransform;
     OptixTraversableHandle traversable;
+
+    const TransformMatrix* dRayPoses;
+    Point3f* dUnityVisualisationPoints;
+    PCL12* dRosXYZ;
+    int* dWasHit;
 };

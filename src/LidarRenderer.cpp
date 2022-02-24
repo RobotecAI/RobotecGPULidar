@@ -75,19 +75,6 @@ OptiXInitializationGuard::~OptiXInitializationGuard()
 
 LidarRenderer::LidarRenderer()
   : optix()
-  , dRayCountOfLidar("dRayCountOfLidar")
-  , dRayPoses("dRayPoses")
-  , dLidarArrayRingIds("dLidarArrayRingIds")
-  , dRangeOfLidar("dRangeOfLidar")
-  , dLaunchParams("dLaunchParams")
-  , dHitIsFinite("dHitIsFinite")
-  , dHitsBeforeIndex("dHitsBeforeIndex")
-  , dPoint3f("dPoint3f")
-  , dPCL12("dPCL12")
-  , dDensePoint3f("dDensePoint3f")
-  , dDensePCL12("dDensePCL12")
-  , dDensePCL24("dDensePCL24")
-  , dDensePCL48("dDensePCL48")
 {
     PerfProbe c("init");
     logInfo("[RGL] Initialization started\n");
@@ -154,7 +141,7 @@ void LidarRenderer::removeMesh(const std::string& id)
 void LidarRenderer::updateStructsForModel()
 {
     if (needs_root_rebuild) {
-        hLaunchParams.traversable = buildAccel();
+        traversable = buildAccel();
         sbt = buildSBT();
     }
     needs_root_rebuild = false;
@@ -385,120 +372,29 @@ OptixShaderBindingTable LidarRenderer::buildSBT()
     };
 }
 
-void LidarRenderer::render(const std::vector<LidarSource>& lidars)
+void LidarRenderer::render(TransformMatrix lidarPose,
+                           TransformMatrix rosTransform,
+                           TransformMatrix* rayPoses,
+                           int rayPosesCount,
+                           int* lidarArrayRingIds,
+                           int lidarArrayRingCount,
+                           float range)
 {
-    logInfo("[RGL] render start\n");
-    static int renderCallIdx = 0;
-    PerfProbe c("render");
-
-    updateStructsForModel();
-
-    if (!ensureBuffersPreparedBeforeRender(lidars)) {
-        return;
-    }
-
+    logInfo("[RGL] render()\n");
     if (m_instances_map.size() == 0) {
         logWarn("[RGL] LidarRender::render called with 0 meshes\n");
         return;
     }
 
+    updateStructsForModel();
 
-    {
-        PerfProbe ccc("render-gpu");
-        OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-            pipeline, nullptr,
-            /*! parameters and SBT */
-            dLaunchParams.readDeviceRaw(),
-            dLaunchParams.getByteSize(),
-            &sbt,
-            /*! dimensions of the launch: */
-            hLaunchParams.rayCount,
-            1,
-            1));
-    }
-
-    hitpointCount = formatPCLs(dHitIsFinite, dHitsBeforeIndex, dPCL12, dPoint3f, dLidarArrayRingIds, dDensePoint3f, dDensePCL12, dDensePCL24, dDensePCL48);
-
-
-    logInfo("[RGL] render finished\n");
-    renderCallIdx++;
-    if (renderCallIdx % 200 == 0) {
-        PerfProbe::saveToFileAndReset();
-    }
-}
-
-bool LidarRenderer::ensureBuffersPreparedBeforeRender(const std::vector<LidarSource>& lidars)
-{
-    PerfProbe c("updateLidarSource");
-
-    logInfo("[RGL] Preparing for render\n");
-    logInfo("[RGL] lidar size {}\n", lidars.size());
-    logInfo("[RGL] ray poses size: {}\n", lidars[0].rayPoseCount);
-
-    // ########## Ray Count of LiDAR [0] ########## //
-
-    // TODO(prybicki): urgent optimizations and bold assumptions here :)
-    if (lidars.size() != 1) {
-        auto message = fmt::format("fixme: unexpected number of lidars: {}\n", lidars.size());
-        throw std::logic_error(message);
-    }
-
-    hRayCountOfLidar.resize((lidars.size()));
-    hRayCountOfLidar[0] = lidars[0].rayPoseCount;
-
-    auto totalRayCount = hRayCountOfLidar[0];
-    if (totalRayCount == 0) {
-        logWarn("[RGL] LidarRender::render called with 0 rays\n");
-        return false;
-    }
-    dRayCountOfLidar.copyFromHost(hRayCountOfLidar);
-
-    // ########## Ray poses of LiDAR [0] ########## //
-    dRayPoses.copyFromHost(lidars[0].rayPoses, lidars[0].rayPoseCount);
-
-//    std::cout << "Copying stuff" << std::endl;
-//    for (int i = 0; i < lidars[0].lidarArrayRingCount; i++) {
-//        std::cout << "Ring " << i << ": " << lidars[0].lidarArrayRingIds[i] << std::endl;
-//    }
-    // #### Lidar array ring ids of LiDAR[0] ###### //
-    dLidarArrayRingIds.copyFromHost(lidars[0].lidarArrayRingIds, lidars[0].lidarArrayRingCount);
-//    std::cout << "Copied stuff?" << std::endl;
-
-    // ########## Range of LiDAR [ 0] ########## //
-    dRangeOfLidar.copyFromHost(&lidars[0].range, 1UL);
-
-
-    // ########## GPU Output for LiDAR[0] ########## //
-    dPoint3f.resizeToFit(totalRayCount);
-    dPCL12.resizeToFit(totalRayCount);
-    dDensePoint3f.resizeToFit(totalRayCount);
-    dDensePCL12.resizeToFit(totalRayCount);
-    dDensePCL24.resizeToFit(totalRayCount);
-    dDensePCL48.resizeToFit(totalRayCount);
-    dHitIsFinite.resizeToFit(totalRayCount);
-    dHitsBeforeIndex.resizeToFit(totalRayCount);
-
-    hLaunchParams.rayCount = totalRayCount;
-    // hLaunchParams.lidarCount = lidars.size();
-    hLaunchParams.dRayCountOfLidar = dRayCountOfLidar.readDevice();
-    hLaunchParams.lidarPose = lidars[0].lidarPose;
-    hLaunchParams.postRaycastTransform = lidars[0].postRaycastTransform;
-    hLaunchParams.dRayPoses = dRayPoses.readDevice();
-    hLaunchParams.dRangeOfLidar = dRangeOfLidar.readDevice();
-    hLaunchParams.dLidarArrayRingIds = dLidarArrayRingIds.readDevice();
-    hLaunchParams.lidarArrayRingCount = lidars[0].lidarArrayRingCount;
-    hLaunchParams.dHitXYZ = dPCL12.writeDevice();
-    hLaunchParams.dHitP3 = dPoint3f.writeDevice();
-    hLaunchParams.dHitIsFinite = dHitIsFinite.writeDevice();
-    dLaunchParams.copyFromHost(&hLaunchParams, 1);
-
-    return true;
+    defaultLidarContext.emplace(rayPoses, rayPosesCount, lidarArrayRingIds, lidarArrayRingCount);
+    defaultLidarContext->scheduleRaycast(pipeline, sbt, traversable, lidarPose, rosTransform, range);
 }
 
 int LidarRenderer::getNextDownloadPointCount()
 {
-    assert(hRayCountOfLidar.size() == 1);
-    return hitpointCount;
+    return defaultLidarContext->getResultsSize();
 }
 
 void LidarRenderer::downloadPoints(int maxPointCount, Point3f *outXYZ)
@@ -506,36 +402,18 @@ void LidarRenderer::downloadPoints(int maxPointCount, Point3f *outXYZ)
     std::vector<PCL12> dummy12(maxPointCount);
     std::vector<PCL24> dummy24(maxPointCount);
     std::vector<PCL48> dummy48(maxPointCount);
-    downloadPoints(maxPointCount, outXYZ, dummy12.data(), dummy24.data(), dummy48.data(), 0.0);
+    downloadPoints(maxPointCount, outXYZ, dummy12.data(), dummy24.data(), dummy48.data());
 }
 
 void LidarRenderer::downloadPoints(int maxPointCount,
-                                   Point3f* restrict outXYZ,
-                                   PCL12* restrict outPCL12,
-                                   PCL24* restrict outPCL24,
-                                   PCL48* restrict outPCL48,
-                                   double timestamp)
+                                   Point3f* outXYZ,
+                                   PCL12* outPCL12,
+                                   PCL24* outPCL24,
+                                   PCL48* outPCL48)
 {
-    logInfo("[RGL] Downloading points\n");
-    PerfProbe c("download");
-
-    int pointCount = getNextDownloadPointCount();
-    if (pointCount != maxPointCount) {
-        auto msg = fmt::format("Invalid buffer size ({}) for the size of the requested PCL ({})\n",
-                     maxPointCount, pointCount);
-        throw std::logic_error(msg);
-    }
-
-    dDensePoint3f.copyToHost(outXYZ, pointCount);
-    dDensePCL12.copyToHost(outPCL12, pointCount);
-    dDensePCL24.copyToHost(outPCL24, pointCount);
-    dDensePCL48.copyToHost(outPCL48, pointCount);
-
-    // int pointformatPCLs(dPCL12.getElemCount(), dHitIsFinite, dHitsBeforeIndex,
-    //            dPCL12, dPCL24, dPCL48);
-    // dPCL12.copyToHost(outPCL12, maxPointCount);
-    // dPCL24.copyToHost(outPCL24, maxPointCount);
-    // dPCL48.copyToHost(outPCL48, maxPointCount);
+    logInfo("[RGL] downloadPoints()\n");
+    defaultLidarContext->getResults(maxPointCount, outXYZ, outPCL12, outPCL24, outPCL48);
+    defaultLidarContext.reset();
 }
 
 std::string LidarRenderer::getCurrentDeviceName()

@@ -31,7 +31,8 @@ public:
     DeviceBuffer& operator=(DeviceBuffer&&) = delete;
 
 
-    DeviceBuffer(const std::string& _name) {
+    // TODO: buffer names are most likely no longer needed - consider removing them
+    DeviceBuffer(const std::string& _name = "<unnamed>") {
         logInfo("[DB] DeviceBuffer {} ({})\n", _name, elemCount);
         name = _name;
     }
@@ -50,19 +51,27 @@ public:
         elemCount = srcElemCount;
     }
 
+    // TODO: deduplicate all those memcopies
+    void copyFromHostAsync(const T* src, std::size_t srcElemCount, cudaStream_t stream) {
+        logInfo("[DB] copyFromHost {} (count={})\n", name, srcElemCount);
+        ensureDeviceCanFit(srcElemCount);
+        CUDA_CHECK(MemcpyAsync(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice, stream));
+        elemCount = srcElemCount;
+    }
+
     void copyFromHost(const HostPinnedBuffer<int>& src) {
         copyFromHost(src.readHost(), src.getElemCount());
     }
 
     void copyFromHost(const std::vector<T>& src) { copyFromHost(src.data(), src.size()); }
 
-    void copyToHost(T* dst, size_t outputElemCount) {
-        if (elemCount > outputElemCount) {
-            auto msg = fmt::format("PARTIAL COPY of {} ({}) into a buffer of smaller size ({})\n", name, elemCount, outputElemCount);
-            logWarn(msg);
+    void copyPrefixToHostAsync(T* dst, size_t elemsToCopy, cudaStream_t stream) {
+        if (elemsToCopy > elemCount) {
+            auto msg = fmt::format("copyPrefixToHostAsync {} requested to copy more elements ({}) than it cointains ({})\n",
+                                   name, elemsToCopy, elemCount);
+            throw std::invalid_argument(msg);
         }
-        auto elemsToCopy = std::min(elemCount, outputElemCount);
-        CUDA_CHECK(Memcpy(dst, data, elemsToCopy * sizeof(T), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(MemcpyAsync(dst, data, elemsToCopy * sizeof(T), cudaMemcpyDeviceToHost, stream));
     }
 
     const T* readDevice() const {
@@ -73,6 +82,48 @@ public:
     T* writeDevice() {
         logInfo("[DB] writeDevice {}\n", name);
         return data;
+    }
+
+    void print(int elemLimit=5) const {
+        T* temp = nullptr;
+        CUDA_CHECK(MallocHost(&temp, sizeof(T) * elemCount));
+        CUDA_CHECK(Memcpy(temp, data, sizeof(T) * elemCount, cudaMemcpyDeviceToHost));
+        int toPrint = std::min((int) elemCount, elemLimit);
+
+        // WTF: this print apparently flushes "[0:230400]:." in tests
+        fmt::print("\n");
+
+        // Prefix
+        fmt::print("[");
+        for (int i = 0; i < toPrint; ++i) {
+            fmt::print("{}", temp[i]);
+            if (i != toPrint - 1) {
+                fmt::print(", ");
+            }
+        }
+        if (toPrint < elemCount) {
+            fmt::print(", ...");
+        }
+        fmt::print("]");
+
+        fmt::print(" (total: {}) ", elemCount);
+
+        // Suffix
+        fmt::print("[");
+        if (toPrint < elemCount) {
+            fmt::print("..., ");
+        }
+        for (int i = elemCount - toPrint; i < elemCount; ++i) {
+            fmt::print("{}", temp[i]);
+            if (i != elemCount - 1) {
+                fmt::print(", ");
+            }
+        }
+        fmt::print("]");
+
+        fmt::print("\n");
+
+        CUDA_CHECK(FreeHost(temp));
     }
 
     CUdeviceptr readDeviceRaw() const {
@@ -116,5 +167,17 @@ private:
         CUDA_CHECK(Malloc(&data, newElemCount * sizeof(T)));
         logInfo("[DB] ensureDeviceCanFit {} {} {}\n", name, newElemCount, (void*) data);
         elemCapacity = newElemCount;
+    }
+};
+
+template<>
+struct fmt::formatter<Point3f>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(Point3f const& p, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "({0} {1} {2})", p.x, p.y, p.z);
     }
 };
