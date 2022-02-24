@@ -28,6 +28,7 @@ add_library(gdt
   gdt/gdt.h
   gdt/gdt.cpp
   utils/optix_macros.h
+  utils/DisableWarningUtil.h
   utils/CUDABuffer.h
   )
 

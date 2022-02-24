@@ -2,6 +2,9 @@
 #include <cuda_runtime.h>
 #include <optix_device.h>
 
+#define HOSTDEVICE __device__
+#include "linearGeometry.h"
+
 #define NDEBUG
 //#undef NDEBUG
 #include <assert.h>
@@ -21,6 +24,7 @@ static __forceinline__ __device__ void packPointer(void* ptr, uint32_t& i0, uint
     i0 = uptr >> 32;
     i1 = uptr & 0x00000000ffffffff;
 }
+
 template <typename T>
 static __forceinline__ __device__ T* getPRD()
 {
@@ -36,45 +40,48 @@ extern "C" __global__ void __closesthit__lidar()
 
     const int primID = optixGetPrimitiveIndex();
     assert(primID < sbtData.index_count);
-    const vec3i index = sbtData.index[primID];
+    const gdt::vec3i index = sbtData.index[primID];
     const float u = optixGetTriangleBarycentrics().x;
     const float v = optixGetTriangleBarycentrics().y;
 
     assert(index.x < sbtData.vertex_count);
     assert(index.y < sbtData.vertex_count);
     assert(index.z < sbtData.vertex_count);
-    const vec3f& A = sbtData.vertex[index.x];
-    const vec3f& B = sbtData.vertex[index.y];
-    const vec3f& C = sbtData.vertex[index.z];
+    const gdt::vec3f& A = sbtData.vertex[index.x];
+    const gdt::vec3f& B = sbtData.vertex[index.y];
+    const gdt::vec3f& C = sbtData.vertex[index.z];
 
-    vec3f& prd = *(vec3f*)getPRD<vec3f>();
-    prd = vec3f((1 - u - v) * A + u * B + v * C);
+    gdt::vec3f& prd = *(gdt::vec3f*)getPRD<gdt::vec3f>();
+    prd = gdt::vec3f((1 - u - v) * A + u * B + v * C);
 
     uint32_t intensity = 0;
     if (sbtData.hasTexture && sbtData.texcoord) {
         assert(index.x < sbtData.texcoord_count);
         assert(index.y < sbtData.texcoord_count);
         assert(index.z < sbtData.texcoord_count);
-        const vec2f tc
+        const gdt::vec2f tc
             = (1.f - u - v) * sbtData.texcoord[index.x]
             + u * sbtData.texcoord[index.y]
             + v * sbtData.texcoord[index.z];
 
         // Texture access is resilient to out-of-bounds and is governed by cudaTextureAddressMode.
-        vec4f fromTexture = tex2D<float4>(sbtData.texture, tc.x, tc.y);
+        gdt::vec4f fromTexture = tex2D<float4>(sbtData.texture, tc.x, tc.y);
         float intensityFloat = fromTexture.w; // only alpha canal
         memcpy(&intensity, &intensityFloat, sizeof(intensityFloat));
     }
 
-    vec3f rayHitPoint = vec3f(prd.x, prd.y, prd.z);
-    vec3f transformedPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
+    gdt::vec3f rayHitPoint = gdt::vec3f(prd.x, prd.y, prd.z);
+    gdt::vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
+    gdt::vec3f rosPoint = multiply3x4TransformByVector3(optixLaunchLidarParams.postRaycastTransform, unityPoint);
 
     const int ix = optixGetLaunchIndex().x;
 
-    optixLaunchLidarParams.hitXYZI[ix].x = transformedPoint.x;
-    optixLaunchLidarParams.hitXYZI[ix].y = transformedPoint.y;
-    optixLaunchLidarParams.hitXYZI[ix].z = transformedPoint.z;
-    optixLaunchLidarParams.hitXYZI[ix].i = intensity;
+    optixLaunchLidarParams.dHitP3[ix].x = unityPoint.x;
+    optixLaunchLidarParams.dHitP3[ix].y = unityPoint.y;
+    optixLaunchLidarParams.dHitP3[ix].z = unityPoint.z;
+    optixLaunchLidarParams.dHitXYZ[ix].x = rosPoint.x;
+    optixLaunchLidarParams.dHitXYZ[ix].y = rosPoint.y;
+    optixLaunchLidarParams.dHitXYZ[ix].z = rosPoint.z;
     optixSetPayload_3(1);
 }
 
@@ -84,16 +91,14 @@ extern "C" __global__ void __anyhit__lidar()
 
 extern "C" __global__ void __miss__lidar()
 {
-    vec3f& prd = *(vec3f*)getPRD<vec3f>();
-    prd = vec3f(0.f);
+    gdt::vec3f& prd = *(gdt::vec3f*)getPRD<gdt::vec3f>();
+    prd = gdt::vec3f(0.f);
     optixSetPayload_3(0);
 }
 
 extern "C" __global__ void __raygen__renderLidar()
 {
     const int ix = optixGetLaunchIndex().x;
-    // int lidarX = ix;
-    int lidarIdx = 0;
 
     // No idea what the hell it computes, but it is not used.
     // TODO(prybicki): implement multi-lidar calls here
@@ -102,20 +107,27 @@ extern "C" __global__ void __raygen__renderLidar()
     //     lidarIdx++;
     // }
 
-    vec3f lidarPositionPRD = vec3f(0.f);
+    gdt::vec3f lidarPositionPRD = gdt::vec3f(0.f);
 
     // the values we store the PRD pointer in:
     uint32_t u0, u1, u2, u3;
     packPointer(&lidarPositionPRD, u0, u1);
 
-    vec3f from = vec3f(optixLaunchLidarParams.positionOfLidar[lidarIdx].x, optixLaunchLidarParams.positionOfLidar[lidarIdx].y, optixLaunchLidarParams.positionOfLidar[lidarIdx].z);
-    vec3f dir = vec3f(optixLaunchLidarParams.rayDirs[ix].x, optixLaunchLidarParams.rayDirs[ix].y, optixLaunchLidarParams.rayDirs[ix].z);
+    TransformMatrix ray_pose = multiply3x4TransformMatrices(optixLaunchLidarParams.lidarPose, optixLaunchLidarParams.dRayPoses[ix]);
+
+//    const float* ray_pose = optixLaunchLidarParams.lidarPose;
+    gdt::vec3f from = getTranslationFrom3x4Transform(ray_pose);
+    gdt::vec3f zero = gdt::vec3f(0.0f, 0.0f, 0.0f);
+    gdt::vec3f forward = gdt::vec3f(0.0f, 0.0f, 1.0f);
+    gdt::vec3f zero_moved = multiply3x4TransformByVector3(ray_pose, zero);
+    gdt::vec3f forward_moved = multiply3x4TransformByVector3(ray_pose, forward);
+    gdt::vec3f dir = gdt::vec3f(forward_moved.x - zero_moved.x, forward_moved.y - zero_moved.y, forward_moved.z - zero_moved.z) ;
 
     optixTrace(optixLaunchLidarParams.traversable,
         from, // from
         dir, // direction
         0.f, // tmin
-        optixLaunchLidarParams.rangeOfLidar[lidarIdx], // tmax // TODO(prybicki): WTF, this is OOB for > 0!
+        optixLaunchLidarParams.dRangeOfLidar[0],
         0.0f, // rayTime
         OptixVisibilityMask(255),
         OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
@@ -125,8 +137,8 @@ extern "C" __global__ void __raygen__renderLidar()
         u0, u1, u2, u3);
 
     if (u3) {
-        optixLaunchLidarParams.hitIsFinite[ix] = 1;
+        optixLaunchLidarParams.dHitIsFinite[ix] = 1;
     } else {
-        optixLaunchLidarParams.hitIsFinite[ix] = 0;
+        optixLaunchLidarParams.dHitIsFinite[ix] = 0;
     }
 }

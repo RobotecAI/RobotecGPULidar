@@ -5,11 +5,15 @@
 #include <type_traits>
 #include <optional>
 #include "Logging.h"
+#include "DeviceBuffer.hpp"
 
+template<typename T>
+struct DeviceBuffer;
 
 template <typename T>
 struct HostPinnedBuffer
 {
+private:
     typedef T ValueType;
     static_assert(std::is_trivially_copyable<T>::value, "HostPinnedBuffer is instantiable only for types that can be copied between Host and GPU");
 
@@ -18,6 +22,7 @@ struct HostPinnedBuffer
     std::size_t elemCapacity {0};
     std::string name;
 
+public:
     HostPinnedBuffer(HostPinnedBuffer&) = delete;
     HostPinnedBuffer(HostPinnedBuffer&&) = delete;
     HostPinnedBuffer& operator=(HostPinnedBuffer&) = delete;
@@ -36,32 +41,40 @@ struct HostPinnedBuffer
     }
 
     void copyFromDeviceAsync(const DeviceBuffer<T>& src) {
-        logInfo("[DB] copyFromDevice {} (from={}) (count={})\n", name, src.name,  src.getElemCount());
+        logInfo("[DB] copyFromDevice {} (srcCount={})\n", name, src.getElemCount());
         ensureHostCanFit(src.getElemCount());
         CUDA_CHECK(MemcpyAsync(data, src.readDevice(), src.getElemCount() * sizeof(T), cudaMemcpyDeviceToHost));
         elemCount = src.getElemCount();
     }
 
-    const T* readHost() {
+    const T* readHost() const {
         logInfo("[DB] readHost {}\n", name);
         return data;
     }
 
-    // T* writeHost() {
-    //     logInfo("[DB] writeHost {}\n", name);
-    //     return data;
-    // }
+    T* writeHost() {
+        logInfo("[DB] writeHost {}\n", name);
+        return data;
+    }
 
 
-    std::size_t getElemCount() {
+    std::size_t getElemCount() const {
         return elemCount;
     }
 
-    std::size_t getByteSize() {
+    std::size_t getByteSize() const {
         return getElemCount() * sizeof(T);
     }
 
-private:
+    void resizeToFit(std::size_t newElemCount, bool clear=false)
+    {
+        ensureHostCanFit(newElemCount);
+        elemCount = newElemCount;
+        if (clear) {
+            CUDA_CHECK(Memset(data, 0, elemCount * sizeof(T)));
+        }
+    }
+
     void ensureHostCanFit(std::size_t newElemCount) {
         if (newElemCount == 0) {
             auto msg = fmt::format("Attempted to allocate {} bytes of memory\n", newElemCount);

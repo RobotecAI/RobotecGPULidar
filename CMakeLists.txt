@@ -16,10 +16,9 @@
 
 # TODO(prybicki): rewrite it to modern CMake
 cmake_minimum_required(VERSION 3.16)
-project(RobotecGPULidar C CXX)
+project(RobotecGPULidar C CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 20)
-
 
 # GDT-Related stuff, to be removed in the future TODO(prybicki)
 set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
@@ -52,10 +51,11 @@ add_library(RobotecGPULidar SHARED
     src/ModelInstance.cpp
     src/PerfProbe.cpp
     src/legacy_api.cpp
+    src/formatPCL.cu
 )
 target_link_libraries(RobotecGPULidar
     gdt
-    fmt::fmt # FMT Library for a proper string formatting in C++
+    fmt::fmt-header-only # FMT Library for a proper string formatting in C++
     ${CUDA_LIBRARIES}
     ${CUDA_CUDA_LIBRARY}
 )
@@ -74,4 +74,5 @@ add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
  if (BUILD_TESTS)
      enable_testing()
      add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
+     add_subdirectory(test)
  endif()
