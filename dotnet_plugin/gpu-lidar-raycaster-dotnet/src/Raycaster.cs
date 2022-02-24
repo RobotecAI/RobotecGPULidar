@@ -71,43 +71,38 @@ public class Raycaster : IDisposable
     CheckError(NativeMethods.Internal_UpdateMeshTransform(m_NativeRaycaster, mesh_id, transform, transform.Length));
   }
 
-  public void Raycast(in LidarSource source, ref RaycastResults res)
+  public void Raycast(in LidarSource source, ref RaycastResults res, double timestamp)
   {
     NativeHandleCheck();
-    CheckError(NativeMethods.Internal_Raycast(m_NativeRaycaster, source.source_id,
-     source.source_pos, source.directions, source.directions.Length, source.range));
+    CheckError(NativeMethods.Internal_Raycast(
+        m_NativeRaycaster,
+        source.source_id,
+        source.lidarPose,
+        source.postRaycastTransform,
+        source.sourcePoses,
+        source.sourcePoses.Length,
+        source.lidarArrayRingIds,
+        source.lidarArrayRingIds.Length,
+        source.range
+    ));
 
-    // Get points right away - this could also be done in a different time
 
-    int results_count = 0;
-    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, ref m_resultsRaw, ref results_count));
+    int pointCount = -1;
+    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, ref pointCount, timestamp));
 
-    if (!m_resultBuffers.ContainsKey(source.source_id)) {
-      m_resultBuffers.Add(source.source_id, new Point4f[results_count]);
-    }
-    else {
-      var buffer_size = m_resultBuffers[source.source_id].Length;
-      if (buffer_size != results_count) {
-        m_resultBuffers[source.source_id] = new Point4f[results_count];
-      }
-    }
+    res.pointCount = pointCount;
+    res.xyz = new Point3f[pointCount];
+    res.rosPCL12 = new byte[12 * pointCount];
+    res.rosPCL24 = new byte[24 * pointCount];
+    res.rosPCL48 = new byte[48 * pointCount];
 
-    res.lidar_id = source.source_id;
-    res.points = m_resultBuffers[source.source_id];
-    if (results_count > 0) {
-      int single_point_number_of_floats = Marshal.SizeOf(res.points[0]) / sizeof(float);
-      int floats_total = results_count * single_point_number_of_floats;
-      if (m_flatFloatBuffer.Length < floats_total) {
-        m_flatFloatBuffer = new float[floats_total];
-      }
-      Marshal.Copy(m_resultsRaw, m_flatFloatBuffer, 0, floats_total);
-      for (int i = 0; i < results_count; ++i) {
-        int flat_offset = i * single_point_number_of_floats;
-        res.points[i].x = m_flatFloatBuffer[flat_offset];
-        res.points[i].y = m_flatFloatBuffer[flat_offset + 1];
-        res.points[i].z = m_flatFloatBuffer[flat_offset + 2];
-        res.points[i].i = m_flatFloatBuffer[flat_offset + 3];
-      }
+    // May by risky, but should be faster than Marshal.Copy.
+    unsafe {
+        fixed (Point3f* pXYZ = res.xyz) {
+        fixed (byte* p12 = res.rosPCL12, p24 = res.rosPCL24, p48 = res.rosPCL48)  {
+            CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, (IntPtr) pXYZ, (IntPtr) p12, (IntPtr) p24, (IntPtr) p48, ref pointCount, timestamp));
+        }
+        }
     }
   }
 

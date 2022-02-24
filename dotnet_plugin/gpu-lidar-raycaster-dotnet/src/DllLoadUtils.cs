@@ -67,6 +67,7 @@ namespace GPULidarRaycaster {
       IntPtr LoadLibraryNoSuffix (string fileName);
       void FreeLibrary (IntPtr handle);
       IntPtr GetProcAddress (IntPtr dllHandle, string name);
+      IntPtr LoadLibraryPath (string fileName);
     }
 
     internal class DllLoadUtilsUnix : DllLoadUtils {
@@ -104,8 +105,9 @@ namespace GPULidarRaycaster {
       public IntPtr LoadLibrary (string fileName) {
         string libraryName = "lib" + fileName + "_native.so";
         IntPtr ptr = dlopen (libraryName, RTLD_NOW);
+        var errPtr = dlerror();
         if (ptr == IntPtr.Zero) {
-          throw new UnsatisfiedLinkError (libraryName);
+          throw new UnsatisfiedLinkError($"dlopen({libraryName}): {Marshal.PtrToStringAnsi (errPtr)}");
         }
         return ptr;
       }
@@ -113,8 +115,19 @@ namespace GPULidarRaycaster {
       public IntPtr LoadLibraryNoSuffix (string fileName) {
         string libraryName = "lib" + fileName + ".so";
         IntPtr ptr = dlopen (libraryName, RTLD_NOW);
+        var errPtr = dlerror();
         if (ptr == IntPtr.Zero) {
-          throw new UnsatisfiedLinkError (libraryName);
+          throw new UnsatisfiedLinkError($"dlopen({libraryName}): {Marshal.PtrToStringAnsi (errPtr)}");
+        }
+        return ptr;
+      }
+
+      public IntPtr LoadLibraryPath (string fileName) {
+        string libraryName = fileName;
+        IntPtr ptr = dlopen (libraryName, RTLD_NOW);
+        var errPtr = dlerror();
+        if (ptr == IntPtr.Zero) {
+          throw new UnsatisfiedLinkError($"dlopen({libraryName}): {Marshal.PtrToStringAnsi (errPtr)}");
         }
         return ptr;
       }

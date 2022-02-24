@@ -3,8 +3,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include "Texture.h"
-#include "TriangleMesh.h"
+#include "../common/Texture.h"
+#include "../common/TriangleMesh.h"
 #include "optix.h"
 #include "utils/CUDABuffer.h"
 

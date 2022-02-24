@@ -12,6 +12,9 @@ struct CUDABuffer {
     //! re-size buffer to given number of bytes
     void resize(size_t size)
     {
+        if (size == sizeInBytes) {
+            return;
+        }
         if (d_ptr) free();
         alloc(size);
     }

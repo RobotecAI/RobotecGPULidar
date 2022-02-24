@@ -5,16 +5,15 @@
 #include <optix.h>
 #include <sstream>
 
-#include <DisableWarningUtil.h>
-
+#include <gdt/utils/DisableWarningUtil.h>
 DISABLE_WARNING_PUSH
 DISABLE_WARNING_MISSING_FIELD_INITIALIZERS
-
 #include <optix_stubs.h>
-
 DISABLE_WARNING_POP
 
+#ifndef __CUDACC__
 #include <fmt/format.h>
+#endif
 #include <unistd.h>
 
 #define CUDA_CHECK(call)                                                                                     \

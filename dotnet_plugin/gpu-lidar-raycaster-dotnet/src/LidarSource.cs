@@ -6,8 +6,10 @@ namespace GPULidarRaycaster
 
 public struct LidarSource {
   public String source_id;
-  public Point3f source_pos;
-  public Point3f[] directions;
+  public float[] lidarPose;
+  public float[] sourcePoses;
+  public int[] lidarArrayRingIds;
+  public float[] postRaycastTransform;
   public float range;
 }
 

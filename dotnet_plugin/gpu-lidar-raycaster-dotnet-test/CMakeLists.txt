@@ -41,11 +41,12 @@ target_link_libraries(native_model_loader RobotecGPULidar)
 target_include_directories(native_model_loader PUBLIC ${RobotecGPULidar_INCLUDE_DIRS})
 configure_csharp_c_extension_library(native_model_loader)
 
+# Commented out due to urgent changes in C# types
 add_dotnet_test(GPULidarTest
-src/GPULidarTest.cs
-src/ModelLoader.cs
-INCLUDE_DLLS
-"${CMAKE_CURRENT_BINARY_DIR}/../gpu-lidar-raycaster-dotnet/gpu_lidar_raycaster_dotnet.dll"
+  src/GPULidarTest.cs
+  src/ModelLoader.cs
+  INCLUDE_DLLS
+  "${CMAKE_CURRENT_BINARY_DIR}/../gpu-lidar-raycaster-dotnet/gpu_lidar_raycaster_dotnet.dll"
 )
 
 add_dotnet_test(ModelLoaderTest
@@ -69,4 +70,4 @@ foreach(test_model ${TEST_MODELS})
   configure_file(${CMAKE_CURRENT_LIST_DIR}/models/${test_model}.mtl ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CSHARP_TARGET_FRAMEWORK}/${test_model}.mtl COPYONLY)
 endforeach(test_model)
 
-install_dotnet(GPULidarTest DESTINATION lib/GPULidarTest/dotnet)
+#install_dotnet(GPULidarTest DESTINATION lib/GPULidarTest/dotnet)
