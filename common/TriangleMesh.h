@@ -3,6 +3,7 @@
 #include "TransformMatrix.h"
 #include "simple_uid_generator.h"
 #include <vector>
+#include "gdt/gdt/math/vec.h"
 
 struct TriangleMesh {
     TriangleMesh() { mesh_id = generate_simple_uid(); }

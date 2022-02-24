@@ -2,7 +2,7 @@
 .#*
 *#
 bin
-[Bb]uild
+[_][Bb]uild
 *.autosave
 *.gz
 *.zip
@@ -35,4 +35,5 @@ sysinfo.txt
 .vscode
 Builds/*
 Testing/*
-
+.idea
+cmake-build-debug

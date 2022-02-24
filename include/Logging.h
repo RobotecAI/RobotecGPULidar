@@ -2,6 +2,7 @@
 
 // TODO(prybicki): Consider more real-world logging with ability to set level and redirect to a file.
 #include <fmt/format.h>
+#include <fmt/color.h>
 using namespace fmt; // forgive me master
 
 template <typename... Args>

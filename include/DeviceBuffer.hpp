@@ -2,13 +2,20 @@
 
 #pragma once
 
+#include <cuda.h>
 #include <type_traits>
 #include <optional>
 #include "Logging.h"
+#include "HostPinnedBuffer.hpp"
+
+// TODO: elemCount and elemCapacity are duplictes..
+template<typename T>
+struct HostPinnedBuffer;
 
 template <typename T>
 struct DeviceBuffer
 {
+private:
     typedef T ValueType;
     static_assert(std::is_trivially_copyable<T>::value, "DeviceBuffer is instantiable only for types that can be copied between Host and GPU");
 
@@ -43,7 +50,20 @@ public:
         elemCount = srcElemCount;
     }
 
+    void copyFromHost(const HostPinnedBuffer<int>& src) {
+        copyFromHost(src.readHost(), src.getElemCount());
+    }
+
     void copyFromHost(const std::vector<T>& src) { copyFromHost(src.data(), src.size()); }
+
+    void copyToHost(T* dst, size_t outputElemCount) {
+        if (elemCount > outputElemCount) {
+            auto msg = fmt::format("PARTIAL COPY of {} ({}) into a buffer of smaller size ({})\n", name, elemCount, outputElemCount);
+            logWarn(msg);
+        }
+        auto elemsToCopy = std::min(elemCount, outputElemCount);
+        CUDA_CHECK(Memcpy(dst, data, elemsToCopy * sizeof(T), cudaMemcpyDeviceToHost));
+    }
 
     const T* readDevice() const {
         logInfo("[DB] readDevice {}\n", name);

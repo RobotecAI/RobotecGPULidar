@@ -6,17 +6,19 @@
 
 #include <fmt/color.h>
 
-#include "LidarSource.h"
+#include "data_types/LidarSource.h"
 #include "LidarRenderer.h"
-#include "PointTypes.h"
-#include "RaycastResult.h"
+#include "data_types/PointTypes.h"
 #include "visibility_control.h"
 
 using namespace gdt;
 using namespace fmt;
 static std::string last_gpu_library_error = ""; // no support for multithreading
 
-#define LIDAR_GPU_TRY_CATCH(call)                                \
+void br() {}
+
+#define LIDAR_GPU_TRY_CATCH(call) \
+    do                                                           \
     {                                                            \
         try {                                                    \
             call;                                                \
@@ -25,9 +27,14 @@ static std::string last_gpu_library_error = ""; // no support for multithreading
             fprintf(stderr, "Runtime exception %s", err.what()); \
             return GPULIDAR_ERROR;                               \
         }                                                        \
-    }
+    } while(0)
 
-std::unique_ptr<LidarRenderer> workaround = std::make_unique<LidarRenderer>();
+
+
+LidarRenderer* getWorkaround() {
+    static std::unique_ptr<LidarRenderer> workaround = std::make_unique<LidarRenderer>();
+    return workaround.get();
+}
 
 extern "C" {
 
@@ -38,13 +45,16 @@ enum GPULIDAR_RETURN_CODE {
 };
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
+int Internal_HelloWorld()
+{
+    fmt::print(stderr, "Hello world unity @@");
+    return GPULIDAR_SUCCESS;
+}
+
+GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_CreateNativeRaycaster(LidarRenderer** lidarRenderer)
 {
-    if (workaround) {
-        *lidarRenderer = workaround.get();
-        return GPULIDAR_SUCCESS;
-    }
-    LIDAR_GPU_TRY_CATCH(*lidarRenderer = new LidarRenderer());
+    LIDAR_GPU_TRY_CATCH(*lidarRenderer = getWorkaround());
     return GPULIDAR_SUCCESS;
 }
 
@@ -88,32 +98,45 @@ int Internal_UpdateMeshTransform(LidarRenderer* lidarRenderer, char* id, float* 
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, Point3f source_pos, Point3f* directions, int directions_count, float range)
+int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, float* lidarPose, float* postRaycastTransform, float* rayPosesFloats, int rayPoseFloatCount, int* lidarArrayRingIds, int lidarArrayRingCount, float range)
 {
-    LidarSource source {source_id, source_pos, range, directions_count, directions};
+    auto* lidarPoseTyped = reinterpret_cast<TransformMatrix*>(lidarPose);
+    auto* rayPosesTyped = reinterpret_cast<TransformMatrix*>(rayPosesFloats);
+    auto* postRaycastTransformTyped = reinterpret_cast<TransformMatrix*>(postRaycastTransform);
 
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->render({source})); // TODO - support more sources when needed in the higher interface
+    LidarSource source {source_id, *lidarPoseTyped, *postRaycastTransformTyped, rayPosesTyped, static_cast<int>(sizeof(float) * rayPoseFloatCount / sizeof(*rayPosesTyped)), lidarArrayRingIds, lidarArrayRingCount, range};
+    std::vector<LidarSource> source_v = {source};
+
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->render(source_v)); // TODO - support more sources when needed in the higher interface
 
     return GPULIDAR_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_GetPoints(LidarRenderer* lidarRenderer, const LidarPoint** results, int* results_count)
+int Internal_GetPoints(LidarRenderer* lidarRenderer, void* xyz, void* pcl12, void* pcl24, void* pcl48, int* results_count, double timestamp)
 {
-    const RaycastResults* allLidarsResults = nullptr;
-
-    LIDAR_GPU_TRY_CATCH(allLidarsResults = lidarRenderer->downloadPoints());
-
-    if (allLidarsResults == nullptr || allLidarsResults->size() == 0) {
-        results_count = nullptr;
+    // Once upon a time there was an urgent request to implement PCL generation on the GPU.
+    // To remove redundant copies, the caller will provide a pointer to store the data.
+    // To provide such a pointer, it needs to know the size of the PCL upfront.
+    // Adding a new call turned out to be problematic (not working out-of-the-box).
+    // Therefore, GetPoints, if provided a negative results_count,
+    // it will be filled with the number of points in the result PCL.
+    // No other action will be performed.
+    if (*results_count < 0) {
+        LIDAR_GPU_TRY_CATCH(*results_count = lidarRenderer->getNextDownloadPointCount());
         return GPULIDAR_SUCCESS;
     }
 
-    *results_count = allLidarsResults->at(0).points.size();
-    *results = reinterpret_cast<const LidarPoint*>(allLidarsResults->at(0).points.data());
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->downloadPoints(
+        *results_count,
+        reinterpret_cast<Point3f*>(xyz),
+        reinterpret_cast<PCL12*>(pcl12),
+        reinterpret_cast<PCL24*>(pcl24),
+        reinterpret_cast<PCL48*>(pcl48),
+        timestamp
+    ));
+
     return GPULIDAR_SUCCESS;
 }
 
 } // extern "C"
-
-void br() {}

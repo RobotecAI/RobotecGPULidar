@@ -208,3 +208,54 @@ std::shared_ptr<Model> load_model_from_obj_file(const std::string & objFile)
   std::cout << "created a total of " << model->meshes_map.size() << " meshes" << std::endl;
   return model;
 }
+
+class ModelLoader
+{
+public:
+    void load_obj(const std::string & path) {
+        model_ = load_model_from_obj_file(path);
+        if (model_) {
+            meshes_.clear();
+            for (auto mesh_kv : model_->meshes_map) {
+                meshes_.push_back(mesh_kv.second);
+            }
+        }
+    }
+
+    size_t get_number_of_meshes() {
+        return meshes_.size();
+    }
+
+    std::shared_ptr<TriangleMesh> get_triangle_mesh(const uint32_t & mesh_index) {
+        // DEBUG
+        /*
+        if (model_) {
+          for (auto v : model_->meshes[mesh_index]->vertex) {
+            std::cout << "v: " << v << std::endl;
+          }
+          for (auto n : model_->meshes[mesh_index]->normal) {
+            std::cout << "n: " << n << std::endl;
+          }
+          for (auto i : model_->meshes[mesh_index]->index) {
+            std::cout << "i: " << i << std::endl;
+          }
+          for (auto t : model_->meshes[mesh_index]->texcoord) {
+            std::cout << "t: " << t << std::endl;
+          }
+
+          std::cout << std::endl << std::endl;
+        }
+        */
+
+        //
+
+        if (meshes_.size() < mesh_index)
+            return nullptr;
+
+        return meshes_[mesh_index];
+    }
+
+private:
+    std::shared_ptr<Model> model_;
+    Meshes meshes_; // For index-based access
+};
