@@ -56,15 +56,16 @@ __global__ void kFormatAll(int sparsePointCount,
     out48[wIdx].time_stamp = 0; // TODO
 }
 
-int formatPCLs(const DeviceBuffer<int>& dWasHit,
-               DeviceBuffer<int>& dHitsBeforeIndex,
-               const DeviceBuffer<PCL12>& dIn12,
-               const DeviceBuffer<Point3f>& dInPoint3f,
-               const DeviceBuffer<int>& dInRingIds,
-               DeviceBuffer<Point3f>& dOutPoint3f,
-               DeviceBuffer<PCL12>& dOut12,
-               DeviceBuffer<PCL24>& dOut24,
-               DeviceBuffer<PCL48>& dOut48
+void formatPCLsAsync(cudaStream_t stream,
+                     const DeviceBuffer<int>& dWasHit,
+                     DeviceBuffer<int>& dHitsBeforeIndex,
+                     const DeviceBuffer<PCL12>& dIn12,
+                     const DeviceBuffer<Point3f>& dInPoint3f,
+                     const DeviceBuffer<int>& dInRingIds,
+                     DeviceBuffer<Point3f>& dOutPoint3f,
+                     DeviceBuffer<PCL12>& dOut12,
+                     DeviceBuffer<PCL24>& dOut24,
+                     DeviceBuffer<PCL48>& dOut48
 )
 {
     int sparsePointCount = dWasHit.getElemCount();
@@ -76,8 +77,8 @@ int formatPCLs(const DeviceBuffer<int>& dWasHit,
         auto end = thrust::device_ptr<int>(const_cast<int*>(dWasHit.readDevice()) + sparsePointCount);
         auto dst = thrust::device_ptr<int>(dHitsBeforeIndex.writeDevice());
 
-        // Note: this compiles only in .cu files
-        thrust::inclusive_scan(beg, end, dst);
+        // Note: this will compile only in a .cu file
+        thrust::inclusive_scan(thrust::cuda::par.on(stream), beg, end, dst);
     }
 
     // Second step: format PCLs
@@ -97,10 +98,5 @@ int formatPCLs(const DeviceBuffer<int>& dWasHit,
         );
     }
 
-    // Third step: get number of points in the dense cloud
-    {
-        int densePointCount = 0;
-        CUDA_CHECK(Memcpy(&densePointCount, dHitsBeforeIndex.readDevice() + sparsePointCount - 1, sizeof(densePointCount), cudaMemcpyDeviceToHost));
-        return densePointCount;
-    }
+
 }
