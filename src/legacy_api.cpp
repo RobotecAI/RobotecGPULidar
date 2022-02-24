@@ -6,8 +6,8 @@
 
 #include <fmt/color.h>
 
-#include "data_types/LidarSource.h"
 #include "LidarRenderer.h"
+#include "LidarContext.hpp"
 #include "data_types/PointTypes.h"
 #include "visibility_control.h"
 
@@ -40,7 +40,7 @@ extern "C" {
 
 // First attempt - on any error the module is deemed unusable
 enum GPULIDAR_RETURN_CODE {
-    GPULIDAR_SUCCESS = 0,
+    ROBOTEC_SUCCESS = 0,
     GPULIDAR_ERROR
 };
 
@@ -48,14 +48,14 @@ GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_HelloWorld()
 {
     fmt::print(stderr, "Hello world unity @@");
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_CreateNativeRaycaster(LidarRenderer** lidarRenderer)
 {
     LIDAR_GPU_TRY_CATCH(*lidarRenderer = getWorkaround());
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
@@ -80,36 +80,50 @@ int Internal_AddMesh(LidarRenderer* lidarRenderer, char* mesh_id, float* transfo
     (void) is_global;
     LIDAR_GPU_TRY_CATCH(lidarRenderer->addMeshRaw(mesh_id, mesh_size, vertices, normals, texture_coordinates,
                                                   indices_size, indices, transform_size, transform));
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_RemoveMesh(LidarRenderer* lidarRenderer, char* mesh_id)
 {
     LIDAR_GPU_TRY_CATCH(lidarRenderer->removeMeshRawTmp(mesh_id));
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_UpdateMeshTransform(LidarRenderer* lidarRenderer, char* id, float* transform, int transform_size)
 {
     LIDAR_GPU_TRY_CATCH(lidarRenderer->updateMeshTransformRawTmp(id, transform, transform_size));
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
+
+// GPU_LIDAR_RAYCASTER_C_EXPORT
+// int Internal_CreateLidarContext(LidarRenderer* lidarRenderer, void* outLidarCtx, float* rayPosesFloats, size_t rayPosesFloatCount, int* lidarArrayRingIds, size_t lidarArrayRingCount)
+// {
+//     auto* rayPosesTyped = reinterpret_cast<TransformMatrix*>(rayPosesFloats);
+//     auto rayPosesCount = static_cast<int>(sizeof(float) * rayPosesFloatCount / sizeof(*rayPosesTyped));
+//         LIDAR_GPU_TRY_CATCH(outLidarCtx = new LidarContext(rayPosesFloats, rayPosesCount, lidarArrayRingIds, lidarArrayRingCount));
+//     return GPULIDAR_SUCCESS;
+// }
+
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, float* lidarPose, float* postRaycastTransform, float* rayPosesFloats, int rayPoseFloatCount, int* lidarArrayRingIds, int lidarArrayRingCount, float range)
+int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, float* lidarPose, float* rosTransform, float* rayPosesFloats, int rayPosesFloatCount, int* lidarArrayRingIds, int lidarArrayRingCount, float range)
 {
     auto* lidarPoseTyped = reinterpret_cast<TransformMatrix*>(lidarPose);
     auto* rayPosesTyped = reinterpret_cast<TransformMatrix*>(rayPosesFloats);
-    auto* postRaycastTransformTyped = reinterpret_cast<TransformMatrix*>(postRaycastTransform);
+    auto* rosTransformTyped = reinterpret_cast<TransformMatrix*>(rosTransform);
+    auto rayPosesCount = static_cast<int>(sizeof(float) * rayPosesFloatCount / sizeof(*rayPosesTyped));
 
-    LidarSource source {source_id, *lidarPoseTyped, *postRaycastTransformTyped, rayPosesTyped, static_cast<int>(sizeof(float) * rayPoseFloatCount / sizeof(*rayPosesTyped)), lidarArrayRingIds, lidarArrayRingCount, range};
-    std::vector<LidarSource> source_v = {source};
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->render(*lidarPoseTyped,
+                                              *rosTransformTyped,
+                                              rayPosesTyped,
+                                              rayPosesCount,
+                                              lidarArrayRingIds,
+                                              lidarArrayRingCount,
+                                              range));
 
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->render(source_v)); // TODO - support more sources when needed in the higher interface
-
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
@@ -124,7 +138,7 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, void* xyz, void* pcl12, voi
     // No other action will be performed.
     if (*results_count < 0) {
         LIDAR_GPU_TRY_CATCH(*results_count = lidarRenderer->getNextDownloadPointCount());
-        return GPULIDAR_SUCCESS;
+        return ROBOTEC_SUCCESS;
     }
 
     LIDAR_GPU_TRY_CATCH(lidarRenderer->downloadPoints(
@@ -132,11 +146,10 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, void* xyz, void* pcl12, voi
         reinterpret_cast<Point3f*>(xyz),
         reinterpret_cast<PCL12*>(pcl12),
         reinterpret_cast<PCL24*>(pcl24),
-        reinterpret_cast<PCL48*>(pcl48),
-        timestamp
-    ));
+        reinterpret_cast<PCL48*>(pcl48))
+    );
 
-    return GPULIDAR_SUCCESS;
+    return ROBOTEC_SUCCESS;
 }
 
 } // extern "C"

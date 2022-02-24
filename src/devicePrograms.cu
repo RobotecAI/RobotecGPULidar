@@ -72,16 +72,16 @@ extern "C" __global__ void __closesthit__lidar()
 
     gdt::vec3f rayHitPoint = gdt::vec3f(prd.x, prd.y, prd.z);
     gdt::vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
-    gdt::vec3f rosPoint = multiply3x4TransformByVector3(optixLaunchLidarParams.postRaycastTransform, unityPoint);
+    gdt::vec3f rosPoint = multiply3x4TransformByVector3(optixLaunchLidarParams.rosTransform, unityPoint);
 
     const int ix = optixGetLaunchIndex().x;
 
-    optixLaunchLidarParams.dHitP3[ix].x = unityPoint.x;
-    optixLaunchLidarParams.dHitP3[ix].y = unityPoint.y;
-    optixLaunchLidarParams.dHitP3[ix].z = unityPoint.z;
-    optixLaunchLidarParams.dHitXYZ[ix].x = rosPoint.x;
-    optixLaunchLidarParams.dHitXYZ[ix].y = rosPoint.y;
-    optixLaunchLidarParams.dHitXYZ[ix].z = rosPoint.z;
+    optixLaunchLidarParams.dUnityVisualisationPoints[ix].x = unityPoint.x;
+    optixLaunchLidarParams.dUnityVisualisationPoints[ix].y = unityPoint.y;
+    optixLaunchLidarParams.dUnityVisualisationPoints[ix].z = unityPoint.z;
+    optixLaunchLidarParams.dRosXYZ[ix].x = rosPoint.x;
+    optixLaunchLidarParams.dRosXYZ[ix].y = rosPoint.y;
+    optixLaunchLidarParams.dRosXYZ[ix].z = rosPoint.z;
     optixSetPayload_3(1);
 }
 
@@ -127,7 +127,7 @@ extern "C" __global__ void __raygen__renderLidar()
         from, // from
         dir, // direction
         0.f, // tmin
-        optixLaunchLidarParams.dRangeOfLidar[0],
+        optixLaunchLidarParams.range,
         0.0f, // rayTime
         OptixVisibilityMask(255),
         OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
@@ -137,8 +137,8 @@ extern "C" __global__ void __raygen__renderLidar()
         u0, u1, u2, u3);
 
     if (u3) {
-        optixLaunchLidarParams.dHitIsFinite[ix] = 1;
+        optixLaunchLidarParams.dWasHit[ix] = 1;
     } else {
-        optixLaunchLidarParams.dHitIsFinite[ix] = 0;
+        optixLaunchLidarParams.dWasHit[ix] = 0;
     }
 }
