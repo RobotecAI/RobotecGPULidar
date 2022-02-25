@@ -83,7 +83,7 @@ void formatPCLsAsync(cudaStream_t stream,
 
     // Second step: format PCLs
     {
-        kFormatAll<<<(sparsePointCount + 256) / 256, 256>>>(
+        kFormatAll<<<(sparsePointCount + 256) / 256, 256, 0, stream>>>(
                 sparsePointCount,
                 dWasHit.readDevice(),
                 dHitsBeforeIndex.readDevice(),

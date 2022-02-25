@@ -159,6 +159,8 @@ OptixTraversableHandle LidarRenderer::buildAccel()
 
     const size_t instancesSizeInBytes = sizeof(OptixInstance) * instances.size();
 
+    // *** *** *** ACHTUNG *** *** ***
+    // Calls to cudaMemcpy below are a duck-tape for synchronizing all streams from LidarContexts.
     CUDABuffer instanceBuffer;
     instanceBuffer.alloc(instancesSizeInBytes);
     instanceBuffer.upload(instances.data(), instances.size());
@@ -380,9 +382,12 @@ void LidarRenderer::renderCtx(LidarContext *ctx, TransformMatrix lidarPose, Tran
         return;
     }
 
-    // TODO: make sure no lidar is running!
-    // Otherwise device-side optix structs will be freed while being used
+    // The function below uses nullstream for memcopies,
+    // which causes an implicite synchronization of other streams
+    // https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#implicit-synchronization
+    // I.E. This function will wait for pending jobs in all streams to complete and will be completed before starting next jobs.
     updateStructsForModel();
+
     ctx->scheduleRaycast(pipeline, sbt, traversable, lidarPose, rosTransform, range);
 }
 

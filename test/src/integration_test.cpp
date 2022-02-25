@@ -67,17 +67,27 @@ TEST_F(GPULidarIntegration, SimpleRaycast)
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f
     };
-    LidarContext lidarCtx(&sourcePoses, 1, ringIds_, ringIdsSize_);
+    LidarContext lidarCtx1(&sourcePoses, 1, ringIds_, ringIdsSize_);
+    LidarContext lidarCtx2(&sourcePoses, 1, ringIds_, ringIdsSize_);
     LidarSource lidar_source("lidar", lidarPose, &sourcePoses, 1, ringIds_, ringIdsSize_, 100.0f);
-    lr_.renderCtx(&lidarCtx, lidarPose, 100.0f);
+    lr_.renderCtx(&lidarCtx1, lidarPose, 100.0f);
+    lr_.renderCtx(&lidarCtx2, lidarPose, 100.0f);
 
-    std::vector<Point3f> results(lr_.getResultPointCloudSizeCtx(&lidarCtx));
-    lr_.downloadPointsCtx(&lidarCtx, results.size(), results.data());
-    ASSERT_EQ(1, results.size());
-    EXPECT_NEAR(results[0].x, 0.0f, 0.01f);
-    EXPECT_NEAR(results[0].y, 0.0f, 0.01f);
-    EXPECT_NEAR(results[0].z, -1.0f, 0.01f);
-    std::cout << results[0] << std::endl;
+    std::vector<Point3f> results1(lr_.getResultPointCloudSizeCtx(&lidarCtx1));
+    lr_.downloadPointsCtx(&lidarCtx1, results1.size(), results1.data());
+    ASSERT_EQ(1, results1.size());
+    EXPECT_NEAR(results1[0].x, 0.0f, 0.01f);
+    EXPECT_NEAR(results1[0].y, 0.0f, 0.01f);
+    EXPECT_NEAR(results1[0].z, -1.0f, 0.01f);
+    std::cout << results1[0] << std::endl;
+
+    std::vector<Point3f> results2(lr_.getResultPointCloudSizeCtx(&lidarCtx2));
+    lr_.downloadPointsCtx(&lidarCtx2, results2.size(), results2.data());
+    ASSERT_EQ(1, results2.size());
+    EXPECT_NEAR(results2[0].x, 0.0f, 0.01f);
+    EXPECT_NEAR(results2[0].y, 0.0f, 0.01f);
+    EXPECT_NEAR(results2[0].z, -1.0f, 0.01f);
+    std::cout << results2[0] << std::endl;
 }
 //
 // TEST_F(GPULidarIntegration, MovedUpRaycast) {

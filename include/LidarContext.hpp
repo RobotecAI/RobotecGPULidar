@@ -17,7 +17,8 @@ struct LidarContext
 
     LidarContext(TransformMatrix* rayPoses, int rayPosesCount, int* lidarArrayRingIds, int lidarArrayRingCount)
     {
-        // TODO: register this to avoid double free due to C# LidarRenderer/finalize LidarContext/finalize
+        CUDA_CHECK(StreamCreate(&stream));
+
         if (rayPosesCount <= 0) {
             auto msg = fmt::format("LidarContext::LidarContext: rayPosesCount ({}) must be > 0", rayPosesCount);
             throw std::logic_error(msg);
