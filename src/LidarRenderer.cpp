@@ -372,13 +372,7 @@ OptixShaderBindingTable LidarRenderer::buildSBT()
     };
 }
 
-void LidarRenderer::render(TransformMatrix lidarPose,
-                           TransformMatrix rosTransform,
-                           TransformMatrix* rayPoses,
-                           int rayPosesCount,
-                           int* lidarArrayRingIds,
-                           int lidarArrayRingCount,
-                           float range)
+void LidarRenderer::renderCtx(LidarContext *ctx, TransformMatrix lidarPose, TransformMatrix rosTransform, float range)
 {
     logInfo("[RGL] render()\n");
     if (m_instances_map.size() == 0) {
@@ -386,34 +380,29 @@ void LidarRenderer::render(TransformMatrix lidarPose,
         return;
     }
 
+    // TODO: make sure no lidar is running!
+    // Otherwise device-side optix structs will be freed while being used
     updateStructsForModel();
-
-    defaultLidarContext.emplace(rayPoses, rayPosesCount, lidarArrayRingIds, lidarArrayRingCount);
-    defaultLidarContext->scheduleRaycast(pipeline, sbt, traversable, lidarPose, rosTransform, range);
+    ctx->scheduleRaycast(pipeline, sbt, traversable, lidarPose, rosTransform, range);
 }
 
-int LidarRenderer::getNextDownloadPointCount()
+int LidarRenderer::getResultPointCloudSizeCtx(LidarContext *ctx)
 {
-    return defaultLidarContext->getResultsSize();
+    return ctx->getResultsSize();
 }
 
-void LidarRenderer::downloadPoints(int maxPointCount, Point3f *outXYZ)
+void LidarRenderer::downloadPointsCtx(LidarContext* ctx, int maxPointCount, Point3f* outXYZ, PCL12* outPCL12, PCL24* outPCL24, PCL48* outPCL48)
+{
+    logInfo("[RGL] downloadPoints()\n");
+    ctx->getResults(maxPointCount, outXYZ, outPCL12, outPCL24, outPCL48);
+}
+
+void LidarRenderer::downloadPointsCtx(LidarContext* ctx, int maxPointCount, Point3f* outXYZ)
 {
     std::vector<PCL12> dummy12(maxPointCount);
     std::vector<PCL24> dummy24(maxPointCount);
     std::vector<PCL48> dummy48(maxPointCount);
-    downloadPoints(maxPointCount, outXYZ, dummy12.data(), dummy24.data(), dummy48.data());
-}
-
-void LidarRenderer::downloadPoints(int maxPointCount,
-                                   Point3f* outXYZ,
-                                   PCL12* outPCL12,
-                                   PCL24* outPCL24,
-                                   PCL48* outPCL48)
-{
-    logInfo("[RGL] downloadPoints()\n");
-    defaultLidarContext->getResults(maxPointCount, outXYZ, outPCL12, outPCL24, outPCL48);
-    defaultLidarContext.reset();
+    downloadPointsCtx(ctx, maxPointCount, outXYZ, dummy12.data(), dummy24.data(), dummy48.data());
 }
 
 std::string LidarRenderer::getCurrentDeviceName()
@@ -487,3 +476,4 @@ void LidarRenderer::updateMeshTransformRawTmp(char *meshID, float *transform, in
     memcpy(transformMatrix.matrix_flat, transform, sizeof(TransformMatrix));
     updateMeshTransform(std::string(meshID), transformMatrix);
 }
+
