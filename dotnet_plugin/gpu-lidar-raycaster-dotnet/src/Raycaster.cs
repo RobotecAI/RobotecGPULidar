@@ -9,15 +9,9 @@ namespace GPULidarRaycaster
 public class Raycaster : IDisposable
 {
   private IntPtr m_NativeRaycaster = IntPtr.Zero;
-  private float[] m_flatFloatBuffer;
-  private IntPtr m_resultsRaw;
-  private Dictionary<string, Point4f[]> m_resultBuffers;
 
   public Raycaster()
   {
-    m_flatFloatBuffer = new float[0];
-    m_resultBuffers = new Dictionary<string, Point4f[]>();
-    m_resultsRaw = new IntPtr();
     CheckError(NativeMethods.Internal_CreateNativeRaycaster(out m_NativeRaycaster));
   }
 
@@ -71,24 +65,48 @@ public class Raycaster : IDisposable
     CheckError(NativeMethods.Internal_UpdateMeshTransform(m_NativeRaycaster, mesh_id, transform, transform.Length));
   }
 
-  public void Raycast(in LidarSource source, ref RaycastResults res, double timestamp)
+  public IntPtr CreateLidarContext(in LidarSource source)
   {
+    NativeHandleCheck();
+    IntPtr ctx = IntPtr.Zero;
+    CheckError(NativeMethods.Internal_CreateLidarContext(
+            m_NativeRaycaster,
+            out ctx,
+            source.sourcePoses,
+            source.sourcePoses.Length,
+            source.lidarArrayRingIds,
+            source.lidarArrayRingIds.Length
+    ));
+    return ctx;
+  }
+
+  public void DestroyLidarContext(IntPtr ctx)
+  {
+    NativeHandleCheck();
+    CheckError(NativeMethods.Internal_DestroyLidarContext(
+            m_NativeRaycaster,
+            ctx
+    ));
+  }
+
+  public void RaycastAsync(in LidarSource source, IntPtr lidarContext, double timestamp)
+  {
+    // At the moment timestamp is not yet propagated to the native side.
     NativeHandleCheck();
     CheckError(NativeMethods.Internal_Raycast(
         m_NativeRaycaster,
+        lidarContext,
         source.source_id,
         source.lidarPose,
         source.postRaycastTransform,
-        source.sourcePoses,
-        source.sourcePoses.Length,
-        source.lidarArrayRingIds,
-        source.lidarArrayRingIds.Length,
         source.range
     ));
+  }
 
-
+  public void SyncAndDownload(IntPtr lidarContext, ref RaycastResults res)
+  {
     int pointCount = -1;
-    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, ref pointCount, timestamp));
+    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, ref pointCount));
 
     res.pointCount = pointCount;
     res.xyz = new Point3f[pointCount];
@@ -98,11 +116,11 @@ public class Raycaster : IDisposable
 
     // May by risky, but should be faster than Marshal.Copy.
     unsafe {
-        fixed (Point3f* pXYZ = res.xyz) {
-        fixed (byte* p12 = res.rosPCL12, p24 = res.rosPCL24, p48 = res.rosPCL48)  {
-            CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, (IntPtr) pXYZ, (IntPtr) p12, (IntPtr) p24, (IntPtr) p48, ref pointCount, timestamp));
-        }
-        }
+      fixed (Point3f* pXYZ = res.xyz) {
+      fixed (byte* p12 = res.rosPCL12, p24 = res.rosPCL24, p48 = res.rosPCL48)  {
+          CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, (IntPtr) pXYZ, (IntPtr) p12, (IntPtr) p24, (IntPtr) p48, ref pointCount));
+      }
+      }
     }
   }
 

@@ -73,6 +73,6 @@ add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
 # ------------------------------------------------------------------
  if (BUILD_TESTS)
      enable_testing()
-     add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
+#     add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
      add_subdirectory(test)
  endif()

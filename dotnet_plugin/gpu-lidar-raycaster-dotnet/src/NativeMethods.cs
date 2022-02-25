@@ -65,8 +65,26 @@ namespace GPULidarRaycaster
             typeof(Internal_UpdateMeshTransformType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int Internal_RaycastType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string source_id,
-          [In] float [] lidarPose, [In] float [] postRaycastTransform, [In] float[] sourcePosesFloats, [In] int source_pos_float_count,  [In] int[] lidarArrayRingIds, [In] int lidarArrayRingCount, [In] float range);
+        internal delegate int Internal_CreateLidarContextType(IntPtr lidar, out IntPtr context, [In] float[] sourcePosesFloats, [In] int sourcePosesFloatsCount,  [In] int[] lidarArrayRingIds, [In] int lidarArrayRingCount);
+        internal static Internal_CreateLidarContextType
+            Internal_CreateLidarContext =
+            (Internal_CreateLidarContextType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            native_raycaster_lib,
+            "Internal_CreateLidarContext"),
+            typeof(Internal_CreateLidarContextType));
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int Internal_DestroyLidarContextType(IntPtr lidar, IntPtr context);
+        internal static Internal_DestroyLidarContextType
+            Internal_DestroyLidarContext =
+            (Internal_DestroyLidarContextType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            native_raycaster_lib,
+            "Internal_DestroyLidarContext"),
+            typeof(Internal_DestroyLidarContextType));
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int Internal_RaycastType(IntPtr obj, IntPtr lidarCtx, [In, MarshalAs(UnmanagedType.LPStr)] string source_id,
+          [In] float [] lidarPose, [In] float [] postRaycastTransform, [In] float range);
         internal static Internal_RaycastType
             Internal_Raycast =
             (Internal_RaycastType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -75,7 +93,7 @@ namespace GPULidarRaycaster
             typeof(Internal_RaycastType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int Internal_GetPointsType(IntPtr obj, IntPtr xyz, IntPtr pcl12, IntPtr pcl24, IntPtr pcl48, ref int results_count, double timestamp);
+        internal delegate int Internal_GetPointsType(IntPtr obj, IntPtr lidarCtx, IntPtr xyz, IntPtr pcl12, IntPtr pcl24, IntPtr pcl48, ref int results_count);
         internal static Internal_GetPointsType
             Internal_GetPoints =
             (Internal_GetPointsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(

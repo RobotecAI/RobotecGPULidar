@@ -37,37 +37,11 @@ struct LidarRenderer {
     LidarRenderer();
     ~LidarRenderer();
 
-    void render(TransformMatrix lidarPose,
-                TransformMatrix rosTransform,
-                TransformMatrix* rayPoses,
-                int rayPosesCount,
-                int* lidarArrayRingIds,
-                int lidarArrayRingCount,
-                float range);
-
-    // Preserved because I'm too lazy right now to fix all tests.
-    void render(const std::vector<LidarSource> src)
-    {
-        auto&& s = src[0];
-        render(s.lidarPose,
-               s.postRaycastTransform,
-               s.rayPoses,
-               s.rayPoseCount,
-               s.lidarArrayRingIds,
-               s.lidarArrayRingCount,
-               s.range);
-    }
-
-    // TODO(prybicki): this return type is temporary and should be changed in the future refactor
-    int getNextDownloadPointCount();
-    void downloadPoints(int maxPointCount,
-                        Point3f* outXYZ,
-                        PCL12* outPCL12,
-                        PCL24* outPCL24,
-                        PCL48* outPCL48);
-
-    // This is a slower overload for tests
-    void downloadPoints(int maxPointCount, Point3f* outXYZ);
+    void renderCtx(LidarContext* ctx, TransformMatrix lidarPose, float range) { renderCtx(ctx, lidarPose, TransformMatrix::identity(), range); }
+    void renderCtx(LidarContext* ctx, TransformMatrix lidarPose, TransformMatrix rosTransform, float range);
+    int getResultPointCloudSizeCtx(LidarContext* ctx);
+    void downloadPointsCtx(LidarContext* ctx, int maxPointCount, Point3f* outXYZ, PCL12* outPCL12, PCL24* outPCL24, PCL48* outPCL48);
+    void downloadPointsCtx(LidarContext* ctx, int maxPointCount, Point3f* outXYZ);
 
     void addMeshRaw(const char* meshID,
                     int meshSize, gdt::vec3f* vertices, gdt::vec3f* normals, gdt::vec2f* texCoords,
@@ -99,8 +73,6 @@ private:
     OptixProgramGroup hitgroupPG;
     OptixShaderBindingTable sbt;
     OptixTraversableHandle traversable;
-
-    std::optional<LidarContext> defaultLidarContext;
 
     // MODEL STUFF
     std::unordered_map<std::string, std::shared_ptr<ModelInstance>> m_instances_map;

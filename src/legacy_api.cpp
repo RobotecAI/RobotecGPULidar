@@ -98,36 +98,49 @@ int Internal_UpdateMeshTransform(LidarRenderer* lidarRenderer, char* id, float* 
 }
 
 
-// GPU_LIDAR_RAYCASTER_C_EXPORT
-// int Internal_CreateLidarContext(LidarRenderer* lidarRenderer, void* outLidarCtx, float* rayPosesFloats, size_t rayPosesFloatCount, int* lidarArrayRingIds, size_t lidarArrayRingCount)
-// {
-//     auto* rayPosesTyped = reinterpret_cast<TransformMatrix*>(rayPosesFloats);
-//     auto rayPosesCount = static_cast<int>(sizeof(float) * rayPosesFloatCount / sizeof(*rayPosesTyped));
-//         LIDAR_GPU_TRY_CATCH(outLidarCtx = new LidarContext(rayPosesFloats, rayPosesCount, lidarArrayRingIds, lidarArrayRingCount));
-//     return GPULIDAR_SUCCESS;
-// }
+GPU_LIDAR_RAYCASTER_C_EXPORT
+int Internal_CreateLidarContext(LidarRenderer* lidarRenderer, void** outLidarCtx, float* rayPosesFloats, size_t rayPosesFloatCount, int* lidarArrayRingIds, size_t lidarArrayRingCount)
+{
+    auto* rayPosesTyped = reinterpret_cast<TransformMatrix*>(rayPosesFloats);
+    auto rayPosesCount = static_cast<int>(sizeof(float) * rayPosesFloatCount / sizeof(*rayPosesTyped));
+    LIDAR_GPU_TRY_CATCH(*outLidarCtx = new LidarContext(rayPosesTyped, rayPosesCount, lidarArrayRingIds, lidarArrayRingCount));
+    return ROBOTEC_SUCCESS;
+}
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_Raycast(LidarRenderer* lidarRenderer, char* source_id, float* lidarPose, float* rosTransform, float* rayPosesFloats, int rayPosesFloatCount, int* lidarArrayRingIds, int lidarArrayRingCount, float range)
+int Internal_DestroyLidarContext(LidarRenderer* lidarRenderer, LidarContext* lidarCtx)
+{
+    LIDAR_GPU_TRY_CATCH(
+        if (lidarCtx == nullptr) {
+            throw std::invalid_argument("lidarCtx == null");
+        }
+    );
+    LIDAR_GPU_TRY_CATCH(delete lidarCtx);
+    return ROBOTEC_SUCCESS;
+}
+
+GPU_LIDAR_RAYCASTER_C_EXPORT
+int Internal_Raycast(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, char* source_id, float* lidarPose, float* rosTransform, float range)
 {
     auto* lidarPoseTyped = reinterpret_cast<TransformMatrix*>(lidarPose);
-    auto* rayPosesTyped = reinterpret_cast<TransformMatrix*>(rayPosesFloats);
     auto* rosTransformTyped = reinterpret_cast<TransformMatrix*>(rosTransform);
-    auto rayPosesCount = static_cast<int>(sizeof(float) * rayPosesFloatCount / sizeof(*rayPosesTyped));
 
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->render(*lidarPoseTyped,
+    LIDAR_GPU_TRY_CATCH(
+        if (lidarCtx == nullptr) {
+            throw std::invalid_argument("lidarCtx == null");
+        }
+    );
+
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->renderCtx(lidarCtx,
+                                              *lidarPoseTyped,
                                               *rosTransformTyped,
-                                              rayPosesTyped,
-                                              rayPosesCount,
-                                              lidarArrayRingIds,
-                                              lidarArrayRingCount,
                                               range));
 
     return ROBOTEC_SUCCESS;
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_GetPoints(LidarRenderer* lidarRenderer, void* xyz, void* pcl12, void* pcl24, void* pcl48, int* results_count, double timestamp)
+int Internal_GetPoints(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, void* xyz, void* pcl12, void* pcl24, void* pcl48, int* results_count)
 {
     // Once upon a time there was an urgent request to implement PCL generation on the GPU.
     // To remove redundant copies, the caller will provide a pointer to store the data.
@@ -137,11 +150,19 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, void* xyz, void* pcl12, voi
     // it will be filled with the number of points in the result PCL.
     // No other action will be performed.
     if (*results_count < 0) {
-        LIDAR_GPU_TRY_CATCH(*results_count = lidarRenderer->getNextDownloadPointCount());
+        LIDAR_GPU_TRY_CATCH(*results_count = lidarRenderer->getResultPointCloudSizeCtx(lidarCtx));
         return ROBOTEC_SUCCESS;
     }
 
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->downloadPoints(
+    LIDAR_GPU_TRY_CATCH(
+        if (lidarCtx == nullptr) {
+            throw std::invalid_argument("lidarCtx == null");
+        }
+    );
+
+
+    LIDAR_GPU_TRY_CATCH(lidarRenderer->downloadPointsCtx(
+        lidarCtx,
         *results_count,
         reinterpret_cast<Point3f*>(xyz),
         reinterpret_cast<PCL12*>(pcl12),
