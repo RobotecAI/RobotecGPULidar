@@ -47,6 +47,15 @@ namespace GPULidarRaycaster
             typeof(Internal_AddMeshType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int Internal_HasMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id, ref bool outHasMesh);
+        internal static Internal_HasMeshType
+            Internal_HasMesh =
+            (Internal_HasMeshType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            native_raycaster_lib,
+            "Internal_HasMesh"),
+            typeof(Internal_HasMeshType));
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int Internal_RemoveMeshType(IntPtr obj, [In, MarshalAs(UnmanagedType.LPStr)] string id);
         internal static Internal_RemoveMeshType
             Internal_RemoveMesh =

@@ -49,6 +49,15 @@ public class Raycaster : IDisposable
   public void AddMesh(in Mesh mesh)
   {
     NativeHandleCheck();
+    bool hasMesh = false;
+    CheckError(NativeMethods.Internal_HasMesh(m_NativeRaycaster, mesh.id, ref hasMesh));
+    if (hasMesh) {
+      return;
+    }
+    // *** *** *** ACHTUNG *** *** ***
+    // This call is VERY expensive, even if the mesh is not being added (when native side detects it's been already uploaded).
+    // The reason for that is that mesh.vertices performs a full copy of mesh vertices.
+    // Some of used meshes have 1e5 vertices, so it's not an option to copy them on every frame.
     CheckError(NativeMethods.Internal_AddMesh(m_NativeRaycaster, mesh.id, mesh.transform, mesh.is_global, mesh.vertices,
       mesh.normals, mesh.texture_coordinates, mesh.indices, mesh.indices.Length, mesh.vertices.Length, mesh.transform.Length));
   }
@@ -103,22 +112,26 @@ public class Raycaster : IDisposable
     ));
   }
 
+  public void PrepareDownload(IntPtr lidarContext, ref RaycastResults res)
+  {
+      int pointCount = -1;
+      CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, ref pointCount));
+
+      var bufferSize = pointCount;
+      res.pointCount = pointCount;
+      res.xyz = new Point3f[bufferSize];
+      res.rosPCL12 = new byte[12 * bufferSize];
+      res.rosPCL24 = new byte[24 * bufferSize];
+      res.rosPCL48 = new byte[48 * bufferSize];
+  }
+
   public void SyncAndDownload(IntPtr lidarContext, ref RaycastResults res)
   {
-    int pointCount = -1;
-    CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, ref pointCount));
-
-    res.pointCount = pointCount;
-    res.xyz = new Point3f[pointCount];
-    res.rosPCL12 = new byte[12 * pointCount];
-    res.rosPCL24 = new byte[24 * pointCount];
-    res.rosPCL48 = new byte[48 * pointCount];
-
     // May by risky, but should be faster than Marshal.Copy.
     unsafe {
       fixed (Point3f* pXYZ = res.xyz) {
       fixed (byte* p12 = res.rosPCL12, p24 = res.rosPCL24, p48 = res.rosPCL48)  {
-          CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, (IntPtr) pXYZ, (IntPtr) p12, (IntPtr) p24, (IntPtr) p48, ref pointCount));
+          CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, (IntPtr) pXYZ, (IntPtr) p12, (IntPtr) p24, (IntPtr) p48, ref res.pointCount));
       }
       }
     }

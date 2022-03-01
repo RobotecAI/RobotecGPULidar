@@ -84,6 +84,14 @@ int Internal_AddMesh(LidarRenderer* lidarRenderer, char* mesh_id, float* transfo
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
+int Internal_HasMesh(LidarRenderer* lidarRenderer, char* mesh_id, bool* outHasMesh)
+{
+    LIDAR_GPU_TRY_CATCH(*outHasMesh = lidarRenderer->hasMesh(mesh_id));
+    return ROBOTEC_SUCCESS;
+}
+
+
+GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_RemoveMesh(LidarRenderer* lidarRenderer, char* mesh_id)
 {
     LIDAR_GPU_TRY_CATCH(lidarRenderer->removeMeshRawTmp(mesh_id));

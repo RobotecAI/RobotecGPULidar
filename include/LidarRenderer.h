@@ -43,6 +43,8 @@ struct LidarRenderer {
     void downloadPointsCtx(LidarContext* ctx, int maxPointCount, Point3f* outXYZ, PCL12* outPCL12, PCL24* outPCL24, PCL48* outPCL48);
     void downloadPointsCtx(LidarContext* ctx, int maxPointCount, Point3f* outXYZ);
 
+    bool hasMesh(const std::string& meshID);
+
     void addMeshRaw(const char* meshID,
                     int meshSize, gdt::vec3f* vertices, gdt::vec3f* normals, gdt::vec2f* texCoords,
                     int indicesSize, gdt::vec3i* indices,

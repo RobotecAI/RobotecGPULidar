@@ -422,15 +422,15 @@ std::string LidarRenderer::getCurrentDeviceName()
 void LidarRenderer::addMeshRaw(const char *meshID, int meshSize, gdt::vec3f *vertices, gdt::vec3f *normals, gdt::vec2f *texCoords,
                                int indicesSize, gdt::vec3i *indices, int transformSize, float *transform)
 {
-    logInfo("[RGL] Add raw mesh\n");
+    logInfo("[RGL] Add raw mesh {}\n", meshID);
     if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
         logError("[RGL] Invalid transform size: {} (expected {})\n", transformSize, sizeof(TransformMatrix) / sizeof(float));
         throw std::invalid_argument("invalid transform size");
     }
 
     // Since constructing TriangleMesh is costly, we want to check for its existence early.
-    if (m_instances_map.find(meshID) != m_instances_map.end()) {
-        logInfo("[RGL] Skip existing model\n");
+    if (hasMesh(meshID)) {
+        logInfo("[RGL] Skip existing model {}\n", meshID);
         return; // Already in the map, skip it.
     }
 
@@ -480,5 +480,10 @@ void LidarRenderer::updateMeshTransformRawTmp(char *meshID, float *transform, in
     TransformMatrix transformMatrix;
     memcpy(transformMatrix.matrix_flat, transform, sizeof(TransformMatrix));
     updateMeshTransform(std::string(meshID), transformMatrix);
+}
+
+bool LidarRenderer::hasMesh(const std::string& meshID)
+{
+    return m_instances_map.find(meshID) != m_instances_map.end();
 }
 
