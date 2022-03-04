@@ -28,7 +28,7 @@ public:
     HostPinnedBuffer& operator=(HostPinnedBuffer&) = delete;
     HostPinnedBuffer& operator=(HostPinnedBuffer&&) = delete;
 
-    HostPinnedBuffer(const std::string& _name) {
+    HostPinnedBuffer(const std::string& _name="<unnamed>") {
         logInfo("[DB] HostPinnedBuffer {} ({})\n", _name, elemCount);
         name = _name;
     }
@@ -40,10 +40,10 @@ public:
         }
     }
 
-    void copyFromDeviceAsync(const DeviceBuffer<T>& src) {
+    void copyFromDeviceAsync(const DeviceBuffer<T>& src, cudaStream_t stream) {
         logInfo("[DB] copyFromDevice {} (srcCount={})\n", name, src.getElemCount());
         ensureHostCanFit(src.getElemCount());
-        CUDA_CHECK(MemcpyAsync(data, src.readDevice(), src.getElemCount() * sizeof(T), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(MemcpyAsync(data, src.readDevice(), src.getElemCount() * sizeof(T), cudaMemcpyDeviceToHost, stream));
         elemCount = src.getElemCount();
     }
 
