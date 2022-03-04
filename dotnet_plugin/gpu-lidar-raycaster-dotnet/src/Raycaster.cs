@@ -116,13 +116,7 @@ public class Raycaster : IDisposable
   {
       int pointCount = -1;
       CheckError(NativeMethods.Internal_GetPoints(m_NativeRaycaster, lidarContext, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, ref pointCount));
-
-      var bufferSize = pointCount;
       res.pointCount = pointCount;
-      res.xyz = new Point3f[bufferSize];
-      res.rosPCL12 = new byte[12 * bufferSize];
-      res.rosPCL24 = new byte[24 * bufferSize];
-      res.rosPCL48 = new byte[48 * bufferSize];
   }
 
   public void SyncAndDownload(IntPtr lidarContext, ref RaycastResults res)

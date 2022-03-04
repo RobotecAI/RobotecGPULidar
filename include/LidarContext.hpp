@@ -66,6 +66,11 @@ struct LidarContext
 
         formatPCLsAsync(stream, dWasHit, dHitsBeforeIndex, dRosXYZ, dUnityVisualisationPoints, dLidarArrayRingIds,
                         dDensePoint3f, dDensePCL12, dDensePCL24, dDensePCL48);
+
+        hDensePoint3f.copyFromDeviceAsync(dDensePoint3f, stream);
+        hDensePCL12.copyFromDeviceAsync(dDensePCL12, stream);
+        hDensePCL24.copyFromDeviceAsync(dDensePCL24, stream);
+        hDensePCL48.copyFromDeviceAsync(dDensePCL48, stream);
     }
 
     int getResultsSize()
@@ -98,17 +103,11 @@ struct LidarContext
             throw std::invalid_argument(msg);
         }
 
-        // TODO: here lies a potential performance improvement (but needs profiling):
-        // - Copy (device -> paged host [aka malloc-ed]) is indirect (buffered) and therefore slower
-        //   - Alternative approach would be to schedule earlier async copy device -> pinned host [aka cudaMallocHost-ed],
-        //     and getResults would do a memcpy (pinned -> paged), which is likely to be faster (~40GiB/s) than (device -> paged host) (?? GiB/s)
-        // - These copies can be done in parallel (either in different streams or threads, depending on the point above
-        dDensePoint3f.copyPrefixToHostAsync(outXYZ, buffersSize, stream);
-        dDensePCL12.copyPrefixToHostAsync(outPCL12, buffersSize, stream);
-        dDensePCL24.copyPrefixToHostAsync(outPCL24, buffersSize, stream);
-        dDensePCL48.copyPrefixToHostAsync(outPCL48, buffersSize, stream);
-
         CUDA_CHECK(StreamSynchronize(stream));
+        memcpy(outXYZ, hDensePoint3f.readHost(), hDensePoint3f.getByteSize());
+        memcpy(outPCL12, hDensePCL12.readHost(), hDensePCL12.getByteSize());
+        memcpy(outPCL24, hDensePCL24.readHost(), hDensePCL24.getByteSize());
+        memcpy(outPCL48, hDensePCL48.readHost(), hDensePCL48.getByteSize());
 
         currentJob.reset();
         densePointCount.reset();
@@ -134,4 +133,9 @@ struct LidarContext
     DeviceBuffer<PCL12> dDensePCL12;
     DeviceBuffer<PCL24> dDensePCL24;
     DeviceBuffer<PCL48> dDensePCL48;
+
+    HostPinnedBuffer<Point3f> hDensePoint3f;
+    HostPinnedBuffer<PCL12> hDensePCL12;
+    HostPinnedBuffer<PCL24> hDensePCL24;
+    HostPinnedBuffer<PCL48> hDensePCL48;
 };
