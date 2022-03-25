@@ -44,14 +44,18 @@ __global__ void kFormatAll(int sparsePointCount,
     outPoint3f[wIdx] = inPoint3f[rIdx];
     out12[wIdx] = in12[rIdx];
 
-    out48[wIdx].x = out24[wIdx].x = in12[rIdx].x;
-    out48[wIdx].y = out24[wIdx].y = in12[rIdx].y;
-    out48[wIdx].z = out24[wIdx].z = in12[rIdx].z;
+    const float x = in12[rIdx].x;
+    const float y = in12[rIdx].y;
+    const float z = in12[rIdx].z;
+
+    out48[wIdx].x = out24[wIdx].x = x;
+    out48[wIdx].y = out24[wIdx].y = y;
+    out48[wIdx].z = out24[wIdx].z = z;
     out48[wIdx].intensity = out24[wIdx].intensity = 100;
     out48[wIdx].ring = out24[wIdx].ring = inRingIds[rIdx % inRingCount];
 
     out48[wIdx].azimuth = 0; // TODO
-    out48[wIdx].distance = 0; // TODO
+    out48[wIdx].distance = sqrt(x*x + y*y + z*z);
     out48[wIdx].return_type = 0; // TODO
     out48[wIdx].time_stamp = 0; // TODO
 }
