@@ -379,6 +379,8 @@ void LidarRenderer::renderCtx(LidarContext *ctx, TransformMatrix lidarPose, Tran
     logInfo("[RGL] render()\n");
     if (m_instances_map.size() == 0) {
         logWarn("[RGL] LidarRender::render called with 0 meshes\n");
+        // Temporary hack to make results disappear when there are no meshes on the scene.
+        CUDA_CHECK(MemsetAsync(ctx->dHitsBeforeIndex.writeDevice(), 0, ctx->dHitsBeforeIndex.getByteSize(), ctx->stream));
         return;
     }
 
@@ -419,8 +421,7 @@ std::string LidarRenderer::getCurrentDeviceName()
     return std::string(deviceProperties.name);
 }
 
-void LidarRenderer::addMeshRaw(const char *meshID, int meshSize, gdt::vec3f *vertices, gdt::vec3f *normals, gdt::vec2f *texCoords,
-                               int indicesSize, gdt::vec3i *indices, int transformSize, float *transform)
+void LidarRenderer::addMeshRaw(const char *meshID, int meshSize, gdt::vec3f *vertices, int indicesSize, gdt::vec3i *indices, int transformSize, float *transform)
 {
     logInfo("[RGL] Add raw mesh {}\n", meshID);
     if (transformSize != sizeof(TransformMatrix) / sizeof(float)) {
@@ -439,12 +440,6 @@ void LidarRenderer::addMeshRaw(const char *meshID, int meshSize, gdt::vec3f *ver
 
     std::vector<gdt::vec3f> v(vertices, vertices + meshSize);
     tm->vertex = v;
-
-    std::vector<gdt::vec3f> n(normals, normals + meshSize);
-    tm->normal = n;
-
-    std::vector<gdt::vec2f> tc(texCoords, texCoords + meshSize);
-    tm->texcoord = tc;
 
     std::vector<gdt::vec3i> ind(indices, indices + indicesSize);
     tm->index = ind;
@@ -469,7 +464,7 @@ void LidarRenderer::updateMeshTransformRawTmp(char *meshID, float *transform, in
     }
 
     std::stringstream ss;
-    logInfo("[RGL] transform {}: \n", *meshID);
+    logInfo("[RGL] transform {}: \n", meshID);
     for (int i = 0; i < transformSize; i++) {
         ss << transform[i] << " ";
         if (i % 4 == 3) {

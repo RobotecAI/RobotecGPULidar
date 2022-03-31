@@ -46,7 +46,7 @@ struct LidarRenderer {
     bool hasMesh(const std::string& meshID);
 
     void addMeshRaw(const char* meshID,
-                    int meshSize, gdt::vec3f* vertices, gdt::vec3f* normals, gdt::vec2f* texCoords,
+                    int meshSize, gdt::vec3f* vertices,
                     int indicesSize, gdt::vec3i* indices,
                     int transformSize, float* transform);
 

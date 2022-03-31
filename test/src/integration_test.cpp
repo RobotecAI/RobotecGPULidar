@@ -35,9 +35,9 @@ protected:
         std::shared_ptr<TriangleMesh> mesh = ml_.get_triangle_mesh(0);
 
 
-        lr_.addMeshRaw("cube", mesh->vertex.size(), mesh->vertex.data(), mesh->normal.data(), mesh->texcoord.data(),
+        lr_.addMeshRaw("cube", mesh->vertex.size(), mesh->vertex.data(),
                       mesh->index.size(), mesh->index.data(), 12, not_translate_);
-        lr_.addMeshRaw("cube_translated", mesh->vertex.size(), mesh->vertex.data(), mesh->normal.data(), mesh->texcoord.data(),
+        lr_.addMeshRaw("cube_translated", mesh->vertex.size(), mesh->vertex.data(),
                       mesh->index.size(), mesh->index.data(), 12, translate_);
     }
 
