@@ -51,6 +51,7 @@ add_library(RobotecGPULidar SHARED
     src/ModelInstance.cpp
     src/PerfProbe.cpp
     src/legacy_api.cpp
+    src/rgl_tmp_api.cpp
     src/formatPCL.cu
 )
 target_link_libraries(RobotecGPULidar
