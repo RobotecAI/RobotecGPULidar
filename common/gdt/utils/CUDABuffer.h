@@ -9,6 +9,8 @@ struct CUDABuffer {
     inline CUdeviceptr d_pointer() const
     { return (CUdeviceptr)d_ptr; }
 
+    ~CUDABuffer() { free(); }
+
     //! re-size buffer to given number of bytes
     void resize(size_t size)
     {
