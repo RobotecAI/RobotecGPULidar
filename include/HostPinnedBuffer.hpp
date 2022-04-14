@@ -6,6 +6,7 @@
 #include <optional>
 #include "Logging.h"
 #include "DeviceBuffer.hpp"
+#include "utils/optix_macros.h"
 
 template<typename T>
 struct DeviceBuffer;

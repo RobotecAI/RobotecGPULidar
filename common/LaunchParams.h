@@ -1,11 +1,13 @@
 #pragma once
 
 #include <data_types/PCLFormats.h>
+#include <data_types/LidarNoiseParams.h>
 #include "gdt/math/vec.h"
 #include "gdt/utils/optix_macros.h"
 #include "data_types/PointTypes.h"
 #include "TransformMatrix.h"
 
+#include <curand_kernel.h>
 
 // two ray types
 enum { RADIANCE_RAY_TYPE=0, RAY_TYPE_COUNT };
@@ -32,9 +34,11 @@ struct LaunchLidarParams
     TransformMatrix lidarPose;
     TransformMatrix rosTransform;
     OptixTraversableHandle traversable;
+    LidarNoiseParams lidarNoiseParams;
 
     const TransformMatrix* dRayPoses;
     Point3f* dUnityVisualisationPoints;
     PCL12* dRosXYZ;
     int* dWasHit;
+    curandStatePhilox4_32_10_t* dRandomizationStates;
 };
