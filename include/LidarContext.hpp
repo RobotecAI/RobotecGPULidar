@@ -1,6 +1,8 @@
 #pragma once
 
 #include "formatPCL.h"
+#include "gaussianNoise.h"
+#include <random>
 
 /**
  * LidarContext represents the following:
@@ -40,10 +42,14 @@ struct LidarContext
         dDensePCL48.resizeToFit(rayPosesCount);
         dWasHit.resizeToFit(rayPosesCount);
         dHitsBeforeIndex.resizeToFit(rayPosesCount);
+
+        dRandomizationStates.resizeToFit(rayPosesCount);
+        setupGaussianNoiseGenerator(randomDevice(), stream, dRandomizationStates);
     }
 
     // TODO: Arguments such as OptiX Pipeline and SBT should be passed coupled (as structure)
-    void scheduleRaycast(OptixPipeline& pipeline, OptixShaderBindingTable& sbt, OptixTraversableHandle& scene, TransformMatrix lidarPose, TransformMatrix rosTransform, float range)
+    void scheduleRaycast(OptixPipeline& pipeline, OptixShaderBindingTable& sbt, OptixTraversableHandle& scene,
+                         TransformMatrix lidarPose, TransformMatrix rosTransform, float range)
     {
         currentJob = LaunchLidarParams {
             .range = range,
@@ -51,10 +57,12 @@ struct LidarContext
             .lidarPose = lidarPose,
             .rosTransform = rosTransform,
             .traversable = scene,
+            .lidarNoiseParams = lidarNoiseParams,
             .dRayPoses = dRayPoses.readDevice(),
             .dUnityVisualisationPoints = dUnityVisualisationPoints.writeDevice(),
             .dRosXYZ = dRosXYZ.writeDevice(),
             .dWasHit = dWasHit.writeDevice(),
+            .dRandomizationStates = dRandomizationStates.writeDevice()
         };
 
         dCurrentJob.copyFromHostAsync(&currentJob.value(), 1, stream);
@@ -62,7 +70,12 @@ struct LidarContext
         CUdeviceptr pipelineArgsPtr = dCurrentJob.readDeviceRaw();
         size_t pipelineArgsSize = dCurrentJob.getByteSize();
         dim3 launchDims = {static_cast<unsigned int>(currentJob->rayCount), 1, 1};
+
+        addGaussianNoise(stream, dRayPoses, lidarNoiseParams, dRandomizationStates, dRayPoses);
         OPTIX_CHECK(optixLaunch( pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sbt, launchDims.x, launchDims.y, launchDims.y));
+
+        Point3f lidar_origin_position = {lidarPose[3], lidarPose[7], lidarPose[11]};
+        addGaussianNoise(stream, dRosXYZ, dUnityVisualisationPoints, lidar_origin_position, lidarNoiseParams, dRandomizationStates, dRosXYZ, dUnityVisualisationPoints);
 
         formatPCLsAsync(stream, dWasHit, dHitsBeforeIndex, dRosXYZ, dUnityVisualisationPoints, dLidarArrayRingIds,
                         dDensePoint3f, dDensePCL12, dDensePCL24, dDensePCL48);
@@ -138,4 +151,9 @@ struct LidarContext
     HostPinnedBuffer<PCL12> hDensePCL12;
     HostPinnedBuffer<PCL24> hDensePCL24;
     HostPinnedBuffer<PCL48> hDensePCL48;
+
+    DeviceBuffer<curandStatePhilox4_32_10_t> dRandomizationStates;
+    std::random_device randomDevice;
+
+    LidarNoiseParams lidarNoiseParams;
 };

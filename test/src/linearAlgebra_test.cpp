@@ -58,6 +58,30 @@ TEST(LinearAlgebraTest, TransformMultiplicationDense) {
     result.print();
 }
 
+TEST(LinearAlgebraTest, GenerateRotationMatrixAroundYAxis) {
+    TransformMatrix result_golden = {0.5403023,  0.0000000,  -0.8414710, 0.0f,
+                                     0.0000000,  1.0000000,  0.0000000, 0.0f,
+                                     0.8414710,  0.0000000,  0.5403023, 0.0f};
+
+    TransformMatrix result = yAxisRotation3x4Matrix(1.0f);
+
+    for (int i = 0; i < 12; i++) {
+        EXPECT_NEAR(result[i], result_golden[i], 0.01f);
+    }
+    result.print();
+
+    gdt::vec3f point = {1.0f, 0.0f, 0.0f};
+
+    std::cout << "input point: " << point << std::endl;
+    gdt::vec3f rotated_point = multiply3x4TransformByVector3(result, point);
+    std::cout << "rotated point: " << rotated_point << std::endl;
+
+    float angle = std::atan2(rotated_point.z, rotated_point.x);
+    std::cout << "angle : " << angle << std::endl;
+
+    EXPECT_NEAR(angle, 1.0f, 0.01f);
+}
+
 TEST(LinearAlgebraTest, TransformVectorMultiplicationIdentity) {
     TransformMatrix lhs = {{1.0f, 0.0f, 0.0f, 0.0f,
                             0.0f, 1.0f, 0.0f, 0.0f,

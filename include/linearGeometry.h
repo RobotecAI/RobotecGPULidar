@@ -6,7 +6,6 @@
 
 static HOSTDEVICE TransformMatrix multiply3x4TransformMatrices(const TransformMatrix& lhs, const TransformMatrix& rhs)
 {
-    // remember to clean this after used
     TransformMatrix ret;
     int M = 3;
     int R = 4;
@@ -26,6 +25,14 @@ static HOSTDEVICE TransformMatrix multiply3x4TransformMatrices(const TransformMa
             ret[i*R+j] = sum;
         }
     }
+    return ret;
+}
+
+static HOSTDEVICE TransformMatrix yAxisRotation3x4Matrix(float angle) {
+    TransformMatrix ret;
+    ret[0] = cos(angle);  ret[1] = 0.0f; ret[2] = -sin(angle);  ret[3] = 0.0f;
+    ret[4] = 0.0f;        ret[5] = 1.0f; ret[6] = 0.0f;        ret[7] = 0.0f;
+    ret[8] = sin(angle); ret[9] = 0.0f; ret[10] = cos(angle); ret[11] = 0.0f;
     return ret;
 }
 

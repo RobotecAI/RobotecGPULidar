@@ -16,13 +16,14 @@ enable_testing()
 
 cuda_compile_and_embed(helloTestCU src/helloTest/helloTest.cu)
 
-add_executable( hello_test
+add_executable( RobotecGPULidar_test
         ${helloTestCU}
-#        src/helloTest/hello_test.cpp
         src/linearAlgebra_test.cpp
         src/integration_test.cpp
+        src/gaussianNoise_test.cpp
+        src/utils/statistical_utils.cpp
 )
-target_link_libraries( hello_test
+target_link_libraries( RobotecGPULidar_test
         gdt
         gtest_main
         fmt::fmt # FMT Library for a proper string formatting in C++
@@ -39,4 +40,4 @@ set (model_files
 file(COPY ${model_files} DESTINATION ${CMAKE_BINARY_DIR})
 
 include(GoogleTest)
-gtest_discover_tests(hello_test)
+gtest_discover_tests(RobotecGPULidar_test)

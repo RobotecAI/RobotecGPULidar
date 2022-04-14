@@ -11,13 +11,13 @@ function wait_for_decision {
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # ============= USER SPECIFIC =========================================================
-e2e_dir=/home/pzyskowski/repos/E2ESimulator
+e2e_dir=/home/pzyskowski/repos/E2E_test
 cmake_dir=/home/pzyskowski/tools/cmake-3.22.2-linux-x86_64/bin
 fmt_install_dir=/home/pzyskowski/tools/fmt-8.0.1/_build/install/usr/local/lib/cmake/fmt
 optix_dir=/home/pzyskowski/tools/NVIDIA-OptiX-SDK-7.2.0-linux64-x86_64
 # =====================================================================================
 
-cuda_dir=/usr/local/cuda-11.6/
+cuda_dir=/usr/local/cuda/
 
 repo_dir=$SCRIPT_DIR
 build_dir=$repo_dir/_build
@@ -46,6 +46,10 @@ echo "PATH=${cuda_dir}:$PATH LD_LIBRARY_PATH=$cuda_dir -DOptiX_INSTALL_DIR=$opti
 cmake $repo_dir -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DBUILD_TESTS=1
 make
 #make DESTDIR=$install_dir install
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 wait_for_decision
 

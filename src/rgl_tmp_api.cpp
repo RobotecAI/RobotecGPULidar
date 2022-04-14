@@ -1,5 +1,6 @@
 #include "LidarRenderer.h"
 #include "LidarContext.hpp"
+#include "data_types/LidarNoiseParams.h"
 
 using namespace gdt;
 using namespace fmt;
@@ -27,6 +28,17 @@ void rgl_tmp_remove_object(char* id)
 void rgl_tmp_remove_all_object(char* id)
 {
     getWorkaround()->softReset();
+}
+
+void rgl_tmp_ctx_set_gaussian_noise_params(LidarContext* ctx, int angularNoiseType, float angularNoiseStDev, float angularNoiseMean,
+    float distanceNoiseStDevBase, float distanceNoiseStDevRisePerMeter, float distanceNoiseMean)
+{
+    ctx->lidarNoiseParams = {.angularNoiseType = (AngularNoiseType)angularNoiseType,
+                             .angularNoiseStDev = angularNoiseStDev,
+                             .angularNoiseMean = angularNoiseMean,
+                             .distanceNoiseStDevBase = distanceNoiseStDevBase,
+                             .distanceNoiseStDevRisePerMeter = distanceNoiseStDevRisePerMeter,
+                             .distanceNoiseMean = distanceNoiseMean};
 }
 
 }
