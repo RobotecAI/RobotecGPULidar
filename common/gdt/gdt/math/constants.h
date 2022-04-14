@@ -81,13 +81,15 @@ namespace gdt {
 #endif
   } neg_inf MAYBE_UNUSED;
 
-  inline __both__ float infty() {
 #ifdef __CUDACC__
+  __device__ float infty() {
     return CUDART_INF_F;
-#else
-    return std::numeric_limits<float>::infinity();
-#endif
   }
+#else
+  inline __both__ float infty() {
+    return std::numeric_limits<float>::infinity();
+  }
+#endif
 
   static struct PosInfTy
   {

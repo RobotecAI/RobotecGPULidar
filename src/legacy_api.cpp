@@ -9,7 +9,9 @@
 #include "LidarRenderer.h"
 #include "LidarContext.hpp"
 #include "data_types/PointTypes.h"
+#include "data_types/LidarNoiseParams.h"
 #include "visibility_control.h"
+
 
 using namespace gdt;
 using namespace fmt;
@@ -127,7 +129,8 @@ int Internal_DestroyLidarContext(LidarRenderer* lidarRenderer, LidarContext* lid
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_Raycast(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, char* source_id, float* lidarPose, float* rosTransform, float range)
+int Internal_Raycast(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, char* source_id,
+                     float* lidarPose, float* rosTransform, float range)
 {
     auto* lidarPoseTyped = reinterpret_cast<TransformMatrix*>(lidarPose);
     auto* rosTransformTyped = reinterpret_cast<TransformMatrix*>(rosTransform);
@@ -137,7 +140,6 @@ int Internal_Raycast(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, char*
             throw std::invalid_argument("lidarCtx == null");
         }
     );
-
     LIDAR_GPU_TRY_CATCH(lidarRenderer->renderCtx(lidarCtx,
                                               *lidarPoseTyped,
                                               *rosTransformTyped,

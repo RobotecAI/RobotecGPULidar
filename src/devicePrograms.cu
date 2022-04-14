@@ -9,6 +9,8 @@
 //#undef NDEBUG
 #include <assert.h>
 
+#include "gaussianNoise.cu"
+
 extern "C" static __constant__ LaunchLidarParams optixLaunchLidarParams;
 
 static __forceinline__ __device__ void* unpackPointer(uint32_t i0, uint32_t i1)
@@ -82,6 +84,7 @@ extern "C" __global__ void __closesthit__lidar()
     optixLaunchLidarParams.dRosXYZ[ix].x = rosPoint.x;
     optixLaunchLidarParams.dRosXYZ[ix].y = rosPoint.y;
     optixLaunchLidarParams.dRosXYZ[ix].z = rosPoint.z;
+
     optixSetPayload_3(1);
 }
 
@@ -113,19 +116,19 @@ extern "C" __global__ void __raygen__renderLidar()
     uint32_t u0, u1, u2, u3;
     packPointer(&lidarPositionPRD, u0, u1);
 
-    TransformMatrix ray_pose = multiply3x4TransformMatrices(optixLaunchLidarParams.lidarPose, optixLaunchLidarParams.dRayPoses[ix]);
+    TransformMatrix ray_pose_local = optixLaunchLidarParams.dRayPoses[ix];
+    TransformMatrix ray_pose_global = multiply3x4TransformMatrices(optixLaunchLidarParams.lidarPose, ray_pose_local);
 
-//    const float* ray_pose = optixLaunchLidarParams.lidarPose;
-    gdt::vec3f from = getTranslationFrom3x4Transform(ray_pose);
+    gdt::vec3f from = getTranslationFrom3x4Transform(ray_pose_global);
     gdt::vec3f zero = gdt::vec3f(0.0f, 0.0f, 0.0f);
     gdt::vec3f forward = gdt::vec3f(0.0f, 0.0f, 1.0f);
-    gdt::vec3f zero_moved = multiply3x4TransformByVector3(ray_pose, zero);
-    gdt::vec3f forward_moved = multiply3x4TransformByVector3(ray_pose, forward);
+    gdt::vec3f zero_moved = multiply3x4TransformByVector3(ray_pose_global, zero);
+    gdt::vec3f forward_moved = multiply3x4TransformByVector3(ray_pose_global, forward);
     gdt::vec3f dir = gdt::vec3f(forward_moved.x - zero_moved.x, forward_moved.y - zero_moved.y, forward_moved.z - zero_moved.z) ;
 
     optixTrace(optixLaunchLidarParams.traversable,
-        from, // from
-        dir, // direction
+        from,
+        dir,
         0.f, // tmin
         optixLaunchLidarParams.range,
         0.0f, // rayTime

@@ -53,6 +53,7 @@ add_library(RobotecGPULidar SHARED
     src/legacy_api.cpp
     src/rgl_tmp_api.cpp
     src/formatPCL.cu
+    src/gaussianNoiseKernels.cu
 )
 target_link_libraries(RobotecGPULidar
     gdt

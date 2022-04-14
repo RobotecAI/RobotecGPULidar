@@ -7,6 +7,8 @@
 #include <optional>
 #include "Logging.h"
 #include "HostPinnedBuffer.hpp"
+#include "data_types/PointTypes.h"
+#include "utils/optix_macros.h"
 
 // TODO: elemCount and elemCapacity are duplictes..
 template<typename T>
