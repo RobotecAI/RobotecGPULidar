@@ -93,7 +93,7 @@ public:
         int toPrint = std::min((int) elemCount, elemLimit);
 
         // WTF: this print apparently flushes "[0:230400]:." in tests
-        fmt::print("\n");
+        fmt::print("{}: ", name);
 
         // Prefix
         fmt::print("[");
@@ -110,18 +110,20 @@ public:
 
         fmt::print(" (total: {}) ", elemCount);
 
-        // Suffix
-        fmt::print("[");
-        if (toPrint < elemCount) {
-            fmt::print("..., ");
-        }
-        for (int i = elemCount - toPrint; i < elemCount; ++i) {
-            fmt::print("{}", temp[i]);
-            if (i != elemCount - 1) {
-                fmt::print(", ");
+        if (elemLimit < elemCount) {
+            // Suffix
+            fmt::print("[");
+            if (toPrint < elemCount) {
+                fmt::print("..., ");
             }
+            for (int i = elemCount - toPrint; i < elemCount; ++i) {
+                fmt::print("{}", temp[i]);
+                if (i != elemCount - 1) {
+                    fmt::print(", ");
+                }
+            }
+            fmt::print("]");
         }
-        fmt::print("]");
 
         fmt::print("\n");
 
