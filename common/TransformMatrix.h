@@ -13,8 +13,6 @@
 struct TransformMatrix {
     float matrix_flat[12];
 
-    TransformMatrix() : matrix_flat{0} {}
-
     TransformMatrix& operator=(std::array<float, 12> values)
     {
         std::copy(values.begin(), values.end(), matrix_flat);
@@ -22,7 +20,7 @@ struct TransformMatrix {
     }
 
     static TransformMatrix identity() {
-        TransformMatrix v;
+        TransformMatrix v = {0};
         v[0] = 1.0;
         v[5] = 1.0;
         v[10] = 1.0;
