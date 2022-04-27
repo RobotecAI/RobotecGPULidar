@@ -27,6 +27,12 @@ struct TransformMatrix {
         return v;
     }
 
+    static TransformMatrix fromPointer(float* data) {
+        TransformMatrix matrix;
+        memcpy(matrix.matrix_flat, data, 12 * sizeof(float));
+        return matrix;
+    }
+
     TransformMatrix& operator=(const TransformMatrix& other) = default;
 
     __host__ void print() {

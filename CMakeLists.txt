@@ -47,12 +47,15 @@ cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 add_library(RobotecGPULidar SHARED
     ${embedded_ptx_code}
     src/LidarRenderer.cpp
-    src/simple_uid_generator.cpp
-    src/ModelInstance.cpp
     src/PerfProbe.cpp
     src/legacy_api.cpp
     src/rgl_tmp_api.cpp
     src/formatPCL.cu
+    src/Optix.cpp
+    src/scene/Scene.cpp
+    src/scene/Mesh.cpp
+    src/scene/SceneObject.cpp
+    src/scene/ASBuildScratchpad.cpp
     src/gaussianNoiseKernels.cu
 )
 target_link_libraries(RobotecGPULidar

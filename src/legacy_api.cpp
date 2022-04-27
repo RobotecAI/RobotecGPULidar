@@ -12,6 +12,7 @@
 #include "data_types/LidarNoiseParams.h"
 #include "visibility_control.h"
 
+#include <scene/Scene.hpp>
 
 using namespace gdt;
 using namespace fmt;
@@ -24,19 +25,12 @@ void br() {}
     {                                                            \
         try {                                                    \
             call;                                                \
-        } catch (std::runtime_error & err) {                     \
+        } catch (std::exception & err) {                     \
             last_gpu_library_error = err.what();                 \
-            fprintf(stderr, "Runtime exception %s", err.what()); \
+            fprintf(stderr, "Runtime exception %s, %d %s (type=%s)\n", err.what(), __LINE__, __FILE__, typeid(err).name()); \
             return GPULIDAR_ERROR;                               \
         }                                                        \
     } while(0)
-
-
-
-LidarRenderer* getWorkaround() {
-    static std::unique_ptr<LidarRenderer> workaround = std::make_unique<LidarRenderer>();
-    return workaround.get();
-}
 
 extern "C" {
 
@@ -56,7 +50,6 @@ int Internal_HelloWorld()
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_CreateNativeRaycaster(LidarRenderer** lidarRenderer)
 {
-    LIDAR_GPU_TRY_CATCH(*lidarRenderer = getWorkaround());
     return ROBOTEC_SUCCESS;
 }
 
@@ -64,7 +57,7 @@ GPU_LIDAR_RAYCASTER_C_EXPORT
 void Internal_DestroyNativeRaycaster(LidarRenderer* lidarRenderer)
 {
     // OK, Boomer.
-    lidarRenderer->softReset();
+    Scene::defaultInstance()->removeAllObjects();
 }
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
@@ -73,39 +66,6 @@ const char* Internal_GetLastError()
     // Return pointer to memory of last_gpu_library_error. Interpreted as null-terminated string
     return last_gpu_library_error.c_str();
 }
-
-// TODO - optimize this POC
-GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_AddMesh(LidarRenderer* lidarRenderer, char* mesh_id, float* transform, bool is_global, vec3f* vertices, vec3f* normals,
-    vec2f* texture_coordinates, vec3i* indices, int indices_size, int mesh_size, int transform_size)
-{
-    (void) is_global;
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->addMeshRaw(mesh_id, mesh_size, vertices, indices_size, indices, transform_size, transform));
-    return ROBOTEC_SUCCESS;
-}
-
-GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_HasMesh(LidarRenderer* lidarRenderer, char* mesh_id, bool* outHasMesh)
-{
-    LIDAR_GPU_TRY_CATCH(*outHasMesh = lidarRenderer->hasMesh(mesh_id));
-    return ROBOTEC_SUCCESS;
-}
-
-
-GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_RemoveMesh(LidarRenderer* lidarRenderer, char* mesh_id)
-{
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->removeMeshRawTmp(mesh_id));
-    return ROBOTEC_SUCCESS;
-}
-
-GPU_LIDAR_RAYCASTER_C_EXPORT
-int Internal_UpdateMeshTransform(LidarRenderer* lidarRenderer, char* id, float* transform, int transform_size)
-{
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->updateMeshTransformRawTmp(id, transform, transform_size));
-    return ROBOTEC_SUCCESS;
-}
-
 
 GPU_LIDAR_RAYCASTER_C_EXPORT
 int Internal_CreateLidarContext(LidarRenderer* lidarRenderer, void** outLidarCtx, float* rayPosesFloats, size_t rayPosesFloatCount, int* lidarArrayRingIds, size_t lidarArrayRingCount)
@@ -140,7 +100,8 @@ int Internal_Raycast(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, char*
             throw std::invalid_argument("lidarCtx == null");
         }
     );
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->renderCtx(lidarCtx,
+
+    LIDAR_GPU_TRY_CATCH(LidarRenderer::instance().renderCtx(lidarCtx,
                                               *lidarPoseTyped,
                                               *rosTransformTyped,
                                               range));
@@ -159,7 +120,7 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, voi
     // it will be filled with the number of points in the result PCL.
     // No other action will be performed.
     if (*results_count < 0) {
-        LIDAR_GPU_TRY_CATCH(*results_count = lidarRenderer->getResultPointCloudSizeCtx(lidarCtx));
+    	LIDAR_GPU_TRY_CATCH(*results_count = LidarRenderer::instance().getResultPointCloudSizeCtx(lidarCtx));
         return ROBOTEC_SUCCESS;
     }
 
@@ -170,7 +131,7 @@ int Internal_GetPoints(LidarRenderer* lidarRenderer, LidarContext* lidarCtx, voi
     );
 
 
-    LIDAR_GPU_TRY_CATCH(lidarRenderer->downloadPointsCtx(
+    LIDAR_GPU_TRY_CATCH(LidarRenderer::instance().downloadPointsCtx(
         lidarCtx,
         *results_count,
         reinterpret_cast<Point3f*>(xyz),

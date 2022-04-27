@@ -8,6 +8,8 @@
 #include "DeviceBuffer.hpp"
 #include "utils/optix_macros.h"
 
+#include <macros/cuda.hpp>
+
 template<typename T>
 struct DeviceBuffer;
 
@@ -44,7 +46,7 @@ public:
     void copyFromDeviceAsync(const DeviceBuffer<T>& src, cudaStream_t stream) {
         logInfo("[DB] copyFromDevice {} (srcCount={})\n", name, src.getElemCount());
         ensureHostCanFit(src.getElemCount());
-        CUDA_CHECK(MemcpyAsync(data, src.readDevice(), src.getElemCount() * sizeof(T), cudaMemcpyDeviceToHost, stream));
+        CHECK_CUDA(cudaMemcpyAsync(data, src.readDevice(), src.getElemCount() * sizeof(T), cudaMemcpyDeviceToHost, stream));
         elemCount = src.getElemCount();
     }
 
@@ -72,7 +74,7 @@ public:
         ensureHostCanFit(newElemCount);
         elemCount = newElemCount;
         if (clear) {
-            CUDA_CHECK(Memset(data, 0, elemCount * sizeof(T)));
+            CHECK_CUDA(cudaMemset(data, 0, elemCount * sizeof(T)));
         }
     }
 
@@ -85,9 +87,9 @@ public:
             return;
         }
         if (data != nullptr) {
-            CUDA_CHECK(FreeHost(data));
+            CHECK_CUDA(cudaFreeHost(data));
         }
-        CUDA_CHECK(MallocHost(&data, newElemCount * sizeof(T)));
+        CHECK_CUDA(cudaMallocHost(&data, newElemCount * sizeof(T)));
         elemCapacity = newElemCount;
     }
 };
