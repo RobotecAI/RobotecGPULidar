@@ -48,8 +48,7 @@ add_library(RobotecGPULidar SHARED
     ${embedded_ptx_code}
     src/LidarRenderer.cpp
     src/PerfProbe.cpp
-    src/legacy_api.cpp
-    src/rgl_tmp_api.cpp
+    src/api_experimental.cpp
     src/formatPCL.cu
     src/Optix.cpp
     src/scene/Scene.cpp
@@ -65,13 +64,6 @@ target_link_libraries(RobotecGPULidar
     ${CUDA_CUDA_LIBRARY}
 )
 target_compile_options(RobotecGPULidar PRIVATE -Wall)
-
-
-# -------------------
-# build dotnet
-# -------------------
-add_subdirectory(dotnet_plugin/dotnet_cmake_module)
-add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet)
 
 # ------------------------------------------------------------------
 # tests
