@@ -10,6 +10,8 @@
 #include "data_types/PointTypes.h"
 #include "utils/optix_macros.h"
 
+#include <macros/cuda.hpp>
+
 // TODO: elemCount and elemCapacity are duplictes..
 template<typename T>
 struct HostPinnedBuffer;
@@ -17,14 +19,14 @@ struct HostPinnedBuffer;
 template <typename T>
 struct DeviceBuffer
 {
-private:
     typedef T ValueType;
+private:
     static_assert(std::is_trivially_copyable<T>::value, "DeviceBuffer is instantiable only for types that can be copied between Host and GPU");
 
     T* data {nullptr};
     std::size_t elemCount {0};
     std::size_t elemCapacity {0};
-    std::string name;
+    std::string _name;
 
 public:
     DeviceBuffer(DeviceBuffer&) = delete;
@@ -32,68 +34,74 @@ public:
     DeviceBuffer& operator=(DeviceBuffer&) = delete;
     DeviceBuffer& operator=(DeviceBuffer&&) = delete;
 
-
     // TODO: buffer names are most likely no longer needed - consider removing them
-    DeviceBuffer(const std::string& _name = "<unnamed>") {
-        logInfo("[DB] DeviceBuffer {} ({})\n", _name, elemCount);
-        name = _name;
+    DeviceBuffer(const std::string& name = "<unnamed>") : _name(name) {
+        logInfo("[DB] DeviceBuffer(): {}\n", *this);
     }
 
     ~DeviceBuffer() {
-        logInfo("[DB] ~DeviceBuffer {}\n", name);
+        logInfo("[DB] ~DeviceBuffer(): {}\n", *this);
         if (data != nullptr) {
             cudaFree(data);
+            data = nullptr;
         }
     }
 
     void copyFromHost(const T* src, std::size_t srcElemCount) {
-        logInfo("[DB] copyFromHost {} (count={})\n", name, srcElemCount);
+        logInfo("[DB] copyFromHost({}, {}): {}\n", (void*) src, srcElemCount, *this);
         ensureDeviceCanFit(srcElemCount);
-        CUDA_CHECK(Memcpy(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice));
+        CHECK_CUDA(cudaMemcpy(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice));
         elemCount = srcElemCount;
     }
 
     // TODO: deduplicate all those memcopies
     void copyFromHostAsync(const T* src, std::size_t srcElemCount, cudaStream_t stream) {
-        logInfo("[DB] copyFromHost {} (count={})\n", name, srcElemCount);
+    	logInfo("[DB] copyFromHostAsync({}, {}, {}): {}\n", (void*) src, srcElemCount, (void*) stream, *this);
         ensureDeviceCanFit(srcElemCount);
-        CUDA_CHECK(MemcpyAsync(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice, stream));
+        CHECK_CUDA(cudaMemcpyAsync(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice, stream));
         elemCount = srcElemCount;
     }
 
-    void copyFromHost(const HostPinnedBuffer<int>& src) {
+    void copyFromHost(const HostPinnedBuffer<int>& src)
+    {
+    	logInfo("[DB] copyFromHost(<hb>): {}\n", *this);
         copyFromHost(src.readHost(), src.getElemCount());
     }
 
-    void copyFromHost(const std::vector<T>& src) { copyFromHost(src.data(), src.size()); }
+    void copyFromHost(const std::vector<T>& src)
+    {
+        logInfo("[DB] copyFromHost(<vec>): {}\n", src.size(), *this);
+        copyFromHost(src.data(), src.size()); }
 
-    void copyPrefixToHostAsync(T* dst, size_t elemsToCopy, cudaStream_t stream) {
+    void copyPrefixToHostAsync(T* dst, size_t elemsToCopy, cudaStream_t stream)
+    {
+        logInfo("[DB] copyPrefixToHostAsync({}, {}, {}): {}\n", (void*) dst, elemsToCopy, (void*) stream, *this);
         if (elemsToCopy > elemCount) {
             auto msg = fmt::format("copyPrefixToHostAsync {} requested to copy more elements ({}) than it cointains ({})\n",
-                                   name, elemsToCopy, elemCount);
+                                   _name, elemsToCopy, elemCount);
             throw std::invalid_argument(msg);
         }
-        CUDA_CHECK(MemcpyAsync(dst, data, elemsToCopy * sizeof(T), cudaMemcpyDeviceToHost, stream));
+        CHECK_CUDA(cudaMemcpyAsync(dst, data, elemsToCopy * sizeof(T), cudaMemcpyDeviceToHost, stream));
     }
 
     const T* readDevice() const {
-        logInfo("[DB] readDevice {}\n", name);
+        logInfo("[DB] readDevice(): {}\n", *this);
         return data;
     }
 
     T* writeDevice() {
-        logInfo("[DB] writeDevice {}\n", name);
+        logInfo("[DB] writeDevice(): {}\n", *this);
         return data;
     }
 
     void print(int elemLimit=5) const {
         T* temp = nullptr;
-        CUDA_CHECK(MallocHost(&temp, sizeof(T) * elemCount));
-        CUDA_CHECK(Memcpy(temp, data, sizeof(T) * elemCount, cudaMemcpyDeviceToHost));
+        CHECK_CUDA(cudaMallocHost(reinterpret_cast<void**>(&temp), sizeof(T) * elemCount));
+        CHECK_CUDA(cudaMemcpy(temp, data, sizeof(T) * elemCount, cudaMemcpyDeviceToHost));
         int toPrint = std::min((int) elemCount, elemLimit);
 
         // WTF: this print apparently flushes "[0:230400]:." in tests
-        fmt::print("{}: ", name);
+        fmt::print("{}: ", _name);
 
         // Prefix
         fmt::print("[");
@@ -127,32 +135,29 @@ public:
 
         fmt::print("\n");
 
-        CUDA_CHECK(FreeHost(temp));
+        CHECK_CUDA(cudaFreeHost(temp));
     }
 
     CUdeviceptr readDeviceRaw() const {
-        logInfo("[DB] readDeviceRaw {}\n", name);
+        logInfo("[DB] readDeviceRaw(): {}\n", *this);
         return reinterpret_cast<CUdeviceptr>(
                 reinterpret_cast<void*>(
                         const_cast<T*>(readDevice())
-                        )
-                        );
+                )
+        );
     }
 
-    std::size_t getElemCount() const {
-        return elemCount;
-    }
+    std::size_t getElemCount() const { return elemCount; }
 
-    std::size_t getByteSize() const {
-        return getElemCount() * sizeof(T);
-    }
+    std::size_t getByteSize() const { return getElemCount() * sizeof(T); }
 
     void resizeToFit(std::size_t newElemCount, bool clear=false)
     {
+    	logInfo("[DB] resizeToFit({}, {}): {}\n", newElemCount, clear, *this);
         ensureDeviceCanFit(newElemCount);
         elemCount = newElemCount;
         if (clear) {
-            CUDA_CHECK(Memset(data, 0, elemCount * sizeof(T)));
+            CHECK_CUDA(cudaMemset(data, 0, elemCount * sizeof(T)));
         }
     }
 
@@ -166,14 +171,17 @@ private:
             return;
         }
         if (data != nullptr) {
-            CUDA_CHECK(Free(data));
+            CHECK_CUDA(cudaFree(data));
         }
-        CUDA_CHECK(Malloc(&data, newElemCount * sizeof(T)));
-        logInfo("[DB] ensureDeviceCanFit {} {} {}\n", name, newElemCount, (void*) data);
+        CHECK_CUDA(cudaMalloc(reinterpret_cast<void**>(&data), newElemCount * sizeof(T)));
+        logInfo("[DB] ensureDeviceCanFit({}): {}\n", newElemCount, *this);
         elemCapacity = newElemCount;
     }
+
+    friend struct fmt::formatter<DeviceBuffer<T>>;
 };
 
+#include <data_types/PointTypes.h>
 template<>
 struct fmt::formatter<Point3f>
 {
@@ -184,4 +192,19 @@ struct fmt::formatter<Point3f>
     auto format(Point3f const& p, FormatContext& ctx) {
         return fmt::format_to(ctx.out(), "({0} {1} {2})", p.x, p.y, p.z);
     }
+};
+
+template<typename T>
+struct fmt::formatter<DeviceBuffer<T>>
+{
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext& ctx) {
+		return ctx.begin();
+	}
+
+	template<typename FormatContext>
+	auto format(DeviceBuffer<T> const& db, FormatContext& ctx)
+	{
+		return fmt::format_to(ctx.out(), "{} ({}/{}) @ {}", db._name, db.elemCount, db.elemCapacity, (void*) db.data);
+	}
 };

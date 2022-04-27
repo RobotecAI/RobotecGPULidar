@@ -4,6 +4,8 @@
 #include "gaussianNoise.h"
 #include <random>
 
+#include <Logging.h>
+
 /**
  * LidarContext represents the following:
  * - Description of a lidar model (list of ray transforms); a rough equivalent of the lidar's tech spec
@@ -62,7 +64,6 @@ struct LidarContext
             .dUnityVisualisationPoints = dUnityVisualisationPoints.writeDevice(),
             .dRosXYZ = dRosXYZ.writeDevice(),
             .dWasHit = dWasHit.writeDevice(),
-            .dRandomizationStates = dRandomizationStates.writeDevice()
         };
 
         dCurrentJob.copyFromHostAsync(&currentJob.value(), 1, stream);
@@ -116,6 +117,11 @@ struct LidarContext
             throw std::invalid_argument(msg);
         }
 
+        if (densePointCount == 0) {
+            logWarn("[RGL] Returning empty pointcloud\n");
+            return;
+        }
+
         CUDA_CHECK(StreamSynchronize(stream));
         memcpy(outXYZ, hDensePoint3f.readHost(), hDensePoint3f.getByteSize());
         memcpy(outPCL12, hDensePCL12.readHost(), hDensePCL12.getByteSize());
@@ -127,16 +133,16 @@ struct LidarContext
     }
 
     std::optional<LaunchLidarParams> currentJob;
-    DeviceBuffer<LaunchLidarParams> dCurrentJob;
+    DeviceBuffer<LaunchLidarParams> dCurrentJob {"dCurrentJob"};
     std::optional<int> densePointCount;
 
     // GPU INPUT
     DeviceBuffer<TransformMatrix> dRayPoses {"dRayPoses"};
-    DeviceBuffer<int> dLidarArrayRingIds;
+    DeviceBuffer<int> dLidarArrayRingIds {"dLidarArrayRingsIds"};
 
     // GPU OUTPUT
-    DeviceBuffer<int> dWasHit;
-    DeviceBuffer<int> dHitsBeforeIndex;
+    DeviceBuffer<int> dWasHit {"dWasHit"};
+    DeviceBuffer<int> dHitsBeforeIndex {"dHitsBeforeIndex"};
 
     DeviceBuffer<Point3f> dUnityVisualisationPoints; // Native output (for visualization in Unity)
     DeviceBuffer<PCL12> dRosXYZ; // Native output (for publishing via ROS), contains non-hits
@@ -155,5 +161,5 @@ struct LidarContext
     DeviceBuffer<curandStatePhilox4_32_10_t> dRandomizationStates;
     std::random_device randomDevice;
 
-    LidarNoiseParams lidarNoiseParams;
+    LidarNoiseParams lidarNoiseParams {};
 };

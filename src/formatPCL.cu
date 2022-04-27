@@ -1,16 +1,4 @@
-#include <Logging.h>
-#include <unistd.h>
-#include <fmt/format.h>
-
-#define CUDA_CHECK(call)                                                                                     \
-do {                                                                                                         \
-cudaError_t rc = cuda##call;                                                                             \
-if (rc != cudaSuccess) {                                                                                 \
-auto msg = fmt::format("[pid={}] CUDA error: {} (code={}) @ {}:{}",                                      \
-getpid(), cudaGetErrorName(rc), rc, __FILE__, __LINE__);   \
-throw std::runtime_error(msg);                                                                       \
-}                                                                                                        \
-} while (0)
+#include <cuda_runtime_api.h>
 
 #include "formatPCL.h"
 

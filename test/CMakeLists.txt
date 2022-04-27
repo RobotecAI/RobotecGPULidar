@@ -18,10 +18,10 @@ cuda_compile_and_embed(helloTestCU src/helloTest/helloTest.cu)
 
 add_executable( RobotecGPULidar_test
         ${helloTestCU}
-        src/linearAlgebra_test.cpp
+#        src/linearAlgebra_test.cpp
         src/integration_test.cpp
-        src/gaussianNoise_test.cpp
-        src/utils/statistical_utils.cpp
+#        src/gaussianNoise_test.cpp
+#        src/utils/statistical_utils.cpp
 )
 target_link_libraries( RobotecGPULidar_test
         gdt
