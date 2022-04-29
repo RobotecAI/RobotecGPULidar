@@ -28,11 +28,24 @@ void rgl_exp_add_object(char* id, int vertex_count, vec3f* vertices, int index_c
 	Scene::defaultInstance()->addObject(object);
 }
 
-void rgl_exp_update_object(char* id, float* transform)
+
+
+void rgl_exp_update_object_transform(char* id, float* transform)
 {
 	TransformMatrix matrix = TransformMatrix::fromPointer(transform);
 	Scene::defaultInstance()->getObjectByName(id)->setTransform(matrix);
 }
+
+void rgl_exp_update_object_vertices(char* id, int vertex_count, Vec3f* vertices)
+{
+	Scene::defaultInstance()->getObjectByName(id)->mesh->setVertices(vertex_count, vertices);
+
+	// TODO: figure out a way to do this automagically
+	// NOTE: weak_from_this in Mesh constructor is not an option :(
+	Scene::defaultInstance()->requestSBTRebuild();
+	Scene::defaultInstance()->requestASRebuild();
+}
+
 
 void rgl_exp_remove_object(char* id)
 {
