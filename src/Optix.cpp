@@ -22,7 +22,7 @@
 #define OPTIX_LOG_LEVEL_WARN 3
 #define OPTIX_LOG_LEVEL_INFO 4
 
-extern const char embedded_ptx_code[];
+extern "C" const char embedded_ptx_code[];
 static CUcontext getCurrentDeviceContext();
 
 Optix& Optix::instance()

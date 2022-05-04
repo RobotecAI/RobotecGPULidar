@@ -14,14 +14,13 @@ DISABLE_WARNING_POP
 #ifndef __CUDACC__
 #include <fmt/format.h>
 #endif
-#include <unistd.h>
 
 #define CUDA_CHECK(call)                                                                                     \
 do {                                                                                                         \
     cudaError_t rc = cuda##call;                                                                             \
     if (rc != cudaSuccess) {                                                                                 \
-    auto msg = fmt::format("[pid={}] CUDA error: {} (code={}) @ {}:{}",                                      \
-        getpid(), cudaGetErrorName(rc), rc, __FILE__, __LINE__);   \
+    auto msg = fmt::format("CUDA error: {} (code={}) @ {}:{}",                                      \
+        cudaGetErrorName(rc), rc, __FILE__, __LINE__);   \
         throw std::runtime_error(msg);                                                                       \
     }                                                                                                        \
 } while (0)

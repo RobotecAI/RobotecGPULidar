@@ -1,7 +1,6 @@
 #include <fmt/color.h>
 
 #include "LidarRenderer.h"
-#include "PerfProbe.h"
 #include <thread>
 #include <formatPCL.h>
 
@@ -12,7 +11,6 @@
 LidarRenderer::LidarRenderer()
 {
     logInfo("[RGL] Running on GPU: {}\n", getCurrentDeviceName());
-    logInfo("[RGL] PID: {}\n", getpid());
 }
 
 LidarRenderer::~LidarRenderer() {}

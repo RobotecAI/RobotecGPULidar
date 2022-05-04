@@ -13,12 +13,6 @@
 struct TransformMatrix {
     float matrix_flat[12];
 
-    TransformMatrix& operator=(std::array<float, 12> values)
-    {
-        std::copy(values.begin(), values.end(), matrix_flat);
-        return *this;
-    }
-
     static TransformMatrix identity() {
         TransformMatrix v = {0};
         v[0] = 1.0;
