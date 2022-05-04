@@ -3,7 +3,6 @@
 #include "formatPCL.h"
 
 #include "HostPinnedBuffer.hpp"
-#include "DeviceBuffer.hpp"
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 #include <cstdio>

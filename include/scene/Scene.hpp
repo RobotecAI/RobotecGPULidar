@@ -3,6 +3,7 @@
 #include <set>
 #include <string>
 #include <optional>
+#include <unordered_map>
 #include <scene/ASBuildScratchpad.hpp>
 #include <APIObject.hpp>
 

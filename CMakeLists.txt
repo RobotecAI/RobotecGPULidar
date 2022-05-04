@@ -16,9 +16,12 @@
 
 # TODO(prybicki): rewrite it to modern CMake
 cmake_minimum_required(VERSION 3.16)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 project(RobotecGPULidar C CXX CUDA)
 
-set(CMAKE_CXX_STANDARD 20)
 
 # GDT-Related stuff, to be removed in the future TODO(prybicki)
 set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
@@ -40,6 +43,7 @@ if (UNIX AND NOT APPLE)
 else()
     # On Windows, it is easier to clone and build from sources
     add_subdirectory("fmt-8.0.1")
+    include_directories(fmt-8.0.1/include)
 endif()
 
 cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
@@ -47,7 +51,6 @@ cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 add_library(RobotecGPULidar SHARED
     ${embedded_ptx_code}
     src/LidarRenderer.cpp
-    src/PerfProbe.cpp
     src/api_experimental.cpp
     src/formatPCL.cu
     src/Optix.cpp
@@ -63,7 +66,7 @@ target_link_libraries(RobotecGPULidar
     ${CUDA_LIBRARIES}
     ${CUDA_CUDA_LIBRARY}
 )
-target_compile_options(RobotecGPULidar PRIVATE -Wall)
+# TODO: re-add -Wall for MSVC && GCC
 
 # ------------------------------------------------------------------
 # tests

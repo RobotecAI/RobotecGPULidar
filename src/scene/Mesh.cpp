@@ -5,6 +5,10 @@
 #include "model_utils.h"
 #include "TriangleMesh.h"
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 API_OBJECT_INSTANCE(Mesh);
 
 Mesh::Mesh(std::size_t vertexCount, Vec3f *vertices, std::size_t indexCount, Vec3i *indices)
@@ -13,10 +17,10 @@ Mesh::Mesh(std::size_t vertexCount, Vec3f *vertices, std::size_t indexCount, Vec
 	setIndices(indexCount, indices);
 }
 
-Mesh::Mesh(std::filesystem::path path)
+Mesh::Mesh(fs::path path)
 {
 	ModelLoader modelLoader;
-	modelLoader.load_obj(path);
+	modelLoader.load_obj(path.string());
 	std::shared_ptr<TriangleMesh> triangleMesh = modelLoader.get_triangle_mesh(0);
 
 	std::vector<Vec3f> vertices;
