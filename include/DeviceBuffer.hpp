@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cuda.h>
+#include <vector>
 #include <type_traits>
 #include <optional>
 #include "Logging.h"
@@ -64,14 +65,15 @@ public:
 
     void copyFromHost(const HostPinnedBuffer<int>& src)
     {
-    	logInfo("[DB] copyFromHost(<hb>): {}\n", *this);
+   	    logInfo("[DB] copyFromHost(<hb>): {}\n", *this);
         copyFromHost(src.readHost(), src.getElemCount());
     }
 
     void copyFromHost(const std::vector<T>& src)
     {
         logInfo("[DB] copyFromHost(<vec>): {}\n", src.size(), *this);
-        copyFromHost(src.data(), src.size()); }
+        copyFromHost(src.data(), src.size());
+    }
 
     void copyPrefixToHostAsync(T* dst, size_t elemsToCopy, cudaStream_t stream)
     {

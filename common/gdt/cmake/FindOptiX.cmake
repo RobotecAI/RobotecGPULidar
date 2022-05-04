@@ -32,7 +32,7 @@ if (WIN32)
     find_path(searched_OptiX_INSTALL_DIR
         NAME include/optix.h
         PATHS
-        "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.0.0"
+        "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0"
         )
     mark_as_advanced(searched_OptiX_INSTALL_DIR)
     set(OptiX_INSTALL_DIR ${searched_OptiX_INSTALL_DIR} CACHE PATH "Path to OptiX installed location.")
