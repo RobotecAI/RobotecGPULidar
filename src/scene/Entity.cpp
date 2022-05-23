@@ -1,13 +1,13 @@
-#include <scene/SceneObject.hpp>
+#include <scene/Entity.hpp>
 
-API_OBJECT_INSTANCE(SceneObject);
+API_OBJECT_INSTANCE(Entity);
 
-SceneObject::SceneObject(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
+Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
 : mesh(std::move(mesh))
 , transform(TransformMatrix::identity())
 , humanReadableName(std::move(name)) { }
 
-void SceneObject::setTransform(TransformMatrix newTransform)
+void Entity::setTransform(TransformMatrix newTransform)
 {
 	transform = newTransform;
 	if (auto activeScene = scene.lock()) {
@@ -15,7 +15,7 @@ void SceneObject::setTransform(TransformMatrix newTransform)
 	}
 }
 
-OptixInstance SceneObject::getIAS(int idx)
+OptixInstance Entity::getIAS(int idx)
 {
 	logInfo("[RGL] Bulding IAS for object {}\n", humanReadableName.has_value() ? *humanReadableName : "<unnamed>");
 	// NOTE: this assumes a single SBT record per GAS
@@ -30,8 +30,6 @@ OptixInstance SceneObject::getIAS(int idx)
 	return instance;
 }
 
-SceneObject::~SceneObject()
+Entity::~Entity()
 {
-	// TODO: remove this once mesh:object 1:1 relation is dropped
-	Mesh::release(mesh);
 }

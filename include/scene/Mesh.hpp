@@ -17,13 +17,13 @@
 
 struct Mesh : APIObject<Mesh>
 {
-	void setVertices(std::size_t vertexCount, Vec3f *vertices);
-	void setIndices(std::size_t indexCount, Vec3i *indices);
+	void setVertices(Vec3f *vertices, std::size_t vertexCount);
 	OptixTraversableHandle getGAS();
 
 private:
-	Mesh(std::size_t vertexCount, Vec3f *vertices,
-	     std::size_t indexCount, Vec3i *indices);
+	void setIndices(Vec3i *indices, std::size_t indexCount);
+	Mesh(Vec3f *vertices, std::size_t vertexCount,
+		 Vec3i *indices, std::size_t indexCount);
 	Mesh(std::filesystem::path path);
 
 	OptixTraversableHandle buildGAS();
