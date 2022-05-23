@@ -1,48 +1,59 @@
 #include <scene/Scene.hpp>
-#include <scene/SceneObject.hpp>
+#include <scene/Entity.hpp>
 
 API_OBJECT_INSTANCE(Scene);
 
 std::shared_ptr<Scene> Scene::defaultInstance()
 {
-	static auto scene = std::make_shared<Scene>();
+	static auto scene = Scene::create();
 	return scene;
 }
 
 std::size_t Scene::getObjectCount()
-{ return objects.size(); }
+{ return entities.size(); }
 
-void Scene::addObject(std::shared_ptr<SceneObject> object)
+void Scene::addEntity(std::shared_ptr<Entity> entity)
 {
-	logInfo("[RGL] Adding object name={}\n", *object->humanReadableName);
-	object->scene = weak_from_this();
-	objects.insert({*object->humanReadableName, object});
-	requestFullRebuild();
-}
-
-std::shared_ptr<SceneObject> Scene::getObjectByName(std::string name)
-{
-	return objects.at(name);
-}
-
-void Scene::removeObjectByName(std::string name)
-{
-	logInfo("[RGL] Removing object name={}", name);
-	auto object = objects.at(name);
-	SceneObject::release(object);
-	objects.erase(name);
-	logWarn("{}\n", SceneObject::instances.size());
-	requestFullRebuild();
-}
-
-void Scene::removeAllObjects()
-{
-	for (auto&& [name, object] : objects) {
-		SceneObject::release(object);
+	// TODO: remove this limitation
+	for (auto&& e : entities) {
+		if (e->mesh.use_count() > 2) { // APIObject<Mesh>::instance + Entity::mesh
+			auto msg = "Entities sharing mesh is not yet implemented! Please use separate mesh instances for each entity";
+			throw std::logic_error(msg);
+		}
 	}
-	objects.clear();
+	entity->scene = weak_from_this();
+	entities.insert(entity);
 	requestFullRebuild();
 }
+
+void Scene::removeEntity(std::shared_ptr<Entity> entity)
+{
+	entities.erase(entity);
+}
+
+// std::shared_ptr<Entity> Scene::getObjectByName(std::string name)
+// {
+// 	return objects.at(name);
+// }
+
+// void Scene::removeObjectByName(std::string name)
+// {
+// 	logInfo("[RGL] Removing object name={}", name);
+// 	auto object = objects.at(name);
+// 	Entity::release(object);
+// 	objects.erase(name);
+// 	logWarn("{}\n", Entity::instances.size());
+// 	requestFullRebuild();
+// }
+
+// void Scene::removeAllEntities()
+// {
+// 	for (auto&& [name, object] : entities) {
+// 		Entity::release(object.get());
+// 	}
+// 	objects.clear();
+// 	requestFullRebuild();
+// }
 
 void Scene::requestFullRebuild()
 {
@@ -73,10 +84,10 @@ OptixShaderBindingTable Scene::buildSBT()
 	static DeviceBuffer<RaygenRecord> dRaygenRecords("raygenRecord");
 	static DeviceBuffer<MissRecord> dMissRecords("missRecord");
 
-	logInfo("[RGL] Building SBT using {} objects\n", objects.size());
+	logInfo("[RGL] Building SBT using {} objects\n", entities.size());
 	std::vector<HitgroupRecord> hHitgroupRecords;
-	for (auto&&[name, object] : objects) {
-		auto mesh = object->mesh;
+	for (auto&& entity : entities) {
+		auto mesh = entity->mesh;
 
 		hHitgroupRecords.emplace_back(); // TODO(prybicki): fix, this is weird
 		HitgroupRecord *hr = &(*hHitgroupRecords.rbegin());
@@ -113,9 +124,9 @@ OptixTraversableHandle Scene::buildAS()
 {
 	logInfo("[RGL] buildAS\n");
 	std::vector<OptixInstance> instances;
-	for (auto&&[name, object] : objects) {
+	for (auto&& entity : entities) {
 		// TODO(prybicki): this is somewhat inefficient, because most of the time only transform changes.
-		instances.push_back(object->getIAS(static_cast<int>(instances.size())));
+		instances.push_back(entity->getIAS(static_cast<int>(instances.size())));
 	}
 
 	// *** *** *** ACHTUNG *** *** ***

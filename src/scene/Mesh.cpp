@@ -11,10 +11,10 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(std::size_t vertexCount, Vec3f *vertices, std::size_t indexCount, Vec3i *indices)
+Mesh::Mesh(Vec3f *vertices, size_t vertexCount, Vec3i *indices, size_t indexCount)
 {
-	setVertices(vertexCount, vertices);
-	setIndices(indexCount, indices);
+	setVertices(vertices, vertexCount);
+	setIndices(indices, indexCount);
 }
 
 Mesh::Mesh(fs::path path)
@@ -31,17 +31,17 @@ Mesh::Mesh(fs::path path)
 	for (auto&& i : triangleMesh->index) {
 		indices.emplace_back(i.x, i.y, i.z);
 	}
-	setVertices(vertices.size(), vertices.data());
-	setIndices(indices.size(), indices.data());
+	setVertices(vertices.data(), vertices.size());
+	setIndices(indices.data(), indices.size());
 }
 
-void Mesh::setVertices(std::size_t vertexCount, Vec3f *vertices)
+void Mesh::setVertices(Vec3f *vertices, std::size_t vertexCount)
 {
 	dVertices.copyFromHost(vertices, vertexCount);
 	cachedGAS = std::nullopt;
 }
 
-void Mesh::setIndices(std::size_t indexCount, Vec3i *indices)
+void Mesh::setIndices(Vec3i *indices, std::size_t indexCount)
 {
 	dIndices.copyFromHost(indices, indexCount);
 	cachedGAS = std::nullopt;

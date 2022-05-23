@@ -11,7 +11,7 @@
 #include <data_types/ShaderBindingTableTypes.h>
 #include <LaunchParams.h>
 
-struct SceneObject;
+struct Entity;
 
 /**
  * Class responsible for managing objects and meshes, building AS and SBT.
@@ -24,13 +24,10 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 {
 	static std::shared_ptr<Scene> defaultInstance();
 
-	void addObject(std::shared_ptr<SceneObject> object);
+	void addEntity(std::shared_ptr<Entity> entity);
+	void removeEntity(std::shared_ptr<Entity> entity);
 
 	std::size_t getObjectCount();
-	std::shared_ptr<SceneObject> getObjectByName(std::string name);
-
-	void removeObjectByName(std::string name);
-	void removeAllObjects();
 
 	OptixTraversableHandle getAS();
 	OptixShaderBindingTable getSBT();
@@ -44,7 +41,7 @@ private:
 	OptixTraversableHandle buildAS();
 
 private:
-	std::unordered_map<std::string, std::shared_ptr<SceneObject>> objects;
+	std::set<std::shared_ptr<Entity>> entities;
 	ASBuildScratchpad scratchpad;
 
 	std::optional<OptixTraversableHandle> cachedAS;
