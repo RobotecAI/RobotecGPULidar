@@ -13,9 +13,9 @@
    #define GPU_LIDAR_RAYCASTER_C_PUBLIC_TYPE GPU_LIDAR_RAYCASTER_C_PUBLIC
    #define GPU_LIDAR_RAYCASTER_C_LOCAL
  #else
-   #define RGL_API __attribute__ ((visibility("default")))
+   #define RGL_API extern "C" __attribute__ ((visibility("default")))
    #if __GNUC__ >= 4
-     #define RGL_API __attribute__ ((visibility("default")))
+     #define RGL_API extern "C" __attribute__ ((visibility("default")))
    #else
      #define RGL_API
    #endif

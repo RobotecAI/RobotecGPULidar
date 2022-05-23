@@ -11,6 +11,7 @@
 #include <cuda_runtime_api.h>
 
 #include <macros/optix.hpp>
+#include <macros/cuda.hpp>
 
 #include <Logging.h>
 
@@ -33,6 +34,7 @@ Optix& Optix::instance()
 
 Optix::Optix()
 {
+
 	CHECK_OPTIX(optixInit());
 	CHECK_OPTIX(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &context));
 
@@ -194,4 +196,13 @@ static CUcontext getCurrentDeviceContext()
 	}
 	assert(cudaContext != nullptr);
 	return cudaContext;
+}
+
+static std::string getCurrentDeviceName()
+{
+	int currentDevice = -1;
+	cudaDeviceProp deviceProperties {};
+	CHECK_CUDA(cudaGetDevice(&currentDevice));
+	CHECK_CUDA(cudaGetDeviceProperties(&deviceProperties, currentDevice));
+	return std::string(deviceProperties.name);
 }

@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <scene/Mesh.hpp>
-#include <scene/SceneObject.hpp>
+#include <scene/Entity.hpp>
 #include <scene/Scene.hpp>
 
 
@@ -38,12 +38,12 @@ protected:
 
         cube_mesh = Mesh::create("cube.obj");
 
-        cube = SceneObject::create(cube_mesh, "cube");
-        cube_translated = SceneObject::create(cube_mesh, "cube_translated");
+        cube = Entity::create(cube_mesh, "cube");
+        cube_translated = Entity::create(cube_mesh, "cube_translated");
         cube_translated->setTransform(TransformMatrix::fromPointer(translate_));
 
-        Scene::defaultInstance()->addObject(cube);
-        Scene::defaultInstance()->addObject(cube_translated);
+	    Scene::defaultInstance()->addEntity(cube);
+	    Scene::defaultInstance()->addEntity(cube_translated);
     }
 
     void TearDown() override {
@@ -51,8 +51,8 @@ protected:
     }
 
     std::shared_ptr<Mesh> cube_mesh;
-    std::shared_ptr<SceneObject> cube;
-    std::shared_ptr<SceneObject> cube_translated;
+    std::shared_ptr<Entity> cube;
+    std::shared_ptr<Entity> cube_translated;
 
     LidarRenderer& lr_ = LidarRenderer::instance();
 
@@ -60,6 +60,17 @@ protected:
     int* ringIds_;
     int ringIdsSize_;
 };
+
+#include <api/experimental.h>
+
+TEST(Trivial, Version)
+{
+	int major, minor, patch;
+	const char *suffix, *hash;
+	rgl_status_t status = rgl_get_version_info(&major, &minor, &patch, &suffix, &hash);
+	ASSERT_EQ(status, RGL_SUCCESS);
+	ASSERT_EQ(strlen(hash), 40);
+}
 
 
 TEST_F(GPULidarIntegration, SimpleRaycast)
@@ -78,7 +89,7 @@ TEST_F(GPULidarIntegration, SimpleRaycast)
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f
     }};
-    LidarContext lidarCtx(rayPoses, 2, ringIds_, ringIdsSize_);
+    Lidar lidarCtx(rayPoses, 2, ringIds_, ringIdsSize_);
     lidarCtx.lidarNoiseParams = {
         .angularNoiseType = AngularNoiseType::HITPOINT_BASED,
         .angularNoiseStDev = 0.0f,
@@ -238,7 +249,7 @@ TEST_F(GPULidarIntegration, MultipleRaysAndRuns) {
 //        std::cout << "[" << i << "]:" << goldenResults[i] << std::endl;
 //    }
     int sentRays = 0;
-    LidarContext ctx (sourcePoses.data(), sourcePoses.size(), ringIds_, ringIdsSize_);
+    Lidar ctx (sourcePoses.data(), sourcePoses.size(), ringIds_, ringIdsSize_);
     for (size_t i = 0; i < 100; i++) {
         sentRays += size;
         if (i % 100 == 0) {

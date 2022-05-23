@@ -50,13 +50,13 @@ cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 
 add_library(RobotecGPULidar SHARED
     ${embedded_ptx_code}
-    src/LidarRenderer.cpp
-    src/api_experimental.cpp
+    src/api/api.cpp
+    src/Lidar.cpp
     src/formatPCL.cu
     src/Optix.cpp
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
-    src/scene/SceneObject.cpp
+    src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
     src/gaussianNoiseKernels.cu
 )
@@ -72,7 +72,7 @@ target_link_libraries(RobotecGPULidar
 # tests
 # ------------------------------------------------------------------
  if (BUILD_TESTS)
-     enable_testing()
-#     add_subdirectory(dotnet_plugin/gpu-lidar-raycaster-dotnet-test)
-     add_subdirectory(test)
+  enable_testing()
+# Tests will be brought back soon
+# add_subdirectory(test)
  endif()
