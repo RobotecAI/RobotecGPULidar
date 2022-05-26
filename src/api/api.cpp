@@ -1,7 +1,7 @@
 #include <cmath>
 
-#include <api/experimental.h>
-#include <api/e2e_extensions.h>
+#include <rgl/api/experimental.h>
+#include <rgl/api/e2e_extensions.h>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
@@ -54,7 +54,7 @@ do if (!(expr)) {                                                               
 extern "C" {
 
 RGL_API rgl_status_t
-rgl_get_version_info(int *out_major, int *out_minor, int *out_patch, const char **out_suffix, const char **out_hash)
+rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 {
 	// Short API version history:
 	// 0.1: PoC via dlopen
@@ -64,17 +64,14 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch, const char 
 	// 0.5: implemented scene management via native API
 	// 0.6: added gaussian noise API
 	// 0.7: pre-open-source API cleanup
+	// 0.8: removed hash and suffix args - will be logged instead
 	return rglSafeCall([&]() {
 		CHECK_ARG(out_major != nullptr);
 		CHECK_ARG(out_minor != nullptr);
 		CHECK_ARG(out_patch != nullptr);
-		CHECK_ARG(out_suffix != nullptr);
-		CHECK_ARG(out_hash != nullptr);
 		*out_major = 0;
-		*out_minor = 7;
+		*out_minor = 8;
 		*out_patch = 0;
-		*out_suffix = "";
-		*out_hash = "0000000000000000000000000000000000000000"; // TODO automate
 	});
 }
 
