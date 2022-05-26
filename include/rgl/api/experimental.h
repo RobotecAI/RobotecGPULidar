@@ -107,7 +107,7 @@ typedef enum
 {
 	RGL_FORMAT_INVALID = 0,
 	/**
-	 * Three consecutive 32-bit floats describing hit-point coordinates in the world frame.
+	 * Three consecutive 32-bit floats describing hit-point coordinates in the world frame. Does not contain non-hits.
 	 */
 	RGL_FORMAT_XYZ = 1,
 	RGL_FORMAT_COUNT
@@ -122,11 +122,9 @@ typedef enum
  * @param out_major Address to store major version number
  * @param out_minor Address to store minor version number
  * @param out_patch Address to store patch version number
- * @param out_suffix Address to store pointer to any suffixes, such as '-alpha', '-rc', etc.
- * @param out_hash Address to store pointer to hash string uniquely identifying source code version
  */
 RGL_API rgl_status_t
-rgl_get_version_info(int *out_major, int *out_minor, int *out_patch, const char **out_suffix, const char **out_hash);
+rgl_get_version_info(int *out_major, int *out_minor, int *out_patch);
 
 /**
  * Returns pointer to string explaining the most recent error. This function always succeeds.
@@ -134,15 +132,13 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch, const char 
  * Returned pointer is valid only until next RGL API call.
  */
 RGL_API void
-rgl_get_last_error_string(const char** out_error_string);
-
-// TODO: add api-calls to control loggin after spdlog is used
-// TODO: add api-calls to get error codes/strings
+rgl_get_last_error_string(const char **out_error_string);
 
 /******************************** MESH ********************************/
 
 /**
- * Creates mesh from vertex and index arrays.
+ * Creates mesh from vertex and index arrays. CW/CCW order does not matter.
+ * Provided arrays are copied to the GPU before this function returns.
  * @param out_mesh Address to store the resulting mesh handle
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
  * @param vertex_count Number of elements in the vertices array
@@ -208,14 +204,14 @@ rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf);
 /******************************** LIDAR ********************************/
 
 /**
- * Creates lidar from (r)ay (t)ransforms.
+ * Creates lidar from ray transforms.
  * Lidar range will be set to default (inf).
  * @param out_lidar Address where to store resulting lidar handle.
  */
 RGL_API rgl_status_t
-rgl_lidar_create_rt(rgl_lidar_t *out_lidar,
-                    rgl_mat3x4f *ray_transforms,
-                    int ray_transforms_count);
+rgl_lidar_create(rgl_lidar_t *out_lidar,
+                 rgl_mat3x4f *ray_transforms,
+                 int ray_transforms_count);
 
 /**
  * Allows to set maximum distance that rays are to be traced.

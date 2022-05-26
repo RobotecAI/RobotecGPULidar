@@ -1,29 +1,17 @@
-# ======================================================================== #
-# Copyright 2018-2019 Ingo Wald                                            #
-#                                                                          #
-# Licensed under the Apache License, Version 2.0 (the "License");          #
-# you may not use this file except in compliance with the License.         #
-# You may obtain a copy of the License at                                  #
-#                                                                          #
-#     http://www.apache.org/licenses/LICENSE-2.0                           #
-#                                                                          #
-# Unless required by applicable law or agreed to in writing, software      #
-# distributed under the License is distributed on an "AS IS" BASIS,        #
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
-# See the License for the specific language governing permissions and      #
-# limitations under the License.                                           #
-# ======================================================================== #
-
-# TODO(prybicki): rewrite it to modern CMake
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 project(RobotecGPULidar C CXX CUDA)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
 
-# GDT-Related stuff, to be removed in the future TODO(prybicki)
+add_subdirectory(external)
+find_package(FMT)
+
+# GDT-related stuff, to be removed in the future
 set(gdt_dir ${PROJECT_SOURCE_DIR}/common/gdt/)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${gdt_dir}/cmake/")
 include(${gdt_dir}/cmake/configure_build_type.cmake)
@@ -36,16 +24,6 @@ mark_as_advanced(CUDA_SDK_ROOT_DIR)
 # Project files
 include_directories(include)
 include_directories(${OptiX_INCLUDE})
-
-if (UNIX AND NOT APPLE)
-    # On Linux, libfmt is expected to be installed separately (apt / compiled from sources)
-    find_package(fmt REQUIRED)
-else()
-    # On Windows, it is easier to clone and build from sources
-    add_subdirectory("fmt-8.0.1")
-    include_directories(fmt-8.0.1/include)
-endif()
-
 cuda_compile_and_embed(embedded_ptx_code src/devicePrograms.cu)
 
 add_library(RobotecGPULidar SHARED
@@ -59,20 +37,16 @@ add_library(RobotecGPULidar SHARED
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
     src/gaussianNoiseKernels.cu
-)
+    )
+
 target_link_libraries(RobotecGPULidar
     gdt
-    fmt::fmt-header-only # FMT Library for a proper string formatting in C++
+    fmt::fmt-header-only
     ${CUDA_LIBRARIES}
     ${CUDA_CUDA_LIBRARY}
-)
-# TODO: re-add -Wall for MSVC && GCC
+    )
 
-# ------------------------------------------------------------------
-# tests
-# ------------------------------------------------------------------
- if (BUILD_TESTS)
-  enable_testing()
-# Tests will be brought back soon
-# add_subdirectory(test)
- endif()
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif ()

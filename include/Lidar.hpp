@@ -9,8 +9,8 @@
 #include <scene/Scene.hpp>
 #include <Optix.hpp>
 
-#include <api/experimental.h>
-#include <api/e2e_extensions.h>
+#include <rgl/api/experimental.h>
+#include <rgl/api/e2e_extensions.h>
 
 // Currently there is no explicit (documented) model of API / GPU synchronization
 // Getting correct results is dependent on calling API calls in right order
@@ -36,7 +36,7 @@ struct Lidar : APIObject<Lidar>
     void getResults(int format, void* data);
 
     LidarNoiseParams lidarNoiseParams {};
-    TransformMatrix lidarPose{};
+    TransformMatrix lidarPose = TransformMatrix::identity();
     TransformMatrix rosTransform{};
     float range;
 
