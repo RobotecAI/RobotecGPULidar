@@ -5,10 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// TODO: Describe in the README:
-// - Blocking behavior (all function are blocking, unless stated otherwise)
-// - Thread safety: no thread safety
-
 /**
  * Three consecutive 32-bit floats.
  */
