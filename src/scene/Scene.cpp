@@ -29,6 +29,7 @@ void Scene::addEntity(std::shared_ptr<Entity> entity)
 void Scene::removeEntity(std::shared_ptr<Entity> entity)
 {
 	entities.erase(entity);
+	requestFullRebuild();
 }
 
 // std::shared_ptr<Entity> Scene::getObjectByName(std::string name)
