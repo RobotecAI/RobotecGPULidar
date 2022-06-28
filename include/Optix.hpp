@@ -2,10 +2,11 @@
 
 #include <optix_types.h>
 
-// RAII object to (de)initialize OptiX
+// RAII object to (de)initialize OptiX and CUDA
 struct Optix
 {
 	static Optix& instance();
+	static void logVersions();
 
 	Optix();
 	~Optix();

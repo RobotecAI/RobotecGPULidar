@@ -121,7 +121,7 @@ private:
 };
 
 #ifndef __CUDACC__
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
 template<int dim, typename T>
 struct fmt::formatter<Vector<dim, T>>
 {

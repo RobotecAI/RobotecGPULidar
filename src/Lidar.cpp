@@ -46,7 +46,7 @@ void Lidar::scheduleRaycast(std::shared_ptr<Scene> scene)
 {
 	densePointCount.reset();
 	if (scene->getObjectCount() == 0) {
-		logWarn("[RGL] Requested raytracing on an empty scene\n");
+		WARN("Requested raytracing on an empty scene");
 		densePointCount = 0;
 		return;
 	}
@@ -112,7 +112,7 @@ void Lidar::getResults(int format, void *data)
 	}
 
 	if (densePointCount == 0) {
-		logWarn("[RGL] Returning empty pointcloud\n");
+		WARN("Returning an empty pointcloud");
 		return;
 	}
 
