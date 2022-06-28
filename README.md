@@ -16,12 +16,20 @@ If you would like to have a custom integration, feel free to [contact us](https:
 
 An introduction to the RGL API along with an example can be found [here](USAGE.md).
 
-## Building
+## Building in Docker (Linux)
+
+1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
+2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
+3. `docker build . --tag rgl`
+4. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -it rgl /bin/bash`
+5. `mkdir build && cd build && cmake ../ && make`
+
+## Building manually
 
 **Note: you can use a pre-built binary version available on GitHub.**
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.4
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
    1. You may be asked to create Nvidia account to download
 3. If you are on Linux or you have chosen non-standard location on Windows when installing OptiX, you need to export environment variable `OptiX_INSTALL_DIR`.
 4. Proceed with a standard CMake build procedure:

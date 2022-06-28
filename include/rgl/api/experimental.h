@@ -84,6 +84,12 @@ typedef enum
 	RGL_INVALID_STATE,
 
 	/**
+	 * Indicates that a logging operation (e.g. configuration) was not successful.
+	 * This is a recoverable error.
+	 */
+	RGL_LOGGING_ERROR,
+
+	/**
 	 * Requested functionality has been not yet implemented.
 	 * This is a recoverable error.
 	 */
@@ -109,11 +115,24 @@ typedef enum
 	RGL_FORMAT_COUNT
 } rgl_format_t;
 
+typedef enum : int
+{
+	RGL_LOG_LEVEL_ALL = 0,
+	RGL_LOG_LEVEL_TRACE = 0,
+	RGL_LOG_LEVEL_DEBUG = 1,
+	RGL_LOG_LEVEL_INFO = 2,
+	RGL_LOG_LEVEL_WARN = 3,
+	RGL_LOG_LEVEL_ERROR = 4,
+	RGL_LOG_LEVEL_CRITICAL = 5,
+	RGL_LOG_LEVEL_OFF = 6,
+	RGL_LOG_LEVEL_COUNT = 7
+} rgl_log_level_t;
+
 /******************************** GENERAL ********************************/
 
 /**
  * Returns data describing semantic version as described in https://semver.org/
- * Version string can be obtained by formatting "{out_major}.{out_minor}.{out_patch}{out_suffix}.
+ * Version string can be obtained by formatting "{out_major}.{out_minor}.{out_patch}".
  * Hash is provided mostly for debugging and issue reporting.
  * @param out_major Address to store major version number
  * @param out_minor Address to store minor version number
@@ -121,6 +140,19 @@ typedef enum
  */
 RGL_API rgl_status_t
 rgl_get_version_info(int *out_major, int *out_minor, int *out_patch);
+
+/**
+ * Optionally (re)configures internal logging. This feature may be useful for debugging / issue reporting.
+ * By default (i.e. not calling `rgl_configure_logging`) is equivalent to the following call:
+ * `rgl_configure_logging(RGL_LOG_LEVEL_INFO, nullptr, true)`
+ * @param log_level Controls severity of emitted logs: trace=0, debug=1, info=2, warn=3, error=4, critical=5, off=6
+ * @param log_file_path Path to the file where logs will be saved.
+ * The file will be created or truncated on each configuration.
+ * Pass nullptr to disable logging to file
+ * @param use_stdout If true, logs will be outputted to stdout.
+ */
+RGL_API rgl_status_t
+rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout);
 
 /**
  * Returns pointer to string explaining the most recent error. This function always succeeds.

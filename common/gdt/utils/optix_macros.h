@@ -12,7 +12,7 @@ DISABLE_WARNING_MISSING_FIELD_INITIALIZERS
 DISABLE_WARNING_POP
 
 #ifndef __CUDACC__
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
 #endif
 
 #define CUDA_CHECK(call)                                                                                     \

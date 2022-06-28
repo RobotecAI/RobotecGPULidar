@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
 
 struct InvalidAPIObject : std::logic_error
 {
@@ -46,7 +46,7 @@ struct APIObject
 	{
 		auto it = instances.find(rawPtr);
 		if (it == instances.end()) {
-			auto msg = fmt::format("RGL API object {} does not exist", reinterpret_cast<void*>(rawPtr));
+			auto msg = fmt::format("RGL APIObject<{}>  {} does not exist", typeid(T).name(), reinterpret_cast<void*>(rawPtr));
 			throw InvalidAPIObject(msg);
 		}
 		return it->second;

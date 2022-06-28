@@ -4,7 +4,7 @@
 #include "gaussianNoise.h"
 #include <random>
 
-#include <Logging.h>
+#include <Logger.h>
 #include <APIObject.hpp>
 #include <scene/Scene.hpp>
 #include <Optix.hpp>
@@ -43,31 +43,31 @@ struct Lidar : APIObject<Lidar>
 private:
     cudaStream_t stream = nullptr;
     std::optional<LaunchLidarParams> currentJob;
-    DeviceBuffer<LaunchLidarParams> dCurrentJob {"dCurrentJob"};
     std::optional<int> densePointCount;
 
     // GPU INPUT
-    DeviceBuffer<TransformMatrix> dRayPoses {"dRayPoses"};
-    DeviceBuffer<int> dLidarArrayRingIds {"dLidarArrayRingsIds"};
+    DeviceBuffer<LaunchLidarParams> NAMED(dCurrentJob);
+    DeviceBuffer<TransformMatrix> NAMED(dRayPoses);
+    DeviceBuffer<int> NAMED(dLidarArrayRingIds);
 
     // GPU OUTPUT
-    DeviceBuffer<int> dWasHit {"dWasHit"};
-    DeviceBuffer<int> dHitsBeforeIndex {"dHitsBeforeIndex"};
+    DeviceBuffer<int> NAMED(dWasHit);
+    DeviceBuffer<int> NAMED(dHitsBeforeIndex);
 
-    DeviceBuffer<Point3f> dUnityVisualisationPoints; // Native output (for visualization in Unity)
-    DeviceBuffer<PCL12> dRosXYZ; // Native output (for publishing via ROS), contains non-hits
+    DeviceBuffer<Point3f> NAMED(dUnityVisualisationPoints); // Native output (for visualization in Unity)
+    DeviceBuffer<PCL12> NAMED(dRosXYZ); // Native output (for publishing via ROS), contains non-hits
 
     // Buffers to be computed via formatPCLs
-    DeviceBuffer<Point3f> dDensePoint3f;
-    DeviceBuffer<PCL12> dDensePCL12;
-    DeviceBuffer<PCL24> dDensePCL24;
-    DeviceBuffer<PCL48> dDensePCL48;
+    DeviceBuffer<Point3f> NAMED(dDensePoint3f);
+    DeviceBuffer<PCL12> NAMED(dDensePCL12);
+    DeviceBuffer<PCL24> NAMED(dDensePCL24);
+    DeviceBuffer<PCL48> NAMED(dDensePCL48);
 
-    HostPinnedBuffer<Point3f> hDensePoint3f;
-    HostPinnedBuffer<PCL12> hDensePCL12;
-    HostPinnedBuffer<PCL24> hDensePCL24;
-    HostPinnedBuffer<PCL48> hDensePCL48;
+    HostPinnedBuffer<Point3f> NAMED(hDensePoint3f);
+    HostPinnedBuffer<PCL12> NAMED(hDensePCL12);
+    HostPinnedBuffer<PCL24> NAMED(hDensePCL24);
+    HostPinnedBuffer<PCL48> NAMED(hDensePCL48);
 
-    DeviceBuffer<curandStatePhilox4_32_10_t> dRandomizationStates;
+    DeviceBuffer<curandStatePhilox4_32_10_t> NAMED(dRandomizationStates);
     std::random_device randomDevice;
 };

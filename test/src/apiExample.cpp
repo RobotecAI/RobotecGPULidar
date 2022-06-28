@@ -1,50 +1,17 @@
 #include <gtest/gtest.h>
+#include <spdlog/fmt/fmt.h>
 #include <rgl/api/experimental.h>
+#include <Logger.h>
 
-#define RGL_CHECK(call)                  \
-do {                                     \
-	rgl_status_t status = call;          \
-	if (status != RGL_SUCCESS) {         \
-		const char* msg;                 \
-		rgl_get_last_error_string(&msg); \
-		FAIL() << msg;                   \
-	}                                    \
-} while(0)
+#include <rglCheck.hpp>
+#include <testModels.hpp>
 
-
-rgl_vec3f cube_vertices[] = {
-	{-1, -1, -1},
-	{1, -1, -1},
-	{1, 1, -1},
-	{-1, 1, -1},
-	{-1, -1, 1},
-	{1, -1, 1},
-	{1, 1, 1},
-	{-1, 1, 1}
-};
-
-constexpr size_t cube_vertices_length = sizeof(cube_vertices) / sizeof(cube_vertices[0]);
-
-rgl_vec3i cube_indices[] = {
-	{0, 1, 3},
-	{3, 1, 2},
-	{1, 5, 2},
-	{2, 5, 6},
-	{5, 4, 6},
-	{6, 4, 7},
-	{4, 0, 7},
-	{7, 0, 3},
-	{3, 2, 7},
-	{7, 2, 6},
-	{4, 5, 0},
-	{0, 5, 1},
-};
-constexpr size_t cube_indices_length = sizeof(cube_indices) / sizeof(cube_indices[0]);
-
-
-TEST(API, Readme_Example)
+TEST(IntegrationTests, Readme_Example)
 {
-	// Load mesh from a file
+	int major, minor, patch;
+	RGL_CHECK(rgl_get_version_info(&major, &minor, &patch));
+	INFO("RGL version: {}.{}.{}", major, minor, patch);
+
 	rgl_mesh_t cube_mesh = 0;
 	RGL_CHECK(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
 

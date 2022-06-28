@@ -2,7 +2,9 @@
 
 #include <cuda_runtime_api.h>
 
-#include <fmt/format.h>
+#ifndef __CUDACC__
+#include <spdlog/fmt/fmt.h>
+#endif // __CUDACC__
 
 #define CHECK_CUDA(call)                                                                            \
 do                                                                                                  \

@@ -56,18 +56,18 @@ RGL is optimized to be used in ever-changing scenes, therefore it is possible to
 ## Minimal example
 
 The minimal example below demonstrates ray-tracing of a single ray on a scene consisting of a single cube.
-Full source code can be found [here](test/src/api_example.cpp)
+Full source code can be found [here](test/src/apiExample.cpp)
 
 ![Diagram of the example scene](docs/readme-example-scene.svg)
 
 ```c
 // Create a mesh
-rgl_mesh_t cube_mesh = 0;
+rgl_mesh_t mesh = 0;
 RGL_CHECK(rgl_mesh_create(/*arguments omitted for brevity*/));
 
 // Put an entity on the default scene
-rgl_entity_t cube_entity = 0;
-RGL_CHECK(rgl_entity_create(&cube_entity, NULL, cube_mesh));
+rgl_entity_t entity = 0;
+RGL_CHECK(rgl_entity_create(&entity, NULL, mesh));
 
 // Set position of the cube entity to (0, 0, 5)
 rgl_mat3x4f entity_tf = {
@@ -77,7 +77,7 @@ rgl_mat3x4f entity_tf = {
         {0, 0, 1, 5}
     }
 };
-RGL_CHECK(rgl_entity_set_pose(cube_entity, &entity_tf));
+RGL_CHECK(rgl_entity_set_pose(entity, &entity_tf));
 
 // Create a description of lidar that sends 1 ray
 // By default, lidar will have infinite ray range

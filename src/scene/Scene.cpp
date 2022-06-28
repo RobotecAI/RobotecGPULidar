@@ -32,30 +32,6 @@ void Scene::removeEntity(std::shared_ptr<Entity> entity)
 	requestFullRebuild();
 }
 
-// std::shared_ptr<Entity> Scene::getObjectByName(std::string name)
-// {
-// 	return objects.at(name);
-// }
-
-// void Scene::removeObjectByName(std::string name)
-// {
-// 	logInfo("[RGL] Removing object name={}", name);
-// 	auto object = objects.at(name);
-// 	Entity::release(object);
-// 	objects.erase(name);
-// 	logWarn("{}\n", Entity::instances.size());
-// 	requestFullRebuild();
-// }
-
-// void Scene::removeAllEntities()
-// {
-// 	for (auto&& [name, object] : entities) {
-// 		Entity::release(object.get());
-// 	}
-// 	objects.clear();
-// 	requestFullRebuild();
-// }
-
 void Scene::requestFullRebuild()
 {
 	requestASRebuild();
@@ -80,12 +56,10 @@ OptixShaderBindingTable Scene::getSBT()
 
 OptixShaderBindingTable Scene::buildSBT()
 {
-	logInfo("[RGL] buildSBT");
 	static DeviceBuffer<HitgroupRecord> dHitgroupRecords("hitgroupRecord");
 	static DeviceBuffer<RaygenRecord> dRaygenRecords("raygenRecord");
 	static DeviceBuffer<MissRecord> dMissRecords("missRecord");
 
-	logInfo("[RGL] Building SBT using {} objects\n", entities.size());
 	std::vector<HitgroupRecord> hHitgroupRecords;
 	for (auto&& entity : entities) {
 		auto mesh = entity->mesh;
@@ -123,7 +97,6 @@ OptixShaderBindingTable Scene::buildSBT()
 
 OptixTraversableHandle Scene::buildAS()
 {
-	logInfo("[RGL] buildAS\n");
 	std::vector<OptixInstance> instances;
 	for (auto&& entity : entities) {
 		// TODO(prybicki): this is somewhat inefficient, because most of the time only transform changes.
@@ -178,7 +151,6 @@ OptixTraversableHandle Scene::buildAS()
 	// TODO(prybicki): use a non-null stream
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 
-	logInfo("[RGL] AS built\n");
 	return sceneHandle;
 }
 
