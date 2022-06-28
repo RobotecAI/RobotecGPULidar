@@ -37,3 +37,4 @@ Builds/*
 Testing/*
 .idea
 cmake-build-debug
+build

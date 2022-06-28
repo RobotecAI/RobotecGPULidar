@@ -17,7 +17,6 @@ void Entity::setTransform(TransformMatrix newTransform)
 
 OptixInstance Entity::getIAS(int idx)
 {
-	logInfo("[RGL] Bulding IAS for object {}\n", humanReadableName.has_value() ? *humanReadableName : "<unnamed>");
 	// NOTE: this assumes a single SBT record per GAS
 	OptixInstance instance = {
 		.instanceId = static_cast<unsigned int>(idx),
