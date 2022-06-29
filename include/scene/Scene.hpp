@@ -47,5 +47,5 @@ private:
 	std::optional<OptixTraversableHandle> cachedAS;
 	std::optional<OptixShaderBindingTable> cachedSBT;
 
-	DeviceBuffer<OptixInstance> NAMED(dInstances);
+	DeviceBuffer<OptixInstance> dInstances;
 };

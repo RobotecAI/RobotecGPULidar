@@ -64,7 +64,6 @@ void Lidar::scheduleRaycast(std::shared_ptr<Scene> scene)
 		.dRosXYZ = dRosXYZ.writeDevice(),
 		.dWasHit = dWasHit.writeDevice(),
 	};
-
 	dCurrentJob.copyFromHostAsync(&currentJob.value(), 1, stream);
 
 	CUdeviceptr pipelineArgsPtr = dCurrentJob.readDeviceRaw();
@@ -72,9 +71,7 @@ void Lidar::scheduleRaycast(std::shared_ptr<Scene> scene)
 	dim3 launchDims = {static_cast<unsigned int>(currentJob->rayCount), 1, 1};
 
 	addGaussianNoise(stream, dRayPoses, lidarNoiseParams, dRandomizationStates, dRayPoses);
-	OPTIX_CHECK(
-	optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x,
-	            launchDims.y, launchDims.y));
+	OPTIX_CHECK(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
 
 	Point3f lidar_origin_position = {lidarPose[3], lidarPose[7], lidarPose[11]};
 	addGaussianNoise(stream, dRosXYZ, dUnityVisualisationPoints, lidar_origin_position, lidarNoiseParams,

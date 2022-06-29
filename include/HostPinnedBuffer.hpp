@@ -22,7 +22,6 @@ private:
 	T* data {nullptr};
 	std::size_t elemCount {0};
 	std::size_t elemCapacity {0};
-	std::string name;
 
 public:
 	HostPinnedBuffer(HostPinnedBuffer&) = delete;
@@ -30,14 +29,10 @@ public:
 	HostPinnedBuffer& operator=(HostPinnedBuffer&) = delete;
 	HostPinnedBuffer& operator=(HostPinnedBuffer&&) = delete;
 
-	HostPinnedBuffer(const std::string& _name="<unnamed>") : name(_name)
-	{
-		TRACE("{}::HostPinnedBuffer()", _name);
-	}
+	HostPinnedBuffer() { }
 
 	~HostPinnedBuffer()
 	{
-		TRACE("{}::~HostPinnedBuffer()", name);
 		if (data != nullptr) {
 			cudaFreeHost(data);
 		}
@@ -45,7 +40,6 @@ public:
 
 	void copyFromDeviceAsync(const DeviceBuffer<T>& src, cudaStream_t stream)
 	{
-		TRACE("{}::copyFromDeviceAsync(srcName={}, srcCount={}, stream={})", name, src.getName(), src.getElemCount(), (void*) stream);
 		ensureHostCanFit(src.getElemCount());
 		CHECK_CUDA(cudaMemcpyAsync(data, src.readDevice(), src.getElemCount() * sizeof(T), cudaMemcpyDeviceToHost, stream));
 		elemCount = src.getElemCount();
@@ -53,15 +47,12 @@ public:
 
 	const T* readHost() const
 	{
-		TRACE("{}::readHost()", name);
 		return data;
 	}
 
 	std::size_t getElemCount() const { return elemCount; }
 
 	std::size_t getByteSize() const { return getElemCount() * sizeof(T); }
-
-	std::string getName() const { return name; }
 
 private:
 	void ensureHostCanFit(std::size_t newElemCount)
@@ -80,5 +71,3 @@ private:
 		elemCapacity = newElemCount;
 	}
 };
-
-#define NAMED(name) name {#name}

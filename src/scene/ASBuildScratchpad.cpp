@@ -3,19 +3,23 @@
 #include <macros/cuda.hpp>
 #include <HostPinnedBuffer.hpp>
 
-void ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options)
+bool ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options)
 {
 	OptixAccelBufferSizes bufferSizes;
 	CHECK_OPTIX(optixAccelComputeMemoryUsage(Optix::instance().context, &options, &input, 1, &bufferSizes));
 
-	dTemp.resizeToFit(bufferSizes.tempSizeInBytes);
-	dFull.resizeToFit(bufferSizes.outputSizeInBytes);
-	dCompactedSize.resizeToFit(1);
+	return dTemp.resizeToFit(bufferSizes.tempSizeInBytes)
+	    || dFull.resizeToFit(bufferSizes.outputSizeInBytes)
+	    || dCompactedSize.resizeToFit(1);
 }
 
 void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
 {
+	throw std::runtime_error("AS compaction is disabled due to performance reasons");
 	// TODO(prybicki): Too many lines for getting a number from GPU :(
+	// TODO(prybicki): Some time later, it turns out that this communication (async cpy + sync) is killing perf
+	// TODO(prybicki): This should remain disabled, until a real-world memory management subsystem is implemented
+	// TODO(prybicki): Copy here should be not async...
 	HostPinnedBuffer<uint64_t> hCompactedSize;
 	hCompactedSize.copyFromDeviceAsync(dCompactedSize, nullptr); // TODO: stream
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));

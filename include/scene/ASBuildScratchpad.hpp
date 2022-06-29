@@ -10,14 +10,14 @@
  */
 struct ASBuildScratchpad
 {
-	void resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options);
+	bool resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options);
 	void doCompaction(OptixTraversableHandle& handle);
 
 private:
-	DeviceBuffer<uint64_t> NAMED(dCompactedSize);
-	DeviceBuffer<std::byte> NAMED(dTemp);
-	DeviceBuffer<std::byte> NAMED(dFull);
-	DeviceBuffer<std::byte> NAMED(dCompact);
+	DeviceBuffer<uint64_t> dCompactedSize;
+	DeviceBuffer<std::byte> dTemp;
+	DeviceBuffer<std::byte> dFull;
+	DeviceBuffer<std::byte> dCompact;
 
 	friend struct Mesh;
 	friend struct Object;
