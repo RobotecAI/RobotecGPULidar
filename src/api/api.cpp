@@ -90,6 +90,7 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.7: pre-open-source API cleanup
 	// 0.8: removed hash and suffix args - will be logged instead
 	// 0.9: added rgl_configure_logging
+	// 0.9.1: optimized rgl_mesh_update_vertices
 	return rglSafeCall([&]() {
 		DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
@@ -97,7 +98,7 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 		CHECK_ARG(out_patch != nullptr);
 		*out_major = 0;
 		*out_minor = 9;
-		*out_patch = 0;
+		*out_patch = 1;
 	});
 }
 
