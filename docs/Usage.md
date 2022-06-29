@@ -56,9 +56,9 @@ RGL is optimized to be used in ever-changing scenes, therefore it is possible to
 ## Minimal example
 
 The minimal example below demonstrates ray-tracing of a single ray on a scene consisting of a single cube.
-Full source code can be found [here](test/src/apiExample.cpp)
+Full source code can be found [here](../test/src/apiExample.cpp)
 
-![Diagram of the example scene](docs/readme-example-scene.svg)
+![Diagram of the example scene](readme-example-scene.svg)
 
 ```c
 // Create a mesh
