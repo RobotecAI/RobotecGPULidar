@@ -56,9 +56,9 @@ OptixShaderBindingTable Scene::getSBT()
 
 OptixShaderBindingTable Scene::buildSBT()
 {
-	static DeviceBuffer<HitgroupRecord> dHitgroupRecords("hitgroupRecord");
-	static DeviceBuffer<RaygenRecord> dRaygenRecords("raygenRecord");
-	static DeviceBuffer<MissRecord> dMissRecords("missRecord");
+	static DeviceBuffer<HitgroupRecord> dHitgroupRecords;
+	static DeviceBuffer<RaygenRecord> dRaygenRecords;
+	static DeviceBuffer<MissRecord> dMissRecords;
 
 	std::vector<HitgroupRecord> hHitgroupRecords;
 	for (auto&& entity : entities) {
@@ -145,11 +145,7 @@ OptixTraversableHandle Scene::buildAS()
 	                            1
 	));
 
-	CHECK_CUDA(cudaStreamSynchronize(nullptr));
-	scratchpad.doCompaction(sceneHandle);
-
-	// TODO(prybicki): use a non-null stream
-	CHECK_CUDA(cudaStreamSynchronize(nullptr));
+	// scratchpad.doCompaction(sceneHandle);
 
 	return sceneHandle;
 }

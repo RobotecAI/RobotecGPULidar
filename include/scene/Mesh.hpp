@@ -27,12 +27,19 @@ private:
 	Mesh(std::filesystem::path path);
 
 	OptixTraversableHandle buildGAS();
+	void updateGAS();
 
 private:
 	friend APIObject<Mesh>;
 	friend struct Scene;
 	ASBuildScratchpad scratchpad;
+	bool gasNeedsUpdate;
 	std::optional<OptixTraversableHandle> cachedGAS;
-	DeviceBuffer<Vec3f> dVertices{"dVertices"};
-	DeviceBuffer<Vec3i> dIndices{"dIndices"};
+	DeviceBuffer<Vec3f> dVertices;
+	DeviceBuffer<Vec3i> dIndices;
+
+	// Shared between buildGAS() and updateGAS()
+	OptixBuildInput buildInput;
+	OptixAccelBuildOptions buildOptions;
+
 };
