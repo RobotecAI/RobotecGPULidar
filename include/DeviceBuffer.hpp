@@ -28,7 +28,6 @@ private:
 	T* data {nullptr};
 	std::size_t elemCount {0};
 	std::size_t elemCapacity {0};
-	std::string name;
 
 public:
 	DeviceBuffer(DeviceBuffer&) = delete;
@@ -36,14 +35,10 @@ public:
 	DeviceBuffer& operator=(DeviceBuffer&) = delete;
 	DeviceBuffer& operator=(DeviceBuffer&&) = delete;
 
-	DeviceBuffer(const std::string& name = "<unnamed>") : name(name)
-	{
-		TRACE("{}::DeviceBuffer()", name);
-	}
+	DeviceBuffer() { }
 
 	~DeviceBuffer()
 	{
-		TRACE("{}::~DeviceBuffer()", name);
 		if (data != nullptr) {
 			cudaFree(data);
 			data = nullptr;
@@ -52,7 +47,6 @@ public:
 
 	void copyFromHost(const T* src, std::size_t srcElemCount)
 	{
-		TRACE("{}::copyFromHost(src={}, srcElemCount={})", name, (void*) src, srcElemCount);
 		ensureDeviceCanFit(srcElemCount);
 		CHECK_CUDA(cudaMemcpy(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice));
 		elemCount = srcElemCount;
@@ -60,7 +54,6 @@ public:
 
 	void copyFromHostAsync(const T* src, std::size_t srcElemCount, cudaStream_t stream)
 	{
-		TRACE("{}::copyFromHostAsync(src={}, srcElemCount={}, stream={})", name, (void*) src, srcElemCount, (void*) stream);
 		ensureDeviceCanFit(srcElemCount);
 		CHECK_CUDA(cudaMemcpyAsync(data, src, srcElemCount * sizeof(T), cudaMemcpyHostToDevice, stream));
 		elemCount = srcElemCount;
@@ -68,31 +61,26 @@ public:
 
 	void copyFromHost(const HostPinnedBuffer<int>& src)
 	{
-		TRACE("{}::copyFromHost<HPB>(hpbName={}, hpbSize)", name, src.getName(), src.getElemCount());
 		copyFromHost(src.readHost(), src.getElemCount());
 	}
 
 	void copyFromHost(const std::vector<T>& src)
 	{
-		TRACE("{}::copyFromHost<vector>(srcData={}, srcSize={})", src.size(), (void*) src.data(), src.size());
 		copyFromHost(src.data(), src.size());
 	}
 
 	const T* readDevice() const
 	{
-		TRACE("{}::readDevice()");
 		return data;
 	}
 
 	T* writeDevice()
 	{
-		TRACE("{}::writeDevice()", name);
 		return data;
 	}
 
 	CUdeviceptr readDeviceRaw() const
 	{
-		TRACE("{}::readDeviceRaw()");
 		return reinterpret_cast<CUdeviceptr>(
 				reinterpret_cast<void*>(
 						const_cast<T*>(readDevice())
@@ -104,32 +92,31 @@ public:
 
 	std::size_t getByteSize() const { return getElemCount() * sizeof(T); }
 
-	void resizeToFit(std::size_t newElemCount, bool clear=false)
+	bool resizeToFit(std::size_t newElemCount, bool clear=false)
 	{
-		TRACE("{}::resizeToFit(newElemCount={}, clear={})", name, newElemCount, clear);
-		ensureDeviceCanFit(newElemCount);
+		bool resized = ensureDeviceCanFit(newElemCount);
 		elemCount = newElemCount;
 		if (clear) {
 			CHECK_CUDA(cudaMemset(data, 0, elemCount * sizeof(T)));
 		}
+		return resized;
 	}
 
-	std::string getName() const { return name; }
-
 private:
-	void ensureDeviceCanFit(std::size_t newElemCount) {
+	bool ensureDeviceCanFit(std::size_t newElemCount) {
 		if (newElemCount == 0) {
 			auto msg = fmt::format("Attempted to allocate {} bytes of memory", newElemCount);
 			throw std::logic_error(msg);
 		}
 		if (elemCapacity >= newElemCount) {
-			return;
+			return false;
 		}
 		if (data != nullptr) {
 			CHECK_CUDA(cudaFree(data));
 		}
 		CHECK_CUDA(cudaMalloc(reinterpret_cast<void**>(&data), newElemCount * sizeof(T)));
 		elemCapacity = newElemCount;
+		return true;
 	}
 
 	friend struct fmt::formatter<DeviceBuffer<T>>;

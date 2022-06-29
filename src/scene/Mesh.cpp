@@ -38,13 +38,21 @@ Mesh::Mesh(fs::path path)
 void Mesh::setVertices(Vec3f *vertices, std::size_t vertexCount)
 {
 	dVertices.copyFromHost(vertices, vertexCount);
-	cachedGAS = std::nullopt;
+	bool sizeChanged = dVertices.getElemCount() != vertexCount;
+	if (sizeChanged) {
+		cachedGAS.reset();
+	}
+	gasNeedsUpdate = true;
 }
 
 void Mesh::setIndices(Vec3i *indices, std::size_t indexCount)
 {
 	dIndices.copyFromHost(indices, indexCount);
-	cachedGAS = std::nullopt;
+	bool sizeChanged = dIndices.getElemCount() != indexCount;
+	if (sizeChanged) {
+		cachedGAS.reset();
+	}
+	gasNeedsUpdate = true;
 }
 
 OptixTraversableHandle Mesh::getGAS()
@@ -52,7 +60,41 @@ OptixTraversableHandle Mesh::getGAS()
 	if (!cachedGAS.has_value()) {
 		cachedGAS = buildGAS();
 	}
+	if (gasNeedsUpdate) {
+		updateGAS();
+	}
 	return *cachedGAS;
+}
+
+void Mesh::updateGAS()
+{
+	OptixAccelBuildOptions updateOptions = buildOptions;
+	updateOptions.operation = OPTIX_BUILD_OPERATION_UPDATE;
+
+	// OptiX update disallows buffer sizes to change
+	OptixBuildInput updateInput = buildInput;
+	const CUdeviceptr vertexBuffers[1] = {dVertices.readDeviceRaw()};
+	updateInput.triangleArray.vertexBuffers = vertexBuffers;
+	updateInput.triangleArray.indexBuffer = dIndices.readDeviceRaw();
+
+	scratchpad.resizeToFit(updateInput, updateOptions);
+
+	// Fun fact: calling optixAccelBuild does not change anything visually, but introduces a significant slowdown
+	// Investigation is needed whether it needs to be called at all (OptiX documentation says yes, but it works without)
+	CHECK_OPTIX(optixAccelBuild(Optix::instance().context,
+	                            nullptr, // TODO: stream
+	                            &updateOptions,
+	                            &updateInput,
+	                            1,
+	                            scratchpad.dTemp.readDeviceRaw(),
+	                            scratchpad.dTemp.getByteSize(),
+	                            scratchpad.dFull.readDeviceRaw(),
+	                            scratchpad.dFull.getByteSize(),
+	                            &cachedGAS.value(),
+	                            nullptr, // &emitDesc,
+	                            0));
+
+	gasNeedsUpdate = false;
 }
 
 OptixTraversableHandle Mesh::buildGAS()
@@ -60,7 +102,7 @@ OptixTraversableHandle Mesh::buildGAS()
 	constexpr unsigned triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 	const CUdeviceptr vertexBuffers[1] = {dVertices.readDeviceRaw()};
 
-	OptixBuildInput triangleInput = {
+	buildInput = {
 		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
 		.triangleArray = {
 			.vertexBuffers = vertexBuffers,
@@ -79,39 +121,39 @@ OptixTraversableHandle Mesh::buildGAS()
 		}
 	};
 
-	OptixAccelBuildOptions accelBuildOptions = {
+	buildOptions = {
 		.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE
-		              | OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
+		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+		              // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
 		.operation = OPTIX_BUILD_OPERATION_BUILD
 	};
 
-	scratchpad.resizeToFit(triangleInput, accelBuildOptions);
+	scratchpad.resizeToFit(buildInput, buildOptions);
 
-	OptixAccelEmitDesc emitDesc = {
-		.result = scratchpad.dCompactedSize.readDeviceRaw(),
-		.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
-	};
+	// OptixAccelEmitDesc emitDesc = {
+		// .result = scratchpad.dCompactedSize.readDeviceRaw(),
+		// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
+	// };
 
 	OptixTraversableHandle gasHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::instance().context,
 	                            nullptr, // TODO: stream
-	                            &accelBuildOptions,
-	                            &triangleInput,
+	                            &buildOptions,
+	                            &buildInput,
 	                            1,
 	                            scratchpad.dTemp.readDeviceRaw(),
 	                            scratchpad.dTemp.getByteSize(),
 	                            scratchpad.dFull.readDeviceRaw(),
 	                            scratchpad.dFull.getByteSize(),
 	                            &gasHandle,
-	                            &emitDesc,
-	                            1
+	                            nullptr, // &emitDesc,
+	                            0
 	));
 
-	// TODO(prybicki): check what's the difference between compacted and full
-	// TODO(prybicki): we may care more about perf than mem
-	scratchpad.doCompaction(gasHandle);
+	// Compaction yields around 10% of memory and slows down a lot (e.g. 500us per model)
+	// scratchpad.doCompaction(gasHandle);
 
+	gasNeedsUpdate = false;
 	return gasHandle;
 }
 
