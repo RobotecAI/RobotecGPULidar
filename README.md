@@ -10,11 +10,18 @@ One of the use-cases of RGL is implementing Lidar sensor in simulation engines. 
 - O3DE (planned)
 - Gazebo (planned)
 
-If you would like to have a custom integration, feel free to [contact us](https://robotec.ai/contact/). 
+If you would like to have a custom integration, feel free to [contact us](https://robotec.ai/contact/).
+
+## Features
+
+- GPU-accelerated
+- Configurable LiDAR pattern and range
+- Asynchronous raytracing
+- Optional Gaussian noise (see [documentation](docs/GaussianNoise.md))
 
 ## Usage
 
-An introduction to the RGL API along with an example can be found [here](USAGE.md).
+An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
 
 ## Building in Docker (Linux)
 
