@@ -9,8 +9,8 @@ bool ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOption
 	CHECK_OPTIX(optixAccelComputeMemoryUsage(Optix::instance().context, &options, &input, 1, &bufferSizes));
 
 	return dTemp.resizeToFit(bufferSizes.tempSizeInBytes)
-	    || dFull.resizeToFit(bufferSizes.outputSizeInBytes)
-	    || dCompactedSize.resizeToFit(1);
+	     | dFull.resizeToFit(bufferSizes.outputSizeInBytes)
+	     | dCompactedSize.resizeToFit(1);
 }
 
 void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
