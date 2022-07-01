@@ -4,7 +4,7 @@
 #include <scene/Mesh.hpp>
 #include <APIObject.hpp>
 #include <utility>
-#include <TransformMatrix.h>
+#include <math/TransformMatrix.h>
 
 
 struct Entity : APIObject<Entity>

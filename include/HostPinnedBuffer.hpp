@@ -6,8 +6,6 @@
 #include <optional>
 #include "Logger.h"
 #include "DeviceBuffer.hpp"
-#include "utils/optix_macros.h"
-
 #include <macros/cuda.hpp>
 
 template<typename T>
@@ -67,7 +65,7 @@ private:
 		if (data != nullptr) {
 			CHECK_CUDA(cudaFreeHost(data));
 		}
-		CHECK_CUDA(cudaMallocHost(&data, newElemCount * sizeof(T)));
+		CHECK_CUDA(cudaMallocHost(reinterpret_cast<void**>(&data), newElemCount * sizeof(T)));
 		elemCapacity = newElemCount;
 	}
 };

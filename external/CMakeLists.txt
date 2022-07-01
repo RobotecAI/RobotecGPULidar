@@ -1,7 +1,5 @@
 include(FetchContent)
 
-# Note: SPDLOG includes FMT
-set(SPDLOG_BUILD_SHARED ON)
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
@@ -9,6 +7,13 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(spdlog)
+
+if (UNIX)
+    # This is a fix for:
+    # relocation R_X86_64_TPOFF32 against `_ZGVZN6spdlog7details2os9thread_idEvE3tid'
+    # can not be used when making a shared object; recompile with -fPIC
+    set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 
 if (${RGL_BUILD_TESTS})
     FetchContent_Declare(

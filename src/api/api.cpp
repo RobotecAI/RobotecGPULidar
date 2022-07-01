@@ -24,10 +24,10 @@ static void handleAPIError()
 	const char* msg = nullptr;
 	rgl_get_last_error_string(&msg);
 	if (recoverableErrors.contains(lastStatusCode)) {
-		ERROR("Recoverable error ({}): {}", lastStatusCode, msg);
+            RGL_ERROR("Recoverable error ({}): {}", lastStatusCode, msg);
 	}
 	else {
-		CRITICAL("Unrecoverable error ({}): {}", lastStatusCode, msg);
+            RGL_CRITICAL("Unrecoverable error ({}): {}", lastStatusCode, msg);
 	}
 	Logger::instance().flush();
 }
@@ -91,14 +91,15 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.8: removed hash and suffix args - will be logged instead
 	// 0.9: added rgl_configure_logging
 	// 0.9.1: optimized rgl_mesh_update_vertices
+	// 0.9.2: remove external dependency (gdt)
 	return rglSafeCall([&]() {
-		DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
+            RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
 		CHECK_ARG(out_minor != nullptr);
 		CHECK_ARG(out_patch != nullptr);
 		*out_major = 0;
 		*out_minor = 9;
-		*out_patch = 1;
+		*out_patch = 2;
 	});
 }
 
@@ -151,7 +152,7 @@ RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh, rgl_vec3f *vertices, int vertex_count, rgl_vec3i *indices, int index_count)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
+        RGL_DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
 			  (void*) out_mesh, repr(vertices, vertex_count), repr(indices, index_count, 1));
 		CHECK_ARG(out_mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
@@ -169,7 +170,7 @@ RGL_API rgl_status_t
 rgl_mesh_destroy(rgl_mesh_t mesh)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
+        RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
 		Mesh::release(mesh);
 	});
@@ -181,7 +182,7 @@ rgl_mesh_set_vertices(rgl_mesh_t mesh,
                       int vertex_count)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_mesh_set_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
+        RGL_DEBUG("rgl_mesh_set_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
@@ -193,7 +194,7 @@ RGL_API rgl_status_t
 rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
+        RGL_DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
 		if (scene == nullptr) {
@@ -208,7 +209,7 @@ RGL_API rgl_status_t
 rgl_entity_destroy(rgl_entity_t entity)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
+        RGL_DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
 		auto entitySafe = Entity::validatePtr(entity);
 		if (auto sceneShared = entitySafe->scene.lock()) {
@@ -224,7 +225,7 @@ RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity, repr(local_to_world_tf, 1));
+        RGL_DEBUG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity, repr(local_to_world_tf, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(local_to_world_tf != nullptr);
 		auto tf = TransformMatrix::fromPointer(reinterpret_cast<float *>(&local_to_world_tf->value[0][0]));
@@ -238,7 +239,7 @@ rgl_lidar_create(rgl_lidar_t *out_lidar,
                  int ray_transforms_count)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_create(out_lidar={}, ray_transforms={})",
+        RGL_DEBUG("rgl_lidar_create(out_lidar={}, ray_transforms={})",
 		      (void*) out_lidar, repr(ray_transforms, ray_transforms_count));
 		CHECK_ARG(out_lidar != nullptr);
 		CHECK_ARG(ray_transforms != nullptr);
@@ -251,7 +252,7 @@ RGL_API rgl_status_t
 rgl_lidar_set_range(rgl_lidar_t lidar, float range)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
+        RGL_DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(!std::isnan(range));
 		Lidar::validatePtr(lidar)->range = range;
@@ -262,7 +263,7 @@ RGL_API rgl_status_t
 rgl_lidar_destroy(rgl_lidar_t lidar)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_destroy(lidar={})", (void*) lidar);
+        RGL_DEBUG("rgl_lidar_destroy(lidar={})", (void*) lidar);
 		CHECK_ARG(lidar != nullptr);
 		Lidar::release(lidar);
 	});
@@ -272,7 +273,7 @@ RGL_API rgl_status_t
 rgl_lidar_set_pose(rgl_lidar_t lidar, rgl_mat3x4f *local_to_world_tf)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
+        RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(local_to_world_tf != nullptr);
 		Lidar::validatePtr(lidar)->lidarPose = TransformMatrix::fromPointer(&local_to_world_tf->value[0][0]);
@@ -283,7 +284,7 @@ RGL_API rgl_status_t
 rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_raytrace_async(scene={}, lidar={})", (void*) scene, (void*) lidar);
+        RGL_DEBUG("rgl_lidar_raytrace_async(scene={}, lidar={})", (void*) scene, (void*) lidar);
 		CHECK_ARG(lidar != nullptr);
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
@@ -296,7 +297,7 @@ RGL_API rgl_status_t
 rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
+        RGL_DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(out_size != nullptr);
 		*out_size = Lidar::validatePtr(lidar)->getResultsSize();
@@ -307,7 +308,7 @@ RGL_API rgl_status_t
 rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
+        RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
 		int fmtVal = static_cast<int>(format);
 		bool formatOK = (RGL_FORMAT_INVALID < fmtVal && fmtVal < RGL_FORMAT_COUNT);
 		bool formatE2EOK = (RGL_FORMAT_E2E_INVALID < fmtVal && fmtVal < RGL_FORMAT_E2E_COUNT);
@@ -322,7 +323,7 @@ RGL_API rgl_status_t
 rgl_lidar_set_ring_indices(rgl_lidar_t lidar, int *ring_ids, int ring_ids_count)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
+        RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
 		      (void*) lidar, repr(ring_ids, ring_ids_count, 5));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(ring_ids != nullptr);
@@ -341,7 +342,7 @@ rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
                                     float distance_noise_mean)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
+        RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
 			  (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(angular_noise_type == RAY_BASED || angular_noise_type == HITPOINT_BASED);
@@ -363,7 +364,7 @@ RGL_API rgl_status_t
 rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, rgl_mat3x4f *transform)
 {
 	return rglSafeCall([&]() {
-		DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
+        RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(transform != nullptr);
 		Lidar::validatePtr(lidar)->rosTransform = TransformMatrix::fromPointer(&transform->value[0][0]);

@@ -1,10 +1,13 @@
 #include <Lidar.hpp>
 
+#include <macros/cuda.hpp>
+#include <macros/optix.hpp>
+
 API_OBJECT_INSTANCE(Lidar);
 
 Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount) : range(std::numeric_limits<float>::max())
 {
-	CUDA_CHECK(StreamCreate(&stream));
+	CHECK_CUDA(cudaStreamCreate(&stream));
 
 	if (rayPosesCount <= 0) {
 		auto msg = fmt::format("LidarContext::LidarContext: rayPosesCount ({}) must be > 0", rayPosesCount);
@@ -46,7 +49,7 @@ void Lidar::scheduleRaycast(std::shared_ptr<Scene> scene)
 {
 	densePointCount.reset();
 	if (scene->getObjectCount() == 0) {
-		WARN("Requested raytracing on an empty scene");
+            RGL_WARN("Requested raytracing on an empty scene");
 		densePointCount = 0;
 		return;
 	}
@@ -71,7 +74,7 @@ void Lidar::scheduleRaycast(std::shared_ptr<Scene> scene)
 	dim3 launchDims = {static_cast<unsigned int>(currentJob->rayCount), 1, 1};
 
 	addGaussianNoise(stream, dRayPoses, lidarNoiseParams, dRandomizationStates, dRayPoses);
-	OPTIX_CHECK(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
+	CHECK_OPTIX(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
 
 	Point3f lidar_origin_position = {lidarPose[3], lidarPose[7], lidarPose[11]};
 	addGaussianNoise(stream, dRosXYZ, dUnityVisualisationPoints, lidar_origin_position, lidarNoiseParams,
@@ -90,26 +93,27 @@ int Lidar::getResultsSize()
 {
 	if (!densePointCount.has_value()) {
 		densePointCount = -1;
-		CUDA_CHECK(MemcpyAsync(&densePointCount.value(),
+		// TODO: move this to scheduleRaycast
+		CHECK_CUDA(cudaMemcpyAsync(&densePointCount.value(),
 		                       dHitsBeforeIndex.readDevice() + dHitsBeforeIndex.getElemCount() - 1,
 		                       sizeof(densePointCount.value()),
 		                       cudaMemcpyDeviceToHost,
 		                       stream));
-		CUDA_CHECK(StreamSynchronize(stream));
+		CHECK_CUDA(cudaStreamSynchronize(stream));
 	}
 	return densePointCount.value();
 }
 
 void Lidar::getResults(int format, void *data)
 {
-	CUDA_CHECK(StreamSynchronize(stream));
+	CHECK_CUDA(cudaStreamSynchronize(stream));
 	// densePointCount.has_value() guarantees that the stream has been synchronized
 	if (!densePointCount.has_value()) {
 		throw std::logic_error("getResults() has been called without a prior call to getResultsSize()");
 	}
 
 	if (densePointCount == 0) {
-		WARN("Returning an empty pointcloud");
+            RGL_WARN("Returning an empty pointcloud");
 		return;
 	}
 

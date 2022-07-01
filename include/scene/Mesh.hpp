@@ -24,7 +24,6 @@ private:
 	void setIndices(Vec3i *indices, std::size_t indexCount);
 	Mesh(Vec3f *vertices, std::size_t vertexCount,
 		 Vec3i *indices, std::size_t indexCount);
-	Mesh(std::filesystem::path path);
 
 	OptixTraversableHandle buildGAS();
 	void updateGAS();

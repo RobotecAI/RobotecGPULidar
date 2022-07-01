@@ -1,10 +1,5 @@
 #include <scene/Mesh.hpp>
 
-// TODO: temporary, for testing purposes
-// TODO: remove this cancer
-#include "model_utils.h"
-#include "TriangleMesh.h"
-
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -15,24 +10,6 @@ Mesh::Mesh(Vec3f *vertices, size_t vertexCount, Vec3i *indices, size_t indexCoun
 {
 	setVertices(vertices, vertexCount);
 	setIndices(indices, indexCount);
-}
-
-Mesh::Mesh(fs::path path)
-{
-	ModelLoader modelLoader;
-	modelLoader.load_obj(path.string());
-	std::shared_ptr<TriangleMesh> triangleMesh = modelLoader.get_triangle_mesh(0);
-
-	std::vector<Vec3f> vertices;
-	std::vector<Vec3i> indices;
-	for (auto&& v : triangleMesh->vertex) {
-		vertices.emplace_back(v.x, v.y, v.z);
-	}
-	for (auto&& i : triangleMesh->index) {
-		indices.emplace_back(i.x, i.y, i.z);
-	}
-	setVertices(vertices.data(), vertices.size());
-	setIndices(indices.data(), indices.size());
 }
 
 void Mesh::setVertices(Vec3f *vertices, std::size_t vertexCount)

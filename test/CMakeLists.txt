@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-
-
-cuda_compile_and_embed(helloTestCU src/helloTest/helloTest.cu)
-
 add_executable(RobotecGPULidar_test
-    ${helloTestCU}
 #    src/apiExample.cpp
 #    src/apiUnitTests.cpp
     src/apiUseCases.cpp

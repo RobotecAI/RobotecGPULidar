@@ -1,8 +1,7 @@
 #pragma once
 
-#include <TransformMatrix.h>
-#include "gdt/math/vec.h"
-#include "gdt/utils/optix_macros.h"
+#include <math/TransformMatrix.h>
+#include <math/Vector.hpp>
 
 static HOSTDEVICE TransformMatrix multiply3x4TransformMatrices(const TransformMatrix& lhs, const TransformMatrix& rhs)
 {
@@ -36,12 +35,12 @@ static HOSTDEVICE TransformMatrix yAxisRotation3x4Matrix(float angle) {
     return ret;
 }
 
-static HOSTDEVICE gdt::vec3f getTranslationFrom3x4Transform(const TransformMatrix& transform) {
-    return gdt::vec3f(transform[3], transform[7], transform[11]);
+static HOSTDEVICE Vec3f getTranslationFrom3x4Transform(const TransformMatrix& transform) {
+    return {transform[3], transform[7], transform[11]};
 }
 
-static HOSTDEVICE gdt::vec3f multiply3x4TransformByVector3(const TransformMatrix& m_lhs, const gdt::vec3f v_rhs) {
-    gdt::vec3f ret (0.0f, 0.0f, 0.0f);
+static HOSTDEVICE Vec3f multiply3x4TransformByVector3(const TransformMatrix& m_lhs, const Vec3f v_rhs) {
+    Vec3f ret (0.0f, 0.0f, 0.0f);
     int M = 3;
     int N = 4;
 

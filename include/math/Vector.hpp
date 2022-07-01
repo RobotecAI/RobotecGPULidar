@@ -55,6 +55,12 @@ struct Vector
 		}
 	}
 
+	template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
+	Dev Vector(float3 v) : Vector(v.x, v.y, v.z) {}
+
+	template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
+	Dev operator float3() { return float3 {row[0], row[1], row[2]}; }
+
 	// *** *** *** ACCESSORS *** *** *** //
 
 	FORWARD_ITERATION(row, HD)

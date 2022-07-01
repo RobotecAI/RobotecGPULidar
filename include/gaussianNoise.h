@@ -6,7 +6,7 @@
 #include "DeviceBuffer.hpp"
 #include "data_types/PCLFormats.h"
 #include "data_types/LidarNoiseParams.h"
-#include "TransformMatrix.h"
+#include "math/TransformMatrix.h"
 
 void setupGaussianNoiseGenerator(const unsigned seed,
                                  cudaStream_t stream,
