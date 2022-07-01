@@ -2,13 +2,11 @@
 #include "data_types/ShaderBindingTableTypes.h"
 #include <cuda_runtime.h>
 #include <optix_device.h>
+#include <math/Vector.hpp>
 
 #define HOSTDEVICE __device__
 #include "linearGeometry.h"
 
-#define NDEBUG
-//#undef NDEBUG
-#include <assert.h>
 
 extern "C" static __constant__ LaunchLidarParams optixLaunchLidarParams;
 
@@ -55,18 +53,18 @@ extern "C" __global__ void __closesthit__lidar()
     Vec3f& prd = *(Vec3f*)getPRD<Vec3f>();
     prd = Vec3f((1 - u - v) * A + u * B + v * C);
 
-    gdt::vec3f rayHitPoint = gdt::vec3f(prd.x(), prd.y(), prd.z());
-    gdt::vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
-    gdt::vec3f rosPoint = multiply3x4TransformByVector3(optixLaunchLidarParams.rosTransform, unityPoint);
+    Vec3f rayHitPoint = Vec3f(prd.x(), prd.y(), prd.z());
+    Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
+    Vec3f rosPoint = multiply3x4TransformByVector3(optixLaunchLidarParams.rosTransform, unityPoint);
 
     const int ix = optixGetLaunchIndex().x;
 
-    optixLaunchLidarParams.dUnityVisualisationPoints[ix].x = unityPoint.x;
-    optixLaunchLidarParams.dUnityVisualisationPoints[ix].y = unityPoint.y;
-    optixLaunchLidarParams.dUnityVisualisationPoints[ix].z = unityPoint.z;
-    optixLaunchLidarParams.dRosXYZ[ix].x = rosPoint.x;
-    optixLaunchLidarParams.dRosXYZ[ix].y = rosPoint.y;
-    optixLaunchLidarParams.dRosXYZ[ix].z = rosPoint.z;
+    optixLaunchLidarParams.dUnityVisualisationPoints[ix].x = unityPoint.x();
+    optixLaunchLidarParams.dUnityVisualisationPoints[ix].y = unityPoint.y();
+    optixLaunchLidarParams.dUnityVisualisationPoints[ix].z = unityPoint.z();
+    optixLaunchLidarParams.dRosXYZ[ix].x = rosPoint.x();
+    optixLaunchLidarParams.dRosXYZ[ix].y = rosPoint.y();
+    optixLaunchLidarParams.dRosXYZ[ix].z = rosPoint.z();
 
     optixSetPayload_3(1);
 }
@@ -77,8 +75,8 @@ extern "C" __global__ void __anyhit__lidar()
 
 extern "C" __global__ void __miss__lidar()
 {
-    gdt::vec3f& prd = *(gdt::vec3f*)getPRD<gdt::vec3f>();
-    prd = gdt::vec3f(0.f);
+    Vec3f& prd = *(Vec3f*)getPRD<Vec3f>();
+    prd = Vec3f(0.f);
     optixSetPayload_3(0);
 }
 
@@ -86,7 +84,7 @@ extern "C" __global__ void __raygen__renderLidar()
 {
     const int ix = optixGetLaunchIndex().x;
 
-    gdt::vec3f lidarPositionPRD = gdt::vec3f(0.f);
+    Vec3f lidarPositionPRD = Vec3f(0.f);
 
     // the values we store the PRD pointer in:
     uint32_t u0 = 0U;
@@ -98,12 +96,12 @@ extern "C" __global__ void __raygen__renderLidar()
     TransformMatrix ray_pose_local = optixLaunchLidarParams.dRayPoses[ix];
     TransformMatrix ray_pose_global = multiply3x4TransformMatrices(optixLaunchLidarParams.lidarPose, ray_pose_local);
 
-    gdt::vec3f from = getTranslationFrom3x4Transform(ray_pose_global);
-    gdt::vec3f zero = gdt::vec3f(0.0f, 0.0f, 0.0f);
-    gdt::vec3f forward = gdt::vec3f(0.0f, 0.0f, 1.0f);
-    gdt::vec3f zero_moved = multiply3x4TransformByVector3(ray_pose_global, zero);
-    gdt::vec3f forward_moved = multiply3x4TransformByVector3(ray_pose_global, forward);
-    gdt::vec3f dir = gdt::vec3f(forward_moved.x - zero_moved.x, forward_moved.y - zero_moved.y, forward_moved.z - zero_moved.z) ;
+    Vec3f from = getTranslationFrom3x4Transform(ray_pose_global);
+    Vec3f zero = Vec3f(0.0f, 0.0f, 0.0f);
+    Vec3f forward = Vec3f(0.0f, 0.0f, 1.0f);
+    Vec3f zero_moved = multiply3x4TransformByVector3(ray_pose_global, zero);
+    Vec3f forward_moved = multiply3x4TransformByVector3(ray_pose_global, forward);
+    Vec3f dir = Vec3f(forward_moved.x() - zero_moved.x(), forward_moved.y() - zero_moved.y(), forward_moved.z() - zero_moved.z()) ;
 
     optixTrace(optixLaunchLidarParams.traversable,
         from,

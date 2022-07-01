@@ -10,7 +10,6 @@
 #include <Logger.h>
 #include <HostPinnedBuffer.hpp>
 #include <data_types/PointTypes.h>
-#include <utils/optix_macros.h>
 
 #include <macros/cuda.hpp>
 

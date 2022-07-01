@@ -1,11 +1,11 @@
 #pragma once
 
+#include <optix.h>
+
 #include <data_types/PCLFormats.h>
 #include <data_types/LidarNoiseParams.h>
-#include "gdt/math/vec.h"
-#include "gdt/utils/optix_macros.h"
-#include "data_types/PointTypes.h"
-#include "TransformMatrix.h"
+#include <data_types/PointTypes.h>
+#include <math/TransformMatrix.h>
 
 #include <curand_kernel.h>
 

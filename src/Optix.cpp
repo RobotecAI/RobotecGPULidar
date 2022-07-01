@@ -1,22 +1,21 @@
-#include <Optix.hpp>
 
 #include <cassert>
 #include <stdexcept>
 #include <cstring>
 
 #include <cuda.h>
+#include <nvml.h>
 #include <optix.h>
 #include <optix_stubs.h>
-#include <spdlog/fmt/fmt.h>
+#include <optix_function_table_definition.h>
 #include <cuda_runtime_api.h>
+#include <spdlog/fmt/fmt.h>
 
+#include <Optix.hpp>
+#include <Logger.h>
+#include <optixProgramsPtx.hpp>
 #include <macros/optix.hpp>
 #include <macros/cuda.hpp>
-
-#include <Logger.h>
-
-#include <optix_function_table_definition.h>
-#include <nvml.h>
 
 #define OPTIX_LOG_LEVEL_NONE 0
 #define OPTIX_LOG_LEVEL_FATAL 1
@@ -24,7 +23,6 @@
 #define OPTIX_LOG_LEVEL_WARN 3
 #define OPTIX_LOG_LEVEL_INFO 4
 
-extern "C" const char embedded_ptx_code[];
 static CUcontext getCurrentDeviceContext();
 
 static std::pair<int, int> getCudaMajorMinor(int version)
@@ -46,24 +44,24 @@ void Optix::logVersions()
 	auto optixMajor =  OPTIX_VERSION / 10000;
 	auto optixMinor = (OPTIX_VERSION % 10000) / 100;
 	auto optixMicro =  OPTIX_VERSION % 100;
-	INFO("OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
-	INFO("OptiX ABI version: {}", OPTIX_ABI_VERSION);
+        RGL_INFO("OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
+        RGL_INFO("OptiX ABI version: {}", OPTIX_ABI_VERSION);
 
 	auto [toolkitMajor, toolkitMinor] = getCudaMajorMinor(CUDA_VERSION);
-	INFO("Built against CUDA Toolkit version: {}.{}", toolkitMajor, toolkitMinor);
+        RGL_INFO("Built against CUDA Toolkit version: {}.{}", toolkitMajor, toolkitMinor);
 
 	int cudaRuntimeVersion = -1;
 	CHECK_CUDA(cudaRuntimeGetVersion(&cudaRuntimeVersion));
 	auto [cudaRuntimeMajor, cudaRuntimeMinor] = getCudaMajorMinor(cudaRuntimeVersion);
-	INFO("CUDA runtime version: {}.{}", cudaRuntimeMajor, cudaRuntimeMinor);
+        RGL_INFO("CUDA runtime version: {}.{}", cudaRuntimeMajor, cudaRuntimeMinor);
 
 	int cudaDriverVersion = -1;
 	CHECK_CUDA(cudaDriverGetVersion(&cudaDriverVersion));
 	auto [cudaDriverMajor, cudaDriverMinor] = getCudaMajorMinor(cudaDriverVersion);
-	INFO("CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
+        RGL_INFO("CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
 
 	if (auto err = wrapError(nvmlInit())) {
-		WARN("Failed to initialize Nvidia Management Library (NVML): {}", err.value());
+            RGL_WARN("Failed to initialize Nvidia Management Library (NVML): {}", err.value());
 	}
 
 	char driverVersionStr[128] = {0};
@@ -71,7 +69,7 @@ void Optix::logVersions()
 		std::string msg = fmt::format("(nvml error: {})", err.value());
 		strncpy(driverVersionStr, msg.c_str(), sizeof(driverVersionStr));
 	}
-	INFO("Nvidia kernel driver version: {}", driverVersionStr);
+        RGL_INFO("Nvidia kernel driver version: {}", driverVersionStr);
 }
 
 Optix& Optix::instance()
@@ -88,15 +86,15 @@ Optix::Optix()
 
 	auto cbInfo = [](unsigned level, const char* tag, const char* message, void*) {
 		auto fmt = "[OptiX][{:2}][{:^12}]: {}\n";
-		INFO(fmt, level, tag, message);
+                RGL_INFO(fmt, level, tag, message);
 	};
 	auto cbWarn = [](unsigned level, const char* tag, const char* message, void*) {
 		auto fmt = "[OptiX][{:2}][{:^12}]: {}\n";
-		WARN(fmt, level, tag, message);
+                RGL_WARN(fmt, level, tag, message);
 	};
 	auto cbErr = [](unsigned level, const char* tag, const char* message, void*) {
 		auto fmt = "[OptiX][{:2}][{:^12}]: {}\n";
-		ERROR(fmt, level, tag, message);
+                RGL_ERROR(fmt, level, tag, message);
 	};
 
 	CHECK_OPTIX(optixDeviceContextSetLogCallback(context, cbErr, nullptr, OPTIX_LOG_LEVEL_FATAL));
@@ -161,8 +159,8 @@ void Optix::initializeStaticOptixStructures()
 	CHECK_OPTIX(optixModuleCreateFromPTX(context,
 		&moduleCompileOptions,
 		&pipelineCompileOptions,
-		embedded_ptx_code,
-		strlen(embedded_ptx_code),
+		optixProgramsPtx,
+		strlen(optixProgramsPtx),
 		nullptr, nullptr,
 		&module
 	));
