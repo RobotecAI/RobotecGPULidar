@@ -66,7 +66,7 @@ OptixShaderBindingTable Scene::buildSBT()
 
 		hHitgroupRecords.emplace_back(); // TODO(prybicki): fix, this is weird
 		HitgroupRecord *hr = &(*hHitgroupRecords.rbegin());
-		OPTIX_CHECK(optixSbtRecordPackHeader(Optix::instance().hitgroupPG, hr));
+		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().hitgroupPG, hr));
 		hr->data = TriangleMeshSBTData{
 			.vertex = mesh->dVertices.readDevice(),
 			.index = mesh->dIndices.readDevice(),
@@ -77,11 +77,11 @@ OptixShaderBindingTable Scene::buildSBT()
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);
 
 	RaygenRecord hRaygenRecord;
-	OPTIX_CHECK(optixSbtRecordPackHeader(Optix::instance().raygenPG, &hRaygenRecord));
+	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().raygenPG, &hRaygenRecord));
 	dRaygenRecords.copyFromHost(&hRaygenRecord, 1);
 
 	MissRecord hMissRecord;
-	OPTIX_CHECK(optixSbtRecordPackHeader(Optix::instance().missPG, &hMissRecord));
+	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().missPG, &hMissRecord));
 	dMissRecords.copyFromHost(&hMissRecord, 1);
 
 	return OptixShaderBindingTable{

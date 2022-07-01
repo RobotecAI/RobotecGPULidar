@@ -29,9 +29,9 @@ private:
 	std::shared_ptr<spdlog::logger> mainLogger;
 };
 
-#define TRACE Logger::instance().getLogger().trace
-#define DEBUG Logger::instance().getLogger().debug
-#define INFO Logger::instance().getLogger().info
-#define WARN Logger::instance().getLogger().warn
-#define ERROR Logger::instance().getLogger().error
-#define CRITICAL Logger::instance().getLogger().critical
+#define RGL_TRACE Logger::instance().getLogger().trace
+#define RGL_DEBUG Logger::instance().getLogger().debug
+#define RGL_INFO Logger::instance().getLogger().info
+#define RGL_WARN Logger::instance().getLogger().warn
+#define RGL_ERROR Logger::instance().getLogger().error
+#define RGL_CRITICAL Logger::instance().getLogger().critical

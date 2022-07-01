@@ -5,7 +5,6 @@
 #include "HostPinnedBuffer.hpp"
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-#include <cstdio>
 
 __global__ void kFormatAll(int sparsePointCount,
                            const int* wasHit,

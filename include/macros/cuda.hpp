@@ -30,3 +30,5 @@ do                                                                              
 while(false)
 
 #define HD __host__ __device__
+#define Dev __device__
+#define Host __host__
