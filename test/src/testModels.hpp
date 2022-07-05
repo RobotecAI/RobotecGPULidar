@@ -13,6 +13,17 @@ static rgl_vec3f cube_vertices[] = {
 	{-1, 1, 1}
 };
 
+static rgl_vec3f cube_vertices_big[] = {
+	{-2, -2, -2},
+	{2, -2, -2},
+	{2, 2, -2},
+	{-2, 2, -2},
+	{-2, -2, 2},
+	{2, -2, 2},
+	{2, 2, 2},
+	{-2, 2, 2}
+};
+
 static constexpr size_t cube_vertices_length = sizeof(cube_vertices) / sizeof(cube_vertices[0]);
 
 static rgl_vec3i cube_indices[] = {

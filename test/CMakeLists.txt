@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.16)
 add_executable(RobotecGPULidar_test
     src/unit/api/experimental.cpp
     src/unit/api/e2e_extentions.cpp
-    src/integration/laser/range.cpp
-    src/integration/laser/gaussianNoise.cpp
+    src/integration/lidar/range.cpp
+    src/integration/lidar/gaussianNoise.cpp
+    src/integration/mesh/oneMeshManyEntities.cpp
 #   src/apiExample.cpp
 #   src/apiUseCases.cpp
 #   src/linearAlgebra_test.cpp
