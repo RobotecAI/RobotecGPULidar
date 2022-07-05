@@ -5,7 +5,7 @@
 
 using namespace ::testing;
 
-TEST(Laser, range)
+TEST(Lidar, range)
 {
     rgl_mesh_t cube_mesh;
     rgl_entity_t cube;
