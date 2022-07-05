@@ -51,4 +51,8 @@ TEST(Lidar, range)
     EXPECT_EQ(rgl_lidar_get_output_size(lidar, &hitpointCount), rgl_status_t::RGL_SUCCESS);
 
     ASSERT_EQ(hitpointCount, 0);
+
+    rgl_mesh_destroy(cube_mesh);
+    rgl_entity_destroy(cube);
+    rgl_lidar_destroy(lidar);
 }

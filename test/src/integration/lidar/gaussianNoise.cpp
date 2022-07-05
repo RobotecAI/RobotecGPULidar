@@ -20,6 +20,13 @@ protected:
         rgl_lidar_create(&lidar, rays_tf.data(), rays_tf.size());
     }
 
+    void TearDown() override
+    {
+        rgl_mesh_destroy(cube_mesh);
+        rgl_entity_destroy(cube);
+        rgl_lidar_destroy(lidar);
+    }
+
     void readResults()
     {
         EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
@@ -98,7 +105,7 @@ TEST_F(GaussianNoise, DistanceStandardDeviation)
     ASSERT_EQ(hitpointCount, no_of_rays);
     auto distances = computeDistances(results, no_of_rays);
     auto [average_distance, distance_st_dev] = mean_and_stdev(distances);
-    EXPECT_NEAR(average_distance, expected_distance_in_meters, 0.002f);
+    EXPECT_NEAR(average_distance, expected_distance_in_meters, 0.003f);
     EXPECT_NEAR(distance_st_dev, distance_std_dev, 0.002f);
 }
 
