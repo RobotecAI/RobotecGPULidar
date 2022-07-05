@@ -5,6 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define RGL_VERSION_MAJOR 0
+#define RGL_VERSION_MINOR 9
+#define RGL_VERSION_PATCH 3
+
 /**
  * Three consecutive 32-bit floats.
  */
@@ -12,6 +16,10 @@ typedef struct
 {
 	float value[3];
 } rgl_vec3f;
+
+#ifndef __cplusplus
+static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
+#endif
 
 /**
  * Three consecutive 32-bit signed integers.
@@ -127,6 +135,12 @@ typedef enum : int
 	RGL_LOG_LEVEL_OFF = 6,
 	RGL_LOG_LEVEL_COUNT = 7
 } rgl_log_level_t;
+
+typedef enum
+{
+	RGL_ANGULAR_NOISE_TYPE_RAY_BASED = 0,
+	RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED = 1
+} rgl_angular_noise_type_t;
 
 /******************************** GENERAL ********************************/
 
