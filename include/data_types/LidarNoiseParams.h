@@ -1,9 +1,9 @@
 #pragma once
 
-enum AngularNoiseType { RAY_BASED = 0, HITPOINT_BASED = 1};
+#include <rgl/api/experimental.h>
 
 struct LidarNoiseParams {
-    AngularNoiseType angularNoiseType;
+    rgl_angular_noise_type_t angularNoiseType;
     float angularNoiseStDev;
     float angularNoiseMean;
     float distanceNoiseStDevBase;

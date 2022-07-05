@@ -8,11 +8,11 @@
 #include <scene/Mesh.hpp>
 
 #include <Lidar.hpp>
-#include "data_types/LidarNoiseParams.h"
 #include <macros/visibility.h>
 #include <spdlog/common.h>
 
 #include <repr.hpp>
+
 
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
@@ -81,6 +81,7 @@ RGL_API rgl_status_t
 rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 {
 	// Short API version history:
+	// This is a brief shortcut for devs!
 	// 0.1: PoC via dlopen
 	// 0.2: added E2E PCL formats (12, 24, 48), ringIds, postRaycastTransform
 	// 0.3: implemented async calls
@@ -92,14 +93,15 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.9: added rgl_configure_logging
 	// 0.9.1: optimized rgl_mesh_update_vertices
 	// 0.9.2: remove external dependency (gdt)
+	// 0.9.3: add API unit tests with fixes, in particular: optix logging
 	return rglSafeCall([&]() {
             RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
 		CHECK_ARG(out_minor != nullptr);
 		CHECK_ARG(out_patch != nullptr);
-		*out_major = 0;
-		*out_minor = 9;
-		*out_patch = 2;
+		*out_major = RGL_VERSION_MAJOR;
+		*out_minor = RGL_VERSION_MINOR;
+		*out_patch = RGL_VERSION_PATCH;
 	});
 }
 
@@ -255,6 +257,7 @@ rgl_lidar_set_range(rgl_lidar_t lidar, float range)
         RGL_DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(!std::isnan(range));
+		CHECK_ARG(range > 0.0f);
 		Lidar::validatePtr(lidar)->range = range;
 	});
 }
@@ -334,7 +337,7 @@ rgl_lidar_set_ring_indices(rgl_lidar_t lidar, int *ring_ids, int ring_ids_count)
 
 RGL_API rgl_status_t
 rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
-                                    int angular_noise_type,
+                                    rgl_angular_noise_type_t angular_noise_type,
                                     float angular_noise_stddev,
                                     float angular_noise_mean,
                                     float distance_noise_stddev_base,
@@ -345,12 +348,12 @@ rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
         RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
 			  (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
 		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(angular_noise_type == RAY_BASED || angular_noise_type == HITPOINT_BASED);
+		CHECK_ARG(angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED || angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED);
 		CHECK_ARG(angular_noise_stddev >= 0.0f);
 		CHECK_ARG(distance_noise_stddev_base >= 0.0f);
 		CHECK_ARG(distance_noise_stddev_rise_per_meter >= 0.0f);
 		Lidar::validatePtr(lidar)->lidarNoiseParams = {
-			.angularNoiseType = (AngularNoiseType) angular_noise_type,
+			.angularNoiseType = (rgl_angular_noise_type_t) angular_noise_type,
 			.angularNoiseStDev = angular_noise_stddev,
 			.angularNoiseMean = angular_noise_mean,
 			.distanceNoiseStDevBase = distance_noise_stddev_base,
