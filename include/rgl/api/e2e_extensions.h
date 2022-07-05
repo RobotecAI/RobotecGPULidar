@@ -23,7 +23,7 @@ rgl_lidar_set_ring_indices(rgl_lidar_t lidar, int* ring_ids, int ring_ids_count)
 
 RGL_API rgl_status_t
 rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
-                                    int angular_noise_type,
+                                    rgl_angular_noise_type_t angular_noise_type,
                                     float angular_noise_stddev,
                                     float angular_noise_mean,
                                     float distance_noise_stddev_base,

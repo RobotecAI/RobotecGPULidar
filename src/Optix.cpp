@@ -1,4 +1,3 @@
-
 #include <cassert>
 #include <stdexcept>
 #include <cstring>
@@ -17,7 +16,6 @@
 #include <macros/optix.hpp>
 #include <macros/cuda.hpp>
 
-#define OPTIX_LOG_LEVEL_NONE 0
 #define OPTIX_LOG_LEVEL_FATAL 1
 #define OPTIX_LOG_LEVEL_ERROR 2
 #define OPTIX_LOG_LEVEL_WARN 3
@@ -62,6 +60,7 @@ void Optix::logVersions()
 
 	if (auto err = wrapError(nvmlInit())) {
             RGL_WARN("Failed to initialize Nvidia Management Library (NVML): {}", err.value());
+		return;
 	}
 
 	char driverVersionStr[128] = {0};
@@ -84,23 +83,24 @@ Optix::Optix()
 	CHECK_OPTIX(optixInit());
 	CHECK_OPTIX(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &context));
 
-	auto cbInfo = [](unsigned level, const char* tag, const char* message, void*) {
-		auto fmt = "[OptiX][{:2}][{:^12}]: {}\n";
-                RGL_INFO(fmt, level, tag, message);
-	};
-	auto cbWarn = [](unsigned level, const char* tag, const char* message, void*) {
-		auto fmt = "[OptiX][{:2}][{:^12}]: {}\n";
-                RGL_WARN(fmt, level, tag, message);
-	};
-	auto cbErr = [](unsigned level, const char* tag, const char* message, void*) {
-		auto fmt = "[OptiX][{:2}][{:^12}]: {}\n";
-                RGL_ERROR(fmt, level, tag, message);
+	auto cb = [](unsigned level, const char* tag, const char* message, void*) {
+		auto fmt = "[OptiX][{:^12}]: {}\n";
+		if (level == OPTIX_LOG_LEVEL_FATAL) {
+			RGL_CRITICAL(fmt, level, tag, message);
+		}
+		if (level == OPTIX_LOG_LEVEL_ERROR) {
+			RGL_ERROR(fmt, level, tag, message);
+		}
+		if (level == OPTIX_LOG_LEVEL_WARN) {
+			RGL_WARN(fmt, level, tag, message);
+		}
+		if (level == OPTIX_LOG_LEVEL_INFO) {
+			// Lower log level to prevent leaking backend logs to end user
+			RGL_DEBUG(fmt, level, tag, message);
+		}
 	};
 
-	CHECK_OPTIX(optixDeviceContextSetLogCallback(context, cbErr, nullptr, OPTIX_LOG_LEVEL_FATAL));
-	CHECK_OPTIX(optixDeviceContextSetLogCallback(context, cbErr, nullptr, OPTIX_LOG_LEVEL_ERROR));
-	CHECK_OPTIX(optixDeviceContextSetLogCallback(context, cbWarn, nullptr, OPTIX_LOG_LEVEL_WARN));
-	CHECK_OPTIX(optixDeviceContextSetLogCallback(context, cbInfo, nullptr, OPTIX_LOG_LEVEL_INFO));
+	CHECK_OPTIX(optixDeviceContextSetLogCallback(context, cb, nullptr, OPTIX_LOG_LEVEL_INFO));
 	initializeStaticOptixStructures();
 }
 

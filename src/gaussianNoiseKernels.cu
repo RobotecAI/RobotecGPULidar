@@ -34,7 +34,7 @@ __global__ void kAddGaussianNoise(int point_cloud_size,
         return;
     }
 
-    if (lidar_noise_params.angularNoiseType == AngularNoiseType::HITPOINT_BASED) {
+    if (lidar_noise_params.angularNoiseType == rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED) {
         addAngularGaussianNoise(input_point_cloud[id],
                                 input_visualization_point_cloud[id],
                                 visualization_point_cloud_origin,
@@ -62,7 +62,7 @@ __global__ void kAddGaussianNoise(int point_cloud_size,
     if (id >= point_cloud_size) {
         return;
     }
-    if (lidar_noise_params.angularNoiseType == AngularNoiseType::RAY_BASED) {
+    if (lidar_noise_params.angularNoiseType == rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED) {
         ray_poses_with_noise[id] = addAngularGaussianNoise(ray_poses[id], lidar_noise_params,
                                                            state[id]);
     }
