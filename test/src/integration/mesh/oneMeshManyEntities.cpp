@@ -13,6 +13,11 @@ protected:
         rgl_lidar_create(&lidar, &ray_tf, 1);
     }
 
+    void TearDown() override
+    {
+        rgl_lidar_destroy(lidar);
+    }
+
     rgl_mesh_t cube_mesh = nullptr;
     rgl_entity_t entity = nullptr;
     rgl_lidar_t lidar = nullptr;
@@ -88,4 +93,7 @@ TEST_F(OneMeshManyEntities, set_vertices)
 
     EXPECT_EQ(hitpointCount, 1);
     EXPECT_FLOAT_EQ(results[0].value[2], 3.0f);
+
+    EXPECT_RGL_SUCCESS(rgl_mesh_destroy(cube_mesh));
+    EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
 }
