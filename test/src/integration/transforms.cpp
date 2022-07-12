@@ -1,8 +1,10 @@
 #include <cmath>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <rgl/api/e2e_extensions.h>
 #include <rgl/api/experimental.h>
 #include <testModels.hpp>
+#include <utils/statistical_utils.h>
 #include <utils/testUtils.h>
 
 using namespace ::testing;
@@ -96,9 +98,11 @@ protected:
     std::vector<float> distances_in_entity = { -1.5f, -1.0f, 1.0f, 1.5f };
     std::vector<float> distances_out_entity = { -3.0f, 3.0f };
     float expected_distance_z = 3.0f;
+    int no_of_rays = 100000;
+    float distance_std_dev = 0.1;
 };
 
-TEST_F(Transforms, lidar_rotate_x)
+TEST_F(Transforms, LidarRotateX)
 {
     for (auto angle_deg : angles_in_entity) {
         float angle = toRadians(angle_deg);
@@ -128,7 +132,7 @@ TEST_F(Transforms, lidar_rotate_x)
     }
 }
 
-TEST_F(Transforms, lidar_rotate_y)
+TEST_F(Transforms, LidarRotateY)
 {
     for (auto angle_deg : angles_in_entity) {
         float angle = toRadians(angle_deg);
@@ -158,7 +162,7 @@ TEST_F(Transforms, lidar_rotate_y)
     }
 }
 
-TEST_F(Transforms, lidar_rotate_z)
+TEST_F(Transforms, LidarRotateZ)
 {
     for (auto angle_deg : angles_in_entity) {
         float angle = toRadians(angle_deg);
@@ -175,7 +179,7 @@ TEST_F(Transforms, lidar_rotate_z)
     }
 }
 
-TEST_F(Transforms, entity_move_x)
+TEST_F(Transforms, EntityMoveX)
 {
     for (auto distance : distances_in_entity) {
         rgl_mat3x4f tf_entity_moved = {
@@ -195,7 +199,7 @@ TEST_F(Transforms, entity_move_x)
     }
 }
 
-TEST_F(Transforms, entity_move_y)
+TEST_F(Transforms, EntityMoveY)
 {
     for (auto distance : distances_in_entity) {
         rgl_mat3x4f tf_entity_moved = {
@@ -215,7 +219,7 @@ TEST_F(Transforms, entity_move_y)
     }
 }
 
-TEST_F(Transforms, entity_move_z)
+TEST_F(Transforms, EntityMoveZ)
 {
     for (auto distance : distances_in_entity) {
         rgl_mat3x4f tf_entity_moved = {
@@ -235,7 +239,7 @@ TEST_F(Transforms, entity_move_z)
     }
 }
 
-TEST_F(Transforms, ray_move_z)
+TEST_F(Transforms, RayMoveZ)
 {
     rgl_mat3x4f tf_ray = {
         .value = {
@@ -254,7 +258,7 @@ TEST_F(Transforms, ray_move_z)
     EXPECT_FLOAT_EQ(results[0].value[2], expected_distance_z);
 }
 
-TEST_F(Transforms, ray_move_y)
+TEST_F(Transforms, RayMoveY)
 {
     for (auto ray_move_distance_y : distances_out_entity) {
         rgl_mat3x4f tf_ray = {
@@ -272,7 +276,7 @@ TEST_F(Transforms, ray_move_y)
     }
 }
 
-TEST_F(Transforms, ray_move_x)
+TEST_F(Transforms, RayMoveX)
 {
     for (auto ray_move_distance_x : distances_out_entity) {
         rgl_mat3x4f tf_ray = {
@@ -287,5 +291,89 @@ TEST_F(Transforms, ray_move_x)
 
         readResults();
         EXPECT_EQ(hitpointCount, 0);
+    }
+}
+
+TEST_F(Transforms, RayMoveZGaussianNoise)
+{
+    rgl_mat3x4f tf_ray_moved = {
+        .value = {
+            { 1, 0, 0, 0 },
+            { 0, 1, 0, 0 },
+            { 0, 0, 1, 1 },
+        }
+    };
+    std::vector<rgl_mat3x4f> tf_rays_moved;
+    for (size_t i = 0; i < no_of_rays; ++i) {
+        tf_rays_moved.push_back(tf_ray_moved);
+    }
+    rgl_vec3f results[no_of_rays];
+
+    rgl_lidar_destroy(lidar);
+    rgl_lidar_create(&lidar, tf_rays_moved.data(), tf_rays_moved.size());
+    EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
+
+    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
+    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
+    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+
+    ASSERT_EQ(hitpointCount, no_of_rays);
+    auto distances = computeDistances(results, no_of_rays);
+    auto [average_distance, distance_st_dev] = mean_and_stdev(distances);
+    EXPECT_NEAR(average_distance, expected_distance_z, 0.001f);
+    EXPECT_NEAR(distance_st_dev, distance_std_dev, 0.002f);
+}
+
+TEST_F(Transforms, RayMoveYGaussianNoise)
+{
+    for (auto ray_move_distance_y : distances_out_entity) {
+        rgl_mat3x4f tf_ray_moved = {
+            .value = {
+                { 1, 0, 0, 0 },
+                { 0, 1, 0, ray_move_distance_y },
+                { 0, 0, 1, 0 },
+            }
+        };
+        std::vector<rgl_mat3x4f> tf_rays_moved;
+        for (size_t i = 0; i < no_of_rays; ++i) {
+            tf_rays_moved.push_back(tf_ray_moved);
+        }
+        rgl_vec3f results[no_of_rays];
+
+        rgl_lidar_destroy(lidar);
+        rgl_lidar_create(&lidar, tf_rays_moved.data(), tf_rays_moved.size());
+        EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
+
+        EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
+        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
+
+        ASSERT_EQ(hitpointCount, 0);
+    }
+}
+
+TEST_F(Transforms, RayMoveXGaussianNoise)
+{
+    for (auto ray_move_distance_X : distances_out_entity) {
+        rgl_mat3x4f tf_ray_moved = {
+            .value = {
+                { 1, 0, 0, ray_move_distance_X },
+                { 0, 1, 0, 0 },
+                { 0, 0, 1, 0 },
+            }
+        };
+        std::vector<rgl_mat3x4f> tf_rays_moved;
+        for (size_t i = 0; i < no_of_rays; ++i) {
+            tf_rays_moved.push_back(tf_ray_moved);
+        }
+        rgl_vec3f results[no_of_rays];
+
+        rgl_lidar_destroy(lidar);
+        rgl_lidar_create(&lidar, tf_rays_moved.data(), tf_rays_moved.size());
+        EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
+
+        EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
+        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
+
+        ASSERT_EQ(hitpointCount, 0);
     }
 }

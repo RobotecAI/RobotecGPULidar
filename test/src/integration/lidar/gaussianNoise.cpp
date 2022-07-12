@@ -53,33 +53,13 @@ protected:
         .value = {
             { 1, 0, 0, 0 },
             { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
+            { 0, 0, 1, 1 },
         }
     };
     std::vector<rgl_mat3x4f> rays_tf;
-    int no_of_rays = 10000;
-    rgl_vec3f results[10000];
+    int no_of_rays = 100000;
+    rgl_vec3f results[100000];
     int hitpointCount = 0;
-
-    template <typename T>
-    std::vector<float> computeDistances(const T* data, int size)
-    {
-        std::vector<float> return_data(size);
-        for (int i = 0; i < size; i++) {
-            return_data[i] = sqrt(data[i].value[0] * data[i].value[0] + data[i].value[1] * data[i].value[1] + data[i].value[2] * data[i].value[2]);
-        }
-        return return_data;
-    }
-
-    template <typename T>
-    std::vector<float> computeAngles(const T* data, int size)
-    {
-        std::vector<float> return_data(size);
-        for (int i = 0; i < size; i++) {
-            return_data[i] = std::atan2(data[i].value[2], data[i].value[0]);
-        }
-        return return_data;
-    }
 };
 
 TEST_F(GaussianNoise, DistanceNoiseMean)

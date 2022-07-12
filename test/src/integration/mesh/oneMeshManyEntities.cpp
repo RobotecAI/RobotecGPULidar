@@ -40,7 +40,7 @@ protected:
     int hitpointCount = 0;
 };
 
-TEST_F(OneMeshManyEntities, delete_mesh)
+TEST_F(OneMeshManyEntities, DeleteMesh)
 {
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
     EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
@@ -72,7 +72,7 @@ TEST_F(OneMeshManyEntities, delete_mesh)
     EXPECT_EQ(hitpointCount, 0);
 }
 
-TEST_F(OneMeshManyEntities, set_vertices)
+TEST_F(OneMeshManyEntities, SetVertices)
 {
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
     EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
