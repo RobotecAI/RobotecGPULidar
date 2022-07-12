@@ -91,14 +91,16 @@ protected:
     rgl_vec3f results[1];
     int hitpointCount = 0;
     float error = 10e-6;
-    std::vector<float> angles = { -30.0f, -20.0f, -10.0f, 10.0f, 20.0f, 30.0f };
-    std::vector<float> distances = { -1.5f, -1.0f, 1.0f, 1.5f };
+    std::vector<float> angles_in_entity = { -30.0f, -20.0f, -10.0f, 10.0f, 20.0f, 30.0f };
+    std::vector<float> angles_out_entity = { -60.0f, 60.0f };
+    std::vector<float> distances_in_entity = { -1.5f, -1.0f, 1.0f, 1.5f };
+    std::vector<float> distances_out_entity = { -3.0f, 3.0f };
     float expected_distance_z = 3.0f;
 };
 
 TEST_F(Transforms, lidar_rotate_x)
 {
-    for (auto angle_deg : angles) {
+    for (auto angle_deg : angles_in_entity) {
         float angle = toRadians(angle_deg);
         float y = expected_distance_z * -std::tan(angle);
 
@@ -112,11 +114,23 @@ TEST_F(Transforms, lidar_rotate_x)
         EXPECT_FLOAT_EQ(results[0].value[1], y);
         EXPECT_FLOAT_EQ(results[0].value[2], expected_distance_z);
     }
+
+    for (auto angle_deg : angles_out_entity) {
+        float angle = toRadians(angle_deg);
+        float y = expected_distance_z * -std::tan(angle);
+
+        rgl_mat3x4f tf_rotate_x = getTfX(0.0, 0.0, 0.0, angle);
+
+        rgl_lidar_set_pose(lidar, &tf_rotate_x);
+
+        readResults();
+        EXPECT_EQ(hitpointCount, 0);
+    }
 }
 
 TEST_F(Transforms, lidar_rotate_y)
 {
-    for (auto angle_deg : angles) {
+    for (auto angle_deg : angles_in_entity) {
         float angle = toRadians(angle_deg);
         float x = expected_distance_z * std::tan(angle);
 
@@ -130,11 +144,23 @@ TEST_F(Transforms, lidar_rotate_y)
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
         EXPECT_FLOAT_EQ(results[0].value[2], expected_distance_z);
     }
+
+    for (auto angle_deg : angles_out_entity) {
+        float angle = toRadians(angle_deg);
+        float x = expected_distance_z * std::tan(angle);
+
+        rgl_mat3x4f tf_rotate_y = getTfY(0.0, 0.0, 0.0, angle);
+
+        rgl_lidar_set_pose(lidar, &tf_rotate_y);
+
+        readResults();
+        EXPECT_EQ(hitpointCount, 0);
+    }
 }
 
 TEST_F(Transforms, lidar_rotate_z)
 {
-    for (auto angle_deg : angles) {
+    for (auto angle_deg : angles_in_entity) {
         float angle = toRadians(angle_deg);
 
         rgl_mat3x4f tf_rotate_z = getTfZ(0.0, 0.0, 0.0, angle);
@@ -151,7 +177,7 @@ TEST_F(Transforms, lidar_rotate_z)
 
 TEST_F(Transforms, entity_move_x)
 {
-    for (auto distance : distances) {
+    for (auto distance : distances_in_entity) {
         rgl_mat3x4f tf_entity_moved = {
             .value = {
                 { 1, 0, 0, distance },
@@ -171,7 +197,7 @@ TEST_F(Transforms, entity_move_x)
 
 TEST_F(Transforms, entity_move_y)
 {
-    for (auto distance : distances) {
+    for (auto distance : distances_in_entity) {
         rgl_mat3x4f tf_entity_moved = {
             .value = {
                 { 1, 0, 0, 0 },
@@ -191,12 +217,12 @@ TEST_F(Transforms, entity_move_y)
 
 TEST_F(Transforms, entity_move_z)
 {
-    for (auto distance : distances) {
+    for (auto distance : distances_in_entity) {
         rgl_mat3x4f tf_entity_moved = {
             .value = {
                 { 1, 0, 0, 0 },
                 { 0, 1, 0, 0 },
-                { 0, 0, 1, 5 + distance } }
+                { 0, 0, 1, 5.0f + distance } }
         };
 
         rgl_entity_set_pose(entity, &tf_entity_moved);
@@ -206,5 +232,60 @@ TEST_F(Transforms, entity_move_z)
         EXPECT_NEAR(results[0].value[0], 0.0f, error);
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
         EXPECT_FLOAT_EQ(results[0].value[2], expected_distance_z + distance);
+    }
+}
+
+TEST_F(Transforms, ray_move_z)
+{
+    rgl_mat3x4f tf_ray = {
+        .value = {
+            { 1, 0, 0, 0 },
+            { 0, 1, 0, 0 },
+            { 0, 0, 1, 1 },
+        }
+    };
+    rgl_lidar_destroy(lidar);
+    rgl_lidar_create(&lidar, &tf_ray, 1);
+
+    readResults();
+    EXPECT_EQ(hitpointCount, 1);
+    EXPECT_NEAR(results[0].value[0], 0.0f, error);
+    EXPECT_NEAR(results[0].value[1], 0.0f, error);
+    EXPECT_FLOAT_EQ(results[0].value[2], expected_distance_z);
+}
+
+TEST_F(Transforms, ray_move_y)
+{
+    for (auto ray_move_distance_y : distances_out_entity) {
+        rgl_mat3x4f tf_ray = {
+            .value = {
+                { 1, 0, 0, 0 },
+                { 0, 1, 0, ray_move_distance_y },
+                { 0, 0, 1, 0 },
+            }
+        };
+        rgl_lidar_destroy(lidar);
+        rgl_lidar_create(&lidar, &tf_ray, 1);
+
+        readResults();
+        EXPECT_EQ(hitpointCount, 0);
+    }
+}
+
+TEST_F(Transforms, ray_move_x)
+{
+    for (auto ray_move_distance_x : distances_out_entity) {
+        rgl_mat3x4f tf_ray = {
+            .value = {
+                { 1, 0, 0, ray_move_distance_x },
+                { 0, 1, 0, 0 },
+                { 0, 0, 1, 0 },
+            }
+        };
+        rgl_lidar_destroy(lidar);
+        rgl_lidar_create(&lidar, &tf_ray, 1);
+
+        readResults();
+        EXPECT_EQ(hitpointCount, 0);
     }
 }
