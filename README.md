@@ -61,3 +61,9 @@ To verify that your drivers and libraries are correctly installed, do the follow
 *  Build OptiX SDK and run `./optixHello` from the `${OptiX_INSTALL_DIR}/SDK/build/bin` directory. It should run without error and show green window.
 
 If all of these work correctly, your environment is likely setup correctly. Some problems are solved by restarting your computer (especially after you change/install drivers).
+
+## Acknowledgements
+
+The development of this project was made possible thanks to cooperation with Tier IV - challenging needs
+in terms of features and performance of Tier IV's project allowed to significantly enrich Robotec GPU Lidar
+with features such as Gaussian noise and animated meshes as well as optimize it to provide real-time performance with many lidars.
