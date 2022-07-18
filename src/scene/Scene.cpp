@@ -12,15 +12,14 @@ std::shared_ptr<Scene> Scene::defaultInstance()
 std::size_t Scene::getObjectCount()
 { return entities.size(); }
 
+void Scene::clear()
+{
+	entities.clear();
+	requestFullRebuild();
+}
+
 void Scene::addEntity(std::shared_ptr<Entity> entity)
 {
-	// TODO: remove this limitation
-	for (auto&& e : entities) {
-		if (e->mesh.use_count() > 2) { // APIObject<Mesh>::instance + Entity::mesh
-			auto msg = "Entities sharing mesh is not yet implemented! Please use separate mesh instances for each entity";
-			throw std::logic_error(msg);
-		}
-	}
 	entity->scene = weak_from_this();
 	entities.insert(entity);
 	requestFullRebuild();
@@ -60,10 +59,10 @@ OptixShaderBindingTable Scene::buildSBT()
 	static DeviceBuffer<RaygenRecord> dRaygenRecords;
 	static DeviceBuffer<MissRecord> dMissRecords;
 
+	// TODO(prybicki): low priority: can HG count be reduced to be == count(GASes)? or must it be count(IASes)?
 	std::vector<HitgroupRecord> hHitgroupRecords;
 	for (auto&& entity : entities) {
-		auto mesh = entity->mesh;
-
+		auto& mesh = entity->mesh;
 		hHitgroupRecords.emplace_back(); // TODO(prybicki): fix, this is weird
 		HitgroupRecord *hr = &(*hHitgroupRecords.rbegin());
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().hitgroupPG, hr));

@@ -21,9 +21,7 @@ protected:
 
     void TearDown() override
     {
-        rgl_mesh_destroy(cube_mesh);
-        rgl_entity_destroy(entity);
-        rgl_lidar_destroy(lidar);
+        rgl_cleanup();
     }
 
     float toRadians(float angle_radians)
