@@ -31,6 +31,9 @@ endif()
 add_subdirectory(external)
 find_package(CUDAToolkit REQUIRED)
 find_program(BIN2C bin2c DOC "Path to the cuda-sdk bin2c executable.")
+if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
+    message(FATAL_ERROR "Required environent variable OptiX_INSTALL_DIR is empty, aborting build")
+endif()
 
 # Includes
 include_directories(include)
