@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.18)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_ARCHITECTURES 75-virtual)
 project(RobotecGPULidar C CXX CUDA)
 
 # Logging default settings (can be changed via API call)
@@ -49,7 +48,6 @@ add_custom_command(
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
-
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
     src/Logger.cpp
@@ -62,6 +60,8 @@ add_library(RobotecGPULidar SHARED
     src/scene/ASBuildScratchpad.cpp
     src/gaussianNoiseKernels.cu
 )
+
+target_include_directories(RobotecGPULidar PUBLIC include)
 
 target_link_libraries(RobotecGPULidar PUBLIC
     spdlog
