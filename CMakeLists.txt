@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_ARCHITECTURES 75-virtual)
 project(RobotecGPULidar C CXX CUDA)
 
 # Logging default settings (can be changed via API call)
@@ -45,10 +44,9 @@ set_target_properties(optixProgramsPtx PROPERTIES CUDA_PTX_COMPILATION ON)
 add_custom_command(
     OUTPUT optixProgramsPtx.c
     COMMAND ${BIN2C} -c --padd 0 --type char --name optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx> > optixProgramsPtx.c
-    DEPENDS optixProgramsPtx
+    DEPENDS optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx>  # Should work with just optixProgramsPtx, but CMake..
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
-
 
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
@@ -62,6 +60,8 @@ add_library(RobotecGPULidar SHARED
     src/scene/ASBuildScratchpad.cpp
     src/gaussianNoiseKernels.cu
 )
+
+target_include_directories(RobotecGPULidar PUBLIC include)
 
 target_link_libraries(RobotecGPULidar PUBLIC
     spdlog
