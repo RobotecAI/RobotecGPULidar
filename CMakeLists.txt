@@ -44,7 +44,7 @@ set_target_properties(optixProgramsPtx PROPERTIES CUDA_PTX_COMPILATION ON)
 add_custom_command(
     OUTPUT optixProgramsPtx.c
     COMMAND ${BIN2C} -c --padd 0 --type char --name optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx> > optixProgramsPtx.c
-    DEPENDS optixProgramsPtx
+    DEPENDS optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx>  # Should work with just optixProgramsPtx, but CMake..
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
