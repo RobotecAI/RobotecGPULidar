@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
 #include <testModels.hpp>
+#include <utils/testUtils.h>
 
 using namespace ::testing;
 
@@ -30,25 +31,22 @@ TEST(Lidar, range)
     EXPECT_EQ(rgl_entity_create(&cube, nullptr, cube_mesh), rgl_status_t::RGL_SUCCESS);
     EXPECT_EQ(rgl_entity_set_pose(cube, &entity_tf), rgl_status_t::RGL_SUCCESS);
     EXPECT_EQ(rgl_lidar_create(&lidar, &ray_tf, 1), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_raytrace_async(nullptr, lidar), rgl_status_t::RGL_SUCCESS);
 
-    EXPECT_EQ(rgl_lidar_get_output_size(lidar, &hitpointCount), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results), rgl_status_t::RGL_SUCCESS);
+    getLidarResults(lidar, &hitpointCount, results);
 
     ASSERT_EQ(hitpointCount, 1);
     ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
 
     EXPECT_EQ(rgl_lidar_set_range(lidar, 4.5f), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_raytrace_async(nullptr, lidar), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_get_output_size(lidar, &hitpointCount), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results), rgl_status_t::RGL_SUCCESS);
+
+    getLidarResults(lidar, &hitpointCount, results);
 
     ASSERT_EQ(hitpointCount, 1);
     ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
 
     EXPECT_EQ(rgl_lidar_set_range(lidar, 3.5f), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_raytrace_async(nullptr, lidar), rgl_status_t::RGL_SUCCESS);
-    EXPECT_EQ(rgl_lidar_get_output_size(lidar, &hitpointCount), rgl_status_t::RGL_SUCCESS);
+
+    getLidarResults(lidar, &hitpointCount, results);
 
     ASSERT_EQ(hitpointCount, 0);
 

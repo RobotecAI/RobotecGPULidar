@@ -10,7 +10,7 @@ class GaussianNoise : public ::testing::Test {
 protected:
     void SetUp() override
     {
-        for (int i = 0; i < no_of_rays; ++i) {
+        for (int i = 0; i < rays_count; ++i) {
             rays_tf.push_back(ray_tf);
         }
 
@@ -27,18 +27,13 @@ protected:
         rgl_lidar_destroy(lidar);
     }
 
-    void readResults()
-    {
-        EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
-    }
-
-    float expected_distance_in_meters = 4.0;
+    float expected_hitpoint_z = 4.0;
     float expected_angle_in_radians = 1.57;
     std::vector<float> means = { -0.1, 0.0, 0.1 };
     float distance_std_dev = 0.1;
-    float angle_std_dev = 0.05;
+    float angle_std_dev = 0.01;
+    float std_dev_rise_per_meter = 0.2;
+    float abs_error = 0.002;
 
     rgl_mesh_t cube_mesh;
     rgl_entity_t cube;
@@ -57,8 +52,8 @@ protected:
         }
     };
     std::vector<rgl_mat3x4f> rays_tf;
-    int no_of_rays = 100000;
-    rgl_vec3f results[100000];
+    int rays_count = 500000;
+    rgl_vec3f results[500000];
     int hitpointCount = 0;
 };
 
@@ -66,13 +61,13 @@ TEST_F(GaussianNoise, DistanceNoiseMean)
 {
     for (auto mean : means) {
         EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, 0.0, 0.0, mean));
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
 
-        ASSERT_EQ(hitpointCount, no_of_rays);
-        for (int i = 0; i < no_of_rays; ++i) {
+        ASSERT_EQ(hitpointCount, rays_count);
+        for (int i = 0; i < rays_count; ++i) {
             EXPECT_EQ(results[i].value[0], 0.0f);
             EXPECT_EQ(results[i].value[1], 0.0f);
-            EXPECT_EQ(results[i].value[2], expected_distance_in_meters + mean);
+            EXPECT_EQ(results[i].value[2], expected_hitpoint_z + mean);
         }
     }
 }
@@ -80,40 +75,39 @@ TEST_F(GaussianNoise, DistanceNoiseMean)
 TEST_F(GaussianNoise, DistanceStandardDeviation)
 {
     EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
-    readResults();
+    getLidarResults(lidar, &hitpointCount, results);
 
-    ASSERT_EQ(hitpointCount, no_of_rays);
-    auto distances = computeDistances(results, no_of_rays);
-    auto [average_distance, distance_st_dev] = mean_and_stdev(distances);
-    EXPECT_NEAR(average_distance, expected_distance_in_meters, 0.003f);
-    EXPECT_NEAR(distance_st_dev, distance_std_dev, 0.002f);
+    ASSERT_EQ(hitpointCount, rays_count);
+    auto distances = computeDistances(results, rays_count);
+    auto [distance_mean, distance_st_dev] = mean_and_stdev(distances);
+    EXPECT_NEAR(distance_mean, expected_hitpoint_z, abs_error);
+    EXPECT_NEAR(distance_st_dev, distance_std_dev, abs_error);
 }
 
 TEST_F(GaussianNoise, DistanceStandardDeviationRaisePerMeter)
 {
-    float std_dev_rise_per_meter = 0.2;
-
     EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, std_dev_rise_per_meter, 0.0));
-    readResults();
+    getLidarResults(lidar, &hitpointCount, results);
 
-    ASSERT_EQ(hitpointCount, no_of_rays);
-    auto distances = computeDistances(results, no_of_rays);
-    auto [average_distance, distance_st_dev] = mean_and_stdev(distances);
-    EXPECT_NEAR(average_distance, expected_distance_in_meters, 0.002f);
-    EXPECT_NEAR(distance_st_dev, distance_std_dev, 0.002f);
-    // EXPECT_NEAR(distance_st_dev, distance_std_dev + expected_distance_in_meters * std_dev_rise_per_meter, 0.0002f);
+    ASSERT_EQ(hitpointCount, rays_count);
+    auto distances = computeDistances(results, rays_count);
+    auto [distance_mean, distance_st_dev] = mean_and_stdev(distances);
+    EXPECT_NEAR(distance_mean, expected_hitpoint_z, abs_error);
+    EXPECT_NEAR(distance_st_dev, distance_std_dev, abs_error);
+    // TODO: investigate why this EXPECT do not pass
+    // EXPECT_NEAR(distance_st_dev, distance_std_dev + expected_hitpoint_z * std_dev_rise_per_meter, 0.0002f);
 }
 
 TEST_F(GaussianNoise, AngleNoiseRayBasedStandardDeviation)
 {
     EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, angle_std_dev, 0.0, 0.0, 0.0, 0.0));
-    readResults();
+    getLidarResults(lidar, &hitpointCount, results);
 
-    ASSERT_EQ(hitpointCount, no_of_rays);
-    auto angles = computeAngles(results, no_of_rays);
-    auto [angle_average, angle_std_dev] = mean_and_stdev(angles);
-    EXPECT_NEAR(angle_average, expected_angle_in_radians, 0.002f);
-    EXPECT_NEAR(angle_std_dev, angle_std_dev, 0.002f);
+    ASSERT_EQ(hitpointCount, rays_count);
+    auto angles = computeAngles(results, rays_count);
+    auto [angle_mean, angle_std_dev] = mean_and_stdev(angles);
+    EXPECT_NEAR(angle_mean, expected_angle_in_radians, abs_error);
+    EXPECT_NEAR(angle_std_dev, angle_std_dev, abs_error);
 }
 
 TEST_F(GaussianNoise, AngleNoiseRayBasedMean)
@@ -121,26 +115,27 @@ TEST_F(GaussianNoise, AngleNoiseRayBasedMean)
     for (auto mean : means) {
 
         EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, mean, 0.0, 0.0, 0.0));
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
 
-        ASSERT_EQ(hitpointCount, no_of_rays);
-        auto angles = computeAngles(results, no_of_rays);
-        auto [angle_average, angle_std_dev] = mean_and_stdev(angles);
-        // EXPECT_NEAR(angle_average, expected_angle_in_radians + mean, 0.002f);
-        EXPECT_NEAR(angle_std_dev, 0.0f, 0.002f);
+        ASSERT_EQ(hitpointCount, rays_count);
+        auto angles = computeAngles(results, rays_count);
+        auto [angle_mean, angle_std_dev] = mean_and_stdev(angles);
+        // TODO: investigate why this EXPECT do not pass
+        // EXPECT_NEAR(angle_mean, expected_angle_in_radians + mean, abs_error);
+        EXPECT_NEAR(angle_std_dev, 0.0f, abs_error);
     }
 }
 
 TEST_F(GaussianNoise, AngleNoiseHitpointBasedStandardDeviation)
 {
     EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED, angle_std_dev, 0.0, 0.0, 0.0, 0.0));
-    readResults();
+    getLidarResults(lidar, &hitpointCount, results);
 
-    ASSERT_EQ(hitpointCount, no_of_rays);
-    auto angles = computeAngles(results, no_of_rays);
-    auto [angle_average, angle_std_dev] = mean_and_stdev(angles);
-    EXPECT_NEAR(angle_average, expected_angle_in_radians, 0.002f);
-    EXPECT_NEAR(angle_std_dev, angle_std_dev, 0.002f);
+    ASSERT_EQ(hitpointCount, rays_count);
+    auto angles = computeAngles(results, rays_count);
+    auto [angle_mean, angle_std_dev] = mean_and_stdev(angles);
+    EXPECT_NEAR(angle_mean, expected_angle_in_radians, abs_error);
+    EXPECT_NEAR(angle_std_dev, angle_std_dev, abs_error);
 }
 
 TEST_F(GaussianNoise, AngleNoiseHitpointBasedMean)
@@ -148,12 +143,12 @@ TEST_F(GaussianNoise, AngleNoiseHitpointBasedMean)
     for (auto mean : means) {
 
         EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED, 0.0, mean, 0.0, 0.0, 0.0));
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
 
-        ASSERT_EQ(hitpointCount, no_of_rays);
-        auto angles = computeAngles(results, no_of_rays);
-        auto [angle_average, angle_std_dev] = mean_and_stdev(angles);
-        EXPECT_NEAR(angle_average, expected_angle_in_radians + mean, 0.002f);
-        EXPECT_NEAR(angle_std_dev, 0.0f, 0.002f);
+        ASSERT_EQ(hitpointCount, rays_count);
+        auto angles = computeAngles(results, rays_count);
+        auto [angle_mean, angle_std_dev] = mean_and_stdev(angles);
+        EXPECT_NEAR(angle_mean, expected_angle_in_radians + mean, abs_error);
+        EXPECT_NEAR(angle_std_dev, 0.0f, abs_error);
     }
 }

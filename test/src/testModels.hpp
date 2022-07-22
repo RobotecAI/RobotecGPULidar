@@ -25,6 +25,7 @@ static rgl_vec3f cube_vertices_big[] = {
 };
 
 static constexpr size_t cube_vertices_length = sizeof(cube_vertices) / sizeof(cube_vertices[0]);
+static constexpr size_t cube_vertices_big_length = sizeof(cube_vertices_big) / sizeof(cube_vertices_big[0]);
 
 static rgl_vec3i cube_indices[] = {
 	{0, 1, 3},

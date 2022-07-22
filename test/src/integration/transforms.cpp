@@ -26,13 +26,6 @@ protected:
         rgl_lidar_destroy(lidar);
     }
 
-    void readResults()
-    {
-        EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
-    }
-
     float toRadians(float angle_radians)
     {
         return angle_radians * M_PI / 180;
@@ -112,7 +105,7 @@ TEST_F(Transforms, LidarRotateX)
 
         rgl_lidar_set_pose(lidar, &tf_rotate_x);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 1);
         EXPECT_NEAR(results[0].value[0], 0.0f, error);
         EXPECT_FLOAT_EQ(results[0].value[1], y);
@@ -127,7 +120,7 @@ TEST_F(Transforms, LidarRotateX)
 
         rgl_lidar_set_pose(lidar, &tf_rotate_x);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 0);
     }
 }
@@ -142,7 +135,7 @@ TEST_F(Transforms, LidarRotateY)
 
         rgl_lidar_set_pose(lidar, &tf_rotate_y);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 1);
         EXPECT_FLOAT_EQ(results[0].value[0], x);
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
@@ -157,7 +150,7 @@ TEST_F(Transforms, LidarRotateY)
 
         rgl_lidar_set_pose(lidar, &tf_rotate_y);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 0);
     }
 }
@@ -171,7 +164,7 @@ TEST_F(Transforms, LidarRotateZ)
 
         rgl_lidar_set_pose(lidar, &tf_rotate_z);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 1);
         EXPECT_NEAR(results[0].value[0], 0.0f, error);
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
@@ -191,7 +184,7 @@ TEST_F(Transforms, EntityMoveX)
 
         rgl_entity_set_pose(entity, &tf_entity_moved);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 1);
         EXPECT_NEAR(results[0].value[0], 0.0f, error);
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
@@ -211,7 +204,7 @@ TEST_F(Transforms, EntityMoveY)
 
         rgl_entity_set_pose(entity, &tf_entity_moved);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 1);
         EXPECT_NEAR(results[0].value[0], 0.0f, error);
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
@@ -231,7 +224,7 @@ TEST_F(Transforms, EntityMoveZ)
 
         rgl_entity_set_pose(entity, &tf_entity_moved);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 1);
         EXPECT_NEAR(results[0].value[0], 0.0f, error);
         EXPECT_NEAR(results[0].value[1], 0.0f, error);
@@ -251,7 +244,7 @@ TEST_F(Transforms, RayMoveZ)
     rgl_lidar_destroy(lidar);
     rgl_lidar_create(&lidar, &tf_ray, 1);
 
-    readResults();
+    getLidarResults(lidar, &hitpointCount, results);
     EXPECT_EQ(hitpointCount, 1);
     EXPECT_NEAR(results[0].value[0], 0.0f, error);
     EXPECT_NEAR(results[0].value[1], 0.0f, error);
@@ -271,7 +264,7 @@ TEST_F(Transforms, RayMoveY)
         rgl_lidar_destroy(lidar);
         rgl_lidar_create(&lidar, &tf_ray, 1);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 0);
     }
 }
@@ -289,7 +282,7 @@ TEST_F(Transforms, RayMoveX)
         rgl_lidar_destroy(lidar);
         rgl_lidar_create(&lidar, &tf_ray, 1);
 
-        readResults();
+        getLidarResults(lidar, &hitpointCount, results);
         EXPECT_EQ(hitpointCount, 0);
     }
 }
@@ -313,9 +306,7 @@ TEST_F(Transforms, RayMoveZGaussianNoise)
     rgl_lidar_create(&lidar, tf_rays_moved.data(), tf_rays_moved.size());
     EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    getLidarResults(lidar, &hitpointCount, results);
 
     ASSERT_EQ(hitpointCount, no_of_rays);
     auto distances = computeDistances(results, no_of_rays);
@@ -344,8 +335,7 @@ TEST_F(Transforms, RayMoveYGaussianNoise)
         rgl_lidar_create(&lidar, tf_rays_moved.data(), tf_rays_moved.size());
         EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
 
-        EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
+        getLidarResults(lidar, &hitpointCount, results);
 
         ASSERT_EQ(hitpointCount, 0);
     }
@@ -370,9 +360,7 @@ TEST_F(Transforms, RayMoveXGaussianNoise)
         rgl_lidar_destroy(lidar);
         rgl_lidar_create(&lidar, tf_rays_moved.data(), tf_rays_moved.size());
         EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, distance_std_dev, 0.0, 0.0));
-
-        EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-        EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
+        getLidarResults(lidar, &hitpointCount, results);
 
         ASSERT_EQ(hitpointCount, 0);
     }

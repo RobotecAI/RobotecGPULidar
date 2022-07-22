@@ -13,6 +13,7 @@ add_executable(RobotecGPULidar_test
 #   src/integration_test.cpp
 #   src/gaussianNoise_test.cpp
     src/utils/statistical_utils.cpp
+    src/utils/testUtils.cpp
 )
 
 target_link_libraries(RobotecGPULidar_test

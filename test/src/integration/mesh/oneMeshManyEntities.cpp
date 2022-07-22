@@ -45,10 +45,7 @@ TEST_F(OneMeshManyEntities, DeleteMesh)
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
     EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
     EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entity_tf));
-
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    getLidarResults(lidar, &hitpointCount, results);
 
     EXPECT_EQ(hitpointCount, 1);
     EXPECT_FLOAT_EQ(results[0].value[2], 4.0f);
@@ -56,18 +53,13 @@ TEST_F(OneMeshManyEntities, DeleteMesh)
     EXPECT_RGL_SUCCESS(rgl_mesh_destroy(cube_mesh));
     EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entity_tf));
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    getLidarResults(lidar, &hitpointCount, results);
 
     EXPECT_EQ(hitpointCount, 1);
     EXPECT_FLOAT_EQ(results[0].value[2], 4.0f);
 
     EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
-
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    getLidarResults(lidar, &hitpointCount, results);
 
     EXPECT_EQ(hitpointCount, 0);
 }
@@ -78,18 +70,14 @@ TEST_F(OneMeshManyEntities, SetVertices)
     EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
     EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entity_tf));
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    getLidarResults(lidar, &hitpointCount, results);
 
     EXPECT_EQ(hitpointCount, 1);
     EXPECT_FLOAT_EQ(results[0].value[2], 4.0f);
 
-    EXPECT_RGL_SUCCESS(rgl_mesh_set_vertices(cube_mesh, cube_vertices_big, 8));
+    EXPECT_RGL_SUCCESS(rgl_mesh_set_vertices(cube_mesh, cube_vertices_big, cube_vertices_big_length));
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    getLidarResults(lidar, &hitpointCount, results);
 
     EXPECT_EQ(hitpointCount, 1);
     EXPECT_FLOAT_EQ(results[0].value[2], 3.0f);
