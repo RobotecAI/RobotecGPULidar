@@ -5,7 +5,7 @@ add_executable(RobotecGPULidar_test
     src/unit/api/e2e_extentions.cpp
     src/integration/lidar/range.cpp
     src/integration/lidar/gaussianNoise.cpp
-    src/integration/mesh/oneMeshManyEntities.cpp
+    src/integration/mesh.cpp
     src/integration/transforms.cpp
 #   src/apiExample.cpp
 #   src/apiUseCases.cpp

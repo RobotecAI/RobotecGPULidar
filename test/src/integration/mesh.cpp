@@ -6,7 +6,7 @@
 
 using namespace ::testing;
 
-class OneMeshManyEntities : public ::testing::Test {
+class Mesh : public ::testing::Test {
 protected:
     void SetUp() override
     {
@@ -40,7 +40,7 @@ protected:
     int hitpointCount = 0;
 };
 
-TEST_F(OneMeshManyEntities, DeleteMesh)
+TEST_F(Mesh, DeleteMesh)
 {
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
     EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
@@ -64,7 +64,7 @@ TEST_F(OneMeshManyEntities, DeleteMesh)
     EXPECT_EQ(hitpointCount, 0);
 }
 
-TEST_F(OneMeshManyEntities, SetVertices)
+TEST_F(Mesh, SetVertices)
 {
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
     EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
