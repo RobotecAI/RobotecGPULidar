@@ -7,11 +7,7 @@ add_executable(RobotecGPULidar_test
     src/integration/lidar/gaussianNoise.cpp
     src/integration/mesh.cpp
     src/integration/transforms.cpp
-#   src/apiExample.cpp
-#   src/apiUseCases.cpp
-#   src/linearAlgebra_test.cpp
-#   src/integration_test.cpp
-#   src/gaussianNoise_test.cpp
+    src/apiExample.cpp
     src/utils/statistical_utils.cpp
     src/utils/testUtils.cpp
 )

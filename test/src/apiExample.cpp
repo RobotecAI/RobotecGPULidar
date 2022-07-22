@@ -10,7 +10,7 @@ TEST(IntegrationTests, Readme_Example)
 {
 	int major, minor, patch;
 	RGL_CHECK(rgl_get_version_info(&major, &minor, &patch));
-	INFO("RGL version: {}.{}.{}", major, minor, patch);
+	RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
 
 	rgl_mesh_t cube_mesh = 0;
 	RGL_CHECK(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
