@@ -30,7 +30,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
 2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
 3. `docker build . --tag rgl`
-4. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -it rgl /bin/bash`
+4. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl /bin/bash`
 5. `mkdir build && cd build && cmake ../ && make`
 
 ## Building manually
