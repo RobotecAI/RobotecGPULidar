@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
-#include <Logger.h>
+#include <Logger.hpp>
 
-#include <utils/testUtils.h>
+#include "../include/utils.hpp"
 
 TEST(EndToEnd, ReadmeExample)
 {

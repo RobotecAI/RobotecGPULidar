@@ -31,15 +31,32 @@ add_subdirectory(external)
 find_package(CUDAToolkit REQUIRED)
 find_program(BIN2C bin2c DOC "Path to the cuda-sdk bin2c executable.")
 if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
-    message(FATAL_ERROR "Required environent variable OptiX_INSTALL_DIR is empty, aborting build")
+    message(FATAL_ERROR "Required environment variable OptiX_INSTALL_DIR is empty, aborting build")
 endif()
+
+# Quick and dirty PCL integration,
+message("CMAKE_SYSTEM_PREFIX_PATH: ${CMAKE_SYSTEM_PREFIX_PATH}")
+
+
+#list(PREPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
+#list(PREPEND CMAKE_MODULE_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
+#find_package(utf8cpp)
+#find_package(double-conversion)
+#find_package(Boost 1.80.0 COMPONENTS system filesystem date_time iostreams)
+
+#message("BOOST: ${BOOST_LIBRARIES}")
+
+find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 # Includes
 include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
-add_library(optixProgramsPtx OBJECT src/optixPrograms.cu)
+add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)
 set_target_properties(optixProgramsPtx PROPERTIES CUDA_PTX_COMPILATION ON)
 add_custom_command(
     OUTPUT optixProgramsPtx.c
@@ -51,14 +68,24 @@ add_library(optixPrograms optixProgramsPtx.c)
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
     src/Logger.cpp
-    src/Lidar.cpp
-    src/formatPCL.cu
-    src/Optix.cpp
+    src/VArray.cpp
+    src/gpu/Optix.cpp
+    src/gpu/nodeKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
-    src/gaussianNoiseKernels.cu
+    src/graph/graph.cpp
+    src/graph/Node.cpp
+    src/graph/CompactNode.cpp
+    src/graph/DownSampleNode.cpp
+    src/graph/FormatNode.cpp
+    src/graph/RaytraceNode.cpp
+    src/graph/TransformPointsNode.cpp
+    src/graph/TransformRaysNode.cpp
+    src/graph/UseRaysMat3x4fNode.cpp
+    src/graph/WritePCDFileNode.cpp
+    src/graph/YieldPointsNode.cpp
 )
 
 target_include_directories(RobotecGPULidar PUBLIC include)
@@ -69,7 +96,10 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart
     CUDA::cuda_driver
+    ${PCL_LIBRARIES}
 )
+set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 
 # Pass #define-s to RGL compilation
 target_compile_definitions(RobotecGPULidar

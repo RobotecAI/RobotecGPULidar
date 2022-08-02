@@ -2,17 +2,24 @@
 #include <spdlog/common.h>
 
 #include <rgl/api/experimental.h>
-#include <rgl/api/e2e_extensions.h>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
 
-#include <Lidar.hpp>
+#include <graph/Nodes.hpp>
+#include <graph/graph.hpp>
+
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
 
 #include <repr.hpp>
+
+#define CHECK_ARG(expr)                                                                          \
+do if (!(expr)) {                                                                                \
+    auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr); \
+    throw std::invalid_argument(msg);                                                            \
+} while(0)
 
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
@@ -23,6 +30,7 @@ static bool canContinueAfterStatus(rgl_status_t status)
 	static std::set recoverableErrors = {
 		RGL_INVALID_ARGUMENT,
 		RGL_INVALID_API_OBJECT,
+		RGL_INVALID_PIPELINE,
 		RGL_NOT_IMPLEMENTED
 	};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
@@ -69,20 +77,38 @@ static rgl_status_t rglSafeCall(Fn fn)
 	catch (InvalidAPIObject &e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
+	catch (InvalidPipeline &e) {
+		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
+	}
 	catch (std::invalid_argument &e) {
-		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
+		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
 	catch (std::exception &e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
+	catch (...) {
+		return updateAPIState(RGL_INTERNAL_EXCEPTION, "exceptional exception");
+	}
 	return updateAPIState(RGL_SUCCESS);
 }
 
-#define CHECK_ARG(expr)                                                                          \
-do if (!(expr)) {                                                                                \
-    auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr); \
-    throw std::invalid_argument(msg);                                                            \
-} while(0)
+template<typename NodeType, typename... Args>
+void createOrUpdateNode(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, Args&&... args)
+{
+	CHECK_ARG(nodeRawPtr != nullptr);
+	std::shared_ptr<NodeType> node;
+	if (*nodeRawPtr == nullptr) {
+		node = Node::create<NodeType>();
+		if (parentRaw != nullptr) {
+			node->addParent(Node::validatePtr(parentRaw));
+		}
+	}
+	else {
+		node = Node::validatePtr<NodeType>(*nodeRawPtr);
+	}
+	node->setParameters(args...);
+	*nodeRawPtr = node.get();
+}
 
 extern "C" {
 
@@ -165,14 +191,17 @@ RGL_API rgl_status_t
 rgl_cleanup(void)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_cleanup()");
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Entity::instances.clear();
 		Mesh::instances.clear();
-		Lidar::instances.clear();
 		Scene::defaultInstance()->clear();
+		while (!Node::instances.empty()) {
+			// Note: destroyPipeline calls Node::release()
+			Node::Ptr node = Node::instances.begin()->second;
+			destroyGraph(node);
+		}
 	});
 }
-
 
 RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_count, const rgl_vec3i *indices, int index_count)
@@ -198,6 +227,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Mesh::release(mesh);
 	});
 }
@@ -235,6 +265,7 @@ rgl_entity_destroy(rgl_entity_t entity)
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		auto entitySafe = Entity::validatePtr(entity);
 		if (auto sceneShared = entitySafe->scene.lock()) {
 			sceneShared->removeEntity(entitySafe);
@@ -258,142 +289,132 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
 }
 
 RGL_API rgl_status_t
-rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 const rgl_mat3x4f *ray_transforms,
-                 int ray_transforms_count)
+rgl_graph_run(rgl_node_t node)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_create(out_lidar={}, ray_transforms={})",
-		      (void*) out_lidar, repr(ray_transforms, ray_transforms_count));
-		CHECK_ARG(out_lidar != nullptr);
-		CHECK_ARG(ray_transforms != nullptr);
-		CHECK_ARG(ray_transforms_count > 0);
-		*out_lidar = Lidar::create(reinterpret_cast<const Mat3x4f *>(ray_transforms), ray_transforms_count).get();
+		RGL_DEBUG("rgl_graph_run(node={})", repr(node));
+		CHECK_ARG(node != nullptr);
+		runGraph(Node::validatePtr(node));
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_destroy(rgl_lidar_t lidar)
+rgl_graph_destroy(rgl_node_t node)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_destroy(lidar={})", (void*) lidar);
-		CHECK_ARG(lidar != nullptr);
-		Lidar::release(lidar);
+		RGL_DEBUG("rgl_graph_destroy(node={})", repr(node));
+		CHECK_ARG(node != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		destroyGraph(Node::validatePtr(node));
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_range(rgl_lidar_t lidar, float range)
+rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
-		CHECK_ARG(lidar != nullptr);
+		RGL_DEBUG("rgl_node_use_rays_mat3x4f(node={}, parent={}, rays={})", repr(node), repr(parent), repr(rays, ray_count));
+		CHECK_ARG(rays != nullptr);
+		CHECK_ARG(ray_count > 0);
+		createOrUpdateNode<UseRaysMat3x4fNode>(node, parent, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
+	});
+}
+
+RGL_API rgl_status_t
+rgl_node_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_transform_rays(node={}, parent={}, transform={})", repr(nodeRawPtr), repr(parent), repr(transform));
+		CHECK_ARG(transform != nullptr);
+
+		createOrUpdateNode<TransformRaysNode>(nodeRawPtr, parent, Mat3x4f::fromRGL(*transform));
+	});
+}
+
+
+RGL_API rgl_status_t
+rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_transform_points(node={}, parent={}, transform={})", repr(node), repr(parent), repr(transform));
+		CHECK_ARG(transform != nullptr);
+
+		createOrUpdateNode<TransformPointsNode>(node, parent, Mat3x4f::fromRGL(*transform));
+	});
+}
+
+RGL_API rgl_status_t
+rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_raytrace(node={}, parent={}, scene={}, range={})", repr(node), repr(parent), (void*) scene, range);
 		CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
-		Lidar::validatePtr(lidar)->range = range;
-	});
-}
 
-RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(local_to_world_tf != nullptr);
-		Lidar::validatePtr(lidar)->lidarPose = Mat3x4f::fromRaw(&local_to_world_tf->value[0][0]);
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_raytrace_async(scene={}, lidar={})", (void*) scene, (void*) lidar);
-		CHECK_ARG(lidar != nullptr);
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
-		Lidar::validatePtr(lidar)->scheduleRaycast(Scene::validatePtr(scene));
+
+		createOrUpdateNode<RaytraceNode>(node, parent, Scene::validatePtr(scene), range);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size)
+rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(out_size != nullptr);
-		*out_size = Lidar::validatePtr(lidar)->getResultsSize();
+		RGL_DEBUG("rgl_node_format(node={}, parent={}, fields={})", repr(node), repr(parent), repr(fields, field_count));
+		CHECK_ARG(outToken != nullptr);
+		CHECK_ARG(fields != nullptr);
+		CHECK_ARG(field_count > 0);
+
+		// TODO: future feature
+		*outToken = RGL_FIELD_DYNAMIC_BASE,
+		createOrUpdateNode<FormatNode>(node, parent, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data)
+rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
-		int fmtVal = static_cast<int>(format);
-		bool formatOK = (RGL_FORMAT_INVALID < fmtVal && fmtVal < RGL_FORMAT_COUNT);
-		bool formatE2EOK = (RGL_FORMAT_E2E_INVALID < fmtVal && fmtVal < RGL_FORMAT_E2E_COUNT);
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(formatOK || formatE2EOK);
-		CHECK_ARG(out_data != nullptr);
-		Lidar::validatePtr(lidar)->getResults(format, out_data);
+		RGL_DEBUG("rgl_pipeline_yield(node={}, parent={}, fields={})", repr(node), repr(parent), repr(fields, field_count));
+		CHECK_ARG(fields != nullptr);
+		CHECK_ARG(field_count > 0);
+
+		createOrUpdateNode<YieldPointsNode>(node, parent, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int *ring_ids, int ring_ids_count)
+rgl_node_compact(rgl_node_t* node, rgl_node_t parent)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
-		          (void*) lidar, repr(ring_ids, ring_ids_count, 5));
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(ring_ids != nullptr);
-		CHECK_ARG(ring_ids_count > 0);
-		Lidar::validatePtr(lidar)->setRingIds(ring_ids, ring_ids_count);
+		RGL_DEBUG("rgl_node_compact(node={}, parent={})", repr(node), repr(parent));
+
+		createOrUpdateNode<CompactNode>(node, parent);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
-                                    rgl_angular_noise_type_t angular_noise_type,
-                                    float angular_noise_stddev,
-                                    float angular_noise_mean,
-                                    float distance_noise_stddev_base,
-                                    float distance_noise_stddev_rise_per_meter,
-                                    float distance_noise_mean)
+rgl_node_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
-		          (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
-		bool noiseTypeOK = angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED || angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED;
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(noiseTypeOK);
-		CHECK_ARG(angular_noise_stddev >= 0.0f);
-		CHECK_ARG(distance_noise_stddev_base >= 0.0f);
-		CHECK_ARG(distance_noise_stddev_rise_per_meter >= 0.0f);
-		Lidar::validatePtr(lidar)->lidarNoiseParams = {
-			.angularNoiseType = (rgl_angular_noise_type_t) angular_noise_type,
-			.angularNoiseStDev = angular_noise_stddev,
-			.angularNoiseMean = angular_noise_mean,
-			.distanceNoiseStDevBase = distance_noise_stddev_base,
-			.distanceNoiseStDevRisePerMeter = distance_noise_stddev_rise_per_meter,
-			.distanceNoiseMean = distance_noise_mean
-		};
+		RGL_DEBUG("rgl_node_downsample(node={}, parent={}, leaf=({}, {}, {}))", repr(node), repr(parent), leaf_size_x, leaf_size_y, leaf_size_z);
+
+		createOrUpdateNode<DownSampleNode>(node, parent, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f *transform)
+rgl_node_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(transform != nullptr);
-		Lidar::validatePtr(lidar)->rosTransform = Mat3x4f::fromRaw(&transform->value[0][0]);
+		RGL_DEBUG("rgl_node_write_pcd_file(node={}, parent={}, file={})", repr(node), repr(parent), file_path);
+		CHECK_ARG(file_path != nullptr);
+		CHECK_ARG(file_path[0] != '\0');
+
+		createOrUpdateNode<WritePCDFileNode>(node, parent, file_path);
 	});
 }
 }

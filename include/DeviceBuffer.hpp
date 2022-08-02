@@ -7,9 +7,8 @@
 #include <type_traits>
 #include <optional>
 
-#include <Logger.h>
+#include <Logger.hpp>
 #include <HostPinnedBuffer.hpp>
-#include <data_types/PointTypes.h>
 
 #include <macros/cuda.hpp>
 

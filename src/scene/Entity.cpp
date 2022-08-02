@@ -29,6 +29,3 @@ OptixInstance Entity::getIAS(int idx)
 	return instance;
 }
 
-Entity::~Entity()
-{
-}
