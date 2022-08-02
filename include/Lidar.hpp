@@ -4,13 +4,12 @@
 #include "gaussianNoise.h"
 #include <random>
 
-#include <Logger.h>
+#include <Logger.hpp>
 #include <APIObject.hpp>
 #include <scene/Scene.hpp>
-#include <Optix.hpp>
+#include <gpu/Optix.hpp>
 
 #include <rgl/api/experimental.h>
-#include <rgl/api/e2e_extensions.h>
 
 // Currently there is no explicit (documented) model of API / GPU synchronization
 // Getting correct results is dependent on calling API calls in right order
@@ -35,7 +34,6 @@ struct Lidar : APIObject<Lidar>
     int getResultsSize();
     void getResults(int format, void* data);
 
-    LidarNoiseParams lidarNoiseParams {};
     Mat3x4f lidarPose = Mat3x4f::identity();
     Mat3x4f rosTransform{};
     float range;

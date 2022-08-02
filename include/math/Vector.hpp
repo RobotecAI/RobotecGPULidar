@@ -77,17 +77,14 @@ NAMED_GETTER(z, 2)
 
 // *** *** *** PIECEWISE OPERATORS (VECTOR + SCALAR) *** *** *** //
 
-#define PIECEWISE_OPERATOR(OP, OPEQ)                                        \
-HD V& operator OPEQ(const V& rhs) {                                         \
-for (int i = 0; i < dim; ++i) {                                 \
-row[i] OPEQ rhs[i];                                             \
-}                                                                   \
-return *this;                                                       \
-}                                                                           \
+#define PIECEWISE_OPERATOR(OP, OPEQ)    \
+	HD V& operator OPEQ(const V& rhs) { \
+		for (int i = 0; i < dim; ++i) { \
+			row[i] OPEQ rhs[i];         \
+		}                               \
+		return *this;                   \
+	}                                   \
 HD friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs; } \
-// HD V& operator OPEQ(T rhs) { return (*this) OPEQ V {rhs}; }                 \
-	// HD friend V operator OP(T lhs, V rhs) {	rhs OPEQ lhs; return rhs; }         \
-	// TODO: scalar operators above are a bit questionable.
 
 	PIECEWISE_OPERATOR(+, +=)
 	PIECEWISE_OPERATOR(-, -=)

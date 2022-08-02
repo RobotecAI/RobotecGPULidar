@@ -4,7 +4,9 @@
 #include <memory>
 #include <stdexcept>
 #include <spdlog/fmt/fmt.h>
+#include <macros/cuda.hpp>
 
+#include <typingUtils.hpp>
 #include <RGLExceptions.hpp>
 
 /**
@@ -27,8 +29,14 @@ struct APIObject
 	template<typename... Args>
 	static std::shared_ptr<T> create(Args&&... args)
 	{
+		return create<T>(args...);
+	}
+
+	template<typename SubClass, typename... Args>
+	static std::shared_ptr<SubClass> create(Args&&... args)
+	{
 		// Cannot use std::make_shared due to private constructor
-		auto ptr = std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+		auto ptr = std::shared_ptr<SubClass>(new SubClass(std::forward<Args>(args)...));
 		instances.insert({ptr.get(), ptr});
 		return ptr;
 	}
@@ -42,12 +50,23 @@ struct APIObject
 	{
 		auto it = instances.find(rawPtr);
 		if (it == instances.end()) {
-			std::string_view name = typeid(T).name();
-			name.remove_prefix(name.find_first_not_of("0123456789"));
-			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name, reinterpret_cast<void*>(rawPtr));
+			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name(typeid(T)), reinterpret_cast<void*>(rawPtr));
 			throw InvalidAPIObject(msg);
 		}
 		return it->second;
+	}
+
+	template<typename SubClass>
+	static std::shared_ptr<SubClass> validatePtr(T* rawPtr)
+	{
+		auto node = validatePtr(rawPtr);
+		auto subclass = std::dynamic_pointer_cast<SubClass>(node);
+		if (subclass != nullptr) {
+			return subclass;
+		}
+		auto msg = fmt::format("RGL API Error: Node type mismatch: expected {}, got {}", name(typeid(SubClass)), name(typeid(*node)));
+		throw InvalidAPIObject(msg);
+
 	}
 
 	static void release(T* toDestroy)
@@ -60,6 +79,7 @@ struct APIObject
 	APIObject(APIObject<T>&&) = delete;
 	APIObject<T>& operator=(APIObject<T>&) = delete;
 	APIObject<T>& operator=(APIObject<T>&&) = delete;
+	virtual ~APIObject() = default;
 protected:
 	APIObject() = default;
 };

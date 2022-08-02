@@ -1,7 +1,7 @@
 #pragma once
 
 #include <optix_stubs.h>
-#include <Optix.hpp>
+#include <gpu/Optix.hpp>
 #include <DeviceBuffer.hpp>
 #include <memory>
 

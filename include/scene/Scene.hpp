@@ -7,9 +7,7 @@
 #include <scene/ASBuildScratchpad.hpp>
 #include <APIObject.hpp>
 
-// TODO(prybicki): fix these includes
-#include <data_types/ShaderBindingTableTypes.h>
-#include <LaunchParams.h>
+#include <gpu/ShaderBindingTableTypes.h>
 
 struct Entity;
 
