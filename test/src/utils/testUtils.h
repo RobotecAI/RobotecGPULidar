@@ -75,6 +75,26 @@ static std::string readFile(std::filesystem::path path)
 	return buffer.str();
 }
 
+template<typename T>
+static std::vector<T> readFileVec(std::filesystem::path path)
+{
+	// open the file:
+	std::streampos fileSize;
+	std::ifstream file(path, std::ios::binary);
+
+	// get its size:
+	file.seekg(0, std::ios::end);
+	fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	EXPECT_TRUE(fileSize % sizeof(T) == 0);
+
+	// read the data:
+	std::vector<T> fileData(fileSize / sizeof(T));
+	file.read((char*) &fileData[0], fileSize);
+	return fileData;
+}
+
 static rgl_vec3f cube_vertices[] = {
 	{-1, -1, -1},
 	{1, -1, -1},
@@ -124,3 +144,4 @@ static rgl_mat3x4f identity = { .value = {
 	0, 1, 0, 0,
 	0, 0, 1, 0
 }};
+

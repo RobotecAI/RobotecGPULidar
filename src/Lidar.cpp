@@ -120,7 +120,10 @@ void Lidar::getResults(int format, void *data)
 	}
 
 	if (format == RGL_FORMAT_XYZ) {
-		memcpy(data, hDensePoint3f.readHost(), hDensePoint3f.getByteSize());
+		// fmt::print("{} / {} {}\n", densePointCount.value(), densePointCount.value() * sizeof(rgl_vec3f),
+		// 		   hDensePoint3f.getByteSize());
+		//  TODO: BUG!!!!!!!!!!!!
+		memcpy(data, hDensePoint3f.readHost(), densePointCount.value() * sizeof(rgl_vec3f));
 		return;
 	}
 	if (format == RGL_FORMAT_E2E_PCL12) {
