@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 10
-#define RGL_VERSION_PATCH 2
+#define RGL_VERSION_MINOR 11
+#define RGL_VERSION_PATCH 0
 
 /**
  * Three consecutive 32-bit floats.
@@ -50,14 +50,9 @@ typedef struct Mesh *rgl_mesh_t;
 typedef struct Entity *rgl_entity_t;
 
 /**
- * Opaque handle representing a Lidar, including
- * - it's position
- * - rays' starting positions and directions, relative to the lidar,
- * - rays' ranges
- * - possibly other properties in the future
- * Note: Creating and destroying a Lidar is a costly operation.
+ * TODO(prybicki)
  */
-typedef struct Lidar *rgl_lidar_t;
+typedef struct Node *rgl_node_t;
 
 /**
  * Opaque handle representing a scene - a collection of entities.
@@ -106,6 +101,11 @@ typedef enum
 	RGL_INVALID_API_OBJECT,
 
 	/**
+	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
+	 */
+	RGL_INVALID_PIPELINE,
+
+	/**
 	 * Requested functionality has been not yet implemented.
 	 * This is a recoverable error.
 	 */
@@ -119,18 +119,8 @@ typedef enum
 } rgl_status_t;
 
 /**
- * Output data formats.
+ * Available logging verbosity levels.
  */
-typedef enum
-{
-	RGL_FORMAT_INVALID = 0,
-	/**
-	 * Three consecutive 32-bit floats describing hit-point coordinates in the world frame. Does not contain non-hits.
-	 */
-	RGL_FORMAT_XYZ = 1,
-	RGL_FORMAT_COUNT
-} rgl_format_t;
-
 typedef enum : int
 {
 	RGL_LOG_LEVEL_ALL = 0,
@@ -144,12 +134,28 @@ typedef enum : int
 	RGL_LOG_LEVEL_COUNT = 7
 } rgl_log_level_t;
 
+/**
+ * Available point attributes, used to specify layout of the binary data.
+ */
 typedef enum
 {
-	// TODO(prybicki): avoid 0 enum
-	RGL_ANGULAR_NOISE_TYPE_RAY_BASED = 0,
-	RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED = 1
-} rgl_angular_noise_type_t;
+	RGL_FIELD_XYZ_F32 = 1,
+	RGL_FIELD_INTENSITY_F32,
+	RGL_FIELD_IS_HIT_I32,
+	RGL_FIELD_RAY_IDX_U32,
+	RGL_FIELD_POINT_IDX_U32,
+	RGL_FIELD_DISTANCE_F32,
+	RGL_FIELD_AZIMUTH_F32,
+	RGL_FIELD_RING_ID_U16,
+	RGL_FIELD_RETURN_TYPE_U8,
+	RGL_FIELD_TIME_STAMP_F64,
+	// Dummy fields
+	RGL_FIELD_PADDING_8 = 1024,
+	RGL_FIELD_PADDING_16,
+	RGL_FIELD_PADDING_32,
+	// Dynamic fields
+	RGL_FIELD_DYNAMIC_BASE = 13842,
+} rgl_field_t;
 
 /******************************** GENERAL ********************************/
 
@@ -261,65 +267,147 @@ rgl_entity_destroy(rgl_entity_t entity);
 RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 
-/******************************** LIDAR ********************************/
+/******************************** NODES ********************************/
 
 /**
- * Creates lidar from ray transforms.
- * Lidar range will be set to default (inf).
- * @param out_lidar Address where to store resulting lidar handle.
+ * Creates or modifies UseRaysNode.
+ * The node provides initial rays for its children nodes.
+ * Initial rays are usually provided in device-local coordinate frame, i.e. close to (0, 0, 0).
+ * Input: none
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param rays Pointer to 3x4 affine matrices describing rays poses.
+ * @param ray_count Size of the `rays` array
  */
 RGL_API rgl_status_t
-rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 const rgl_mat3x4f *ray_transforms,
-                 int ray_transforms_count);
+rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
 
 /**
- * Destroys lidar and releases its resources. After this call, provided lidar handle must not be used.
- * @param lidar Lidar handle to be destroyed.
+ * Creates or modifies TransformRaysNode.
+ * Effectively, the node performs the following operation for all rays: `outputRay[i] = (*transform) * inputRay[i]`
+ * This function can be used to account for the pose of the device.
+ * Graph input: rays
+ * Graph output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
 RGL_API rgl_status_t
-rgl_lidar_destroy(rgl_lidar_t lidar);
+rgl_node_transform_rays(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
+
+// Applies affine transformation, e.g. to change the coordinate frame.
+/**
+ * Creates or modifies TransformPointsNode.
+ * The node applies affine transformation to all points.
+ * It can be used to e.g. change coordinate frame after raytracing.
+ * Graph input: point cloud
+ * Graph output: point cloud (transformed)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
+ */
+RGL_API rgl_status_t
+rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
 
 /**
- * Allows to set maximum distance that rays are to be traced.
- * Hit-points further than given range will be not reported.
- * @param lidar Lidar handle to change range.
- * @param range Positive, finite real number.
+ * Creates or modifies RaytraceNode.
+ * The node performs GPU-accelerated raytracing on the given scene.
+ * Fields to be computed will be automatically determined based on connected FormatNodes and YieldPointsNodes
+ * Graph input: rays
+ * Graph output: point cloud (sparse)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
+ * @param range Maximum distance to travel for every ray
  */
 RGL_API rgl_status_t
-rgl_lidar_set_range(rgl_lidar_t lidar, float range);
+rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
 
 /**
- * Changes position of the lidar, i.e. base transform transform for all rays.
- * @param lidar Lidar handle to have the pose changed
- * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
+ * Creates or modifies FormatNode.
+ * The node converts internal representation into a binary format defined by `fields` array.
+ * Graph input: point cloud
+ * Graph output: none
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param fields Subsequent fields to be present in the binary output
+ * @param field_count Number of elements in the `fields` array
+ *
  */
 RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf);
+rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
 
 /**
- * Initiates raytracing for the given scene and lidar and returns immediately.
- * When raytracing is in-progress, some calls may be blocking.
- * @param scene Handle of the scene where raytracing will be performed. Pass NULL to use the default scene.
- * @param lidar Handle of the lidar that will be used to perform raytracing.
+ * Creates or modifies YieldPointsNode.
+ * The node is a marker what fields are expected by the user.
+ * Graph input: point cloud
+ * Graph output: none
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param fields Subsequent fields expected to be available
+ * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t
-rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar);
+rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
 
 /**
- * Returns number of elements (e.g. hit-points) of the most recent result of the given format.
- * User should prepare a buffer at least <number-of-elements> * <size-of-element> bytes long.
- * @param format Format to query
- * @param out_size Address to store result
+ * Creates or modifies CompactNode.
+ * The node removes non-hit points. In other words, it converts a point cloud into a dense one.
+ * Graph input: point cloud
+ * Graph output: point cloud (compacted)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
  */
 RGL_API rgl_status_t
-rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size);
+rgl_node_compact(rgl_node_t* node, rgl_node_t parent);
+
 
 /**
- * Copy results of the given format into provided buffer.
- * Required buffer size can be queried using rgl_lidar_get_output_size.
- * @param format Result format to copy
- * @param out_data Target buffer
+ * Creates or modifies DownSampleNode.
+ * The node uses VoxelGrid down-sampling filter from PCL library to reduce the number of points.
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
  */
 RGL_API rgl_status_t
-rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data);
+rgl_node_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z);
+
+/**
+ * Creates or modifies WritePCDFileNode.
+ * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ */
+RGL_API rgl_status_t
+rgl_node_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
+
+/******************************** GRAPH ********************************/
+
+/**
+ * Starts execution of the RGL graph containing provided node.
+ * This function is asynchronous.
+ * @param node Any node from the graph to execute
+ */
+RGL_API rgl_status_t
+rgl_graph_run(rgl_node_t node);
+
+/**
+ * Destroys RGL graph (all connected nodes) containing provided node.
+ * @param node Any node from the graph to destroy
+ */
+RGL_API rgl_status_t
+rgl_graph_destroy(rgl_node_t node);
+
+/**
+ * Obtains the result of any node in the graph.
+ * If the result is not yet available, this function will block.
+ * The function will fill output parameters that are not null.
+ * I.e. The size of the output can be queried using a nullptr data.
+ * @param node Node to get output from
+ * @param outCount Returns the number of available elements (e.g. points). May be null.
+ * @param outSizeOf Returns byte size of a single element (e.g. point). May be null.
+ * @param data Returns binary data, expects a buffer of size (*outCount) * (*outSizeOf). May be null.
+ */
+RGL_API rgl_status_t
+rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_t* outSizeOf, void* data);

@@ -30,7 +30,7 @@ This limitation may be removed in the future.
 
 Noise parameters can be configured using `rgl_lidar_set_gaussian_noise_params` API call.
 
-| Parameter name                         | Type                       | Description                                                                                                                                     |
+| Parameter name                         | Field                       | Description                                                                                                                                     |
 |----------------------------------------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | `angular_noise_type`                   | `rgl_angular_noise_type_t` | Angular noise type selection enum. More details below                                                                                           |
 | `angular_noise_stddev`                 | `float`                    | Angular noise standard deviation in radians                                                                                                     |
