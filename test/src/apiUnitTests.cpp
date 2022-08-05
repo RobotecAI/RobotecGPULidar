@@ -9,7 +9,7 @@
 
 using namespace ::testing;
 
-class ApiExperimentalUnitTest : public ::testing::Test {
+class APIUnitTests : public ::testing::Test {
 protected:
     rgl_lidar_t lidar = nullptr;
     rgl_mesh_t mesh = nullptr;
@@ -33,7 +33,7 @@ protected:
     }
 };
 
-TEST_F(ApiExperimentalUnitTest, rgl_configure_logging)
+TEST_F(APIUnitTests, rgl_configure_logging)
 {
     std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
 
@@ -73,7 +73,7 @@ TEST(ApiExperimentalUnitTestVersion, rgl_get_version_info)
     EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(nullptr, nullptr, nullptr), "out_major != nullptr");
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_mesh_create)
+TEST_F(APIUnitTests, rgl_mesh_create)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(nullptr, vertices.data(), 0, indices.data(), 0), "mesh != nullptr");
     EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh, vertices.data(), 0, indices.data(), 0), "vertices != nullptr");
@@ -94,7 +94,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_mesh_create)
     // EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_destroy(mesh), "mesh != nullptr");
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_mesh_update_vertices)
+TEST_F(APIUnitTests, rgl_mesh_update_vertices)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(nullptr, vertices.data(), vertices.size()), "mesh != nullptr");
     EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size()), "mesh != nullptr");
@@ -110,7 +110,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_mesh_update_vertices)
     EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size()));
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_entity_create)
+TEST_F(APIUnitTests, rgl_entity_create)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(nullptr, nullptr, mesh), "entity != nullptr");
     EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(&entity, nullptr, mesh), "mesh != nullptr");
@@ -127,7 +127,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_entity_create)
     // EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_destroy(entity), "entity != nullptr");
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_entity_set_pose)
+TEST_F(APIUnitTests, rgl_entity_set_pose)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity, nullptr), "entity != nullptr");
 
@@ -143,7 +143,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_entity_set_pose)
     EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_lidar_create)
+TEST_F(APIUnitTests, rgl_lidar_create)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_destroy(lidar), "lidar != nullptr");
     EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(nullptr, nullptr, 0), "out_lidar != nullptr");
@@ -157,7 +157,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_lidar_create)
     // EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_destroy(lidar), "lidar != nullptr");
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_lidar_set_range)
+TEST_F(APIUnitTests, rgl_lidar_set_range)
 {
     EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
 
@@ -170,7 +170,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_lidar_set_range)
     EXPECT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_lidar_set_pose)
+TEST_F(APIUnitTests, rgl_lidar_set_pose)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_pose(lidar, nullptr), "lidar != nullptr");
     EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
@@ -181,7 +181,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_lidar_set_pose)
     EXPECT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_lidar_output)
+TEST_F(APIUnitTests, rgl_lidar_output)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_raytrace_async(nullptr, lidar), "lidar != nullptr");
     EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_size(lidar, nullptr), "lidar != nullptr");
@@ -200,7 +200,7 @@ TEST_F(ApiExperimentalUnitTest, rgl_lidar_output)
     EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, rgl_format_t::RGL_FORMAT_XYZ, results));
 }
 
-struct ApiE2EExtensionUnitTest : public ::testing::Test
+struct APIUnitTestsE2E : public ::testing::Test
 {
 	rgl_lidar_t lidar = nullptr;
 	rgl_mat3x4f identity = {
@@ -212,7 +212,7 @@ struct ApiE2EExtensionUnitTest : public ::testing::Test
 	};
 };
 
-TEST_F(ApiE2EExtensionUnitTest, rgl_lidar_set_ring_indices)
+TEST_F(APIUnitTestsE2E, rgl_lidar_set_ring_indices)
 {
 	int ring_indices[1] = { 0 };
 
@@ -223,7 +223,7 @@ TEST_F(ApiE2EExtensionUnitTest, rgl_lidar_set_ring_indices)
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_ring_indices(lidar, ring_indices, 1));
 }
 
-TEST_F(ApiE2EExtensionUnitTest, rgl_lidar_set_gaussian_noise_params)
+TEST_F(APIUnitTestsE2E, rgl_lidar_set_gaussian_noise_params)
 {
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, 0.0, 0.0, 0.0), "lidar != nullptr");
 	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
@@ -233,7 +233,7 @@ TEST_F(ApiE2EExtensionUnitTest, rgl_lidar_set_gaussian_noise_params)
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0, 1.0, 1.0, 1.0, 1.0));
 }
 
-TEST_F(ApiE2EExtensionUnitTest, rgl_lidar_set_post_raycast_transform)
+TEST_F(APIUnitTestsE2E, rgl_lidar_set_post_raycast_transform)
 {
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_post_raycast_transform(lidar, nullptr), "lidar != nullptr");
 	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
