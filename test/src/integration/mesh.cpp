@@ -99,7 +99,7 @@ protected:
 
 
 		rgl_mat3x4f rays[ENTITY_COUNT_X * ENTITY_COUNT_Y];
-		rgl_entity_t entities[ENTITY_COUNT_Y];
+		rgl_entity_t entities[ENTITY_COUNT_Y][ENTITY_COUNT_X];
 		for (int y = 0; y < ENTITY_COUNT_Y; ++y) {
 			for (int x = 0; x < ENTITY_COUNT_X; ++x) {
 				rays[ENTITY_COUNT_X * y + x] = {
@@ -116,8 +116,8 @@ protected:
 				{0, 0, 1, 10},
 				}
 				};
-				EXPECT_RGL_SUCCESS(rgl_entity_create(&entities[y], nullptr, ((x % 2) == 0) ? cube_small : cube_big));
-				EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities[y], &entity_tf));
+				EXPECT_RGL_SUCCESS(rgl_entity_create(&entities[y][x], nullptr, ((x % 2) == 0) ? cube_small : cube_big));
+				EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities[y][x], &entity_tf));
 			}
 		}
 
