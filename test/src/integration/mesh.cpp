@@ -144,8 +144,8 @@ TEST_F(MeshSharing, TwoMeshesOneUpdated)
 		EXPECT_EQ(hitpointCount, sizeof(results) / sizeof(*results));
 		EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
 
-	for (int x = 0; x < ENTITY_COUNT_X; ++x) {
-		for (int y = 0; y < ENTITY_COUNT_Y; ++y) {
+	for (int y = 0; y < ENTITY_COUNT_Y; ++y) {
+		for (int x = 0; x < ENTITY_COUNT_X; ++x) {
 				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X*y + x].x(), 10.0f * x);
 				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X*y + x].y(), 10.0f * y);
 				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X*y + x].z(), distOfX[x]);
