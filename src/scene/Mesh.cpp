@@ -8,27 +8,18 @@ API_OBJECT_INSTANCE(Mesh);
 
 Mesh::Mesh(Vec3f *vertices, size_t vertexCount, Vec3i *indices, size_t indexCount)
 {
-	setVertices(vertices, vertexCount);
-	setIndices(indices, indexCount);
-}
-
-void Mesh::setVertices(Vec3f *vertices, std::size_t vertexCount)
-{
 	dVertices.copyFromHost(vertices, vertexCount);
-	bool sizeChanged = dVertices.getElemCount() != vertexCount;
-	if (sizeChanged) {
-		cachedGAS.reset();
-	}
-	gasNeedsUpdate = true;
+	dIndices.copyFromHost(indices, indexCount);
 }
 
-void Mesh::setIndices(Vec3i *indices, std::size_t indexCount)
+void Mesh::updateVertices(Vec3f *vertices, std::size_t vertexCount)
 {
-	dIndices.copyFromHost(indices, indexCount);
-	bool sizeChanged = dIndices.getElemCount() != indexCount;
-	if (sizeChanged) {
-		cachedGAS.reset();
+	if (dVertices.getElemCount() != vertexCount) {
+		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
+		                        dVertices.getElemCount(), vertexCount);
+		throw std::invalid_argument(msg);
 	}
+	dVertices.copyFromHost(vertices, vertexCount);
 	gasNeedsUpdate = true;
 }
 

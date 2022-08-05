@@ -55,7 +55,7 @@ TEST_F(SingleRaySingleCube, DeleteEntity)
 	// for (auto&& vec : cube_vertices) {
 	// 	verticesModified.push_back({.value={2.0f * vec.value[0], 2.0f* vec.value[1], 2.0f * vec.value[2]}});
 	// }
-	// // RGL_CHECK(rgl_mesh_set_vertices(mesh, verticesModified.data(), verticesModified.size()));
+	// // RGL_CHECK(rgl_mesh_update_vertices(mesh, verticesModified.data(), verticesModified.size()));
 
 	RGL_CHECK(rgl_entity_destroy(entity));
 	entity = nullptr;

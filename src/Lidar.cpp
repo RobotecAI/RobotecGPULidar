@@ -113,7 +113,7 @@ void Lidar::getResults(int format, void *data)
 	}
 
 	if (densePointCount == 0) {
-            RGL_WARN("Returning an empty pointcloud");
+		RGL_WARN("Returning an empty pointcloud");
 		return;
 	}
 

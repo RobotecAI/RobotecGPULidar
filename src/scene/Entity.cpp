@@ -20,7 +20,7 @@ OptixInstance Entity::getIAS(int idx)
 	// NOTE: this assumes a single SBT record per GAS
 	OptixInstance instance = {
 		.instanceId = static_cast<unsigned int>(idx),
-		.sbtOffset = static_cast<unsigned int>(idx * 1), // TODO: LIDAR_RAY_TYPE_COUNT was here, figure out implications
+		.sbtOffset = static_cast<unsigned int>(idx),
 		.visibilityMask = 255,
 		.flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		.traversableHandle = mesh->getGAS(),

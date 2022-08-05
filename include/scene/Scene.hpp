@@ -26,6 +26,7 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 
 	void addEntity(std::shared_ptr<Entity> entity);
 	void removeEntity(std::shared_ptr<Entity> entity);
+	void clear();
 
 	std::size_t getObjectCount();
 

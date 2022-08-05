@@ -93,18 +93,20 @@ TEST_F(ApiExperimentalUnitTest, rgl_mesh_create)
     // EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_destroy(mesh), "mesh != nullptr");
 }
 
-TEST_F(ApiExperimentalUnitTest, rgl_mesh_set_vertices)
+TEST_F(ApiExperimentalUnitTest, rgl_mesh_update_vertices)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_set_vertices(nullptr, vertices.data(), vertices.size()), "mesh != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_set_vertices(mesh, vertices.data(), vertices.size()), "mesh != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(nullptr, vertices.data(), vertices.size()), "mesh != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size()), "mesh != nullptr");
 
     vertices.push_back({ .value = { 1.0, 2.0, 3.0 } });
     indices.push_back({ .value = { 1, 2, 3 } });
 
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), indices.size()));
 
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size() + 1), "vertex counts do not match");
+
     vertices[0] = { .value = { 4.0, 5.0, 6.0 } };
-    EXPECT_RGL_SUCCESS(rgl_mesh_set_vertices(mesh, vertices.data(), vertices.size()));
+    EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size()));
 }
 
 TEST_F(ApiExperimentalUnitTest, rgl_entity_create)
