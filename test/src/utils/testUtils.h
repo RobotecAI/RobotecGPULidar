@@ -1,22 +1,31 @@
 #pragma once
 
-#include <rgl/api/experimental.h>
 #include <vector>
 #include <cmath>
 #include <numeric>
+#include <filesystem>
+#include <fstream>
 #include <gtest/gtest.h>
+#include <rgl/api/experimental.h>
 
 using namespace ::testing;
 
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
-#define EXPECT_RGL_INVALID_ARGUMENT(status, error_string_msg)     \
-    {                                                             \
-        EXPECT_EQ(status, rgl_status_t::RGL_INVALID_ARGUMENT);    \
-        const char* error_string;                                 \
-        rgl_get_last_error_string(&error_string);                 \
-        EXPECT_THAT(error_string, HasSubstr("Invalid argument")); \
-        EXPECT_THAT(error_string, HasSubstr(error_string_msg));   \
-    }
+#define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
+
+#define EXPECT_RGL_STATUS(actual, expected, error_prefix, error_detail) \
+    do                                                                  \
+    {                                                                   \
+        EXPECT_EQ(actual, expected);                                    \
+        const char* error_string;                                       \
+        rgl_get_last_error_string(&error_string);                       \
+        EXPECT_THAT(error_string, HasSubstr(error_prefix));       \
+        EXPECT_THAT(error_string, HasSubstr(error_detail));         \
+    }                                                                   \
+    while(false)
+
+#define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
+#define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
 
 template <typename T>
 std::vector<float> computeDistances(const T* data, int size)
@@ -59,6 +68,13 @@ std::pair<T, T> mean_and_stdev(std::vector<T> v) {
 	return {mean, stdev};
 }
 
+static std::string readFile(std::filesystem::path path)
+{
+	std::stringstream buffer;
+	buffer << std::ifstream(path).rdbuf();
+	return buffer.str();
+}
+
 static rgl_vec3f cube_vertices[] = {
 	{-1, -1, -1},
 	{1, -1, -1},
@@ -99,3 +115,12 @@ static rgl_vec3i cube_indices[] = {
 	{0, 5, 1},
 };
 static constexpr size_t cube_indices_length = sizeof(cube_indices) / sizeof(cube_indices[0]);
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(*array))
+
+// TODO(prybicki): replace this with a proper Matrix class
+static rgl_mat3x4f identity = { .value = {
+	1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0
+}};

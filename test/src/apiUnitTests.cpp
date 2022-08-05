@@ -1,242 +1,305 @@
 #include <Logger.h>
-#include <filesystem>
-#include <fstream>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <rgl/api/experimental.h>
 #include <utils/testUtils.h>
+#include <rgl/api/experimental.h>
 #include <rgl/api/e2e_extensions.h>
 
 using namespace ::testing;
 
-class APIUnitTests : public ::testing::Test {
+#define VERTICES cube_vertices
+#define INDICES cube_indices
+
+class RGLAutoCleanupTest : public ::testing::Test {
 protected:
-    rgl_lidar_t lidar = nullptr;
-    rgl_mesh_t mesh = nullptr;
-    rgl_entity_t entity = nullptr;
-
-    std::vector<rgl_vec3f> vertices;
-    std::vector<rgl_vec3i> indices;
-    rgl_mat3x4f identity = {
-        .value = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-        }
-    };
-
-    std::string readFile(std::filesystem::path path)
-    {
-        std::stringstream buffer;
-        buffer << std::ifstream(path).rdbuf();
-        return buffer.str();
-    }
+	~RGLAutoCleanupTest() {	rgl_cleanup(); }
 };
+
+class APIUnitTests : public RGLAutoCleanupTest {};
+
+static rgl_mesh_t makeCubeMesh()
+{
+	rgl_mesh_t mesh = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cube_vertices, ARRAY_SIZE(cube_vertices), cube_indices, ARRAY_SIZE(cube_indices)));
+	EXPECT_THAT(mesh, NotNull());
+	return mesh;
+}
+
+static rgl_entity_t makeCubeEntity(rgl_mesh_t mesh=nullptr, rgl_scene_t scene=nullptr)
+{
+	if (mesh == nullptr) {
+		mesh = makeCubeMesh();
+	}
+	rgl_entity_t entity = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, scene, mesh));
+	EXPECT_THAT(entity, NotNull());
+	return entity;
+}
+
+static rgl_lidar_t makeTrivialLidar()
+{
+	rgl_lidar_t lidar = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	EXPECT_THAT(lidar, NotNull());
+	return lidar;
+}
+
 
 TEST_F(APIUnitTests, rgl_configure_logging)
 {
-    std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
+	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
 
-    ASSERT_THAT(logFilePath.c_str(), NotNull());
-    EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_INFO, logFilePath.c_str(), true));
-    ASSERT_THAT(std::filesystem::exists(logFilePath), IsTrue());
-    Logger::instance().flush();
-    ASSERT_THAT(readFile(logFilePath), HasSubstr("Logging configured"));
+	// Setup logging, file should be created
+	ASSERT_THAT(logFilePath.c_str(), NotNull());
+	ASSERT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_INFO, logFilePath.c_str(), true));
+	ASSERT_THAT(std::filesystem::exists(logFilePath), IsTrue());
+	Logger::instance().flush();
+	ASSERT_THAT(readFile(logFilePath), HasSubstr("Logging configured"));
 
-    RGL_TRACE("This is RGL trace log."); // Should be not printed
-    RGL_INFO("This is RGL info log.");
-    RGL_WARN("This is RGL warn log.");
-    RGL_ERROR("This is RGL error log.");
-    RGL_CRITICAL("This is RGL critical log.");
-    Logger::instance().flush();
+	// Write some logs
+	RGL_TRACE("This is RGL trace log."); // Should be not printed
+	RGL_INFO("This is RGL info log.");
+	RGL_WARN("This is RGL warn log.");
+	RGL_ERROR("This is RGL error log.");
+	RGL_CRITICAL("This is RGL critical log.");
+	Logger::instance().flush();
 
-    ASSERT_THAT(readFile(logFilePath), Not(HasSubstr("trace")));
-    ASSERT_THAT(readFile(logFilePath), HasSubstr("info"));
-    ASSERT_THAT(readFile(logFilePath), HasSubstr("warn"));
-    ASSERT_THAT(readFile(logFilePath), HasSubstr("error"));
-    ASSERT_THAT(readFile(logFilePath), HasSubstr("critical"));
-    EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
+	// Expected log levels should be in the file
+	std::string logFile = readFile(logFilePath);
+	EXPECT_THAT(readFile(logFilePath), Not(HasSubstr("trace")));
+	EXPECT_THAT(readFile(logFilePath), HasSubstr("info"));
+	EXPECT_THAT(readFile(logFilePath), HasSubstr("warn"));
+	EXPECT_THAT(readFile(logFilePath), HasSubstr("error"));
+	EXPECT_THAT(readFile(logFilePath), HasSubstr("critical"));
+	ASSERT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
 }
 
-TEST(ApiExperimentalUnitTestVersion, rgl_get_version_info)
+TEST_F(APIUnitTests, rgl_get_version_info)
 {
-    int major, minor, patch;
+	int major, minor, patch;
 
-    EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
-    EXPECT_EQ(major, RGL_VERSION_MAJOR);
-    EXPECT_EQ(minor, RGL_VERSION_MINOR);
-    EXPECT_EQ(patch, RGL_VERSION_PATCH);
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(nullptr, nullptr, nullptr), "out_major != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major,  nullptr, nullptr), "out_minor != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major,  &minor,  nullptr), "out_patch != nullptr");
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(nullptr, &minor, &patch), "out_major != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major, nullptr, &patch), "out_minor != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major, &minor, nullptr), "out_patch != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(nullptr, nullptr, nullptr), "out_major != nullptr");
+	ASSERT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
+	EXPECT_EQ(major, RGL_VERSION_MAJOR);
+	EXPECT_EQ(minor, RGL_VERSION_MINOR);
+	EXPECT_EQ(patch, RGL_VERSION_PATCH);
+
 }
 
-TEST_F(APIUnitTests, rgl_mesh_create)
+TEST_F(APIUnitTests, rgl_mesh_create_destroy)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(nullptr, vertices.data(), 0, indices.data(), 0), "mesh != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh, vertices.data(), 0, indices.data(), 0), "vertices != nullptr");
+	rgl_mesh_t mesh = nullptr;
 
-    vertices.push_back({ .value = { 1.0, 2.0, 3.0 } });
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(nullptr, nullptr,   0,                    nullptr, 0), "mesh != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh,   nullptr,   0,                    nullptr, 0), "vertices != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh,   VERTICES,  0,                    nullptr, 0), "vertex_count > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh,   VERTICES,  ARRAY_SIZE(VERTICES), nullptr, 0), "indices != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh,   VERTICES,  ARRAY_SIZE(VERTICES), INDICES, 0), "index_count > 0");
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh, vertices.data(), 0, indices.data(), 0), "vertex_count > 0");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), 0), "indices != nullptr");
+	// Correct create
+	ASSERT_RGL_SUCCESS(rgl_mesh_create(&mesh, VERTICES, ARRAY_SIZE(VERTICES), INDICES, ARRAY_SIZE(INDICES)));
+	ASSERT_THAT(mesh, NotNull());
 
-    indices.push_back({ .value = { 1, 2, 3 } });
+	// Correct destroy
+	ASSERT_RGL_SUCCESS(rgl_mesh_destroy(mesh));
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), 0), "index_count > 0");
-    EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), indices.size()));
+	// Double destroy
+	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_destroy(mesh), "Object does not exist: Mesh");
 
-    EXPECT_RGL_SUCCESS(rgl_mesh_destroy(mesh));
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_destroy(nullptr), "mesh != nullptr");
-    // TODO(piotr.rybicki): Fix return error 500 RGL_INTERNAL_EXCEPTION
-    // EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_destroy(mesh), "mesh != nullptr");
+	// Invalid destroy
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_destroy(nullptr), "mesh != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_destroy((rgl_mesh_t) 0x1234), "Object does not exist: Mesh 0x1234");
+
 }
 
 TEST_F(APIUnitTests, rgl_mesh_update_vertices)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(nullptr, vertices.data(), vertices.size()), "mesh != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size()), "mesh != nullptr");
+	rgl_mesh_t mesh = makeCubeMesh();
 
-    vertices.push_back({ .value = { 1.0, 2.0, 3.0 } });
-    indices.push_back({ .value = { 1, 2, 3 } });
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(nullptr, nullptr,  0), "mesh != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh,    nullptr,  0), "vertices != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh,    VERTICES, 0), "vertex_count > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh,    VERTICES, ARRAY_SIZE(VERTICES) + 1), "vertex counts do not match");
+	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_update_vertices((rgl_mesh_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)), "Object does not exist: Mesh 0x1234");
 
-    EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), indices.size()));
-
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size() + 1), "vertex counts do not match");
-
-    vertices[0] = { .value = { 4.0, 5.0, 6.0 } };
-    EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, vertices.data(), vertices.size()));
+	// Correct update_vertices
+	ASSERT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES)));
 }
 
-TEST_F(APIUnitTests, rgl_entity_create)
+TEST_F(APIUnitTests, rgl_entity_create_destroy)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(nullptr, nullptr, mesh), "entity != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(&entity, nullptr, mesh), "mesh != nullptr");
+	rgl_mesh_t mesh = makeCubeMesh();
+	rgl_entity_t entity = nullptr;
 
-    vertices.push_back({ .value = { 1.0, 2.0, 3.0 } });
-    indices.push_back({ .value = { 1, 2, 3 } });
+	// Invalid args, note: scene can be nullptr here.
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(nullptr, nullptr, nullptr), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(&entity, nullptr, nullptr), "mesh != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_create(&entity, (rgl_scene_t) 0x1234, mesh), "Object does not exist: Scene 0x1234");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_create(&entity, nullptr, (rgl_mesh_t) 0x1234), "Object does not exist: Mesh 0x1234");
 
-    EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), indices.size()));
-    EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
+	// Correct create
+	ASSERT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
+	ASSERT_THAT(entity, NotNull());
 
-    EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_destroy(nullptr), "entity != nullptr");
-    // TODO(piotr.rybicki): Fix return error 500 RGL_INTERNAL_EXCEPTION
-    // EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_destroy(entity), "entity != nullptr");
+	// Correct destroy
+	ASSERT_RGL_SUCCESS(rgl_entity_destroy(entity));
+
+	// Double destroy
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy(entity), "Object does not exist: Entity");
+
+	// Invalid destroy
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_destroy(nullptr), "entity != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy((rgl_entity_t) 0x1234), "Object does not exist: Entity 0x1234");
 }
 
 TEST_F(APIUnitTests, rgl_entity_set_pose)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity, nullptr), "entity != nullptr");
+	rgl_entity_t entity = makeCubeEntity();
 
-    vertices.push_back({ .value = { 1.0, 2.0, 3.0 } });
-    indices.push_back({ .value = { 1, 2, 3 } });
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(nullptr, nullptr), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity,  nullptr), "local_to_world_tf != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_set_pose((rgl_entity_t) 0x1234, &identity), "Object does not exist: Entity 0x1234");
 
-    EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vertices.data(), vertices.size(), indices.data(), indices.size()));
-    EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity, nullptr), "local_to_world_tf != nullptr");
-    EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identity));
-
-    EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
+	// Correct set_pose
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identity));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_create)
+TEST_F(APIUnitTests, rgl_lidar_create_destroy)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_destroy(lidar), "lidar != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(nullptr, nullptr, 0), "out_lidar != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(&lidar, nullptr, 0), "ray_transforms != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(&lidar, &identity, 0), "ray_transforms_count > 0");
-    EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	rgl_lidar_t lidar = nullptr;
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_destroy(nullptr), "lidar != nullptr");
-    // TODO(piotr.rybicki): Fix return error 500 RGL_INTERNAL_EXCEPTION
-    // EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_destroy(lidar), "lidar != nullptr");
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(nullptr, nullptr,   0), "out_lidar != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(&lidar,  nullptr,   0), "ray_transforms != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_create(&lidar,  &identity, 0), "ray_transforms_count > 0");
+
+	// Correct create
+	ASSERT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	ASSERT_THAT(lidar, NotNull());
+
+	// Correct destroy
+	ASSERT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
+
+	// Double destroy
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_destroy(lidar), "Lidar");
+
+	// Invalid destroy
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_destroy(nullptr), "lidar != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_destroy((rgl_lidar_t) 0x1234), "Object does not exist: Lidar 0x1234");
 }
 
 TEST_F(APIUnitTests, rgl_lidar_set_range)
 {
-    EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	rgl_lidar_t lidar = makeTrivialLidar();
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(nullptr, 0.0), "lidar != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(lidar, std::nanf("0.0")), "!std::isnan(range)");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(lidar, -1.0), "range > 0");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(lidar, 0.0), "range > 0");
-    EXPECT_RGL_SUCCESS(rgl_lidar_set_range(lidar, 1.0));
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(nullptr,  0.0f), "lidar != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(lidar,   -1.0f), "range > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(lidar,    0.0f), "range > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_range(lidar,    NAN), "!std::isnan(range)");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_set_range((rgl_lidar_t) 0x1234, 1.0f), "Object does not exist: Lidar 0x1234");
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
+	// Correct set_range
+	EXPECT_RGL_SUCCESS(rgl_lidar_set_range(lidar, 1.0f));
 }
 
 TEST_F(APIUnitTests, rgl_lidar_set_pose)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_pose(lidar, nullptr), "lidar != nullptr");
-    EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	rgl_lidar_t lidar = makeTrivialLidar();
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_pose(lidar, nullptr), "local_to_world_tf != nullptr");
-    EXPECT_RGL_SUCCESS(rgl_lidar_set_pose(lidar, &identity));
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_pose(nullptr, nullptr), "lidar != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_pose(lidar, nullptr), "local_to_world_tf != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_set_pose((rgl_lidar_t) 0x1234, &identity), "Object does not exist: Lidar 0x1234");
 
-    EXPECT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
+	// Correct set_pose
+	EXPECT_RGL_SUCCESS(rgl_lidar_set_pose(lidar, &identity));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_output)
+TEST_F(APIUnitTests, rgl_lidar_raytrace_async)
 {
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_raytrace_async(nullptr, lidar), "lidar != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_size(lidar, nullptr), "lidar != nullptr");
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_data(lidar, rgl_format_t::RGL_FORMAT_XYZ, nullptr), "lidar != nullptr");
-    EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
-    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_size(lidar, nullptr), "out_size != nullptr");
+	rgl_lidar_t lidar = makeTrivialLidar();
 
-    int hitpointCount = 1;
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
-    EXPECT_EQ(hitpointCount, 0);
+	// Invalid args raytrace_async
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_raytrace_async(nullptr, nullptr), "lidar != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_raytrace_async((rgl_scene_t) 0x1234, lidar), "Object does not exist: Scene 0x1234");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_raytrace_async(nullptr, (rgl_lidar_t) 0x1234), "Object does not exist: Lidar 0x1234");
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_data(lidar, rgl_format_t::RGL_FORMAT_XYZ, nullptr), "out_data != nullptr");
-
-    rgl_vec3f results[1] = { 0 };
-    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, rgl_format_t::RGL_FORMAT_XYZ, results));
+	// Correct raytrace_async
+	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
 }
 
-struct APIUnitTestsE2E : public ::testing::Test
+TEST_F(APIUnitTests, rgl_lidar_get_output)
 {
-	rgl_lidar_t lidar = nullptr;
-	rgl_mat3x4f identity = {
-	.value = {
-		{ 1, 0, 0, 0 },
-		{ 0, 1, 0, 0 },
-		{ 0, 0, 1, 0 },
-		}
-	};
-};
+	rgl_lidar_t lidar = makeTrivialLidar();
+	int hitpointCount = -1;
 
-TEST_F(APIUnitTestsE2E, rgl_lidar_set_ring_indices)
+	// Invalid args get_output_size
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_size(nullptr, nullptr), "lidar != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_size(lidar, nullptr), "out_size != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_get_output_size((rgl_lidar_t) 0x1234, &hitpointCount), "Object does not exist: Lidar 0x1234");
+
+	// Invalid args get_output_data
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_data(nullptr, RGL_FORMAT_INVALID, nullptr), "lidar != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_data(lidar, RGL_FORMAT_INVALID, nullptr), "formatOK");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, nullptr), "out_data != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_get_output_data((rgl_lidar_t) 0x1234, RGL_FORMAT_XYZ, (void*) 0xCAFEBABE), "Object does not exist: Lidar 0x1234");
+
+	// Correct get_output_size
+	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpointCount));
+	EXPECT_EQ(hitpointCount, 0);
+
+	// Correct get_output_data
+	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, (void*) 0xCAFEBABE));
+}
+
+TEST_F(APIUnitTests, rgl_lidar_set_ring_indices)
 {
-	int ring_indices[1] = { 0 };
+	rgl_lidar_t lidar = makeTrivialLidar();
+	int ring_indices[] = { 0 };
 
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_ring_indices(lidar, nullptr, 0), "lidar != nullptr");
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_ring_indices(nullptr, nullptr, 0), "lidar != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_ring_indices(lidar, nullptr, 0), "ring_ids != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_ring_indices(lidar, ring_indices, 0), "ring_ids_count > 0");
-	EXPECT_RGL_SUCCESS(rgl_lidar_set_ring_indices(lidar, ring_indices, 1));
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_set_ring_indices((rgl_lidar_t) 0x1234, ring_indices, ARRAY_SIZE(ring_indices)), "Object does not exist: Lidar 0x1234");
+
+	// Correct set_ring_indices
+	EXPECT_RGL_SUCCESS(rgl_lidar_set_ring_indices(lidar, ring_indices, ARRAY_SIZE(ring_indices)));
 }
 
-TEST_F(APIUnitTestsE2E, rgl_lidar_set_gaussian_noise_params)
+TEST_F(APIUnitTests, rgl_lidar_set_gaussian_noise_params)
 {
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 0.0, 0.0, 0.0, 0.0, 0.0), "lidar != nullptr");
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, -1.0, -1.0, -1.0, -1.0, -1.0), "angular_noise_stddev >= 0.0");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0, 1.0, -1.0, -1.0, -1.0), "distance_noise_stddev_base >= 0.0");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0, 1.0, 1.0, -1.0, -1.0), "distance_noise_stddev_rise_per_meter >= 0.0");
-	EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, rgl_angular_noise_type_t::RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0, 1.0, 1.0, 1.0, 1.0));
+	rgl_lidar_t lidar = makeTrivialLidar();
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(nullptr, (rgl_angular_noise_type_t) -1,   0.0f,  0.0f,  0.0f,  0.0f, 0.0f), "lidar != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, (rgl_angular_noise_type_t) -1,     0.0f,  0.0f,  0.0f,  0.0f, 0.0f), "noiseTypeOK");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, RGL_ANGULAR_NOISE_TYPE_RAY_BASED, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f), "angular_noise_stddev >= 0.0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, RGL_ANGULAR_NOISE_TYPE_RAY_BASED,  1.0f,  1.0f, -1.0f,  0.0f, 0.0f), "distance_noise_stddev_base >= 0.0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_gaussian_noise_params(lidar, RGL_ANGULAR_NOISE_TYPE_RAY_BASED,  1.0f,  1.0f,  1.0f, -1.0f, 0.0f), "distance_noise_stddev_rise_per_meter >= 0.0");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_set_gaussian_noise_params((rgl_lidar_t) 0x1234, RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f), "Object does not exist: Lidar 0x1234");
+
+	// Correct set_gaussian_noise_params
+	EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f));
 }
 
-TEST_F(APIUnitTestsE2E, rgl_lidar_set_post_raycast_transform)
+TEST_F(APIUnitTests, rgl_lidar_set_post_raycast_transform)
 {
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_post_raycast_transform(lidar, nullptr), "lidar != nullptr");
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	rgl_lidar_t lidar = makeTrivialLidar();
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_post_raycast_transform(nullptr, nullptr), "lidar != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_post_raycast_transform(lidar, nullptr), "transform != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_set_post_raycast_transform((rgl_lidar_t) 0x1234, &identity), "Object does not exist: Lidar 0x1234");
+
+	// Correct set_post_raycast_transform
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_post_raycast_transform(lidar, &identity));
 }

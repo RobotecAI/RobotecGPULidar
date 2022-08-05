@@ -5,11 +5,7 @@
 #include <stdexcept>
 #include <spdlog/fmt/fmt.h>
 
-struct InvalidAPIObject : std::logic_error
-{
-	// Inherit constructors:
-	using std::logic_error::logic_error;
-};
+#include <RGLExceptions.hpp>
 
 /**
  * Objects shared through C-API should inherit from APIObject<T>, which:
@@ -46,7 +42,9 @@ struct APIObject
 	{
 		auto it = instances.find(rawPtr);
 		if (it == instances.end()) {
-			auto msg = fmt::format("RGL APIObject<{}>  {} does not exist", typeid(T).name(), reinterpret_cast<void*>(rawPtr));
+			std::string_view name = typeid(T).name();
+			name.remove_prefix(name.find_first_not_of("0123456789"));
+			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name, reinterpret_cast<void*>(rawPtr));
 			throw InvalidAPIObject(msg);
 		}
 		return it->second;

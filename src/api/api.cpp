@@ -1,4 +1,5 @@
 #include <cmath>
+#include <spdlog/common.h>
 
 #include <rgl/api/experimental.h>
 #include <rgl/api/e2e_extensions.h>
@@ -8,64 +9,73 @@
 #include <scene/Mesh.hpp>
 
 #include <Lidar.hpp>
+#include <RGLExceptions.hpp>
 #include <macros/visibility.h>
-#include <spdlog/common.h>
 
 #include <repr.hpp>
 
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
-static std::set recoverableErrors = {RGL_INVALID_ARGUMENT};
 
-static void handleAPIError()
+static bool canContinueAfterStatus(rgl_status_t status)
 {
-	// Report API error in log file
-	const char* msg = nullptr;
-	rgl_get_last_error_string(&msg);
-	if (recoverableErrors.contains(lastStatusCode)) {
-            RGL_ERROR("Recoverable error ({}): {}", lastStatusCode, msg);
-	}
-	else {
-            RGL_CRITICAL("Unrecoverable error ({}): {}", lastStatusCode, msg);
-	}
-	Logger::instance().flush();
-}
+	// Set constructor may throw, hence lazy initialization.
+	static std::set recoverableErrors = {
+		RGL_INVALID_ARGUMENT,
+		RGL_INVALID_API_OBJECT,
+		RGL_NOT_IMPLEMENTED
+	};
+	return status == RGL_SUCCESS || recoverableErrors.contains(status);
+};
 
-static rgl_status_t finalizeAPICall(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt)
+static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt)
 {
 	lastStatusString = auxErrStr;
 	lastStatusCode = status;
 	if (status != RGL_SUCCESS) {
-		handleAPIError();
+		// Report API error in log file
+		const char* msg = nullptr;
+		rgl_get_last_error_string(&msg);
+		if (canContinueAfterStatus(lastStatusCode)) {
+			RGL_ERROR("Recoverable error (code={}): {}", lastStatusCode, msg);
+		}
+		else {
+			RGL_CRITICAL("Unrecoverable error (code={}): {}", lastStatusCode, msg);
+		}
+		Logger::instance().flush();
 	}
 	return status;
-}
-
-static bool isRGLHealthy()
-{
-	return (lastStatusCode == RGL_SUCCESS) || recoverableErrors.contains(lastStatusCode);
 }
 
 template<typename Fn>
 static rgl_status_t rglSafeCall(Fn fn)
 {
-	if (!isRGLHealthy()) {
-
-		return finalizeAPICall(RGL_INVALID_STATE);
+	if (!canContinueAfterStatus(lastStatusCode)) {
+		if (lastStatusCode != RGL_LOGGING_ERROR) {
+			RGL_CRITICAL("Logging disabled due to the previous fatal error");
+			try {
+				Logger::instance().configure(RGL_LOG_LEVEL_OFF, std::nullopt, false);
+			}
+			catch (std::exception& e) {}
+		}
+		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
 		std::invoke(fn);
 	}
 	catch (spdlog::spdlog_ex &e) {
-		return finalizeAPICall(RGL_LOGGING_ERROR, e.what());
+		return updateAPIState(RGL_LOGGING_ERROR, e.what());
+	}
+	catch (InvalidAPIObject &e) {
+		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
 	catch (std::invalid_argument &e) {
-		return finalizeAPICall(RGL_INVALID_ARGUMENT, e.what());
+		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
 	catch (std::exception &e) {
-		return finalizeAPICall(RGL_INTERNAL_EXCEPTION, e.what());
+		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
-	return finalizeAPICall(RGL_SUCCESS);
+	return updateAPIState(RGL_SUCCESS);
 }
 
 #define CHECK_ARG(expr)                                                                          \
@@ -95,7 +105,7 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.9.3: add API unit tests with fixes, in particular: optix logging
 	// 0.10.0: entities can now share meshes
 	return rglSafeCall([&]() {
-            RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
+		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
 		CHECK_ARG(out_minor != nullptr);
 		CHECK_ARG(out_patch != nullptr);
@@ -163,7 +173,7 @@ rgl_cleanup(void)
 
 
 RGL_API rgl_status_t
-rgl_mesh_create(rgl_mesh_t *out_mesh, rgl_vec3f *vertices, int vertex_count, rgl_vec3i *indices, int index_count)
+rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_count, const rgl_vec3i *indices, int index_count)
 {
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
@@ -173,9 +183,9 @@ rgl_mesh_create(rgl_mesh_t *out_mesh, rgl_vec3f *vertices, int vertex_count, rgl
 		CHECK_ARG(vertex_count > 0);
 		CHECK_ARG(indices != nullptr);
 		CHECK_ARG(index_count > 0);
-		*out_mesh = Mesh::create(reinterpret_cast<Vec3f *>(vertices),
+		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
 		                         vertex_count,
-		                         reinterpret_cast<Vec3i *>(indices),
+		                         reinterpret_cast<const Vec3i*>(indices),
 		                         index_count).get();
 	});
 }
@@ -184,21 +194,21 @@ RGL_API rgl_status_t
 rgl_mesh_destroy(rgl_mesh_t mesh)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
+		RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
 		Mesh::release(mesh);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_mesh_update_vertices(rgl_mesh_t mesh, rgl_vec3f *vertices, int vertex_count)
+rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f *vertices, int vertex_count)
 {
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
-		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<Vec3f *>(vertices), vertex_count);
+		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
 	});
 }
 
@@ -261,10 +271,20 @@ rgl_lidar_create(rgl_lidar_t *out_lidar,
 }
 
 RGL_API rgl_status_t
+rgl_lidar_destroy(rgl_lidar_t lidar)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_lidar_destroy(lidar={})", (void*) lidar);
+		CHECK_ARG(lidar != nullptr);
+		Lidar::release(lidar);
+	});
+}
+
+RGL_API rgl_status_t
 rgl_lidar_set_range(rgl_lidar_t lidar, float range)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
+		RGL_DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
@@ -273,20 +293,10 @@ rgl_lidar_set_range(rgl_lidar_t lidar, float range)
 }
 
 RGL_API rgl_status_t
-rgl_lidar_destroy(rgl_lidar_t lidar)
-{
-	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_destroy(lidar={})", (void*) lidar);
-		CHECK_ARG(lidar != nullptr);
-		Lidar::release(lidar);
-	});
-}
-
-RGL_API rgl_status_t
 rgl_lidar_set_pose(rgl_lidar_t lidar, rgl_mat3x4f *local_to_world_tf)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
+		RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(local_to_world_tf != nullptr);
 		Lidar::validatePtr(lidar)->lidarPose = TransformMatrix::fromPointer(&local_to_world_tf->value[0][0]);
@@ -297,7 +307,7 @@ RGL_API rgl_status_t
 rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_raytrace_async(scene={}, lidar={})", (void*) scene, (void*) lidar);
+		RGL_DEBUG("rgl_lidar_raytrace_async(scene={}, lidar={})", (void*) scene, (void*) lidar);
 		CHECK_ARG(lidar != nullptr);
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
@@ -310,7 +320,7 @@ RGL_API rgl_status_t
 rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
+		RGL_DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(out_size != nullptr);
 		*out_size = Lidar::validatePtr(lidar)->getResultsSize();
@@ -321,7 +331,7 @@ RGL_API rgl_status_t
 rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
+		RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
 		int fmtVal = static_cast<int>(format);
 		bool formatOK = (RGL_FORMAT_INVALID < fmtVal && fmtVal < RGL_FORMAT_COUNT);
 		bool formatE2EOK = (RGL_FORMAT_E2E_INVALID < fmtVal && fmtVal < RGL_FORMAT_E2E_COUNT);
@@ -336,8 +346,8 @@ RGL_API rgl_status_t
 rgl_lidar_set_ring_indices(rgl_lidar_t lidar, int *ring_ids, int ring_ids_count)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
-		      (void*) lidar, repr(ring_ids, ring_ids_count, 5));
+		RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
+		          (void*) lidar, repr(ring_ids, ring_ids_count, 5));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
@@ -355,10 +365,11 @@ rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
                                     float distance_noise_mean)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
-			  (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
+		RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
+		          (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
+		bool noiseTypeOK = angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED || angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED;
 		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED || angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED);
+		CHECK_ARG(noiseTypeOK);
 		CHECK_ARG(angular_noise_stddev >= 0.0f);
 		CHECK_ARG(distance_noise_stddev_base >= 0.0f);
 		CHECK_ARG(distance_noise_stddev_rise_per_meter >= 0.0f);
@@ -377,7 +388,7 @@ RGL_API rgl_status_t
 rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, rgl_mat3x4f *transform)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
+		RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(transform != nullptr);
 		Lidar::validatePtr(lidar)->rosTransform = TransformMatrix::fromPointer(&transform->value[0][0]);

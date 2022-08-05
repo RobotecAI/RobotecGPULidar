@@ -34,6 +34,8 @@ Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount) : range(std::numeric_
 
 	dRandomizationStates.resizeToFit(rayPosesCount);
 	setupGaussianNoiseGenerator(randomDevice(), stream, dRandomizationStates);
+
+	densePointCount = 0;
 }
 
 void Lidar::setRingIds(int *ringIds, size_t ringIdsCount)
