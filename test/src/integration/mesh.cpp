@@ -146,9 +146,9 @@ TEST_F(MeshSharing, TwoMeshesOneUpdated)
 
 	for (int y = 0; y < ENTITY_COUNT_Y; ++y) {
 		for (int x = 0; x < ENTITY_COUNT_X; ++x) {
-				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X*y + x].x(), 10.0f * x);
-				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X*y + x].y(), 10.0f * y);
-				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X*y + x].z(), distOfX[x]);
+				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X * y + x].x(), 10.0f * x);
+				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X * y + x].y(), 10.0f * y);
+				EXPECT_FLOAT_EQ(results[ENTITY_COUNT_X * y + x].z(), distOfX[x]);
 				// fmt::print("[x={}][y={}] = {}\n", x, y, results[y * ENTITY_COUNT_X + x]);
 			}
 		}
