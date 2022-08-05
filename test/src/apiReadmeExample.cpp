@@ -3,7 +3,6 @@
 #include <rgl/api/apiUnitTests.h>
 #include <Logger.h>
 
-#include <rglCheck.hpp>
 #include <testModels.hpp>
 #include <utils/testUtils.h>
 
