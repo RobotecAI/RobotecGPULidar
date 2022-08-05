@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rgl/api/apiUnitTests.h>
+#include <rgl/api/experimental.h>
 
 struct LidarNoiseParams {
     rgl_angular_noise_type_t angularNoiseType;

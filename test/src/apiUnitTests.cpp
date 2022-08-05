@@ -3,7 +3,7 @@
 #include <fstream>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <rgl/api/apiUnitTests.h>
+#include <rgl/api/experimental.h>
 #include <utils/testUtils.h>
 #include <rgl/api/e2e_extensions.h>
 

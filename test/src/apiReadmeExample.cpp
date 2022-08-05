@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
-#include <spdlog/fmt/fmt.h>
-#include <rgl/api/apiUnitTests.h>
+#include <rgl/api/experimental.h>
 #include <Logger.h>
 
-#include <testModels.hpp>
 #include <utils/testUtils.h>
 
 TEST(EndToEnd, ReadmeExample)

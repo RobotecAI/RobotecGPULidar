@@ -109,7 +109,7 @@ for (int i = 0; i < hitpointCount; ++i) {
 
 ### API documentation
 
-More details can be found [here](../include/rgl/api/apiUnitTests.h).
+More details can be found [here](../include/rgl/api/experimental.h).
 
 ### API stability
 
