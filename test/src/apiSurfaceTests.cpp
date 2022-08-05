@@ -12,10 +12,11 @@ using namespace ::testing;
 
 class RGLAutoCleanupTest : public ::testing::Test {
 protected:
-	~RGLAutoCleanupTest() {	rgl_cleanup(); }
+	RGLAutoCleanupTest() { rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false); }
+	~RGLAutoCleanupTest() { rgl_cleanup(); }
 };
 
-class APIUnitTests : public RGLAutoCleanupTest {};
+class APISurfaceTests : public RGLAutoCleanupTest {};
 
 static rgl_mesh_t makeCubeMesh()
 {
@@ -45,7 +46,7 @@ static rgl_lidar_t makeTrivialLidar()
 }
 
 
-TEST_F(APIUnitTests, rgl_configure_logging)
+TEST_F(APISurfaceTests, rgl_configure_logging)
 {
 	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
 
@@ -74,7 +75,7 @@ TEST_F(APIUnitTests, rgl_configure_logging)
 	ASSERT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
 }
 
-TEST_F(APIUnitTests, rgl_get_version_info)
+TEST_F(APISurfaceTests, rgl_get_version_info)
 {
 	int major, minor, patch;
 
@@ -90,7 +91,7 @@ TEST_F(APIUnitTests, rgl_get_version_info)
 
 }
 
-TEST_F(APIUnitTests, rgl_mesh_create_destroy)
+TEST_F(APISurfaceTests, rgl_mesh_create_destroy)
 {
 	rgl_mesh_t mesh = nullptr;
 
@@ -117,7 +118,7 @@ TEST_F(APIUnitTests, rgl_mesh_create_destroy)
 
 }
 
-TEST_F(APIUnitTests, rgl_mesh_update_vertices)
+TEST_F(APISurfaceTests, rgl_mesh_update_vertices)
 {
 	rgl_mesh_t mesh = makeCubeMesh();
 
@@ -132,7 +133,7 @@ TEST_F(APIUnitTests, rgl_mesh_update_vertices)
 	ASSERT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES)));
 }
 
-TEST_F(APIUnitTests, rgl_entity_create_destroy)
+TEST_F(APISurfaceTests, rgl_entity_create_destroy)
 {
 	rgl_mesh_t mesh = makeCubeMesh();
 	rgl_entity_t entity = nullptr;
@@ -158,7 +159,7 @@ TEST_F(APIUnitTests, rgl_entity_create_destroy)
 	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy((rgl_entity_t) 0x1234), "Object does not exist: Entity 0x1234");
 }
 
-TEST_F(APIUnitTests, rgl_entity_set_pose)
+TEST_F(APISurfaceTests, rgl_entity_set_pose)
 {
 	rgl_entity_t entity = makeCubeEntity();
 
@@ -171,7 +172,7 @@ TEST_F(APIUnitTests, rgl_entity_set_pose)
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identity));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_create_destroy)
+TEST_F(APISurfaceTests, rgl_lidar_create_destroy)
 {
 	rgl_lidar_t lidar = nullptr;
 
@@ -195,7 +196,7 @@ TEST_F(APIUnitTests, rgl_lidar_create_destroy)
 	EXPECT_RGL_INVALID_OBJECT(rgl_lidar_destroy((rgl_lidar_t) 0x1234), "Object does not exist: Lidar 0x1234");
 }
 
-TEST_F(APIUnitTests, rgl_lidar_set_range)
+TEST_F(APISurfaceTests, rgl_lidar_set_range)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 
@@ -210,7 +211,7 @@ TEST_F(APIUnitTests, rgl_lidar_set_range)
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_range(lidar, 1.0f));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_set_pose)
+TEST_F(APISurfaceTests, rgl_lidar_set_pose)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 
@@ -223,7 +224,7 @@ TEST_F(APIUnitTests, rgl_lidar_set_pose)
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_pose(lidar, &identity));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_raytrace_async)
+TEST_F(APISurfaceTests, rgl_lidar_raytrace_async)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 
@@ -236,7 +237,7 @@ TEST_F(APIUnitTests, rgl_lidar_raytrace_async)
 	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_get_output)
+TEST_F(APISurfaceTests, rgl_lidar_get_output)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 	int hitpointCount = -1;
@@ -260,7 +261,7 @@ TEST_F(APIUnitTests, rgl_lidar_get_output)
 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, (void*) 0xCAFEBABE));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_set_ring_indices)
+TEST_F(APISurfaceTests, rgl_lidar_set_ring_indices)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 	int ring_indices[] = { 0 };
@@ -275,7 +276,7 @@ TEST_F(APIUnitTests, rgl_lidar_set_ring_indices)
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_ring_indices(lidar, ring_indices, ARRAY_SIZE(ring_indices)));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_set_gaussian_noise_params)
+TEST_F(APISurfaceTests, rgl_lidar_set_gaussian_noise_params)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 
@@ -291,7 +292,7 @@ TEST_F(APIUnitTests, rgl_lidar_set_gaussian_noise_params)
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_gaussian_noise_params(lidar, RGL_ANGULAR_NOISE_TYPE_RAY_BASED, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f));
 }
 
-TEST_F(APIUnitTests, rgl_lidar_set_post_raycast_transform)
+TEST_F(APISurfaceTests, rgl_lidar_set_post_raycast_transform)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
 
