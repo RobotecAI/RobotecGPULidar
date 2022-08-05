@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 9
-#define RGL_VERSION_PATCH 3
+#define RGL_VERSION_MINOR 10
+#define RGL_VERSION_PATCH 0
 
 /**
  * Three consecutive 32-bit floats.
@@ -176,6 +176,15 @@ rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool
 RGL_API void
 rgl_get_last_error_string(const char **out_error_string);
 
+/**
+ * Removes all user-created API objects: meshes, entities, scenes, lidars, etc.
+ * Effectively brings the library to the state as-if it was not yet used.
+ * All API handles are invalidated.
+ */
+RGL_API rgl_status_t
+rgl_cleanup(void);
+
+
 /******************************** MESH ********************************/
 
 /**
@@ -203,15 +212,16 @@ RGL_API rgl_status_t
 rgl_mesh_destroy(rgl_mesh_t mesh);
 
 /**
- * Updates mesh vertex data. Note: if indices were set, then the number of vertices must not change.
+ * Updates mesh vertex data. The number of vertices must not change.
+ * This function is intended to update animated meshes.
  * @param mesh Mesh to modify
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
- * @param vertex_count Number of (rgl_vec3f) elements of the vertices array
+ * @param vertex_count Number of elements in the vertices array. Must be equal to the original vertex count!
  */
 RGL_API rgl_status_t
-rgl_mesh_set_vertices(rgl_mesh_t mesh,
-                      rgl_vec3f *vertices,
-                      int vertex_count);
+rgl_mesh_update_vertices(rgl_mesh_t mesh,
+                         rgl_vec3f *vertices,
+                         int vertex_count);
 
 
 /******************************** ENTITY ********************************/
@@ -219,7 +229,6 @@ rgl_mesh_set_vertices(rgl_mesh_t mesh,
 /**
  * Creates an entity and adds it to the given scene.
  * Entity is a lightweight object which pairs a reference to a mesh with a 3D affine transform.
- * NOTE: Current implementation requires each entity to use a unique mesh handle. This limitation will be removed in the future.
  * @param out_entity Handle to the created entity.
  * @param scene Scene where entity will be added. Pass NULL to use the default scene.
  * @param mesh Handle to the mesh which will represent the entity on the scene.

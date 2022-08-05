@@ -17,11 +17,10 @@
 
 struct Mesh : APIObject<Mesh>
 {
-	void setVertices(Vec3f *vertices, std::size_t vertexCount);
+	void updateVertices(Vec3f *vertices, std::size_t vertexCount);
 	OptixTraversableHandle getGAS();
 
 private:
-	void setIndices(Vec3i *indices, std::size_t indexCount);
 	Mesh(Vec3f *vertices, std::size_t vertexCount,
 		 Vec3i *indices, std::size_t indexCount);
 
