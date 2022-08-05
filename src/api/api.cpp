@@ -13,7 +13,6 @@
 
 #include <repr.hpp>
 
-
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
 static std::set recoverableErrors = {RGL_INVALID_ARGUMENT};
@@ -94,6 +93,7 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.9.1: optimized rgl_mesh_update_vertices
 	// 0.9.2: remove external dependency (gdt)
 	// 0.9.3: add API unit tests with fixes, in particular: optix logging
+	// 0.10.0: entities can now share meshes
 	return rglSafeCall([&]() {
             RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
@@ -149,6 +149,18 @@ rgl_get_last_error_string(const char **out_error_string)
 	}
 }
 
+RGL_API rgl_status_t
+rgl_cleanup(void)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_cleanup()");
+		Entity::instances.clear();
+		Mesh::instances.clear();
+		Lidar::instances.clear();
+		Scene::defaultInstance()->clear();
+	});
+}
+
 
 RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh, rgl_vec3f *vertices, int vertex_count, rgl_vec3i *indices, int index_count)
@@ -179,16 +191,14 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 }
 
 RGL_API rgl_status_t
-rgl_mesh_set_vertices(rgl_mesh_t mesh,
-                      rgl_vec3f *vertices,
-                      int vertex_count)
+rgl_mesh_update_vertices(rgl_mesh_t mesh, rgl_vec3f *vertices, int vertex_count)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_mesh_set_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
+        RGL_DEBUG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
-		Mesh::validatePtr(mesh)->setVertices(reinterpret_cast<Vec3f *>(vertices), vertex_count);
+		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<Vec3f *>(vertices), vertex_count);
 	});
 }
 
