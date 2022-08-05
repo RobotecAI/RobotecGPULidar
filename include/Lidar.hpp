@@ -9,7 +9,7 @@
 #include <scene/Scene.hpp>
 #include <Optix.hpp>
 
-#include <rgl/api/experimental.h>
+#include <rgl/api/apiUnitTests.h>
 #include <rgl/api/e2e_extensions.h>
 
 // Currently there is no explicit (documented) model of API / GPU synchronization

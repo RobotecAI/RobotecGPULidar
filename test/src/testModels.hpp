@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rgl/api/experimental.h>
+#include <rgl/api/apiUnitTests.h>
 
 static rgl_vec3f cube_vertices[] = {
 	{-1, -1, -1},

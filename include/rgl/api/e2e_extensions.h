@@ -4,7 +4,7 @@
 */
 #pragma once
 
-#include <rgl/api/experimental.h>
+#include <rgl/api/apiUnitTests.h>
 
 /**
  * Formats internal to E2E simulator, defined in its source code, subject to change.
