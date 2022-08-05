@@ -7,8 +7,7 @@ add_executable(RobotecGPULidar_test
     src/features/gaussianNoise.cpp
     src/features/mesh.cpp
     src/features/transforms.cpp
-    src/utils/testUtils.cpp
-)
+    )
 
 target_link_libraries(RobotecGPULidar_test
     gtest_main
