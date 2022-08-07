@@ -4,7 +4,7 @@
 #include <scene/Mesh.hpp>
 #include <APIObject.hpp>
 #include <utility>
-#include <math/Mat3x4f.h>
+#include <math/Mat3x4f.hpp>
 
 
 struct Entity : APIObject<Entity>

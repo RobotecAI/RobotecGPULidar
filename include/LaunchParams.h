@@ -5,7 +5,7 @@
 #include <data_types/PCLFormats.h>
 #include <data_types/LidarNoiseParams.h>
 #include <data_types/PointTypes.h>
-#include <math/Mat3x4f.h>
+#include <math/Mat3x4f.hpp>
 
 #include <curand_kernel.h>
 

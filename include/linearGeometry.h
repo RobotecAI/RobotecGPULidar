@@ -1,6 +1,6 @@
 #pragma once
 
-#include <math/Mat3x4f.h>
+#include <math/Mat3x4f.hpp>
 #include <math/Vector.hpp>
 
 static HOSTDEVICE Mat3x4f multiply3x4TransformMatrices(const Mat3x4f& lhs, const Mat3x4f& rhs)

@@ -6,7 +6,7 @@
 #include "DeviceBuffer.hpp"
 #include "data_types/PCLFormats.h"
 #include "data_types/LidarNoiseParams.h"
-#include "math/Mat3x4f.h"
+#include "math/Mat3x4f.hpp"
 
 void setupGaussianNoiseGenerator(const unsigned seed,
                                  cudaStream_t stream,
