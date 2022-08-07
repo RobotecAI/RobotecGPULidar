@@ -38,9 +38,9 @@ __device__ T addDistanceNoise(const T& point, float distance_error) {
     return scale(point_normalized, new_distance);
 }
 
-__device__ TransformMatrix addAngularGaussianNoise(const TransformMatrix& transform_to_rotate,
-                                                   const LidarNoiseParams& lidar_noise_params,
-                                                   curandStatePhilox4_32_10_t& randomization_state) {
+__device__ Mat3x4f addAngularGaussianNoise(const Mat3x4f& transform_to_rotate,
+                                           const LidarNoiseParams& lidar_noise_params,
+                                           curandStatePhilox4_32_10_t& randomization_state) {
     float angle =
         lidar_noise_params.angularNoiseMean + curand_normal(&randomization_state) * lidar_noise_params.angularNoiseStDev;
 

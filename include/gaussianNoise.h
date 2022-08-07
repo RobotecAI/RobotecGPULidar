@@ -6,17 +6,17 @@
 #include "DeviceBuffer.hpp"
 #include "data_types/PCLFormats.h"
 #include "data_types/LidarNoiseParams.h"
-#include "math/TransformMatrix.h"
+#include "math/Mat3x4f.h"
 
 void setupGaussianNoiseGenerator(const unsigned seed,
                                  cudaStream_t stream,
                                  DeviceBuffer<curandStatePhilox4_32_10_t>& dPHILOXStates);
 
 void addGaussianNoise(cudaStream_t stream,
-                      const DeviceBuffer<TransformMatrix>& dRayPoses,
+                      const DeviceBuffer<Mat3x4f>& dRayPoses,
                       const LidarNoiseParams& lidar_noise_params,
                       DeviceBuffer<curandStatePhilox4_32_10_t>& dPHILOXStates,
-                      DeviceBuffer<TransformMatrix>& dRayPosesWithNoise);
+                      DeviceBuffer<Mat3x4f>& dRayPosesWithNoise);
 
 void addGaussianNoise(cudaStream_t stream,
                       const DeviceBuffer<PCL12>& dInputPointCloud,

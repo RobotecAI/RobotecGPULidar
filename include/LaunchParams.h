@@ -5,7 +5,7 @@
 #include <data_types/PCLFormats.h>
 #include <data_types/LidarNoiseParams.h>
 #include <data_types/PointTypes.h>
-#include <math/TransformMatrix.h>
+#include <math/Mat3x4f.h>
 
 #include <curand_kernel.h>
 
@@ -17,12 +17,12 @@ struct LaunchLidarParams
 {
     float range;
     size_t rayCount;
-    TransformMatrix lidarPose;
-    TransformMatrix rosTransform;
+    Mat3x4f lidarPose;
+    Mat3x4f rosTransform;
     OptixTraversableHandle traversable;
     LidarNoiseParams lidarNoiseParams;
 
-    const TransformMatrix* dRayPoses;
+    const Mat3x4f* dRayPoses;
     Point3f* dUnityVisualisationPoints;
     PCL12* dRosXYZ;
     int* dWasHit;

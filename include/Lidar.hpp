@@ -28,7 +28,7 @@
  */
 struct Lidar : APIObject<Lidar>
 {
-    Lidar(TransformMatrix* rayPoses, int rayPosesCount);
+    Lidar(Mat3x4f* rayPoses, int rayPosesCount);
 
     void setRingIds(int* ringIds, size_t ringIdsCount);
     void scheduleRaycast(std::shared_ptr<Scene> scene);
@@ -36,8 +36,8 @@ struct Lidar : APIObject<Lidar>
     void getResults(int format, void* data);
 
     LidarNoiseParams lidarNoiseParams {};
-    TransformMatrix lidarPose = TransformMatrix::identity();
-    TransformMatrix rosTransform{};
+    Mat3x4f lidarPose = Mat3x4f::identity();
+    Mat3x4f rosTransform{};
     float range;
 
 private:
@@ -47,7 +47,7 @@ private:
 
     // GPU INPUT
     DeviceBuffer<LaunchLidarParams> dCurrentJob;
-    DeviceBuffer<TransformMatrix> dRayPoses;
+    DeviceBuffer<Mat3x4f> dRayPoses;
     DeviceBuffer<int> dLidarArrayRingIds;
 
     // GPU OUTPUT

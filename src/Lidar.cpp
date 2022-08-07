@@ -5,7 +5,7 @@
 
 API_OBJECT_INSTANCE(Lidar);
 
-Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount) : range(std::numeric_limits<float>::max())
+Lidar::Lidar(Mat3x4f *rayPoses, int rayPosesCount) : range(std::numeric_limits<float>::max())
 {
 	CHECK_CUDA(cudaStreamCreate(&stream));
 
