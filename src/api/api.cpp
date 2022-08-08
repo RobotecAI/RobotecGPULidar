@@ -104,6 +104,7 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.9.2: remove external dependency (gdt)
 	// 0.9.3: add API unit tests with fixes, in particular: optix logging
 	// 0.10.0: entities can now share meshes
+	// 0.10.1: API const correctness, added INVALID_OBJECT error, minor internal changes
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
@@ -244,20 +245,20 @@ rgl_entity_destroy(rgl_entity_t entity)
 }
 
 RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf)
+rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
 {
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity, repr(local_to_world_tf, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(local_to_world_tf != nullptr);
-		auto tf = Mat3x4f::fromRaw(reinterpret_cast<float *>(&local_to_world_tf->value[0][0]));
+		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float *>(&local_to_world_tf->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
 	});
 }
 
 RGL_API rgl_status_t
 rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 rgl_mat3x4f *ray_transforms,
+                 const rgl_mat3x4f *ray_transforms,
                  int ray_transforms_count)
 {
 	return rglSafeCall([&]() {
@@ -266,7 +267,7 @@ rgl_lidar_create(rgl_lidar_t *out_lidar,
 		CHECK_ARG(out_lidar != nullptr);
 		CHECK_ARG(ray_transforms != nullptr);
 		CHECK_ARG(ray_transforms_count > 0);
-		*out_lidar = Lidar::create(reinterpret_cast<Mat3x4f *>(ray_transforms), ray_transforms_count).get();
+		*out_lidar = Lidar::create(reinterpret_cast<const Mat3x4f *>(ray_transforms), ray_transforms_count).get();
 	});
 }
 
@@ -293,7 +294,7 @@ rgl_lidar_set_range(rgl_lidar_t lidar, float range)
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, rgl_mat3x4f *local_to_world_tf)
+rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
@@ -343,7 +344,7 @@ rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_ring_indices(rgl_lidar_t lidar, int *ring_ids, int ring_ids_count)
+rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int *ring_ids, int ring_ids_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
@@ -385,7 +386,7 @@ rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, rgl_mat3x4f *transform)
+rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f *transform)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));

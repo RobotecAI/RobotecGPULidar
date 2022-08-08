@@ -28,9 +28,9 @@
  */
 struct Lidar : APIObject<Lidar>
 {
-    Lidar(Mat3x4f* rayPoses, int rayPosesCount);
+    Lidar(const Mat3x4f* rayPoses, int rayPosesCount);
 
-    void setRingIds(int* ringIds, size_t ringIdsCount);
+    void setRingIds(const int* ringIds, size_t ringIdsCount);
     void scheduleRaycast(std::shared_ptr<Scene> scene);
     int getResultsSize();
     void getResults(int format, void* data);

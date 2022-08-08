@@ -22,7 +22,7 @@ struct Mat3x4f
 		}};
 	}
 
-	static Mat3x4f fromRaw(float* data)
+	static Mat3x4f fromRaw(const float* data)
 	{
 		Mat3x4f matrix = {0};
 		memcpy(matrix.rc, data, 12 * sizeof(float));

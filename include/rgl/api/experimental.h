@@ -259,7 +259,7 @@ rgl_entity_destroy(rgl_entity_t entity);
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
  */
 RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf);
+rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 
 /******************************** LIDAR ********************************/
 
@@ -270,7 +270,7 @@ rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf);
  */
 RGL_API rgl_status_t
 rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 rgl_mat3x4f *ray_transforms,
+                 const rgl_mat3x4f *ray_transforms,
                  int ray_transforms_count);
 
 /**
@@ -295,7 +295,7 @@ rgl_lidar_set_range(rgl_lidar_t lidar, float range);
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
  */
 RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, rgl_mat3x4f *local_to_world_tf);
+rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf);
 
 /**
  * Initiates raytracing for the given scene and lidar and returns immediately.
