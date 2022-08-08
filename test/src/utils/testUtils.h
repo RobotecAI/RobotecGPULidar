@@ -7,6 +7,7 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
+#include <gmock/gmock-matchers.h>
 
 using namespace ::testing;
 
@@ -68,19 +69,14 @@ std::pair<T, T> mean_and_stdev(std::vector<T> v) {
 	return {mean, stdev};
 }
 
-static std::string readFile(std::filesystem::path path)
-{
-	std::stringstream buffer;
-	buffer << std::ifstream(path).rdbuf();
-	return buffer.str();
-}
-
 template<typename T>
-static std::vector<T> readFileVec(std::filesystem::path path)
+static std::vector<T> loadVec(std::filesystem::path path)
 {
 	// open the file:
 	std::streampos fileSize;
 	std::ifstream file(path, std::ios::binary);
+
+	EXPECT_TRUE(file.is_open() && !file.eof());
 
 	// get its size:
 	file.seekg(0, std::ios::end);
@@ -93,6 +89,12 @@ static std::vector<T> readFileVec(std::filesystem::path path)
 	std::vector<T> fileData(fileSize / sizeof(T));
 	file.read((char*) &fileData[0], fileSize);
 	return fileData;
+}
+
+static std::string readFileStr(std::filesystem::path path)
+{
+	std::vector<char> logFileChars = loadVec<char>(path);
+	return {logFileChars.begin(), logFileChars.end()};
 }
 
 static rgl_vec3f cube_vertices[] = {
@@ -145,3 +147,54 @@ static rgl_mat3x4f identity = { .value = {
 	0, 0, 1, 0
 }};
 
+class RGLAutoCleanupTest : public ::testing::Test {
+protected:
+	RGLAutoCleanupTest() { rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false); }
+	~RGLAutoCleanupTest() { rgl_cleanup(); }
+};
+
+
+static rgl_mesh_t makeCubeMesh()
+{
+	rgl_mesh_t mesh = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cube_vertices, ARRAY_SIZE(cube_vertices), cube_indices, ARRAY_SIZE(cube_indices)));
+	EXPECT_THAT(mesh, NotNull());
+	return mesh;
+}
+
+static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullptr)
+{
+	if (mesh == nullptr) {
+		mesh = makeCubeMesh();
+	}
+	rgl_entity_t entity = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, scene, mesh));
+	EXPECT_THAT(entity, NotNull());
+	return entity;
+}
+
+static rgl_lidar_t makeTrivialLidar()
+{
+	rgl_lidar_t lidar = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+	EXPECT_THAT(lidar, NotNull());
+	return lidar;
+}
+
+static rgl_lidar_t loadLidar(std::filesystem::path path)
+{
+	rgl_lidar_t lidar = nullptr;
+	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>(path);
+	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, rays.data(), rays.size()));
+	EXPECT_THAT(lidar, NotNull());
+	return lidar;
+}
+
+static rgl_mesh_t loadMesh(std::filesystem::path path)
+{
+	rgl_mesh_t mesh = nullptr;
+	std::vector<rgl_vec3f> vs = loadVec<rgl_vec3f>(path.string() + std::string(".vertices"));
+	std::vector<rgl_vec3i> is = loadVec<rgl_vec3i>(path.string() + std::string(".indices"));
+	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vs.data(), vs.size(), is.data(), is.size()));
+	return mesh;
+}

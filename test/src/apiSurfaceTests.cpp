@@ -10,41 +10,7 @@ using namespace ::testing;
 #define VERTICES cube_vertices
 #define INDICES cube_indices
 
-class RGLAutoCleanupTest : public ::testing::Test {
-protected:
-	RGLAutoCleanupTest() { rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false); }
-	~RGLAutoCleanupTest() { rgl_cleanup(); }
-};
-
 class APISurfaceTests : public RGLAutoCleanupTest {};
-
-static rgl_mesh_t makeCubeMesh()
-{
-	rgl_mesh_t mesh = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cube_vertices, ARRAY_SIZE(cube_vertices), cube_indices, ARRAY_SIZE(cube_indices)));
-	EXPECT_THAT(mesh, NotNull());
-	return mesh;
-}
-
-static rgl_entity_t makeCubeEntity(rgl_mesh_t mesh=nullptr, rgl_scene_t scene=nullptr)
-{
-	if (mesh == nullptr) {
-		mesh = makeCubeMesh();
-	}
-	rgl_entity_t entity = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, scene, mesh));
-	EXPECT_THAT(entity, NotNull());
-	return entity;
-}
-
-static rgl_lidar_t makeTrivialLidar()
-{
-	rgl_lidar_t lidar = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
-	EXPECT_THAT(lidar, NotNull());
-	return lidar;
-}
-
 
 TEST_F(APISurfaceTests, rgl_configure_logging)
 {
@@ -55,7 +21,7 @@ TEST_F(APISurfaceTests, rgl_configure_logging)
 	ASSERT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_INFO, logFilePath.c_str(), true));
 	ASSERT_THAT(std::filesystem::exists(logFilePath), IsTrue());
 	Logger::instance().flush();
-	ASSERT_THAT(readFile(logFilePath), HasSubstr("Logging configured"));
+	ASSERT_THAT(readFileStr(logFilePath), HasSubstr("Logging configured"));
 
 	// Write some logs
 	RGL_TRACE("This is RGL trace log."); // Should be not printed
@@ -65,13 +31,13 @@ TEST_F(APISurfaceTests, rgl_configure_logging)
 	RGL_CRITICAL("This is RGL critical log.");
 	Logger::instance().flush();
 
-	// Expected log levels should be in the file
-	std::string logFile = readFile(logFilePath);
-	EXPECT_THAT(readFile(logFilePath), Not(HasSubstr("trace")));
-	EXPECT_THAT(readFile(logFilePath), HasSubstr("info"));
-	EXPECT_THAT(readFile(logFilePath), HasSubstr("warn"));
-	EXPECT_THAT(readFile(logFilePath), HasSubstr("error"));
-	EXPECT_THAT(readFile(logFilePath), HasSubstr("critical"));
+	// Expected log levels should be written in the file
+	std::string logFile = readFileStr(logFilePath);
+	EXPECT_THAT(logFile, Not(HasSubstr("trace")));
+	EXPECT_THAT(logFile, HasSubstr("info"));
+	EXPECT_THAT(logFile, HasSubstr("warn"));
+	EXPECT_THAT(logFile, HasSubstr("error"));
+	EXPECT_THAT(logFile, HasSubstr("critical"));
 	ASSERT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
 }
 
@@ -161,7 +127,7 @@ TEST_F(APISurfaceTests, rgl_entity_create_destroy)
 
 TEST_F(APISurfaceTests, rgl_entity_set_pose)
 {
-	rgl_entity_t entity = makeCubeEntity();
+	rgl_entity_t entity = makeEntity();
 
 	// Invalid args
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(nullptr, nullptr), "entity != nullptr");

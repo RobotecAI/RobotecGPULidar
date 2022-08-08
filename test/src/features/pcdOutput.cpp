@@ -9,35 +9,8 @@
 #include <pcl/point_types.h>
 #include <math/Mat3x4f.hpp>
 
-rgl_mat3x4f getTfX(float x, float y, float z, float angleX)
+void captureToPCD(rgl_lidar_t lidar)
 {
-	return {
-	.value = {
-	{ 1, 0, 0, x },
-	{ 0, std::cos(angleX), -std::sin(angleX), y },
-	{ 0, std::sin(angleX), std::cos(angleX), z },
-	}
-	};
-}
-
-TEST(PCD_Output, Godzilla)
-{
-	std::vector<rgl_vec3f> godzillaVs = readFileVec<rgl_vec3f>("/tmp/rgl/godzilla.vertices");
-	std::vector<rgl_vec3i> godzillaIs = readFileVec<rgl_vec3i>("/tmp/rgl/godzilla.indices");
-	std::vector<rgl_mat3x4f> rays = readFileVec<rgl_mat3x4f>("/tmp/rgl/lidar2048-1024-240-120.mat3x4f");
-	rgl_mesh_t mesh = nullptr;
-	rgl_entity_t entity = nullptr;
-	rgl_lidar_t lidar = nullptr;
-
-	rgl_mat3x4f entityPose = getTfX(-50, 50, 200, 90);
-	//T Y-100 Z 100
-	//R X-90 Z=180
-
-	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, godzillaVs.data(), godzillaVs.size(), godzillaIs.data(), godzillaIs.size()));
-	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPose));
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, rays.data(), rays.size()));
-
 	pcl::PointCloud<pcl::PointXYZ> cloud;
 	cloud.height   = 1;
 	cloud.is_dense = true;
@@ -47,7 +20,6 @@ TEST(PCD_Output, Godzilla)
 
 	std::vector<rgl_vec3f> output;
 	output.resize(cloud.width);
-	fmt::print("{} / {}\n", output.size(), sizeof(rgl_vec3f) * output.size());
 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, output.data()));
 
 	for (auto&& v : output) {
@@ -55,12 +27,49 @@ TEST(PCD_Output, Godzilla)
 	}
 
 	pcl::io::savePCDFileASCII ("test_pcd.pcd", cloud);
+}
 
-	// for (auto&& v : godzillaVs) {
-	// 	fmt::print("{} {} {}\n", v.value[0], v.value[1], v.value[2]);
-	// }
-	//
-	// for (auto&& v : godzillaIs) {
-	// 	fmt::print("{} {} {}\n", v.value[0], v.value[1], v.value[2]);
-	// }
+TEST(PCD_Output, Godzilla)
+{
+	rgl_lidar_t lidar = loadLidar("/home/prybicki/Desktop/rgl/lidar2048-1024-240-120.mat3x4f");
+	rgl_mesh_t mesh = loadMesh("/home/prybicki/Desktop/rgl/godzilla");
+	rgl_entity_t entity = makeEntity(mesh);
+
+	rgl_mat3x4f entityPose = (Mat3x4f::rotation(90, 0, 0) * Mat3x4f::translation(0, 150, 150)).toRGL();
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPose));
+
+	captureToPCD(lidar);
+}
+
+TEST(PCD_Output, Orientation)
+{
+	constexpr int BOX_COUNT = 10;
+	constexpr float scaleX = 1.0f;
+	constexpr float scaleY = 2.0f;
+	constexpr float scaleZ = 3.0f;
+
+	rgl_mesh_t cube = makeCubeMesh();
+	std::vector<rgl_entity_t> xs, ys, zs;
+	for (int i = 0; i < BOX_COUNT; ++i) {
+		xs.push_back(makeEntity(cube));
+		ys.push_back(makeEntity(cube));
+		zs.push_back(makeEntity(cube));
+
+		rgl_mat3x4f xTf = Mat3x4f::TRS({(2 * scaleX + 2) * i, 0, 0}, {45, 0, 0}, {scaleX, 1, 1}).toRGL();
+		rgl_mat3x4f yTf = Mat3x4f::TRS({0, (2 * scaleY + 2) * i, 0}, {0, 45, 0}, {1, scaleY, 1}).toRGL();
+		rgl_mat3x4f zTf = Mat3x4f::TRS({0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ}).toRGL();
+
+		// rgl_mat3x4f yTf = Mat3x4f::TRS({0, 5, 0}, {0, 0, 0}, {1, 2, 1}).toRGL();
+
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(xs[i], &xTf));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(ys[i], &yTf));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(zs[i], &zTf));
+	}
+
+	rgl_lidar_t lidar = loadLidar("/tmp/rgl/lidar1000-1000-360-180.mat3x4f");
+	rgl_mat3x4f lidarTf = Mat3x4f::translation(10.0f, 10.0f, 10.0f).toRGL();
+	EXPECT_RGL_SUCCESS(rgl_lidar_set_pose(lidar, &lidarTf));
+	captureToPCD(lidar);
+
+
 }
