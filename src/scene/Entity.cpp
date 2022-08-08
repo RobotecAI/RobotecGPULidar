@@ -4,10 +4,10 @@ API_OBJECT_INSTANCE(Entity);
 
 Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
 : mesh(std::move(mesh))
-, transform(TransformMatrix::identity())
+, transform(Mat3x4f::identity())
 , humanReadableName(std::move(name)) { }
 
-void Entity::setTransform(TransformMatrix newTransform)
+void Entity::setTransform(Mat3x4f newTransform)
 {
 	transform = newTransform;
 	if (auto activeScene = scene.lock()) {
@@ -25,7 +25,7 @@ OptixInstance Entity::getIAS(int idx)
 		.flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		.traversableHandle = mesh->getGAS(),
 	};
-	memcpy(instance.transform, transform.matrix_flat, sizeof(float) * 12);
+	transform.toRaw(instance.transform);
 	return instance;
 }
 

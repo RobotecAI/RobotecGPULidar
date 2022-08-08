@@ -2,8 +2,6 @@
 #include <gtest/gtest.h>
 #include <rgl/api/e2e_extensions.h>
 #include <rgl/api/experimental.h>
-#include <testModels.hpp>
-#include <utils/statistical_utils.h>
 #include <utils/testUtils.h>
 
 class GaussianNoise : public ::testing::Test {

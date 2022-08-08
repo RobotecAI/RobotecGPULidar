@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
-#include <testModels.hpp>
 #include <utils/testUtils.h>
 
 using namespace ::testing;

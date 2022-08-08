@@ -5,7 +5,7 @@
 
 API_OBJECT_INSTANCE(Lidar);
 
-Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount) : range(std::numeric_limits<float>::max())
+Lidar::Lidar(const Mat3x4f *rayPoses, int rayPosesCount) : range(std::numeric_limits<float>::max())
 {
 	CHECK_CUDA(cudaStreamCreate(&stream));
 
@@ -34,9 +34,11 @@ Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount) : range(std::numeric_
 
 	dRandomizationStates.resizeToFit(rayPosesCount);
 	setupGaussianNoiseGenerator(randomDevice(), stream, dRandomizationStates);
+
+	densePointCount = 0;
 }
 
-void Lidar::setRingIds(int *ringIds, size_t ringIdsCount)
+void Lidar::setRingIds(const int *ringIds, size_t ringIdsCount)
 {
 	if (ringIdsCount <= 0) {
 		auto msg = fmt::format("LidarContext::LidarContext: lidarArrayRingCount ({}) must be > 0", ringIdsCount);

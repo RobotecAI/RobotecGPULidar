@@ -4,7 +4,7 @@
 #include <scene/Mesh.hpp>
 #include <APIObject.hpp>
 #include <utility>
-#include <math/TransformMatrix.h>
+#include <math/Mat3x4f.hpp>
 
 
 struct Entity : APIObject<Entity>
@@ -13,13 +13,13 @@ struct Entity : APIObject<Entity>
 	~Entity();
 
 	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
-	void setTransform(TransformMatrix newTransform);
+	void setTransform(Mat3x4f newTransform);
 	OptixInstance getIAS(int idx);
 
 	std::shared_ptr<Mesh> mesh;
 	std::weak_ptr<Scene> scene;
 private:
-	TransformMatrix transform;
+	Mat3x4f transform;
 	std::optional<std::string> humanReadableName;
 	friend struct APIObject<Entity>;
 	friend struct Scene;
