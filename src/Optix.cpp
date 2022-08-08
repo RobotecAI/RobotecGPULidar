@@ -86,17 +86,17 @@ Optix::Optix()
 	auto cb = [](unsigned level, const char* tag, const char* message, void*) {
 		auto fmt = "[OptiX][{:^12}]: {}\n";
 		if (level == OPTIX_LOG_LEVEL_FATAL) {
-			RGL_CRITICAL(fmt, level, tag, message);
+			RGL_CRITICAL(fmt::runtime(fmt), level, tag, message);
 		}
 		if (level == OPTIX_LOG_LEVEL_ERROR) {
-			RGL_ERROR(fmt, level, tag, message);
+			RGL_ERROR(fmt::runtime(fmt), level, tag, message);
 		}
 		if (level == OPTIX_LOG_LEVEL_WARN) {
-			RGL_WARN(fmt, level, tag, message);
+			RGL_WARN(fmt::runtime(fmt), level, tag, message);
 		}
 		if (level == OPTIX_LOG_LEVEL_INFO) {
 			// Lower log level to prevent leaking backend logs to end user
-			RGL_DEBUG(fmt, level, tag, message);
+			RGL_DEBUG(fmt::runtime(fmt), level, tag, message);
 		}
 	};
 

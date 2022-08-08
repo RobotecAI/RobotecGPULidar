@@ -93,8 +93,8 @@ extern "C" __global__ void __raygen__renderLidar()
     uint32_t u3 = 0U;
     packPointer(&lidarPositionPRD, u0, u1);
 
-    TransformMatrix ray_pose_local = optixLaunchLidarParams.dRayPoses[ix];
-    TransformMatrix ray_pose_global = multiply3x4TransformMatrices(optixLaunchLidarParams.lidarPose, ray_pose_local);
+    Mat3x4f ray_pose_local = optixLaunchLidarParams.dRayPoses[ix];
+    Mat3x4f ray_pose_global = multiply3x4TransformMatrices(optixLaunchLidarParams.lidarPose, ray_pose_local);
 
     Vec3f from = getTranslationFrom3x4Transform(ray_pose_global);
     Vec3f zero = Vec3f(0.0f, 0.0f, 0.0f);

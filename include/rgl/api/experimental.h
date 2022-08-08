@@ -7,7 +7,7 @@
 
 #define RGL_VERSION_MAJOR 0
 #define RGL_VERSION_MINOR 10
-#define RGL_VERSION_PATCH 0
+#define RGL_VERSION_PATCH 1
 
 /**
  * Three consecutive 32-bit floats.
@@ -98,6 +98,14 @@ typedef enum
 	RGL_LOGGING_ERROR,
 
 	/**
+	 * Indicates that provided API object handle is not known by RGL.
+	 * This can be caused by using previously destroyed API object, e.g.
+	 * by previous call to rgl_*_destroy(...) or rgl_cleanup()
+	 * This is a recoverable error.
+	 */
+	RGL_INVALID_API_OBJECT,
+
+	/**
 	 * Requested functionality has been not yet implemented.
 	 * This is a recoverable error.
 	 */
@@ -138,6 +146,7 @@ typedef enum : int
 
 typedef enum
 {
+	// TODO(prybicki): avoid 0 enum
 	RGL_ANGULAR_NOISE_TYPE_RAY_BASED = 0,
 	RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED = 1
 } rgl_angular_noise_type_t;
@@ -169,9 +178,9 @@ RGL_API rgl_status_t
 rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout);
 
 /**
- * Returns pointer to string explaining the most recent error. This function always succeeds.
- * @param out_error Address to store pointer to string explaining the cause of the given error.
+ * Returns a pointer to a string explaining last error. This function always succeeds.
  * Returned pointer is valid only until next RGL API call.
+ * @param out_error Address to store pointer to string explaining the cause of the given error.
  */
 RGL_API void
 rgl_get_last_error_string(const char **out_error_string);
@@ -198,9 +207,9 @@ rgl_cleanup(void);
  */
 RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh,
-                rgl_vec3f *vertices,
+                const rgl_vec3f *vertices,
                 int vertex_count,
-                rgl_vec3i *indices,
+                const rgl_vec3i *indices,
                 int index_count);
 
 /**
@@ -220,7 +229,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh);
  */
 RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh,
-                         rgl_vec3f *vertices,
+                         const rgl_vec3f *vertices,
                          int vertex_count);
 
 
@@ -250,7 +259,7 @@ rgl_entity_destroy(rgl_entity_t entity);
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
  */
 RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf);
+rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 
 /******************************** LIDAR ********************************/
 
@@ -261,8 +270,15 @@ rgl_entity_set_pose(rgl_entity_t entity, rgl_mat3x4f *local_to_world_tf);
  */
 RGL_API rgl_status_t
 rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 rgl_mat3x4f *ray_transforms,
+                 const rgl_mat3x4f *ray_transforms,
                  int ray_transforms_count);
+
+/**
+ * Destroys lidar and releases its resources. After this call, provided lidar handle must not be used.
+ * @param lidar Lidar handle to be destroyed.
+ */
+RGL_API rgl_status_t
+rgl_lidar_destroy(rgl_lidar_t lidar);
 
 /**
  * Allows to set maximum distance that rays are to be traced.
@@ -274,19 +290,12 @@ RGL_API rgl_status_t
 rgl_lidar_set_range(rgl_lidar_t lidar, float range);
 
 /**
- * Destroys lidar and releases its resources. After this call, provided lidar handle must not be used.
- * @param lidar Lidar handle to be destroyed.
- */
-RGL_API rgl_status_t
-rgl_lidar_destroy(rgl_lidar_t lidar);
-
-/**
  * Changes position of the lidar, i.e. base transform transform for all rays.
  * @param lidar Lidar handle to have the pose changed
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
  */
 RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, rgl_mat3x4f *local_to_world_tf);
+rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf);
 
 /**
  * Initiates raytracing for the given scene and lidar and returns immediately.

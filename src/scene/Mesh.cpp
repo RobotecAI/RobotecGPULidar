@@ -6,13 +6,13 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(Vec3f *vertices, size_t vertexCount, Vec3i *indices, size_t indexCount)
+Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
 {
 	dVertices.copyFromHost(vertices, vertexCount);
 	dIndices.copyFromHost(indices, indexCount);
 }
 
-void Mesh::updateVertices(Vec3f *vertices, std::size_t vertexCount)
+void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
 {
 	if (dVertices.getElemCount() != vertexCount) {
 		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",

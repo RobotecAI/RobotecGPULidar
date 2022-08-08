@@ -19,7 +19,7 @@ typedef enum
 } rgl_format_e2e_t;
 
 RGL_API rgl_status_t
-rgl_lidar_set_ring_indices(rgl_lidar_t lidar, int* ring_ids, int ring_ids_count);
+rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int* ring_ids, int ring_ids_count);
 
 RGL_API rgl_status_t
 rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
@@ -32,4 +32,4 @@ rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
 
 // Note: as of now this affects only E2E formats
 RGL_API rgl_status_t
-rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, rgl_mat3x4f* transform);
+rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f* transform);

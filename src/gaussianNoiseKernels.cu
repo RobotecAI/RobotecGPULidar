@@ -54,10 +54,10 @@ __global__ void kAddGaussianNoise(int point_cloud_size,
 }
 
 __global__ void kAddGaussianNoise(int point_cloud_size,
-                                  const TransformMatrix* ray_poses,
+                                  const Mat3x4f* ray_poses,
                                   LidarNoiseParams lidar_noise_params,
                                   curandStatePhilox4_32_10_t* state,
-                                  TransformMatrix *ray_poses_with_noise) {
+                                  Mat3x4f *ray_poses_with_noise) {
     const int id = threadIdx.x + blockIdx.x * blockDim.x;
     if (id >= point_cloud_size) {
         return;
@@ -81,10 +81,10 @@ void setupGaussianNoiseGenerator(unsigned int seed,
 
 
 void addGaussianNoise(cudaStream_t stream,
-                      const DeviceBuffer<TransformMatrix>& dRayPoses,
+                      const DeviceBuffer<Mat3x4f>& dRayPoses,
                       const LidarNoiseParams& lidar_noise_params,
                       DeviceBuffer<curandStatePhilox4_32_10_t>& dPHILOXStates,
-                      DeviceBuffer<TransformMatrix>& dRayPosesWithNoise) {
+                      DeviceBuffer<Mat3x4f>& dRayPosesWithNoise) {
 
     const int cloud_size = dRayPoses.getElemCount();
     const int thread_per_block_count = 256;

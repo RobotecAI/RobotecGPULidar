@@ -1,11 +1,11 @@
 #pragma once
 
-#include <math/TransformMatrix.h>
+#include <math/Mat3x4f.hpp>
 #include <math/Vector.hpp>
 
-static HOSTDEVICE TransformMatrix multiply3x4TransformMatrices(const TransformMatrix& lhs, const TransformMatrix& rhs)
+static HOSTDEVICE Mat3x4f multiply3x4TransformMatrices(const Mat3x4f& lhs, const Mat3x4f& rhs)
 {
-    TransformMatrix ret;
+    Mat3x4f ret;
     int M = 3;
     int R = 4;
     int N = 4;
@@ -27,19 +27,19 @@ static HOSTDEVICE TransformMatrix multiply3x4TransformMatrices(const TransformMa
     return ret;
 }
 
-static HOSTDEVICE TransformMatrix yAxisRotation3x4Matrix(float angle) {
-    TransformMatrix ret;
+static HOSTDEVICE Mat3x4f yAxisRotation3x4Matrix(float angle) {
+    Mat3x4f ret;
     ret[0] = cos(angle);  ret[1] = 0.0f; ret[2] = -sin(angle);  ret[3] = 0.0f;
     ret[4] = 0.0f;        ret[5] = 1.0f; ret[6] = 0.0f;        ret[7] = 0.0f;
     ret[8] = sin(angle); ret[9] = 0.0f; ret[10] = cos(angle); ret[11] = 0.0f;
     return ret;
 }
 
-static HOSTDEVICE Vec3f getTranslationFrom3x4Transform(const TransformMatrix& transform) {
+static HOSTDEVICE Vec3f getTranslationFrom3x4Transform(const Mat3x4f& transform) {
     return {transform[3], transform[7], transform[11]};
 }
 
-static HOSTDEVICE Vec3f multiply3x4TransformByVector3(const TransformMatrix& m_lhs, const Vec3f v_rhs) {
+static HOSTDEVICE Vec3f multiply3x4TransformByVector3(const Mat3x4f& m_lhs, const Vec3f v_rhs) {
     Vec3f ret (0.0f, 0.0f, 0.0f);
     int M = 3;
     int N = 4;
