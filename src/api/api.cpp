@@ -7,10 +7,19 @@
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
 
+#include <pipeline/Node.hpp>
+#include <pipeline/runPipeline.hpp>
+
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
 
 #include <repr.hpp>
+
+#define CHECK_ARG(expr)                                                                          \
+do if (!(expr)) {                                                                                \
+    auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr); \
+    throw std::invalid_argument(msg);                                                            \
+} while(0)
 
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
@@ -76,11 +85,22 @@ static rgl_status_t rglSafeCall(Fn fn)
 	return updateAPIState(RGL_SUCCESS);
 }
 
-#define CHECK_ARG(expr)                                                                          \
-do if (!(expr)) {                                                                                \
-    auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr); \
-    throw std::invalid_argument(msg);                                                            \
-} while(0)
+template<typename NodeType, typename... Args>
+void createOrUpdateNode(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, Args&&... args)
+{
+	CHECK_ARG(nodeRawPtr != nullptr);
+	std::shared_ptr<NodeType> node;
+	std::shared_ptr<Node> parent = (parentRaw != nullptr) ? Node::validatePtr(parentRaw) : nullptr;
+	if (*nodeRawPtr == nullptr) {
+		node = Node::create<NodeType>();
+		node->setParent(parent);
+	}
+	else {
+		node = Node::validatePtr<NodeType>(*nodeRawPtr);
+	}
+	node->setParameters(args...);
+	*nodeRawPtr = node.get();
+}
 
 extern "C" {
 
@@ -252,5 +272,52 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
 		Entity::validatePtr(entity)->setTransform(tf);
 	});
 }
+
+RGL_API rgl_status_t
+rgl_pipeline_run(rgl_node_t node)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_run(node={})", repr(node));
+		CHECK_ARG(node != nullptr);
+		runPipeline(Node::validatePtr(node));
+	});
+}
+
+
+RGL_API rgl_status_t
+rgl_pipeline_use_rays_mat3x4f(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_mat3x4f* rays, size_t ray_count)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_use_rays_mat3x4f(node={}, parent={}, rays={})", repr(nodeRawPtr), repr(parentRaw), repr(rays, ray_count));
+		CHECK_ARG(rays != nullptr);
+		CHECK_ARG(ray_count > 0);
+		createOrUpdateNode<UseRaysMat3x4fNode>(nodeRawPtr, parentRaw, rays, ray_count);
+	});
+}
+
+RGL_API rgl_status_t
+rgl_pipeline_raytrace(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_scene_t scene, float range)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_raytrace(node={}, parent={}, scene={}, range={})", repr(nodeRawPtr), repr(parentRaw), (void*) scene, range);
+		CHECK_ARG(!std::isnan(range));
+		CHECK_ARG(range > 0.0f);
+
+		createOrUpdateNode<RaytraceNode>(nodeRawPtr, parentRaw, range);
+	});
+}
+
+RGL_API rgl_status_t
+rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const char* file_path)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_write_pcd_file(node={}, parent={}, file={})", repr(nodeRawPtr), repr(parentRaw), file_path);
+		CHECK_ARG(file_path != nullptr);
+		CHECK_ARG(file_path[0] != '\0');
+
+		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, parentRaw, file_path);
+	});
+}
+
 
 }

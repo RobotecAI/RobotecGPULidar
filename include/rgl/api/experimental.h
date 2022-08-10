@@ -263,26 +263,35 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 // /******************************** PIPELINE ********************************/
 
 RGL_API rgl_status_t
+rgl_pipeline_run(rgl_node_t node);
+
+RGL_API rgl_status_t
 rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, rgl_mat3x4f* rays, size_t ray_count);
+
+RGL_API rgl_status_t
+rgl_pipeline_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
+
+RGL_API rgl_status_t
+rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
 
 // Cuts out requested fields and formats a contiguous binary buffer.
 RGL_API rgl_status_t
-rgl_pipeline_format(rgl_node_t* out_node, rgl_node_t parent, rgl_field_t* fields, int field_count);
+rgl_pipeline_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* fields, int field_count);
 
 // Removes non-hit points. Performed lazily - only one occurrence in the pipeline will have computational cost.
 RGL_API rgl_status_t
-rgl_pipeline_compact(rgl_node_t* out_node, rgl_node_t parent);
+rgl_pipeline_compact(rgl_node_t* node, rgl_node_t parent);
 
 // Reduces the number of points using the PCL library.
 RGL_API rgl_status_t
-rgl_pipeline_downsample(rgl_node_t* out_node, rgl_node_t parent, float leaf_size);
+rgl_pipeline_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 RGL_API rgl_status_t
-rgl_pipeline_transform_pointcloud(rgl_node_t* out_node, rgl_node_t parent, rgl_mat3x4f transform);
+rgl_pipeline_transform_pointcloud(rgl_node_t* node, rgl_node_t parent, rgl_mat3x4f transform);
 
 RGL_API rgl_status_t
-rgl_pipeline_transform_rays(rgl_node_t* out_node, rgl_node_t parent, rgl_mat3x4f transform);
+rgl_pipeline_transform_rays(rgl_node_t* node, rgl_node_t parent, rgl_mat3x4f transform);
 
 
 // Applies gaussian noise.
@@ -297,7 +306,7 @@ rgl_pipeline_transform_rays(rgl_node_t* out_node, rgl_node_t parent, rgl_mat3x4f
 
 // Appends data from the parent node to the given PCD file
 RGL_API rgl_status_t
-rgl_pipeline_write_pcd_file(rgl_node_t* out_node, rgl_node_t parent, const char* file_path);
+rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
 
 // Publishes data from the parent node on the given topic
 RGL_API rgl_status_t

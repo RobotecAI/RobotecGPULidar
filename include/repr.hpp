@@ -41,7 +41,7 @@ struct fmt::formatter<rgl_mat3x4f>
 };
 
 template<typename ArrayT>
-std::string repr(ArrayT* elements, int elemCount=1, int elemLimit=3)
+std::string repr(ArrayT* elements, size_t elemCount=1, int elemLimit=3)
 {
 #define PUSH(...) fmt::format_to(std::back_inserter(out), __VA_ARGS__)
 	if (elements == nullptr) {
@@ -49,8 +49,8 @@ std::string repr(ArrayT* elements, int elemCount=1, int elemLimit=3)
 	}
 	int suffixLimit = elemLimit / 2;
 	int prefixLimit = elemLimit - suffixLimit; // Prefix is +1 longer in case of uneven limit
-	int prefixLength = std::min(prefixLimit, elemCount);
-	int suffixLength = std::min(suffixLimit, elemCount - prefixLength);
+	int prefixLength = std::min(prefixLimit, (int) elemCount);
+	int suffixLength = std::min(suffixLimit, (int) elemCount - prefixLength);
 	auto out = fmt::memory_buffer();
 
 	if (elemCount > 1) {
@@ -86,3 +86,15 @@ std::string repr(ArrayT* elements, int elemCount=1, int elemLimit=3)
 	return to_string(out);
 #undef PUSH
 }
+
+static inline std::string repr(rgl_node_t node)
+{
+	return fmt::format("{}", (void*) node);
+}
+
+static inline std::string repr(rgl_node_t* node)
+{
+	std::string nodePointee = (node != nullptr) ? fmt::format("->{}", repr(*node)) : "";
+	return fmt::format("{}{}", (void*) node, nodePointee);
+}
+
