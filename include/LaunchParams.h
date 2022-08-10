@@ -3,7 +3,6 @@
 #include <optix.h>
 
 #include <data_types/PCLFormats.h>
-#include <data_types/LidarNoiseParams.h>
 #include <data_types/PointTypes.h>
 #include <math/Mat3x4f.hpp>
 
@@ -20,7 +19,6 @@ struct LaunchLidarParams
     Mat3x4f lidarPose;
     Mat3x4f rosTransform;
     OptixTraversableHandle traversable;
-    LidarNoiseParams lidarNoiseParams;
 
     const Mat3x4f* dRayPoses;
     Point3f* dUnityVisualisationPoints;

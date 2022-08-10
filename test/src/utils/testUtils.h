@@ -48,12 +48,12 @@ std::vector<float> computeAngles(const T* data, int size)
     return return_data;
 }
 
-static void getLidarResults(rgl_lidar_t lidar, int* hitpointCount, void* results)
-{
-	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, hitpointCount));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
-}
+// static void getLidarResults(rgl_lidar_t lidar, int* hitpointCount, void* results)
+// {
+// 	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
+// 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, hitpointCount));
+// 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+// }
 
 template<typename T>
 std::pair<T, T> mean_and_stdev(std::vector<T> v) {
@@ -173,22 +173,22 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 	return entity;
 }
 
-static rgl_lidar_t makeTrivialLidar()
-{
-	rgl_lidar_t lidar = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
-	EXPECT_THAT(lidar, NotNull());
-	return lidar;
-}
+// static rgl_lidar_t makeTrivialLidar()
+// {
+// 	rgl_lidar_t lidar = nullptr;
+// 	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
+// 	EXPECT_THAT(lidar, NotNull());
+// 	return lidar;
+// }
 
-static rgl_lidar_t loadLidar(std::filesystem::path path)
-{
-	rgl_lidar_t lidar = nullptr;
-	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>(path);
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, rays.data(), rays.size()));
-	EXPECT_THAT(lidar, NotNull());
-	return lidar;
-}
+// static rgl_lidar_t loadLidar(std::filesystem::path path)
+// {
+// 	rgl_lidar_t lidar = nullptr;
+// 	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>(path);
+// 	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, rays.data(), rays.size()));
+// 	EXPECT_THAT(lidar, NotNull());
+// 	return lidar;
+// }
 
 static rgl_mesh_t loadMesh(std::filesystem::path path)
 {

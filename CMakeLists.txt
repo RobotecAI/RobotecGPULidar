@@ -31,7 +31,7 @@ add_subdirectory(external)
 find_package(CUDAToolkit REQUIRED)
 find_program(BIN2C bin2c DOC "Path to the cuda-sdk bin2c executable.")
 if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
-    message(FATAL_ERROR "Required environent variable OptiX_INSTALL_DIR is empty, aborting build")
+    message(FATAL_ERROR "Required environment variable OptiX_INSTALL_DIR is empty, aborting build")
 endif()
 
 # Includes
@@ -51,14 +51,14 @@ add_library(optixPrograms optixProgramsPtx.c)
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
     src/Logger.cpp
-    src/Lidar.cpp
-    src/formatPCL.cu
+#    src/Lidar.cpp
+#    src/formatPCL.cu
     src/Optix.cpp
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
-    src/gaussianNoiseKernels.cu
+#    src/gaussianNoiseKernels.cu
 )
 
 target_include_directories(RobotecGPULidar PUBLIC include)

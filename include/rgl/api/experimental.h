@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 10
-#define RGL_VERSION_PATCH 1
+#define RGL_VERSION_MINOR 11
+#define RGL_VERSION_PATCH 0
 
 /**
  * Three consecutive 32-bit floats.
@@ -50,14 +50,9 @@ typedef struct Mesh *rgl_mesh_t;
 typedef struct Entity *rgl_entity_t;
 
 /**
- * Opaque handle representing a Lidar, including
- * - it's position
- * - rays' starting positions and directions, relative to the lidar,
- * - rays' ranges
- * - possibly other properties in the future
- * Note: Creating and destroying a Lidar is a costly operation.
+ * TODO(prybicki)
  */
-typedef struct Lidar *rgl_lidar_t;
+typedef struct Node *rgl_node_t;
 
 /**
  * Opaque handle representing a scene - a collection of entities.
@@ -119,18 +114,8 @@ typedef enum
 } rgl_status_t;
 
 /**
- * Output data formats.
+ * Available logging verbosity levels.
  */
-typedef enum
-{
-	RGL_FORMAT_INVALID = 0,
-	/**
-	 * Three consecutive 32-bit floats describing hit-point coordinates in the world frame. Does not contain non-hits.
-	 */
-	RGL_FORMAT_XYZ = 1,
-	RGL_FORMAT_COUNT
-} rgl_format_t;
-
 typedef enum : int
 {
 	RGL_LOG_LEVEL_ALL = 0,
@@ -144,12 +129,26 @@ typedef enum : int
 	RGL_LOG_LEVEL_COUNT = 7
 } rgl_log_level_t;
 
+/**
+ * Available point attributes, used to specify layout of the binary data.
+ * TODO(prybicki)
+ */
 typedef enum
 {
-	// TODO(prybicki): avoid 0 enum
-	RGL_ANGULAR_NOISE_TYPE_RAY_BASED = 0,
-	RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED = 1
-} rgl_angular_noise_type_t;
+	RGL_FIELD_X_F32,
+	RGL_FIELD_Y_F32,
+	RGL_FIELD_Z_F32,
+	RGL_FIELD_INTENSITY_F32,
+	RGL_FIELD_RING_ID_U16,
+	RGL_FIELD_AZIMUTH_F32,
+	RGL_FIELD_DISTANCE_F32,
+	RGL_FIELD_RETURN_TYPE_U8,
+	RGL_FIELD_TIME_STAMP_F64,
+	RGL_FIELD_PADDING_8,
+	RGL_FIELD_PADDING_16,
+	RGL_FIELD_PADDING_32,
+	// ...
+} rgl_field_t;
 
 /******************************** GENERAL ********************************/
 
@@ -261,65 +260,58 @@ rgl_entity_destroy(rgl_entity_t entity);
 RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 
-/******************************** LIDAR ********************************/
+// /******************************** PIPELINE ********************************/
 
-/**
- * Creates lidar from ray transforms.
- * Lidar range will be set to default (inf).
- * @param out_lidar Address where to store resulting lidar handle.
- */
 RGL_API rgl_status_t
-rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 const rgl_mat3x4f *ray_transforms,
-                 int ray_transforms_count);
+rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, rgl_mat3x4f* rays, size_t ray_count);
 
-/**
- * Destroys lidar and releases its resources. After this call, provided lidar handle must not be used.
- * @param lidar Lidar handle to be destroyed.
- */
+// Cuts out requested fields and formats a contiguous binary buffer.
 RGL_API rgl_status_t
-rgl_lidar_destroy(rgl_lidar_t lidar);
+rgl_pipeline_format(rgl_node_t* out_node, rgl_node_t parent, rgl_field_t* fields, int field_count);
 
-/**
- * Allows to set maximum distance that rays are to be traced.
- * Hit-points further than given range will be not reported.
- * @param lidar Lidar handle to change range.
- * @param range Positive, finite real number.
- */
+// Removes non-hit points. Performed lazily - only one occurrence in the pipeline will have computational cost.
 RGL_API rgl_status_t
-rgl_lidar_set_range(rgl_lidar_t lidar, float range);
+rgl_pipeline_compact(rgl_node_t* out_node, rgl_node_t parent);
 
-/**
- * Changes position of the lidar, i.e. base transform transform for all rays.
- * @param lidar Lidar handle to have the pose changed
- * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
- */
+// Reduces the number of points using the PCL library.
 RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf);
+rgl_pipeline_downsample(rgl_node_t* out_node, rgl_node_t parent, float leaf_size);
 
-/**
- * Initiates raytracing for the given scene and lidar and returns immediately.
- * When raytracing is in-progress, some calls may be blocking.
- * @param scene Handle of the scene where raytracing will be performed. Pass NULL to use the default scene.
- * @param lidar Handle of the lidar that will be used to perform raytracing.
- */
+// Applies affine transformation, e.g. to change the coordinate frame.
 RGL_API rgl_status_t
-rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar);
+rgl_pipeline_transform_pointcloud(rgl_node_t* out_node, rgl_node_t parent, rgl_mat3x4f transform);
 
-/**
- * Returns number of elements (e.g. hit-points) of the most recent result of the given format.
- * User should prepare a buffer at least <number-of-elements> * <size-of-element> bytes long.
- * @param format Format to query
- * @param out_size Address to store result
- */
 RGL_API rgl_status_t
-rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size);
+rgl_pipeline_transform_rays(rgl_node_t* out_node, rgl_node_t parent, rgl_mat3x4f transform);
 
-/**
- * Copy results of the given format into provided buffer.
- * Required buffer size can be queried using rgl_lidar_get_output_size.
- * @param format Result format to copy
- * @param out_data Target buffer
- */
+
+// Applies gaussian noise.
+// RGL_API rgl_status_t
+// rgl_pipeline_apply_gaussian_noise(rgl_node_t* out_node, rgl_node_t parent,
+//                                   rgl_angular_noise_type_t angular_noise_type,
+//                                   float angular_noise_stddev,
+//                                   float angular_noise_mean,
+//                                   float distance_noise_stddev_base,
+//                                   float distance_noise_stddev_rise_per_meter,
+//                                   float distance_noise_mean);
+
+// Appends data from the parent node to the given PCD file
 RGL_API rgl_status_t
-rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data);
+rgl_pipeline_write_pcd_file(rgl_node_t* out_node, rgl_node_t parent, const char* file_path);
+
+// Publishes data from the parent node on the given topic
+RGL_API rgl_status_t
+rgl_pipeline_publish_ros2_topic(rgl_node_t channel, rgl_node_t parent, const char* topic /* QoS settings, etc */);
+
+// // Returns the minimal size of the buffer required to receive data from the leaf node of a pipeline
+// RGL_API rgl_status_t
+// rgl_pipeline_node_get_results_size(rgl_lidar_t lidar, rgl_node_t node, int* point_count);
+//
+// // Returns binary data from the given leaf node of a pipeline.
+// RGL_API rgl_status_t
+// rgl_pipeline_node_get_results_data(rgl_lidar_t lidar, rgl_node_t node, void* data);
+//
+// // Requests LiDAR to perform the pipeline after raytracing.
+// // Point dimensions to be computed are inferred from all format nodes in the pipeline.
+// RGL_API rgl_status_t
+// rgl_lidar_set_pipeline(rgl_lidar_t lidar, rgl_node_t pipeline_root_node);

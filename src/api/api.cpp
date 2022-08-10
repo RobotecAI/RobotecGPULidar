@@ -2,13 +2,11 @@
 #include <spdlog/common.h>
 
 #include <rgl/api/experimental.h>
-#include <rgl/api/e2e_extensions.h>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
 
-#include <Lidar.hpp>
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
 
@@ -167,7 +165,6 @@ rgl_cleanup(void)
 		RGL_DEBUG("rgl_cleanup()");
 		Entity::instances.clear();
 		Mesh::instances.clear();
-		Lidar::instances.clear();
 		Scene::defaultInstance()->clear();
 	});
 }
@@ -256,143 +253,4 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
 	});
 }
 
-RGL_API rgl_status_t
-rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 const rgl_mat3x4f *ray_transforms,
-                 int ray_transforms_count)
-{
-	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_create(out_lidar={}, ray_transforms={})",
-		      (void*) out_lidar, repr(ray_transforms, ray_transforms_count));
-		CHECK_ARG(out_lidar != nullptr);
-		CHECK_ARG(ray_transforms != nullptr);
-		CHECK_ARG(ray_transforms_count > 0);
-		*out_lidar = Lidar::create(reinterpret_cast<const Mat3x4f *>(ray_transforms), ray_transforms_count).get();
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_destroy(rgl_lidar_t lidar)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_destroy(lidar={})", (void*) lidar);
-		CHECK_ARG(lidar != nullptr);
-		Lidar::release(lidar);
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_set_range(rgl_lidar_t lidar, float range)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_range(lidar={}, range={})", (void*) lidar, range);
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(!std::isnan(range));
-		CHECK_ARG(range > 0.0f);
-		Lidar::validatePtr(lidar)->range = range;
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(local_to_world_tf != nullptr);
-		Lidar::validatePtr(lidar)->lidarPose = Mat3x4f::fromRaw(&local_to_world_tf->value[0][0]);
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_raytrace_async(scene={}, lidar={})", (void*) scene, (void*) lidar);
-		CHECK_ARG(lidar != nullptr);
-		if (scene == nullptr) {
-			scene = Scene::defaultInstance().get();
-		}
-		Lidar::validatePtr(lidar)->scheduleRaycast(Scene::validatePtr(scene));
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(out_size != nullptr);
-		*out_size = Lidar::validatePtr(lidar)->getResultsSize();
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
-		int fmtVal = static_cast<int>(format);
-		bool formatOK = (RGL_FORMAT_INVALID < fmtVal && fmtVal < RGL_FORMAT_COUNT);
-		bool formatE2EOK = (RGL_FORMAT_E2E_INVALID < fmtVal && fmtVal < RGL_FORMAT_E2E_COUNT);
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(formatOK || formatE2EOK);
-		CHECK_ARG(out_data != nullptr);
-		Lidar::validatePtr(lidar)->getResults(format, out_data);
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int *ring_ids, int ring_ids_count)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
-		          (void*) lidar, repr(ring_ids, ring_ids_count, 5));
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(ring_ids != nullptr);
-		CHECK_ARG(ring_ids_count > 0);
-		Lidar::validatePtr(lidar)->setRingIds(ring_ids, ring_ids_count);
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
-                                    rgl_angular_noise_type_t angular_noise_type,
-                                    float angular_noise_stddev,
-                                    float angular_noise_mean,
-                                    float distance_noise_stddev_base,
-                                    float distance_noise_stddev_rise_per_meter,
-                                    float distance_noise_mean)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
-		          (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
-		bool noiseTypeOK = angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED || angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED;
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(noiseTypeOK);
-		CHECK_ARG(angular_noise_stddev >= 0.0f);
-		CHECK_ARG(distance_noise_stddev_base >= 0.0f);
-		CHECK_ARG(distance_noise_stddev_rise_per_meter >= 0.0f);
-		Lidar::validatePtr(lidar)->lidarNoiseParams = {
-			.angularNoiseType = (rgl_angular_noise_type_t) angular_noise_type,
-			.angularNoiseStDev = angular_noise_stddev,
-			.angularNoiseMean = angular_noise_mean,
-			.distanceNoiseStDevBase = distance_noise_stddev_base,
-			.distanceNoiseStDevRisePerMeter = distance_noise_stddev_rise_per_meter,
-			.distanceNoiseMean = distance_noise_mean
-		};
-	});
-}
-
-RGL_API rgl_status_t
-rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f *transform)
-{
-	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
-		CHECK_ARG(lidar != nullptr);
-		CHECK_ARG(transform != nullptr);
-		Lidar::validatePtr(lidar)->rosTransform = Mat3x4f::fromRaw(&transform->value[0][0]);
-	});
-}
 }

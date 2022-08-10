@@ -6,14 +6,15 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_executable(RobotecGPULidar_test
-    src/apiReadmeExample.cpp
-    src/apiSurfaceTests.cpp
-    src/features/range.cpp
-    src/features/gaussianNoise.cpp
-    src/features/mesh.cpp
-    src/features/transforms.cpp
-    src/features/pcdOutput.cpp
-    src/testMat3x4f.cpp
+    src/pipelineTest.cpp
+#    src/apiReadmeExample.cpp
+#    src/apiSurfaceTests.cpp
+#    src/features/range.cpp
+#    src/features/gaussianNoise.cpp
+#    src/features/mesh.cpp
+#    src/features/transforms.cpp
+#    src/features/pcdOutput.cpp
+#    src/testMat3x4f.cpp
 )
 
 target_link_libraries(RobotecGPULidar_test
