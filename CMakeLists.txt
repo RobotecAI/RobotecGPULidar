@@ -58,6 +58,7 @@ add_library(RobotecGPULidar SHARED
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
+    src/pipeline/Node.cpp
 #    src/gaussianNoiseKernels.cu
 )
 

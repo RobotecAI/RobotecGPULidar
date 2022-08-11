@@ -101,6 +101,11 @@ typedef enum
 	RGL_INVALID_API_OBJECT,
 
 	/**
+	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
+	 */
+	RGL_INVALID_PIPELINE,
+
+	/**
 	 * Requested functionality has been not yet implemented.
 	 * This is a recoverable error.
 	 */

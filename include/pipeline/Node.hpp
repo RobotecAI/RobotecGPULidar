@@ -1,5 +1,12 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include <VArray.hpp>
+#include <rgl/api/experimental.h>
+#include <APIObject.hpp>
+
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
 	Node() = default;
@@ -12,49 +19,26 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 		}
 	}
 
+	virtual void validate() = 0;
+	virtual void execute() = 0;
 	virtual ~Node() = default;
 
-	std::shared_ptr<Node> parent = nullptr;
-	std::vector<std::shared_ptr<Node>> children;
-};
-
-API_OBJECT_INSTANCE(Node);
-
-struct UseRaysMat3x4fNode : Node
-{
-	using Node::Node;
-
-	void setParameters(const rgl_mat3x4f* rays, size_t ray_count)
+	std::shared_ptr<Node> parent {};
+	std::vector<std::shared_ptr<Node>> children {};
+protected:
+	template<typename T>
+	std::shared_ptr<T> validateParent()
 	{
-		dRays.copyFromHost(rays, ray_count);
+		if (parent == nullptr) {
+			auto msg = fmt::format("{} requires parent, but has none", name(typeid(*this)));
+			throw InvalidPipeline(msg);
+		}
+		std::shared_ptr<T> parentTyped = std::dynamic_pointer_cast<T>(parent);
+		if (parentTyped == nullptr) {
+			auto msg = fmt::format("{} requires parent of type {}, but {} was found",
+			                       name(typeid(*this)), name(typeid(T)), name(typeid(*parent)));
+			throw InvalidPipeline(msg);
+		}
+		return parentTyped;
 	}
-
-private:
-	DeviceBuffer<rgl_mat3x4f> dRays;
-};
-
-struct RaytraceNode : Node
-{
-	using Node::Node;
-
-	void setParameters(float range)
-	{
-		this->range = range;
-	}
-
-private:
-	float range;
-};
-
-struct WritePCDFileNode : Node
-{
-	using Node::Node;
-
-	void setParameters(const char* filePath)
-	{
-		this->filePath = filePath;
-	}
-
-private:
-	std::filesystem::path filePath;
 };

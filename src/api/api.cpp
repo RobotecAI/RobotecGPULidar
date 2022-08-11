@@ -7,7 +7,7 @@
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
 
-#include <pipeline/Node.hpp>
+#include <pipeline/Nodes.hpp>
 #include <pipeline/runPipeline.hpp>
 
 #include <RGLExceptions.hpp>
@@ -30,6 +30,7 @@ static bool canContinueAfterStatus(rgl_status_t status)
 	static std::set recoverableErrors = {
 		RGL_INVALID_ARGUMENT,
 		RGL_INVALID_API_OBJECT,
+		RGL_INVALID_PIPELINE,
 		RGL_NOT_IMPLEMENTED
 	};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
@@ -76,8 +77,11 @@ static rgl_status_t rglSafeCall(Fn fn)
 	catch (InvalidAPIObject &e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
+	catch (InvalidPipeline &e) {
+		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
+	}
 	catch (std::invalid_argument &e) {
-		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
+		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
 	catch (std::exception &e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
