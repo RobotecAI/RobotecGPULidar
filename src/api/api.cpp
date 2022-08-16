@@ -94,10 +94,11 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, Args&&... 
 {
 	CHECK_ARG(nodeRawPtr != nullptr);
 	std::shared_ptr<NodeType> node;
-	std::shared_ptr<Node> parent = (parentRaw != nullptr) ? Node::validatePtr(parentRaw) : nullptr;
 	if (*nodeRawPtr == nullptr) {
 		node = Node::create<NodeType>();
-		node->setParent(parent);
+		if (parentRaw != nullptr) {
+			node->setParent(Node::validatePtr(parentRaw));
+		}
 	}
 	else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
@@ -311,6 +312,17 @@ rgl_pipeline_raytrace(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_scene_t 
 	});
 }
 
+RGL_API rgl_status_t
+rgl_pipeline_format(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_field_t* fields, int field_count)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_format(node={}, parent={}, fields={})", repr(nodeRawPtr), repr(parentRaw), repr(fields, field_count));
+		CHECK_ARG(fields != nullptr);
+		CHECK_ARG(field_count > 0);
+
+		createOrUpdateNode<FormatNode>(nodeRawPtr, parentRaw, fields, field_count);
+	});
+}
 RGL_API rgl_status_t
 rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const char* file_path)
 {

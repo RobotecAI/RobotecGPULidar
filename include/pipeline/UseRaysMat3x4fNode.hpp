@@ -1,6 +1,6 @@
 #pragma once
 
-struct UseRaysMat3x4fNode : Node, IRaysProvider
+struct UseRaysMat3x4fNode : Node, IRaysNode
 {
 	using Node::Node;
 
@@ -14,7 +14,7 @@ struct UseRaysMat3x4fNode : Node, IRaysProvider
 	{ return rays; }
 
 	void validate() override {}
-	void execute() override {}
+	void schedule(cudaStream_t stream) override {}
 
 private:
 	std::shared_ptr<VArrayTyped<rgl_mat3x4f>> rays;

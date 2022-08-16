@@ -7,7 +7,7 @@ class Pipeline : RGLAutoCleanupTest {};
 
 TEST(Pipeline, Minimal)
 {
-	rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, nullptr, true);
+	rgl_configure_logging(RGL_LOG_LEVEL_TRACE, nullptr, true);
 
 	rgl_entity_t entity = makeEntity();
 	rgl_mat3x4f entityPose = Mat3x4f::translation(0, 0, 5).toRGL();

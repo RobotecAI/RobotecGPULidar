@@ -1,11 +1,11 @@
 #pragma once
 
-struct IRaysProvider
+struct IRaysNode
 {
 	virtual std::shared_ptr<const VArrayTyped<rgl_mat3x4f>> getRays() const = 0;
 };
 
-struct IPointcloudProvider
+struct IPointcloudNode
 {
-	virtual std::shared_ptr<const VArray> getField(rgl_field_t field) const = 0;
+	virtual std::shared_ptr<const VArray> getFieldData(rgl_field_t field) const = 0;
 };

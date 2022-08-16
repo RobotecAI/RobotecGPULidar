@@ -42,24 +42,24 @@ void Optix::logVersions()
 	auto optixMajor =  OPTIX_VERSION / 10000;
 	auto optixMinor = (OPTIX_VERSION % 10000) / 100;
 	auto optixMicro =  OPTIX_VERSION % 100;
-        RGL_INFO("OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
-        RGL_INFO("OptiX ABI version: {}", OPTIX_ABI_VERSION);
+	RGL_INFO("OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
+	RGL_INFO("OptiX ABI version: {}", OPTIX_ABI_VERSION);
 
 	auto [toolkitMajor, toolkitMinor] = getCudaMajorMinor(CUDA_VERSION);
-        RGL_INFO("Built against CUDA Toolkit version: {}.{}", toolkitMajor, toolkitMinor);
+	RGL_INFO("Built against CUDA Toolkit version: {}.{}", toolkitMajor, toolkitMinor);
 
 	int cudaRuntimeVersion = -1;
 	CHECK_CUDA(cudaRuntimeGetVersion(&cudaRuntimeVersion));
 	auto [cudaRuntimeMajor, cudaRuntimeMinor] = getCudaMajorMinor(cudaRuntimeVersion);
-        RGL_INFO("CUDA runtime version: {}.{}", cudaRuntimeMajor, cudaRuntimeMinor);
+	RGL_INFO("CUDA runtime version: {}.{}", cudaRuntimeMajor, cudaRuntimeMinor);
 
 	int cudaDriverVersion = -1;
 	CHECK_CUDA(cudaDriverGetVersion(&cudaDriverVersion));
 	auto [cudaDriverMajor, cudaDriverMinor] = getCudaMajorMinor(cudaDriverVersion);
-        RGL_INFO("CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
+	RGL_INFO("CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
 
 	if (auto err = wrapError(nvmlInit())) {
-            RGL_WARN("Failed to initialize Nvidia Management Library (NVML): {}", err.value());
+		RGL_WARN("Failed to initialize Nvidia Management Library (NVML): {}", err.value());
 		return;
 	}
 
@@ -68,7 +68,7 @@ void Optix::logVersions()
 		std::string msg = fmt::format("(nvml error: {})", err.value());
 		strncpy(driverVersionStr, msg.c_str(), sizeof(driverVersionStr));
 	}
-        RGL_INFO("Nvidia kernel driver version: {}", driverVersionStr);
+	RGL_INFO("Nvidia kernel driver version: {}", driverVersionStr);
 }
 
 Optix& Optix::instance()
@@ -170,7 +170,7 @@ void Optix::initializeStaticOptixStructures()
 		.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
 		.raygen = {
 			.module = module,
-			.entryFunctionName = "__raygen__renderLidar" }
+			.entryFunctionName = "rayGen" }
 	};
 
 	CHECK_OPTIX(optixProgramGroupCreate(
@@ -180,7 +180,7 @@ void Optix::initializeStaticOptixStructures()
 		.kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
 		.miss = {
 			.module = module,
-			.entryFunctionName = "__miss__lidar" },
+			.entryFunctionName = "miss" },
 	};
 
 	CHECK_OPTIX(optixProgramGroupCreate(
@@ -190,9 +190,9 @@ void Optix::initializeStaticOptixStructures()
 		.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
 		.hitgroup = {
 			.moduleCH = module,
-			.entryFunctionNameCH = "__closesthit__lidar",
+			.entryFunctionNameCH = "closestHit",
 			.moduleAH = module,
-			.entryFunctionNameAH = "__anyhit__lidar",
+			.entryFunctionNameAH = "anyHit",
 		}
 	};
 

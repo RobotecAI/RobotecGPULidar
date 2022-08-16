@@ -17,7 +17,7 @@
 #endif
 
 struct Mat3x4f;
-static Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs);
+__host__ __device__ Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs);
 
 struct Mat3x4f
 {
@@ -130,14 +130,27 @@ struct Mat3x4f
 		return true;
 	}
 
+	__host__ __device__ inline Vec3f translation()
+	{
+		return {rc[0][3], rc[1][3], rc[2][3]};
+	}
+
+	__host__ __device__ inline Mat3x4f rotation()
+	{
+		return { .rc = {
+			rc[0][0], rc[0][1], rc[0][2], 0.0f,
+			rc[1][0], rc[1][1], rc[1][2], 0.0f,
+			rc[2][0], rc[2][1], rc[2][2], 0.0f,
+		}};
+	}
+
 	inline Mat3x4f& operator=(const Mat3x4f& other) = default;
 
 	__host__ __device__ float& operator[](int i) {return rc[i/4][i%4];}
 	__host__ __device__ const float& operator[](int i) const {return rc[i/4][i%4];}
-	friend Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs);
 };
 
-static inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs)
+__host__ __device__ inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs)
 {
 #define MUL(y, x) ((lhs.rc[y][0] * rhs.rc[0][x]) + (lhs.rc[y][1] * rhs.rc[1][x]) + (lhs.rc[y][2] * rhs.rc[2][x]))
 	return {.rc = {
@@ -147,6 +160,18 @@ static inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs)
 	}};
 #undef MUL
 }
+
+__host__ __device__ inline Vec3f operator*(const Mat3x4f& lhs, const Vec3f& rhs)
+{
+#define MUL(i) ((lhs.rc[i][0] * rhs[0]) + (lhs.rc[i][1] * rhs[1]) + (lhs.rc[i][2] * rhs[2]))
+	return {
+	MUL(0),
+	MUL(1),
+	MUL(2)
+	};
+#undef MUL
+}
+
 
 #ifndef __CUDACC__
 #include <spdlog/fmt/fmt.h>

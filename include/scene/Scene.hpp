@@ -9,7 +9,6 @@
 
 // TODO(prybicki): fix these includes
 #include <data_types/ShaderBindingTableTypes.h>
-#include <LaunchParams.h>
 
 struct Entity;
 

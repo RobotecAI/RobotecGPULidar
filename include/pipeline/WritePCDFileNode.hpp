@@ -10,7 +10,7 @@ struct WritePCDFileNode : Node
 	}
 
 	void validate() override {}
-	void execute() override {}
+	void schedule(cudaStream_t stream) override {}
 
 private:
 	std::filesystem::path filePath{};

@@ -5,3 +5,4 @@
 #include <pipeline/UseRaysMat3x4fNode.hpp>
 #include <pipeline/RaytraceNode.hpp>
 #include <pipeline/WritePCDFileNode.hpp>
+#include <pipeline/FormatNode.hpp>

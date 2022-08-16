@@ -9,7 +9,6 @@
 
 #include <Logger.h>
 #include <HostPinnedBuffer.hpp>
-#include <data_types/PointTypes.h>
 
 #include <macros/cuda.hpp>
 
