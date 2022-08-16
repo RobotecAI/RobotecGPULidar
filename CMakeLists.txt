@@ -39,7 +39,7 @@ include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
-add_library(optixProgramsPtx OBJECT src/optixPrograms.cu)
+add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)
 set_target_properties(optixProgramsPtx PROPERTIES CUDA_PTX_COMPILATION ON)
 add_custom_command(
     OUTPUT optixProgramsPtx.c
@@ -53,7 +53,7 @@ add_library(RobotecGPULidar SHARED
     src/Logger.cpp
 #    src/Lidar.cpp
 #    src/formatPCL.cu
-    src/Optix.cpp
+    src/gpu/Optix.cpp
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp

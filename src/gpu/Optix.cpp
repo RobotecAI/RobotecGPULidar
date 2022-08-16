@@ -10,9 +10,9 @@
 #include <cuda_runtime_api.h>
 #include <spdlog/fmt/fmt.h>
 
-#include <Optix.hpp>
+#include <gpu/Optix.hpp>
 #include <Logger.h>
-#include <optixProgramsPtx.hpp>
+#include <gpu/optixProgramsPtx.hpp>
 #include <macros/optix.hpp>
 #include <macros/cuda.hpp>
 

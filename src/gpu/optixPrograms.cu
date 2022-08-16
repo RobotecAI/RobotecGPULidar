@@ -5,8 +5,8 @@
 #include <math/Mat3x4f.hpp>
 #include <cassert>
 
-#include <pipeline/RaytraceRequestParams.hpp>
-#include <data_types/ShaderBindingTableTypes.h>
+#include <gpu/RaytraceRequestParams.hpp>
+#include <gpu/ShaderBindingTableTypes.h>
 
 #define HOSTDEVICE __device__
 // #include "linearGeometry.h"
@@ -45,13 +45,13 @@ extern "C" __global__ void closestHit()
     const Vec3f& B = sbtData.vertex[index.y()];
     const Vec3f& C = sbtData.vertex[index.z()];
 
+    const int rayIdx = optixGetLaunchIndex().x;
     Vec3f prd = Vec3f((1 - u - v) * A + u * B + v * C);
+    ctx.xyz[rayIdx] = Vec3f(prd.x(), prd.y(), prd.z());
 
-    Vec3f rayHitPoint = Vec3f(prd.x(), prd.y(), prd.z());
     // Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
     // Vec3f rosPoint = args.rosTransform * unityPoint;
 
-    // const int ix = optixGetLaunchIndex().x;
 
 	// args.dUnityVisualisationPoints[ix].x = unityPoint.x();
 	// args.dUnityVisualisationPoints[ix].y = unityPoint.y();

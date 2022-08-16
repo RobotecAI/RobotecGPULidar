@@ -8,7 +8,7 @@
 #include <APIObject.hpp>
 
 // TODO(prybicki): fix these includes
-#include <data_types/ShaderBindingTableTypes.h>
+#include <gpu/ShaderBindingTableTypes.h>
 
 struct Entity;
 

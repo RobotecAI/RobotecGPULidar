@@ -7,7 +7,7 @@
 #include <Logger.h>
 #include <APIObject.hpp>
 #include <scene/Scene.hpp>
-#include <Optix.hpp>
+#include <gpu/Optix.hpp>
 
 #include <rgl/api/experimental.h>
 
