@@ -12,4 +12,5 @@ struct RaytraceRequestContext
 
 	// Output
 	Vec3f* xyz;
+	Vec4f* xyzp;
 };

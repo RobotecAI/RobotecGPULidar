@@ -20,6 +20,26 @@ struct FormatNode : Node, IPointcloudNode
 		return fields;
 	}
 
+	bool hasField(rgl_field_t field) const override
+	{
+		return false;
+	}
+
+	bool isDense() const override
+	{
+		return false;
+	}
+
+	size_t getWidth() const override
+	{
+		return 0;
+	}
+
+	size_t getHeight() const override
+	{
+		return 0;
+	}
+
 	void validate() override
 	{
 		// compaction node optional

@@ -29,6 +29,7 @@ struct VArray : std::enable_shared_from_this<VArray>
 	{
 		switch (type) {
 			case RGL_FIELD_XYZ_F32: return VArray::create<Vec3f>(initialSize);
+			case RGL_FIELD_XYZP_F32: return VArray::create<Vec4f>(initialSize);
 			case RGL_FIELD_INTENSITY_F32: return VArray::create<float>(initialSize);
 			case RGL_FIELD_RING_ID_U16: return VArray::create<uint16_t>(initialSize);
 			case RGL_FIELD_AZIMUTH_F32: return VArray::create<float>(initialSize);
@@ -43,10 +44,16 @@ struct VArray : std::enable_shared_from_this<VArray>
 	}
 
 	template<typename T>
-	std::shared_ptr<VArrayProxy<T>> getTypedProxy() { return VArrayProxy<T>::create(shared_from_this()); }
+	std::shared_ptr<VArrayProxy<T>> getTypedProxy()
+	{ return VArrayProxy<T>::create(shared_from_this()); }
 
 	template<typename T>
-	std::shared_ptr<VArrayTyped<T>> intoTypedWrapper() && { return VArrayTyped<T>::create(std::move(*this)); }
+	std::shared_ptr<const VArrayProxy<T>> getTypedProxy() const
+	{ return VArrayProxy<T>::create(shared_from_this()); }
+
+	template<typename T>
+	std::shared_ptr<VArrayTyped<T>> intoTypedWrapper() &&
+	{ return VArrayTyped<T>::create(std::move(*this)); }
 
 	void copyFrom(const void* src, std::size_t bytes)
 	{
@@ -145,9 +152,10 @@ struct VArrayProxy
 {
 	template<typename... Args>
 	static std::shared_ptr<VArrayProxy<T>> create(Args... args)
-	{
-		return std::shared_ptr<VArrayProxy<T>>(new VArrayProxy<T>(args...));
-	}
+	{ return std::shared_ptr<VArrayProxy<T>>(new VArrayProxy<T>(args...)); }
+
+	static std::shared_ptr<const VArrayProxy<T>> create(std::shared_ptr<const VArray> src)
+	{ return std::shared_ptr<const VArrayProxy<T>>(new VArrayProxy<T>(std::const_pointer_cast<VArray>(src))); }
 
 	void copyFrom(const T* srcRaw, std::size_t count) { src->copyFrom(srcRaw, sizeof(T) * count); }
 
@@ -161,6 +169,7 @@ struct VArrayProxy
 	const T* getDevicePtr(cudaStream_t stream=nullptr) const { return reinterpret_cast<const T*>(src->getDevicePtr(stream)); }
 
 	T& operator[](int idx) { return (reinterpret_cast<T*>(src->managedData))[idx]; }
+	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->managedData))[idx]; }
 
 private:
 	VArrayProxy(std::shared_ptr<VArray> src=nullptr) : src(src == nullptr ? VArray::create<T>() : src) {}

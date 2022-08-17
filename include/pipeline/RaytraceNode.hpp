@@ -45,7 +45,8 @@ struct RaytraceNode : Node, IPointcloudNode
 			.rayOriginToWorld = Mat3x4f::identity(),
 			.rayRange = range,
 			.scene = sceneAS,
-			.xyz = fields.contains(RGL_FIELD_XYZ_F32) ? fieldData.at(RGL_FIELD_XYZ_F32)->getTypedProxy<Vec3f>()->getDevicePtr(stream) : nullptr
+			.xyz = fields.contains(RGL_FIELD_XYZ_F32) ? fieldData.at(RGL_FIELD_XYZ_F32)->getTypedProxy<Vec3f>()->getDevicePtr(stream) : nullptr,
+			.xyzp = fields.contains(RGL_FIELD_XYZP_F32) ? fieldData.at(RGL_FIELD_XYZP_F32)->getTypedProxy<Vec4f>()->getDevicePtr(stream) : nullptr
 		};
 
 		// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.
@@ -57,8 +58,16 @@ struct RaytraceNode : Node, IPointcloudNode
 
 	std::shared_ptr<const VArray> getFieldData(rgl_field_t field) const override
 	{
-
+		return std::const_pointer_cast<const VArray>(fieldData.at(field));
 	}
+
+	bool hasField(rgl_field_t field) const override	{ return fields.contains(field); }
+
+	bool isDense() const override { return false; }
+
+	size_t getWidth() const override { return raysNode->getRays()->getCount(); }
+
+	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
 
 
 private:

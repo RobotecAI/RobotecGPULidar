@@ -34,6 +34,12 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
     message(FATAL_ERROR "Required environment variable OptiX_INSTALL_DIR is empty, aborting build")
 endif()
 
+# Quick and dirty PCL integration,
+find_package(PCL 1.3 REQUIRED COMPONENTS common io)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 # Includes
 include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
@@ -70,6 +76,7 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart
     CUDA::cuda_driver
+    ${PCL_LIBRARIES}
 )
 
 # Pass #define-s to RGL compilation
