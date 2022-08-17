@@ -21,8 +21,6 @@
 #define OPTIX_LOG_LEVEL_WARN 3
 #define OPTIX_LOG_LEVEL_INFO 4
 
-static CUcontext getCurrentDeviceContext();
-
 static std::pair<int, int> getCudaMajorMinor(int version)
 {
 	return {version / 1000, (version % 1000) / 10};
@@ -37,6 +35,40 @@ static std::optional<std::string> wrapError(nvmlReturn_t status)
 	return {std::string(err)};
 }
 
+static CUcontext getCurrentDeviceContext()
+{
+	const char* error = nullptr;
+	CUresult status;
+
+	cudaFree(nullptr); // Force CUDA runtime initialization
+
+	CUdevice device;
+	status = cuDeviceGet(&device, 0);
+	if (status != CUDA_SUCCESS) {
+		cuGetErrorString(status, &error);
+		throw std::runtime_error(fmt::format("failed to get current CUDA device: {} ({})\n", error, status));
+	}
+
+	CUcontext cudaContext = nullptr;
+	CUresult primaryCtxStatus = cuDevicePrimaryCtxRetain(&cudaContext, device);
+	if (primaryCtxStatus != CUDA_SUCCESS) {
+		cuGetErrorString(status, &error);
+		throw std::runtime_error(fmt::format("failed to get primary CUDA context: {} ({})\n", error, status));
+	}
+	assert(cudaContext != nullptr);
+	return cudaContext;
+}
+
+static std::string getCurrentDeviceName()
+{
+	int currentDevice = -1;
+	cudaDeviceProp deviceProperties {};
+	CHECK_CUDA(cudaGetDevice(&currentDevice));
+	CHECK_CUDA(cudaGetDeviceProperties(&deviceProperties, currentDevice));
+	return std::string(deviceProperties.name);
+}
+
+
 void Optix::logVersions()
 {
 	auto optixMajor =  OPTIX_VERSION / 10000;
@@ -44,6 +76,8 @@ void Optix::logVersions()
 	auto optixMicro =  OPTIX_VERSION % 100;
 	RGL_INFO("OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
 	RGL_INFO("OptiX ABI version: {}", OPTIX_ABI_VERSION);
+
+	RGL_INFO("Running on GPU: {}", getCurrentDeviceName());
 
 	auto [toolkitMajor, toolkitMinor] = getCudaMajorMinor(CUDA_VERSION);
 	RGL_INFO("Built against CUDA Toolkit version: {}.{}", toolkitMajor, toolkitMinor);
@@ -84,19 +118,19 @@ Optix::Optix()
 	CHECK_OPTIX(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &context));
 
 	auto cb = [](unsigned level, const char* tag, const char* message, void*) {
-		auto fmt = "[OptiX][{:^12}]: {}\n";
+		auto fmt = "[OptiX][{:^12}]: {}";
 		if (level == OPTIX_LOG_LEVEL_FATAL) {
-			RGL_CRITICAL(fmt::runtime(fmt), level, tag, message);
+			RGL_CRITICAL(fmt::runtime(fmt), tag, message);
 		}
 		if (level == OPTIX_LOG_LEVEL_ERROR) {
-			RGL_ERROR(fmt::runtime(fmt), level, tag, message);
+			RGL_ERROR(fmt::runtime(fmt), tag, message);
 		}
 		if (level == OPTIX_LOG_LEVEL_WARN) {
-			RGL_WARN(fmt::runtime(fmt), level, tag, message);
+			RGL_WARN(fmt::runtime(fmt), tag, message);
 		}
 		if (level == OPTIX_LOG_LEVEL_INFO) {
 			// Lower log level to prevent leaking backend logs to end user
-			RGL_DEBUG(fmt::runtime(fmt), level, tag, message);
+			RGL_DEBUG(fmt::runtime(fmt), tag, message);
 		}
 	};
 
@@ -144,7 +178,7 @@ void Optix::initializeStaticOptixStructures()
 		.numPayloadValues = 4,
 		.numAttributeValues = 2,
 		.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
-		.pipelineLaunchParamsVariableName = "optixLaunchLidarParams",
+		.pipelineLaunchParamsVariableName = "ctx",
 	};
 
 	OptixPipelineLinkOptions pipelineLinkOptions = {
@@ -170,7 +204,7 @@ void Optix::initializeStaticOptixStructures()
 		.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
 		.raygen = {
 			.module = module,
-			.entryFunctionName = "rayGen" }
+			.entryFunctionName = "__raygen__" }
 	};
 
 	CHECK_OPTIX(optixProgramGroupCreate(
@@ -180,7 +214,7 @@ void Optix::initializeStaticOptixStructures()
 		.kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
 		.miss = {
 			.module = module,
-			.entryFunctionName = "miss" },
+			.entryFunctionName = "__miss__" },
 	};
 
 	CHECK_OPTIX(optixProgramGroupCreate(
@@ -190,9 +224,9 @@ void Optix::initializeStaticOptixStructures()
 		.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
 		.hitgroup = {
 			.moduleCH = module,
-			.entryFunctionNameCH = "closestHit",
+			.entryFunctionNameCH = "__closesthit__",
 			.moduleAH = module,
-			.entryFunctionNameAH = "anyHit",
+			.entryFunctionNameAH = "__anyhit__",
 		}
 	};
 
@@ -218,37 +252,4 @@ void Optix::initializeStaticOptixStructures()
 		2 * 1024, // continuationStackSize
 		3 // maxTraversableGraphDepth
 	));
-}
-
-static CUcontext getCurrentDeviceContext()
-{
-	const char* error = nullptr;
-	CUresult status;
-
-	cudaFree(nullptr); // Force CUDA runtime initialization
-
-	CUdevice device;
-	status = cuDeviceGet(&device, 0);
-	if (status != CUDA_SUCCESS) {
-		cuGetErrorString(status, &error);
-		throw std::runtime_error(fmt::format("failed to get current CUDA device: {} ({})\n", error, status));
-	}
-
-	CUcontext cudaContext = nullptr;
-	CUresult primaryCtxStatus = cuDevicePrimaryCtxRetain(&cudaContext, device);
-	if (primaryCtxStatus != CUDA_SUCCESS) {
-		cuGetErrorString(status, &error);
-		throw std::runtime_error(fmt::format("failed to get primary CUDA context: {} ({})\n", error, status));
-	}
-	assert(cudaContext != nullptr);
-	return cudaContext;
-}
-
-static std::string getCurrentDeviceName()
-{
-	int currentDevice = -1;
-	cudaDeviceProp deviceProperties {};
-	CHECK_CUDA(cudaGetDevice(&currentDevice));
-	CHECK_CUDA(cudaGetDeviceProperties(&deviceProperties, currentDevice));
-	return std::string(deviceProperties.name);
 }

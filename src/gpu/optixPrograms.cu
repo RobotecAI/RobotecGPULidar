@@ -15,7 +15,7 @@ extern "C" static __constant__ RaytraceRequestContext ctx;
 
 static __forceinline__ __device__ Vec3f forwardVec() {return Vec3f(0.0f, 0.0f, 1.0f); }
 
-extern "C" __global__ void rayGen()
+extern "C" __global__ void __raygen__()
 {
 	Mat3x4f rayLocal = ctx.rays[optixGetLaunchIndex().x];
 	Mat3x4f rayWorld = ctx.rayOriginToWorld * rayLocal;
@@ -27,30 +27,32 @@ extern "C" __global__ void rayGen()
 	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0);
 }
 
-extern "C" __global__ void closestHit()
+extern "C" __global__ void __closesthit__()
 {
-    const TriangleMeshSBTData& sbtData
-        = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();
+	const TriangleMeshSBTData& sbtData
+		= *(const TriangleMeshSBTData*)optixGetSbtDataPointer();
 
-    const int primID = optixGetPrimitiveIndex();
-    assert(primID < sbtData.index_count);
-    const Vec3i index = sbtData.index[primID];
-    const float u = optixGetTriangleBarycentrics().x;
-    const float v = optixGetTriangleBarycentrics().y;
+	const int primID = optixGetPrimitiveIndex();
+	assert(primID < sbtData.index_count);
+	const Vec3i index = sbtData.index[primID];
+	const float u = optixGetTriangleBarycentrics().x;
+	const float v = optixGetTriangleBarycentrics().y;
 
-    assert(index.x() < sbtData.vertex_count);
-    assert(index.y() < sbtData.vertex_count);
-    assert(index.z() < sbtData.vertex_count);
-    const Vec3f& A = sbtData.vertex[index.x()];
-    const Vec3f& B = sbtData.vertex[index.y()];
-    const Vec3f& C = sbtData.vertex[index.z()];
+	assert(index.x() < sbtData.vertex_count);
+	assert(index.y() < sbtData.vertex_count);
+	assert(index.z() < sbtData.vertex_count);
+	const Vec3f& A = sbtData.vertex[index.x()];
+	const Vec3f& B = sbtData.vertex[index.y()];
+	const Vec3f& C = sbtData.vertex[index.z()];
 
-    const int rayIdx = optixGetLaunchIndex().x;
-    Vec3f prd = Vec3f((1 - u - v) * A + u * B + v * C);
-    ctx.xyz[rayIdx] = Vec3f(prd.x(), prd.y(), prd.z());
+	const int rayIdx = optixGetLaunchIndex().x;
+	Vec3f prd = Vec3f((1 - u - v) * A + u * B + v * C);
+	if (ctx.xyz != nullptr) {
+		ctx.xyz[rayIdx] = Vec3f(prd.x(), prd.y(), prd.z());
+	}
 
-    // Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
-    // Vec3f rosPoint = args.rosTransform * unityPoint;
+	// Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
+	// Vec3f rosPoint = args.rosTransform * unityPoint;
 
 
 	// args.dUnityVisualisationPoints[ix].x = unityPoint.x();
@@ -63,9 +65,9 @@ extern "C" __global__ void closestHit()
 	// args.dWasHit[optixGetLaunchIndex().x] = 1;
 }
 
-extern "C" __global__ void miss()
+extern "C" __global__ void __miss__()
 {
 	// ctx.dWasHit[optixGetLaunchIndex().x] = 0;
 }
 
-extern "C" __global__ void anyHit(){}
+extern "C" __global__ void __anyhit__(){}

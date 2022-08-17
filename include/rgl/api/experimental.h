@@ -269,7 +269,7 @@ RGL_API rgl_status_t
 rgl_pipeline_run(rgl_node_t node);
 
 RGL_API rgl_status_t
-rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, rgl_mat3x4f* rays, size_t ray_count);
+rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
 
 RGL_API rgl_status_t
 rgl_pipeline_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
@@ -279,7 +279,7 @@ rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* fil
 
 // Cuts out requested fields and formats a contiguous binary buffer.
 RGL_API rgl_status_t
-rgl_pipeline_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* fields, int field_count);
+rgl_pipeline_format(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
 
 // Removes non-hit points. Performed lazily - only one occurrence in the pipeline will have computational cost.
 RGL_API rgl_status_t

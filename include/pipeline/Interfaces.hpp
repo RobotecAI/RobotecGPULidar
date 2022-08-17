@@ -2,7 +2,7 @@
 
 struct IRaysNode
 {
-	virtual std::shared_ptr<const VArrayTyped<rgl_mat3x4f>> getRays() const = 0;
+	virtual std::shared_ptr<const VArrayProxy<Mat3x4f>> getRays() const = 0;
 };
 
 struct IPointcloudNode

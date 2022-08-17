@@ -75,11 +75,6 @@ void runPipeline(Node::Ptr userNode)
 {
 	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
 
-	for (auto&& current : graph) {
-		RGL_TRACE("Validating node: {}", *current);
-		current->validate();
-	}
-
 	std::set<rgl_field_t> fields;
 	for (auto&& formatNode : Node::filter<FormatNode>(graph)) {
 		for (auto&& field : formatNode->getFieldList()) {
@@ -89,6 +84,12 @@ void runPipeline(Node::Ptr userNode)
 
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
 	rt->setFields(fields);
+
+	for (auto&& current : graph) {
+		RGL_TRACE("Validating node: {}", *current);
+		current->validate();
+	}
+
 
 	std::vector<Node::Ptr> executionOrder = findTopologicalOrder(graph);
 

@@ -41,7 +41,7 @@ struct fmt::formatter<rgl_mat3x4f>
 };
 
 template<typename ArrayT>
-std::string repr(ArrayT* elements, size_t elemCount=1, int elemLimit=3)
+std::string repr(ArrayT* elements, long long elemCount=1, int elemLimit=3)
 {
 #define PUSH(...) fmt::format_to(std::back_inserter(out), __VA_ARGS__)
 	if (elements == nullptr) {

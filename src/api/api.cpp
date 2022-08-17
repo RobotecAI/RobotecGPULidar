@@ -290,13 +290,13 @@ rgl_pipeline_run(rgl_node_t node)
 
 
 RGL_API rgl_status_t
-rgl_pipeline_use_rays_mat3x4f(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_mat3x4f* rays, size_t ray_count)
+rgl_pipeline_use_rays_mat3x4f(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const rgl_mat3x4f* rays, size_t ray_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_pipeline_use_rays_mat3x4f(node={}, parent={}, rays={})", repr(nodeRawPtr), repr(parentRaw), repr(rays, ray_count));
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
-		createOrUpdateNode<UseRaysMat3x4fNode>(nodeRawPtr, parentRaw, rays, ray_count);
+		createOrUpdateNode<UseRaysMat3x4fNode>(nodeRawPtr, parentRaw, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
 	});
 }
 
@@ -308,19 +308,23 @@ rgl_pipeline_raytrace(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_scene_t 
 		CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
 
-		createOrUpdateNode<RaytraceNode>(nodeRawPtr, parentRaw, range);
+		if (scene == nullptr) {
+			scene = Scene::defaultInstance().get();
+		}
+
+		createOrUpdateNode<RaytraceNode>(nodeRawPtr, parentRaw, Scene::validatePtr(scene), range);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_pipeline_format(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, rgl_field_t* fields, int field_count)
+rgl_pipeline_format(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_pipeline_format(node={}, parent={}, fields={})", repr(nodeRawPtr), repr(parentRaw), repr(fields, field_count));
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
-		createOrUpdateNode<FormatNode>(nodeRawPtr, parentRaw, fields, field_count);
+		createOrUpdateNode<FormatNode>(nodeRawPtr, parentRaw, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
 RGL_API rgl_status_t

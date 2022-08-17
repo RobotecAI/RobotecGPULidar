@@ -10,9 +10,9 @@ struct FormatNode : Node, IPointcloudNode
 		return std::shared_ptr<const VArray>();
 	}
 
-	void setParameters(rgl_field_t* fields, int fieldCount)
+	void setParameters(std::vector<rgl_field_t> fields)
 	{
-		this->fields = {fields, fields+fieldCount};
+		this->fields = std::move(fields);
 	}
 
 	std::vector<rgl_field_t> getFieldList() const
