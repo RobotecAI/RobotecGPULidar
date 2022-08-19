@@ -110,6 +110,7 @@ void destroyPipeline(Node::Ptr userNode)
 
 	while (!graph.empty()) {
 		Node::Ptr node = *graph.begin();
+		RGL_DEBUG("Destroying node {}", (void*) node.get());
 		graph.erase(node);
 		node->inputs.clear();
 		node->outputs.clear();

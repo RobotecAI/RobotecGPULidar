@@ -150,7 +150,7 @@ static rgl_mat3x4f identity = { .value = {
 class RGLAutoCleanupTest : public ::testing::Test {
 protected:
 	RGLAutoCleanupTest() { rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false); }
-	~RGLAutoCleanupTest() { rgl_cleanup(); }
+	virtual ~RGLAutoCleanupTest() override { rgl_cleanup(); }
 };
 
 
