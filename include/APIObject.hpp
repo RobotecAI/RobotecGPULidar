@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 #include <spdlog/fmt/fmt.h>
+#include <macros/cuda.hpp>
 
 #include <typingUtils.hpp>
 #include <RGLExceptions.hpp>
@@ -78,6 +79,7 @@ struct APIObject
 	APIObject(APIObject<T>&&) = delete;
 	APIObject<T>& operator=(APIObject<T>&) = delete;
 	APIObject<T>& operator=(APIObject<T>&&) = delete;
+	virtual ~APIObject() = default;
 protected:
 	APIObject() = default;
 };

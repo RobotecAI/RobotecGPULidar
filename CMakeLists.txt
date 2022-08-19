@@ -35,7 +35,8 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
 endif()
 
 # Quick and dirty PCL integration,
-find_package(PCL 1.3 REQUIRED COMPONENTS common io)
+list(APPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/pcl_x64-linux")
+find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -78,6 +79,8 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::cuda_driver
     ${PCL_LIBRARIES}
 )
+set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 
 # Pass #define-s to RGL compilation
 target_compile_definitions(RobotecGPULidar

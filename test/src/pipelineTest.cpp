@@ -19,4 +19,6 @@ TEST(Pipeline, Minimal)
 	EXPECT_RGL_SUCCESS(rgl_pipeline_raytrace(&raytrace, use_rays, nullptr, 1000));
 	EXPECT_RGL_SUCCESS(rgl_pipeline_write_pcd_file(&write, raytrace, "output.pcd"));
 	EXPECT_RGL_SUCCESS(rgl_pipeline_run(write));
+	EXPECT_RGL_SUCCESS(rgl_pipeline_run(write));
+	EXPECT_RGL_SUCCESS(rgl_pipeline_destroy(write));
 }

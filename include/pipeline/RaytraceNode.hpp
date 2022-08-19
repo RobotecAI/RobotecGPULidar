@@ -40,18 +40,18 @@ struct RaytraceNode : Node, IPointcloudNode
 		dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
 		(*requestCtx)[0] = {
-			.rays = rays->getDevicePtr(stream),
+			.rays = rays->getDevicePtr(),
 			.rayCount = rays->getCount(),
 			.rayOriginToWorld = Mat3x4f::identity(),
 			.rayRange = range,
 			.scene = sceneAS,
-			.xyz = fields.contains(RGL_FIELD_XYZ_F32) ? fieldData.at(RGL_FIELD_XYZ_F32)->getTypedProxy<Vec3f>()->getDevicePtr(stream) : nullptr,
-			.xyzp = fields.contains(RGL_FIELD_XYZP_F32) ? fieldData.at(RGL_FIELD_XYZP_F32)->getTypedProxy<Vec4f>()->getDevicePtr(stream) : nullptr
+			.xyz = fields.contains(RGL_FIELD_XYZ_F32) ? fieldData.at(RGL_FIELD_XYZ_F32)->getTypedProxy<Vec3f>()->getDevicePtr() : nullptr,
+			.xyzp = fields.contains(RGL_FIELD_XYZP_F32) ? fieldData.at(RGL_FIELD_XYZP_F32)->getTypedProxy<Vec4f>()->getDevicePtr() : nullptr
 		};
 
 		// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.
 		// TODO(prybicki): Based on my intuition, it should work fine, but beware.
-		CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr(stream);
+		CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 		std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
 		CHECK_OPTIX(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
 	}

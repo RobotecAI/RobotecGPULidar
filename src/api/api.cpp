@@ -187,13 +187,16 @@ RGL_API rgl_status_t
 rgl_cleanup(void)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_cleanup()");
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Entity::instances.clear();
 		Mesh::instances.clear();
 		Scene::defaultInstance()->clear();
+		while (!Node::instances.empty()) {
+			auto&& [raw, shared] = *Node::instances.begin();
+			destroyPipeline(std::dynamic_pointer_cast<Node>(shared));
+		}
 	});
 }
-
 
 RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_count, const rgl_vec3i *indices, int index_count)
@@ -219,6 +222,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Mesh::release(mesh);
 	});
 }
@@ -256,6 +260,7 @@ rgl_entity_destroy(rgl_entity_t entity)
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		auto entitySafe = Entity::validatePtr(entity);
 		if (auto sceneShared = entitySafe->scene.lock()) {
 			sceneShared->removeEntity(entitySafe);
@@ -288,6 +293,16 @@ rgl_pipeline_run(rgl_node_t node)
 	});
 }
 
+RGL_API rgl_status_t
+rgl_pipeline_destroy(rgl_node_t node)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_destroy(node={})", repr(node));
+		CHECK_ARG(node != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		destroyPipeline(Node::validatePtr(node));
+	});
+}
 
 RGL_API rgl_status_t
 rgl_pipeline_use_rays_mat3x4f(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const rgl_mat3x4f* rays, size_t ray_count)

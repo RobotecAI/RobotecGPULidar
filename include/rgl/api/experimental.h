@@ -269,6 +269,10 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 RGL_API rgl_status_t
 rgl_pipeline_run(rgl_node_t node);
 
+// Destroys all connected nodes
+RGL_API rgl_status_t
+rgl_pipeline_destroy(rgl_node_t node);
+
 RGL_API rgl_status_t
 rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
 

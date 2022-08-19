@@ -7,6 +7,7 @@
 
 #include <rgl/api/experimental.h>
 #include <math/Vector.hpp>
+#include <Logger.h>
 
 template<typename T>
 struct VArrayProxy;
@@ -19,11 +20,12 @@ struct VArrayTyped;
 
 struct VArray : std::enable_shared_from_this<VArray>
 {
+	static constexpr int CPU = -1;
+	static constexpr int GPU = 0;
+
 	template<typename T>
 	static std::shared_ptr<VArray> create(std::size_t initialSize=0)
-	{
-		return std::shared_ptr<VArray>(new VArray(typeid(T), sizeof(T), initialSize));
-	}
+	{ return std::shared_ptr<VArray>(new VArray(typeid(T), sizeof(T), initialSize)); }
 
 	static std::shared_ptr<VArray> create(rgl_field_t type, std::size_t initialSize=0)
 	{
@@ -54,6 +56,9 @@ struct VArray : std::enable_shared_from_this<VArray>
 	template<typename T>
 	std::shared_ptr<VArrayTyped<T>> intoTypedWrapper() &&
 	{ return VArrayTyped<T>::create(std::move(*this)); }
+
+	std::shared_ptr<VArray> clone() const
+	{ return std::shared_ptr<VArray>(new VArray(*this)); }
 
 	void copyFrom(const void* src, std::size_t bytes)
 	{
@@ -103,14 +108,17 @@ struct VArray : std::enable_shared_from_this<VArray>
 		elemCapacity = newCapacity;
 	}
 
+	void hintLocation(int location, cudaStream_t stream=nullptr)
+	{
+		CHECK_CUDA(cudaMemPrefetchAsync(managedData, elemCapacity * sizeOfType, location, stream));
+	}
+
 	// std::size_t getCapacity() const { return elemCapacity; }
 	// std::size_t getCount() const { return elemCapacity; } // For now, capacity follows tightly element count.
 	// std::size_t getSizeOfType() const { return elemCount * sizeOfType; }
-	void* getDevicePtr(cudaStream_t stream=nullptr) const
-	{
-		CHECK_CUDA(cudaMemPrefetchAsync(managedData, elemCapacity * sizeOfType, 0, stream));
-		return managedData;
-	}
+	void* getDevicePtr() const { return managedData; }
+	void* getHostPtr(cudaStream_t stream=nullptr, bool prefetch=true) const { return managedData; }
+
 
 private:
 	std::type_index typeIndex;
@@ -125,6 +133,17 @@ private:
 	{
 		this->resize(initialSize);
 	}
+
+	VArray(const VArray& other)
+	: typeIndex(other.typeIndex)
+	, sizeOfType(other.sizeOfType)
+	, elemCapacity(other.elemCapacity)
+	, elemCount(other.elemCount)
+	{
+		CHECK_CUDA(cudaMallocManaged(&managedData, elemCapacity * sizeOfType));
+		CHECK_CUDA(cudaMemcpy(managedData, other.managedData, elemCapacity * sizeOfType, cudaMemcpyDefault));
+	}
+
 	VArray(VArray&& src)
 	: typeIndex(src.typeIndex)
 	, sizeOfType(src.sizeOfType)
@@ -150,32 +169,39 @@ private:
 template<typename T>
 struct VArrayProxy
 {
+	using Ptr = std::shared_ptr<VArrayProxy<T>>;
+	using ConstPtr = std::shared_ptr<const VArrayProxy<T>>;
+
 	template<typename... Args>
 	static std::shared_ptr<VArrayProxy<T>> create(Args... args)
 	{ return std::shared_ptr<VArrayProxy<T>>(new VArrayProxy<T>(args...)); }
-
 	static std::shared_ptr<const VArrayProxy<T>> create(std::shared_ptr<const VArray> src)
 	{ return std::shared_ptr<const VArrayProxy<T>>(new VArrayProxy<T>(std::const_pointer_cast<VArray>(src))); }
 
+	std::shared_ptr<VArrayProxy<T>> clone() const
+	{ return VArrayProxy<T>::create(src->clone()); }
+
 	void copyFrom(const T* srcRaw, std::size_t count) { src->copyFrom(srcRaw, sizeof(T) * count); }
 
-	std::size_t getCapacity() const { return src->elemCapacity; }
 	std::size_t getCount() const { return src->elemCount; }
+	std::size_t getCapacity() const { return src->elemCapacity; }
 	std::size_t getBytesInUse() const { return src->elemCount * sizeof(T); }
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true) { src->resize(newCount, zeroInit, preserveData); }
 
-	CUdeviceptr getCUdeviceptr(cudaStream_t stream=nullptr) const { return reinterpret_cast<CUdeviceptr>(src->getDevicePtr(stream)); }
-	T* getDevicePtr(cudaStream_t stream=nullptr) { return reinterpret_cast<T*>(src->getDevicePtr(stream)); }
-	const T* getDevicePtr(cudaStream_t stream=nullptr) const { return reinterpret_cast<const T*>(src->getDevicePtr(stream)); }
 
-	T& operator[](int idx) { return (reinterpret_cast<T*>(src->managedData))[idx]; }
+	T*          getDevicePtr()         { return reinterpret_cast<T*>(src->getDevicePtr()); }
+	T*          getHostPtr()           { return reinterpret_cast<T*>(src->getHostPtr()); }
+	CUdeviceptr getCUdeviceptr() const { return reinterpret_cast<CUdeviceptr>(src->getDevicePtr()); }
+	const T*    getDevicePtr()   const { return reinterpret_cast<const T*>(src->getDevicePtr()); }
+	const T*    getHostPtr()     const { return reinterpret_cast<const T*>(src->getHostPtr()); }
+	T&       operator[](int idx)       { return (reinterpret_cast<T*>(src->managedData))[idx]; }
 	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->managedData))[idx]; }
+
+	void hintLocation(int location, cudaStream_t stream=nullptr) const { src->hintLocation(location, stream); }
 
 private:
 	VArrayProxy(std::shared_ptr<VArray> src=nullptr) : src(src == nullptr ? VArray::create<T>() : src) {}
 	VArrayProxy(std::size_t initialSize) : src(VArray::create<T>(initialSize)) {}
-
-
 
 private:
 	std::shared_ptr<VArray> src;

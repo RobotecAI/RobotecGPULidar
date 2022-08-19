@@ -103,3 +103,16 @@ void runPipeline(Node::Ptr userNode)
 		node->schedule(nullptr);
 	}
 }
+
+void destroyPipeline(Node::Ptr userNode)
+{
+	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
+
+	while (!graph.empty()) {
+		Node::Ptr node = *graph.begin();
+		graph.erase(node);
+		node->inputs.clear();
+		node->outputs.clear();
+		Node::release(node.get());
+	}
+}

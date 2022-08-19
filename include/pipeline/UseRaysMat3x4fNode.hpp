@@ -8,6 +8,7 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 	{
 		rays = VArrayProxy<Mat3x4f>::create();
 		rays->copyFrom(raysRaw, rayCount);
+		rays->hintLocation(VArray::GPU);
 	}
 
 	std::shared_ptr<const VArrayProxy<Mat3x4f>> getRays() const override
