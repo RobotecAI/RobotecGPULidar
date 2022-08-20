@@ -82,11 +82,6 @@ void runPipeline(Node::Ptr userNode)
 		}
 	}
 
-	if (!Node::filter<WritePCDFileNode>(graph).empty()) {
-		// Currently WritePCDFileNode works only with XYZP format
-		fields.insert(RGL_FIELD_XYZP_F32);
-	}
-
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
 	rt->setFields(fields);
 

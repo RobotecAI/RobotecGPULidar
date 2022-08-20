@@ -61,11 +61,17 @@ add_library(RobotecGPULidar SHARED
 #    src/Lidar.cpp
 #    src/formatPCL.cu
     src/gpu/Optix.cpp
+    src/VArray.cpp
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
     src/pipeline/Node.cpp
+    src/pipeline/RaytraceNode.cpp
+    src/pipeline/UseRaysMat3x4fNode.cpp
+    src/pipeline/WritePCDFileNode.cpp
+    src/pipeline/FormatNode.cpp
+    src/pipeline/CompactNode.cpp
 #    src/gaussianNoiseKernels.cu
 )
 

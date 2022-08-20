@@ -20,3 +20,8 @@ TEST_F(Pipeline, Minimal)
 	EXPECT_RGL_SUCCESS(rgl_pipeline_write_pcd_file(&write, raytrace, "output.pcd"));
 	EXPECT_RGL_SUCCESS(rgl_pipeline_run(write));
 }
+
+TEST_F(Pipeline, Format)
+{
+
+}

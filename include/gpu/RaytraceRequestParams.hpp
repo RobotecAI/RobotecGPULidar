@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optix.h>
+
 struct RaytraceRequestContext
 {
 	// Input
