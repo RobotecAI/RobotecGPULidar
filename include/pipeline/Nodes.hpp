@@ -41,7 +41,7 @@ struct FormatNode : Node, IFormatNode
 private:
 	std::vector<rgl_field_t> fields;
 	IPointCloudNode::Ptr input;
-	VArray::Ptr output;
+	VArray::Ptr output = output = VArray::create<char>();
 };
 
 struct RaytraceNode : IPointCloudNode, public Node
@@ -74,7 +74,6 @@ private:
 
 struct TransformRaysNode : Node, IRaysNode
 {
-
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override
 	{
 		return VArrayProxy<Mat3x4f>::ConstPtr();
@@ -86,7 +85,8 @@ struct TransformRaysNode : Node, IRaysNode
 	void schedule(cudaStream_t stream) override;
 
 private:
-	VArrayProxy<Mat3x4f>::Ptr rays;
+	IRaysNode::Ptr input;
+	VArrayProxy<Mat3x4f>::ConstPtr rays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct UseRaysMat3x4fNode : Node, IRaysNode
@@ -102,7 +102,7 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 	void schedule(cudaStream_t stream) override {}
 
 private:
-	VArrayProxy<Mat3x4f>::Ptr rays;
+	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct WritePCDFileNode : Node

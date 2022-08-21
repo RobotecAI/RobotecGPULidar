@@ -14,9 +14,6 @@ std::size_t FormatNode::getPointSize() const
 void FormatNode::validate(cudaStream_t stream)
 {
 	input = getValidInput<IPointCloudNode>();
-	if (output == nullptr) {
-		output = VArray::create<char>();
-	}
 }
 
 void FormatNode::schedule(cudaStream_t stream)
