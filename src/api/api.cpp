@@ -196,7 +196,6 @@ rgl_cleanup(void)
 			Node::Ptr node = Node::instances.begin()->second;
 			destroyPipeline(node);
 		}
-		RGL_DEBUG("Destroying pipeline doneee");
 	});
 }
 
@@ -314,6 +313,15 @@ rgl_pipeline_use_rays_mat3x4f(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, cons
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<UseRaysMat3x4fNode>(nodeRawPtr, parentRaw, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
+	});
+}
+
+RGL_API rgl_status_t
+rgl_pipeline_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_transform_rays(node={}, parent={}, transform={})", repr(nodeRawPtr), repr(parent), repr(transform));
+		createOrUpdateNode<TransformRaysNode>(nodeRawPtr, parent, Mat3x4f::fromRGL(*transform));
 	});
 }
 

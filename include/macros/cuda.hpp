@@ -2,9 +2,7 @@
 
 #include <cuda_runtime_api.h>
 
-#ifndef __CUDACC__
 #include <spdlog/fmt/fmt.h>
-#endif // __CUDACC__
 
 static inline void onCUDAError() {}
 

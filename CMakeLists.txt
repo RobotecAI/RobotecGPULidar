@@ -75,8 +75,8 @@ add_library(RobotecGPULidar SHARED
     src/pipeline/CompactNode.cpp
     src/pipeline/TransformRaysNode.cpp
     src/pipeline/TransformPointsNode.cpp
-    src/gpu/format.cu
-#    src/gaussianNoiseKernels.cu
+    src/gpu/nodeKernels.cu
+    #    src/gaussianNoiseKernels.cu
 )
 
 target_include_directories(RobotecGPULidar PUBLIC include)

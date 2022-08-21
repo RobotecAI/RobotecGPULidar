@@ -1,5 +1,5 @@
 #include <pipeline/Nodes.hpp>
-#include <gpu/trampolines.hpp>
+#include <gpu/nodeKernels.hpp>
 #include <RGLFields.hpp>
 
 std::size_t FormatNode::getPointSize() const
@@ -35,5 +35,5 @@ void FormatNode::schedule(cudaStream_t stream)
 		offset += getFieldSize(fields[i]);
 	}
 	char* outputPtr = static_cast<char*>(output->getDevicePtr());
-	gpuFormat(fields.size(), gpuFields->getDevicePtr(), pointCount, getPointSize(), outputPtr);
+	gpuFormat(pointCount, getPointSize(), fields.size(), gpuFields->getDevicePtr(), outputPtr);
 }

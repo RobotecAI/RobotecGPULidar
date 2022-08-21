@@ -74,19 +74,17 @@ private:
 
 struct TransformRaysNode : Node, IRaysNode
 {
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override
-	{
-		return VArrayProxy<Mat3x4f>::ConstPtr();
-	}
-
-	size_t getRayCount() const override { return 0; }
+	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
+	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	inline size_t getRayCount() const override { return input->getRayCount(); }
 
 	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override;
 
 private:
+	Mat3x4f transform;
 	IRaysNode::Ptr input;
-	VArrayProxy<Mat3x4f>::ConstPtr rays = VArrayProxy<Mat3x4f>::create();
+	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct UseRaysMat3x4fNode : Node, IRaysNode

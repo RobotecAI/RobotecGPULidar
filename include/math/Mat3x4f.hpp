@@ -80,7 +80,7 @@ struct Mat3x4f
 		}};
 	}
 
-	static inline Mat3x4f TRS(Vec3f t, Vec3f r, Vec3f s)
+	static inline Mat3x4f TRS(Vec3f t, Vec3f r={0, 0, 0}, Vec3f s={1, 1, 1})
 	{
 		auto T = Mat3x4f::translation(t.x(), t.y(), t.z());
 		auto R = Mat3x4f::rotation(r.x(), r.y(), r.z());
