@@ -193,7 +193,7 @@ rgl_cleanup(void)
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
 			// Note: destroyPipeline calls Node::release()
-			std::shared_ptr<Node> node = Node::instances.begin()->second;
+			Node::Ptr node = Node::instances.begin()->second;
 			destroyPipeline(node);
 		}
 		RGL_DEBUG("Destroying pipeline doneee");

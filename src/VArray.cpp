@@ -2,13 +2,13 @@
 
 #include <RGLFields.hpp>
 
-std::shared_ptr <VArray> VArray::create(rgl_field_t type, std::size_t initialSize)
+VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize)
 {
 	return createVArray(type, initialSize);
 }
 
-std::shared_ptr<VArray> VArray::clone() const
-{ return std::shared_ptr<VArray>(new VArray(*this)); }
+VArray::Ptr VArray::clone() const
+{ return VArray::Ptr(new VArray(*this)); }
 
 void VArray::copyFrom(const void *src, std::size_t bytes)
 {

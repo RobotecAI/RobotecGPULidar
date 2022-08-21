@@ -59,7 +59,7 @@ inline bool isDummy(rgl_field_t type)
 	return dummies.contains(type);
 }
 
-inline std::shared_ptr<VArray> createVArray(rgl_field_t type, std::size_t initialSize)
+inline VArray::Ptr createVArray(rgl_field_t type, std::size_t initialSize)
 {
 	if (isDummy(type)) {
 		throw std::invalid_argument(fmt::format("Cannot create VArray for non-instantiable type {}", type));

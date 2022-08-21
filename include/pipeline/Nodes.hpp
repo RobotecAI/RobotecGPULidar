@@ -36,12 +36,12 @@ struct FormatNode : Node, IFormatNode
 	inline size_t getHeight() const override { return input->getHeight(); }
 
 	std::size_t getPointSize() const override;
-	inline std::shared_ptr<const VArray> getData() const override { return output; }
+	inline VArray::ConstPtr getData() const override { return output; }
 
 private:
 	std::vector<rgl_field_t> fields;
-	std::shared_ptr<IPointCloudNode> input;
-	std::shared_ptr<VArray> output;
+	IPointCloudNode::Ptr input;
+	VArray::Ptr output;
 };
 
 struct RaytraceNode : IPointCloudNode, public Node
@@ -59,7 +59,7 @@ struct RaytraceNode : IPointCloudNode, public Node
 	inline bool isDense() const override { return false; }
 	inline size_t getWidth() const override { return raysNode->getRays()->getCount(); }
 	inline size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
-	inline std::shared_ptr<const VArray> getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	inline VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 
@@ -67,9 +67,26 @@ private:
 	float range;
 	std::shared_ptr<Scene> scene;
 	std::set<rgl_field_t> fields;
-	std::shared_ptr<IRaysNode> raysNode;
-	std::shared_ptr<VArrayProxy<RaytraceRequestContext>> requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
-	std::unordered_map<rgl_field_t, std::shared_ptr<VArray>> fieldData;
+	IRaysNode::Ptr raysNode;
+	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
+	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+};
+
+struct TransformRaysNode : Node, IRaysNode
+{
+
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override
+	{
+		return VArrayProxy<Mat3x4f>::ConstPtr();
+	}
+
+	size_t getRayCount() const override { return 0; }
+
+	void validate(cudaStream_t stream) override;
+	void schedule(cudaStream_t stream) override;
+
+private:
+	VArrayProxy<Mat3x4f>::Ptr rays;
 };
 
 struct UseRaysMat3x4fNode : Node, IRaysNode
@@ -78,14 +95,14 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
-	inline std::shared_ptr<const VArrayProxy<Mat3x4f>> getRays() const override { return rays; }
+	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	inline size_t getRayCount() const override { return rays->getCount(); }
 
 	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override {}
 
 private:
-	std::shared_ptr<VArrayProxy<Mat3x4f>> rays;
+	VArrayProxy<Mat3x4f>::Ptr rays;
 };
 
 struct WritePCDFileNode : Node

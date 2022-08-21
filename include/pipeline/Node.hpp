@@ -54,9 +54,9 @@ protected:
 	}
 
 	template<typename T, template<typename _> typename Container>
-	static std::vector<std::shared_ptr<T>> filter(const Container<Node::Ptr>& nodes)
+	static std::vector<typename T::Ptr> filter(const Container<Node::Ptr>& nodes)
 	{
-		std::vector<std::shared_ptr<T>> typedNodes {};
+		std::vector<typename T::Ptr> typedNodes {};
 		for (auto&& node : nodes) {
 			auto typedNode = std::dynamic_pointer_cast<T>(node);
 			if (typedNode != nullptr) {
@@ -67,9 +67,9 @@ protected:
 	}
 
 	template<typename T, template<typename _> typename Container>
-	static std::shared_ptr<T> getExactlyOne(const Container<Node::Ptr>& nodes)
+	static typename T::Ptr getExactlyOne(const Container<Node::Ptr>& nodes)
 	{
-		std::vector<std::shared_ptr<T>> typedNodes = Node::filter<T>(nodes);
+		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes);
 		if (typedNodes.size() != 1) {
 			auto msg = fmt::format("looked for {}, but found [{}]", name(typeid(T)), getNodeTypeNames(nodes));
 			throw InvalidPipeline(msg);
@@ -78,7 +78,7 @@ protected:
 	}
 
 	template<typename T>
-	std::shared_ptr<T> getValidInput()
+	typename T::Ptr getValidInput()
 	{
 		return getExactlyOne<T>(inputs);
 	}

@@ -6,8 +6,8 @@
 template<typename T>
 struct VArrayTyped
 {
-	static std::shared_ptr<VArrayTyped<T>> create()	{ return std::shared_ptr<VArrayTyped<T>>(new VArrayTyped<T>());	}
-	static std::shared_ptr<VArrayTyped<T>> create(VArray&& src)	{ return std::shared_ptr<VArrayTyped<T>>(new VArrayTyped<T>(src)); }
+	static VArrayTyped<T>::Ptr create()	{ return VArrayTyped<T>::Ptr(new VArrayTyped<T>());	}
+	static VArrayTyped<T>::Ptr create(VArray&& src)	{ return VArrayTyped<T>::Ptr(new VArrayTyped<T>(src)); }
 
 	// TODO: implement if needed :)
 

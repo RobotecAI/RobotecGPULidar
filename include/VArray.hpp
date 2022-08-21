@@ -20,17 +20,20 @@ struct VArrayTyped;
  */
 struct VArray : std::enable_shared_from_this<VArray>
 {
+	using Ptr = std::shared_ptr<VArray>;
+	using ConstPtr = std::shared_ptr<const VArray>;
+
 	static constexpr int CPU = -1;
 	static constexpr int GPU = 0;
 
 	template<typename T>
-	static std::shared_ptr<VArray> create(std::size_t initialSize=0)
-	{ return std::shared_ptr<VArray>(new VArray(typeid(T), sizeof(T), initialSize)); }
+	static VArray::Ptr create(std::size_t initialSize=0)
+	{ return VArray::Ptr(new VArray(typeid(T), sizeof(T), initialSize)); }
 
-	static std::shared_ptr<VArray> create(rgl_field_t type, std::size_t initialSize=0);
+	static VArray::Ptr create(rgl_field_t type, std::size_t initialSize=0);
 
 	template<typename T>
-	std::shared_ptr<VArrayProxy<T>> getTypedProxy()
+	typename VArrayProxy<T>::Ptr getTypedProxy()
 	{
 		if (typeid(T) != typeInfo) {
 			auto msg = fmt::format("VArray type mismatch: {} requested as {}", name(typeInfo), name(typeid(T)));
@@ -40,14 +43,14 @@ struct VArray : std::enable_shared_from_this<VArray>
 	}
 
 	template<typename T>
-	std::shared_ptr<const VArrayProxy<T>> getTypedProxy() const
+	typename VArrayProxy<T>::ConstPtr getTypedProxy() const
 	{ return VArrayProxy<T>::create(shared_from_this()); }
 
 	template<typename T>
-	std::shared_ptr<VArrayTyped<T>> intoTypedWrapper() &&
+	typename VArrayTyped<T>::Ptr intoTypedWrapper() &&
 	{ return VArrayTyped<T>::create(std::move(*this)); }
 
-	std::shared_ptr<VArray> clone() const;
+	VArray::Ptr clone() const;
 	void copyFrom(const void* src, std::size_t bytes);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
