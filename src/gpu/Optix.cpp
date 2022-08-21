@@ -71,13 +71,13 @@ static std::string getCurrentDeviceName()
 
 void Optix::logVersions()
 {
+	RGL_INFO("Running on GPU: {}", getCurrentDeviceName());
+
 	auto optixMajor =  OPTIX_VERSION / 10000;
 	auto optixMinor = (OPTIX_VERSION % 10000) / 100;
 	auto optixMicro =  OPTIX_VERSION % 100;
-	RGL_INFO("OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
-	RGL_INFO("OptiX ABI version: {}", OPTIX_ABI_VERSION);
-
-	RGL_INFO("Running on GPU: {}", getCurrentDeviceName());
+	RGL_INFO("Built against OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
+	RGL_INFO("Built against OptiX ABI version: {}", OPTIX_ABI_VERSION);
 
 	auto [toolkitMajor, toolkitMinor] = getCudaMajorMinor(CUDA_VERSION);
 	RGL_INFO("Built against CUDA Toolkit version: {}.{}", toolkitMajor, toolkitMinor);
@@ -85,15 +85,15 @@ void Optix::logVersions()
 	int cudaRuntimeVersion = -1;
 	CHECK_CUDA(cudaRuntimeGetVersion(&cudaRuntimeVersion));
 	auto [cudaRuntimeMajor, cudaRuntimeMinor] = getCudaMajorMinor(cudaRuntimeVersion);
-	RGL_INFO("CUDA runtime version: {}.{}", cudaRuntimeMajor, cudaRuntimeMinor);
+	RGL_INFO("Installed CUDA runtime version: {}.{}", cudaRuntimeMajor, cudaRuntimeMinor);
 
 	int cudaDriverVersion = -1;
 	CHECK_CUDA(cudaDriverGetVersion(&cudaDriverVersion));
 	auto [cudaDriverMajor, cudaDriverMinor] = getCudaMajorMinor(cudaDriverVersion);
-	RGL_INFO("CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
+	RGL_INFO("Installed CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
 
 	if (auto err = wrapError(nvmlInit())) {
-		RGL_WARN("Failed to initialize Nvidia Management Library (NVML): {}", err.value());
+		RGL_WARN("Failed to initialize NVidia Management Library (NVML): {}", err.value());
 		return;
 	}
 
@@ -102,7 +102,7 @@ void Optix::logVersions()
 		std::string msg = fmt::format("(nvml error: {})", err.value());
 		strncpy(driverVersionStr, msg.c_str(), sizeof(driverVersionStr));
 	}
-	RGL_INFO("Nvidia kernel driver version: {}", driverVersionStr);
+	RGL_INFO("Installed NVidia kernel driver version: {}", driverVersionStr);
 }
 
 Optix& Optix::instance()
