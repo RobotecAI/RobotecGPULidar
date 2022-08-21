@@ -10,5 +10,5 @@ void TransformRaysNode::validate(cudaStream_t stream)
 
 void TransformRaysNode::schedule(cudaStream_t stream)
 {
-	gpuTransformRays(getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
+	gpuTransformRays(stream, getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
 }

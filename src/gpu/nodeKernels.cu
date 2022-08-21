@@ -3,13 +3,16 @@
 #include <macros/cuda.hpp>
 #include <vector>
 
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+
 template<typename Kernel, typename... KernelArgs>
-void run(Kernel&& kernel, size_t threads, KernelArgs... kernelArgs)
+void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... kernelArgs)
 {
 	int blockDim = 256;
 	int blockCount = 1 + threads / 256;
 	void* args[] = {&threads, &kernelArgs...};
-	CHECK_CUDA(cudaLaunchKernel(reinterpret_cast<void*>(kernel), blockCount, blockDim, args, 0, 0));
+	CHECK_CUDA(cudaLaunchKernel(reinterpret_cast<void*>(kernel), blockCount, blockDim, args, 0, stream));
 }
 
 __global__ void kFormat(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* fields, char* out)
@@ -33,9 +36,37 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	outRays[tid] = inRays[tid] * transform;
 }
 
-void gpuFormat(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *fields, char *out)
-{ run(kFormat, pointCount, pointSize, fieldCount, fields, out); }
+__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const bool* shouldWrite, const int32_t *writeIndex, char *dst, const char *src)
+{
+	int32_t rIdx = threadIdx.x + blockIdx.x * blockDim.x;
+	if (rIdx >= pointCount) {
+		return;
+	}
+	if (!shouldWrite[rIdx]) {
+		return;
+	}
+	int wIdx = writeIndex[rIdx] - 1;
+	memcpy(dst + fieldSize * wIdx, src + fieldSize * rIdx, fieldSize);
+}
 
-void gpuTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
-{ run(kTransformRays, rayCount, inRays, outRays, transform); };
+void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *fields, char *out)
+{ run(kFormat, stream, pointCount, pointSize, fieldCount, fields, out); }
+
+void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
+{ run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
+
+void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const bool* isHit, int32_t* hitCountInclusive, size_t* outHitCount)
+{
+	// beg and end could be used as const pointers, however thrust does not support it
+	auto beg = thrust::device_ptr<const bool>(isHit);
+	auto end = thrust::device_ptr<const bool>(isHit + pointCount);
+	auto dst = thrust::device_ptr<int32_t>(hitCountInclusive);
+
+	// Note: this will compile only in a .cu file
+	thrust::inclusive_scan(thrust::cuda::par.on(stream), beg, end, dst);
+	CHECK_CUDA(cudaMemcpyAsync(outHitCount, hitCountInclusive + pointCount - 1, sizeof(*hitCountInclusive), cudaMemcpyDefault, stream));
+}
+
+void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const bool* shouldWrite, const int32_t *writeIndex, char *dst, const char *src)
+{ run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }
 

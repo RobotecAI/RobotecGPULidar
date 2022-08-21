@@ -150,6 +150,7 @@ typedef enum
 	RGL_FIELD_PADDING_8,
 	RGL_FIELD_PADDING_16,
 	RGL_FIELD_PADDING_32,
+	RGL_FIELD_FINITE_B8,
 	// ...
 } rgl_field_t;
 
@@ -290,7 +291,9 @@ rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* fil
 RGL_API rgl_status_t
 rgl_pipeline_format(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
 
-// Removes non-hit points. Performed lazily - only one occurrence in the pipeline will have computational cost.
+// Removes non-hit points.
+// Performed lazily - only one occurrence in the pipeline will have computational cost.
+// TODO: Well, it's not actually true for now :)
 RGL_API rgl_status_t
 rgl_pipeline_compact(rgl_node_t* node, rgl_node_t parent);
 

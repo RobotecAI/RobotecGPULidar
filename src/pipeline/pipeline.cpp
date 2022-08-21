@@ -55,18 +55,23 @@ void runPipeline(Node::Ptr userNode)
 		}
 	}
 
+	fields.insert(RGL_FIELD_XYZ_F32);
+
+	if (!Node::filter<CompactNode>(graph).empty()) {
+		fields.insert(RGL_FIELD_FINITE_B8);
+	}
+
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
 	rt->setFields(fields);
 
-	for (auto&& current : graph) {
+	std::vector<Node::Ptr> topologicalOrder = findTopologicalOrder(graph);
+
+	for (auto&& current : topologicalOrder) {
 		RGL_TRACE("Validating node: {}", *current);
 		current->validate(nullptr);
 	}
 
-
-	std::vector<Node::Ptr> executionOrder = findTopologicalOrder(graph);
-
-	for (auto&& node : executionOrder) {
+	for (auto&& node : topologicalOrder) {
 		RGL_TRACE("Scheduling node: {}", *node);
 		node->schedule(nullptr);
 	}

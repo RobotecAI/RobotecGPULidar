@@ -6,7 +6,7 @@
 
 #include <pipeline/Node.hpp>
 #include <pipeline/Interfaces.hpp>
-#include <gpu/RaytraceRequestParams.hpp>
+#include <gpu/RaytraceRequestContext.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <gpu/GPUFieldDesc.hpp>
@@ -21,12 +21,33 @@
  * while buffers sizes are not reliable, since they can be resized in execute().
  */
 
+
+struct CompactNode : public Node, IPointCloudNode
+{
+	using Ptr = std::shared_ptr<CompactNode>;
+
+	inline void setParameters() {}
+	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
+	inline bool isDense() const override { return true; }
+	inline size_t getHeight() const override { return 1; }
+
+	size_t getWidth() const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	void validate(cudaStream_t stream) override;
+	void schedule(cudaStream_t stream) override;
+private:
+	size_t width;
+	cudaStream_t stream;
+	IPointCloudNode::Ptr input;
+	VArrayProxy<int32_t>::Ptr inclusivePrefixSum = VArrayProxy<int32_t>::create();
+};
+
 struct FormatNode : Node, IFormatNode
 {
 	using Ptr = std::shared_ptr<FormatNode>;
 
 	void validate(cudaStream_t stream) override;
-	void schedule(cudaStream_t stream);
+	void schedule(cudaStream_t stream) override;
 
 	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
 	inline std::vector<rgl_field_t> getFieldList() const { return fields; }
@@ -46,14 +67,13 @@ private:
 
 struct RaytraceNode : IPointCloudNode, public Node
 {
-	using Node::Node;
 	using Ptr = std::shared_ptr<RaytraceNode>;
 
 	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override;
 
 	inline void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
-	void setFields(std::set<rgl_field_t> fields) { fields.insert(RGL_FIELD_XYZ_F32); this->fields = std::move(fields); }
+	void setFields(const std::set<rgl_field_t>& fields) { this->fields = std::move(fields); }
 
 	inline bool hasField(rgl_field_t field) const override	{ return fields.contains(field); }
 	inline bool isDense() const override { return false; }
@@ -93,11 +113,11 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
-	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-	inline size_t getRayCount() const override { return rays->getCount(); }
-
 	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override {}
+
+	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	inline size_t getRayCount() const override { return rays->getCount(); }
 
 private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
@@ -120,12 +140,4 @@ private:
 	void execute(cudaStream_t stream);
 
 	friend void streamCallback(cudaStream_t, cudaError_t, void*);
-};
-
-
-
-struct CompactNode : public Node, IPointCloudNode
-{
-	// TODO: this should eagerly compute permutation array, but lazily yield varrays
-
 };

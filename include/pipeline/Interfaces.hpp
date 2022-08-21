@@ -18,6 +18,7 @@ struct IPointcloudDescription
 	virtual bool isDense() const = 0;
 	virtual std::size_t getWidth() const = 0;
 	virtual std::size_t getHeight() const = 0;
+	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
 };
 
 struct IPointCloudNode : public IPointcloudDescription

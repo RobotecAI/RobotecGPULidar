@@ -14,5 +14,5 @@ struct RaytraceRequestContext
 
 	// Output
 	Vec3f* xyz;
-	Vec4f* xyzp;
+	bool* isHit;
 };

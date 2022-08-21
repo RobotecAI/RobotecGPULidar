@@ -352,6 +352,17 @@ rgl_pipeline_format(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const rgl_fiel
 		createOrUpdateNode<FormatNode>(nodeRawPtr, parentRaw, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
+
+RGL_API rgl_status_t
+rgl_pipeline_compact(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_compact(node={}, parent={})", repr(nodeRawPtr), repr(parentRaw));
+
+		createOrUpdateNode<CompactNode>(nodeRawPtr, parentRaw);
+	});
+}
+
 RGL_API rgl_status_t
 rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const char* file_path)
 {

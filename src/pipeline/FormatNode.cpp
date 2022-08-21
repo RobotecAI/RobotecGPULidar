@@ -35,5 +35,6 @@ void FormatNode::schedule(cudaStream_t stream)
 		offset += getFieldSize(fields[i]);
 	}
 	char* outputPtr = static_cast<char*>(output->getDevicePtr());
-	gpuFormat(pointCount, getPointSize(), fields.size(), gpuFields->getDevicePtr(), outputPtr);
+	gpuFormat(stream, pointCount, getPointSize(), fields.size(), gpuFields->getDevicePtr(), outputPtr);
 }
+

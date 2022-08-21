@@ -5,7 +5,7 @@
 #include <math/Mat3x4f.hpp>
 #include <cassert>
 
-#include <gpu/RaytraceRequestParams.hpp>
+#include <gpu/RaytraceRequestContext.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
 
 #define HOSTDEVICE __device__
@@ -50,6 +50,9 @@ extern "C" __global__ void __closesthit__()
 	if (ctx.xyz != nullptr) {
 		ctx.xyz[rayIdx] = Vec3f(prd.x(), prd.y(), prd.z());
 	}
+	if (ctx.isHit != nullptr) {
+		ctx.isHit[rayIdx] = true;
+	}
 
 	// Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
 	// Vec3f rosPoint = args.rosTransform * unityPoint;
@@ -67,7 +70,10 @@ extern "C" __global__ void __closesthit__()
 
 extern "C" __global__ void __miss__()
 {
-	// ctx.dWasHit[optixGetLaunchIndex().x] = 0;
+	const int rayIdx = optixGetLaunchIndex().x;
+	if (ctx.isHit != nullptr) {
+		ctx.isHit[rayIdx] = false;
+	}
 }
 
 extern "C" __global__ void __anyhit__(){}
