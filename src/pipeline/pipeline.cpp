@@ -1,38 +1,10 @@
-#include <pipeline/Node.hpp>
-#include <list>
-#include <queue>
+#include <set>
+#include <vector>
+#include <pipeline/pipeline.hpp>
+#include <pipeline/Nodes.hpp>
+#include <RGLFields.hpp>
 
-
-// template<bool bidirectional>
-// std::set<Node::Ptr> dfs(Node::Ptr start, std::function<void(Node::Ptr)> onEntry=[](Node::Ptr){}, std::function<void()> onLeave=[](){})
-// {
-// 	std::set<Node::Ptr> visited = {};
-//
-// 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
-// 		std::invoke(onEntry);
-// 		visited.insert(current);
-//
-// 		for (auto&& output : current->outputs) {
-// 			if (!visited.contains(output)) {
-// 				dfsRec(output);
-// 			}
-// 		}
-//
-// 		if (bidirectional) {
-// 			for (auto&& input : current->inputs) {
-// 				if (!visited.contains(input)) {
-// 					dfsRec(input);
-// 				}
-// 			}
-// 		}
-// 		std::invoke(onLeave);
-// 	};
-//
-// 	dfsRec(start);
-// 	return visited;
-// }
-
-std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
+static std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 {
 	std::set<Node::Ptr> visited = {};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
@@ -52,7 +24,7 @@ std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 	return visited;
 }
 
-std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
+static std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
 {
 	std::vector<Node::Ptr> reverseOrder {};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
@@ -70,7 +42,6 @@ std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
 
-
 void runPipeline(Node::Ptr userNode)
 {
 	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
@@ -78,7 +49,9 @@ void runPipeline(Node::Ptr userNode)
 	std::set<rgl_field_t> fields;
 	for (auto&& formatNode : Node::filter<FormatNode>(graph)) {
 		for (auto&& field : formatNode->getFieldList()) {
-			fields.insert(field);
+			if (!isDummy(field)) {
+				fields.insert(field);
+			}
 		}
 	}
 

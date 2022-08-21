@@ -50,9 +50,6 @@ extern "C" __global__ void __closesthit__()
 	if (ctx.xyz != nullptr) {
 		ctx.xyz[rayIdx] = Vec3f(prd.x(), prd.y(), prd.z());
 	}
-	if (ctx.xyz != nullptr) {
-		ctx.xyzp[rayIdx] = Vec4f(prd.x(), prd.y(), prd.z(), 0.0f);
-	}
 
 	// Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
 	// Vec3f rosPoint = args.rosTransform * unityPoint;

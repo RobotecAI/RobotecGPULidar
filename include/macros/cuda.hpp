@@ -6,6 +6,8 @@
 #include <spdlog/fmt/fmt.h>
 #endif // __CUDACC__
 
+static inline void onCUDAError() {}
+
 #define CHECK_CUDA(call)                                                                            \
 do                                                                                                  \
 {                                                                                                   \
@@ -13,6 +15,7 @@ do                                                                              
     if (status != cudaSuccess) {                                                                    \
         auto message = fmt::format("cuda error: {} (code={}) @ {}:{}",                              \
         cudaGetErrorString(status), status, __FILE__, __LINE__);                                    \
+        onCUDAError();                                                                              \
         throw std::runtime_error(message);                                                          \
     }                                                                                               \
 }                                                                                                   \

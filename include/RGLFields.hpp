@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include <rgl/api/experimental.h>
 #include <VArray.hpp>
 
@@ -44,11 +46,24 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case RGL_FIELD_PADDING_16: return RGLField<RGL_FIELD_PADDING_16>::size;
 		case RGL_FIELD_PADDING_32: return RGLField<RGL_FIELD_PADDING_32>::size;
 	}
-	throw std::invalid_argument(fmt::format("unknown RGL field {}", type));
+	throw std::invalid_argument(fmt::format("getFieldSize: unknown RGL field {}", type));
+}
+
+inline bool isDummy(rgl_field_t type)
+{
+	static std::set<rgl_field_t> dummies = {
+		RGL_FIELD_PADDING_8,
+		RGL_FIELD_PADDING_16,
+		RGL_FIELD_PADDING_32,
+	};
+	return dummies.contains(type);
 }
 
 inline std::shared_ptr<VArray> createVArray(rgl_field_t type, std::size_t initialSize)
 {
+	if (isDummy(type)) {
+		throw std::invalid_argument(fmt::format("Cannot create VArray for non-instantiable type {}", type));
+	}
 	switch (type) {
 		case RGL_FIELD_XYZ_F32:
 			return VArray::create<RGLField<RGL_FIELD_XYZ_F32>::Type>(initialSize);
@@ -64,7 +79,6 @@ inline std::shared_ptr<VArray> createVArray(rgl_field_t type, std::size_t initia
 			return VArray::create<RGLField<RGL_FIELD_RETURN_TYPE_U8>::Type>(initialSize);
 		case RGL_FIELD_TIME_STAMP_F64:
 			return VArray::create<RGLField<RGL_FIELD_TIME_STAMP_F64>::Type>(initialSize);
-		// Intentional fall-through for padding fields (and other unimplemented)
 	}
-	throw std::invalid_argument(fmt::format("VArray does not handle type {}", type));
+	throw std::invalid_argument(fmt::format("createVArray: unknown RGL field {}", type));
 }

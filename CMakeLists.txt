@@ -66,6 +66,7 @@ add_library(RobotecGPULidar SHARED
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
+    src/pipeline/pipeline.cpp
     src/pipeline/Node.cpp
     src/pipeline/RaytraceNode.cpp
     src/pipeline/UseRaysMat3x4fNode.cpp

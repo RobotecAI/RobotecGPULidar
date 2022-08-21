@@ -4,9 +4,9 @@
 #include <cuda_runtime.h>
 #include <macros/cuda.hpp>
 
+#include <Logger.h>
 #include <rgl/api/experimental.h>
 #include <math/Vector.hpp>
-#include <Logger.h>
 #include <typingUtils.hpp>
 
 template<typename T>

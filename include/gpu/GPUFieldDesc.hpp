@@ -3,5 +3,6 @@
 struct GPUFieldDesc
 {
 	char* data;
-	size_t stride;
+	size_t size;
+	size_t dstOffset;
 };

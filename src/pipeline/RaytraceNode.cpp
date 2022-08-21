@@ -36,4 +36,5 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
 	CHECK_OPTIX(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
+	CHECK_CUDA(cudaStreamSynchronize(stream));
 }

@@ -5,7 +5,6 @@
 
 #include <rgl/api/experimental.h>
 #include <gpu/GPUFieldDesc.hpp>
-#include <VArray.hpp>
 
 /*
  * The following functions are asynchronous!

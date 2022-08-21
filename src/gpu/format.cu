@@ -8,10 +8,9 @@ __global__ void kFormat(size_t fieldCount, GPUFieldDesc* fields, size_t pointCou
 	if (tid >= pointCount) {
 		return;
 	}
-	size_t writePos = 0;
+	// Implement padding
 	for (size_t i = 0; i < fieldCount; ++i) {
-		memcpy(out + pointSize * tid + writePos, fields[i].data + fields[i].stride * tid, fields[i].stride);
-		writePos += fields[i].stride;
+		memcpy(out + pointSize * tid + fields[i].dstOffset, fields[i].data + fields[i].size * tid, fields[i].size);
 	}
 }
 

@@ -8,7 +8,7 @@
 #include <scene/Mesh.hpp>
 
 #include <pipeline/Nodes.hpp>
-#include <pipeline/runPipeline.hpp>
+#include <pipeline/pipeline.hpp>
 
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
@@ -352,7 +352,10 @@ rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const 
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
-		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, parentRaw, file_path);
+		rgl_node_t internalFmtNode = nullptr;
+		std::vector<rgl_field_t> fmtFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_PADDING_32};  // Needed by PCL
+		createOrUpdateNode<FormatNode>(&internalFmtNode, parentRaw, fmtFields);
+		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, internalFmtNode, file_path);
 	});
 }
 
