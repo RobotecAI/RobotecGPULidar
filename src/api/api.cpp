@@ -192,11 +192,9 @@ rgl_cleanup(void)
 		Mesh::instances.clear();
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
+			// Note: destroyPipeline calls Node::release()
 			std::shared_ptr<Node> node = Node::instances.begin()->second;
-			RGL_DEBUG("Destroying pipeline {}", (void*) node.get());
 			destroyPipeline(node);
-			RGL_DEBUG("Destroying pipeline done {}", node->outputs.empty());
-			// Note: no need to erase, destroyPipeline calls Node::release()
 		}
 		RGL_DEBUG("Destroying pipeline doneee");
 	});

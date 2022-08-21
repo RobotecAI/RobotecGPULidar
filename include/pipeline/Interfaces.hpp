@@ -7,6 +7,7 @@ struct IRaysNode
 {
 	using Ptr = std::shared_ptr<IRaysNode>;
 	virtual std::shared_ptr<const VArrayProxy<Mat3x4f>> getRays() const = 0;
+	virtual std::size_t getRayCount() const = 0;
 };
 
 struct IPointcloudDescription
@@ -29,5 +30,5 @@ struct IFormatNode : public IPointcloudDescription
 	using Ptr = std::shared_ptr<IFormatNode>;
 
 	virtual std::shared_ptr<const VArray> getData() const = 0;
-	virtual std::size_t getElemSize() const = 0;
+	virtual std::size_t getPointSize() const = 0;
 };

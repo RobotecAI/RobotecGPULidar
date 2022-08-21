@@ -37,12 +37,12 @@ std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 	std::set<Node::Ptr> visited = {};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
 		visited.insert(current);
-		for (auto&& output : current->outputs) {
+		for (auto&& output : current->getOutputs()) {
 			if (!visited.contains(output)) {
 				dfsRec(output);
 			}
 		}
-		for (auto&& input : current->inputs) {
+		for (auto&& input : current->getInputs()) {
 			if (!visited.contains(input)) {
 				dfsRec(input);
 			}
@@ -57,7 +57,7 @@ std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
 	std::vector<Node::Ptr> reverseOrder {};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
 		nodes.erase(current);
-		for (auto&& output : current->outputs) {
+		for (auto&& output : current->getOutputs()) {
 			if (nodes.contains(output)) {
 				dfsRec(output);
 			}
@@ -87,7 +87,7 @@ void runPipeline(Node::Ptr userNode)
 
 	for (auto&& current : graph) {
 		RGL_TRACE("Validating node: {}", *current);
-		current->validate();
+		current->validate(nullptr);
 	}
 
 

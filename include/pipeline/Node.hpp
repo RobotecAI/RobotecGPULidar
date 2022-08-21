@@ -12,27 +12,30 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	using Ptr = std::shared_ptr<Node>;
 
 	Node() = default;
-
-	void setParent(Node::Ptr parent)
-	{
-		if (parent == nullptr) {
-			auto msg = fmt::format("attempted to set an empty parent for {}", getNodeTypeName());
-			throw InvalidPipeline(msg);
-		}
-		this->inputs.push_back(parent);
-		if (parent != nullptr) {
-			parent->outputs.push_back(shared_from_this());
-		}
-	}
-
-	virtual void validate() = 0;
-	virtual void schedule(cudaStream_t stream) = 0;
 	virtual ~Node() = default;
+	void setParent(Node::Ptr parent);
 
-	std::vector<Node::Ptr> inputs {};
-	std::vector<Node::Ptr> outputs {};
+	/**
+	 * Called on every node when the computation graph changes, e.g.:
+	 * - a node gets inserted or removed
+	 * - node parameters are changed
+	 * WARNING: validate() should not depend on parents VArray buffer sizes
+	 * I.E. Operations such as resizing output buffers must be done in schedule()
+	 * @param stream Stream to perform check in, the same as in schedule()
+	 */
+	virtual void validate(cudaStream_t stream) = 0;
 
-	std::string getNodeTypeName() const { return name(typeid(*this)); }
+	/**
+	 * Prepare node computation and insert it into the given stream.
+	 * @param stream Stream to perform computations in, the same as in validate()
+	 */
+	virtual void schedule(cudaStream_t stream) = 0;
+
+	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
+	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
+
+protected:
+	inline std::string getNodeTypeName() const { return name(typeid(*this)); }
 
 	template <template <typename _> typename Container>
 	static std::string getNodeTypeNames(const Container<Node::Ptr>& nodes, std::string_view separator=", ")
@@ -74,12 +77,19 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 		return typedNodes[0];
 	}
 
-protected:
 	template<typename T>
 	std::shared_ptr<T> getValidInput()
 	{
 		return getExactlyOne<T>(inputs);
 	}
+
+protected:
+	std::vector<Node::Ptr> inputs {};
+	std::vector<Node::Ptr> outputs {};
+
+	friend void runPipeline(Node::Ptr);
+	friend void destroyPipeline(Node::Ptr);
+	friend struct fmt::formatter<Node>;
 };
 
 #ifndef __CUDACC__

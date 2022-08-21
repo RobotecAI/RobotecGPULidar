@@ -27,6 +27,8 @@ struct VArray : std::enable_shared_from_this<VArray>
 	static std::shared_ptr<VArray> create(std::size_t initialSize=0)
 	{ return std::shared_ptr<VArray>(new VArray(typeid(T), sizeof(T), initialSize)); }
 
+	static std::shared_ptr<VArray> create(rgl_field_t type, std::size_t initialSize=0);
+
 	template<typename T>
 	std::shared_ptr<VArrayProxy<T>> getTypedProxy()
 	{
@@ -45,14 +47,14 @@ struct VArray : std::enable_shared_from_this<VArray>
 	std::shared_ptr<VArrayTyped<T>> intoTypedWrapper() &&
 	{ return VArrayTyped<T>::create(std::move(*this)); }
 
-	static std::shared_ptr<VArray> create(rgl_field_t type, std::size_t initialSize=0);
 	std::shared_ptr<VArray> clone() const;
 	void copyFrom(const void* src, std::size_t bytes);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
-	void hintLocation(int location, cudaStream_t stream=nullptr);
-	void* getDevicePtr() const { return managedData; }
-	void* getHostPtr(cudaStream_t stream=nullptr, bool prefetch=true) const { return managedData; }
+	void hintLocation(int location, cudaStream_t stream) const;
+	inline void* getDevicePtr() const { return managedData; }
+	inline void* getHostPtr() const { return managedData; }
+	inline std::size_t getElemSize() const { return sizeOfType; }
 
 private:
 	std::reference_wrapper<const std::type_info> typeInfo;

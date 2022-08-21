@@ -9,31 +9,39 @@
 #include <gpu/RaytraceRequestParams.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <gpu/GPUFieldDesc.hpp>
 #include <typeinfo>
 
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
 
+/**
+ * Note: some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
+ * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
+ * while buffers sizes are not reliable, since they can be resized in execute().
+ */
+
 struct FormatNode : Node, IFormatNode
 {
 	using Ptr = std::shared_ptr<FormatNode>;
 
-	void validate() override;
+	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream);
 
-	inline void setParameters(std::vector<rgl_field_t> fields) { this->fields = std::move(fields); }
+	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
 	inline std::vector<rgl_field_t> getFieldList() const { return fields; }
 	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
 	inline size_t getHeight() const override { return input->getHeight(); }
 
-	std::shared_ptr<const VArray> getData() const override;
-	std::size_t getElemSize() const override;
+	std::size_t getPointSize() const override;
+	inline std::shared_ptr<const VArray> getData() const override { return output; }
 
 private:
 	std::vector<rgl_field_t> fields;
 	std::shared_ptr<IPointCloudNode> input;
+	std::shared_ptr<VArray> output;
 };
 
 struct RaytraceNode : IPointCloudNode, public Node
@@ -41,7 +49,7 @@ struct RaytraceNode : IPointCloudNode, public Node
 	using Node::Node;
 	using Ptr = std::shared_ptr<RaytraceNode>;
 
-	void validate() override;
+	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override;
 
 	inline void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
@@ -71,8 +79,9 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	inline std::shared_ptr<const VArrayProxy<Mat3x4f>> getRays() const override { return rays; }
+	inline size_t getRayCount() const override { return rays->getCount(); }
 
-	void validate() override {}
+	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override {}
 
 private:
@@ -85,13 +94,12 @@ struct WritePCDFileNode : Node
 	using PCLPointType = pcl::PointXYZ;
 
 	inline void setParameters(const char* filePath) { this->filePath = filePath; }
-	void validate() override;
+	void validate(cudaStream_t stream) override;
 	void schedule(cudaStream_t stream) override;
 	virtual ~WritePCDFileNode();
 
 private:
-	IPointCloudNode::Ptr pclNode;
-	FormatNode::Ptr internalFormatNode;
+	IFormatNode::Ptr input;
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
 	void execute(cudaStream_t stream);

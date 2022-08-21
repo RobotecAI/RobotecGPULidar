@@ -1,20 +1,10 @@
 #include <VArray.hpp>
 
+#include <RGLFields.hpp>
+
 std::shared_ptr <VArray> VArray::create(rgl_field_t type, std::size_t initialSize)
 {
-	switch (type) {
-		case RGL_FIELD_XYZ_F32: return VArray::create<Vec3f>(initialSize);
-		case RGL_FIELD_INTENSITY_F32: return VArray::create<float>(initialSize);
-		case RGL_FIELD_RING_ID_U16: return VArray::create<uint16_t>(initialSize);
-		case RGL_FIELD_AZIMUTH_F32: return VArray::create<float>(initialSize);
-		case RGL_FIELD_DISTANCE_F32: return VArray::create<float>(initialSize);
-		case RGL_FIELD_RETURN_TYPE_U8: return VArray::create<uint8_t>(initialSize);
-		case RGL_FIELD_TIME_STAMP_F64: return VArray::create<double>(initialSize);
-		case RGL_FIELD_PADDING_8: // Intentional fall-through
-		case RGL_FIELD_PADDING_16:
-		case RGL_FIELD_PADDING_32:
-		default: throw std::invalid_argument(fmt::format("VArray does not handle type {}", type));
-	}
+	return createVArray(type, initialSize);
 }
 
 std::shared_ptr<VArray> VArray::clone() const
@@ -67,7 +57,7 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 	elemCapacity = newCapacity;
 }
 
-void VArray::hintLocation(int location, cudaStream_t stream)
+void VArray::hintLocation(int location, cudaStream_t stream) const
 {
 	CHECK_CUDA(cudaMemPrefetchAsync(managedData, elemCapacity * sizeOfType, location, stream));
 }

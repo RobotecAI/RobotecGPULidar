@@ -72,6 +72,7 @@ add_library(RobotecGPULidar SHARED
     src/pipeline/WritePCDFileNode.cpp
     src/pipeline/FormatNode.cpp
     src/pipeline/CompactNode.cpp
+    src/gpu/format.cu
 #    src/gaussianNoiseKernels.cu
 )
 

@@ -36,7 +36,7 @@ struct VArrayProxy
 	T&       operator[](int idx)       { return (reinterpret_cast<T*>(src->managedData))[idx]; }
 	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->managedData))[idx]; }
 
-	void hintLocation(int location, cudaStream_t stream=nullptr) const { src->hintLocation(location, stream); }
+	void hintLocation(int location, cudaStream_t stream) const { src->hintLocation(location, stream); }
 
 private:
 	VArrayProxy(std::shared_ptr<VArray> src=nullptr) : src(src == nullptr ? VArray::create<T>() : src) {}

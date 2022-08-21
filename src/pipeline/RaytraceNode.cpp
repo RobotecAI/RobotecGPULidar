@@ -2,15 +2,15 @@
 #include <scene/Scene.hpp>
 #include <macros/optix.hpp>
 
-void RaytraceNode::validate()
+void RaytraceNode::validate(cudaStream_t stream)
 {
 	raysNode = getValidInput<IRaysNode>();
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field)) {
 			fieldData.insert({field, VArray::create(field)});
 		}
-		// TODO: optimization opportunity - do not preserve or zero-initialize
-		fieldData[field]->resize(raysNode->getRays()->getCount());
+		fieldData[field]->resize(raysNode->getRayCount(), false, false);
+		fieldData[field]->hintLocation(VArray::GPU, stream);
 	}
 }
 
