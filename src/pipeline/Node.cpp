@@ -5,7 +5,7 @@ API_OBJECT_INSTANCE(Node);
 void Node::setParent(Node::Ptr parent)
 {
 	if (parent == nullptr) {
-		auto msg = fmt::format("attempted to set an empty parent for {}", getNodeTypeName());
+		auto msg = fmt::format("attempted to set an empty parent for {}", getName());
 		throw InvalidPipeline(msg);
 	}
 	this->inputs.push_back(parent);

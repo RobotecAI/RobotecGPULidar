@@ -58,7 +58,7 @@ void runPipeline(Node::Ptr userNode)
 	fields.insert(RGL_FIELD_XYZ_F32);
 
 	if (!Node::filter<CompactNode>(graph).empty()) {
-		fields.insert(RGL_FIELD_FINITE_B8);
+		fields.insert(RGL_FIELD_IS_HIT_I32);
 	}
 
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
@@ -74,6 +74,10 @@ void runPipeline(Node::Ptr userNode)
 	for (auto&& node : topologicalOrder) {
 		RGL_TRACE("Scheduling node: {}", *node);
 		node->schedule(nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		if (auto pclNode = std::dynamic_pointer_cast<IPointCloudNode>(node)) {
+			RGL_TRACE("PCL after {}: {}", node->getName(), pclNode->getWidth());
+		}
 	}
 }
 

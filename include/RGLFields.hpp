@@ -1,7 +1,6 @@
 #pragma once
 
 #include <set>
-
 #include <rgl/api/experimental.h>
 #include <VArray.hpp>
 
@@ -31,7 +30,7 @@ RGL_FIELD(TIME_STAMP_F64, double);
 RGL_FIELD(PADDING_8, uint8_t);
 RGL_FIELD(PADDING_16, uint16_t);
 RGL_FIELD(PADDING_32, uint32_t);
-RGL_FIELD(FINITE_B8, bool);
+RGL_FIELD(IS_HIT_I32, int32_t);
 
 inline std::size_t getFieldSize(rgl_field_t type)
 {
@@ -46,7 +45,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case RGL_FIELD_PADDING_8: return RGLField<RGL_FIELD_PADDING_8>::size;
 		case RGL_FIELD_PADDING_16: return RGLField<RGL_FIELD_PADDING_16>::size;
 		case RGL_FIELD_PADDING_32: return RGLField<RGL_FIELD_PADDING_32>::size;
-		case RGL_FIELD_FINITE_B8: return RGLField<RGL_FIELD_FINITE_B8>::size;
+		case RGL_FIELD_IS_HIT_I32: return RGLField<RGL_FIELD_IS_HIT_I32>::size;
 	}
 	throw std::invalid_argument(fmt::format("getFieldSize: unknown RGL field {}", type));
 }
@@ -58,7 +57,7 @@ inline bool isDummy(rgl_field_t type)
 		RGL_FIELD_PADDING_16,
 		RGL_FIELD_PADDING_32,
 	};
-	return dummies.contains(type);
+	return dummies.find(type) != dummies.end();
 }
 
 inline VArray::Ptr createVArray(rgl_field_t type, std::size_t initialSize)
@@ -81,8 +80,8 @@ inline VArray::Ptr createVArray(rgl_field_t type, std::size_t initialSize)
 			return VArray::create<RGLField<RGL_FIELD_RETURN_TYPE_U8>::Type>(initialSize);
 		case RGL_FIELD_TIME_STAMP_F64:
 			return VArray::create<RGLField<RGL_FIELD_TIME_STAMP_F64>::Type>(initialSize);
-		case RGL_FIELD_FINITE_B8:
-			return VArray::create<RGLField<RGL_FIELD_FINITE_B8>::Type>(initialSize);
+		case RGL_FIELD_IS_HIT_I32:
+			return VArray::create<RGLField<RGL_FIELD_IS_HIT_I32>::Type>(initialSize);
 	}
 	throw std::invalid_argument(fmt::format("createVArray: unknown RGL field {}", type));
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optix.h>
+#include <RGLFields.hpp>
 
 struct RaytraceRequestContext
 {
@@ -13,6 +14,6 @@ struct RaytraceRequestContext
 	OptixTraversableHandle scene;
 
 	// Output
-	Vec3f* xyz;
-	bool* isHit;
+	RGLField<RGL_FIELD_XYZ_F32>::Type* xyz;
+	RGLField<RGL_FIELD_IS_HIT_I32>::Type* isHit;
 };

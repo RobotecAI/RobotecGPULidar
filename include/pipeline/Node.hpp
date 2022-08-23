@@ -27,22 +27,24 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	/**
 	 * Prepare node computation and insert it into the given stream.
+	 * Note: This method may cause stream synchronization!
 	 * @param stream Stream to perform computations in, the same as in validate()
 	 */
 	virtual void schedule(cudaStream_t stream) = 0;
+
+	inline std::string getName() const { return name(typeid(*this)); }
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 protected:
-	inline std::string getNodeTypeName() const { return name(typeid(*this)); }
 
 	template <template <typename _> typename Container>
 	static std::string getNodeTypeNames(const Container<Node::Ptr>& nodes, std::string_view separator=", ")
 	{
 		std::string output{};
 		for (auto&& node: nodes) {
-			output += node->getNodeTypeName();
+			output += node->getName();
 			output += separator;
 		}
 		if (!output.empty()) {
@@ -104,7 +106,7 @@ struct fmt::formatter<Node>
 	template<typename FormatContext>
 	auto format(const Node& node, FormatContext& ctx) {
 		return fmt::format_to(ctx.out(), "{}(in=[{}], out=[{}])",
-		                      node.getNodeTypeName(),
+		                      node.getName(),
 		                      Node::getNodeTypeNames(node.inputs),
 		                      Node::getNodeTypeNames(node.outputs));
 	}

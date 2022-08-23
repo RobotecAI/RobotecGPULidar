@@ -2,11 +2,6 @@
 
 #include <pcl/io/pcd_io.h>
 
-void streamCallback(cudaStream_t stream, cudaError_t error, void* data)
-{
-	CHECK_CUDA(error);
-	reinterpret_cast<WritePCDFileNode*>(data)->execute(stream);
-}
 
 void WritePCDFileNode::validate(cudaStream_t stream)
 {
@@ -21,11 +16,7 @@ void WritePCDFileNode::validate(cudaStream_t stream)
 void WritePCDFileNode::schedule(cudaStream_t stream)
 {
 	input->getData()->hintLocation(VArray::CPU, stream);
-	CHECK_CUDA(cudaStreamAddCallback(stream, streamCallback, this, 0));
-}
-
-void WritePCDFileNode::execute(cudaStream_t stream)
-{
+	CHECK_CUDA(cudaStreamSynchronize(stream));
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(input->getData()->getHostPtr());
 	pcl::PointCloud<PCLPointType> cloud;
 	cloud.resize(input->getWidth(), input->getHeight());

@@ -9,15 +9,18 @@ TEST_F(Pipeline, Minimal)
 {
 	rgl_configure_logging(RGL_LOG_LEVEL_TRACE, nullptr, true);
 
-	rgl_mesh_t mesh = loadMesh("/home/prybicki/Desktop/rgl/godzilla");
-	rgl_entity_t entity = makeEntity(mesh);
-	rgl_mat3x4f entityPose = (Mat3x4f::TRS({0, 150, 150}, {90, 0, 0})).toRGL();
+	// rgl_mesh_t mesh = loadMesh("/home/prybicki/Desktop/rgl/godzilla");
+	// rgl_entity_t entity = makeEntity(mesh);
+	// rgl_mat3x4f entityPose = (Mat3x4f::TRS({0, 150, 150}, {90, 0, 0})).toRGL();
+	rgl_entity_t  entity = makeEntity();
+	rgl_mat3x4f entityPose = (Mat3x4f::TRS({0, 0, 5})).toRGL();
 
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPose));
 	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>("/home/prybicki/Desktop/rgl/lidar1000-1000-360-180.mat3x4f");
 	rgl_node_t use_rays=nullptr, raytrace=nullptr, lidar_pose=nullptr, write=nullptr, compact=nullptr;
 
-	rgl_mat3x4f lidarPose = Mat3x4f::TRS({0, 200, 0}).toRGL();
+	// rgl_mat3x4f lidarPose = Mat3x4f::TRS({0, 200, 0}).toRGL();
+	rgl_mat3x4f lidarPose = Mat3x4f::TRS({0, 0, 0}).toRGL();
 
 	EXPECT_RGL_SUCCESS(rgl_pipeline_use_rays_mat3x4f(&use_rays, nullptr, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_pipeline_transform_rays(&lidar_pose, use_rays, &lidarPose));

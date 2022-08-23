@@ -1,6 +1,7 @@
 #include <pipeline/Nodes.hpp>
 #include <scene/Scene.hpp>
 #include <macros/optix.hpp>
+#include <RGLFields.hpp>
 
 void RaytraceNode::validate(cudaStream_t stream)
 {
@@ -14,6 +15,11 @@ void RaytraceNode::validate(cudaStream_t stream)
 	}
 }
 
+template<rgl_field_t field>
+auto RaytraceNode::getPtrTo()
+{
+	return fields.contains(field) ? fieldData.at(field)->getTypedProxy<typename RGLField<field>::Type>()->getDevicePtr() : nullptr;
+}
 
 void RaytraceNode::schedule(cudaStream_t stream)
 {
@@ -22,14 +28,14 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto sceneSBT = scene->getSBT();
 	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
-	(*requestCtx)[0] = {
+	(*requestCtx)[0] = RaytraceRequestContext{
 	.rays = rays->getDevicePtr(),
 	.rayCount = rays->getCount(),
 	.rayOriginToWorld = Mat3x4f::identity(),
 	.rayRange = range,
 	.scene = sceneAS,
-	.xyz = fields.contains(RGL_FIELD_XYZ_F32) ? fieldData.at(RGL_FIELD_XYZ_F32)->getTypedProxy<Vec3f>()->getDevicePtr() : nullptr,
-	.isHit = fields.contains(RGL_FIELD_FINITE_B8) ? fieldData.at(RGL_FIELD_FINITE_B8)->getTypedProxy<bool>()->getDevicePtr() : nullptr,
+	.xyz = getPtrTo<RGL_FIELD_XYZ_F32>(),
+	.isHit = getPtrTo<RGL_FIELD_IS_HIT_I32>(),
 	};
 
 	// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.

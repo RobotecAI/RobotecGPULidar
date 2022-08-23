@@ -36,7 +36,7 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	outRays[tid] = inRays[tid] * transform;
 }
 
-__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const bool* shouldWrite, const int32_t *writeIndex, char *dst, const char *src)
+__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType*writeIndex, char *dst, const char *src)
 {
 	int32_t rIdx = threadIdx.x + blockIdx.x * blockDim.x;
 	if (rIdx >= pointCount) {
@@ -45,6 +45,7 @@ __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const bool
 	if (!shouldWrite[rIdx]) {
 		return;
 	}
+	printf("Writing %d\n", rIdx);
 	int wIdx = writeIndex[rIdx] - 1;
 	memcpy(dst + fieldSize * wIdx, src + fieldSize * rIdx, fieldSize);
 }
@@ -55,11 +56,11 @@ void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t 
 void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
 { run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
 
-void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const bool* isHit, int32_t* hitCountInclusive, size_t* outHitCount)
+void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* isHit, CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {
 	// beg and end could be used as const pointers, however thrust does not support it
-	auto beg = thrust::device_ptr<const bool>(isHit);
-	auto end = thrust::device_ptr<const bool>(isHit + pointCount);
+	auto beg = thrust::device_ptr<const int32_t>(isHit);
+	auto end = thrust::device_ptr<const int32_t>(isHit + pointCount);
 	auto dst = thrust::device_ptr<int32_t>(hitCountInclusive);
 
 	// Note: this will compile only in a .cu file
@@ -67,6 +68,6 @@ void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const bool* isHit
 	CHECK_CUDA(cudaMemcpyAsync(outHitCount, hitCountInclusive + pointCount - 1, sizeof(*hitCountInclusive), cudaMemcpyDefault, stream));
 }
 
-void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const bool* shouldWrite, const int32_t *writeIndex, char *dst, const char *src)
+void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
 { run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }
 

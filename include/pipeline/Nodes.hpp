@@ -14,11 +14,17 @@
 
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
+#include <gpu/nodeKernels.hpp>
 
 /**
- * Note: some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
+ * Notes for maintainers:
+ *
+ * Some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
  * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
  * while buffers sizes are not reliable, since they can be resized in execute().
+ *
+ * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
+ * operations prior to the return are finished.
  */
 
 
@@ -39,7 +45,7 @@ private:
 	size_t width;
 	cudaStream_t stream;
 	IPointCloudNode::Ptr input;
-	VArrayProxy<int32_t>::Ptr inclusivePrefixSum = VArrayProxy<int32_t>::create();
+	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
 };
 
 struct FormatNode : Node, IFormatNode
@@ -90,6 +96,9 @@ private:
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+
+	template<rgl_field_t>
+	auto getPtrTo();
 };
 
 struct TransformRaysNode : Node, IRaysNode
@@ -137,7 +146,4 @@ private:
 	IFormatNode::Ptr input;
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
-	void execute(cudaStream_t stream);
-
-	friend void streamCallback(cudaStream_t, cudaError_t, void*);
 };
