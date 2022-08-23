@@ -74,10 +74,6 @@ void runPipeline(Node::Ptr userNode)
 	for (auto&& node : topologicalOrder) {
 		RGL_TRACE("Scheduling node: {}", *node);
 		node->schedule(nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		if (auto pclNode = std::dynamic_pointer_cast<IPointCloudNode>(node)) {
-			RGL_TRACE("PCL after {}: {}", node->getName(), pclNode->getWidth());
-		}
 	}
 }
 

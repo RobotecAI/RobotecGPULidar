@@ -19,7 +19,6 @@ void CompactNode::schedule(cudaStream_t stream)
 	size_t pointCount = input->getWidth() * input->getHeight();
 	const auto* isHit = input->getFieldData(RGL_FIELD_IS_HIT_I32, stream)->getTypedProxy<RGLField<RGL_FIELD_IS_HIT_I32>::Type>()->getDevicePtr();
 	gpuFindCompaction(stream, pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
-	CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
 VArray::ConstPtr CompactNode::getFieldData(rgl_field_t field, cudaStream_t stream) const

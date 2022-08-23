@@ -13,7 +13,7 @@ TEST_F(Pipeline, Minimal)
 	// rgl_entity_t entity = makeEntity(mesh);
 	// rgl_mat3x4f entityPose = (Mat3x4f::TRS({0, 150, 150}, {90, 0, 0})).toRGL();
 	rgl_entity_t  entity = makeEntity();
-	rgl_mat3x4f entityPose = (Mat3x4f::TRS({0, 0, 5})).toRGL();
+	rgl_mat3x4f entityPose = (Mat3x4f::TRS({0, 0, 10})).toRGL();
 
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPose));
 	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>("/home/prybicki/Desktop/rgl/lidar1000-1000-360-180.mat3x4f");

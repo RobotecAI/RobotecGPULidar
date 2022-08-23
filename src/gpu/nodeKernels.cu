@@ -45,7 +45,6 @@ __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const RGLF
 	if (!shouldWrite[rIdx]) {
 		return;
 	}
-	printf("Writing %d\n", rIdx);
 	int wIdx = writeIndex[rIdx] - 1;
 	memcpy(dst + fieldSize * wIdx, src + fieldSize * rIdx, fieldSize);
 }
