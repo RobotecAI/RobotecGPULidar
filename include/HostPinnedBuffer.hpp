@@ -4,7 +4,7 @@
 
 #include <type_traits>
 #include <optional>
-#include "Logger.h"
+#include "Logger.hpp"
 #include "DeviceBuffer.hpp"
 #include <macros/cuda.hpp>
 

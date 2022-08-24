@@ -5,9 +5,9 @@
 #include <numeric>
 #include <filesystem>
 #include <fstream>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <rgl/api/experimental.h>
-#include <gmock/gmock-matchers.h>
+#include "gmock/gmock-matchers.h"
 
 using namespace ::testing;
 

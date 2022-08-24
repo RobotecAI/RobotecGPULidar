@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <macros/cuda.hpp>
 
-#include <Logger.h>
+#include <Logger.hpp>
 #include <rgl/api/experimental.h>
 #include <math/Vector.hpp>
 #include <typingUtils.hpp>

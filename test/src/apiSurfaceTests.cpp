@@ -1,7 +1,7 @@
-#include <Logger.h>
+#include <Logger.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <utils/testUtils.h>
+#include "../include/testUtils.hpp"
 #include <rgl/api/experimental.h>
 #include <rgl/api/e2e_extensions.h>
 

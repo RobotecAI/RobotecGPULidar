@@ -4,7 +4,7 @@
 #include "gaussianNoise.h"
 #include <random>
 
-#include <Logger.h>
+#include <Logger.hpp>
 #include <APIObject.hpp>
 #include <scene/Scene.hpp>
 #include <gpu/Optix.hpp>

@@ -59,8 +59,6 @@ TEST(PCD_Output, Orientation)
 		rgl_mat3x4f yTf = Mat3x4f::TRS({0, (2 * scaleY + 2) * i, 0}, {0, 45, 0}, {1, scaleY, 1}).toRGL();
 		rgl_mat3x4f zTf = Mat3x4f::TRS({0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ}).toRGL();
 
-		// rgl_mat3x4f yTf = Mat3x4f::TRS({0, 5, 0}, {0, 0, 0}, {1, 2, 1}).toRGL();
-
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(xs[i], &xTf));
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(ys[i], &yTf));
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(zs[i], &zTf));

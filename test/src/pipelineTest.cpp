@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <utils/testUtils.h>
+#include "../include/testUtils.hpp"
 
 #include <math/Mat3x4f.hpp>
 

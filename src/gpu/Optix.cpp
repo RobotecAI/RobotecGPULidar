@@ -11,7 +11,7 @@
 #include <spdlog/fmt/fmt.h>
 
 #include <gpu/Optix.hpp>
-#include <Logger.h>
+#include <Logger.hpp>
 #include <gpu/optixProgramsPtx.hpp>
 #include <macros/optix.hpp>
 #include <macros/cuda.hpp>
