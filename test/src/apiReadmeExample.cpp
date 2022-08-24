@@ -2,7 +2,7 @@
 #include <rgl/api/experimental.h>
 #include <Logger.hpp>
 
-#include "../include/testUtils.hpp"
+#include "../include/utils.hpp"
 
 TEST(EndToEnd, ReadmeExample)
 {

@@ -13,7 +13,6 @@ using namespace ::testing;
 
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
-
 #define EXPECT_RGL_STATUS(actual, expected, error_prefix, error_detail) \
     do                                                                  \
     {                                                                   \
@@ -27,6 +26,19 @@ using namespace ::testing;
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
+
+struct RGLAutoCleanupTest : public ::testing::Test {
+protected:
+	RGLAutoCleanupTest()
+	{
+		EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
+	}
+	virtual ~RGLAutoCleanupTest() override
+	{
+		EXPECT_RGL_SUCCESS(rgl_cleanup());
+	}
+};
+
 
 template <typename T>
 std::vector<float> computeDistances(const T* data, int size)
@@ -146,12 +158,6 @@ static rgl_mat3x4f identity = { .value = {
 	0, 1, 0, 0,
 	0, 0, 1, 0
 }};
-
-class RGLAutoCleanupTest : public ::testing::Test {
-protected:
-	RGLAutoCleanupTest() { rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false); }
-	virtual ~RGLAutoCleanupTest() override { rgl_cleanup(); }
-};
 
 
 static rgl_mesh_t makeCubeMesh()

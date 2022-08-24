@@ -11,13 +11,12 @@ add_executable(RobotecGPULidar_test
 #    src/features/pcdOutput.cpp
     src/testMat3x4f.cpp
 )
-
 target_link_libraries(RobotecGPULidar_test
     gtest_main
     gmock_main
     RobotecGPULidar
 )
-target_include_directories(RobotecGPULidar_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(RobotecGPULidar_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 include(GoogleTest)
 gtest_discover_tests(RobotecGPULidar_test)
