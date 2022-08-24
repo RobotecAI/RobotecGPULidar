@@ -49,8 +49,8 @@ public:
 	}
 
 	std::size_t getElemCount() const { return elemCount; }
-
-	std::size_t getByteSize() const { return getElemCount() * sizeof(T); }
+	std::size_t getSizeOfElem() const { return sizeof(T); }
+	std::size_t getByteSize() const { return getElemCount() * getSizeOfElem(); }
 
 private:
 	void ensureHostCanFit(std::size_t newElemCount)
