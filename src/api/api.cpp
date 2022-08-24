@@ -105,6 +105,7 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.9.3: add API unit tests with fixes, in particular: optix logging
 	// 0.10.0: entities can now share meshes
 	// 0.10.1: API const correctness, added INVALID_OBJECT error, minor internal changes
+	// 0.10.2: Fixed Lidar::getResults writing too many bytes
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);

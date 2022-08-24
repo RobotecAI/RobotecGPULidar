@@ -88,8 +88,8 @@ public:
 	}
 
 	std::size_t getElemCount() const { return elemCount; }
-
-	std::size_t getByteSize() const { return getElemCount() * sizeof(T); }
+	std::size_t getSizeOfElem() const { return sizeof(T); }
+	std::size_t getByteSize() const { return getElemCount() * getSizeOfElem(); }
 
 	bool resizeToFit(std::size_t newElemCount, bool clear=false)
 	{

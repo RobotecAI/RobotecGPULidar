@@ -120,19 +120,19 @@ void Lidar::getResults(int format, void *data)
 	}
 
 	if (format == RGL_FORMAT_XYZ) {
-		memcpy(data, hDensePoint3f.readHost(), hDensePoint3f.getByteSize());
+		memcpy(data, hDensePoint3f.readHost(), hDensePoint3f.getSizeOfElem() * densePointCount.value());
 		return;
 	}
 	if (format == RGL_FORMAT_E2E_PCL12) {
-		memcpy(data, hDensePCL12.readHost(), hDensePCL12.getByteSize());
+		memcpy(data, hDensePCL12.readHost(), hDensePCL12.getSizeOfElem() * densePointCount.value());
 		return;
 	}
 	if (format == RGL_FORMAT_E2E_PCL24) {
-		memcpy(data, hDensePCL24.readHost(), hDensePCL24.getByteSize());
+		memcpy(data, hDensePCL24.readHost(), hDensePCL24.getSizeOfElem() * densePointCount.value());
 		return;
 	}
 	if (format == RGL_FORMAT_E2E_PCL48) {
-		memcpy(data, hDensePCL48.readHost(), hDensePCL48.getByteSize());
+		memcpy(data, hDensePCL48.readHost(), hDensePCL48.getSizeOfElem() * densePointCount.value());
 		return;
 	}
 }
