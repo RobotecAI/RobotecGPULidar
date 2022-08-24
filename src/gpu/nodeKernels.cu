@@ -33,7 +33,7 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	if (tid >= rayCount) {
 		return;
 	}
-	outRays[tid] = inRays[tid] * transform;
+	outRays[tid] = transform * inRays[tid];
 }
 
 __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType*writeIndex, char *dst, const char *src)

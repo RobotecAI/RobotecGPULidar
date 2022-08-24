@@ -29,13 +29,12 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
 	(*requestCtx)[0] = RaytraceRequestContext{
-	.rays = rays->getDevicePtr(),
-	.rayCount = rays->getCount(),
-	.rayOriginToWorld = Mat3x4f::identity(),
-	.rayRange = range,
-	.scene = sceneAS,
-	.xyz = getPtrTo<RGL_FIELD_XYZ_F32>(),
-	.isHit = getPtrTo<RGL_FIELD_IS_HIT_I32>(),
+		.rays = rays->getDevicePtr(),
+		.rayCount = rays->getCount(),
+		.rayRange = range,
+		.scene = sceneAS,
+		.xyz = getPtrTo<RGL_FIELD_XYZ_F32>(),
+		.isHit = getPtrTo<RGL_FIELD_IS_HIT_I32>(),
 	};
 
 	// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.

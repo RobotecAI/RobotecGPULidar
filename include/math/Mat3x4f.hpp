@@ -165,9 +165,9 @@ __host__ __device__ inline Vec3f operator*(const Mat3x4f& lhs, const Vec3f& rhs)
 {
 #define MUL(i) ((lhs.rc[i][0] * rhs[0]) + (lhs.rc[i][1] * rhs[1]) + (lhs.rc[i][2] * rhs[2]))
 	return {
-	MUL(0),
-	MUL(1),
-	MUL(2)
+	MUL(0) + lhs.rc[0][3],
+	MUL(1) + lhs.rc[1][3],
+	MUL(2) + lhs.rc[2][3]
 	};
 #undef MUL
 }
