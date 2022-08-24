@@ -46,9 +46,10 @@ extern "C" __global__ void __closesthit__()
 	const Vec3f& C = sbtData.vertex[index.z()];
 
 	const int rayIdx = optixGetLaunchIndex().x;
-	Vec3f prd = Vec3f((1 - u - v) * A + u * B + v * C);
+	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
+	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 	if (ctx.xyz != nullptr) {
-		ctx.xyz[rayIdx] = Vec3f(prd.x(), prd.y(), prd.z());
+		ctx.xyz[rayIdx] = Vec3f(hitWorld.x(), hitWorld.y(), hitWorld.z());
 	}
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = true;

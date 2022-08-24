@@ -17,6 +17,9 @@ void WritePCDFileNode::schedule(cudaStream_t stream)
 {
 	input->getData()->hintLocation(VArray::CPU, stream);
 	CHECK_CUDA(cudaStreamSynchronize(stream));
+	if (input->getWidth() == 0) {
+		return;
+	}
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(input->getData()->getHostPtr());
 	pcl::PointCloud<PCLPointType> cloud;
 	cloud.resize(input->getWidth(), input->getHeight());
@@ -27,5 +30,9 @@ void WritePCDFileNode::schedule(cudaStream_t stream)
 
 WritePCDFileNode::~WritePCDFileNode()
 {
+	if (cachedPCLs.empty()) {
+		RGL_WARN("{}: skipped saving PCD file {} - empty point cloud", getName(), filePath.string());
+		return;
+	}
 	pcl::io::savePCDFileASCII(filePath.string(), cachedPCLs);
 }

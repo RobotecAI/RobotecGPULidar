@@ -9,7 +9,7 @@ add_executable(RobotecGPULidar_test
 #    src/features/mesh.cpp
 #    src/features/transforms.cpp
 #    src/features/pcdOutput.cpp
-#    src/testMat3x4f.cpp
+    src/testMat3x4f.cpp
 )
 
 target_link_libraries(RobotecGPULidar_test
