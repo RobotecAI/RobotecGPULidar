@@ -119,7 +119,7 @@ struct TransformPointsNode : Node, IPointCloudNode
 private:
 	Mat3x4f transform;
 	IPointCloudNode::Ptr input;
-	VArrayProxy<RGLField<RGL_FIELD_XYZ_F32>::Type>::Ptr output = VArrayProxy<RGLField<RGL_FIELD_XYZ_F32>::Type>::create();
+	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 };
 
 struct TransformRaysNode : Node, IRaysNode

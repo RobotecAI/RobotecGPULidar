@@ -386,7 +386,7 @@ rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const 
 		CHECK_ARG(file_path[0] != '\0');
 
 		rgl_node_t internalFmtNode = nullptr;
-		std::vector<rgl_field_t> fmtFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_PADDING_32};  // Needed by PCL
+		std::vector<rgl_field_t> fmtFields = {XYZ_F32, PADDING_32};  // Needed by PCL
 		createOrUpdateNode<FormatNode>(&internalFmtNode, parentRaw, fmtFields);
 		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, internalFmtNode, file_path);
 	});

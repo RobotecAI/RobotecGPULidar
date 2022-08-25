@@ -14,6 +14,6 @@ struct RaytraceRequestContext
 	OptixTraversableHandle scene;
 
 	// Output
-	RGLField<RGL_FIELD_XYZ_F32>::Type* xyz;
-	RGLField<RGL_FIELD_IS_HIT_I32>::Type* isHit;
+	Field<XYZ_F32>::type* xyz;
+	Field<IS_HIT_I32>::type* isHit;
 };

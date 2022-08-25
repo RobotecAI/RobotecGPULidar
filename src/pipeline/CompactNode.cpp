@@ -20,7 +20,7 @@ void CompactNode::schedule(cudaStream_t stream)
 {
 	inclusivePrefixSum->resize(input->getHeight() * input->getWidth());
 	size_t pointCount = input->getWidth() * input->getHeight();
-	const auto* isHit = input->getFieldDataTyped<RGL_FIELD_IS_HIT_I32>(stream)->getDevicePtr();
+	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
 	gpuFindCompaction(stream, pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
 	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
 }
@@ -30,7 +30,7 @@ VArray::ConstPtr CompactNode::getFieldData(rgl_field_t field, cudaStream_t strea
 	VArray::Ptr out = VArray::create(field, width);
 	char* outPtr = static_cast<char *>(out->getDevicePtr());
 	const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getDevicePtr());
-	const auto* isHitPtr = input->getFieldDataTyped<RGL_FIELD_IS_HIT_I32>(stream)->getDevicePtr();
+	const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
 	const CompactionIndexType * indices = inclusivePrefixSum->getDevicePtr();
 	gpuApplyCompaction(stream, input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
 	return out;

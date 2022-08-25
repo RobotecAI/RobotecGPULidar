@@ -29,8 +29,8 @@ struct IPointCloudNode : public IPointcloudDescription
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
 
 	template<rgl_field_t field>
-	typename VArrayProxy<typename RGLField<field>::Type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
-	{ return getFieldData(field, stream)->template getTypedProxy<typename RGLField<field>::Type>(); }
+	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
+	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
 };
 
 struct IFormatNode : public IPointcloudDescription

@@ -36,7 +36,7 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	outRays[tid] = transform * inRays[tid];
 }
 
-__global__ void kTransformPoints(size_t pointCount, const RGLField<RGL_FIELD_XYZ_F32>::Type* inPoints, RGLField<RGL_FIELD_XYZ_F32>::Type* outPoints, Mat3x4f transform)
+__global__ void kTransformPoints(size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
 {
 	auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (tid >= pointCount) {
@@ -45,7 +45,7 @@ __global__ void kTransformPoints(size_t pointCount, const RGLField<RGL_FIELD_XYZ
 	outPoints[tid] = transform * inPoints[tid];
 }
 
-__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType*writeIndex, char *dst, const char *src)
+__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite, const CompactionIndexType*writeIndex, char *dst, const char *src)
 {
 	int32_t rIdx = threadIdx.x + blockIdx.x * blockDim.x;
 	if (rIdx >= pointCount) {
@@ -69,7 +69,7 @@ void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t 
 void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
 { run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
 
-void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* isHit, CompactionIndexType* hitCountInclusive, size_t* outHitCount)
+void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HIT_I32>::type* isHit, CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {
 	// beg and end could be used as const pointers, however thrust does not support it
 	auto beg = thrust::device_ptr<const int32_t>(isHit);
@@ -85,8 +85,8 @@ void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const RGLField<RG
 	CHECK_CUDA(cudaMemcpyAsync(outHitCount, hitCountInclusive + pointCount - 1, sizeof(*hitCountInclusive), cudaMemcpyDefault, stream));
 }
 
-void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
+void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
 { run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }
 
-void gpuTransformPoints(cudaStream_t stream, size_t pointCount, const RGLField<RGL_FIELD_XYZ_F32>::Type* inPoints, RGLField<RGL_FIELD_XYZ_F32>::Type* outPoints, Mat3x4f transform)
+void gpuTransformPoints(cudaStream_t stream, size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
 { run(kTransformPoints, stream, pointCount, inPoints, outPoints, transform); }

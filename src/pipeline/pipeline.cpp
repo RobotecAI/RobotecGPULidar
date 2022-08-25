@@ -55,10 +55,10 @@ void runPipeline(Node::Ptr userNode)
 		}
 	}
 
-	fields.insert(RGL_FIELD_XYZ_F32);
+	fields.insert(XYZ_F32);
 
 	if (!Node::filter<CompactNode>(graph).empty()) {
-		fields.insert(RGL_FIELD_IS_HIT_I32);
+		fields.insert(IS_HIT_I32);
 	}
 
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);

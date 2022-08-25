@@ -17,7 +17,7 @@ void RaytraceNode::validate()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fields.contains(field) ? fieldData.at(field)->getTypedProxy<typename RGLField<field>::Type>()->getDevicePtr() : nullptr;
+	return fields.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
 void RaytraceNode::schedule(cudaStream_t stream)
@@ -35,8 +35,8 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		.rayCount = rays->getCount(),
 		.rayRange = range,
 		.scene = sceneAS,
-		.xyz = getPtrTo<RGL_FIELD_XYZ_F32>(),
-		.isHit = getPtrTo<RGL_FIELD_IS_HIT_I32>(),
+		.xyz = getPtrTo<XYZ_F32>(),
+		.isHit = getPtrTo<IS_HIT_I32>(),
 	};
 
 	// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.
