@@ -13,30 +13,12 @@
 
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
-static __forceinline__ __device__ Vec3f forwardVec() {return Vec3f(0.0f, 0.0f, 1.0f); }
-
 extern "C" __global__ void __raygen__()
 {
 	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
 
-	Vec3f tr = ray.translation();
-	// Vec3f origin = ray * Vec3f{0, 0, 0};
-	// Vec3f dir = ray * Vec3f{0, 0, 1};
-
-	Vec3f origin = ray.translation();
-	Vec3f zero = Vec3f(0.0f, 0.0f, 0.0f);
-	Vec3f forward = Vec3f(0.0f, 0.0f, 1.0f);
-	Vec3f zero_moved = ray * zero;
-	Vec3f forward_moved = ray * forward;
-	Vec3f dir = Vec3f(forward_moved.x() - zero_moved.x(), forward_moved.y() - zero_moved.y(), forward_moved.z() - zero_moved.z()) ;
-
-	if (optixGetLaunchIndex().x % 12345 == 0) {
-		printf("mat:\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n",
-			   ray.rc[0][0], ray.rc[0][1], ray.rc[0][2], ray.rc[0][3],
-			   ray.rc[1][0], ray.rc[1][1], ray.rc[1][2], ray.rc[1][3],
-			   ray.rc[2][0], ray.rc[2][1], ray.rc[2][2], ray.rc[2][3]);
-	}
-	// printf("origin: %f %f %f \t->\t %f %f %f\n", origin.x(), origin.y(), origin.z(), dir.x(), dir.y(), dir.z());
+	Vec3f origin = ray * Vec3f{0, 0, 0};
+	Vec3f dir = ray * Vec3f{0, 0, 1};
 
 	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
 	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0);
@@ -70,19 +52,6 @@ extern "C" __global__ void __closesthit__()
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = true;
 	}
-
-	// Vec3f unityPoint = optixTransformPointFromObjectToWorldSpace(rayHitPoint);
-	// Vec3f rosPoint = args.rosTransform * unityPoint;
-
-
-	// args.dUnityVisualisationPoints[ix].x = unityPoint.x();
-	// args.dUnityVisualisationPoints[ix].y = unityPoint.y();
-	// args.dUnityVisualisationPoints[ix].z = unityPoint.z();
-	// args.dRosXYZ[ix].x = rosPoint.x();
-	// args.dRosXYZ[ix].y = rosPoint.y();
-	// args.dRosXYZ[ix].z = rosPoint.z();
-
-	// args.dWasHit[optixGetLaunchIndex().x] = 1;
 }
 
 extern "C" __global__ void __miss__()
