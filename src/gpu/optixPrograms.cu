@@ -18,7 +18,7 @@ extern "C" __global__ void __raygen__()
 	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
 
 	Vec3f origin = ray * Vec3f{0, 0, 0};
-	Vec3f dir = ray * Vec3f{0, 0, 1};
+	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
 
 	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
 	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0);
@@ -46,6 +46,7 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
+	// printf("UUUUUU %p\n", (void*) ctx.isHit);
 	if (ctx.xyz != nullptr) {
 		ctx.xyz[rayIdx] = Vec3f(hitWorld.x(), hitWorld.y(), hitWorld.z());
 	}

@@ -31,7 +31,7 @@ struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
 	RGLAutoCleanupTest()
 	{
-		EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
+		EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_WARN, nullptr, true));
 	}
 	virtual ~RGLAutoCleanupTest() override
 	{

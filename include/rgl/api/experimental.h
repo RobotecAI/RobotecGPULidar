@@ -279,13 +279,15 @@ rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat
 RGL_API rgl_status_t
 rgl_pipeline_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform);
 
+// Applies affine transformation, e.g. to change the coordinate frame.
+RGL_API rgl_status_t
+rgl_pipeline_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
+
 RGL_API rgl_status_t
 rgl_pipeline_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
 
 RGL_API rgl_status_t
 rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
-
-
 
 // Cuts out requested fields and formats a contiguous binary buffer.
 RGL_API rgl_status_t
@@ -301,9 +303,7 @@ rgl_pipeline_compact(rgl_node_t* node, rgl_node_t parent);
 RGL_API rgl_status_t
 rgl_pipeline_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size);
 
-// Applies affine transformation, e.g. to change the coordinate frame.
-RGL_API rgl_status_t
-rgl_pipeline_transform_pointcloud(rgl_node_t* node, rgl_node_t parent, rgl_mat3x4f transform);
+
 
 
 

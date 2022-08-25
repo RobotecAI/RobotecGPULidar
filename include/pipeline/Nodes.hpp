@@ -109,6 +109,7 @@ struct TransformPointsNode : Node, IPointCloudNode
 	void schedule(cudaStream_t stream) override;
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
+	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
 	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
@@ -118,6 +119,7 @@ struct TransformPointsNode : Node, IPointCloudNode
 private:
 	Mat3x4f transform;
 	IPointCloudNode::Ptr input;
+	VArrayProxy<RGLField<RGL_FIELD_XYZ_F32>::Type>::Ptr output = VArrayProxy<RGLField<RGL_FIELD_XYZ_F32>::Type>::create();
 };
 
 struct TransformRaysNode : Node, IRaysNode

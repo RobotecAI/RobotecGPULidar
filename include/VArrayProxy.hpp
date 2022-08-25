@@ -21,6 +21,9 @@ struct VArrayProxy
 	VArrayProxy<T>::Ptr clone() const
 	{ return VArrayProxy<T>::create(src->clone()); }
 
+	VArray::Ptr untyped() { return src; };
+	VArray::ConstPtr untyped() const { return src; };
+
 	void copyFrom(const T* srcRaw, std::size_t count) { src->copyFrom(srcRaw, sizeof(T) * count); }
 
 	std::size_t getCount() const { return src->elemCount; }

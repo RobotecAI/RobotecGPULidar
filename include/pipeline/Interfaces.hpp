@@ -4,6 +4,7 @@
 #include <math/Mat3x4f.hpp>
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
+#include <RGLFields.hpp>
 
 struct IRaysNode
 {
@@ -26,6 +27,10 @@ struct IPointCloudNode : public IPointcloudDescription
 	using Ptr = std::shared_ptr<IPointCloudNode>;
 
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
+
+	template<rgl_field_t field>
+	typename VArrayProxy<typename RGLField<field>::Type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
+	{ return getFieldData(field, stream)->template getTypedProxy<typename RGLField<field>::Type>(); }
 };
 
 struct IFormatNode : public IPointcloudDescription

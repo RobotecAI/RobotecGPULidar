@@ -321,7 +321,21 @@ rgl_pipeline_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_pipeline_transform_rays(node={}, parent={}, transform={})", repr(nodeRawPtr), repr(parent), repr(transform));
+		CHECK_ARG(transform != nullptr);
+
 		createOrUpdateNode<TransformRaysNode>(nodeRawPtr, parent, Mat3x4f::fromRGL(*transform));
+	});
+}
+
+
+RGL_API rgl_status_t
+rgl_pipeline_transform_points(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_transform_points(node={}, parent={}, transform={})", repr(nodeRawPtr), repr(parent), repr(transform));
+		CHECK_ARG(transform != nullptr);
+
+		createOrUpdateNode<TransformPointsNode>(nodeRawPtr, parent, Mat3x4f::fromRGL(*transform));
 	});
 }
 
@@ -377,6 +391,4 @@ rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const 
 		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, internalFmtNode, file_path);
 	});
 }
-
-
 }

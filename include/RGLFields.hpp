@@ -27,10 +27,10 @@ RGL_FIELD(AZIMUTH_F32, float);
 RGL_FIELD(DISTANCE_F32, float);
 RGL_FIELD(RETURN_TYPE_U8, uint8_t);
 RGL_FIELD(TIME_STAMP_F64, double);
+RGL_FIELD(IS_HIT_I32, int32_t);
 RGL_FIELD(PADDING_8, uint8_t);
 RGL_FIELD(PADDING_16, uint16_t);
 RGL_FIELD(PADDING_32, uint32_t);
-RGL_FIELD(IS_HIT_I32, int32_t);
 
 inline std::size_t getFieldSize(rgl_field_t type)
 {

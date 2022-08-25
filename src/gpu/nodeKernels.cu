@@ -36,6 +36,15 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	outRays[tid] = transform * inRays[tid];
 }
 
+__global__ void kTransformPoints(size_t pointCount, const RGLField<RGL_FIELD_XYZ_F32>::Type* inPoints, RGLField<RGL_FIELD_XYZ_F32>::Type* outPoints, Mat3x4f transform)
+{
+	auto tid = blockIdx.x * blockDim.x + threadIdx.x;
+	if (tid >= pointCount) {
+		return;
+	}
+	outPoints[tid] = transform * inPoints[tid];
+}
+
 __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType*writeIndex, char *dst, const char *src)
 {
 	int32_t rIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -47,6 +56,11 @@ __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const RGLF
 	}
 	int wIdx = writeIndex[rIdx] - 1;
 	memcpy(dst + fieldSize * wIdx, src + fieldSize * rIdx, fieldSize);
+}
+
+__global__ void print(const int32_t* what)
+{
+	printf("AAAAA %d\n", *what);
 }
 
 void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *fields, char *out)
@@ -64,9 +78,15 @@ void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const RGLField<RG
 
 	// Note: this will compile only in a .cu file
 	thrust::inclusive_scan(thrust::cuda::par.on(stream), beg, end, dst);
+	// for (int i = 0; i < 1000000; i+=12345) {
+	// 	print<<<1,1,0,stream>>>(isHit + i);
+	//
+	// }
 	CHECK_CUDA(cudaMemcpyAsync(outHitCount, hitCountInclusive + pointCount - 1, sizeof(*hitCountInclusive), cudaMemcpyDefault, stream));
 }
 
 void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const RGLField<RGL_FIELD_IS_HIT_I32>::Type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
 { run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }
 
+void gpuTransformPoints(cudaStream_t stream, size_t pointCount, const RGLField<RGL_FIELD_XYZ_F32>::Type* inPoints, RGLField<RGL_FIELD_XYZ_F32>::Type* outPoints, Mat3x4f transform)
+{ run(kTransformPoints, stream, pointCount, inPoints, outPoints, transform); }

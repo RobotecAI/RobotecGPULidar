@@ -88,6 +88,15 @@ struct Mat3x4f
 		return T * R * S;
 	}
 
+	static inline Mat3x4f shear(Vec2f x, Vec2f y={0, 0}, Vec2f z={0,0})
+	{
+		return {.rc = {
+			   1, y[0], z[0], 0,
+			x[0],    1, z[1], 0,
+			x[1], y[1],    1, 0
+		}};
+	}
+
 	static inline Mat3x4f fromRaw(const float* data)
 	{
 		Mat3x4f matrix {};
