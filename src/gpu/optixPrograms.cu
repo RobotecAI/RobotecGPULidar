@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include <math_constants.h>
 #include <optix_device.h>
 
 #include <math/Vector.hpp>
@@ -8,10 +9,26 @@
 #include <gpu/RaytraceRequestContext.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
 
-#define HOSTDEVICE __device__
-// #include "linearGeometry.h"
 
 extern "C" static __constant__ RaytraceRequestContext ctx;
+
+template<bool isFinite>
+__forceinline__ __device__
+void saveRayResult(Vec3f* xyz=nullptr)
+{
+	const int rayIdx = optixGetLaunchIndex().x;
+
+	if (ctx.xyz != nullptr) {
+		// Return actual XYZ of the hit point or infinity vector with signs of the ray.
+		ctx.xyz[rayIdx] = isFinite ? *xyz : ctx.rays[rayIdx] * Vec3f{CUDART_INF_F, CUDART_INF_F, CUDART_INF_F};
+	}
+	if (ctx.isHit != nullptr) {
+		ctx.isHit[rayIdx] = isFinite;
+	}
+	if (ctx.rayIdx != nullptr) {
+		ctx.rayIdx[rayIdx] = rayIdx;
+	}
+}
 
 extern "C" __global__ void __raygen__()
 {
@@ -42,26 +59,15 @@ extern "C" __global__ void __closesthit__()
 	const Vec3f& B = sbtData.vertex[index.y()];
 	const Vec3f& C = sbtData.vertex[index.z()];
 
-	const int rayIdx = optixGetLaunchIndex().x;
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
-	// printf("UUUUUU %p\n", (void*) ctx.isHit);
-	if (ctx.xyz != nullptr) {
-		ctx.xyz[rayIdx] = Vec3f(hitWorld.x(), hitWorld.y(), hitWorld.z());
-	}
-	if (ctx.isHit != nullptr) {
-		ctx.isHit[rayIdx] = true;
-	}
+	saveRayResult<true>(&hitWorld);
 }
 
 extern "C" __global__ void __miss__()
 {
-	// TODO fill XYZ with signed infinities
-	const int rayIdx = optixGetLaunchIndex().x;
-	if (ctx.isHit != nullptr) {
-		ctx.isHit[rayIdx] = false;
-	}
+	saveRayResult<false>();
 }
 
 extern "C" __global__ void __anyhit__(){}

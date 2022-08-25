@@ -58,25 +58,23 @@ add_library(optixPrograms optixProgramsPtx.c)
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
     src/Logger.cpp
-#    src/Lidar.cpp
-#    src/formatPCL.cu
-    src/gpu/Optix.cpp
     src/VArray.cpp
+    src/gpu/Optix.cpp
+    src/gpu/nodeKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
     src/pipeline/pipeline.cpp
     src/pipeline/Node.cpp
+    src/pipeline/CompactNode.cpp
+    src/pipeline/DownSampleNode.cpp
+    src/pipeline/FormatNode.cpp
     src/pipeline/RaytraceNode.cpp
+    src/pipeline/TransformPointsNode.cpp
+    src/pipeline/TransformRaysNode.cpp
     src/pipeline/UseRaysMat3x4fNode.cpp
     src/pipeline/WritePCDFileNode.cpp
-    src/pipeline/FormatNode.cpp
-    src/pipeline/CompactNode.cpp
-    src/pipeline/TransformRaysNode.cpp
-    src/pipeline/TransformPointsNode.cpp
-    src/gpu/nodeKernels.cu
-    #    src/gaussianNoiseKernels.cu
 )
 
 target_include_directories(RobotecGPULidar PUBLIC include)

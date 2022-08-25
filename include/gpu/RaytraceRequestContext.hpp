@@ -16,4 +16,5 @@ struct RaytraceRequestContext
 	// Output
 	Field<XYZ_F32>::type* xyz;
 	Field<IS_HIT_I32>::type* isHit;
+	Field<RAY_IDX_U32>::type* rayIdx;
 };

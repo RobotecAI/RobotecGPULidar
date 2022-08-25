@@ -28,7 +28,7 @@
  */
 
 
-struct CompactNode : public Node, IPointCloudNode
+struct CompactNode : Node, IPointCloudNode
 {
 	using Ptr = std::shared_ptr<CompactNode>;
 
@@ -47,6 +47,25 @@ private:
 	IPointCloudNode::Ptr input;
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
+};
+
+struct DownSampleNode : Node, IPointCloudNode
+{
+	using Ptr = std::shared_ptr<DownSampleNode>;
+
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+	size_t getWidth() const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+
+	inline void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
+	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
+	inline bool isDense() const override { return false; }
+	inline size_t getHeight() const override { return 1; }
+
+private:
+	Vec3f leafDims;
+	IPointCloudNode::Ptr input;
 };
 
 struct FormatNode : Node, IFormatNode
@@ -72,7 +91,7 @@ private:
 	VArray::Ptr output = output = VArray::create<char>();
 };
 
-struct RaytraceNode : IPointCloudNode, public Node
+struct RaytraceNode : Node, IPointCloudNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
 
