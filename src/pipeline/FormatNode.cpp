@@ -11,7 +11,7 @@ std::size_t FormatNode::getPointSize() const
 	return size;
 }
 
-void FormatNode::validate(cudaStream_t stream)
+void FormatNode::validate()
 {
 	input = getValidInput<IPointCloudNode>();
 }

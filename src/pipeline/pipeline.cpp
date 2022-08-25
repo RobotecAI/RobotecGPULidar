@@ -68,7 +68,7 @@ void runPipeline(Node::Ptr userNode)
 
 	for (auto&& current : topologicalOrder) {
 		RGL_TRACE("Validating node: {}", *current);
-		current->validate(nullptr);
+		current->validate();
 	}
 
 	for (auto&& node : topologicalOrder) {

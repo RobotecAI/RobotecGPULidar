@@ -31,7 +31,6 @@ TEST_F(Pipeline, Minimal)
 	// rgl_mat3x4f lidarPose = Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}).toRGL();
 	rgl_mat3x4f lidarPose = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
 
-
 	EXPECT_RGL_SUCCESS(rgl_pipeline_use_rays_mat3x4f(&use_rays, nullptr, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_pipeline_transform_rays(&lidar_pose, use_rays, &lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_pipeline_raytrace(&raytrace, lidar_pose, nullptr, 1000));

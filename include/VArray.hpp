@@ -54,7 +54,7 @@ struct VArray : std::enable_shared_from_this<VArray>
 	void copyFrom(const void* src, std::size_t bytes);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
-	void hintLocation(int location, cudaStream_t stream) const;
+	void hintLocation(int location) const;
 	inline void* getDevicePtr() const { return managedData; }
 	inline void* getHostPtr() const { return managedData; }
 	inline std::size_t getElemSize() const { return sizeOfType; }

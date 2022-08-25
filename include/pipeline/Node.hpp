@@ -21,14 +21,13 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * - node parameters are changed
 	 * WARNING: validate() should not depend on parents VArray buffer sizes
 	 * I.E. Operations such as resizing output buffers must be done in schedule()
-	 * @param stream Stream to perform check in, the same as in schedule()
 	 */
-	virtual void validate(cudaStream_t stream) = 0;
+	virtual void validate() = 0;
 
 	/**
 	 * Prepare node computation and insert it into the given stream.
 	 * Note: This method may cause stream synchronization!
-	 * @param stream Stream to perform computations in, the same as in validate()
+	 * @param stream Stream to perform computations in
 	 */
 	virtual void schedule(cudaStream_t stream) = 0;
 

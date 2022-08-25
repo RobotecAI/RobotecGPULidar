@@ -6,19 +6,23 @@
 // TODO: WritePCD triggers cudaSynchronizeStream in its indirect input CompactNode
 // TODO: This can be alleviated with a stream-aware VArray :)
 
-void CompactNode::validate(cudaStream_t stream)
+void CompactNode::validate()
 {
 	input = getValidInput<IPointCloudNode>();
-	inclusivePrefixSum->resize(input->getHeight() * input->getWidth());
-	inclusivePrefixSum->hintLocation(VArray::GPU, stream);
+	if (finishedEvent == nullptr) {
+		unsigned flags = cudaEventDisableTiming;  // Provides better performance
+		CHECK_CUDA(cudaEventCreate(&finishedEvent, flags));
+	}
+	inclusivePrefixSum->hintLocation(VArray::GPU);
 }
 
 void CompactNode::schedule(cudaStream_t stream)
 {
-	this->stream = stream;
+	inclusivePrefixSum->resize(input->getHeight() * input->getWidth());
 	size_t pointCount = input->getWidth() * input->getHeight();
 	const auto* isHit = input->getFieldData(RGL_FIELD_IS_HIT_I32, stream)->getTypedProxy<RGLField<RGL_FIELD_IS_HIT_I32>::Type>()->getDevicePtr();
 	gpuFindCompaction(stream, pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
+	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
 }
 
 VArray::ConstPtr CompactNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
@@ -34,6 +38,6 @@ VArray::ConstPtr CompactNode::getFieldData(rgl_field_t field, cudaStream_t strea
 
 size_t CompactNode::getWidth() const
 {
-	CHECK_CUDA(cudaStreamSynchronize(stream));
+	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	return width;
 }

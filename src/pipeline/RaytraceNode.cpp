@@ -3,15 +3,14 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
-void RaytraceNode::validate(cudaStream_t stream)
+void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field)) {
 			fieldData.insert({field, VArray::create(field)});
+			fieldData[field]->hintLocation(VArray::GPU);
 		}
-		fieldData[field]->resize(raysNode->getRayCount(), false, false);
-		fieldData[field]->hintLocation(VArray::GPU, stream);
 	}
 }
 
@@ -23,6 +22,9 @@ auto RaytraceNode::getPtrTo()
 
 void RaytraceNode::schedule(cudaStream_t stream)
 {
+	for (auto&& field : fields) {
+		fieldData[field]->resize(raysNode->getRayCount(), false, false);
+	}
 	auto rays = raysNode->getRays();
 	auto sceneAS = scene->getAS();
 	auto sceneSBT = scene->getSBT();

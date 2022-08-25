@@ -56,6 +56,7 @@ extern "C" __global__ void __closesthit__()
 
 extern "C" __global__ void __miss__()
 {
+	// TODO fill XYZ with signed infinities
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = false;

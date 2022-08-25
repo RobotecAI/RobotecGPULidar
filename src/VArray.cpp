@@ -57,12 +57,13 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 	elemCapacity = newCapacity;
 }
 
-void VArray::hintLocation(int location, cudaStream_t stream) const
+void VArray::hintLocation(int location) const
 {
 	if (elemCapacity > 0) {
-		CHECK_CUDA(cudaMemPrefetchAsync(managedData, elemCapacity * sizeOfType, location, stream));
+		// TODO: use stream?
+		CHECK_CUDA(cudaMemPrefetchAsync(managedData, elemCapacity * sizeOfType, location, nullptr));
 	}
-	// TODO: potential optimization
+	// TODO: potential optimization - memorize the hint and use it after first allocation
 }
 
 VArray::VArray(const std::type_info &type, std::size_t sizeOfType, std::size_t initialSize)
