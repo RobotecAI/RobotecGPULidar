@@ -97,8 +97,8 @@ struct RaytraceNode : Node, IPointCloudNode
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
+	void setFields(const std::set<rgl_field_t>& fields);
 
-	inline void setFields(const std::set<rgl_field_t>& fields) { this->fields = std::move(fields); }
 	inline void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
 	inline bool hasField(rgl_field_t field) const override	{ return fields.contains(field); }
 	inline bool isDense() const override { return false; }
@@ -185,7 +185,7 @@ struct WritePCDFileNode : Node
 	inline void setParameters(const char* filePath) { this->filePath = filePath; }
 
 private:
-	IFormatNode::Ptr input;
+	FormatNode::Ptr internalFmt {};
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
 };

@@ -13,7 +13,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	Node() = default;
 	virtual ~Node() = default;
-	void setParent(Node::Ptr parent);
+	void addParent(Node::Ptr parent);
 
 	/**
 	 * Called on every node when the computation graph changes, e.g.:
@@ -37,7 +37,6 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 protected:
-
 	template <template <typename _> typename Container>
 	static std::string getNodeTypeNames(const Container<Node::Ptr>& nodes, std::string_view separator=", ")
 	{
@@ -83,6 +82,8 @@ protected:
 	{
 		return getExactlyOne<T>(inputs);
 	}
+
+	void prependNode(Node::Ptr node);
 
 protected:
 	std::vector<Node::Ptr> inputs {};

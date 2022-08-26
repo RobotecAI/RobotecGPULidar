@@ -5,25 +5,25 @@
 
 void WritePCDFileNode::validate()
 {
-	input = getValidInput<IFormatNode>();
-	if (input->getPointSize() != sizeof(PCLPointType)) {
-		auto msg = fmt::format("{} requires points of size {}, but input has points of size {}",
-		                       name(typeid(*this)), sizeof(PCLPointType), input->getPointSize());
-		throw InvalidPipeline(msg);
-	}
+	static const std::vector<rgl_field_t> fmtFields = {XYZ_F32, PADDING_32};  // Needed by PCL
+	internalFmt = Node::create<FormatNode>();
+	internalFmt->setParameters(fmtFields);
+	prependNode(internalFmt);
+	internalFmt->validate();
 }
 
 void WritePCDFileNode::schedule(cudaStream_t stream)
 {
-	if (input->getWidth() == 0) {
+	internalFmt->schedule(stream);
+	if (internalFmt->getWidth() == 0) {
 		return;
 	}
-	input->getData()->hintLocation(VArray::CPU);
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(input->getData()->getHostPtr());
+	internalFmt->getData()->hintLocation(VArray::CPU);
+	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(internalFmt->getData()->getHostPtr());
 	pcl::PointCloud<PCLPointType> cloud;
-	cloud.resize(input->getWidth(), input->getHeight());
-	cloud.assign(data, data + cloud.size(), input->getWidth());
-	cloud.is_dense = input->isDense();
+	cloud.resize(internalFmt->getWidth(), internalFmt->getHeight());
+	cloud.assign(data, data + cloud.size(), internalFmt->getWidth());
+	cloud.is_dense = internalFmt->isDense();
 	cachedPCLs += cloud;
 }
 

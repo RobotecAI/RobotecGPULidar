@@ -97,7 +97,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, Args&&... 
 	if (*nodeRawPtr == nullptr) {
 		node = Node::create<NodeType>();
 		if (parentRaw != nullptr) {
-			node->setParent(Node::validatePtr(parentRaw));
+			node->addParent(Node::validatePtr(parentRaw));
 		}
 	}
 	else {
@@ -385,10 +385,7 @@ rgl_pipeline_write_pcd_file(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, const 
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
-		rgl_node_t internalFmtNode = nullptr;
-		std::vector<rgl_field_t> fmtFields = {XYZ_F32, PADDING_32};  // Needed by PCL
-		createOrUpdateNode<FormatNode>(&internalFmtNode, parentRaw, fmtFields);
-		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, internalFmtNode, file_path);
+		createOrUpdateNode<WritePCDFileNode>(nodeRawPtr, parentRaw, file_path);
 	});
 }
 }

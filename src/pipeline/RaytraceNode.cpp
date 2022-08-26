@@ -6,12 +6,6 @@
 void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
-	for (auto&& field : fields) {
-		if (!fieldData.contains(field)) {
-			fieldData.insert({field, VArray::create(field)});
-			fieldData[field]->hintLocation(VArray::GPU);
-		}
-	}
 }
 
 template<rgl_field_t field>
@@ -45,4 +39,15 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
 	CHECK_OPTIX(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
 	CHECK_CUDA(cudaStreamSynchronize(stream));
+}
+
+void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
+{
+	this->fields = std::move(fields);
+	for (auto&& field : fields) {
+		if (!fieldData.contains(field)) {
+			fieldData.insert({field, VArray::create(field)});
+			fieldData[field]->hintLocation(VArray::GPU);
+		}
+	}
 }
