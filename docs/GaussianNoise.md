@@ -54,7 +54,7 @@ When this type of noise is applied, points stay on the obstacle surface
 
 | Step | Visualization |
 |--------------------------|---------------------------------------------|
-|Ray are provided by the user via RGL API| ![Angular ray](image/Angular_ray_1.png)|
+|Rays are provided by the user via RGL API| ![Angular ray](image/Angular_ray_1.png)|
 |Angular noise is applied to rays | ![Angular ray](image/Angular_ray_2.png)|
 |Raytracing is performed using noised rays. Hitpoints are produced | ![Angular ray](image/Angular_ray_3.png)|
 |Hitpoints with ray-based noise are sent for further processing| ![Angular ray](image/Angular_ray_4.png)|
