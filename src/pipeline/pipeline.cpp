@@ -61,6 +61,10 @@ void runPipeline(Node::Ptr userNode)
 		fields.insert(IS_HIT_I32);
 	}
 
+	if (!Node::filter<DownSampleNode>(graph).empty()) {
+		fields.insert(RAY_IDX_U32);
+	}
+
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
 	rt->setFields(fields);
 

@@ -6,9 +6,11 @@
 void WritePCDFileNode::validate()
 {
 	static const std::vector<rgl_field_t> fmtFields = {XYZ_F32, PADDING_32};  // Needed by PCL
-	internalFmt = Node::create<FormatNode>();
-	internalFmt->setParameters(fmtFields);
-	prependNode(internalFmt);
+	if (internalFmt == nullptr) {
+		internalFmt = Node::create<FormatNode>();
+		internalFmt->setParameters(fmtFields);
+		prependNode(internalFmt);
+	}
 	internalFmt->validate();
 }
 

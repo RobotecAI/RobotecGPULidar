@@ -303,12 +303,7 @@ rgl_pipeline_compact(rgl_node_t* node, rgl_node_t parent);
 
 // Reduces the number of points using the PCL library.
 RGL_API rgl_status_t
-rgl_pipeline_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size);
-
-
-
-
-
+rgl_pipeline_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z);
 
 // Applies gaussian noise.
 // RGL_API rgl_status_t

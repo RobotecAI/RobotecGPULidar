@@ -32,11 +32,3 @@ struct IPointCloudNode : public IPointcloudDescription
 	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
 	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
 };
-
-struct IFormatNode : public IPointcloudDescription
-{
-	using Ptr = std::shared_ptr<IFormatNode>;
-
-	virtual VArray::ConstPtr getData() const = 0;
-	virtual std::size_t getPointSize() const = 0;
-};

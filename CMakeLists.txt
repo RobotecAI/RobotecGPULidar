@@ -36,7 +36,7 @@ endif()
 
 # Quick and dirty PCL integration,
 list(APPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/pcl_x64-linux")
-find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io)
+find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})

@@ -25,8 +25,34 @@
  *
  * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
  * operations prior to the return are finished.
+ *
+ * Some nodes have an internal node. At the moment, WritePCDFileNode and DownSampleNode use FormatNode internally.
+ * In such case, the owning node is responsible for calling validate(), schedule() and taking care of the internal node.
  */
 
+struct FormatNode : Node, IPointcloudDescription
+{
+	using Ptr = std::shared_ptr<FormatNode>;
+
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	std::size_t getPointSize() const;
+	inline VArray::ConstPtr getData() const { return output; }
+
+	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
+	inline std::vector<rgl_field_t> getFieldList() const { return fields; }
+	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
+	inline bool isDense() const override { return input->isDense(); }
+	inline size_t getWidth() const override { return input->getWidth(); }
+	inline size_t getHeight() const override { return input->getHeight(); }
+
+
+private:
+	std::vector<rgl_field_t> fields;
+	IPointCloudNode::Ptr input;
+	VArray::Ptr output = output = VArray::create<char>();
+};
 
 struct CompactNode : Node, IPointCloudNode
 {
@@ -59,37 +85,19 @@ struct DownSampleNode : Node, IPointCloudNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 	inline void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
-	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
+	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return false; }
 	inline size_t getHeight() const override { return 1; }
 
 private:
 	Vec3f leafDims;
 	IPointCloudNode::Ptr input;
+	FormatNode::Ptr internalFmt;
+	cudaEvent_t finishedEvent = nullptr;
+	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
+	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
 };
 
-struct FormatNode : Node, IFormatNode
-{
-	using Ptr = std::shared_ptr<FormatNode>;
-
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
-	std::size_t getPointSize() const override;
-
-	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
-	inline std::vector<rgl_field_t> getFieldList() const { return fields; }
-	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
-	inline bool isDense() const override { return input->isDense(); }
-	inline size_t getWidth() const override { return input->getWidth(); }
-	inline size_t getHeight() const override { return input->getHeight(); }
-	inline VArray::ConstPtr getData() const override { return output; }
-
-
-private:
-	std::vector<rgl_field_t> fields;
-	IPointCloudNode::Ptr input;
-	VArray::Ptr output = output = VArray::create<char>();
-};
 
 struct RaytraceNode : Node, IPointCloudNode
 {

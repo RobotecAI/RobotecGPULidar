@@ -86,6 +86,9 @@ static rgl_status_t rglSafeCall(Fn fn)
 	catch (std::exception &e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
+	catch (...) {
+		return updateAPIState(RGL_INTERNAL_EXCEPTION, "exceptional exception");
+	}
 	return updateAPIState(RGL_SUCCESS);
 }
 
@@ -374,6 +377,16 @@ rgl_pipeline_compact(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw)
 		RGL_DEBUG("rgl_pipeline_compact(node={}, parent={})", repr(nodeRawPtr), repr(parentRaw));
 
 		createOrUpdateNode<CompactNode>(nodeRawPtr, parentRaw);
+	});
+}
+
+RGL_API rgl_status_t
+rgl_pipeline_downsample(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, float leafX, float leafY, float leafZ)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_pipeline_downsample(node={}, parent={}, leaf=({}, {}, {}))", repr(nodeRawPtr), repr(parentRaw), leafX, leafY, leafZ);
+
+		createOrUpdateNode<DownSampleNode>(nodeRawPtr, parentRaw, Vec3f{leafX, leafY, leafZ});
 	});
 }
 

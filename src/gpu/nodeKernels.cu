@@ -6,6 +6,8 @@
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 
+#define LIMIT(count) const int tid = (blockIdx.x * blockDim.x + threadIdx.x); do {if (tid >= count) { return; }} while(false)
+
 template<typename Kernel, typename... KernelArgs>
 void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... kernelArgs)
 {
@@ -17,10 +19,7 @@ void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... ker
 
 __global__ void kFormat(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* fields, char* out)
 {
-	auto tid = blockIdx.x * blockDim.x + threadIdx.x;
-	if (tid >= pointCount) {
-		return;
-	}
+	LIMIT(pointCount);
 	// Implement padding
 	for (size_t i = 0; i < fieldCount; ++i) {
 		memcpy(out + pointSize * tid + fields[i].dstOffset, fields[i].data + fields[i].size * tid, fields[i].size);
@@ -29,28 +28,20 @@ __global__ void kFormat(size_t pointCount, size_t pointSize, size_t fieldCount, 
 
 __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
 {
-	auto tid = blockIdx.x * blockDim.x + threadIdx.x;
-	if (tid >= rayCount) {
-		return;
-	}
+	LIMIT(rayCount);
 	outRays[tid] = transform * inRays[tid];
 }
 
 __global__ void kTransformPoints(size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
 {
-	auto tid = blockIdx.x * blockDim.x + threadIdx.x;
-	if (tid >= pointCount) {
-		return;
-	}
+	LIMIT(pointCount);
 	outPoints[tid] = transform * inPoints[tid];
 }
 
 __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite, const CompactionIndexType*writeIndex, char *dst, const char *src)
 {
-	int32_t rIdx = threadIdx.x + blockIdx.x * blockDim.x;
-	if (rIdx >= pointCount) {
-		return;
-	}
+	LIMIT(pointCount);
+	int32_t rIdx = tid;
 	if (!shouldWrite[rIdx]) {
 		return;
 	}
@@ -58,16 +49,17 @@ __global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const Fiel
 	memcpy(dst + fieldSize * wIdx, src + fieldSize * rIdx, fieldSize);
 }
 
-__global__ void print(const int32_t* what)
+__global__ void kCutField(size_t pointCount, char* dst, const char* src, size_t offset, size_t stride, size_t fieldSize)
 {
-	printf("AAAAA %d\n", *what);
+	LIMIT(pointCount);
+	memcpy(dst + tid * fieldSize, src + tid * stride + offset, fieldSize);
 }
 
-void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *fields, char *out)
-{ run(kFormat, stream, pointCount, pointSize, fieldCount, fields, out); }
-
-void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
-{ run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
+__global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, char* dst, const char* src, size_t fieldSize)
+{
+	LIMIT(count);
+	memcpy(dst + indices[tid] * fieldSize, src + tid * fieldSize, fieldSize);
+}
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HIT_I32>::type* isHit, CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {
@@ -78,15 +70,23 @@ void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HI
 
 	// Note: this will compile only in a .cu file
 	thrust::inclusive_scan(thrust::cuda::par.on(stream), beg, end, dst);
-	// for (int i = 0; i < 1000000; i+=12345) {
-	// 	print<<<1,1,0,stream>>>(isHit + i);
-	//
-	// }
 	CHECK_CUDA(cudaMemcpyAsync(outHitCount, hitCountInclusive + pointCount - 1, sizeof(*hitCountInclusive), cudaMemcpyDefault, stream));
 }
+
+void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *fields, char *out)
+{ run(kFormat, stream, pointCount, pointSize, fieldCount, fields, out); }
+
+void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
+{ run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
 
 void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
 { run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }
 
 void gpuTransformPoints(cudaStream_t stream, size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
 { run(kTransformPoints, stream, pointCount, inPoints, outPoints, transform); }
+
+void gpuCutField(cudaStream_t stream, size_t pointCount, char *dst, const char *src, size_t offset, size_t stride, size_t fieldSize)
+{ run(kCutField, stream, pointCount, dst, src, offset, stride, fieldSize); }
+
+void gpuFilter(cudaStream_t stream, size_t count, const Field<RAY_IDX_U32>::type* indices, char *dst, const char *src, size_t fieldSize)
+{ run(kFilter, stream, count, indices, dst, src, fieldSize); }

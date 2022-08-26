@@ -79,9 +79,11 @@ protected:
 
 	template<typename T>
 	typename T::Ptr getValidInput()
-	{
-		return getExactlyOne<T>(inputs);
-	}
+	{ return getValidInputFrom<T>(inputs); }
+
+	template<typename T>
+	typename T::Ptr getValidInputFrom(const std::vector<Node::Ptr>& srcs)
+	{ return getExactlyOne<T>(srcs); }
 
 	void prependNode(Node::Ptr node);
 
