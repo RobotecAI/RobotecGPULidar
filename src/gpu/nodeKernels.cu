@@ -55,10 +55,10 @@ __global__ void kCutField(size_t pointCount, char* dst, const char* src, size_t 
 	memcpy(dst + tid * fieldSize, src + tid * stride + offset, fieldSize);
 }
 
-__global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, char* dst, const char* src, size_t fieldSize)
+__global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, char* dst, char* src, size_t fieldSize)
 {
 	LIMIT(count);
-	memcpy(dst + indices[tid] * fieldSize, src + tid * fieldSize, fieldSize);
+	memcpy(dst + tid * fieldSize, src + indices[tid] * fieldSize, fieldSize);
 }
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HIT_I32>::type* isHit, CompactionIndexType* hitCountInclusive, size_t* outHitCount)

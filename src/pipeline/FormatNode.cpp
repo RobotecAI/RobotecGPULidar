@@ -37,4 +37,3 @@ void FormatNode::schedule(cudaStream_t stream)
 	char* outputPtr = static_cast<char*>(output->getDevicePtr());
 	gpuFormat(stream, pointCount, getPointSize(), fields.size(), gpuFields->getDevicePtr(), outputPtr);
 }
-

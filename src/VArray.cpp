@@ -10,14 +10,10 @@ VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize)
 VArray::Ptr VArray::clone() const
 { return VArray::Ptr(new VArray(*this)); }
 
-void VArray::copyFrom(const void *src, std::size_t bytes)
+void VArray::copyFrom(const void *src, std::size_t elements)
 {
-	if ((bytes % sizeOfType) != 0) {
-		auto msg = fmt::format("cannot copy {} bytes into an array with element size {}", bytes, sizeOfType);
-		throw std::invalid_argument(msg);
-	}
-	resize(bytes / sizeOfType, false, false);
-	CHECK_CUDA(cudaMemcpy(managedData, src, bytes, cudaMemcpyDefault));
+	resize(elements, false, false);
+	CHECK_CUDA(cudaMemcpy(managedData, src, sizeOfType * elements, cudaMemcpyDefault));
 }
 
 void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)

@@ -18,7 +18,10 @@ void Node::prependNode(Node::Ptr node)
 {
 	for (auto&& in : inputs) {
 		// Remove us as a child of our parents ;)
-		in->outputs.erase(std::find(in->outputs.begin(), in->outputs.end(), shared_from_this()));
+		auto thisIt = std::find(in->outputs.begin(), in->outputs.end(), shared_from_this());
+		if (thisIt != in->outputs.end()) {
+			in->outputs.erase(thisIt);  // It is invalid to call erase() on end()
+		}
 		node->addParent(in);
 	}
 	inputs.clear();

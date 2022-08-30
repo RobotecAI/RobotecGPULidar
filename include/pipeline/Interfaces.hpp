@@ -22,6 +22,10 @@ struct IPointcloudDescription
 	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
 };
 
+// TODO(prybicki): getFieldData* may act lazily, so they take stream as a parameter to do the lazy evaluation.
+// TODO(prybicki): This requires synchronizing with the potentially different stream provided by the schedule(...)
+// TODO(prybicki): This situation is bug-prone, requiring greater mental effort when implementing nodes.
+// TODO(prybicki): It might be better to remove stream as a parameter and assume that all pipeline nodes are using common stream.
 struct IPointCloudNode : public IPointcloudDescription
 {
 	using Ptr = std::shared_ptr<IPointCloudNode>;

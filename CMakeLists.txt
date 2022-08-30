@@ -75,6 +75,7 @@ add_library(RobotecGPULidar SHARED
     src/pipeline/TransformRaysNode.cpp
     src/pipeline/UseRaysMat3x4fNode.cpp
     src/pipeline/WritePCDFileNode.cpp
+    src/pipeline/YieldPointsNode.cpp
 )
 
 target_include_directories(RobotecGPULidar PUBLIC include)

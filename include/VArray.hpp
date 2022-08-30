@@ -51,7 +51,7 @@ struct VArray : std::enable_shared_from_this<VArray>
 	{ return VArrayTyped<T>::create(std::move(*this)); }
 
 	VArray::Ptr clone() const;
-	void copyFrom(const void* src, std::size_t bytes);
+	void copyFrom(const void* src, std::size_t elements);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
 	void hintLocation(int location) const;

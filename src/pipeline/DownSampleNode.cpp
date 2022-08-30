@@ -9,9 +9,9 @@ using PCLPoint = pcl::PointXYZL;
 void DownSampleNode::validate()
 {
 	static const std::vector<rgl_field_t> fmtFields = {
-		// pcl::PointXYZL is SSE-aligned ¯\_(ツ)_/¯
+		// pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
 		XYZ_F32, PADDING_32,
-		RAY_IDX_U32, PADDING_32, PADDING_32, PADDING_32
+		PADDING_32, PADDING_32, PADDING_32, PADDING_32
 	};
 	if (finishedEvent == nullptr) {
 		CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming));
@@ -42,13 +42,14 @@ void DownSampleNode::schedule(cudaStream_t stream)
 	PCLPoint* begin = static_cast<PCLPoint*>(internalFmt->getData()->getHostPtr());
 	PCLPoint* end = begin + pointCount;
 	toFilter->assign(begin, end, pointCount);
+	for (int i = 0; i < toFilter->size(); ++i) {
+		toFilter->points[i].label = i;
+	}
 	pcl::VoxelGrid<PCLPoint> voxelGrid {};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
 	voxelGrid.filter(*filtered);
-	for (auto&& p : *filtered) {
-		RGL_WARN("{} {} {} {}", p.x, p.y, p.z, p.label);
-	}
+	RGL_WARN("Original: {} Filtered: {}", toFilter->size(), filtered->size());
 	filteredPoints->copyFrom(filtered->data(), filtered->size());
 	filteredIndices->resize(filtered->size());
 
@@ -70,8 +71,8 @@ size_t DownSampleNode::getWidth() const
 VArray::ConstPtr DownSampleNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
 {
 	auto&& inData = input->getFieldData(field, stream);
-	VArray::Ptr outData = VArray::create(field, input->getPointCount());
-	gpuFilter(stream, input->getPointCount(), filteredIndices->getDevicePtr(), (char*) outData->getDevicePtr(), (const char*) inData->getDevicePtr(), getFieldSize(field));
+	VArray::Ptr outData = VArray::create(field, filteredIndices->getCount());
+	gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), (char*) outData->getDevicePtr(), (const char*) inData->getDevicePtr(), getFieldSize(field));
 	CHECK_CUDA(cudaStreamSynchronize(stream));
 	return outData;
 }

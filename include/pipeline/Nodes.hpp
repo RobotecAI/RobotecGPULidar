@@ -30,6 +30,9 @@
  * In such case, the owning node is responsible for calling validate(), schedule() and taking care of the internal node.
  */
 
+// TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
+// TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
+
 struct FormatNode : Node, IPointcloudDescription
 {
 	using Ptr = std::shared_ptr<FormatNode>;
@@ -196,4 +199,24 @@ private:
 	FormatNode::Ptr internalFmt {};
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
+};
+
+struct YieldPointsNode : Node, IPointCloudNode
+{
+	void schedule(cudaStream_t stream) override;
+
+	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields; }
+	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
+	inline bool isDense() const override { return input->isDense(); }
+	inline size_t getWidth() const override { return input->getWidth(); }
+	inline size_t getHeight() const override { return input->getHeight(); }
+	inline void validate() override { input = getValidInput<IPointCloudNode>(); }
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	{ return input->getFieldData(field, stream); }
+
+
+private:
+	IPointCloudNode::Ptr input;
+	std::vector<rgl_field_t> fields;
+	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
 };
