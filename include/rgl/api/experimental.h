@@ -267,62 +267,147 @@ rgl_entity_destroy(rgl_entity_t entity);
 RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 
-// /******************************** PIPELINE ********************************/
+/******************************** NODES ********************************/
 
-RGL_API rgl_status_t
-rgl_graph_run(rgl_node_t node);
-
-// Destroys all connected nodes
-RGL_API rgl_status_t
-rgl_graph_destroy(rgl_node_t node);
-
-RGL_API rgl_status_t
-rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_t* outSizeOf, void* data);
-
+/**
+ * Creates or modifies UseRaysNode.
+ * The node provides initial rays for its children nodes.
+ * Initial rays are usually provided in device-local coordinate frame, i.e. close to (0, 0, 0).
+ * Input: none
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param rays Pointer to 3x4 affine matrices describing rays poses.
+ * @param ray_count Size of the `rays` array
+ */
 RGL_API rgl_status_t
 rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
 
+/**
+ * Creates or modifies TransformRaysNode.
+ * Effectively, the node performs the following operation for all rays: `outputRay[i] = (*transform) * inputRay[i]`
+ * This function can be used to account for the pose of the device.
+ * Graph input: rays
+ * Graph output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
+ */
 RGL_API rgl_status_t
-rgl_node_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform);
+rgl_node_transform_rays(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
+/**
+ * Creates or modifies TransformPointsNode.
+ * The node applies affine transformation to all points.
+ * It can be used to e.g. change coordinate frame after raytracing.
+ * Graph input: point cloud
+ * Graph output: point cloud (transformed)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
+ */
 RGL_API rgl_status_t
 rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
 
+/**
+ * Creates or modifies RaytraceNode.
+ * The node performs GPU-accelerated raytracing on the given scene.
+ * Fields to be computed will be automatically determined based on connected FormatNodes and YieldPointsNodes
+ * Graph input: rays
+ * Graph output: point cloud (sparse)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
+ * @param range Maximum distance to travel for every ray
+ */
 RGL_API rgl_status_t
 rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
 
-// Cuts out requested fields and formats a contiguous binary buffer.
+/**
+ * Creates or modifies FormatNode.
+ * The node converts internal representation into a binary format defined by `fields` array.
+ * Graph input: point cloud
+ * Graph output: none
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param fields Subsequent fields to be present in the binary output
+ * @param field_count Number of elements in the `fields` array
+ *
+ */
 RGL_API rgl_status_t
 rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
 
+/**
+ * Creates or modifies YieldPointsNode.
+ * The node is a marker what fields are expected by the user.
+ * Graph input: point cloud
+ * Graph output: none
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param fields Subsequent fields expected to be available
+ * @param field_count Number of elements in the `fields` array
+ */
 RGL_API rgl_status_t
 rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
 
-// Removes non-hit points.
+/**
+ * Creates or modifies CompactNode.
+ * The node removes non-hit points. In other words, it converts a point cloud into a dense one.
+ * Graph input: point cloud
+ * Graph output: point cloud (compacted)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ */
 RGL_API rgl_status_t
 rgl_node_compact(rgl_node_t* node, rgl_node_t parent);
 
-// Reduces the number of points using the PCL library.
+
+/**
+ * Creates or modifies DownSampleNode.
+ * The node uses VoxelGrid down-sampling filter from PCL library to reduce the number of points.
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
+ */
 RGL_API rgl_status_t
 rgl_node_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z);
 
-// Appends data from the parent node to the given PCD file
+/**
+ * Creates or modifies WritePCDFileNode.
+ * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param parent If parent is non-null, it will be set as the parent of (*node)
+ */
 RGL_API rgl_status_t
 rgl_node_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
 
-// Applies gaussian noise.
-// RGL_API rgl_status_t
-// rgl_pipeline_apply_gaussian_noise(rgl_node_t* out_node, rgl_node_t parent,
-//                                   rgl_angular_noise_type_t angular_noise_type,
-//                                   float angular_noise_stddev,
-//                                   float angular_noise_mean,
-//                                   float distance_noise_stddev_base,
-//                                   float distance_noise_stddev_rise_per_meter,
-//                                   float distance_noise_mean);
+/******************************** GRAPH ********************************/
 
-
-
-// Publishes data from the parent node on the given topic
+/**
+ * Starts execution of the RGL graph containing provided node.
+ * This function is asynchronous.
+ * @param node Any node from the graph to execute
+ */
 RGL_API rgl_status_t
-rgl_node_publish_ros2_topic(rgl_node_t channel, rgl_node_t parent, const char* topic /* QoS settings, etc */);
+rgl_graph_run(rgl_node_t node);
+
+/**
+ * Destroys RGL graph (all connected nodes) containing provided node.
+ * @param node Any node from the graph to destroy
+ */
+RGL_API rgl_status_t
+rgl_graph_destroy(rgl_node_t node);
+
+/**
+ * Obtains the result of any node in the graph.
+ * If the result is not yet available, this function will block.
+ * The function will fill output parameters that are not null.
+ * I.e. The size of the output can be queried using a nullptr data.
+ * @param node Node to get output from
+ * @param outCount Returns the number of available elements (e.g. points). May be null.
+ * @param outSizeOf Returns byte size of a single element (e.g. point). May be null.
+ * @param data Returns binary data, expects a buffer of size (*outCount) * (*outSizeOf). May be null.
+ */
+RGL_API rgl_status_t
+rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_t* outSizeOf, void* data);
