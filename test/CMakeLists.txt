@@ -23,5 +23,11 @@ gtest_discover_tests(RobotecGPULidar_test)
 
 #find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS visualization)
 add_executable(interactiveTestAWSIM src/interactive/awsim.cpp)
-target_link_libraries(interactiveTestAWSIM RobotecGPULidar ${PCL_LIBRARIES})
+message("LIBS: ${PCL_LIBRARIES}")
+
+target_link_libraries(interactiveTestAWSIM RobotecGPULidar
+    gtest_main
+    gmock_main
+    ${PCL_LIBRARIES}
+)
 target_include_directories(interactiveTestAWSIM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

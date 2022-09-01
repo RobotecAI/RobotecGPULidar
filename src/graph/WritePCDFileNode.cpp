@@ -1,4 +1,4 @@
-#include <pipeline/Nodes.hpp>
+#include <graph/Nodes.hpp>
 
 #include <pcl/io/pcd_io.h>
 

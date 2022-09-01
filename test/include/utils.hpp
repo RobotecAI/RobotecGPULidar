@@ -7,7 +7,9 @@
 #include <fstream>
 #include "gtest/gtest.h"
 #include <rgl/api/experimental.h>
-#include "gmock/gmock-matchers.h"
+#include <gmock/gmock-matchers.h>
+
+#include <models.hpp>
 
 using namespace ::testing;
 
@@ -26,6 +28,7 @@ using namespace ::testing;
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
+
 
 struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
@@ -109,48 +112,6 @@ static std::string readFileStr(std::filesystem::path path)
 	return {logFileChars.begin(), logFileChars.end()};
 }
 
-static rgl_vec3f cube_vertices[] = {
-	{-1, -1, -1},
-	{1, -1, -1},
-	{1, 1, -1},
-	{-1, 1, -1},
-	{-1, -1, 1},
-	{1, -1, 1},
-	{1, 1, 1},
-	{-1, 1, 1}
-};
-
-static rgl_vec3f cube_vertices_big[] = {
-	{-2, -2, -2},
-	{2, -2, -2},
-	{2, 2, -2},
-	{-2, 2, -2},
-	{-2, -2, 2},
-	{2, -2, 2},
-	{2, 2, 2},
-	{-2, 2, 2}
-};
-
-static constexpr size_t cube_vertices_length = sizeof(cube_vertices) / sizeof(cube_vertices[0]);
-static constexpr size_t cube_vertices_big_length = sizeof(cube_vertices_big) / sizeof(cube_vertices_big[0]);
-
-static rgl_vec3i cube_indices[] = {
-	{0, 1, 3},
-	{3, 1, 2},
-	{1, 5, 2},
-	{2, 5, 6},
-	{5, 4, 6},
-	{6, 4, 7},
-	{4, 0, 7},
-	{7, 0, 3},
-	{3, 2, 7},
-	{7, 2, 6},
-	{4, 5, 0},
-	{0, 5, 1},
-};
-static constexpr size_t cube_indices_length = sizeof(cube_indices) / sizeof(cube_indices[0]);
-
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof(*array))
 
 // TODO(prybicki): replace this with a proper Matrix class
 static rgl_mat3x4f identity = { .value = {
@@ -160,24 +121,7 @@ static rgl_mat3x4f identity = { .value = {
 }};
 
 
-static rgl_mesh_t makeCubeMesh()
-{
-	rgl_mesh_t mesh = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cube_vertices, ARRAY_SIZE(cube_vertices), cube_indices, ARRAY_SIZE(cube_indices)));
-	EXPECT_THAT(mesh, NotNull());
-	return mesh;
-}
 
-static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullptr)
-{
-	if (mesh == nullptr) {
-		mesh = makeCubeMesh();
-	}
-	rgl_entity_t entity = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, scene, mesh));
-	EXPECT_THAT(entity, NotNull());
-	return entity;
-}
 
 // static rgl_lidar_t makeTrivialLidar()
 // {

@@ -1,4 +1,4 @@
-#include <pipeline/Nodes.hpp>
+#include <graph/Nodes.hpp>
 
 void YieldPointsNode::schedule(cudaStream_t stream)
 {

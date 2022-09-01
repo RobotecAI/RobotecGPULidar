@@ -1,6 +1,28 @@
 #pragma once
 
 #include <math/Mat3x4f.hpp>
+#include <models.hpp>
+#include <gtest/gtest.h>
+#include <utils.hpp>
+
+static rgl_mesh_t makeCubeMesh()
+{
+	rgl_mesh_t mesh = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
+	EXPECT_THAT(mesh, NotNull());
+	return mesh;
+}
+
+static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullptr)
+{
+	if (mesh == nullptr) {
+		mesh = makeCubeMesh();
+	}
+	rgl_entity_t entity = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, scene, mesh));
+	EXPECT_THAT(entity, NotNull());
+	return entity;
+}
 
 static inline void setupBoxesAlongAxes(rgl_scene_t scene)
 {

@@ -91,8 +91,8 @@ protected:
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 
-	friend void runPipeline(Node::Ptr);
-	friend void destroyPipeline(Node::Ptr);
+	friend void runGraph(Node::Ptr);
+	friend void destroyGraph(Node::Ptr);
 	friend struct fmt::formatter<Node>;
 };
 

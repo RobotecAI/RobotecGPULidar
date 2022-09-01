@@ -1,4 +1,4 @@
-#include <pipeline/Nodes.hpp>
+#include <graph/Nodes.hpp>
 
 void UseRaysMat3x4fNode::setParameters(const Mat3x4f *raysRaw, size_t rayCount)
 {

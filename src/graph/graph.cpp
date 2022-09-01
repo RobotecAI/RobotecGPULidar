@@ -1,7 +1,7 @@
 #include <set>
 #include <vector>
-#include <pipeline/pipeline.hpp>
-#include <pipeline/Nodes.hpp>
+#include <graph/graph.hpp>
+#include <graph/Nodes.hpp>
 #include <RGLFields.hpp>
 
 static std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
@@ -42,7 +42,7 @@ static std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
 
-void runPipeline(Node::Ptr userNode)
+void runGraph(Node::Ptr userNode)
 {
 	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
 
@@ -77,7 +77,7 @@ void runPipeline(Node::Ptr userNode)
 	}
 }
 
-void destroyPipeline(Node::Ptr userNode)
+void destroyGraph(Node::Ptr userNode)
 {
 	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
 

@@ -1,4 +1,4 @@
-#include <pipeline/Nodes.hpp>
+#include <graph/Nodes.hpp>
 #include <scene/Scene.hpp>
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>

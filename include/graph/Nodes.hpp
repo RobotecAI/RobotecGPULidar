@@ -4,8 +4,8 @@
 #include <set>
 #include <memory>
 
-#include <pipeline/Node.hpp>
-#include <pipeline/Interfaces.hpp>
+#include <graph/Node.hpp>
+#include <graph/Interfaces.hpp>
 #include <gpu/RaytraceRequestContext.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>

@@ -1,4 +1,4 @@
-#include <pipeline/Node.hpp>
+#include <graph/Node.hpp>
 
 API_OBJECT_INSTANCE(Node);
 

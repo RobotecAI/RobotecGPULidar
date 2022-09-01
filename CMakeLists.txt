@@ -35,8 +35,18 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
 endif()
 
 # Quick and dirty PCL integration,
-list(APPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/pcl_x64-linux")
-find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters)
+message("CMAKE_SYSTEM_PREFIX_PATH: ${CMAKE_SYSTEM_PREFIX_PATH}")
+
+
+#list(PREPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
+#list(PREPEND CMAKE_MODULE_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
+#find_package(utf8cpp)
+#find_package(double-conversion)
+#find_package(Boost 1.80.0 COMPONENTS system filesystem date_time iostreams)
+
+#message("BOOST: ${BOOST_LIBRARIES}")
+
+find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -65,17 +75,17 @@ add_library(RobotecGPULidar SHARED
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
-    src/pipeline/pipeline.cpp
-    src/pipeline/Node.cpp
-    src/pipeline/CompactNode.cpp
-    src/pipeline/DownSampleNode.cpp
-    src/pipeline/FormatNode.cpp
-    src/pipeline/RaytraceNode.cpp
-    src/pipeline/TransformPointsNode.cpp
-    src/pipeline/TransformRaysNode.cpp
-    src/pipeline/UseRaysMat3x4fNode.cpp
-    src/pipeline/WritePCDFileNode.cpp
-    src/pipeline/YieldPointsNode.cpp
+    src/graph/graph.cpp
+    src/graph/Node.cpp
+    src/graph/CompactNode.cpp
+    src/graph/DownSampleNode.cpp
+    src/graph/FormatNode.cpp
+    src/graph/RaytraceNode.cpp
+    src/graph/TransformPointsNode.cpp
+    src/graph/TransformRaysNode.cpp
+    src/graph/UseRaysMat3x4fNode.cpp
+    src/graph/WritePCDFileNode.cpp
+    src/graph/YieldPointsNode.cpp
 )
 
 target_include_directories(RobotecGPULidar PUBLIC include)

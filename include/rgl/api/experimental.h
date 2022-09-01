@@ -136,24 +136,25 @@ typedef enum : int
 
 /**
  * Available point attributes, used to specify layout of the binary data.
- * TODO(prybicki)
  */
 typedef enum
 {
-	RGL_FIELD_XYZ_F32,
+	RGL_FIELD_XYZ_F32 = 1,
+	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_RAY_IDX_U32,
-	RGL_FIELD_INTENSITY_F32,
-	RGL_FIELD_RING_ID_U16,
-	RGL_FIELD_AZIMUTH_F32,
+	RGL_FIELD_POINT_IDX_U32,
 	RGL_FIELD_DISTANCE_F32,
+	RGL_FIELD_AZIMUTH_F32,
+	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
 	RGL_FIELD_TIME_STAMP_F64,
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
 	RGL_FIELD_PADDING_32,
-	// ...
+	// Dynamic fields
+	RGL_FIELD_DYNAMIC_BASE = 13842,
 } rgl_field_t;
 
 /******************************** GENERAL ********************************/
@@ -269,41 +270,46 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 // /******************************** PIPELINE ********************************/
 
 RGL_API rgl_status_t
-rgl_pipeline_run(rgl_node_t node);
+rgl_graph_run(rgl_node_t node);
 
 // Destroys all connected nodes
 RGL_API rgl_status_t
-rgl_pipeline_destroy(rgl_node_t node);
+rgl_graph_destroy(rgl_node_t node);
 
 RGL_API rgl_status_t
-rgl_pipeline_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
+rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_t* outSizeOf, void* data);
 
 RGL_API rgl_status_t
-rgl_pipeline_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform);
+rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
+
+RGL_API rgl_status_t
+rgl_node_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 RGL_API rgl_status_t
-rgl_pipeline_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
+rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
 
 RGL_API rgl_status_t
-rgl_pipeline_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
-
-RGL_API rgl_status_t
-rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
+rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
 
 // Cuts out requested fields and formats a contiguous binary buffer.
 RGL_API rgl_status_t
-rgl_pipeline_format(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
+rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
+
+RGL_API rgl_status_t
+rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
 
 // Removes non-hit points.
-// Performed lazily - only one occurrence in the pipeline will have computational cost.
-// TODO: Well, it's not actually true for now :)
 RGL_API rgl_status_t
-rgl_pipeline_compact(rgl_node_t* node, rgl_node_t parent);
+rgl_node_compact(rgl_node_t* node, rgl_node_t parent);
 
 // Reduces the number of points using the PCL library.
 RGL_API rgl_status_t
-rgl_pipeline_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z);
+rgl_node_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z);
+
+// Appends data from the parent node to the given PCD file
+RGL_API rgl_status_t
+rgl_node_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
 
 // Applies gaussian noise.
 // RGL_API rgl_status_t
@@ -315,23 +321,8 @@ rgl_pipeline_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, 
 //                                   float distance_noise_stddev_rise_per_meter,
 //                                   float distance_noise_mean);
 
-// Appends data from the parent node to the given PCD file
-RGL_API rgl_status_t
-rgl_pipeline_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
+
 
 // Publishes data from the parent node on the given topic
 RGL_API rgl_status_t
-rgl_pipeline_publish_ros2_topic(rgl_node_t channel, rgl_node_t parent, const char* topic /* QoS settings, etc */);
-
-// // Returns the minimal size of the buffer required to receive data from the leaf node of a pipeline
-// RGL_API rgl_status_t
-// rgl_pipeline_node_get_results_size(rgl_lidar_t lidar, rgl_node_t node, int* point_count);
-//
-// // Returns binary data from the given leaf node of a pipeline.
-// RGL_API rgl_status_t
-// rgl_pipeline_node_get_results_data(rgl_lidar_t lidar, rgl_node_t node, void* data);
-//
-// // Requests LiDAR to perform the pipeline after raytracing.
-// // Point dimensions to be computed are inferred from all format nodes in the pipeline.
-// RGL_API rgl_status_t
-// rgl_lidar_set_pipeline(rgl_lidar_t lidar, rgl_node_t pipeline_root_node);
+rgl_node_publish_ros2_topic(rgl_node_t channel, rgl_node_t parent, const char* topic /* QoS settings, etc */);
