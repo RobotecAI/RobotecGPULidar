@@ -310,6 +310,17 @@ rgl_graph_destroy(rgl_node_t node)
 }
 
 RGL_API rgl_status_t
+rgl_graph_node_set_active(rgl_node_t node, bool active)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_graph_node_set_active(node={}, active={})", repr(node), active);
+		CHECK_ARG(node != nullptr);
+
+		node->setActive(active);
+	});
+}
+
+RGL_API rgl_status_t
 rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count)
 {
 	return rglSafeCall([&]() {
