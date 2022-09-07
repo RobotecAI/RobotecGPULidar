@@ -93,15 +93,12 @@ static rgl_status_t rglSafeCall(Fn fn)
 }
 
 template<typename NodeType, typename... Args>
-void createOrUpdateNode(rgl_node_t* nodeRawPtr, rgl_node_t parentRaw, Args&&... args)
+void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 {
 	CHECK_ARG(nodeRawPtr != nullptr);
 	std::shared_ptr<NodeType> node;
 	if (*nodeRawPtr == nullptr) {
 		node = Node::create<NodeType>();
-		if (parentRaw != nullptr) {
-			node->addParent(Node::validatePtr(parentRaw));
-		}
 	}
 	else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
@@ -320,44 +317,68 @@ rgl_graph_node_set_active(rgl_node_t node, bool active)
 }
 
 RGL_API rgl_status_t
-rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count)
+rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_use_rays_mat3x4f(node={}, parent={}, rays={})", repr(node), repr(parent), repr(rays, ray_count));
+		RGL_DEBUG("rgl_graph_node_add_child(parent={}, child={})", repr(parent), repr(child));
+		CHECK_ARG(parent != nullptr);
+		CHECK_ARG(child != nullptr);
+
+		parent->addChild(Node::validatePtr(child));
+	});
+}
+
+RGL_API rgl_status_t
+rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_graph_node_remove_child(parent={}, child={})", repr(parent), repr(child));
+		CHECK_ARG(parent != nullptr);
+		CHECK_ARG(child != nullptr);
+
+		parent->removeChild(Node::validatePtr(child));
+	});
+}
+
+RGL_API rgl_status_t
+rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_use_rays_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
-		createOrUpdateNode<UseRaysMat3x4fNode>(node, parent, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
+		createOrUpdateNode<UseRaysMat3x4fNode>(node, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_transform_rays(rgl_node_t* nodeRawPtr, rgl_node_t parent, const rgl_mat3x4f* transform)
+rgl_node_transform_rays(rgl_node_t* nodeRawPtr, const rgl_mat3x4f* transform)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_transform_rays(node={}, parent={}, transform={})", repr(nodeRawPtr), repr(parent), repr(transform));
+		RGL_DEBUG("rgl_node_transform_rays(node={}, transform={})", repr(nodeRawPtr), repr(transform));
 		CHECK_ARG(transform != nullptr);
 
-		createOrUpdateNode<TransformRaysNode>(nodeRawPtr, parent, Mat3x4f::fromRGL(*transform));
+		createOrUpdateNode<TransformRaysNode>(nodeRawPtr, Mat3x4f::fromRGL(*transform));
 	});
 }
 
 
 RGL_API rgl_status_t
-rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform)
+rgl_node_transform_points(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_transform_points(node={}, parent={}, transform={})", repr(node), repr(parent), repr(transform));
+		RGL_DEBUG("rgl_node_transform_points(node={}, transform={})", repr(node), repr(transform));
 		CHECK_ARG(transform != nullptr);
 
-		createOrUpdateNode<TransformPointsNode>(node, parent, Mat3x4f::fromRGL(*transform));
+		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range)
+rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_raytrace(node={}, parent={}, scene={}, range={})", repr(node), repr(parent), (void*) scene, range);
+		RGL_DEBUG("rgl_node_raytrace(node={}, scene={}, range={})", repr(node), (void*) scene, range);
 		CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
 
@@ -365,66 +386,66 @@ rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float 
 			scene = Scene::defaultInstance().get();
 		}
 
-		createOrUpdateNode<RaytraceNode>(node, parent, Scene::validatePtr(scene), range);
+		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene), range);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, const rgl_field_t* fields, int field_count)
+rgl_node_format(rgl_node_t* node, rgl_field_t* outToken, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_format(node={}, parent={}, fields={})", repr(node), repr(parent), repr(fields, field_count));
+		RGL_DEBUG("rgl_node_format(node={}, fields={})", repr(node), repr(fields, field_count));
 		CHECK_ARG(outToken != nullptr);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		// TODO: future feature
 		*outToken = RGL_FIELD_DYNAMIC_BASE,
-		createOrUpdateNode<FormatNode>(node, parent, std::vector<rgl_field_t>{fields, fields + field_count});
+		createOrUpdateNode<FormatNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count)
+rgl_node_yield_points(rgl_node_t* node, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_pipeline_yield(node={}, parent={}, fields={})", repr(node), repr(parent), repr(fields, field_count));
+		RGL_DEBUG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
-		createOrUpdateNode<YieldPointsNode>(node, parent, std::vector<rgl_field_t>{fields, fields + field_count});
+		createOrUpdateNode<YieldPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_compact(rgl_node_t* node, rgl_node_t parent)
+rgl_node_compact(rgl_node_t* node)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_compact(node={}, parent={})", repr(node), repr(parent));
+		RGL_DEBUG("rgl_node_compact(node={})", repr(node));
 
-		createOrUpdateNode<CompactNode>(node, parent);
+		createOrUpdateNode<CompactNode>(node);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z)
+rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_downsample(node={}, parent={}, leaf=({}, {}, {}))", repr(node), repr(parent), leaf_size_x, leaf_size_y, leaf_size_z);
+		RGL_DEBUG("rgl_node_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
 
-		createOrUpdateNode<DownSampleNode>(node, parent, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
+		createOrUpdateNode<DownSampleNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path)
+rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_write_pcd_file(node={}, parent={}, file={})", repr(node), repr(parent), file_path);
+		RGL_DEBUG("rgl_node_write_pcd_file(node={}, file={})", repr(node), file_path);
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
-		createOrUpdateNode<WritePCDFileNode>(node, parent, file_path);
+		createOrUpdateNode<WritePCDFileNode>(node, file_path);
 	});
 }
 }
