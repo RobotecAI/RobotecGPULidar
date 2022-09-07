@@ -55,11 +55,11 @@ static std::vector<Node::Ptr> findExecutionOrder(std::set<Node::Ptr> nodes)
 
 void runGraph(Node::Ptr userNode)
 {
-	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
-	std::vector<Node::Ptr> execGraph = findExecutionOrder(graph);
+	std::set<Node::Ptr> nodes = findConnectedNodes(userNode);
+	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(nodes);
 
 	std::set<rgl_field_t> fields;
-	for (auto&& formatNode : Node::filter<FormatNode>(execGraph)) {
+	for (auto&& formatNode : Node::filter<FormatNode>(nodesInExecOrder)) {
 		for (auto&& field : formatNode->getFieldList()) {
 			if (!isDummy(field)) {
 				fields.insert(field);
@@ -69,19 +69,19 @@ void runGraph(Node::Ptr userNode)
 
 	fields.insert(XYZ_F32);
 
-	if (!Node::filter<CompactNode>(execGraph).empty()) {
+	if (!Node::filter<CompactNode>(nodesInExecOrder).empty()) {
 		fields.insert(IS_HIT_I32);
 	}
 
-	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(execGraph);
+	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
 	rt->setFields(fields);
 
-	for (auto&& current : execGraph) {
+	for (auto&& current : nodesInExecOrder) {
 		RGL_TRACE("Validating node: {}", *current);
 		current->validate();
 	}
 
-	for (auto&& node : execGraph) {
+	for (auto&& node : nodesInExecOrder) {
 		RGL_TRACE("Scheduling node: {}", *node);
 		node->schedule(nullptr);
 	}
