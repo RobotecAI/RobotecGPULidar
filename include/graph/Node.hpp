@@ -36,8 +36,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
-	const bool isActive() const { return is_active; }
-	void setActive(bool active) { is_active = active; }
+	bool isActive() { return active; }
+	void setActive(bool active) { this->active = active; }
 
 protected:
 	template <template <typename _> typename Container>
@@ -91,7 +91,7 @@ protected:
 	void prependNode(Node::Ptr node);
 
 protected:
-	bool is_active {true};
+	bool active {true};
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 

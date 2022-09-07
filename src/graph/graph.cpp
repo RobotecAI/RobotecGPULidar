@@ -24,36 +24,22 @@ static std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 	return visited;
 }
 
-static void removeNotExecutingNodes(std::set<Node::Ptr>& graph)
+static std::vector<Node::Ptr> findExecutionOrder(std::set<Node::Ptr> nodes)
 {
-	std::set<Node::Ptr> not_visited = graph;
+	std::vector<Node::Ptr> reverseOrder {};
 	std::function<void(Node::Ptr)> rmBranch = [&](Node::Ptr current) {
 		for (auto&& output : current->getOutputs()) {
 			rmBranch(output);
 		}
 		RGL_DEBUG("Removing node from execution: {}", *current);
-		graph.erase(current);
-		not_visited.erase(current);
+		nodes.erase(current);
 	};
-
-	while (!not_visited.empty()) {
-		auto current = *not_visited.begin();
+	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
 		if (!current->isActive()) {
 			rmBranch(current);
-		} else {
-			not_visited.erase(current);
-		}
-	}
-}
-
-static std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes, bool only_active_nodes = true)
-{
-	std::vector<Node::Ptr> reverseOrder {};
-	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
-		nodes.erase(current);
-		if (only_active_nodes && !current->isActive()) {
 			return;
 		}
+		nodes.erase(current);
 		for (auto&& output : current->getOutputs()) {
 			if (nodes.contains(output)) {
 				dfsRec(output);
@@ -70,10 +56,10 @@ static std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes, bo
 void runGraph(Node::Ptr userNode)
 {
 	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
-	removeNotExecutingNodes(graph);
+	std::vector<Node::Ptr> execGraph = findExecutionOrder(graph);
 
 	std::set<rgl_field_t> fields;
-	for (auto&& formatNode : Node::filter<FormatNode>(graph)) {
+	for (auto&& formatNode : Node::filter<FormatNode>(execGraph)) {
 		for (auto&& field : formatNode->getFieldList()) {
 			if (!isDummy(field)) {
 				fields.insert(field);
@@ -83,21 +69,19 @@ void runGraph(Node::Ptr userNode)
 
 	fields.insert(XYZ_F32);
 
-	if (!Node::filter<CompactNode>(graph).empty()) {
+	if (!Node::filter<CompactNode>(execGraph).empty()) {
 		fields.insert(IS_HIT_I32);
 	}
 
-	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
+	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(execGraph);
 	rt->setFields(fields);
 
-	std::vector<Node::Ptr> topologicalOrder = findTopologicalOrder(graph);
-
-	for (auto&& current : topologicalOrder) {
+	for (auto&& current : execGraph) {
 		RGL_TRACE("Validating node: {}", *current);
 		current->validate();
 	}
 
-	for (auto&& node : topologicalOrder) {
+	for (auto&& node : execGraph) {
 		RGL_TRACE("Scheduling node: {}", *node);
 		node->schedule(nullptr);
 	}
