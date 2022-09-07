@@ -24,10 +24,21 @@ static std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 	return visited;
 }
 
-static std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
+static std::vector<Node::Ptr> findExecutionOrder(std::set<Node::Ptr> nodes)
 {
 	std::vector<Node::Ptr> reverseOrder {};
+	std::function<void(Node::Ptr)> rmBranch = [&](Node::Ptr current) {
+		for (auto&& output : current->getOutputs()) {
+			rmBranch(output);
+		}
+		RGL_DEBUG("Removing node from execution: {}", *current);
+		nodes.erase(current);
+	};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
+		if (!current->isActive()) {
+			rmBranch(current);
+			return;
+		}
 		nodes.erase(current);
 		for (auto&& output : current->getOutputs()) {
 			if (nodes.contains(output)) {
@@ -44,10 +55,11 @@ static std::vector<Node::Ptr> findTopologicalOrder(std::set<Node::Ptr> nodes)
 
 void runGraph(Node::Ptr userNode)
 {
-	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
+	std::set<Node::Ptr> nodes = findConnectedNodes(userNode);
+	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(nodes);
 
 	std::set<rgl_field_t> fields;
-	for (auto&& formatNode : Node::filter<FormatNode>(graph)) {
+	for (auto&& formatNode : Node::filter<FormatNode>(nodesInExecOrder)) {
 		for (auto&& field : formatNode->getFieldList()) {
 			if (!isDummy(field)) {
 				fields.insert(field);
@@ -57,21 +69,19 @@ void runGraph(Node::Ptr userNode)
 
 	fields.insert(XYZ_F32);
 
-	if (!Node::filter<CompactNode>(graph).empty()) {
+	if (!Node::filter<CompactNode>(nodesInExecOrder).empty()) {
 		fields.insert(IS_HIT_I32);
 	}
 
-	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(graph);
+	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
 	rt->setFields(fields);
 
-	std::vector<Node::Ptr> topologicalOrder = findTopologicalOrder(graph);
-
-	for (auto&& current : topologicalOrder) {
+	for (auto&& current : nodesInExecOrder) {
 		RGL_TRACE("Validating node: {}", *current);
 		current->validate();
 	}
 
-	for (auto&& node : topologicalOrder) {
+	for (auto&& node : nodesInExecOrder) {
 		RGL_TRACE("Scheduling node: {}", *node);
 		node->schedule(nullptr);
 	}

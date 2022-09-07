@@ -36,6 +36,9 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
+	bool isActive() { return active; }
+	void setActive(bool active) { this->active = active; }
+
 protected:
 	template <template <typename _> typename Container>
 	static std::string getNodeTypeNames(const Container<Node::Ptr>& nodes, std::string_view separator=", ")
@@ -88,6 +91,7 @@ protected:
 	void prependNode(Node::Ptr node);
 
 protected:
+	bool active {true};
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 
