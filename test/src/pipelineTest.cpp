@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 #include <scenes.hpp>
+#include <lidars.hpp>
 #include <RGLFields.hpp>
 
 #include <math/Mat3x4f.hpp>
@@ -13,7 +14,7 @@ TEST_F(Pipeline, FullLinear)
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
 
-	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>("/home/prybicki/Desktop/rgl/lidar1000-1000-360-180.mat3x4f");
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
 	rgl_mat3x4f shearTf = Mat3x4f::shear({0,0}, {-1, -1}, {0, 0}).toRGL();
 
@@ -27,7 +28,7 @@ TEST_F(Pipeline, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 }
 
-TEST_F(Pipeline, AWSIM)
+/* TEST_F(Pipeline, AWSIM)
 {
 	setupBoxesAlongAxes(nullptr);
 	std::vector<rgl_field_t> pcl24Fields =  {
@@ -63,4 +64,4 @@ TEST_F(Pipeline, AWSIM)
 			// format PCL24
 			// format PCL48
 
-}
+} */
