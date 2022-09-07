@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 #include <scenes.hpp>
+#include <lidars.hpp>
 #include <RGLFields.hpp>
 
 #include <math/Mat3x4f.hpp>
@@ -13,7 +14,7 @@ TEST_F(Pipeline, FullLinear)
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
 
-	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>("/home/prybicki/Desktop/rgl/lidar1000-1000-360-180.mat3x4f");
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
 	rgl_mat3x4f shearTf = Mat3x4f::shear({0,0}, {-1, -1}, {0, 0}).toRGL();
 
@@ -27,7 +28,42 @@ TEST_F(Pipeline, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 }
 
-TEST_F(Pipeline, AWSIM)
+TEST_F(Pipeline, NodeActivation)
+{
+	auto mesh = makeCubeMesh();
+
+	auto entity = makeEntity(mesh);
+	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+	rgl_entity_set_pose(entity, &entityPoseTf);
+
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
+
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
+	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
+	rgl_mat3x4f zeroTf = Mat3x4f::TRS({0, 0, 0}).toRGL();
+	rgl_mat3x4f translateXTf = Mat3x4f::TRS({3, 0, 0}).toRGL();
+	rgl_mat3x4f translateYTf = Mat3x4f::TRS({0, 3, 0}).toRGL();
+
+	EXPECT_RGL_SUCCESS(rgl_node_use_rays_mat3x4f(&useRays, nullptr, rays.data(), rays.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_transform_rays(&lidarPose, useRays, &lidarPoseTf));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, lidarPose, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_compact(&compact, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_node_transform_points(&transformPts, compact, &zeroTf));
+	EXPECT_RGL_SUCCESS(rgl_node_write_pcd_file(&write, transformPts, "two_boxes.pcd"));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
+
+	// Deactivate transform points
+	EXPECT_RGL_SUCCESS(rgl_node_transform_points(&transformPts, compact, &translateXTf));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, false));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
+
+	// Activate transform points
+	EXPECT_RGL_SUCCESS(rgl_node_transform_points(&transformPts, compact, &translateYTf));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, true));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
+}
+
+/* TEST_F(Pipeline, AWSIM)
 {
 	setupBoxesAlongAxes(nullptr);
 	std::vector<rgl_field_t> pcl24Fields =  {
@@ -63,4 +99,4 @@ TEST_F(Pipeline, AWSIM)
 			// format PCL24
 			// format PCL48
 
-}
+} */

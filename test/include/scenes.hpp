@@ -9,7 +9,7 @@ static rgl_mesh_t makeCubeMesh()
 {
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
-	EXPECT_THAT(mesh, NotNull());
+	EXPECT_THAT(mesh, ::testing::NotNull());
 	return mesh;
 }
 
@@ -20,7 +20,7 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 	}
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, scene, mesh));
-	EXPECT_THAT(entity, NotNull());
+	EXPECT_THAT(entity, ::testing::NotNull());
 	return entity;
 }
 

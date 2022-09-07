@@ -411,3 +411,12 @@ rgl_graph_destroy(rgl_node_t node);
  */
 RGL_API rgl_status_t
 rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_t* outSizeOf, void* data);
+
+/**
+ * Activates or deactivates node in the graph.
+ * Children of inactive nodes do not execute as well.
+ * @param node Node to activate/deactivate.
+ * @param active Whether node active or not.
+ */
+RGL_API rgl_status_t
+rgl_graph_node_set_active(rgl_node_t node, bool active);
