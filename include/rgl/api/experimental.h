@@ -276,12 +276,11 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
  * Input: none
  * Output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param rays Pointer to 3x4 affine matrices describing rays poses.
  * @param ray_count Size of the `rays` array
  */
 RGL_API rgl_status_t
-rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* rays, size_t ray_count);
+rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count);
 
 /**
  * Creates or modifies TransformRaysNode.
@@ -290,11 +289,10 @@ rgl_node_use_rays_mat3x4f(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f
  * Graph input: rays
  * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
 RGL_API rgl_status_t
-rgl_node_transform_rays(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
+rgl_node_transform_rays(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 /**
@@ -304,11 +302,10 @@ rgl_node_transform_rays(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* 
  * Graph input: point cloud
  * Graph output: point cloud (transformed)
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
 RGL_API rgl_status_t
-rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f* transform);
+rgl_node_transform_points(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
  * Creates or modifies RaytraceNode.
@@ -317,12 +314,11 @@ rgl_node_transform_points(rgl_node_t* node, rgl_node_t parent, const rgl_mat3x4f
  * Graph input: rays
  * Graph output: point cloud (sparse)
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
  * @param range Maximum distance to travel for every ray
  */
 RGL_API rgl_status_t
-rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float range);
+rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
 
 /**
  * Creates or modifies FormatNode.
@@ -330,13 +326,12 @@ rgl_node_raytrace(rgl_node_t* node, rgl_node_t parent, rgl_scene_t scene, float 
  * Graph input: point cloud
  * Graph output: none
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param fields Subsequent fields to be present in the binary output
  * @param field_count Number of elements in the `fields` array
  *
  */
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
+rgl_node_format(rgl_node_t* node, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
 
 /**
  * Creates or modifies YieldPointsNode.
@@ -344,12 +339,11 @@ rgl_node_format(rgl_node_t* node, rgl_node_t parent, rgl_field_t* outToken, cons
  * Graph input: point cloud
  * Graph output: none
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param fields Subsequent fields expected to be available
  * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t
-rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fields, int field_count);
+rgl_node_yield_points(rgl_node_t* node, const rgl_field_t* fields, int field_count);
 
 /**
  * Creates or modifies CompactNode.
@@ -357,30 +351,26 @@ rgl_node_yield_points(rgl_node_t* node, rgl_node_t parent, const rgl_field_t* fi
  * Graph input: point cloud
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  */
 RGL_API rgl_status_t
-rgl_node_compact(rgl_node_t* node, rgl_node_t parent);
-
+rgl_node_compact(rgl_node_t* node);
 
 /**
  * Creates or modifies DownSampleNode.
  * The node uses VoxelGrid down-sampling filter from PCL library to reduce the number of points.
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
  */
 RGL_API rgl_status_t
-rgl_node_downsample(rgl_node_t* node, rgl_node_t parent, float leaf_size_x, float leaf_size_y, float leaf_size_z);
+rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
 
 /**
  * Creates or modifies WritePCDFileNode.
  * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param parent If parent is non-null, it will be set as the parent of (*node)
  */
 RGL_API rgl_status_t
-rgl_node_write_pcd_file(rgl_node_t* node, rgl_node_t parent, const char* file_path);
+rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path);
 
 /******************************** GRAPH ********************************/
 
@@ -420,3 +410,19 @@ rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_
  */
 RGL_API rgl_status_t
 rgl_graph_node_set_active(rgl_node_t node, bool active);
+
+/**
+ * Adds child to the parent node 
+ * @param parent Node that will be set as the parent of (child)
+ * @param child Node that will be set as the child of (parent)
+ */
+RGL_API rgl_status_t
+rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child);
+
+/**
+ * Removes child from the parent node
+ * @param parent Node that will be removed as parent from (child)
+ * @param child Node that will be removed as child from (parent)
+ */
+RGL_API rgl_status_t
+rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
