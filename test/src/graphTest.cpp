@@ -6,9 +6,9 @@
 
 #include <math/Mat3x4f.hpp>
 
-class Pipeline : public RGLAutoCleanupTest {};
+class Graph : public RGLAutoCleanupTest {};
 
-TEST_F(Pipeline, FullLinear)
+TEST_F(Graph, FullLinear)
 {
 	setupBoxesAlongAxes(nullptr);
 
@@ -36,7 +36,7 @@ TEST_F(Pipeline, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 }
 
-TEST_F(Pipeline, NodeActivation)
+TEST_F(Graph, NodeActivation)
 {
 	auto mesh = makeCubeMesh();
 
@@ -78,7 +78,7 @@ TEST_F(Pipeline, NodeActivation)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 }
 
-TEST_F(Pipeline, NodeRemoval)
+TEST_F(Graph, NodeRemoval)
 {
 	auto mesh = makeCubeMesh();
 

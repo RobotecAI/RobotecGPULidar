@@ -8,10 +8,13 @@ void Node::addParent(Node::Ptr parent)
 		auto msg = fmt::format("attempted to set an empty parent for {}", getName());
 		throw InvalidPipeline(msg);
 	}
-	this->inputs.push_back(parent);
-	if (parent != nullptr) {
-		parent->outputs.push_back(shared_from_this());
+	auto parentIt = std::find(this->inputs.begin(), this->inputs.end(), parent);
+	if (parentIt != this->inputs.end()) {
+		auto msg = fmt::format("attempted to add parent {} to child {} twice", parent->getName(), getName());
+		throw InvalidPipeline(msg);
 	}
+	this->inputs.push_back(parent);
+	parent->outputs.push_back(shared_from_this());
 }
 
 void Node::addChild(Node::Ptr child)
@@ -22,14 +25,11 @@ void Node::addChild(Node::Ptr child)
 	}
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt != this->outputs.end()) {
-		auto msg = fmt::format("attempted to set an child "
-		                       "for {} that already is his child", getName());
+		auto msg = fmt::format("attempted to add child {} to parent {} twice", child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
 	this->outputs.push_back(child);
-	if (child != nullptr) {
-		child->inputs.push_back(shared_from_this());
-	}
+	child->inputs.push_back(shared_from_this());
 }
 
 void Node::removeChild(Node::Ptr child)
@@ -40,18 +40,21 @@ void Node::removeChild(Node::Ptr child)
 	}
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt == this->outputs.end()) {
-		auto msg = fmt::format("attempted to remove an child "
-		                       "from {} that isn't his child", getName());
+		auto msg = fmt::format("attempted to remove child {} from {},"
+		                       "but it was not found", child->getName(), getName());
 		throw InvalidPipeline(msg);
-	} else {
-		// Remove child from our children
-		this->outputs.erase(childIt);
+	}
+	// Remove child from our children
+	this->outputs.erase(childIt);
+
+	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
+	if (thisIt == child->inputs.end()) {
+		auto msg = fmt::format("attempted to remove parent {} from {},"
+		                       "but it was not found", getName(), child->getName());
+		throw InvalidPipeline(msg);
 	}
 	// Remove us as a parent of that child
-	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
-	if (thisIt != child->inputs.end()) {
-		child->inputs.erase(thisIt);
-	}
+	child->inputs.erase(thisIt);
 }
 
 void Node::prependNode(Node::Ptr node)
