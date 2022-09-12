@@ -41,12 +41,25 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
    1. You may be asked to create Nvidia account to download
 3. If you are on Linux or you have chosen non-standard location on Windows when installing OptiX, you need to export environment variable `OptiX_INSTALL_DIR`.
-4. Proceed with a standard CMake build procedure:
+4. Install [PCL](https://pointclouds.org/) 1.12 on Windows (on Linux this will be done automatically by using a prepared script).
+   1. Get [vcpkg](https://vcpkg.io/en/index.html):\
+   `git clone -b 2022.08.15 --single-branch https://github.com/microsoft/vcpkg`
+   2. Bootstrap `vcpkg`:\
+   `.\vcpkg\bootstrap-vcpkg.bat`
+   3. Install PCL:\
+   `.\vcpkg\vcpkg install pcl[core,visualization]`
+   4. In order to use vcpkg with Visual Studio, run the following command (may require administrator elevation):\
+   `.\vcpkg\vcpkg integrate install`
+   5. In order to use vcpkg with CMake, you can use the toolchain file:\
+   `cmake -B [build directory] -S . "-DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake"`\
+   `cmake --build [build directory]`
+5. Build the project:
    - Linux:
-      - `mkdir build && cd build && cmake ../ && make`
+      - Use prepared `setup.bash` script for additional dependencies installation. You can run cmake and make at once by passing extra arguments:\
+      `./setup.bash --cmake {OPTIONAL_CMAKE_ARGS} --make {OPTIONAL_MAKE_ARGS}`
    - On Windows
-     - You can use [CLion IDE](https://www.jetbrains.com/clion/) (recommended)
-     - Alternatively - [cmake-gui](https://cmake.org/download/) and Microsoft Visual Studio
+      - You can use [CLion IDE](https://www.jetbrains.com/clion/) (recommended)
+      - Alternatively - [cmake-gui](https://cmake.org/download/) and Microsoft Visual Studio
 
 ## Troubleshooting
 

@@ -38,3 +38,4 @@ Testing/*
 .idea
 cmake-build-debug
 build
+external/vcpkg
