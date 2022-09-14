@@ -66,6 +66,13 @@ void runGraph(Node::Ptr userNode)
 			}
 		}
 	}
+	for (auto&& pointCloudNode : Node::filter<IPointCloudNode>(nodesInExecOrder)) {
+		for (auto&& field : pointCloudNode->getRequiredFieldList()) {
+			if (!isDummy(field)) {
+				fields.insert(field);
+			}
+		}
+	}
 
 	fields.insert(XYZ_F32);
 

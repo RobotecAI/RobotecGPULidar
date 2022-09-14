@@ -8,38 +8,45 @@ using PCLPoint = pcl::PointXYZL;
 
 void DownSampleNode::validate()
 {
-	static const std::vector<rgl_field_t> fmtFields = {
-		// pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
-		XYZ_F32, PADDING_32,
-		PADDING_32, PADDING_32, PADDING_32, PADDING_32
-	};
 	if (finishedEvent == nullptr) {
 		CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming));
 	}
-	if (internalFmt == nullptr) {
-		internalFmt = Node::create<FormatNode>();
-		internalFmt->setParameters(fmtFields);
-		prependNode(internalFmt);
-	}
-	internalFmt->validate();
-	if (internalFmt->getPointSize() != sizeof(PCLPoint)) {
-		auto msg = fmt::format("DownSampleNode: RGL / PCL point sizes mismatch: {} {}",
-		                       internalFmt->getPointSize(), sizeof(PCLPoint));
-		throw std::logic_error(msg);
-	}
-	input = getValidInputFrom<IPointCloudNode>(internalFmt->getInputs());
+	input = getValidInput<IPointCloudNode>();
 }
 
 void DownSampleNode::schedule(cudaStream_t stream)
 {
-	internalFmt->schedule(stream);
+	// Get formatted input data
+	std::size_t pointSize = 0;
+	for (auto&& field : requiredFields) {
+		pointSize += getFieldSize(field);
+	}
+	std::size_t pointCount = input->getPointCount();
+	VArray::Ptr fmtInputData = VArray::create<char>(pointCount * pointSize);
+	auto gpuFields = VArrayProxy<GPUFieldDesc>::create(requiredFields.size());
+	std::size_t gpuFieldOffset = 0;
+	std::size_t gpuFieldIdx = 0;
+	for (size_t i = 0; i < requiredFields.size(); ++i) {
+		if (!isDummy(requiredFields[i])) {
+			(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
+				.data = static_cast<char*>(input->getFieldData(requiredFields[i], stream)->getDevicePtr()),
+				.size = getFieldSize(requiredFields[i]),
+				.dstOffset = gpuFieldOffset,
+			};
+			gpuFieldIdx += 1;
+		}
+		gpuFieldOffset += getFieldSize(requiredFields[i]);
+	}
+	char* fmtInputDataPtr = static_cast<char*>(fmtInputData->getDevicePtr());
+	gpuFormat(stream, pointCount, pointSize, requiredFields.size(), gpuFields->getDevicePtr(), fmtInputDataPtr);
 	CHECK_CUDA(cudaStreamSynchronize(stream));
-	internalFmt->getData()->hintLocation(VArray::CPU);
+
+	// Downsample
+	fmtInputData->hintLocation(VArray::CPU);
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
-	auto pointCount = input->getPointCount();
 	toFilter->reserve(pointCount);
-	PCLPoint* begin = static_cast<PCLPoint*>(internalFmt->getData()->getHostPtr());
+	PCLPoint* begin = static_cast<PCLPoint*>(fmtInputData->getHostPtr());
 	PCLPoint* end = begin + pointCount;
 	toFilter->assign(begin, end, pointCount);
 	for (int i = 0; i < toFilter->size(); ++i) {

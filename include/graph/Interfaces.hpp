@@ -31,6 +31,7 @@ struct IPointCloudNode : public IPointcloudDescription
 	using Ptr = std::shared_ptr<IPointCloudNode>;
 
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
+	virtual std::vector<rgl_field_t> getRequiredFieldList() const = 0;
 
 	template<rgl_field_t field>
 	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
