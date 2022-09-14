@@ -6,6 +6,7 @@
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
+#include <graph/utils.hpp>
 #include <gpu/RaytraceRequestContext.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -37,7 +38,6 @@ struct FormatNode : Node, IPointcloudDescription
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
-	std::size_t getPointSize() const;
 	inline VArray::ConstPtr getData() const { return output; }
 
 	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
