@@ -43,7 +43,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 3. If you are on Linux or you have chosen non-standard location on Windows when installing OptiX, you need to export environment variable `OptiX_INSTALL_DIR`.
 4. Install [PCL](https://pointclouds.org/) 1.12 on Windows (on Linux this will be done automatically by using a prepared script).
    1. Get [vcpkg](https://vcpkg.io/en/index.html):\
-   `git clone -b 2022.08.15 --single-branch https://github.com/microsoft/vcpkg`
+   `git clone -b 2022.08.15 --single-branch --depth 1 https://github.com/microsoft/vcpkg`
    2. Bootstrap `vcpkg`:\
    `.\vcpkg\bootstrap-vcpkg.bat`
    3. Install PCL:\
