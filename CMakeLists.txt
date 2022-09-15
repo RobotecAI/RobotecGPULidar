@@ -34,18 +34,6 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
     message(FATAL_ERROR "Required environment variable OptiX_INSTALL_DIR is empty, aborting build")
 endif()
 
-# Quick and dirty PCL integration,
-message("CMAKE_SYSTEM_PREFIX_PATH: ${CMAKE_SYSTEM_PREFIX_PATH}")
-
-
-#list(PREPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
-#list(PREPEND CMAKE_MODULE_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
-#find_package(utf8cpp)
-#find_package(double-conversion)
-#find_package(Boost 1.80.0 COMPONENTS system filesystem date_time iostreams)
-
-#message("BOOST: ${BOOST_LIBRARIES}")
-
 find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})

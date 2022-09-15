@@ -47,9 +47,9 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
    2. Bootstrap `vcpkg`:\
    `.\vcpkg\bootstrap-vcpkg.bat`
    3. Install PCL:\
-   `.\vcpkg\vcpkg install pcl[core,visualization]`
+   `.\vcpkg\vcpkg.exe install pcl[core,visualization]:x64-windows`
    4. In order to use vcpkg with Visual Studio, run the following command (may require administrator elevation):\
-   `.\vcpkg\vcpkg integrate install`
+   `.\vcpkg\vcpkg.exe integrate install`
    5. In order to use vcpkg with CMake, you can use the toolchain file:\
    `cmake -B [build directory] -S . "-DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake"`\
    `cmake --build [build directory]`
