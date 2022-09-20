@@ -66,6 +66,15 @@ inline std::size_t getFieldSize(rgl_field_t type)
 	throw std::invalid_argument(fmt::format("getFieldSize: unknown RGL field {}", type));
 }
 
+inline std::size_t getPointSize(const std::vector<rgl_field_t>& fields)
+{
+	std::size_t size = 0;
+	for (auto&& field : fields) {
+		size += getFieldSize(field);
+	}
+	return size;
+}
+
 inline bool isDummy(rgl_field_t type)
 {
 	static std::set<rgl_field_t> dummies = {

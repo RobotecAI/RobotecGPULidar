@@ -8,38 +8,24 @@ using PCLPoint = pcl::PointXYZL;
 
 void DownSampleNode::validate()
 {
-	static const std::vector<rgl_field_t> fmtFields = {
-		// pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
-		XYZ_F32, PADDING_32,
-		PADDING_32, PADDING_32, PADDING_32, PADDING_32
-	};
 	if (finishedEvent == nullptr) {
 		CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming));
 	}
-	if (internalFmt == nullptr) {
-		internalFmt = Node::create<FormatNode>();
-		internalFmt->setParameters(fmtFields);
-		prependNode(internalFmt);
-	}
-	internalFmt->validate();
-	if (internalFmt->getPointSize() != sizeof(PCLPoint)) {
-		auto msg = fmt::format("DownSampleNode: RGL / PCL point sizes mismatch: {} {}",
-		                       internalFmt->getPointSize(), sizeof(PCLPoint));
-		throw std::logic_error(msg);
-	}
-	input = getValidInputFrom<IPointCloudNode>(internalFmt->getInputs());
+	input = getValidInput<IPointCloudNode>();
 }
 
 void DownSampleNode::schedule(cudaStream_t stream)
 {
-	internalFmt->schedule(stream);
-	CHECK_CUDA(cudaStreamSynchronize(stream));
-	internalFmt->getData()->hintLocation(VArray::CPU);
+	// Get formatted input data
+	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
+
+	// Downsample
+	fmtInputData->hintLocation(VArray::CPU);
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto pointCount = input->getPointCount();
 	toFilter->reserve(pointCount);
-	PCLPoint* begin = static_cast<PCLPoint*>(internalFmt->getData()->getHostPtr());
+	PCLPoint* begin = static_cast<PCLPoint*>(fmtInputData->getHostPtr());
 	PCLPoint* end = begin + pointCount;
 	toFilter->assign(begin, end, pointCount);
 	for (int i = 0; i < toFilter->size(); ++i) {

@@ -6,6 +6,7 @@
 #include <VArray.hpp>
 #include <rgl/api/experimental.h>
 #include <APIObject.hpp>
+#include <RGLFields.hpp>
 
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
@@ -33,6 +34,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * @param stream Stream to perform computations in
 	 */
 	virtual void schedule(cudaStream_t stream) = 0;
+
+	virtual std::vector<rgl_field_t> getRequiredFieldList() const = 0;
 
 	inline std::string getName() const { return name(typeid(*this)); }
 
