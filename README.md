@@ -1,5 +1,9 @@
 # Robotec GPU Lidar
 
+<h1 align="center">
+  <img src="docs/image/rgl-logo.png" width="60%" alt="RobotecGPULidar">
+</h1>
+
 ## About the project
 
 Robotec GPU Lidar (RGL) is a cross-platform (Windows and Linux), C/C++ library developed by [Robotec.AI](https://robotec.ai/)
