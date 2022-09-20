@@ -59,8 +59,8 @@ void runGraph(Node::Ptr userNode)
 	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(nodes);
 
 	std::set<rgl_field_t> fields;
-	for (auto&& formatNode : Node::filter<FormatNode>(nodesInExecOrder)) {
-		for (auto&& field : formatNode->getFieldList()) {
+	for (auto&& node : nodesInExecOrder) {
+		for (auto&& field : node->getRequiredFieldList()) {
 			if (!isDummy(field)) {
 				fields.insert(field);
 			}
