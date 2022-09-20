@@ -34,22 +34,7 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
     message(FATAL_ERROR "Required environment variable OptiX_INSTALL_DIR is empty, aborting build")
 endif()
 
-# Quick and dirty PCL integration,
-message("CMAKE_SYSTEM_PREFIX_PATH: ${CMAKE_SYSTEM_PREFIX_PATH}")
-
-
-#list(PREPEND CMAKE_PREFIX_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
-#list(PREPEND CMAKE_MODULE_PATH "/home/prybicki/work/robotec/vcpkg/packages/")
-#find_package(utf8cpp)
-#find_package(double-conversion)
-#find_package(Boost 1.80.0 COMPONENTS system filesystem date_time iostreams)
-
-#message("BOOST: ${BOOST_LIBRARIES}")
-
 find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
 # Includes
 include_directories(include)
@@ -88,7 +73,14 @@ add_library(RobotecGPULidar SHARED
     src/graph/YieldPointsNode.cpp
 )
 
-target_include_directories(RobotecGPULidar PUBLIC include)
+target_include_directories(RobotecGPULidar
+    PUBLIC include
+    PRIVATE ${PCL_INCLUDE_DIRS}
+)
+
+target_link_directories(RobotecGPULidar PUBLIC
+    ${PCL_LIBRARY_DIRS}
+)
 
 target_link_libraries(RobotecGPULidar PUBLIC
     spdlog
@@ -106,6 +98,7 @@ target_compile_definitions(RobotecGPULidar
     PUBLIC RGL_LOG_STDOUT=$<BOOL:${RGL_LOG_STDOUT}>
     PUBLIC RGL_LOG_FILE={"${RGL_LOG_FILE}"}
     PUBLIC RGL_LOG_LEVEL=RGL_LOG_LEVEL_${RGL_LOG_LEVEL}
+    PUBLIC ${PCL_DEFINITIONS}
 )
 
 # Include tests
