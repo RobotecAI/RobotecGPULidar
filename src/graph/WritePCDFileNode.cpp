@@ -15,13 +15,7 @@ void WritePCDFileNode::schedule(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	std::size_t pointSize = getPointSize(requiredFields);
-	std::size_t pointCount = input->getPointCount();
-	VArray::Ptr fmtInputData = VArray::create<char>(pointCount * pointSize);
-	auto gpuFields = getGPUFields(requiredFields, input, stream);
-	char* fmtInputDataPtr = static_cast<char*>(fmtInputData->getDevicePtr());
-	gpuFormat(stream, pointCount, pointSize, requiredFields.size(), gpuFields->getDevicePtr(), fmtInputDataPtr);
-	CHECK_CUDA(cudaStreamSynchronize(stream));
+	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
 
 	// Convert to PCL cloud
 	fmtInputData->hintLocation(VArray::CPU);

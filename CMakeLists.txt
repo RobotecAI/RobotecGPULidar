@@ -76,7 +76,6 @@ add_library(RobotecGPULidar SHARED
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
     src/graph/graph.cpp
-    src/graph/utils.cpp
     src/graph/Node.cpp
     src/graph/CompactNode.cpp
     src/graph/DownSampleNode.cpp

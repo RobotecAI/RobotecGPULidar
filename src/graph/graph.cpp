@@ -59,15 +59,8 @@ void runGraph(Node::Ptr userNode)
 	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(nodes);
 
 	std::set<rgl_field_t> fields;
-	for (auto&& formatNode : Node::filter<FormatNode>(nodesInExecOrder)) {
-		for (auto&& field : formatNode->getFieldList()) {
-			if (!isDummy(field)) {
-				fields.insert(field);
-			}
-		}
-	}
-	for (auto&& pointCloudNode : Node::filter<IPointCloudNode>(nodesInExecOrder)) {
-		for (auto&& field : pointCloudNode->getRequiredFieldList()) {
+	for (auto&& node : nodesInExecOrder) {
+		for (auto&& field : node->getRequiredFieldList()) {
 			if (!isDummy(field)) {
 				fields.insert(field);
 			}

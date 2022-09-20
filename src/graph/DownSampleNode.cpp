@@ -17,18 +17,13 @@ void DownSampleNode::validate()
 void DownSampleNode::schedule(cudaStream_t stream)
 {
 	// Get formatted input data
-	std::size_t pointSize = getPointSize(requiredFields);
-	std::size_t pointCount = input->getPointCount();
-	VArray::Ptr fmtInputData = VArray::create<char>(pointCount * pointSize);
-	auto gpuFields = getGPUFields(requiredFields, input, stream);
-	char* fmtInputDataPtr = static_cast<char*>(fmtInputData->getDevicePtr());
-	gpuFormat(stream, pointCount, pointSize, requiredFields.size(), gpuFields->getDevicePtr(), fmtInputDataPtr);
-	CHECK_CUDA(cudaStreamSynchronize(stream));
+	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
 
 	// Downsample
 	fmtInputData->hintLocation(VArray::CPU);
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
+	auto pointCount = input->getPointCount();
 	toFilter->reserve(pointCount);
 	PCLPoint* begin = static_cast<PCLPoint*>(fmtInputData->getHostPtr());
 	PCLPoint* end = begin + pointCount;

@@ -9,10 +9,18 @@ void FormatNode::validate()
 
 void FormatNode::schedule(cudaStream_t stream)
 {
+	output = formatAsync<char>(input, fields, stream);
+}
+
+template<typename T>
+VArray::Ptr FormatNode::formatAsync(IPointCloudNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream)
+{
 	std::size_t pointSize = getPointSize(fields);
 	std::size_t pointCount = input->getPointCount();
-	output->resize(pointCount * pointSize, false, false);
-	auto gpuFields = getGPUFields(fields, input, stream);
-	char* outputPtr = static_cast<char*>(output->getDevicePtr());
-	gpuFormat(stream, pointCount, pointSize, fields.size(), gpuFields->getDevicePtr(), outputPtr);
+	VArray::Ptr out = VArray::create<T>(pointCount * pointSize);
+	auto gpuFields = input->getGPUFields(fields, stream);
+	T* outPtr = static_cast<T*>(out->getDevicePtr());
+	gpuFormat(stream, pointCount, pointSize, fields.size(), gpuFields->getDevicePtr(), outPtr);
+	CHECK_CUDA(cudaStreamSynchronize(stream));
+	return out;
 }
