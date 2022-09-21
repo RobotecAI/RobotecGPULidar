@@ -229,7 +229,7 @@ private:
 struct VisualizeNode : Node
 {
 	using Ptr = std::shared_ptr<VisualizeNode>;
-	using PCLPointType = pcl::PointXYZ;
+	using PCLPointType = pcl::PointXYZRGB;
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
@@ -241,7 +241,8 @@ struct VisualizeNode : Node
 
 
 private:
-	std::vector<rgl_field_t> requiredFields{XYZ_F32, PADDING_32};
+	std::vector<rgl_field_t> requiredFields
+	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 	IPointCloudNode::Ptr input;
 
 	PCLVisualizerFix::Ptr viewer;
