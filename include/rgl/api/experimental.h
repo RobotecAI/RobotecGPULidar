@@ -208,7 +208,7 @@ rgl_cleanup(void);
  * @param out_mesh Address to store the resulting mesh handle
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
  * @param vertex_count Number of elements in the vertices array
- * @param vertices An array of rgl_vec3i or binary-compatible data representing mesh indices
+ * @param indices An array of rgl_vec3i or binary-compatible data representing mesh indices
  * @param index_count Number of elements in the indices array
  */
 RGL_API rgl_status_t
@@ -368,9 +368,22 @@ rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, floa
  * Creates or modifies WritePCDFileNode.
  * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param file_path Path to the output pcd file.
  */
 RGL_API rgl_status_t
 rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path);
+
+/**
+ * Creates or modifies VisualizeNode.
+ * The node creates and manages PCLVisualizer to visualize output point cloud from previous node in the graph.
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param window_name The window name.
+ * @param window_width The window width (default: 1280).
+ * @param window_height The window height (default: 1024).
+ * @param fullscreen true for window full screen mode, false otherwise (default: false).
+ */
+RGL_API rgl_status_t
+rgl_node_visualize(rgl_node_t* node, const char* window_name, int window_width = 1280, int window_height = 1024, bool fullscreen = false);
 
 /******************************** GRAPH ********************************/
 
