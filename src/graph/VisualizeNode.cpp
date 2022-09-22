@@ -1,18 +1,18 @@
 #include <graph/Nodes.hpp>
 
-#include <chrono>
-
 void VisualizeNode::setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen)
 {
+	if (viewer.get() != nullptr) {
+		RGL_WARN("Could not update parameters for VisualizeNode.");
+		return;
+	}
+
 	this->windowName = windowName;
 	this->windowWidth = windowWidth;
 	this->windowHeight = windowHeight;
 	this->fullscreen = fullscreen;
 
 	visThread = std::thread(&VisualizeNode::runVisualize, this);
-
-	// Wait for viewer initialization
-	std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void VisualizeNode::validate()
@@ -35,7 +35,17 @@ void VisualizeNode::runVisualize()
 	viewer->addPointCloud(cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(cloudPCL));
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 
-	viewer->spin();
+	while (!viewer->wasStopped ())
+	{
+		{
+			std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
+			if (isNewCloud) {
+				viewer->updatePointCloud(cloudPCL);
+				isNewCloud = false;
+			}
+		}
+		viewer->spinOnce(1000 / FRAME_RATE);
+	}
 }
 
 void VisualizeNode::schedule(cudaStream_t stream)
@@ -46,6 +56,9 @@ void VisualizeNode::schedule(cudaStream_t stream)
 	// Convert to PCL cloud
 	fmtInputData->hintLocation(VArray::CPU);
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(fmtInputData->getHostPtr());
+
+	std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
+
 	cloudPCL->resize(input->getWidth(), input->getHeight());
 	cloudPCL->assign(data, data + cloudPCL->size(), input->getWidth());
 	cloudPCL->is_dense = input->isDense();
@@ -69,8 +82,7 @@ void VisualizeNode::schedule(cudaStream_t stream)
         cloud_it->b = value < 128 ? 255 - (2 * value) : 0;
 	}
 
-	// Update
-	viewer->updatePointCloud(cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(cloudPCL));
+	isNewCloud = true;
 }
 
 VisualizeNode::~VisualizeNode()

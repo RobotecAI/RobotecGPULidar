@@ -231,6 +231,8 @@ struct VisualizeNode : Node
 	using Ptr = std::shared_ptr<VisualizeNode>;
 	using PCLPointType = pcl::PointXYZRGB;
 
+	static const int FRAME_RATE = 60;
+
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 	void runVisualize();
@@ -246,8 +248,9 @@ private:
 	IPointCloudNode::Ptr input;
 
 	PCLVisualizerFix::Ptr viewer;
-
 	std::thread visThread;
+	std::mutex updateCloudMutex;
+	bool isNewCloud{false};
 
 	std::string windowName{};
 	int windowWidth;
