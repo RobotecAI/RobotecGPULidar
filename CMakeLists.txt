@@ -88,6 +88,7 @@ target_link_directories(RobotecGPULidar PUBLIC
 
 target_link_libraries(RobotecGPULidar PUBLIC
     spdlog
+    yaml-cpp
     optixPrograms
     CUDA::nvml
     CUDA::cudart
