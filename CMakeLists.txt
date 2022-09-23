@@ -52,6 +52,8 @@ add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
+    src/api/record_api.cpp
+    src/Record.cpp
     src/Logger.cpp
     src/VArray.cpp
     src/gpu/Optix.cpp

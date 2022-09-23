@@ -8,6 +8,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(
+yaml-cpp
+GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+GIT_TAG yaml-cpp-0.7.0
+GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(yaml-cpp)
+
 if (UNIX)
     # This is a fix for:
     # relocation R_X86_64_TPOFF32 against `_ZGVZN6spdlog7details2os9thread_idEvE3tid'
