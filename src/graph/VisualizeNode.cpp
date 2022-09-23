@@ -37,14 +37,16 @@ void VisualizeNode::runVisualize()
 
 	while (!viewer->wasStopped ())
 	{
+		bool forceRedraw = false;
 		{
 			std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
 			if (isNewCloud) {
 				viewer->updatePointCloud(cloudPCL);
 				isNewCloud = false;
+				forceRedraw = true;
 			}
 		}
-		viewer->spinOnce(1000 / FRAME_RATE);
+		viewer->spinOnce(1000 / FRAME_RATE, forceRedraw);
 	}
 }
 
