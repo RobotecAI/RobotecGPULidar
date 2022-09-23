@@ -19,7 +19,7 @@ private:
     FILE* file_bin;
     uint8_t* file_mmap;
     size_t mmap_size;
-    std::fstream file_yaml;
+    std::ofstream file_yaml;
     size_t next_mesh_id = 0;
     size_t next_entity_id = 0;
     std::map<rgl_mesh_t, size_t> mesh_id_record;
