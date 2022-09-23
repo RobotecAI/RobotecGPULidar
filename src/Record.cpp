@@ -37,6 +37,7 @@ void Record::stop() {
     recording_now = false;
     fclose(file_bin);
     file_yaml << yaml_root;
+    file_yaml << "DEBUG";
     file_yaml.close();
 }
 
