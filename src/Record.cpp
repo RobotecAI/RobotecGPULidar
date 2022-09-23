@@ -28,7 +28,7 @@ void Record::start(const char* file_path_yaml, const char* file_path_bin) {
     entity_id_record = std::map<rgl_entity_t, size_t>();
     file_bin = fopen(file_path_bin, "wb");
     if (nullptr == file_bin) exit (1);
-    file_yaml.open(file_path_yaml);
+    file_yaml.open(file_path_yaml, std::ios::in | std::ios::out);
     yaml_root = YAML::Node();
 }
 
