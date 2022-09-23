@@ -123,6 +123,16 @@ typedef enum
 	RGL_INVALID_API_OBJECT,
 
 	/**
+	* Indicates that a given file could not be opened.
+	*/
+	RGL_INVALID_FILE_PATH,
+
+	/**
+	* Indicates that a tape operation was not successful.
+	*/
+     	RGL_TAPE_ERROR,
+
+	/**
 	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
 	 */
 	RGL_INVALID_PIPELINE,

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
 project(RobotecGPULidar C CXX CUDA)
@@ -66,6 +67,7 @@ add_custom_command(
 
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
+    src/Tape.cpp
     src/Logger.cpp
     src/VArray.cpp
     src/gpu/Optix.cpp
@@ -104,6 +106,7 @@ target_link_directories(RobotecGPULidar PUBLIC
 
 target_link_libraries(RobotecGPULidar PUBLIC
     spdlog
+    yaml-cpp
     optixPrograms
     CUDA::nvml
     CUDA::cudart

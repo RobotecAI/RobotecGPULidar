@@ -120,9 +120,6 @@ static rgl_mat3x4f identity = { .value = {
 	0, 0, 1, 0
 }};
 
-
-
-
 // static rgl_lidar_t makeTrivialLidar()
 // {
 // 	rgl_lidar_t lidar = nullptr;
@@ -139,6 +136,7 @@ static rgl_mat3x4f identity = { .value = {
 // 	EXPECT_THAT(lidar, NotNull());
 // 	return lidar;
 // }
+
 
 static rgl_mesh_t loadMesh(std::filesystem::path path)
 {
