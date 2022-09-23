@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHIT
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
 project(RobotecGPULidar C CXX CUDA)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # Logging default settings (can be changed via API call)
 set(RGL_LOG_STDOUT ON CACHE BOOL
