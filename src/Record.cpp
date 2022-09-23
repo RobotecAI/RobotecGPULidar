@@ -1,6 +1,8 @@
 #include <Record.h>
 #include <cassert>
 
+#include <iostream>
+
 #define FUNCTION_CALL "function_call_"
 #define MESH_CREATE "rgl_mesh_create"
 #define MESH_DESTROY "rgl_mesh_destroy"
@@ -37,6 +39,7 @@ void Record::stop() {
     recording_now = false;
     fclose(file_bin);
     file_yaml << yaml_root;
+    std::cout << yaml_root;
     file_yaml << "DEBUG";
     file_yaml.close();
 }
