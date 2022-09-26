@@ -14,6 +14,8 @@
 
 #include <repr.hpp>
 
+#include <Record.h>
+
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
 
@@ -23,7 +25,8 @@ static bool canContinueAfterStatus(rgl_status_t status)
 	static std::set recoverableErrors = {
 		RGL_INVALID_ARGUMENT,
 		RGL_INVALID_API_OBJECT,
-		RGL_NOT_IMPLEMENTED
+		RGL_NOT_IMPLEMENTED,
+        RGL_RECORD_ERROR
 	};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
 };
@@ -69,6 +72,9 @@ static rgl_status_t rglSafeCall(Fn fn)
 	catch (InvalidAPIObject &e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
+    catch (InvalidFilePath &e) {
+        return updateAPIState(RGL_RECORD_ERROR, e.what());
+    }
 	catch (std::invalid_argument &e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
@@ -155,6 +161,8 @@ rgl_get_last_error_string(const char **out_error_string)
 			break;
 		case RGL_LOGGING_ERROR:
 			*out_error_string = "spdlog error";
+        case RGL_RECORD_ERROR:
+            *out_error_string = "recorder error";
 		default:
 			*out_error_string = "???";
 			break;
@@ -189,6 +197,9 @@ rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_coun
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
 		                         index_count).get();
+        if (Record::instance().recording()) {
+            Record::instance().recordMeshCreate(out_mesh, vertices, vertex_count, indices, index_count);
+        }
 	});
 }
 
@@ -199,6 +210,9 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 		RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
 		Mesh::release(mesh);
+        if (Record::instance().recording()) {
+            Record::instance().recordMeshDestroy(mesh);
+        }
 	});
 }
 
@@ -211,6 +225,9 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f *vertices, int vertex_
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
+        if (Record::instance().recording()) {
+            Record::instance().recordMeshUpdateVertices(mesh, vertices, vertex_count);
+        }
 	});
 }
 
@@ -226,6 +243,9 @@ rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
+        if (Record::instance().recording()) {
+            Record::instance().recordEntityCreate(out_entity, mesh);
+        }
 	});
 }
 
@@ -242,6 +262,9 @@ rgl_entity_destroy(rgl_entity_t entity)
 		} else {
 			throw std::logic_error("Entity's scene does not exist");
 		}
+        if (Record::instance().recording()) {
+            Record::instance().recordEntityDestroy(entity);
+        }
 	});
 }
 
@@ -254,6 +277,9 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
 		CHECK_ARG(local_to_world_tf != nullptr);
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float *>(&local_to_world_tf->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
+        if (Record::instance().recording()) {
+            Record::instance().recordEntitySetPose(entity, local_to_world_tf);
+        }
 	});
 }
 

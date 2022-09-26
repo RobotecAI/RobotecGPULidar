@@ -14,12 +14,10 @@ TEST(EndToEnd, RecordReadmeExample)
 
     rgl_mesh_t cube_mesh = 0;
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
-    rgl_record_rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length);
 
     // Put an entity on the default scene
     rgl_entity_t cube_entity = 0;
     EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
-    rgl_record_rgl_entity_create(&cube_entity, nullptr, cube_mesh);
 
     // Set position of the cube entity to (0, 0, 5)
     rgl_mat3x4f entity_tf = {
@@ -30,7 +28,6 @@ TEST(EndToEnd, RecordReadmeExample)
             }
     };
     EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
-    rgl_record_rgl_entity_set_pose(cube_entity, &entity_tf);
 
     // Create a description of lidar that sends 1 ray
     // By default, lidar will have infinite ray range
@@ -66,14 +63,14 @@ TEST(EndToEnd, RecordReadmeExample)
     EXPECT_RGL_SUCCESS(rgl_cleanup());
 
     char* data_start;
-    size_t data_size = mmap_init(&data_start);
+    size_t data_size = mmapInit(&data_start);
 
     std::cout << "\nvertices:\n";
-    print_mat_float(data_start, 0, cube_vertices_length, 3);
+    printMatFloat(data_start, 0, cube_vertices_length, 3);
     std::cout << "\nindices:\n";
-    print_mat_int(data_start, 96, cube_indices_length, 3);
+    printMatInt(data_start, 96, cube_indices_length, 3);
     std::cout << "\nlocal_to_world_tf:\n";
-    print_mat_float(data_start, 240, 3, 4);
+    printMatFloat(data_start, 240, 3, 4);
     std::cout << "\n";
     munmap(data_start, data_size);
 

@@ -105,6 +105,11 @@ typedef enum
 	 */
 	RGL_INVALID_API_OBJECT,
 
+    /**
+     * Indicates that a recording operation was not successful.
+     */
+    RGL_RECORD_ERROR,
+
 	/**
 	 * Requested functionality has been not yet implemented.
 	 * This is a recoverable error.

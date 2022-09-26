@@ -128,7 +128,7 @@ static rgl_mat3x4f identity = { .value = {
 }};
 
 
-static size_t mmap_init(char** data_start)  {
+static size_t mmapInit(char** data_start)  {
     int fd = open("recording", O_RDONLY);
     if(fd < 0){
         printf("\n\"%s \" could not open\n",
@@ -153,7 +153,7 @@ static size_t mmap_init(char** data_start)  {
     return statbuf.st_size;
 }
 
-static void print_mat_float(const char* data_start, size_t offset, size_t length_1, size_t length_2) {
+static void printMatFloat(const char* data_start, size_t offset, size_t length_1, size_t length_2) {
     for (int i = 0; i < length_1; ++i) {
         std::cout << "(";
         for (int j = 0; j < length_2; ++j) {
@@ -166,7 +166,7 @@ static void print_mat_float(const char* data_start, size_t offset, size_t length
     }
 }
 
-static void print_mat_int(const char* data_start, size_t offset, size_t length_1, size_t length_2) {
+static void printMatInt(const char* data_start, size_t offset, size_t length_1, size_t length_2) {
     for (int i = 0; i < length_1; ++i) {
         std::cout << "(";
         for (int j = 0; j < length_2; ++j) {
