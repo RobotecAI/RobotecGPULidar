@@ -50,6 +50,8 @@ struct VArray : std::enable_shared_from_this<VArray>
 	typename VArrayTyped<T>::Ptr intoTypedWrapper() &&
 	{ return VArrayTyped<T>::create(std::move(*this)); }
 
+	~VArray() { cudaFree(managedData); managedData = nullptr; }
+
 	VArray::Ptr clone() const;
 	void copyFrom(const void* src, std::size_t elements);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
