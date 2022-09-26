@@ -7,6 +7,8 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 using namespace ::testing;
 
@@ -124,3 +126,54 @@ static rgl_mat3x4f identity = { .value = {
 	0, 1, 0, 0,
 	0, 0, 1, 0
 }};
+
+
+static size_t mmap_init(char** data_start)  {
+    int fd = open("recording", O_RDONLY);
+    if(fd < 0){
+        printf("\n\"%s \" could not open\n",
+               "recording");
+        exit(1);
+    }
+
+    struct stat statbuf{};
+    int err = fstat(fd, &statbuf);
+    if(err < 0){
+        printf("\n\"%s \" could not open\n",
+               "recording");
+        exit(2);
+    }
+
+    *data_start = static_cast<char*>(mmap(nullptr, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0));
+    if(data_start == MAP_FAILED) {
+        printf("Mapping Failed\n");
+    }
+    close(fd);
+
+    return statbuf.st_size;
+}
+
+static void print_mat_float(const char* data_start, size_t offset, size_t length_1, size_t length_2) {
+    for (int i = 0; i < length_1; ++i) {
+        std::cout << "(";
+        for (int j = 0; j < length_2; ++j) {
+            if (*(float*)(data_start + offset) >= 0) std::cout << " ";
+            std::cout << *((float*)(data_start + offset));
+            if (j != length_2 - 1) std::cout << ",";
+            offset += 4;
+        }
+        std::cout << ")\n";
+    }
+}
+
+static void print_mat_int(const char* data_start, size_t offset, size_t length_1, size_t length_2) {
+    for (int i = 0; i < length_1; ++i) {
+        std::cout << "(";
+        for (int j = 0; j < length_2; ++j) {
+            std::cout << *((int*)(data_start + offset));
+            if (j != length_2 - 1) std::cout << ",";
+            offset += 4;
+        }
+        std::cout << ")\n";
+    }
+}

@@ -1,66 +1,101 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
+#include <Logger.h>
 #include <utils/testUtils.h>
-#include <math/Vector.hpp>
+#include <rgl/api/record_api.h>
 
-using namespace ::testing;
+TEST(EndToEnd, RecordReadmeExample)
+{
+    int major, minor, patch;
+    EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
+    RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
 
-class Record : public ::testing::Test {
-protected:
-    void SetUp() override
-    {
-        EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
-    }
+    rgl_record_start("recording.yaml", "recording");
 
-    void TearDown() override
-    {
-        EXPECT_RGL_SUCCESS(rgl_lidar_destroy(lidar));
-    }
+    rgl_mesh_t cube_mesh = 0;
+    EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
+    rgl_record_rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length);
 
-    rgl_mesh_t cube_mesh = nullptr;
-    rgl_entity_t entity = nullptr;
-    rgl_lidar_t lidar = nullptr;
+    // Put an entity on the default scene
+    rgl_entity_t cube_entity = 0;
+    EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
+    rgl_record_rgl_entity_create(&cube_entity, nullptr, cube_mesh);
 
+    // Set position of the cube entity to (0, 0, 5)
     rgl_mat3x4f entity_tf = {
             .value = {
-                    { 1, 0, 0, 0 },
-                    { 0, 1, 0, 0 },
-                    { 0, 0, 1, 5 } }
-    };
-    rgl_mat3x4f ray_tf = {
-            .value = {
-                    { 1, 0, 0, 0 },
-                    { 0, 1, 0, 0 },
-                    { 0, 0, 1, 0 },
+                    {1, 0, 0, 0},
+                    {0, 1, 0, 0},
+                    {0, 0, 1, 5}
             }
     };
+    EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
+    rgl_record_rgl_entity_set_pose(cube_entity, &entity_tf);
 
-    rgl_vec3f results[1];
-    int hitpointCount = 0;
-};
+    // Create a description of lidar that sends 1 ray
+    // By default, lidar will have infinite ray range
+    // and will be placed in (0, 0, 0), facing positive Z
+    rgl_lidar_t lidar = 0;
+    rgl_mat3x4f ray_tf = {
+            .value = {
+                    {1, 0, 0, 0},
+                    {0, 1, 0, 0},
+                    {0, 0, 1, 0},
+            }
+    };
+    EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
 
-TEST_F(Record, DeleteMesh)
-{
-    EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
-    EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, cube_mesh));
-    EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entity_tf));
-    getLidarResults(lidar, &hitpointCount, results);
+    // Start raytracing on the default scene
+    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
 
-    EXPECT_EQ(hitpointCount, 1);
-    EXPECT_FLOAT_EQ(results[0].value[2], 4.0f);
+    // Wait for raytracing (if needed) and collect results
+    int hitpoint_count = 0;
+    rgl_vec3f results[1] = {0};
+    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
+    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
 
-    EXPECT_RGL_SUCCESS(rgl_mesh_destroy(cube_mesh));
-    EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entity_tf));
+    printf("Got %d hitpoint(s)\n", hitpoint_count);
+    for (int i = 0; i < hitpoint_count; ++i) {
+        printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
+    }
 
-    getLidarResults(lidar, &hitpointCount, results);
+    ASSERT_EQ(hitpoint_count, 1);
+    ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
 
-    EXPECT_EQ(hitpointCount, 1);
-    EXPECT_FLOAT_EQ(results[0].value[2], 4.0f);
+    rgl_record_stop();
+    EXPECT_RGL_SUCCESS(rgl_cleanup());
 
-    EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
-    getLidarResults(lidar, &hitpointCount, results);
+    char* data_start;
+    size_t data_size = mmap_init(&data_start);
 
-    EXPECT_EQ(hitpointCount, 0);
+    std::cout << "\nvertices:\n";
+    print_mat_float(data_start, 0, cube_vertices_length, 3);
+    std::cout << "\nindices:\n";
+    print_mat_int(data_start, 96, cube_indices_length, 3);
+    std::cout << "\nlocal_to_world_tf:\n";
+    print_mat_float(data_start, 240, 3, 4);
+    std::cout << "\n";
+    munmap(data_start, data_size);
+
+    rgl_record_play("recording.yaml", "recording");
+
+    // rerun the test to check if scene was loaded properly from rgl_record
+    EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
+
+    // Start raytracing on the default scene
+    EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
+
+    // Wait for raytracing (if needed) and collect results
+    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
+    EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+
+    printf("Got %d hitpoint(s)\n", hitpoint_count);
+    for (int i = 0; i < hitpoint_count; ++i) {
+        printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
+    }
+
+    ASSERT_EQ(hitpoint_count, 1);
+    ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
+
+    EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
-
