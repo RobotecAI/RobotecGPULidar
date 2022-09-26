@@ -35,7 +35,7 @@ private:
     void play_entity_destroy(YAML::Node entity_destroy);
     void play_entity_set_pose(YAML::Node entity_set_pose);
 
-    void yaml_node_add(YAML::Node& node);
+    void yaml_node_add(YAML::Node& node, const char* name);
     size_t write_to_bin(const void* source, size_t length, size_t number, FILE* file);
     size_t insert_mesh_record(rgl_mesh_t mesh);
     size_t insert_entity_record(rgl_entity_t entity);
