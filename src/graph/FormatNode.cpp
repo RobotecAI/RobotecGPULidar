@@ -21,6 +21,5 @@ VArray::Ptr FormatNode::formatAsync(IPointCloudNode::Ptr input, const std::vecto
 	auto gpuFields = input->getGPUFields(fields, stream);
 	T* outPtr = static_cast<T*>(out->getDevicePtr());
 	gpuFormat(stream, pointCount, pointSize, fields.size(), gpuFields->getDevicePtr(), outPtr);
-	CHECK_CUDA(cudaStreamSynchronize(stream));
 	return out;
 }
