@@ -200,7 +200,7 @@ void Record::play_mesh_update_vertices(YAML::Node mesh_update_vertices) {
 void Record::play_entity_create(YAML::Node entity_create) {
     rgl_entity_t entity;
     rgl_entity_create(&entity, nullptr, mesh_id_play[entity_create["mesh"].as<size_t>()]);
-    entity_id_play.insert(std::make_pair(entity_create["entity"].as<size_t>(), entity));
+    entity_id_play.insert(std::make_pair(entity_create["out_entity"].as<size_t>(), entity));
 }
 
 void Record::play_entity_destroy(YAML::Node entity_destroy) {
