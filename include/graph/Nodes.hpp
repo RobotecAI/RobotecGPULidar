@@ -52,7 +52,7 @@ struct FormatNode : Node, IPointcloudDescription
 private:
 	std::vector<rgl_field_t> fields;
 	IPointCloudNode::Ptr input;
-	VArray::Ptr output = output = VArray::create<char>();
+	VArray::Ptr output = VArray::create<char>();
 };
 
 struct CompactNode : Node, IPointCloudNode
