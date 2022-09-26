@@ -14,7 +14,8 @@ void TransformPointsNode::schedule(cudaStream_t stream)
 {
 	auto pointCount = input->getWidth() * input->getHeight();
 	output->resize(pointCount);
-	const auto* inputPtr = input->getFieldDataTyped<XYZ_F32>(stream)->getDevicePtr();
+	const auto inputField = input->getFieldDataTyped<XYZ_F32>(stream);
+	const auto* inputPtr = inputField->getDevicePtr();
 	auto* outputPtr = output->getDevicePtr();
 	gpuTransformPoints(stream, pointCount, inputPtr, outputPtr, transform);
 }
