@@ -100,6 +100,11 @@ typedef enum
 	 */
 	RGL_INVALID_API_OBJECT,
 
+    /**
+     * Indicates that a recording operation was not successful.
+     */
+    RGL_RECORD_ERROR,
+
 	/**
 	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
 	 */
