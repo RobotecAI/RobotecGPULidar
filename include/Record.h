@@ -27,13 +27,13 @@ private:
     std::map<size_t, rgl_mesh_t> mesh_id_play;
     std::map<size_t, rgl_entity_t> entity_id_play;
 
-    void play_mesh_create(YAML::Node& mesh_create);
-    void play_mesh_destroy(YAML::Node& mesh_destroy);
-    void play_mesh_update_vertices(YAML::Node& mesh_update_vertices);
+    void play_mesh_create(YAML::Node mesh_create);
+    void play_mesh_destroy(YAML::Node mesh_destroy);
+    void play_mesh_update_vertices(YAML::Node mesh_update_vertices);
 
-    void play_entity_create(YAML::Node& entity_create);
-    void play_entity_destroy(YAML::Node& entity_destroy);
-    void play_entity_set_pose(YAML::Node& entity_set_pose);
+    void play_entity_create(YAML::Node entity_create);
+    void play_entity_destroy(YAML::Node entity_destroy);
+    void play_entity_set_pose(YAML::Node entity_set_pose);
 
     void yaml_node_add(YAML::Node& node);
     size_t write_to_bin(const void* source, size_t length, size_t number, FILE* file);
