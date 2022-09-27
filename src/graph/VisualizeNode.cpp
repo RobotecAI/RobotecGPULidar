@@ -80,8 +80,8 @@ void VisualizeNode::schedule(cudaStream_t stream)
 		int value = std::lround((cloud_it->z - min) * lutScale);
 		value = std::max(std::min(value, 255), 0);
 		cloud_it->r = value > 128 ? (value - 128) * 2 : 0;
-        cloud_it->g = value < 128 ? 2 * value : 255 - ((value - 128) * 2);
-        cloud_it->b = value < 128 ? 255 - (2 * value) : 0;
+		cloud_it->g = value < 128 ? 2 * value : 255 - ((value - 128) * 2);
+		cloud_it->b = value < 128 ? 255 - (2 * value) : 0;
 	}
 
 	isNewCloud = true;
