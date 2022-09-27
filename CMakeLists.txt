@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 set(CMAKE_CUDA_STANDARD 17)
 project(RobotecGPULidar C CXX CUDA)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # Logging default settings (can be changed via API call)
 set(RGL_LOG_STDOUT ON CACHE BOOL
@@ -51,8 +51,7 @@ add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
-    src/api/record_api.cpp
-    src/Record.cpp
+        src/Record.cpp
     src/Logger.cpp
     src/Lidar.cpp
     src/formatPCL.cu

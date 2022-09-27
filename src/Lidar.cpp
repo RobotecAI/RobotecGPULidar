@@ -11,7 +11,7 @@ Lidar::Lidar(const Mat3x4f *rayPoses, int rayPosesCount) : range(std::numeric_li
 
 	if (rayPosesCount <= 0) {
 		auto msg = fmt::format("LidarContext::LidarContext: rayPosesCount ({}) must be > 0", rayPosesCount);
-		throw std::logic_error(msg);
+        throw std::logic_error(msg);
 	}
 
 	dRayPoses.copyFromHost(rayPoses, rayPosesCount);

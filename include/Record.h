@@ -1,21 +1,21 @@
 #pragma once
 
-#include <cassert>
-#include <rgl/api/experimental.h>
-#include <yaml-cpp/yaml.h>
-#include <fstream>
-#include <map>
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
+
+#include <fstream>
+#include <unordered_map>
+
+#include <yaml-cpp/yaml.h>
+
 #include <RGLExceptions.hpp>
+#include <rgl/api/experimental.h>
 
 class Record {
-private:
     bool recordingNow = false;
     size_t currentOffset = 0;
-    size_t functionIndex = 0;
     YAML::Node yamlRoot;
     FILE* fileBin;
     uint8_t* fileMmap;
@@ -23,10 +23,10 @@ private:
     std::ofstream fileYaml;
     size_t nextMeshId = 0;
     size_t nextEntityId = 0;
-    std::map<rgl_mesh_t, size_t> meshIdRecord;
-    std::map<rgl_entity_t, size_t> entityIdRecord;
-    std::map<size_t, rgl_mesh_t> meshIdPlay;
-    std::map<size_t, rgl_entity_t> entityIdPlay;
+    std::unordered_map<rgl_mesh_t, size_t> meshIdRecord;
+    std::unordered_map<rgl_entity_t, size_t> entityIdRecord;
+    std::unordered_map<size_t, rgl_mesh_t> meshIdPlay;
+    std::unordered_map<size_t, rgl_entity_t> entityIdPlay;
 
     void playMeshCreate(YAML::Node mesh_create);
 
@@ -48,18 +48,18 @@ private:
 
     size_t insertEntityRecord(rgl_entity_t entity);
 
-    void mmapInit(const char* file_path);
+    void mmapInit(const char* path);
 
 public:
-    bool recording() const;
+    bool recording() const {return recordingNow; }
 
     static Record& instance();
 
-    void start(const char* file_path_yaml, const char* file_path_bin);
+    void start(const char* path);
 
     void stop();
 
-    void play(const char* file_path_yaml, const char* file_path_bin);
+    void play(const char* path);
 
     void recordMeshCreate(rgl_mesh_t* out_mesh,
                           const rgl_vec3f* vertices,

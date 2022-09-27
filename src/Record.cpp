@@ -7,63 +7,79 @@
 #define ENTITY_DESTROY "rgl_entity_destroy"
 #define ENTITY_SET_POSE "rgl_entity_set_pose"
 
-Record& Record::instance() {
+#define YAML_EXTENSION ".yaml"
+#define BIN_EXTENSION ".bin"
+
+Record& Record::instance()
+{
     static Record instance;
     return instance;
 }
 
-bool Record::recording() const {
-    return recordingNow;
-}
-
-void Record::start(const char* file_path_yaml, const char* file_path_bin) {
-    assert(!recordingNow);
+void Record::start(const char* path)
+{
+    if (recordingNow) {
+        throw RecordError("recording active");
+    }
+    std::string path_yaml_str(path);
+    const char* path_yaml = path_yaml_str.append(YAML_EXTENSION).c_str();
+    std::string path_bin_str(path);
+    const char* path_bin = path_bin_str.append(BIN_EXTENSION).c_str();
     recordingNow = true;
     currentOffset = 0;
-    meshIdRecord = std::map<rgl_mesh_t, size_t>();
-    entityIdRecord = std::map<rgl_entity_t, size_t>();
-    fileBin = fopen(file_path_bin, "wb");
-    if (nullptr == fileBin) throw InvalidFilePath("couldn't open bin file");
-    fileYaml.open(file_path_yaml);
+    meshIdRecord.clear();
+    entityIdRecord.clear();
+    fileBin = fopen(path_bin, "wb");
+    if (nullptr == fileBin) {
+        throw InvalidFilePath(path_bin);
+    }
+    fileYaml.open(path_yaml);
     yamlRoot = YAML::Node();
-    int major, minor, patch;
-    rgl_get_version_info(&major, &minor, &patch);
     YAML::Node rgl_version;
-    rgl_version["major"] = major;
-    rgl_version["minor"] = minor;
-    rgl_version["patch"] = patch;
-    yamlRoot[0]["rgl_version"] = rgl_version;
-    functionIndex = 1;
+    rgl_version["major"] = RGL_VERSION_MAJOR;
+    rgl_version["minor"] = RGL_VERSION_MINOR;
+    rgl_version["patch"] = RGL_VERSION_PATCH;
+    yamlRoot.push_back(rgl_version);
 }
 
-void Record::stop() {
-    assert(recordingNow);
+void Record::stop()
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     recordingNow = false;
     fclose(fileBin);
     fileYaml << yamlRoot;
     fileYaml.close();
 }
 
-void Record::yamlNodeAdd(YAML::Node& node, const char* name) {
-    yamlRoot[functionIndex][name] = node;
-    functionIndex++;
+void Record::yamlNodeAdd(YAML::Node& node, const char* name)
+{
+    yamlRoot.push_back(node);
 }
 
-size_t Record::writeToBin(const void* source, size_t length, size_t number, FILE* file) {
-    // since all the elements to be written are 4 bytes long
-    if ((length * number) % 16 != 0) number += ((length * number) % 16) / 4;
+size_t Record::writeToBin(const void* source, size_t length, size_t number, FILE* file)
+{
+    uint8_t remainder = (length * number) % 16;
+    uint8_t bytesToAdd = 16 - remainder;
     fwrite(source, length, number, file);
-    currentOffset += length * number;
-    return currentOffset - length * number;
+    if (remainder != 0) {
+        uint8_t zeros[16];
+        fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
+    }
+    currentOffset += length * number + bytesToAdd;
+    return currentOffset - length * number - bytesToAdd;
 }
 
-size_t Record::insertMeshRecord(rgl_mesh_t mesh) {
+size_t Record::insertMeshRecord(rgl_mesh_t mesh)
+{
     meshIdRecord.insert(std::make_pair(mesh, nextMeshId));
     nextMeshId++;
     return nextMeshId - 1;
 }
 
-size_t Record::insertEntityRecord(rgl_entity_t entity) {
+size_t Record::insertEntityRecord(rgl_entity_t entity)
+{
     entityIdRecord.insert(std::make_pair(entity, nextEntityId));
     nextEntityId++;
     return nextEntityId - 1;
@@ -73,8 +89,11 @@ void Record::recordMeshCreate(rgl_mesh_t* out_mesh,
                               const rgl_vec3f* vertices,
                               int vertex_count,
                               const rgl_vec3i* indices,
-                              int index_count) {
-    assert(recordingNow);
+                              int index_count)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     YAML::Node rglMeshCreate;
     rglMeshCreate["out_mesh"] = insertMeshRecord(*out_mesh);
     rglMeshCreate["vertices"] = writeToBin(vertices, sizeof(rgl_vec3f), vertex_count, fileBin);
@@ -84,15 +103,21 @@ void Record::recordMeshCreate(rgl_mesh_t* out_mesh,
     yamlNodeAdd(rglMeshCreate, MESH_CREATE);
 }
 
-void Record::recordMeshDestroy(rgl_mesh_t mesh) {
-    assert(recordingNow);
+void Record::recordMeshDestroy(rgl_mesh_t mesh)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     YAML::Node rglMeshDestroy;
     rglMeshDestroy["mesh"] = meshIdRecord[mesh];
     yamlNodeAdd(rglMeshDestroy, MESH_DESTROY);
 }
 
-void Record::recordMeshUpdateVertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int vertex_count) {
-    assert(recordingNow);
+void Record::recordMeshUpdateVertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int vertex_count)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     YAML::Node rglMeshUpdateVertices;
     rglMeshUpdateVertices["mesh"] = meshIdRecord[mesh];
     rglMeshUpdateVertices["vertices"] = writeToBin(vertices, sizeof(rgl_vec3f), vertex_count, fileBin);
@@ -100,8 +125,11 @@ void Record::recordMeshUpdateVertices(rgl_mesh_t mesh, const rgl_vec3f* vertices
     yamlNodeAdd(rglMeshUpdateVertices, MESH_UPDATE_VERTICES);
 }
 
-void Record::recordEntityCreate(rgl_entity_t* out_entity, rgl_mesh_t mesh) {
-    assert(recordingNow);
+void Record::recordEntityCreate(rgl_entity_t* out_entity, rgl_mesh_t mesh)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     YAML::Node rglEntityCreate;
     rglEntityCreate["out_entity"] = insertEntityRecord(*out_entity);
     rglEntityCreate["scene"] = "default scene";
@@ -109,45 +137,65 @@ void Record::recordEntityCreate(rgl_entity_t* out_entity, rgl_mesh_t mesh) {
     yamlNodeAdd(rglEntityCreate, ENTITY_CREATE);
 }
 
-void Record::recordEntityDestroy(rgl_entity_t entity) {
-    assert(recordingNow);
+void Record::recordEntityDestroy(rgl_entity_t entity)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     YAML::Node rglEntityDestroy;
     rglEntityDestroy["entity"] = entityIdRecord[entity];
     yamlNodeAdd(rglEntityDestroy, ENTITY_DESTROY);
 }
 
-void Record::recordEntitySetPose(rgl_entity_t entity, const rgl_mat3x4f* local_to_world_tf) {
-    assert(recordingNow);
+void Record::recordEntitySetPose(rgl_entity_t entity, const rgl_mat3x4f* local_to_world_tf)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
     YAML::Node rglEntitySetPose;
     rglEntitySetPose["entity"] = entityIdRecord[entity];
     rglEntitySetPose["local_to_world_tf"] = writeToBin(local_to_world_tf, sizeof(rgl_mat3x4f), 1, fileBin);
     yamlNodeAdd(rglEntitySetPose, ENTITY_SET_POSE);
 }
 
-void Record::mmapInit(const char* file_path) {
-    int fd = open(file_path, O_RDONLY);
-    if (fd < 0) throw InvalidFilePath("couldn't open bin file");
+void Record::mmapInit(const char* path)
+{
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        throw InvalidFilePath(path);
+    }
 
     struct stat statbuf{};
     int err = fstat(fd, &statbuf);
-    if (err < 0) throw InvalidFilePath("couldn't read bin file stats");
+    if (err < 0) {
+        throw RecordError("couldn't read bin file length");
+    }
 
     fileMmap = (uint8_t*) mmap(nullptr, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     mmapSize = statbuf.st_size;
-    if (fileMmap == MAP_FAILED) throw InvalidFilePath("couldn't open bin file using mmap");
+    if (fileMmap == MAP_FAILED) {
+        throw InvalidFilePath("couldn't open bin file using mmap");
+    }
     close(fd);
 }
 
-void Record::play(const char* file_path_yaml, const char* file_path_bin) {
-    assert(!recordingNow);
-    meshIdPlay = std::map<size_t, rgl_mesh_t>();
-    entityIdPlay = std::map<size_t, rgl_entity_t>();
-    mmapInit(file_path_bin);
-    yamlRoot = YAML::LoadFile(file_path_yaml);
-    int major, minor, patch;
-    rgl_get_version_info(&major, &minor, &patch);
-    assert(yamlRoot[0]["rgl_version"]["major"].as<int>() == major &&
-           yamlRoot[0]["rgl_version"]["minor"].as<int>() == minor);
+void Record::play(const char* path)
+{
+    if (!recordingNow) {
+        throw RecordError("no recording active");
+    }
+    meshIdPlay.clear();
+    entityIdPlay.clear();
+    std::string path_yaml_str(path);
+    const char* path_yaml = path_yaml_str.append(YAML_EXTENSION).c_str();
+    std::string path_bin_str(path);
+    const char* path_bin = path_bin_str.append(BIN_EXTENSION).c_str();
+    mmapInit(path_bin);
+    yamlRoot = YAML::LoadFile(path_yaml);
+    if (yamlRoot[0]["rgl_version"]["major"].as<int>() != RGL_VERSION_MAJOR ||
+        yamlRoot[0]["rgl_version"]["minor"].as<int>() != RGL_VERSION_MINOR) {
+        throw RecordError("recording version does not match rgl version");
+    }
     for (size_t i = 1; yamlRoot[i]; ++i) {
         auto functionCall = yamlRoot[i];
         if (functionCall[MESH_CREATE]) {
@@ -167,7 +215,8 @@ void Record::play(const char* file_path_yaml, const char* file_path_bin) {
     munmap(fileMmap, mmapSize);
 }
 
-void Record::playMeshCreate(YAML::Node mesh_create) {
+void Record::playMeshCreate(YAML::Node mesh_create)
+{
     rgl_mesh_t mesh;
     rgl_mesh_create(&mesh,
                     reinterpret_cast<const rgl_vec3f*>(fileMmap + mesh_create["vertices"].as<size_t>()),
@@ -177,28 +226,33 @@ void Record::playMeshCreate(YAML::Node mesh_create) {
     meshIdPlay.insert(std::make_pair(mesh_create["out_mesh"].as<size_t>(), mesh));
 }
 
-void Record::playMeshDestroy(YAML::Node mesh_destroy) {
+void Record::playMeshDestroy(YAML::Node mesh_destroy)
+{
     rgl_mesh_destroy(meshIdPlay[mesh_destroy["mesh"].as<size_t>()]);
 }
 
-void Record::playMeshUpdateVertices(YAML::Node mesh_update_vertices) {
+void Record::playMeshUpdateVertices(YAML::Node mesh_update_vertices)
+{
     rgl_mesh_update_vertices(meshIdPlay[mesh_update_vertices["mesh"].as<size_t>()],
                              reinterpret_cast<const rgl_vec3f*>
                              (fileMmap + mesh_update_vertices["vertices"].as<size_t>()),
                              mesh_update_vertices["vertex_count"].as<int>());
 }
 
-void Record::playEntityCreate(YAML::Node entity_create) {
+void Record::playEntityCreate(YAML::Node entity_create)
+{
     rgl_entity_t entity;
     rgl_entity_create(&entity, nullptr, meshIdPlay[entity_create["mesh"].as<size_t>()]);
     entityIdPlay.insert(std::make_pair(entity_create["out_entity"].as<size_t>(), entity));
 }
 
-void Record::playEntityDestroy(YAML::Node entity_destroy) {
+void Record::playEntityDestroy(YAML::Node entity_destroy)
+{
     rgl_entity_destroy(entityIdPlay[entity_destroy["entity"].as<size_t>()]);
 }
 
-void Record::playEntitySetPose(YAML::Node entity_set_pose) {
+void Record::playEntitySetPose(YAML::Node entity_set_pose)
+{
     rgl_entity_set_pose(entityIdPlay[entity_set_pose["entity"].as<size_t>()],
                         reinterpret_cast<const rgl_mat3x4f*>
                         (fileMmap + entity_set_pose["local_to_world_tf"].as<size_t>()));

@@ -106,6 +106,11 @@ typedef enum
 	RGL_INVALID_API_OBJECT,
 
     /**
+     * Indicates that a given file could not be opened.
+     */
+    RGL_INVALID_FILE_PATH,
+
+    /**
      * Indicates that a recording operation was not successful.
      */
     RGL_RECORD_ERROR,

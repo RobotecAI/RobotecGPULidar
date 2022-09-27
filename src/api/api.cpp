@@ -9,12 +9,11 @@
 #include <scene/Mesh.hpp>
 
 #include <Lidar.hpp>
+#include <Record.h>
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
 
 #include <repr.hpp>
-
-#include <Record.h>
 
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
@@ -25,6 +24,7 @@ static bool canContinueAfterStatus(rgl_status_t status)
 	static std::set recoverableErrors = {
 		RGL_INVALID_ARGUMENT,
 		RGL_INVALID_API_OBJECT,
+        RGL_INVALID_FILE_PATH,
 		RGL_NOT_IMPLEMENTED,
         RGL_RECORD_ERROR
 	};
@@ -73,11 +73,14 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
     catch (InvalidFilePath &e) {
-        return updateAPIState(RGL_RECORD_ERROR, e.what());
+        return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
     }
 	catch (std::invalid_argument &e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
+    catch (RecordError &e) {
+        return updateAPIState(RGL_RECORD_ERROR, e.what());
+    }
 	catch (std::exception &e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
@@ -161,6 +164,8 @@ rgl_get_last_error_string(const char **out_error_string)
 			break;
 		case RGL_LOGGING_ERROR:
 			*out_error_string = "spdlog error";
+        case RGL_INVALID_FILE_PATH:
+            *out_error_string = "invalid file path";
         case RGL_RECORD_ERROR:
             *out_error_string = "recorder error";
 		default:
@@ -421,5 +426,31 @@ rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f *trans
 		CHECK_ARG(transform != nullptr);
 		Lidar::validatePtr(lidar)->rosTransform = Mat3x4f::fromRaw(&transform->value[0][0]);
 	});
+}
+
+RGL_API rgl_status_t
+rgl_record_start(const char* path) {
+    return rglSafeCall([&]() {
+        CHECK_ARG(path != nullptr);
+        RGL_DEBUG("rgl_record_start(path={})", repr(path, (int)strlen(path)));
+        Record::instance().start(path);
+    });
+}
+
+RGL_API rgl_status_t
+rgl_record_stop() {
+    return rglSafeCall([&]() {
+        RGL_DEBUG("rgl_record_stop()");
+        Record::instance().stop();
+    });
+}
+
+RGL_API rgl_status_t
+rgl_record_play(const char* path) {
+    return rglSafeCall([&]() {
+        CHECK_ARG(path != nullptr);
+        RGL_DEBUG("rgl_record_play(path={})", repr(path, (int)strlen(path)));
+        Record::instance().play(path);
+    });
 }
 }
