@@ -66,6 +66,8 @@ size_t Record::writeToBin(const void* source, size_t length, size_t number, FILE
     if (remainder != 0) {
         uint8_t zeros[16];
         fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
+    } else {
+        bytesToAdd = 0;
     }
     currentOffset += length * number + bytesToAdd;
     return currentOffset - length * number - bytesToAdd;
