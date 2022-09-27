@@ -208,7 +208,7 @@ rgl_cleanup(void);
  * @param out_mesh Address to store the resulting mesh handle
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
  * @param vertex_count Number of elements in the vertices array
- * @param vertices An array of rgl_vec3i or binary-compatible data representing mesh indices
+ * @param indices An array of rgl_vec3i or binary-compatible data representing mesh indices
  * @param index_count Number of elements in the indices array
  */
 RGL_API rgl_status_t
@@ -368,6 +368,7 @@ rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, floa
  * Creates or modifies WritePCDFileNode.
  * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param file_path Path to the output pcd file.
  */
 RGL_API rgl_status_t
 rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path);
