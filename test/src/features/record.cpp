@@ -10,7 +10,7 @@ TEST(EndToEnd, RecordReadmeExample)
     EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
     RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
 
-    rgl_record_start("recording.yaml", "recording");
+    rgl_record_start("recording");
 
     rgl_mesh_t cube_mesh = 0;
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
@@ -74,7 +74,7 @@ TEST(EndToEnd, RecordReadmeExample)
     std::cout << "\n";
     munmap(data_start, data_size);
 
-    rgl_record_play("recording.yaml", "recording");
+    rgl_record_play("recording");
 
     // rerun the test to check if scene was loaded properly from rgl_record
     EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));

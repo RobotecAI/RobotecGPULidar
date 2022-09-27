@@ -11,11 +11,12 @@
 #include <graph/Nodes.hpp>
 #include <graph/graph.hpp>
 
+#include <Lidar.hpp>
+#include <Record.h>
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
 
 #include <repr.hpp>
-#include <Record.h>
 
 #define CHECK_ARG(expr)                                                                          \
 do if (!(expr)) {                                                                                \
@@ -33,6 +34,7 @@ static bool canContinueAfterStatus(rgl_status_t status)
 		RGL_INVALID_ARGUMENT,
 		RGL_INVALID_API_OBJECT,
 		RGL_INVALID_PIPELINE,
+        RGL_INVALID_FILE_PATH,
 		RGL_NOT_IMPLEMENTED,
         RGL_RECORD_ERROR
 	};
@@ -84,11 +86,14 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
 	}
     catch (InvalidFilePath &e) {
-        return updateAPIState(RGL_RECORD_ERROR, e.what());
+        return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
     }
 	catch (std::invalid_argument &e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
+    catch (RecordError &e) {
+        return updateAPIState(RGL_RECORD_ERROR, e.what());
+    }
 	catch (std::exception &e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
@@ -184,6 +189,8 @@ rgl_get_last_error_string(const char **out_error_string)
 			break;
 		case RGL_LOGGING_ERROR:
 			*out_error_string = "spdlog error";
+        case RGL_INVALID_FILE_PATH:
+            *out_error_string = "invalid file path";
         case RGL_RECORD_ERROR:
             *out_error_string = "recorder error";
 		default:
@@ -543,5 +550,31 @@ rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_
 
 		createOrUpdateNode<VisualizePointsNode>(node, window_name, window_width, window_height, fullscreen);
 	});
+}
+
+RGL_API rgl_status_t
+rgl_record_start(const char* path) {
+    return rglSafeCall([&]() {
+        CHECK_ARG(path != nullptr);
+        RGL_DEBUG("rgl_record_start(path={})", repr(path, (int)strlen(path)));
+        Record::instance().start(path);
+    });
+}
+
+RGL_API rgl_status_t
+rgl_record_stop() {
+    return rglSafeCall([&]() {
+        RGL_DEBUG("rgl_record_stop()");
+        Record::instance().stop();
+    });
+}
+
+RGL_API rgl_status_t
+rgl_record_play(const char* path) {
+    return rglSafeCall([&]() {
+        CHECK_ARG(path != nullptr);
+        RGL_DEBUG("rgl_record_play(path={})", repr(path, (int)strlen(path)));
+        Record::instance().play(path);
+    });
 }
 }
