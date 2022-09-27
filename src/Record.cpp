@@ -39,7 +39,9 @@ void Record::start(const char* path)
     rgl_version["major"] = RGL_VERSION_MAJOR;
     rgl_version["minor"] = RGL_VERSION_MINOR;
     rgl_version["patch"] = RGL_VERSION_PATCH;
-    yamlRoot.push_back(rgl_version);
+    YAML::Node name_node;
+    name_node["rgl_version"] = rgl_version;
+    yamlRoot.push_back(name_node);
 }
 
 void Record::stop()
@@ -55,19 +57,19 @@ void Record::stop()
 
 void Record::yamlNodeAdd(YAML::Node& node, const char* name)
 {
-    yamlRoot.push_back(node);
+    YAML::Node name_node;
+    name_node[name] = node;
+    yamlRoot.push_back(name_node);
 }
 
 size_t Record::writeToBin(const void* source, size_t length, size_t number, FILE* file)
 {
     uint8_t remainder = (length * number) % 16;
-    uint8_t bytesToAdd = 16 - remainder;
+    uint8_t bytesToAdd = (16 - remainder) % 16;
     fwrite(source, length, number, file);
     if (remainder != 0) {
         uint8_t zeros[16];
         fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
-    } else {
-        bytesToAdd = 0;
     }
     currentOffset += length * number + bytesToAdd;
     return currentOffset - length * number - bytesToAdd;
