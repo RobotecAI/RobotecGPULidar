@@ -2,6 +2,7 @@
 #include <spdlog/common.h>
 
 #include <rgl/api/experimental.h>
+#include <rgl/api/extensions/visualize.h>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
