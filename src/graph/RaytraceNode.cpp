@@ -6,6 +6,11 @@
 void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
+
+	if (fields.contains(RING_ID_U16) && raysNode->getRingIds() == std::nullopt) {
+		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
+		throw InvalidPipeline(msg);
+	}
 }
 
 template<rgl_field_t field>
