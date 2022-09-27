@@ -64,13 +64,13 @@ void Record::yamlNodeAdd(YAML::Node& node, const char* name)
 
 size_t Record::writeToBin(const void* source, size_t length, size_t number, FILE* file)
 {
-//    uint8_t remainder = (length * number) % 16;
-//    uint8_t bytesToAdd = (16 - remainder) % 16;
+    uint8_t remainder = (length * number) % 16;
+    uint8_t bytesToAdd = (16 - remainder) % 16;
     fwrite(source, length, number, file);
-//    if (remainder != 0) {
-//        uint8_t zeros[16];
-//        fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
-//    }
+    if (remainder != 0) {
+        uint8_t zeros[16];
+        fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
+    }
     currentOffset += length * number;
     return currentOffset - length * number;
 }
@@ -185,8 +185,8 @@ void Record::mmapInit(const char* path)
 
 void Record::play(const char* path)
 {
-    if (!recordingNow) {
-        throw RecordError("no recording active");
+    if (recordingNow) {
+        throw RecordError("recording active");
     }
     meshIdPlay.clear();
     entityIdPlay.clear();
