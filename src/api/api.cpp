@@ -2,6 +2,7 @@
 #include <spdlog/common.h>
 
 #include <rgl/api/experimental.h>
+#include <rgl/api/extensions/visualize.h>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
@@ -447,6 +448,21 @@ rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path)
 		CHECK_ARG(file_path[0] != '\0');
 
 		createOrUpdateNode<WritePCDFileNode>(node, file_path);
+	});
+}
+
+RGL_API rgl_status_t
+rgl_node_visualize(rgl_node_t* node, const char* window_name, int window_width, int window_height, bool fullscreen)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
+		          repr(node), window_name, window_width, window_height, fullscreen);
+		CHECK_ARG(window_name != nullptr);
+		CHECK_ARG(window_name[0] != '\0');
+		CHECK_ARG(window_width > 0);
+		CHECK_ARG(window_height > 0);
+
+		createOrUpdateNode<VisualizeNode>(node, window_name, window_width, window_height, fullscreen);
 	});
 }
 }

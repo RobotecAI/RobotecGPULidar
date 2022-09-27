@@ -3,12 +3,14 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include <thread>
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
 #include <gpu/RaytraceRequestContext.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <graph/PCLVisualizerFix.hpp>
 #include <typeinfo>
 
 #include <VArray.hpp>
@@ -222,4 +224,37 @@ private:
 	IPointCloudNode::Ptr input;
 	std::vector<rgl_field_t> fields;
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
+};
+
+struct VisualizeNode : Node
+{
+	using Ptr = std::shared_ptr<VisualizeNode>;
+	using PCLPointType = pcl::PointXYZRGB;
+
+	static const int FRAME_RATE = 60;
+
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+	void runVisualize();
+	virtual ~VisualizeNode();
+
+	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; };
+
+
+private:
+	std::vector<rgl_field_t> requiredFields
+	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
+	IPointCloudNode::Ptr input;
+
+	PCLVisualizerFix::Ptr viewer;
+	std::thread visThread;
+	std::mutex updateCloudMutex;
+	bool isNewCloud{false};
+
+	std::string windowName{};
+	int windowWidth;
+	int windowHeight;
+	bool fullscreen;
+	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
 };
