@@ -169,6 +169,8 @@ struct TransformRaysNode : Node, IRaysNode
 	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
 	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	inline size_t getRayCount() const override { return input->getRayCount(); }
+	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	inline std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 
 private:
 	Mat3x4f transform;
@@ -187,9 +189,31 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 	inline void schedule(cudaStream_t stream) override {}
 	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	inline size_t getRayCount() const override { return rays->getCount(); }
+	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+	inline std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
 
 private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+};
+
+struct UseRaysRingIdsNode : Node, IRaysNode
+{
+	using Ptr = std::shared_ptr<UseRaysRingIdsNode>;
+
+	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
+	void validate() override;
+
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; };
+	inline void schedule(cudaStream_t stream) override {}
+	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); }
+	inline size_t getRayCount() const override { return input->getRayCount(); }
+	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
+	inline std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
+
+private:
+	std::vector<rgl_field_t> requiredFields{RING_ID_U16};
+	IRaysNode::Ptr input;
+	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
 struct WritePCDFileNode : Node

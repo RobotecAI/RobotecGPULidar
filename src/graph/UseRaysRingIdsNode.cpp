@@ -1,0 +1,19 @@
+#include <graph/Nodes.hpp>
+
+void UseRaysRingIdsNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
+{
+	ringIds->copyFrom(ringIdsRaw, ringIdsCount);
+}
+
+void UseRaysRingIdsNode::validate()
+{
+	input = getValidInput<IRaysNode>();
+
+	if (input->getRayCount() % ringIds->getCount() != 0) {
+		auto msg = fmt::format("ring ids doesn't match number of rays. "
+		    "RayCount({}) mod RingIdsCount({}) should be zero", input->getRayCount(), ringIds->getCount());
+		throw InvalidPipeline(msg);
+	}
+
+	ringIds->hintLocation(VArray::GPU);
+}

@@ -24,14 +24,20 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto sceneSBT = scene->getSBT();
 	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
+	// Optional
+	auto areRingIdsAvailable = raysNode->getRingIds();
+
 	(*requestCtx)[0] = RaytraceRequestContext{
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
 		.rayRange = range,
+		.ringIds = areRingIdsAvailable ? (*areRingIdsAvailable)->getDevicePtr() : nullptr,
+		.ringIdsCount = areRingIdsAvailable ? (*areRingIdsAvailable)->getCount() : 0,
 		.scene = sceneAS,
 		.xyz = getPtrTo<XYZ_F32>(),
 		.isHit = getPtrTo<IS_HIT_I32>(),
 		.rayIdx = getPtrTo<RAY_IDX_U32>(),
+		.ringIdx = getPtrTo<RING_ID_U16>(),
 	};
 
 	// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.
