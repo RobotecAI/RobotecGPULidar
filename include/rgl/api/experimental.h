@@ -326,12 +326,12 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
  * Graph input: point cloud
  * Graph output: none
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param fields Subsequent fields to be present in the binary output
- * @param field_count Number of elements in the `fields` array
- *
+ * @param out_field_id Unique field ID that will be generated.
+ * @param fields Subsequent fields to be present in the binary output.
+ * @param field_count Number of elements in the `fields` array.
  */
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
+rgl_node_format(rgl_node_t* node, rgl_field_t* out_field_id, const rgl_field_t* fields, int field_count);
 
 /**
  * Creates or modifies YieldPointsNode.

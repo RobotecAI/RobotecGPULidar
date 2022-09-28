@@ -35,15 +35,20 @@ struct FormatNode : Node, IPointcloudDescription
 {
 	using Ptr = std::shared_ptr<FormatNode>;
 
+	FormatNode() : uniqueFieldId(static_cast<rgl_field_t>(++latestUniqueFieldId))
+	{ uniqueFieldSizes[uniqueFieldId] = 0; }
+
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
+	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	template<typename T>
 	static VArray::Ptr formatAsync(IPointCloudNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
+	static size_t getFieldSize(rgl_field_t fieldId);
 
 	inline VArray::ConstPtr getData() const { return output; }
+	inline rgl_field_t getUniqueFieldId() const { return uniqueFieldId; }
 
-	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; };
 	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
 	inline bool isDense() const override { return input->isDense(); }
@@ -52,6 +57,10 @@ struct FormatNode : Node, IPointcloudDescription
 
 
 private:
+	static inline std::unordered_map<rgl_field_t, std::size_t> uniqueFieldSizes;
+	static inline int latestUniqueFieldId = static_cast<int>(RGL_FIELD_DYNAMIC_BASE);
+
+	const rgl_field_t uniqueFieldId;
 	std::vector<rgl_field_t> fields;
 	IPointCloudNode::Ptr input;
 	VArray::Ptr output = VArray::create<char>();
