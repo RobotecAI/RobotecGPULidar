@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <unordered_map>
+#include <iostream>
 
 #include <yaml-cpp/yaml.h>
 
@@ -42,13 +43,15 @@ class Record {
 
     void yamlNodeAdd(YAML::Node& node, const char* name);
 
-    size_t writeToBin(const void* source, size_t length, size_t number, FILE* file);
+    template <class T> size_t writeToBin(const T* source, size_t elemCount, FILE* file);
 
     size_t insertMeshRecord(rgl_mesh_t mesh);
 
     size_t insertEntityRecord(rgl_entity_t entity);
 
     void mmapInit(const char* path);
+
+    void writeRGLVersion(YAML::Node& node);
 
 public:
     bool recording() const {return recordingNow; }
@@ -71,7 +74,7 @@ public:
 
     void recordMeshUpdateVertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int vertex_count);
 
-    void recordEntityCreate(rgl_entity_t* out_entity, rgl_mesh_t mesh);
+    void recordEntityCreate(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
 
     void recordEntityDestroy(rgl_entity_t entity);
 

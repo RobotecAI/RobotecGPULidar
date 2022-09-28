@@ -278,7 +278,7 @@ rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
         if (Record::instance().recording()) {
-            Record::instance().recordEntityCreate(out_entity, mesh);
+            Record::instance().recordEntityCreate(out_entity, scene, mesh);
         }
 	});
 }
