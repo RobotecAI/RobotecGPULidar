@@ -7,7 +7,7 @@ void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
 
-	if (fields.contains(RING_ID_U16) && raysNode->getRingIds() == std::nullopt) {
+	if (fields.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
 		throw InvalidPipeline(msg);
 	}
@@ -30,14 +30,14 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
 	// Optional
-	auto areRingIdsAvailable = raysNode->getRingIds();
+	auto ringIds = raysNode->getRingIds();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
 		.rayRange = range,
-		.ringIds = areRingIdsAvailable ? (*areRingIdsAvailable)->getDevicePtr() : nullptr,
-		.ringIdsCount = areRingIdsAvailable ? (*areRingIdsAvailable)->getCount() : 0,
+		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
+		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 		.scene = sceneAS,
 		.xyz = getPtrTo<XYZ_F32>(),
 		.isHit = getPtrTo<IS_HIT_I32>(),
