@@ -199,6 +199,14 @@ rgl_get_last_error_string(const char **out_error_string);
 RGL_API rgl_status_t
 rgl_cleanup(void);
 
+/**
+ * Obtains the size of field.
+ * @param field Field to get size of.
+ * @param out_size Returns byte size of a field.
+ */
+RGL_API rgl_status_t
+rgl_get_field_size(rgl_field_t field, size_t* out_size);
+
 
 /******************************** MESH ********************************/
 

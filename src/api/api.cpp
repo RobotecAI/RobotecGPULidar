@@ -202,6 +202,21 @@ rgl_cleanup(void)
 }
 
 RGL_API rgl_status_t
+rgl_get_field_size(rgl_field_t field, size_t* out_size)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_get_field_size(field={})", field);
+		CHECK_ARG(out_size != nullptr);
+
+		if (field > RGL_FIELD_DYNAMIC_BASE) {
+			*out_size = FormatNode::getFieldSize(field);
+		} else {
+			*out_size = getFieldSize(field);
+		}
+	});
+}
+
+RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_count, const rgl_vec3i *indices, int index_count)
 {
 	return rglSafeCall([&]() {
