@@ -62,20 +62,9 @@ TEST(EndToEnd, RecordReadmeExample)
     rgl_record_stop();
     EXPECT_RGL_SUCCESS(rgl_cleanup());
 
-    char* data_start;
-    size_t data_size = mmapInit(&data_start);
-
-    std::cout << "\nvertices:\n";
-    printMatFloat(data_start, 0, cube_vertices_length, 3);
-    std::cout << "\nindices:\n";
-    printMatInt(data_start, 96, cube_indices_length, 3);
-    std::cout << "\nlocal_to_world_tf:\n";
-    printMatFloat(data_start, 240, 3, 4);
-    std::cout << "\n";
-    munmap(data_start, data_size);
-
     rgl_record_play("recording");
 
+    hitpoint_count = 0;
     // rerun the test to check if scene was loaded properly from rgl_record
     EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
 

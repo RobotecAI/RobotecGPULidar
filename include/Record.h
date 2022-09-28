@@ -53,6 +53,7 @@ class Record {
 
     void writeRGLVersion(YAML::Node& node);
 
+    const char* concat(const char* cString, std::string& string);
 public:
     bool recording() const {return recordingNow; }
 

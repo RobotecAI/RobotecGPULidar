@@ -32,11 +32,9 @@ void Record::start(const char* path)
         throw RecordError("recording active");
     }
     std::string pathStringYaml(path);
-    const char* path_yaml = (pathStringYaml.append(YAML_EXTENSION)).c_str();
+    const char* path_yaml = pathStringYaml.append(YAML_EXTENSION).c_str();
     std::string pathStringBin(path);
-    const char* path_bin = (pathStringBin.append(BIN_EXTENSION)).c_str();
-//    std::cout << path_yaml << std::endl;
-//    std::cout << path_bin << std::endl;
+    const char* path_bin = pathStringBin.append(BIN_EXTENSION).c_str();
     recordingNow = true;
     currentOffset = 0;
     meshIdRecord.clear();
@@ -194,18 +192,15 @@ void Record::mmapInit(const char* path)
 
 void Record::play(const char* path)
 {
-    std::cout << "yaml ";
     if (recordingNow) {
         throw RecordError("recording active");
     }
     meshIdPlay.clear();
     entityIdPlay.clear();
     std::string pathStringYaml(path);
-    const char* path_yaml = (pathStringYaml.append(YAML_EXTENSION)).c_str();
+    const char* path_yaml = pathStringYaml.append(YAML_EXTENSION).c_str();
     std::string pathStringBin(path);
-    const char* path_bin = (pathStringBin.append(BIN_EXTENSION)).c_str();
-    std::cout << "yaml " << path_yaml << std::endl;
-    std::cout << "yaml " << path_bin << std::endl;
+    const char* path_bin = pathStringBin.append(BIN_EXTENSION).c_str();
     mmapInit(path_bin);
     yamlRoot = YAML::LoadFile(path_yaml);
     if (yamlRoot[0]["rgl_version"]["major"].as<int>() != RGL_VERSION_MAJOR ||
