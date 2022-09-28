@@ -60,6 +60,7 @@ struct VArray : std::enable_shared_from_this<VArray>
 	inline void* getDevicePtr() const { return managedData; }
 	inline void* getHostPtr() const { return managedData; }
 	inline std::size_t getElemSize() const { return sizeOfType; }
+	inline std::size_t getCount() const { return elemCount; }
 
 private:
 	std::reference_wrapper<const std::type_info> typeInfo;

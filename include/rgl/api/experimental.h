@@ -402,17 +402,26 @@ RGL_API rgl_status_t
 rgl_graph_destroy(rgl_node_t node);
 
 /**
- * Obtains the result of any node in the graph.
- * If the result is not yet available, this function will block.
+ * Obtains the result information of any node in the graph.
  * The function will fill output parameters that are not null.
- * I.e. The size of the output can be queried using a nullptr data.
+ * I.e. The count of the output elements can be queried using a nullptr out_size_of.
  * @param node Node to get output from
- * @param outCount Returns the number of available elements (e.g. points). May be null.
- * @param outSizeOf Returns byte size of a single element (e.g. point). May be null.
- * @param data Returns binary data, expects a buffer of size (*outCount) * (*outSizeOf). May be null.
+ * @param field Field to get output from. Formatted output with FormatNode should be marked as RGL_FIELD_DYNAMIC_FORMAT.
+ * @param out_count Returns the number of available elements (e.g. points). May be null.
+ * @param out_size_of Returns byte size of a single element (e.g. point). May be null.
  */
 RGL_API rgl_status_t
-rgl_graph_get_result(rgl_node_t node, rgl_field_t field, size_t* outCount, size_t* outSizeOf, void* data);
+rgl_graph_get_result_info(rgl_node_t node, rgl_field_t field, size_t* out_count, size_t* out_size_of);
+
+/**
+ * Obtains the result data of any node in the graph.
+ * If the result is not yet available, this function will block.
+ * @param node Node to get output from
+ * @param field Field to get output from. Formatted output with FormatNode should be marked as RGL_FIELD_DYNAMIC_FORMAT.
+ * @param data Returns binary data, expects a buffer of size (*out_count) * (*out_size_of) from rgl_graph_get_result_info(...) call.
+ */
+RGL_API rgl_status_t
+rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data);
 
 /**
  * Activates or deactivates node in the graph.
