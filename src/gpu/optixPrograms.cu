@@ -31,6 +31,12 @@ void saveRayResult(Vec3f* xyz=nullptr)
 	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
 		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
 	}
+	if (ctx.distanceIdx != nullptr) {
+		ctx.distanceIdx[rayIdx] = sqrt(pow((*xyz)[0], 2) + pow((*xyz)[1], 2) + pow((*xyz)[2], 2));
+	}
+	if (ctx.intensityIdx != nullptr) {
+		ctx.intensityIdx[rayIdx] = 100;
+	}
 }
 
 extern "C" __global__ void __raygen__()
