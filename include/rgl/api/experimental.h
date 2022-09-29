@@ -270,7 +270,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 /******************************** NODES ********************************/
 
 /**
- * Creates or modifies UseRaysNode.
+ * Creates or modifies UseRaysMat3x4fNode.
  * The node provides initial rays for its children nodes.
  * Initial rays are usually provided in device-local coordinate frame, i.e. close to (0, 0, 0).
  * Input: none
@@ -281,6 +281,18 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
  */
 RGL_API rgl_status_t
 rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count);
+
+/**
+ * Creates or modifies UseRaysRingIdsNode.
+ * The node assigns ring ids for existing rays.
+ * Input: rays
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param ring_ids Pointer to ring ids.
+ * @param ray_count Size of the `ring_ids` array.
+ */
+RGL_API rgl_status_t
+rgl_node_use_rays_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count);
 
 /**
  * Creates or modifies TransformRaysNode.

@@ -28,6 +28,9 @@ void saveRayResult(Vec3f* xyz=nullptr)
 	if (ctx.rayIdx != nullptr) {
 		ctx.rayIdx[rayIdx] = rayIdx;
 	}
+	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
+		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
+	}
 }
 
 extern "C" __global__ void __raygen__()
