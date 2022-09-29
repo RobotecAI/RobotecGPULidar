@@ -432,7 +432,7 @@ RGL_API rgl_status_t
 rgl_record_start(const char* path) {
     return rglSafeCall([&]() {
         CHECK_ARG(path != nullptr);
-        RGL_DEBUG("rgl_record_start(path={})", repr(path, (int)strlen(path)));
+        RGL_DEBUG("rgl_record_start(path={})", path);
         if (recordWriter.has_value()) {
             throw RecordError("rgl_record_start: recording already active");
         } else {
@@ -457,7 +457,7 @@ RGL_API rgl_status_t
 rgl_record_play(const char* path) {
     return rglSafeCall([&]() {
         CHECK_ARG(path != nullptr);
-        RGL_DEBUG("rgl_record_play(path={})", repr(path, (int)strlen(path)));
+        RGL_DEBUG("rgl_record_play(path={})", path);
         if (recordWriter.has_value()) {
             throw RecordError("rgl_record_play: recording active");
         } else {
