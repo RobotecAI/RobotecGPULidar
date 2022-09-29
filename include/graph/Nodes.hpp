@@ -44,7 +44,7 @@ struct FormatNode : Node, IPointcloudDescription
 
 	inline VArray::ConstPtr getData() const { return output; }
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
@@ -67,7 +67,7 @@ struct CompactNode : Node, IPointCloudNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 	inline void setParameters() {}
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
 	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return true; }
 	inline size_t getHeight() const override { return 1; }
@@ -89,7 +89,7 @@ struct DownSampleNode : Node, IPointCloudNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 	inline void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
 	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return false; }
 	inline size_t getHeight() const override { return 1; }
@@ -115,7 +115,7 @@ struct RaytraceNode : Node, IPointCloudNode
 
 	inline void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
 	inline bool hasField(rgl_field_t field) const override	{ return fields.contains(field); }
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
 	inline bool isDense() const override { return false; }
 	inline size_t getWidth() const override { return raysNode->getRays()->getCount(); }
 	inline size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
@@ -144,7 +144,7 @@ struct TransformPointsNode : Node, IPointCloudNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
 	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
@@ -165,10 +165,12 @@ struct TransformRaysNode : Node, IRaysNode
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
 	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
 	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	inline size_t getRayCount() const override { return input->getRayCount(); }
+	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	inline std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 
 private:
 	Mat3x4f transform;
@@ -183,13 +185,34 @@ struct UseRaysMat3x4fNode : Node, IRaysNode
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 	void validate() override;
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
 	inline void schedule(cudaStream_t stream) override {}
 	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	inline size_t getRayCount() const override { return rays->getCount(); }
+	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+	inline std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
 
 private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+};
+
+struct UseRaysRingIdsNode : Node, IRaysNode
+{
+	using Ptr = std::shared_ptr<UseRaysRingIdsNode>;
+
+	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
+	void validate() override;
+
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
+	inline void schedule(cudaStream_t stream) override {}
+	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); }
+	inline size_t getRayCount() const override { return input->getRayCount(); }
+	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
+	inline std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
+
+private:
+	IRaysNode::Ptr input;
+	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
 struct WritePCDFileNode : Node
@@ -201,7 +224,7 @@ struct WritePCDFileNode : Node
 	void schedule(cudaStream_t stream) override;
 	virtual ~WritePCDFileNode();
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
 
 	inline void setParameters(const char* filePath) { this->filePath = filePath; }
 
@@ -217,7 +240,7 @@ struct YieldPointsNode : Node
 	void schedule(cudaStream_t stream) override;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 	inline void validate() override { input = getValidInput<IPointCloudNode>(); }
 
 private:
@@ -239,7 +262,7 @@ struct VisualizeNode : Node
 	virtual ~VisualizeNode();
 
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; };
+	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
 
 
 private:

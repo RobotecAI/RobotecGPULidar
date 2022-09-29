@@ -12,6 +12,8 @@ struct IRaysNode
 	using Ptr = std::shared_ptr<IRaysNode>;
 	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const = 0;
 	virtual std::size_t getRayCount() const = 0;
+	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
+	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
 };
 
 struct IPointcloudDescription
