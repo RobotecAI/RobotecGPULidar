@@ -37,13 +37,13 @@ struct FormatNode : Node, IPointcloudDescription
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
+	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	template<typename T>
 	static VArray::Ptr formatAsync(IPointCloudNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
 
 	inline VArray::ConstPtr getData() const { return output; }
 
-	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields;}
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; };
 	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
 	inline bool isDense() const override { return input->isDense(); }
@@ -215,8 +215,8 @@ private:
 struct YieldPointsNode : Node
 {
 	void schedule(cudaStream_t stream) override;
+	void setParameters(const std::vector<rgl_field_t>& fields);
 
-	inline void setParameters(const std::vector<rgl_field_t>& fields) { this->fields = fields; }
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; };
 	inline void validate() override { input = getValidInput<IPointCloudNode>(); }
 

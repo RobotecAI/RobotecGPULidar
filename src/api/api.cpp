@@ -393,16 +393,13 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 }
 
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, rgl_field_t* outToken, const rgl_field_t* fields, int field_count)
+rgl_node_format(rgl_node_t* node, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_format(node={}, fields={})", repr(node), repr(fields, field_count));
-		CHECK_ARG(outToken != nullptr);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
-		// TODO: future feature
-		*outToken = RGL_FIELD_DYNAMIC_BASE,
 		createOrUpdateNode<FormatNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }

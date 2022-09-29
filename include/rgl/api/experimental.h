@@ -154,7 +154,7 @@ typedef enum
 	RGL_FIELD_PADDING_16,
 	RGL_FIELD_PADDING_32,
 	// Dynamic fields
-	RGL_FIELD_DYNAMIC_BASE = 13842,
+	RGL_FIELD_DYNAMIC_FORMAT = 13842,
 } rgl_field_t;
 
 /******************************** GENERAL ********************************/
@@ -328,10 +328,9 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param fields Subsequent fields to be present in the binary output
  * @param field_count Number of elements in the `fields` array
- *
  */
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, rgl_field_t* outToken, const rgl_field_t* fields, int field_count);
+rgl_node_format(rgl_node_t* node, const rgl_field_t* fields, int field_count);
 
 /**
  * Creates or modifies YieldPointsNode.
