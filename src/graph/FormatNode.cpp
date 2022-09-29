@@ -2,6 +2,14 @@
 #include <gpu/nodeKernels.hpp>
 #include <RGLFields.hpp>
 
+void FormatNode::setParameters(const std::vector<rgl_field_t>& fields)
+{
+	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
+		throw InvalidAPIArgument("cannot format field 'RGL_FIELD_DYNAMIC_FORMAT'");
+	}
+	this->fields = fields;
+}
+
 void FormatNode::validate()
 {
 	input = getValidInput<IPointCloudNode>();
