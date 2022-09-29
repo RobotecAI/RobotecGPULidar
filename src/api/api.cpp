@@ -354,6 +354,17 @@ rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_
 }
 
 RGL_API rgl_status_t
+rgl_node_use_rays_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_use_rays_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
+		CHECK_ARG(ring_ids != nullptr);
+		CHECK_ARG(ring_ids_count > 0);
+		createOrUpdateNode<UseRaysRingIdsNode>(node, ring_ids, ring_ids_count);
+	});
+}
+
+RGL_API rgl_status_t
 rgl_node_transform_rays(rgl_node_t* nodeRawPtr, const rgl_mat3x4f* transform)
 {
 	return rglSafeCall([&]() {

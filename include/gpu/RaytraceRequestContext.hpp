@@ -11,10 +11,15 @@ struct RaytraceRequestContext
 
 	Mat3x4f rayOriginToWorld;
 	float rayRange;
+
+	const int* ringIds;
+	size_t ringIdsCount;
+
 	OptixTraversableHandle scene;
 
 	// Output
 	Field<XYZ_F32>::type* xyz;
 	Field<IS_HIT_I32>::type* isHit;
 	Field<RAY_IDX_U32>::type* rayIdx;
+	Field<RING_ID_U16>::type* ringIdx;
 };
