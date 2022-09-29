@@ -230,8 +230,8 @@ rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_coun
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
 		                         index_count).get();
-        if (Record::instance().recording()) {
-            Record::instance().recordMeshCreate(out_mesh, vertices, vertex_count, indices, index_count);
+        if (recordWriter.has_value()) {
+            recordWriter->recordMeshCreate(out_mesh, vertices, vertex_count, indices, index_count);
         }
 	});
 }
@@ -244,8 +244,8 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 		CHECK_ARG(mesh != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Mesh::release(mesh);
-        if (Record::instance().recording()) {
-            Record::instance().recordMeshDestroy(mesh);
+        if (recordWriter.has_value()) {
+            recordWriter->recordMeshDestroy(mesh);
         }
 	});
 }
@@ -259,8 +259,8 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f *vertices, int vertex_
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
-        if (Record::instance().recording()) {
-            Record::instance().recordMeshUpdateVertices(mesh, vertices, vertex_count);
+        if (recordWriter.has_value()) {
+            recordWriter->recordMeshUpdateVertices(mesh, vertices, vertex_count);
         }
 	});
 }
@@ -277,8 +277,8 @@ rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
-        if (Record::instance().recording()) {
-            Record::instance().recordEntityCreate(out_entity, scene, mesh);
+        if (recordWriter.has_value()) {
+            recordWriter->recordEntityCreate(out_entity, scene, mesh);
         }
 	});
 }
@@ -297,8 +297,8 @@ rgl_entity_destroy(rgl_entity_t entity)
 		} else {
 			throw std::logic_error("Entity's scene does not exist");
 		}
-        if (Record::instance().recording()) {
-            Record::instance().recordEntityDestroy(entity);
+        if (recordWriter.has_value()) {
+            recordWriter->recordEntityDestroy(entity);
         }
 	});
 }
@@ -312,8 +312,8 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
 		CHECK_ARG(local_to_world_tf != nullptr);
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float *>(&local_to_world_tf->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
-        if (Record::instance().recording()) {
-            Record::instance().recordEntitySetPose(entity, local_to_world_tf);
+        if (recordWriter.has_value()) {
+            recordWriter->recordEntitySetPose(entity, local_to_world_tf);
         }
 	});
 }
@@ -557,7 +557,11 @@ rgl_record_start(const char* path) {
     return rglSafeCall([&]() {
         CHECK_ARG(path != nullptr);
         RGL_DEBUG("rgl_record_start(path={})", repr(path, (int)strlen(path)));
-        Record::instance().start(path);
+        if (recordWriter.has_value()) {
+            throw RecordError("rgl_record_start: recording already active");
+        } else {
+            recordWriter.emplace(path);
+        }
     });
 }
 
@@ -565,7 +569,11 @@ RGL_API rgl_status_t
 rgl_record_stop() {
     return rglSafeCall([&]() {
         RGL_DEBUG("rgl_record_stop()");
-        Record::instance().stop();
+        if (!recordWriter.has_value()) {
+            throw RecordError("rgl_record_stop: no recording active");
+        } else {
+            recordWriter.reset();
+        }
     });
 }
 
@@ -574,7 +582,11 @@ rgl_record_play(const char* path) {
     return rglSafeCall([&]() {
         CHECK_ARG(path != nullptr);
         RGL_DEBUG("rgl_record_play(path={})", repr(path, (int)strlen(path)));
-        Record::instance().play(path);
+        if (recordWriter.has_value()) {
+            throw RecordError("rgl_record_play: recording active");
+        } else {
+            RecordReader reader(path);
+        }
     });
 }
 }

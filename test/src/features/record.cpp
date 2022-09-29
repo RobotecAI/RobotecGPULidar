@@ -10,7 +10,7 @@ TEST(EndToEnd, RecordReadmeExample)
     EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
     RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
 
-    rgl_record_start("recording");
+    EXPECT_RGL_SUCCESS(rgl_record_start("recording"));
 
     rgl_mesh_t cube_mesh = 0;
     EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
@@ -62,7 +62,7 @@ TEST(EndToEnd, RecordReadmeExample)
     rgl_record_stop();
     EXPECT_RGL_SUCCESS(rgl_cleanup());
 
-    rgl_record_play("recording");
+    EXPECT_RGL_SUCCESS(rgl_record_play("recording"));
 
     hitpoint_count = 0;
     // rerun the test to check if scene was loaded properly from rgl_record
