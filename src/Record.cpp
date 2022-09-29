@@ -2,6 +2,23 @@
 
 std::optional<RecordWriter> recordWriter;
 
+RecordWriter::RecordWriter(const char* path) {
+    std::string pathYaml = std::string(path) + YAML_EXTENSION;
+    std::string pathBin = std::string(path) + BIN_EXTENSION;
+    fileBin = fopen(pathBin.c_str(), "wb");
+    if (nullptr == fileBin) {
+        throw InvalidFilePath(fmt::format("rgl_record_start: could not open binary file: {}", pathBin));
+    }
+    fileYaml.open(pathYaml);
+    RecordWriter::writeRGLVersion(yamlRoot);
+}
+
+RecordWriter::~RecordWriter() {
+    fclose(fileBin);
+    fileYaml << yamlRoot;
+    fileYaml.close();
+}
+
 void RecordWriter::writeRGLVersion(YAML::Node& node) {
     YAML::Node rglVersion;
     rglVersion["major"] = RGL_VERSION_MAJOR;
@@ -104,6 +121,38 @@ void RecordWriter::recordEntitySetPose(rgl_entity_t entity, const rgl_mat3x4f* l
     rglEntitySetPose["entity"] = entityIdRecord[entity];
     rglEntitySetPose["local_to_world_tf"] = writeToBin<rgl_mat3x4f>(localToWorldTf, 1, fileBin);
     yamlNodeAdd(rglEntitySetPose, ENTITY_SET_POSE);
+}
+
+RecordReader::RecordReader(const char* path) {
+    std::string pathYaml = std::string(path) + YAML_EXTENSION;
+    std::string pathBin = std::string(path) + BIN_EXTENSION;
+
+    mmapInit(pathBin.c_str());
+    yamlRoot = YAML::LoadFile(pathYaml);
+    auto yamlRecording = yamlRoot["recording"];
+
+    if (yamlRoot[RGL_VERSION]["major"].as<int>() != RGL_VERSION_MAJOR ||
+        yamlRoot[RGL_VERSION]["minor"].as<int>() != RGL_VERSION_MINOR) {
+        throw RecordError("recording version does not match rgl version");
+    }
+
+    for (auto it = yamlRecording.begin(); it != yamlRecording.end(); it++) {
+        if ((*it)[MESH_CREATE]) {
+            playMeshCreate((*it)[MESH_CREATE]);
+        } else if ((*it)[MESH_DESTROY]) {
+            playMeshDestroy((*it)[MESH_DESTROY]);
+        } else if ((*it)[MESH_UPDATE_VERTICES]) {
+            playMeshUpdateVertices((*it)[MESH_UPDATE_VERTICES]);
+        } else if ((*it)[ENTITY_CREATE]) {
+            playEntityCreate((*it)[ENTITY_CREATE]);
+        } else if ((*it)[ENTITY_DESTROY]) {
+            playEntityDestroy((*it)[ENTITY_DESTROY]);
+        } else if ((*it)[ENTITY_SET_POSE]) {
+            playEntitySetPose((*it)[ENTITY_SET_POSE]);
+        }
+    }
+
+    munmap(fileMmap, mmapSize);
 }
 
 void RecordReader::mmapInit(const char* path)
