@@ -43,6 +43,8 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		.isHit = getPtrTo<IS_HIT_I32>(),
 		.rayIdx = getPtrTo<RAY_IDX_U32>(),
 		.ringIdx = getPtrTo<RING_ID_U16>(),
+		.distanceIdx = getPtrTo<DISTANCE_F32>(),
+		.intensityIdx = getPtrTo<INTENSITY_F32>(),
 	};
 
 	// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.
