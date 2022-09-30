@@ -31,7 +31,7 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatPointsNode : Node, IPointsDescription
+struct FormatPointsNode : Node, IPointCloudDescription
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
 
@@ -250,9 +250,9 @@ private:
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
 };
 
-struct VisualizeNode : Node
+struct VisualizePointsNode : Node
 {
-	using Ptr = std::shared_ptr<VisualizeNode>;
+	using Ptr = std::shared_ptr<VisualizePointsNode>;
 	using PCLPointType = pcl::PointXYZRGB;
 
 	static const int FRAME_RATE = 60;
@@ -260,7 +260,7 @@ struct VisualizeNode : Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 	void runVisualize();
-	virtual ~VisualizeNode();
+	virtual ~VisualizePointsNode();
 
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }

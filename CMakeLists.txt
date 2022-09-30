@@ -71,7 +71,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/FromMat3x4fRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp
     src/graph/WritePCDFilePointsNode.cpp
-    src/graph/VisualizeNode.cpp
+    src/graph/VisualizePointsNode.cpp
     src/graph/YieldPointsNode.cpp
 )
 

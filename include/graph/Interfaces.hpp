@@ -29,7 +29,7 @@ struct IPointCloudDescription
 // TODO(prybicki): This requires synchronizing with the potentially different stream provided by the schedule(...)
 // TODO(prybicki): This situation is bug-prone, requiring greater mental effort when implementing nodes.
 // TODO(prybicki): It might be better to remove stream as a parameter and assume that all pipeline nodes are using common stream.
-struct IPointsNode : public IPointsDescription
+struct IPointsNode : public IPointCloudDescription
 {
 	using Ptr = std::shared_ptr<IPointsNode>;
 

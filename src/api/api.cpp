@@ -516,7 +516,7 @@ rgl_node_visualize(rgl_node_t* node, const char* window_name, int window_width, 
 		CHECK_ARG(window_width > 0);
 		CHECK_ARG(window_height > 0);
 
-		createOrUpdateNode<VisualizeNode>(node, window_name, window_width, window_height, fullscreen);
+		createOrUpdateNode<VisualizePointsNode>(node, window_name, window_width, window_height, fullscreen);
 	});
 }
 }
