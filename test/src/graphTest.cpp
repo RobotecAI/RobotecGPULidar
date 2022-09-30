@@ -42,7 +42,7 @@ TEST_F(Graph, NodeActivation)
 
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	rgl_entity_set_pose(entity, &entityPoseTf);
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
 
@@ -84,7 +84,7 @@ TEST_F(Graph, NodeRemoval)
 
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	rgl_entity_set_pose(entity, &entityPoseTf);
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
 
@@ -126,7 +126,7 @@ TEST_F(Graph, FormatNodeResults)
 
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	rgl_entity_set_pose(entity, &entityPoseTf);
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, format=nullptr;
 
@@ -155,7 +155,7 @@ TEST_F(Graph, FormatNodeResults)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	size_t outCount, outSizeOf;
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_info(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 
 	struct FormatStruct
 	{

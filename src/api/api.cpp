@@ -308,10 +308,10 @@ rgl_graph_destroy(rgl_node_t node)
 }
 
 RGL_API rgl_status_t
-rgl_graph_get_result_info(rgl_node_t node, rgl_field_t field, size_t* out_count, size_t* out_size_of)
+rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, size_t* out_count, size_t* out_size_of)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_graph_get_result_info(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
+		RGL_DEBUG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
 		size_t elemSize, elemCount;
@@ -348,8 +348,8 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 			output = pointCloudNode->getFieldData(field, nullptr);
 		}
 
-		output->hintLocation(VArray::CPU);
-		memcpy(data, output->getHostPtr(), output->getCount() * output->getElemSize());
+		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
+		CHECK_CUDA(cudaMemcpy(data, output->getHostPtr(), output->getCount() * output->getElemSize(), cudaMemcpyDefault));
 	});
 }
 
