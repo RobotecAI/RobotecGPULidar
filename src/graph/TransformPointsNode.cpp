@@ -24,7 +24,7 @@ VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream
 {
 	if (field == XYZ_F32) {
 		// TODO(prybicki): check sync is necessary
-		CHECK_CUDA(cudaStreamSynchronize(stream);
+		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return output->untyped();
 	}
 	return input->getFieldData(field, stream);
