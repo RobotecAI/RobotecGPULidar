@@ -308,6 +308,52 @@ rgl_graph_destroy(rgl_node_t node)
 }
 
 RGL_API rgl_status_t
+rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, size_t* out_count, size_t* out_size_of)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
+		CHECK_ARG(node != nullptr);
+
+		size_t elemSize, elemCount;
+		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
+			auto formatNode = Node::validatePtr<FormatNode>(node);
+			elemCount = formatNode->getPointCount();
+			elemSize = formatNode->getFormattedPointSize();
+		} else {
+			auto pointCloudNode = Node::validatePtr<IPointCloudNode>(node);
+			auto output = pointCloudNode->getFieldData(field, nullptr);
+			elemCount = output->getCount();
+			elemSize = output->getElemSize();
+		}
+
+		if (out_count != nullptr) { *out_count = elemCount; }
+		if (out_size_of != nullptr) { *out_size_of = elemSize; }
+	});
+}
+
+RGL_API rgl_status_t
+rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(data != nullptr);
+
+		VArray::ConstPtr output;
+		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
+			auto formatNode = Node::validatePtr<FormatNode>(node);
+			output = formatNode->getData();
+		} else {
+			auto pointCloudNode = Node::validatePtr<IPointCloudNode>(node);
+			output = pointCloudNode->getFieldData(field, nullptr);
+		}
+
+		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
+		CHECK_CUDA(cudaMemcpy(data, output->getHostPtr(), output->getCount() * output->getElemSize(), cudaMemcpyDefault));
+	});
+}
+
+RGL_API rgl_status_t
 rgl_graph_node_set_active(rgl_node_t node, bool active)
 {
 	return rglSafeCall([&]() {
