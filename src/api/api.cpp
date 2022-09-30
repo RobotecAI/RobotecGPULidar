@@ -506,10 +506,10 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 }
 
 RGL_API rgl_status_t
-rgl_node_visualize(rgl_node_t* node, const char* window_name, int window_width, int window_height, bool fullscreen)
+rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_width, int window_height, bool fullscreen)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
+		RGL_DEBUG("rgl_node_points_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
 		          repr(node), window_name, window_width, window_height, fullscreen);
 		CHECK_ARG(window_name != nullptr);
 		CHECK_ARG(window_name[0] != '\0');

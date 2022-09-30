@@ -14,4 +14,4 @@
  * @param fullscreen true for window full screen mode, false otherwise (default: false).
  */
 RGL_API rgl_status_t
-rgl_node_visualize(rgl_node_t* node, const char* window_name, int window_width = 1280, int window_height = 1024, bool fullscreen = false);
+rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_width = 1280, int window_height = 1024, bool fullscreen = false);
