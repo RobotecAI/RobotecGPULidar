@@ -17,7 +17,7 @@ void VisualizeNode::setParameters(const char* windowName, int windowWidth, int w
 
 void VisualizeNode::validate()
 {
-	input = getValidInput<IPointCloudNode>();
+	input = getValidInput<IPointsNode>();
 }
 
 void VisualizeNode::runVisualize()
@@ -53,7 +53,7 @@ void VisualizeNode::runVisualize()
 void VisualizeNode::schedule(cudaStream_t stream)
 {
 	// Get formatted input data
-	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
+	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
 	// Convert to PCL cloud
 	fmtInputData->hintLocation(VArray::CPU);

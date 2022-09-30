@@ -1,11 +1,11 @@
 #include <graph/Nodes.hpp>
 
-void UseRaysRingIdsNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
+void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
 {
 	ringIds->copyFrom(ringIdsRaw, ringIdsCount);
 }
 
-void UseRaysRingIdsNode::validate()
+void SetRingIdsRaysNode::validate()
 {
 	input = getValidInput<IRaysNode>();
 

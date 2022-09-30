@@ -29,9 +29,9 @@ struct IPointcloudDescription
 // TODO(prybicki): This requires synchronizing with the potentially different stream provided by the schedule(...)
 // TODO(prybicki): This situation is bug-prone, requiring greater mental effort when implementing nodes.
 // TODO(prybicki): It might be better to remove stream as a parameter and assume that all pipeline nodes are using common stream.
-struct IPointCloudNode : public IPointcloudDescription
+struct IPointsNode : public IPointcloudDescription
 {
-	using Ptr = std::shared_ptr<IPointCloudNode>;
+	using Ptr = std::shared_ptr<IPointsNode>;
 
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
 

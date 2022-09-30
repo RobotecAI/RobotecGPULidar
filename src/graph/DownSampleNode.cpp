@@ -6,18 +6,18 @@
 
 using PCLPoint = pcl::PointXYZL;
 
-void DownSampleNode::validate()
+void DownSamplePointsNode::validate()
 {
 	if (finishedEvent == nullptr) {
 		CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming));
 	}
-	input = getValidInput<IPointCloudNode>();
+	input = getValidInput<IPointsNode>();
 }
 
-void DownSampleNode::schedule(cudaStream_t stream)
+void DownSamplePointsNode::schedule(cudaStream_t stream)
 {
 	// Get formatted input data
-	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
+	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
 	// Downsample
 	fmtInputData->hintLocation(VArray::CPU);
@@ -48,13 +48,13 @@ void DownSampleNode::schedule(cudaStream_t stream)
 	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
 }
 
-size_t DownSampleNode::getWidth() const
+size_t DownSamplePointsNode::getWidth() const
 {
 	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	return filteredIndices->getCount();
 }
 
-VArray::ConstPtr DownSampleNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
 {
 	auto&& inData = input->getFieldData(field, stream);
 	VArray::Ptr outData = VArray::create(field, filteredIndices->getCount());

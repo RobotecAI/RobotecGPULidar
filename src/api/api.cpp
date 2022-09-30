@@ -316,11 +316,11 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, size_t* out_count,
 
 		size_t elemSize, elemCount;
 		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-			auto formatNode = Node::validatePtr<FormatNode>(node);
+			auto formatNode = Node::validatePtr<FormatPointsNode>(node);
 			elemCount = formatNode->getPointCount();
 			elemSize = formatNode->getFormattedPointSize();
 		} else {
-			auto pointCloudNode = Node::validatePtr<IPointCloudNode>(node);
+			auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 			auto output = pointCloudNode->getFieldData(field, nullptr);
 			elemCount = output->getCount();
 			elemSize = output->getElemSize();
@@ -341,10 +341,10 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 
 		VArray::ConstPtr output;
 		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-			auto formatNode = Node::validatePtr<FormatNode>(node);
+			auto formatNode = Node::validatePtr<FormatPointsNode>(node);
 			output = formatNode->getData();
 		} else {
-			auto pointCloudNode = Node::validatePtr<IPointCloudNode>(node);
+			auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 			output = pointCloudNode->getFieldData(field, nullptr);
 		}
 
@@ -395,7 +395,7 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray
 		RGL_DEBUG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
-		createOrUpdateNode<UseRaysMat3x4fNode>(node, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
+		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
 	});
 }
 
@@ -406,7 +406,7 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_id
 		RGL_DEBUG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
-		createOrUpdateNode<UseRaysRingIdsNode>(node, ring_ids, ring_ids_count);
+		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, ring_ids_count);
 	});
 }
 
@@ -457,7 +457,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_co
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
-		createOrUpdateNode<FormatNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
+		createOrUpdateNode<FormatPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
 }
 
@@ -479,7 +479,7 @@ rgl_node_points_compact(rgl_node_t* node)
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_compact(node={})", repr(node));
 
-		createOrUpdateNode<CompactNode>(node);
+		createOrUpdateNode<CompactPointsNode>(node);
 	});
 }
 
@@ -489,7 +489,7 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
 
-		createOrUpdateNode<DownSampleNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
+		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
 	});
 }
 
@@ -501,7 +501,7 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
-		createOrUpdateNode<WritePCDFileNode>(node, file_path);
+		createOrUpdateNode<WritePCDFilePointsNode>(node, file_path);
 	});
 }
 
