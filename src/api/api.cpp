@@ -389,10 +389,10 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 }
 
 RGL_API rgl_status_t
-rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count)
+rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_use_rays_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
+		RGL_DEBUG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<UseRaysMat3x4fNode>(node, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
@@ -400,10 +400,10 @@ rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_
 }
 
 RGL_API rgl_status_t
-rgl_node_use_rays_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count)
+rgl_node_rays_set_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_use_rays_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
+		RGL_DEBUG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
 		createOrUpdateNode<UseRaysRingIdsNode>(node, ring_ids, ring_ids_count);
@@ -411,22 +411,22 @@ rgl_node_use_rays_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_id
 }
 
 RGL_API rgl_status_t
-rgl_node_transform_rays(rgl_node_t* nodeRawPtr, const rgl_mat3x4f* transform)
+rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_transform_rays(node={}, transform={})", repr(nodeRawPtr), repr(transform));
+		RGL_DEBUG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
 		CHECK_ARG(transform != nullptr);
 
-		createOrUpdateNode<TransformRaysNode>(nodeRawPtr, Mat3x4f::fromRGL(*transform));
+		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
 	});
 }
 
 
 RGL_API rgl_status_t
-rgl_node_transform_points(rgl_node_t* node, const rgl_mat3x4f* transform)
+rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_transform_points(node={}, transform={})", repr(node), repr(transform));
+		RGL_DEBUG("rgl_node_points_transform(node={}, transform={})", repr(node), repr(transform));
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
@@ -450,10 +450,10 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 }
 
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, const rgl_field_t* fields, int field_count)
+rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_format(node={}, fields={})", repr(node), repr(fields, field_count));
+		RGL_DEBUG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
@@ -462,7 +462,7 @@ rgl_node_format(rgl_node_t* node, const rgl_field_t* fields, int field_count)
 }
 
 RGL_API rgl_status_t
-rgl_node_yield_points(rgl_node_t* node, const rgl_field_t* fields, int field_count)
+rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int field_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
@@ -474,30 +474,30 @@ rgl_node_yield_points(rgl_node_t* node, const rgl_field_t* fields, int field_cou
 }
 
 RGL_API rgl_status_t
-rgl_node_compact(rgl_node_t* node)
+rgl_node_points_compact(rgl_node_t* node)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_compact(node={})", repr(node));
+		RGL_DEBUG("rgl_node_points_compact(node={})", repr(node));
 
 		createOrUpdateNode<CompactNode>(node);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
+rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
+		RGL_DEBUG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
 
 		createOrUpdateNode<DownSampleNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path)
+rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_write_pcd_file(node={}, file={})", repr(node), file_path);
+		RGL_DEBUG("rgl_node_points_write_pcd_file(node={}, file={})", repr(node), file_path);
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
