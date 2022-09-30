@@ -31,7 +31,7 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatPointsNode : Node, IPointcloudDescription
+struct FormatPointsNode : Node, IPointsDescription
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
 
