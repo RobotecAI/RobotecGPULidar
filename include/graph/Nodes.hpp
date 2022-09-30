@@ -43,6 +43,7 @@ struct FormatNode : Node, IPointcloudDescription
 	static VArray::Ptr formatAsync(IPointCloudNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
 
 	inline VArray::ConstPtr getData() const { return output; }
+	inline size_t getFormattedPointSize() const { return getPointSize(fields); }
 
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
