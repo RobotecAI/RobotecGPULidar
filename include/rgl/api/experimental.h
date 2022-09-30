@@ -311,6 +311,7 @@ rgl_node_transform_rays(rgl_node_t* node, const rgl_mat3x4f* transform);
  * Creates or modifies TransformPointsNode.
  * The node applies affine transformation to all points.
  * It can be used to e.g. change coordinate frame after raytracing.
+ * Note: affects only RGL_FIELD_XYZ_F32. Other fields are not modified.
  * Graph input: point cloud
  * Graph output: point cloud (transformed)
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
