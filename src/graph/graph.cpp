@@ -69,7 +69,7 @@ void runGraph(Node::Ptr userNode)
 
 	fields.insert(XYZ_F32);
 
-	if (!Node::filter<CompactNode>(nodesInExecOrder).empty()) {
+	if (!Node::filter<CompactPointsNode>(nodesInExecOrder).empty()) {
 		fields.insert(IS_HIT_I32);
 	}
 

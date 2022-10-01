@@ -280,10 +280,10 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
  * @param ray_count Size of the `rays` array
  */
 RGL_API rgl_status_t
-rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count);
+rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count);
 
 /**
- * Creates or modifies UseRaysRingIdsNode.
+ * Creates or modifies UseRingIdsNode.
  * The node assigns ring ids for existing rays.
  * Input: rays
  * Output: rays
@@ -292,7 +292,7 @@ rgl_node_use_rays_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_
  * @param ray_count Size of the `ring_ids` array.
  */
 RGL_API rgl_status_t
-rgl_node_use_rays_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count);
+rgl_node_rays_set_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count);
 
 /**
  * Creates or modifies TransformRaysNode.
@@ -304,7 +304,7 @@ rgl_node_use_rays_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_id
  * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
 RGL_API rgl_status_t
-rgl_node_transform_rays(rgl_node_t* node, const rgl_mat3x4f* transform);
+rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 /**
@@ -318,7 +318,7 @@ rgl_node_transform_rays(rgl_node_t* node, const rgl_mat3x4f* transform);
  * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
 RGL_API rgl_status_t
-rgl_node_transform_points(rgl_node_t* node, const rgl_mat3x4f* transform);
+rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
  * Creates or modifies RaytraceNode.
@@ -343,7 +343,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
  * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t
-rgl_node_format(rgl_node_t* node, const rgl_field_t* fields, int field_count);
+rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_count);
 
 /**
  * Creates or modifies YieldPointsNode.
@@ -355,7 +355,7 @@ rgl_node_format(rgl_node_t* node, const rgl_field_t* fields, int field_count);
  * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t
-rgl_node_yield_points(rgl_node_t* node, const rgl_field_t* fields, int field_count);
+rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int field_count);
 
 /**
  * Creates or modifies CompactNode.
@@ -365,7 +365,7 @@ rgl_node_yield_points(rgl_node_t* node, const rgl_field_t* fields, int field_cou
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  */
 RGL_API rgl_status_t
-rgl_node_compact(rgl_node_t* node);
+rgl_node_points_compact(rgl_node_t* node);
 
 /**
  * Creates or modifies DownSampleNode.
@@ -374,7 +374,7 @@ rgl_node_compact(rgl_node_t* node);
  * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
  */
 RGL_API rgl_status_t
-rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
+rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
 
 /**
  * Creates or modifies WritePCDFileNode.
@@ -383,7 +383,7 @@ rgl_node_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, floa
  * @param file_path Path to the output pcd file.
  */
 RGL_API rgl_status_t
-rgl_node_write_pcd_file(rgl_node_t* node, const char* file_path);
+rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path);
 
 /******************************** GRAPH ********************************/
 
