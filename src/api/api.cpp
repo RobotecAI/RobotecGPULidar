@@ -82,7 +82,7 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
 	}
 	catch (std::invalid_argument &e) {
-		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
+		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
 	catch (std::exception &e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());

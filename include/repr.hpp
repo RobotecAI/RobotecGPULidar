@@ -47,6 +47,9 @@ std::string repr(ArrayT* elements, long long elemCount=1, int elemLimit=3)
 	if (elements == nullptr) {
 		return "<null>";
 	}
+	if (elemCount == 0) {
+		return "<empty>";
+	}
 	int suffixLimit = elemLimit / 2;
 	int prefixLimit = elemLimit - suffixLimit; // Prefix is +1 longer in case of uneven limit
 	int prefixLength = std::min(prefixLimit, (int) elemCount);
