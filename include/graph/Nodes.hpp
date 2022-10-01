@@ -31,16 +31,16 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatNode : Node, IPointcloudDescription
+struct FormatPointsNode : Node, IPointCloudDescription
 {
-	using Ptr = std::shared_ptr<FormatNode>;
+	using Ptr = std::shared_ptr<FormatPointsNode>;
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	template<typename T>
-	static VArray::Ptr formatAsync(IPointCloudNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
+	static VArray::Ptr formatAsync(IPointsNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
 
 	inline VArray::ConstPtr getData() const { return output; }
 	inline size_t getFormattedPointSize() const { return getPointSize(fields); }
@@ -54,13 +54,13 @@ struct FormatNode : Node, IPointcloudDescription
 
 private:
 	std::vector<rgl_field_t> fields;
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 	VArray::Ptr output = VArray::create<char>();
 };
 
-struct CompactNode : Node, IPointCloudNode
+struct CompactPointsNode : Node, IPointsNode
 {
-	using Ptr = std::shared_ptr<CompactNode>;
+	using Ptr = std::shared_ptr<CompactPointsNode>;
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
@@ -75,14 +75,14 @@ struct CompactNode : Node, IPointCloudNode
 
 private:
 	size_t width;
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
 };
 
-struct DownSampleNode : Node, IPointCloudNode
+struct DownSamplePointsNode : Node, IPointsNode
 {
-	using Ptr = std::shared_ptr<DownSampleNode>;
+	using Ptr = std::shared_ptr<DownSamplePointsNode>;
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
@@ -99,14 +99,14 @@ private:
 	Vec3f leafDims;
 	std::vector<rgl_field_t> requiredFields
 	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32}; // pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
 	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
 };
 
 
-struct RaytraceNode : Node, IPointCloudNode
+struct RaytraceNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
 
@@ -136,7 +136,7 @@ private:
 	auto getPtrTo();
 };
 
-struct TransformPointsNode : Node, IPointCloudNode
+struct TransformPointsNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<TransformPointsNode>;
 
@@ -155,7 +155,7 @@ struct TransformPointsNode : Node, IPointCloudNode
 private:
 	Mat3x4f transform;
 	std::vector<rgl_field_t> requiredFields{XYZ_F32};
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 };
 
@@ -179,9 +179,9 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct UseRaysMat3x4fNode : Node, IRaysNode
+struct FromMat3x4fRaysNode : Node, IRaysNode
 {
-	using Ptr = std::shared_ptr<UseRaysMat3x4fNode>;
+	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
 
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 	void validate() override;
@@ -197,9 +197,9 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct UseRaysRingIdsNode : Node, IRaysNode
+struct SetRingIdsRaysNode : Node, IRaysNode
 {
-	using Ptr = std::shared_ptr<UseRaysRingIdsNode>;
+	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
 
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
 	void validate() override;
@@ -216,14 +216,14 @@ private:
 	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
-struct WritePCDFileNode : Node
+struct WritePCDFilePointsNode : Node
 {
-	using Ptr = std::shared_ptr<WritePCDFileNode>;
+	using Ptr = std::shared_ptr<WritePCDFilePointsNode>;
 	using PCLPointType = pcl::PointXYZ;
 
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	virtual ~WritePCDFileNode();
+	virtual ~WritePCDFilePointsNode();
 
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
 
@@ -231,7 +231,7 @@ struct WritePCDFileNode : Node
 
 private:
 	std::vector<rgl_field_t> requiredFields{XYZ_F32, PADDING_32};
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
 };
@@ -242,17 +242,17 @@ struct YieldPointsNode : Node
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
-	inline void validate() override { input = getValidInput<IPointCloudNode>(); }
+	inline void validate() override { input = getValidInput<IPointsNode>(); }
 
 private:
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 	std::vector<rgl_field_t> fields;
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
 };
 
-struct VisualizeNode : Node
+struct VisualizePointsNode : Node
 {
-	using Ptr = std::shared_ptr<VisualizeNode>;
+	using Ptr = std::shared_ptr<VisualizePointsNode>;
 	using PCLPointType = pcl::PointXYZRGB;
 
 	static const int FRAME_RATE = 60;
@@ -260,7 +260,7 @@ struct VisualizeNode : Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 	void runVisualize();
-	virtual ~VisualizeNode();
+	virtual ~VisualizePointsNode();
 
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
@@ -269,7 +269,7 @@ struct VisualizeNode : Node
 private:
 	std::vector<rgl_field_t> requiredFields
 	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
-	IPointCloudNode::Ptr input;
+	IPointsNode::Ptr input;
 
 	PCLVisualizerFix::Ptr viewer;
 	std::thread visThread;

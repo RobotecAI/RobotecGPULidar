@@ -3,19 +3,19 @@
 #include <pcl/io/pcd_io.h>
 
 
-void WritePCDFileNode::validate()
+void WritePCDFilePointsNode::validate()
 {
-	input = getValidInput<IPointCloudNode>();
+	input = getValidInput<IPointsNode>();
 }
 
-void WritePCDFileNode::schedule(cudaStream_t stream)
+void WritePCDFilePointsNode::schedule(cudaStream_t stream)
 {
 	if (input->getWidth() == 0) {
 		return;
 	}
 
 	// Get formatted input data
-	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
+	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
 	// Convert to PCL cloud
 	fmtInputData->hintLocation(VArray::CPU);
@@ -27,7 +27,7 @@ void WritePCDFileNode::schedule(cudaStream_t stream)
 	cachedPCLs += cloud;
 }
 
-WritePCDFileNode::~WritePCDFileNode()
+WritePCDFilePointsNode::~WritePCDFilePointsNode()
 {
 	if (cachedPCLs.empty()) {
 		RGL_WARN("{}: skipped saving PCD file {} - empty point cloud", getName(), filePath.string());

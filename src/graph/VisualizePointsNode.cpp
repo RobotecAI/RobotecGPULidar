@@ -1,9 +1,9 @@
 #include <graph/Nodes.hpp>
 
-void VisualizeNode::setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen)
+void VisualizePointsNode::setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen)
 {
 	if (viewer.get() != nullptr) {
-		RGL_WARN("Could not update parameters for VisualizeNode.");
+		RGL_WARN("Could not update parameters for VisualizePointsNode.");
 		return;
 	}
 
@@ -12,15 +12,15 @@ void VisualizeNode::setParameters(const char* windowName, int windowWidth, int w
 	this->windowHeight = windowHeight;
 	this->fullscreen = fullscreen;
 
-	visThread = std::thread(&VisualizeNode::runVisualize, this);
+	visThread = std::thread(&VisualizePointsNode::runVisualize, this);
 }
 
-void VisualizeNode::validate()
+void VisualizePointsNode::validate()
 {
-	input = getValidInput<IPointCloudNode>();
+	input = getValidInput<IPointsNode>();
 }
 
-void VisualizeNode::runVisualize()
+void VisualizePointsNode::runVisualize()
 {
 	viewer = std::make_shared<PCLVisualizerFix>();
 	viewer->setWindowName(windowName);
@@ -50,10 +50,10 @@ void VisualizeNode::runVisualize()
 	}
 }
 
-void VisualizeNode::schedule(cudaStream_t stream)
+void VisualizePointsNode::schedule(cudaStream_t stream)
 {
 	// Get formatted input data
-	VArray::Ptr fmtInputData = FormatNode::formatAsync<char>(input, requiredFields, stream);
+	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
 	// Convert to PCL cloud
 	fmtInputData->hintLocation(VArray::CPU);
@@ -87,7 +87,7 @@ void VisualizeNode::schedule(cudaStream_t stream)
 	isNewCloud = true;
 }
 
-VisualizeNode::~VisualizeNode()
+VisualizePointsNode::~VisualizePointsNode()
 {
 	visThread.join();
 }

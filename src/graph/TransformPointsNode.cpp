@@ -3,7 +3,7 @@
 
 void TransformPointsNode::validate()
 {
-	input = getValidInput<IPointCloudNode>();
+	input = getValidInput<IPointsNode>();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw std::invalid_argument(msg);

@@ -62,16 +62,16 @@ add_library(RobotecGPULidar SHARED
     src/scene/ASBuildScratchpad.cpp
     src/graph/graph.cpp
     src/graph/Node.cpp
-    src/graph/CompactNode.cpp
-    src/graph/DownSampleNode.cpp
-    src/graph/FormatNode.cpp
+    src/graph/CompactPointsNode.cpp
+    src/graph/DownSamplePointsNode.cpp
+    src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
-    src/graph/UseRaysMat3x4fNode.cpp
-    src/graph/UseRaysRingIdsNode.cpp
-    src/graph/WritePCDFileNode.cpp
-    src/graph/VisualizeNode.cpp
+    src/graph/FromMat3x4fRaysNode.cpp
+    src/graph/SetRaysRingIdsRaysNode.cpp
+    src/graph/WritePCDFilePointsNode.cpp
+    src/graph/VisualizePointsNode.cpp
     src/graph/YieldPointsNode.cpp
 )
 
