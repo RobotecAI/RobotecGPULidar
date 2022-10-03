@@ -9,7 +9,7 @@
 #include <scene/Mesh.hpp>
 
 #include <Lidar.hpp>
-#include <Record.h>
+#include <Tape.h>
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
 
@@ -24,9 +24,9 @@ static bool canContinueAfterStatus(rgl_status_t status)
 	static std::set recoverableErrors = {
 		RGL_INVALID_ARGUMENT,
 		RGL_INVALID_API_OBJECT,
-        RGL_INVALID_FILE_PATH,
+		RGL_INVALID_FILE_PATH,
 		RGL_NOT_IMPLEMENTED,
-        RGL_RECORD_ERROR
+		RGL_TAPE_ERROR
 	};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
 };
@@ -41,8 +41,7 @@ static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::strin
 		rgl_get_last_error_string(&msg);
 		if (canContinueAfterStatus(lastStatusCode)) {
 			RGL_ERROR("Recoverable error (code={}): {}", lastStatusCode, msg);
-		}
-		else {
+		} else {
 			RGL_CRITICAL("Unrecoverable error (code={}): {}", lastStatusCode, msg);
 		}
 		Logger::instance().flush();
@@ -66,22 +65,22 @@ static rgl_status_t rglSafeCall(Fn fn)
 	try {
 		std::invoke(fn);
 	}
-	catch (spdlog::spdlog_ex &e) {
+	catch (spdlog::spdlog_ex& e) {
 		return updateAPIState(RGL_LOGGING_ERROR, e.what());
 	}
-	catch (InvalidAPIObject &e) {
+	catch (InvalidAPIObject& e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
-    catch (InvalidFilePath &e) {
-        return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
-    }
-	catch (std::invalid_argument &e) {
+	catch (InvalidFilePath& e) {
+		return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
+	}
+	catch (std::invalid_argument& e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
-    catch (RecordError &e) {
-        return updateAPIState(RGL_RECORD_ERROR, e.what());
-    }
-	catch (std::exception &e) {
+	catch (RecordError& e) {
+		return updateAPIState(RGL_TAPE_ERROR, e.what());
+	}
+	catch (std::exception& e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
 	return updateAPIState(RGL_SUCCESS);
@@ -96,7 +95,7 @@ do if (!(expr)) {                                                               
 extern "C" {
 
 RGL_API rgl_status_t
-rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
+rgl_get_version_info(int* out_major, int* out_minor, int* out_patch)
 {
 	// Short API version history:
 	// This is a brief shortcut for devs!
@@ -116,7 +115,8 @@ rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
 	// 0.10.1: API const correctness, added INVALID_OBJECT error, minor internal changes
 	// 0.10.2: Fixed Lidar::getResults writing too many bytes
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major, (void*) out_minor, (void*) out_patch);
+		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major,
+			  (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
 		CHECK_ARG(out_minor != nullptr);
 		CHECK_ARG(out_patch != nullptr);
@@ -139,7 +139,7 @@ rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool
 }
 
 RGL_API void
-rgl_get_last_error_string(const char **out_error_string)
+rgl_get_last_error_string(const char** out_error_string)
 {
 	// No logging here for now, since it may throw.
 	if (lastStatusString.has_value()) {
@@ -164,10 +164,10 @@ rgl_get_last_error_string(const char **out_error_string)
 			break;
 		case RGL_LOGGING_ERROR:
 			*out_error_string = "spdlog error";
-        case RGL_INVALID_FILE_PATH:
-            *out_error_string = "invalid file path";
-        case RGL_RECORD_ERROR:
-            *out_error_string = "recorder error";
+		case RGL_INVALID_FILE_PATH:
+			*out_error_string = "invalid file path";
+		case RGL_TAPE_ERROR:
+			*out_error_string = "tape error";
 		default:
 			*out_error_string = "???";
 			break;
@@ -188,10 +188,11 @@ rgl_cleanup(void)
 
 
 RGL_API rgl_status_t
-rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_count, const rgl_vec3i *indices, int index_count)
+rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int vertex_count, const rgl_vec3i* indices,
+		int index_count)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
+		RGL_DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
 			  (void*) out_mesh, repr(vertices, vertex_count), repr(indices, index_count, 1));
 		CHECK_ARG(out_mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
@@ -199,12 +200,12 @@ rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_coun
 		CHECK_ARG(indices != nullptr);
 		CHECK_ARG(index_count > 0);
 		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
-		                         vertex_count,
-		                         reinterpret_cast<const Vec3i*>(indices),
-		                         index_count).get();
-        if (recordWriter.has_value()) {
-            recordWriter->recordMeshCreate(out_mesh, vertices, vertex_count, indices, index_count);
-        }
+					 vertex_count,
+					 reinterpret_cast<const Vec3i*>(indices),
+					 index_count).get();
+		if (tapeRecord.has_value()) {
+			tapeRecord->recordMeshCreate(out_mesh, vertices, vertex_count, indices, index_count);
+		}
 	});
 }
 
@@ -215,32 +216,33 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 		RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
 		Mesh::release(mesh);
-        if (recordWriter.has_value()) {
-            recordWriter->recordMeshDestroy(mesh);
-        }
+		if (tapeRecord.has_value()) {
+			tapeRecord->recordMeshDestroy(mesh);
+		}
 	});
 }
 
 RGL_API rgl_status_t
-rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f *vertices, int vertex_count)
+rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int vertex_count)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
+		RGL_DEBUG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
-        if (recordWriter.has_value()) {
-            recordWriter->recordMeshUpdateVertices(mesh, vertices, vertex_count);
-        }
+		if (tapeRecord.has_value()) {
+			tapeRecord->recordMeshUpdateVertices(mesh, vertices, vertex_count);
+		}
 	});
 }
 
 RGL_API rgl_status_t
-rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
+rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
+		RGL_DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene,
+			  (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
 		if (scene == nullptr) {
@@ -248,9 +250,9 @@ rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
-        if (recordWriter.has_value()) {
-            recordWriter->recordEntityCreate(out_entity, scene, mesh);
-        }
+		if (tapeRecord.has_value()) {
+			tapeRecord->recordEntityCreate(out_entity, scene, mesh);
+		}
 	});
 }
 
@@ -258,7 +260,7 @@ RGL_API rgl_status_t
 rgl_entity_destroy(rgl_entity_t entity)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
+		RGL_DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
 		auto entitySafe = Entity::validatePtr(entity);
 		if (auto sceneShared = entitySafe->scene.lock()) {
@@ -267,39 +269,41 @@ rgl_entity_destroy(rgl_entity_t entity)
 		} else {
 			throw std::logic_error("Entity's scene does not exist");
 		}
-        if (recordWriter.has_value()) {
-            recordWriter->recordEntityDestroy(entity);
-        }
+		if (tapeRecord.has_value()) {
+			tapeRecord->recordEntityDestroy(entity);
+		}
 	});
 }
 
 RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf)
+rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* local_to_world_tf)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity, repr(local_to_world_tf, 1));
+		RGL_DEBUG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity,
+			  repr(local_to_world_tf, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(local_to_world_tf != nullptr);
-		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float *>(&local_to_world_tf->value[0][0]));
+		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&local_to_world_tf->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
-        if (recordWriter.has_value()) {
-            recordWriter->recordEntitySetPose(entity, local_to_world_tf);
-        }
+		if (tapeRecord.has_value()) {
+			tapeRecord->recordEntitySetPose(entity, local_to_world_tf);
+		}
 	});
 }
 
 RGL_API rgl_status_t
-rgl_lidar_create(rgl_lidar_t *out_lidar,
-                 const rgl_mat3x4f *ray_transforms,
-                 int ray_transforms_count)
+rgl_lidar_create(rgl_lidar_t* out_lidar,
+		 const rgl_mat3x4f* ray_transforms,
+		 int ray_transforms_count)
 {
 	return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_lidar_create(out_lidar={}, ray_transforms={})",
-		      (void*) out_lidar, repr(ray_transforms, ray_transforms_count));
+		RGL_DEBUG("rgl_lidar_create(out_lidar={}, ray_transforms={})",
+			  (void*) out_lidar, repr(ray_transforms, ray_transforms_count));
 		CHECK_ARG(out_lidar != nullptr);
 		CHECK_ARG(ray_transforms != nullptr);
 		CHECK_ARG(ray_transforms_count > 0);
-		*out_lidar = Lidar::create(reinterpret_cast<const Mat3x4f *>(ray_transforms), ray_transforms_count).get();
+		*out_lidar = Lidar::create(reinterpret_cast<const Mat3x4f*>(ray_transforms),
+					   ray_transforms_count).get();
 	});
 }
 
@@ -326,7 +330,7 @@ rgl_lidar_set_range(rgl_lidar_t lidar, float range)
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f *local_to_world_tf)
+rgl_lidar_set_pose(rgl_lidar_t lidar, const rgl_mat3x4f* local_to_world_tf)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_lidar_set_pose(lidar={}, local_to_world_tf={})", (void*) lidar, repr(local_to_world_tf));
@@ -350,7 +354,7 @@ rgl_lidar_raytrace_async(rgl_scene_t scene, rgl_lidar_t lidar)
 }
 
 RGL_API rgl_status_t
-rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size)
+rgl_lidar_get_output_size(rgl_lidar_t lidar, int* out_size)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_lidar_get_output_size(lidar={}, out_size={})", (void*) lidar, (void*) out_size);
@@ -361,10 +365,11 @@ rgl_lidar_get_output_size(rgl_lidar_t lidar, int *out_size)
 }
 
 RGL_API rgl_status_t
-rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data)
+rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void* out_data)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format, out_data);
+		RGL_DEBUG("rgl_lidar_get_output_data(lidar={}, format={}, out_data={})", (void*) lidar, (int) format,
+			  out_data);
 		int fmtVal = static_cast<int>(format);
 		bool formatOK = (RGL_FORMAT_INVALID < fmtVal && fmtVal < RGL_FORMAT_COUNT);
 		bool formatE2EOK = (RGL_FORMAT_E2E_INVALID < fmtVal && fmtVal < RGL_FORMAT_E2E_COUNT);
@@ -376,11 +381,11 @@ rgl_lidar_get_output_data(rgl_lidar_t lidar, rgl_format_t format, void *out_data
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int *ring_ids, int ring_ids_count)
+rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int* ring_ids, int ring_ids_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_lidar_set_ring_indices(lidar={}, ring_ids={})",
-		          (void*) lidar, repr(ring_ids, ring_ids_count, 5));
+			  (void*) lidar, repr(ring_ids, ring_ids_count, 5));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
@@ -390,17 +395,20 @@ rgl_lidar_set_ring_indices(rgl_lidar_t lidar, const int *ring_ids, int ring_ids_
 
 RGL_API rgl_status_t
 rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
-                                    rgl_angular_noise_type_t angular_noise_type,
-                                    float angular_noise_stddev,
-                                    float angular_noise_mean,
-                                    float distance_noise_stddev_base,
-                                    float distance_noise_stddev_rise_per_meter,
-                                    float distance_noise_mean)
+				    rgl_angular_noise_type_t angular_noise_type,
+				    float angular_noise_stddev,
+				    float angular_noise_mean,
+				    float distance_noise_stddev_base,
+				    float distance_noise_stddev_rise_per_meter,
+				    float distance_noise_mean)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
-		          (void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean, distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
-		bool noiseTypeOK = angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED || angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED;
+		RGL_DEBUG(
+			"rgl_lidar_set_gaussian_noise_params(lidar={}, angular_noise_type={}, angular_noise_stddev={}, angular_noise_mean={}, distance_noise_stddev_base={}, distance_noise_stddev_rise_per_meter={}, distance_noise_mean={}",
+			(void*) lidar, angular_noise_type, angular_noise_stddev, angular_noise_mean,
+			distance_noise_stddev_base, distance_noise_stddev_rise_per_meter, distance_noise_mean);
+		bool noiseTypeOK = angular_noise_type == RGL_ANGULAR_NOISE_TYPE_RAY_BASED ||
+				   angular_noise_type == RGL_ANGULAR_NOISE_TYPE_HITPOINT_BASED;
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(noiseTypeOK);
 		CHECK_ARG(angular_noise_stddev >= 0.0f);
@@ -418,10 +426,11 @@ rgl_lidar_set_gaussian_noise_params(rgl_lidar_t lidar,
 }
 
 RGL_API rgl_status_t
-rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f *transform)
+rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f* transform)
 {
 	return rglSafeCall([&]() {
-		RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar, repr(transform));
+		RGL_DEBUG("rgl_lidar_set_post_raycast_transform(lidar={}, transform={})", (void*) lidar,
+			  repr(transform));
 		CHECK_ARG(lidar != nullptr);
 		CHECK_ARG(transform != nullptr);
 		Lidar::validatePtr(lidar)->rosTransform = Mat3x4f::fromRaw(&transform->value[0][0]);
@@ -429,40 +438,43 @@ rgl_lidar_set_post_raycast_transform(rgl_lidar_t lidar, const rgl_mat3x4f *trans
 }
 
 RGL_API rgl_status_t
-rgl_record_start(const char* path) {
-    return rglSafeCall([&]() {
-        CHECK_ARG(path != nullptr);
-        RGL_DEBUG("rgl_record_start(path={})", path);
-        if (recordWriter.has_value()) {
-            throw RecordError("rgl_record_start: recording already active");
-        } else {
-            recordWriter.emplace(path);
-        }
-    });
+rgl_tape_record_begin(const char* path)
+{
+	return rglSafeCall([&]() {
+		CHECK_ARG(path != nullptr);
+		RGL_DEBUG("rgl_tape_record_begin(path={})", path);
+		if (tapeRecord.has_value()) {
+			throw RecordError("rgl_tape_record_begin: recording already active");
+		} else {
+			tapeRecord.emplace(path);
+		}
+	});
 }
 
 RGL_API rgl_status_t
-rgl_record_stop() {
-    return rglSafeCall([&]() {
-        RGL_DEBUG("rgl_record_stop()");
-        if (!recordWriter.has_value()) {
-            throw RecordError("rgl_record_stop: no recording active");
-        } else {
-            recordWriter.reset();
-        }
-    });
+rgl_tape_record_end()
+{
+	return rglSafeCall([&]() {
+		RGL_DEBUG("rgl_tape_record_end()");
+		if (!tapeRecord.has_value()) {
+			throw RecordError("rgl_tape_record_end: no recording active");
+		} else {
+			tapeRecord.reset();
+		}
+	});
 }
 
 RGL_API rgl_status_t
-rgl_record_play(const char* path) {
-    return rglSafeCall([&]() {
-        CHECK_ARG(path != nullptr);
-        RGL_DEBUG("rgl_record_play(path={})", path);
-        if (recordWriter.has_value()) {
-            throw RecordError("rgl_record_play: recording active");
-        } else {
-            RecordReader reader(path);
-        }
-    });
+rgl_tape_play(const char* path)
+{
+	return rglSafeCall([&]() {
+		CHECK_ARG(path != nullptr);
+		RGL_DEBUG("rgl_tape_play(path={})", path);
+		if (tapeRecord.has_value()) {
+			throw RecordError("rgl_tape_play: recording active");
+		} else {
+			TapePlay play(path);
+		}
+	});
 }
 }
