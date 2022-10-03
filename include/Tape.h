@@ -25,7 +25,7 @@
 #define MESH_UPDATE_VERTICES "rgl_mesh_update_vertices"
 #define RGL_VERSION "rgl_version"
 
-class RecordWriter
+class TapeRecord
 {
 	YAML::Node yamlRoot;
 	YAML::Node yamlRecording;
@@ -42,23 +42,23 @@ class RecordWriter
 	template<typename T>
 	size_t writeToBin(const T* source, size_t elemCount, FILE* file);
 
-	size_t insertMeshRecord(rgl_mesh_t mesh);
+	size_t saveNewMeshId(rgl_mesh_t mesh);
 
-	size_t insertEntityRecord(rgl_entity_t entity);
+	size_t saveNewEntityId(rgl_entity_t entity);
 
-	static void writeRGLVersion(YAML::Node& node);
+	static void recordRGLVersion(YAML::Node& node);
 
 public:
 
-	explicit RecordWriter(const char* path);
+	explicit TapeRecord(const char* path);
 
-	~RecordWriter();
+	~TapeRecord();
 
 	void recordMeshCreate(rgl_mesh_t* outMesh,
-						  const rgl_vec3f* vertices,
-						  int vertexCount,
-						  const rgl_vec3i* indices,
-						  int indexCount);
+			      const rgl_vec3f* vertices,
+			      int vertexCount,
+			      const rgl_vec3i* indices,
+			      int indexCount);
 
 	void recordMeshDestroy(rgl_mesh_t mesh);
 
@@ -71,7 +71,7 @@ public:
 	void recordEntitySetPose(rgl_entity_t entity, const rgl_mat3x4f* localToWorldTf);
 };
 
-class RecordReader
+class TapePlay
 {
 	YAML::Node yamlRoot;
 	uint8_t* fileMmap{};
@@ -95,7 +95,7 @@ class RecordReader
 
 public:
 
-	explicit RecordReader(const char* path);
+	explicit TapePlay(const char* path);
 };
 
-extern std::optional<RecordWriter> recordWriter;
+extern std::optional<TapeRecord> tapeRecord;

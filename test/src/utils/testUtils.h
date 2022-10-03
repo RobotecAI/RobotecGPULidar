@@ -33,7 +33,7 @@ std::vector<float> computeDistances(const T* data, int size)
 	std::vector<float> return_data(size);
 	for (int i = 0; i < size; i++) {
 		return_data[i] = sqrt(data[i].value[0] * data[i].value[0] + data[i].value[1] * data[i].value[1] +
-							  data[i].value[2] * data[i].value[2]);
+				      data[i].value[2] * data[i].value[2]);
 	}
 	return return_data;
 }
@@ -63,7 +63,7 @@ std::pair<T, T> mean_and_stdev(std::vector<T> v)
 
 	std::vector<float> diff(v.size());
 	std::transform(v.begin(), v.end(), diff.begin(),
-				   std::bind2nd(std::minus<T>(), mean));
+		       std::bind2nd(std::minus<T>(), mean));
 	float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
 	float stdev = std::sqrt(sq_sum / v.size());
 
@@ -78,43 +78,43 @@ static std::string readFile(std::filesystem::path path)
 }
 
 static rgl_vec3f cube_vertices[] = {
-		{-1, -1, -1},
-		{1,  -1, -1},
-		{1,  1,  -1},
-		{-1, 1,  -1},
-		{-1, -1, 1},
-		{1,  -1, 1},
-		{1,  1,  1},
-		{-1, 1,  1}
+	{-1, -1, -1},
+	{ 1, -1, -1},
+	{ 1,  1, -1},
+	{-1,  1, -1},
+	{-1, -1,  1},
+	{ 1, -1,  1},
+	{ 1,  1,  1},
+	{-1,  1,  1}
 };
 
 static rgl_vec3f cube_vertices_big[] = {
-		{-2, -2, -2},
-		{2,  -2, -2},
-		{2,  2,  -2},
-		{-2, 2,  -2},
-		{-2, -2, 2},
-		{2,  -2, 2},
-		{2,  2,  2},
-		{-2, 2,  2}
+	{-2, -2, -2},
+	{ 2, -2, -2},
+	{ 2,  2, -2},
+	{-2,  2, -2},
+	{-2, -2,  2},
+	{ 2, -2,  2},
+	{ 2,  2,  2},
+	{-2,  2,  2}
 };
 
 static constexpr size_t cube_vertices_length = sizeof(cube_vertices) / sizeof(cube_vertices[0]);
 static constexpr size_t cube_vertices_big_length = sizeof(cube_vertices_big) / sizeof(cube_vertices_big[0]);
 
 static rgl_vec3i cube_indices[] = {
-		{0, 1, 3},
-		{3, 1, 2},
-		{1, 5, 2},
-		{2, 5, 6},
-		{5, 4, 6},
-		{6, 4, 7},
-		{4, 0, 7},
-		{7, 0, 3},
-		{3, 2, 7},
-		{7, 2, 6},
-		{4, 5, 0},
-		{0, 5, 1},
+	{0, 1, 3},
+	{3, 1, 2},
+	{1, 5, 2},
+	{2, 5, 6},
+	{5, 4, 6},
+	{6, 4, 7},
+	{4, 0, 7},
+	{7, 0, 3},
+	{3, 2, 7},
+	{7, 2, 6},
+	{4, 5, 0},
+	{0, 5, 1},
 };
 static constexpr size_t cube_indices_length = sizeof(cube_indices) / sizeof(cube_indices[0]);
 
@@ -122,7 +122,7 @@ static constexpr size_t cube_indices_length = sizeof(cube_indices) / sizeof(cube
 
 // TODO(prybicki): replace this with a proper Matrix class
 static rgl_mat3x4f identity = {.value = {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0
+	1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0
 }};
