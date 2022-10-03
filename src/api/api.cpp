@@ -11,7 +11,6 @@
 #include <graph/Nodes.hpp>
 #include <graph/graph.hpp>
 
-#include <Lidar.hpp>
 #include <Tape.h>
 #include <RGLExceptions.hpp>
 #include <macros/visibility.h>
