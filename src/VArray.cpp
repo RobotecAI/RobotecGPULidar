@@ -20,10 +20,12 @@ void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 {
 	reserve(newCount, preserveData);
 	if (zeroInit) {
-		// If data was preserved, zero-init only the new part, otherwise - everything
-		char* start = (char*) managedData + sizeOfType * (preserveData ? elemCount : 0);
-		std::size_t bytesToClear = sizeOfType * (newCount - (preserveData ? elemCount : 0));
-		CHECK_CUDA(cudaMemset(start, 0, bytesToClear));
+		if (!preserveData || newCount > elemCount) {
+			// If data was preserved, zero-init only the new part, otherwise - everything
+			char* start = (char*) managedData + sizeOfType * (preserveData ? elemCount : 0);
+			std::size_t bytesToClear = sizeOfType * (newCount - (preserveData ? elemCount : 0));
+			CHECK_CUDA(cudaMemset(start, 0, bytesToClear));
+		}
 	}
 	elemCount = newCount;
 }
