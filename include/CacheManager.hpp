@@ -18,7 +18,7 @@ struct CacheManager
 		}
 	}
 
- 	void insert(Key key, CacheType& value, bool needUpdate = false)
+	void insert(Key key, CacheType& value, bool needUpdate = false)
 	{
 		int age = needUpdate ? 1 : 0;
 		cache.insert({key, value});
@@ -35,7 +35,6 @@ struct CacheManager
 	bool isLatest(Key key) const { return cacheAge.at(key) == 0; }
 	bool contains(Key key) const { return cache.contains(key); }
 	CacheType& getValue(Key key) { return cache.at(key); }
-	CacheType getValueCopy(Key key) { return cache.at(key); }
 
 private:
 	std::unordered_map<Key, CacheType> cache;
