@@ -18,11 +18,11 @@ void VArray::copyFrom(const void *src, std::size_t elements)
 
 void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 {
+	// If !preserveData, reserve(...) zeroes elemCount
 	reserve(newCount, preserveData);
-	if (zeroInit) {
-		// If data was preserved, zero-init only the new part, otherwise - everything
-		char* start = (char*) managedData + sizeOfType * (preserveData ? elemCount : 0);
-		std::size_t bytesToClear = sizeOfType * (newCount - (preserveData ? elemCount : 0));
+	if (zeroInit && elemCount < newCount) {
+		char* start = (char*) managedData + sizeOfType * elemCount;
+		std::size_t bytesToClear = sizeOfType * (newCount - elemCount);
 		CHECK_CUDA(cudaMemset(start, 0, bytesToClear));
 	}
 	elemCount = newCount;
@@ -30,6 +30,10 @@ void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 
 void VArray::reserve(std::size_t newCapacity, bool preserveData)
 {
+	if (!preserveData) {
+		elemCount = 0;
+	}
+
 	if(elemCapacity >= newCapacity) {
 		return;
 	}
@@ -39,10 +43,6 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 
 	if (preserveData && managedData != nullptr) {
 		CHECK_CUDA(cudaMemcpy(newMem, managedData, sizeOfType * elemCount, cudaMemcpyDefault));
-	}
-
-	if (!preserveData) {
-		elemCount = 0;
 	}
 
 	if (managedData != nullptr) {
