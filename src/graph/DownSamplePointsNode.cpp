@@ -18,6 +18,11 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 {
 	cacheManager.trigger();
 
+	if (input->getPointCount() == 0) {
+		filteredIndices->resize(0, false, false);
+		return;
+	}
+
 	// Get formatted input data
 	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
