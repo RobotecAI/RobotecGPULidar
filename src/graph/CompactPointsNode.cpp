@@ -18,7 +18,8 @@ void CompactPointsNode::validate()
 
 void CompactPointsNode::schedule(cudaStream_t stream)
 {
-	inclusivePrefixSum->resize(input->getHeight() * input->getWidth());
+	cacheManager.trigger();
+	inclusivePrefixSum->resize(input->getHeight() * input->getWidth(), false, false);
 	size_t pointCount = input->getWidth() * input->getHeight();
 	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
 	gpuFindCompaction(stream, pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
@@ -27,13 +28,24 @@ void CompactPointsNode::schedule(cudaStream_t stream)
 
 VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
 {
-	VArray::Ptr out = VArray::create(field, width);
-	char* outPtr = static_cast<char *>(out->getDevicePtr());
-	const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getDevicePtr());
-	const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
-	const CompactionIndexType * indices = inclusivePrefixSum->getDevicePtr();
-	gpuApplyCompaction(stream, input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
-	return out;
+	if (!cacheManager.contains(field)) {
+		auto fieldData = VArray::create(field, width);
+		cacheManager.insert(field, fieldData, true);
+	}
+
+	if (!cacheManager.isLatest(field)) {
+		auto fieldData = cacheManager.getValue(field);
+		fieldData->resize(width, false, false);
+		char* outPtr = static_cast<char *>(fieldData->getDevicePtr());
+		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getDevicePtr());
+		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
+		const CompactionIndexType * indices = inclusivePrefixSum->getDevicePtr();
+		gpuApplyCompaction(stream, input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
+		CHECK_CUDA(cudaStreamSynchronize(stream));
+		cacheManager.setUpdated(field);
+	}
+
+	return std::const_pointer_cast<const VArray>(cacheManager.getValue(field));
 }
 
 size_t CompactPointsNode::getWidth() const

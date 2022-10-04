@@ -16,6 +16,8 @@ void DownSamplePointsNode::validate()
 
 void DownSamplePointsNode::schedule(cudaStream_t stream)
 {
+	cacheManager.trigger();
+
 	// Get formatted input data
 	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
@@ -37,7 +39,7 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	voxelGrid.filter(*filtered);
 	RGL_WARN("Original: {} Filtered: {}", toFilter->size(), filtered->size());
 	filteredPoints->copyFrom(filtered->data(), filtered->size());
-	filteredIndices->resize(filtered->size());
+	filteredIndices->resize(filtered->size(), false, false);
 
 	size_t offset = offsetof(PCLPoint, label);
 	size_t stride = sizeof(PCLPoint);
@@ -56,9 +58,20 @@ size_t DownSamplePointsNode::getWidth() const
 
 VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
 {
-	auto&& inData = input->getFieldData(field, stream);
-	VArray::Ptr outData = VArray::create(field, filteredIndices->getCount());
-	gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), (char*) outData->getDevicePtr(), (const char*) inData->getDevicePtr(), getFieldSize(field));
-	CHECK_CUDA(cudaStreamSynchronize(stream));
-	return outData;
+	if (!cacheManager.contains(field)) {
+		auto fieldData = VArray::create(field, filteredIndices->getCount());
+		cacheManager.insert(field, fieldData, true);
+	}
+
+	if (!cacheManager.isLatest(field)) {
+		auto fieldData = cacheManager.getValue(field);
+		fieldData->resize(filteredIndices->getCount(), false, false);
+		char* outPtr = static_cast<char *>(fieldData->getDevicePtr());
+		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getDevicePtr());
+		gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), outPtr, inputPtr, getFieldSize(field));
+		CHECK_CUDA(cudaStreamSynchronize(stream));
+		cacheManager.setUpdated(field);
+	}
+
+	return std::const_pointer_cast<const VArray>(cacheManager.getValue(field));
 }
