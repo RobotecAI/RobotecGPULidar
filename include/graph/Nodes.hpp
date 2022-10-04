@@ -13,6 +13,7 @@
 #include <graph/PCLVisualizerFix.hpp>
 #include <typeinfo>
 
+#include <CacheManager.hpp>
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
 #include <gpu/nodeKernels.hpp>
@@ -78,6 +79,7 @@ private:
 	IPointsNode::Ptr input;
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
+	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
 struct DownSamplePointsNode : Node, IPointsNode
@@ -103,6 +105,7 @@ private:
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
 	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
+	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
 
