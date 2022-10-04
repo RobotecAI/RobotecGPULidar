@@ -5,6 +5,7 @@ add_executable(RobotecGPULidar_test
 #    src/apiReadmeExample.cpp
 #    src/apiSurfaceTests.cpp
 #    src/features/range.cpp
+    src/features/tape.cpp
 #    src/features/gaussianNoise.cpp
 #    src/features/mesh.cpp
 #    src/features/transforms.cpp

@@ -1,140 +1,121 @@
 #include <gtest/gtest.h>
-#include <rgl/api/experimental.h>
-#include <Logger.h>
-#include <utils/testUtils.h>
-#include <rgl/api/tape_api.h>
+#include <utils.hpp>
+#include <scenes.hpp>
+#include <lidars.hpp>
+#include <RGLFields.hpp>
+#include <rgl/api/extensions/tape_api.h>
 
-TEST(EndToEnd, RecordReadmeExample)
+#include <math/Mat3x4f.hpp>
+
+class Graph : public RGLAutoCleanupTest {};
+
+TEST_F(Graph, TapeFormatNodeResults)
 {
-	int major, minor, patch;
-	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
-	RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
+    rgl_tape_record_begin("recording");
 
-	EXPECT_RGL_SUCCESS(rgl_tape_record_begin("recording"));
+    auto mesh = makeCubeMesh();
 
-	rgl_mesh_t cube_mesh = 0;
-	EXPECT_RGL_SUCCESS(
-		rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
+    auto entity = makeEntity(mesh);
+    rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+    ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	// Put an entity on the default scene
-	rgl_entity_t cube_entity = 0;
-	EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
+    rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, format=nullptr;
 
-	// Set position of the cube entity to (0, 0, 5)
-	rgl_mat3x4f entity_tf = {
-		.value = {
-			{1, 0, 0, 0},
-			{0, 1, 0, 0},
-			{0, 0, 1, 5}
-		}
-	};
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
+    std::vector<rgl_mat3x4f> rays = {
+        Mat3x4f::TRS({0, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.2, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.4, 0, 0}).toRGL()
+    };
+    rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
+    std::vector<rgl_field_t> formatFields = {
+        XYZ_F32,
+        PADDING_32
+    };
 
-	// Create a description of lidar that sends 1 ray
-	// By default, lidar will have infinite ray range
-	// and will be placed in (0, 0, 0), facing positive Z
-	rgl_lidar_t lidar = 0;
-	rgl_mat3x4f ray_tf = {
-		.value = {
-			{1, 0, 0, 0},
-			{0, 1, 0, 0},
-			{0, 0, 1, 0},
-		}
-	};
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
+    EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+    EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+    EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+    EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
 
-	// Start raytracing on the default scene
-	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
+    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 
-	// Wait for raytracing (if needed) and collect results
-	int hitpoint_count = 0;
-	rgl_vec3f results[1] = {0};
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	printf("Got %d hitpoint(s)\n", hitpoint_count);
-	for (int i = 0; i < hitpoint_count; ++i) {
-		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
-	}
+    size_t outCount, outSizeOf;
+    EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 
-	ASSERT_EQ(hitpoint_count, 1);
-	ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
+    struct FormatStruct
+    {
+        Field<XYZ_F32>::type xyz;
+        Field<PADDING_32>::type padding;
+    } formatStruct;
 
-	rgl_tape_record_end();
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
+    EXPECT_EQ(outCount, rays.size());
+    EXPECT_EQ(outSizeOf, sizeof(formatStruct));
 
-	EXPECT_RGL_SUCCESS(rgl_tape_play("recording"));
+    std::vector<FormatStruct> formatData{outCount};
+    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
-	hitpoint_count = 0;
-	// rerun the test to check if scene was loaded properly from rgl_record
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
+    for (int i = 0; i < formatData.size(); ++i) {
+        EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], 1e-6);
+        EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], 1e-6);
+        EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
+    }
 
-	// Start raytracing on the default scene
-	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
+    rgl_tape_record_end();
 
-	// Wait for raytracing (if needed) and collect results
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    rgl_cleanup();
 
-	printf("Got %d hitpoint(s)\n", hitpoint_count);
-	for (int i = 0; i < hitpoint_count; ++i) {
-		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
-	}
+    rgl_tape_play("recording");
 
-	ASSERT_EQ(hitpoint_count, 1);
-	ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
+    mesh = makeCubeMesh();
 
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
+    entity = makeEntity(mesh);
+    entityPoseTf = Mat3x4f::identity().toRGL();
+    ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	EXPECT_RGL_SUCCESS(rgl_tape_record_begin("recording"));
+    useRays=nullptr;
+    raytrace=nullptr;
+    lidarPose=nullptr;
+    format=nullptr;
 
-	EXPECT_RGL_SUCCESS(
-		rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
+    rays = {
+        Mat3x4f::TRS({0, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.2, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
+        Mat3x4f::TRS({0.4, 0, 0}).toRGL()
+    };
+    lidarPoseTf = Mat3x4f::identity().toRGL();
 
-	// Put an entity on the default scene
-	EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
+    EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+    EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+    EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+    EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
 
-	// Set position of the cube entity to (0, 0, 5)
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
+    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
+    EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	// Start raytracing on the default scene
-	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
+    outCount = 0;
+    outSizeOf = 0;
+    EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 
-	// Wait for raytracing (if needed) and collect results
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+    EXPECT_EQ(outCount, rays.size());
+    EXPECT_EQ(outSizeOf, sizeof(formatStruct));
 
-	printf("Got %d hitpoint(s)\n", hitpoint_count);
-	for (int i = 0; i < hitpoint_count; ++i) {
-		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
-	}
+    std::vector<FormatStruct> formatData_2{outCount};
+    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData_2.data()));
 
-	ASSERT_EQ(hitpoint_count, 1);
-	ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
-
-	rgl_tape_record_end();
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
-
-	EXPECT_RGL_SUCCESS(rgl_tape_play("recording"));
-	hitpoint_count = 0;
-	// rerun the test to check if scene was loaded properly from rgl_record
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
-
-	// Start raytracing on the default scene
-	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
-
-	// Wait for raytracing (if needed) and collect results
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
-
-	printf("Got %d hitpoint(s)\n", hitpoint_count);
-	for (int i = 0; i < hitpoint_count; ++i) {
-		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
-	}
-
-	ASSERT_EQ(hitpoint_count, 1);
-	ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
+    for (int i = 0; i < formatData_2.size(); ++i) {
+        EXPECT_NEAR(formatData_2[i].xyz[0], rays[i].value[0][3], 1e-6);
+        EXPECT_NEAR(formatData_2[i].xyz[1], rays[i].value[1][3], 1e-6);
+        EXPECT_NEAR(formatData_2[i].xyz[2], 1, 1e-6);
+    }
 }
