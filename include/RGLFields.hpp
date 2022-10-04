@@ -119,6 +119,6 @@ inline std::string toString(rgl_field_t type)
 		case PADDING_8: return "PADDING_8";
 		case PADDING_16: return "PADDING_16";
 		case PADDING_32: return "PADDING_32";
-		default: return "<unknown field>";
+		default: return fmt::format("<unknown field {}>", static_cast<int>(type));
 	}
 }
