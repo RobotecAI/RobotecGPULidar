@@ -238,11 +238,11 @@ private:
 
 struct YieldPointsNode : Node, IPointsNode
 {
+	void validate() override;
 	void schedule(cudaStream_t stream) override;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
-	inline void validate() override { input = getValidInput<IPointsNode>(); }
 
 	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
 	inline bool isDense() const override { return input->isDense(); }

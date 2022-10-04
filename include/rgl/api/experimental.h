@@ -349,7 +349,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_co
  * Creates or modifies YieldPointsNode.
  * The node is a marker what fields are expected by the user.
  * Graph input: point cloud
- * Graph output: none
+ * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param fields Subsequent fields expected to be available
  * @param field_count Number of elements in the `fields` array

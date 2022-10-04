@@ -103,3 +103,22 @@ inline VArray::Ptr createVArray(rgl_field_t type, std::size_t initialSize)
 	}
 	throw std::invalid_argument(fmt::format("createVArray: unknown RGL field {}", type));
 }
+
+inline std::string toString(rgl_field_t type)
+{
+	switch (type) {
+		case XYZ_F32: return "XYZ_F32";
+		case IS_HIT_I32: return "IS_HIT_I32";
+		case RAY_IDX_U32: return "RAY_IDX_U32";
+		case INTENSITY_F32: return "INTENSITY_F32";
+		case RING_ID_U16: return "RING_ID_U16";
+		case AZIMUTH_F32: return "AZIMUTH_F32";
+		case DISTANCE_F32: return "DISTANCE_F32";
+		case RETURN_TYPE_U8: return "RETURN_TYPE_U8";
+		case TIME_STAMP_F64: return "TIME_STAMP_F64";
+		case PADDING_8: return "PADDING_8";
+		case PADDING_16: return "PADDING_16";
+		case PADDING_32: return "PADDING_32";
+		default: return "<unknown field>";
+	}
+}
