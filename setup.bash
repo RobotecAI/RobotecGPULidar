@@ -45,6 +45,9 @@ fi
 
 # Install PCL using vcpkg
 if [ ! -d "$VCPKG_INSTALL_DIR" ]; then
+    echo "Installing dependencies for vcpkg..."
+    sudo apt update
+    sudo apt install git curl zip unzip tar freeglut3-dev
     git clone -b $VCPKG_TAG --single-branch --depth 1 https://github.com/microsoft/vcpkg $VCPKG_INSTALL_DIR &&
     $VCPKG_INSTALL_DIR"/bootstrap-vcpkg.sh"
 fi
