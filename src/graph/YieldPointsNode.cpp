@@ -14,3 +14,14 @@ void YieldPointsNode::schedule(cudaStream_t stream)
 		results[field] = input->getFieldData(field, stream);
 	}
 }
+
+void YieldPointsNode::validate()
+{
+	input = getValidInput<IPointsNode>();
+	for (auto&& field : fields) {
+		if (!input->hasField(field)) {
+			auto msg = fmt::format("YieldPointsNode's input does not provide required field {}", toString(field));
+			throw InvalidPipeline(msg);
+		}
+	}
+}
