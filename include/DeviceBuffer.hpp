@@ -55,6 +55,13 @@ public:
         elemCount = srcElemCount;
     }
 
+    void copyFromDevice(const T* src, std::size_t srcElemCount)
+    {
+        ensureDeviceCanFit(srcElemCount);
+        CHECK_CUDA(cudaMemcpy(data, src, srcElemCount * sizeof(T), cudaMemcpyDeviceToDevice));
+        elemCount = srcElemCount;
+    }
+
     // TODO: deduplicate all those memcopies
     void copyFromHostAsync(const T* src, std::size_t srcElemCount, cudaStream_t stream) {
     	logInfo("[DB] copyFromHostAsync({}, {}, {}): {}\n", (void*) src, srcElemCount, (void*) stream, *this);
@@ -74,6 +81,7 @@ public:
         logInfo("[DB] copyFromHost(<vec>): {}\n", src.size(), *this);
         copyFromHost(src.data(), src.size());
     }
+
 
     void copyPrefixToHostAsync(T* dst, size_t elemsToCopy, cudaStream_t stream)
     {

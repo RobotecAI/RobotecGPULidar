@@ -33,6 +33,18 @@ Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount) : range(std::numeric_
 	setupGaussianNoiseGenerator(randomDevice(), stream, dRandomizationStates);
 }
 
+Lidar::Lidar(TransformMatrix *rayPoses, int rayPosesCount, int* frameSizesPtr, int newFrameCount) : Lidar(rayPoses, frameSizesPtr[0])
+{
+    frameCount = newFrameCount;
+    currentFrame = 0;
+
+    for (int i = 0; i < newFrameCount; ++i) {
+        frameSizes.push_back(frameSizesPtr[i]);
+        allFramesRayCount += frameSizes[i];
+    }
+    dRayPosesAllFrames.copyFromHost(rayPoses, allFramesRayCount);
+}
+
 void Lidar::setRingIds(int *ringIds, size_t ringIdsCount)
 {
 	if (ringIdsCount <= 0) {
@@ -132,4 +144,25 @@ void Lidar::getResults(int format, void *data)
 		memcpy(data, hDensePCL48.readHost(), hDensePCL48.getByteSize());
 		return;
 	}
+}
+
+void Lidar::nextFrame()
+{
+    frameOffset = (frameOffset + frameSizes[currentFrame]) % allFramesRayCount;
+    currentFrame = (currentFrame + 1) % frameCount;
+
+    int rayPosesCount = frameSizes[currentFrame];
+    dRayPoses.copyFromDevice(dRayPosesAllFrames.readDevice() + frameOffset, rayPosesCount);
+
+    dUnityVisualisationPoints.resizeToFit(rayPosesCount);
+    dRosXYZ.resizeToFit(rayPosesCount);
+    dDensePoint3f.resizeToFit(rayPosesCount);
+    dDensePCL12.resizeToFit(rayPosesCount);
+    dDensePCL24.resizeToFit(rayPosesCount);
+    dDensePCL48.resizeToFit(rayPosesCount);
+    dWasHit.resizeToFit(rayPosesCount);
+    dHitsBeforeIndex.resizeToFit(rayPosesCount);
+
+    dRandomizationStates.resizeToFit(rayPosesCount);
+
 }

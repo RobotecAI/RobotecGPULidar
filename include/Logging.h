@@ -8,7 +8,7 @@ using namespace fmt; // forgive me master
 template <typename... Args>
 void logInfo(Args&&... args) {
 #ifndef NDEBUG
-    print(stderr, fg(color::cornflower_blue), std::forward<Args>(args)...);
+    // print(stderr, fg(color::cornflower_blue), std::forward<Args>(args)...);
 #endif
 }
 

@@ -209,6 +209,16 @@ rgl_lidar_create(rgl_lidar_t *out_lidar,
                  rgl_mat3x4f *ray_transforms,
                  int ray_transforms_count);
 
+RGL_API rgl_status_t
+rgl_lidar_create_with_frames(rgl_lidar_t* lidar,
+                             rgl_mat3x4f *ray_transforms,
+                             int ray_transforms_count,
+                             int* frame_sizes,
+                             int frame_count);
+
+RGL_API rgl_status_t
+rgl_lidar_next_frame(rgl_lidar_t lidar);
+
 /**
  * Allows to set maximum distance that rays are to be traced.
  * Hit-points further than given range will be not reported.

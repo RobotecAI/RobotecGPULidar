@@ -46,7 +46,7 @@ target_link_libraries(RobotecGPULidar
     ${CUDA_CUDA_LIBRARY}
     )
 
-if (BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(test)
-endif ()
+#if (BUILD_TESTS)
+enable_testing()
+add_subdirectory(test)
+#endif ()

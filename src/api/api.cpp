@@ -197,6 +197,27 @@ rgl_lidar_create(rgl_lidar_t *out_lidar,
 }
 
 RGL_API rgl_status_t
+rgl_lidar_create_with_frames(rgl_lidar_t* out_lidar, rgl_mat3x4f *ray_transforms, int ray_transforms_count, int* frameSizes, int frameCount)
+{
+    return rglSafeCall([&]() {
+        CHECK_ARG(out_lidar != nullptr);
+        CHECK_ARG(ray_transforms != nullptr);
+        CHECK_ARG(ray_transforms_count > 0);
+        // CHECK_ARG(frameCount > 1);
+        *out_lidar = Lidar::create(reinterpret_cast<TransformMatrix *>(ray_transforms), ray_transforms_count, frameSizes, frameCount).get();
+    });
+}
+
+RGL_API rgl_status_t
+rgl_lidar_next_frame(rgl_lidar_t lidar)
+{
+    return rglSafeCall([&]() {
+        CHECK_ARG(lidar != nullptr);
+        Lidar::validatePtr(lidar)->nextFrame();
+    });
+}
+
+RGL_API rgl_status_t
 rgl_lidar_set_range(rgl_lidar_t lidar, float range)
 {
 	return rglSafeCall([&]() {

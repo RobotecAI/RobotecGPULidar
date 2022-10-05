@@ -38,7 +38,7 @@ set (model_files
     ${CMAKE_CURRENT_SOURCE_DIR}/models/cube.mtl
 )
 
-file(COPY ${model_files} DESTINATION ${CMAKE_BINARY_DIR})
+#file(COPY ${model_files} DESTINATION ${CMAKE_BINARY_DIR})
 
 include(GoogleTest)
 gtest_discover_tests(RobotecGPULidar_test)
