@@ -40,8 +40,8 @@ struct FormatPointsNode : Node, IPointCloudDescription
 	void schedule(cudaStream_t stream) override;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
-	template<typename T>
-	static VArray::Ptr formatAsync(IPointsNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
+	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
+	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
 
 	inline VArray::ConstPtr getData() const { return output; }
 	inline size_t getFormattedPointSize() const { return getPointSize(fields); }
@@ -102,6 +102,7 @@ private:
 	std::vector<rgl_field_t> requiredFields
 	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32}; // pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
 	IPointsNode::Ptr input;
+	VArray::Ptr inputFmtData = VArray::create<char>();
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
 	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
@@ -235,6 +236,7 @@ struct WritePCDFilePointsNode : Node
 private:
 	std::vector<rgl_field_t> requiredFields{XYZ_F32, PADDING_32};
 	IPointsNode::Ptr input;
+	VArray::Ptr inputFmtData = VArray::create<char>();
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
 };
@@ -279,6 +281,7 @@ private:
 	std::vector<rgl_field_t> requiredFields
 	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 	IPointsNode::Ptr input;
+	VArray::Ptr inputFmtData = VArray::create<char>();
 
 	PCLVisualizerFix::Ptr viewer;
 	std::thread visThread;
