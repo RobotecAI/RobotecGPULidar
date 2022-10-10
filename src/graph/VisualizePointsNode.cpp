@@ -52,6 +52,10 @@ void VisualizePointsNode::runVisualize()
 
 void VisualizePointsNode::schedule(cudaStream_t stream)
 {
+	if (input->getPointCount() == 0) {
+		return;
+	}
+
 	// Get formatted input data
 	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
 
