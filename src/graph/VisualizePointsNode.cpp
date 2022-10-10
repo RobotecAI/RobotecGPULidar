@@ -52,6 +52,10 @@ void VisualizePointsNode::runVisualize()
 
 void VisualizePointsNode::schedule(cudaStream_t stream)
 {
+	if (input->getPointCount() == 0) {
+		return;
+	}
+
 	// Get formatted input data
 	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
