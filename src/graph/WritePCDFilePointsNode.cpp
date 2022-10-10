@@ -15,16 +15,17 @@ void WritePCDFilePointsNode::schedule(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
+	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
 	// Convert to PCL cloud
-	fmtInputData->hintLocation(VArray::CPU);
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(fmtInputData->getHostPtr());
+	inputFmtData->hintLocation(VArray::CPU);
+	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getHostPtr());
 	pcl::PointCloud<PCLPointType> cloud;
 	cloud.resize(input->getWidth(), input->getHeight());
 	cloud.assign(data, data + cloud.size(), input->getWidth());
 	cloud.is_dense = input->isDense();
 	cachedPCLs += cloud;
+	inputFmtData->hintLocation(VArray::GPU);
 }
 
 WritePCDFilePointsNode::~WritePCDFilePointsNode()
