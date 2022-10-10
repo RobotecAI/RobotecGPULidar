@@ -32,7 +32,7 @@ void saveRayResult(Vec3f* xyz=nullptr)
 		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
 	}
 	if (ctx.distanceIdx != nullptr) {
-		ctx.distanceIdx[rayIdx] = sqrt(pow((*xyz)[0], 2) + pow((*xyz)[1], 2) + pow((*xyz)[2], 2));
+		ctx.distanceIdx[rayIdx] = isFinite ? sqrt(pow((*xyz)[0], 2) + pow((*xyz)[1], 2) + pow((*xyz)[2], 2)) : CUDART_INF_F;
 	}
 	if (ctx.intensityIdx != nullptr) {
 		ctx.intensityIdx[rayIdx] = 100;
