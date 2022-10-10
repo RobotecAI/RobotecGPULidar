@@ -19,20 +19,21 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	cacheManager.trigger();
 
 	// Get formatted input data
-	VArray::Ptr fmtInputData = FormatPointsNode::formatAsync<char>(input, requiredFields, stream);
+	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
 	// Downsample
-	fmtInputData->hintLocation(VArray::CPU);
+	inputFmtData->hintLocation(VArray::CPU);
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto pointCount = input->getPointCount();
 	toFilter->reserve(pointCount);
-	PCLPoint* begin = static_cast<PCLPoint*>(fmtInputData->getHostPtr());
+	PCLPoint* begin = static_cast<PCLPoint*>(inputFmtData->getHostPtr());
 	PCLPoint* end = begin + pointCount;
 	toFilter->assign(begin, end, pointCount);
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
 	}
+	inputFmtData->hintLocation(VArray::GPU);
 	pcl::VoxelGrid<PCLPoint> voxelGrid {};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
