@@ -1,8 +1,7 @@
+#include <Logger.hpp>
 #include <gtest/gtest.h>
 #include <rgl/api/experimental.h>
-#include <Logger.hpp>
-
-#include "../include/utils.hpp"
+#include <scenes.hpp>
 
 TEST(EndToEnd, ReadmeExample)
 {
@@ -10,8 +9,7 @@ TEST(EndToEnd, ReadmeExample)
 	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
 	RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
 
-	rgl_mesh_t cube_mesh = 0;
-	EXPECT_RGL_SUCCESS(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length));
+	rgl_mesh_t cube_mesh = makeCubeMesh();
 
 	// Put an entity on the default scene
 	rgl_entity_t cube_entity = 0;
@@ -20,36 +18,38 @@ TEST(EndToEnd, ReadmeExample)
 	// Set position of the cube entity to (0, 0, 5)
 	rgl_mat3x4f entity_tf = {
 		.value = {
-			{1, 0, 0, 0},
-			{0, 1, 0, 0},
-			{0, 0, 1, 5}
-		}
+			{ 1, 0, 0, 0 },
+			{ 0, 1, 0, 0 },
+			{ 0, 0, 1, 5 } }
 	};
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
 
-	// Create a description of lidar that sends 1 ray
-	// By default, lidar will have infinite ray range
-	// and will be placed in (0, 0, 0), facing positive Z
-	rgl_lidar_t lidar = 0;
+	// Create a graph representation of a lidar that sends 1 ray and is situated at (x,y,z) = (0, 0, 0), facing positive Z
 	rgl_mat3x4f ray_tf = {
 		.value = {
-			{1, 0, 0, 0},
-			{0, 1, 0, 0},
-			{0, 0, 1, 0},
+			{ 1, 0, 0, 0 },
+			{ 0, 1, 0, 0 },
+			{ 0, 0, 1, 0 },
 		}
 	};
-	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1));
 
-	// Start raytracing on the default scene
-	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(NULL, lidar));
+	rgl_node_t useRays = nullptr, raytrace = nullptr;
 
-	// Wait for raytracing (if needed) and collect results
-	int hitpoint_count = 0;
-	rgl_vec3f results[1] = {0};
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, &hitpoint_count));
-	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
 
-	printf("Got %d hitpoint(s)\n", hitpoint_count);
+	// you can run the graph using any one of its nodes
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	// Wait for the Graph to run (if needed) and collect results
+	size_t hitpoint_count = 0;
+	size_t size;
+	rgl_vec3f results[1] = { 0 };
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &size));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results));
+
+	printf("Got %ld hitpoint(s)\n", hitpoint_count);
 	for (int i = 0; i < hitpoint_count; ++i) {
 		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
 	}

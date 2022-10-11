@@ -428,6 +428,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data);
 /**
  * Activates or deactivates node in the graph.
  * Children of inactive nodes do not execute as well.
+ * Nodes are active by default.
  * @param node Node to activate/deactivate.
  * @param active Whether node active or not.
  */
