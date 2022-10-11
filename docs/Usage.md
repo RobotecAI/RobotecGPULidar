@@ -61,7 +61,7 @@ Usually, using the library will consist of the following steps:
 5. Set Entities' poses
 6. Run Graph(s)
 
-RGL is optimized to be used in ever-changing scenes, therefore it is possible to repeat steps 4-6 dozens of times per second (may vary depending on the number of entites and total number of rays).
+RGL is optimized to be used in ever-changing scenes, therefore it is possible to repeat steps 3-6 dozens of times per second (may vary depending on the number of entites, rays and nodes).
 
 ## Minimal example
 
