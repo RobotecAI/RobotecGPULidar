@@ -336,6 +336,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
 /**
  * Creates or modifies FormatNode.
  * The node converts internal representation into a binary format defined by `fields` array.
+ * Note: It is a user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
  * Graph input: point cloud
  * Graph output: none
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
