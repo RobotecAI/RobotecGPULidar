@@ -175,8 +175,8 @@ void Optix::initializeStaticOptixStructures()
 	OptixPipelineCompileOptions pipelineCompileOptions = {
 		.usesMotionBlur = false,
 		.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
-		.numPayloadValues = 4,
-		.numAttributeValues = 2,
+		.numPayloadValues = 3,  // Ray origin: X, Y, Z
+		.numAttributeValues = 2,  // Triangle barycentrics: X, Y
 		.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
 		.pipelineLaunchParamsVariableName = "ctx",
 	};
