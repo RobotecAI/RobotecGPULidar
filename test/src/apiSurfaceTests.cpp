@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "utils.hpp"
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <rgl/api/e2e_extensions.h>
 
 using namespace ::testing;

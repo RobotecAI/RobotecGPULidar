@@ -1,7 +1,7 @@
 #pragma once
 
 #include <set>
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <VArray.hpp>
 
 /*

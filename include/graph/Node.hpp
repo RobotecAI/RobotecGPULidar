@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <VArray.hpp>
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 

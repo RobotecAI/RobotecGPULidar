@@ -1,6 +1,6 @@
 #include <Logger.hpp>
 #include <gtest/gtest.h>
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <scenes.hpp>
 
 TEST(EndToEnd, ReadmeExample)
@@ -43,13 +43,13 @@ TEST(EndToEnd, ReadmeExample)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	// Wait for the Graph to run (if needed) and collect results
-	size_t hitpoint_count = 0;
-	size_t size;
+	int32_t hitpoint_count = 0;
+	int32_t size;
 	rgl_vec3f results[1] = { 0 };
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &size));
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results));
 
-	printf("Got %ld hitpoint(s)\n", hitpoint_count);
+	printf("Got %d hitpoint(s)\n", hitpoint_count);
 	for (int i = 0; i < hitpoint_count; ++i) {
 		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
 	}

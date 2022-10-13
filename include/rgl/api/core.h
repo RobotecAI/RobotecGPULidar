@@ -168,7 +168,7 @@ typedef enum
  * @param out_patch Address to store patch version number
  */
 RGL_API rgl_status_t
-rgl_get_version_info(int *out_major, int *out_minor, int *out_patch);
+rgl_get_version_info(int32_t *out_major, int32_t *out_minor, int32_t *out_patch);
 
 /**
  * Optionally (re)configures internal logging. This feature may be useful for debugging / issue reporting.
@@ -214,9 +214,9 @@ rgl_cleanup(void);
 RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t *out_mesh,
                 const rgl_vec3f *vertices,
-                int vertex_count,
+                int32_t vertex_count,
                 const rgl_vec3i *indices,
-                int index_count);
+                int32_t index_count);
 
 /**
  * Informs that the given mesh will be no longer used.
@@ -236,7 +236,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh);
 RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh,
                          const rgl_vec3f *vertices,
-                         int vertex_count);
+                         int32_t vertex_count);
 
 
 /******************************** ENTITY ********************************/
@@ -280,7 +280,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
  * @param ray_count Size of the `rays` array
  */
 RGL_API rgl_status_t
-rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count);
+rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count);
 
 /**
  * Creates or modifies UseRingIdsNode.
@@ -292,7 +292,7 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray
  * @param ray_count Size of the `ring_ids` array.
  */
 RGL_API rgl_status_t
-rgl_node_rays_set_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count);
+rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count);
 
 /**
  * Creates or modifies TransformRaysNode.
@@ -344,7 +344,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
  * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t
-rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_count);
+rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies YieldPointsNode.
@@ -356,7 +356,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_co
  * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t
-rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int field_count);
+rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies CompactNode.
@@ -413,7 +413,7 @@ rgl_graph_destroy(rgl_node_t node);
  * @param out_size_of Returns byte size of a single element (e.g. point). May be null.
  */
 RGL_API rgl_status_t
-rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, size_t* out_count, size_t* out_size_of);
+rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of);
 
 /**
  * Obtains the result data of any node in the graph.
