@@ -9,7 +9,7 @@
 #include <scene/Scene.hpp>
 #include <gpu/Optix.hpp>
 
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 
 // Currently there is no explicit (documented) model of API / GPU synchronization
 // Getting correct results is dependent on calling API calls in right order

@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <rgl/api/e2e_extensions.h>
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <utils/testUtils.h>
 
 class GaussianNoise : public ::testing::Test {

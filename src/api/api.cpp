@@ -1,7 +1,7 @@
 #include <cmath>
 #include <spdlog/common.h>
 
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <rgl/api/extensions/visualize.h>
 
 #include <scene/Scene.hpp>
@@ -111,7 +111,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 extern "C" {
 
 RGL_API rgl_status_t
-rgl_get_version_info(int *out_major, int *out_minor, int *out_patch)
+rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
 {
 	// Short API version history:
 	// This is a brief shortcut for devs!
@@ -202,7 +202,7 @@ rgl_cleanup(void)
 }
 
 RGL_API rgl_status_t
-rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int vertex_count, const rgl_vec3i *indices, int index_count)
+rgl_mesh_create(rgl_mesh_t *out_mesh, const rgl_vec3f *vertices, int32_t vertex_count, const rgl_vec3i *indices, int32_t index_count)
 {
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
@@ -231,7 +231,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 }
 
 RGL_API rgl_status_t
-rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f *vertices, int vertex_count)
+rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f *vertices, int32_t vertex_count)
 {
 	return rglSafeCall([&]() {
         RGL_DEBUG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
@@ -308,22 +308,22 @@ rgl_graph_destroy(rgl_node_t node)
 }
 
 RGL_API rgl_status_t
-rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, size_t* out_count, size_t* out_size_of)
+rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
-		size_t elemSize, elemCount;
+		int32_t elemSize, elemCount;
 		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
 			auto formatNode = Node::validatePtr<FormatPointsNode>(node);
-			elemCount = formatNode->getPointCount();
-			elemSize = formatNode->getFormattedPointSize();
+			elemCount = (int32_t)formatNode->getPointCount();
+			elemSize = (int32_t)formatNode->getFormattedPointSize();
 		} else {
 			auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 			auto output = pointCloudNode->getFieldData(field, nullptr);
-			elemCount = output->getCount();
-			elemSize = output->getElemSize();
+			elemCount = (int32_t)output->getCount();
+			elemSize = (int32_t)output->getElemSize();
 		}
 
 		if (out_count != nullptr) { *out_count = elemCount; }
@@ -389,24 +389,24 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 }
 
 RGL_API rgl_status_t
-rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, size_t ray_count)
+rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
-		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), ray_count);
+		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
 	});
 }
 
 RGL_API rgl_status_t
-rgl_node_rays_set_ring_ids(rgl_node_t* node, const int *ring_ids, size_t ring_ids_count)
+rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
-		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, ring_ids_count);
+		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t)ring_ids_count);
 	});
 }
 
@@ -450,7 +450,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 }
 
 RGL_API rgl_status_t
-rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_count)
+rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
@@ -462,7 +462,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int field_co
 }
 
 RGL_API rgl_status_t
-rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int field_count)
+rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
@@ -506,7 +506,7 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 }
 
 RGL_API rgl_status_t
-rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_width, int window_height, bool fullscreen)
+rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width, int32_t window_height, bool fullscreen)
 {
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",

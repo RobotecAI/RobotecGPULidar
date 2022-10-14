@@ -9,7 +9,7 @@
 #endif
 
 #include <math/floatComparison.hpp>
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <math/Vector.hpp>
 
 #ifndef __CUDACC__

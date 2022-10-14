@@ -154,7 +154,7 @@ TEST_F(Graph, FormatNodeResults)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	size_t outCount, outSizeOf;
+	int32_t outCount, outSizeOf;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 
 	struct FormatStruct
@@ -166,7 +166,7 @@ TEST_F(Graph, FormatNodeResults)
 	EXPECT_EQ(outCount, rays.size());
 	EXPECT_EQ(outSizeOf, sizeof(formatStruct));
 
-	std::vector<FormatStruct> formatData{outCount};
+	std::vector<FormatStruct> formatData{(size_t)outCount};
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
 	for (int i = 0; i < formatData.size(); ++i) {

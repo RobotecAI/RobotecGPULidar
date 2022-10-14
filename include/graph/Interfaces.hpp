@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rgl/api/experimental.h>
+#include <rgl/api/core.h>
 #include <math/Mat3x4f.hpp>
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
