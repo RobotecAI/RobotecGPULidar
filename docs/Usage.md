@@ -6,15 +6,9 @@ The C API is built around several concepts that are introduced in the following 
 
 ## API concepts
 
-### Scene
+### Mesh
 
-Scene represents 'a place' where the raytracing occurs.
-User is expected to fill a scene with entities before performing ray-tracing.
-Internally it is used to build hardware raytracing acceleration structures.
-Most of the time, a single scene will be sufficient, therefore RGL automatically instantiates the default scene.
-The default scene can be referenced by passing null pointer where scene handle is expected.
-
-Note: using multiple scenes is not yet implemented.
+Mesh is a handle to the on-GPU data of a 3D model provided by user.
 
 ### Entity
 
@@ -25,19 +19,36 @@ When created, entity is bound to a scene. Entity cannot be unbound from a scene 
 To create an Entity it is required to provide a Mesh, which must be created first.
 Entities can share the same mesh.
 
-### Mesh
+### Scene
 
-Mesh is a handle to the on-GPU data of a 3D model provided by user.
+Scene represents 'a place' where the raytracing occurs.
+User is expected to fill a scene with entities before performing ray-tracing.
+Internally it is used to build hardware raytracing acceleration structures.
+Most of the time, a single scene will be sufficient, therefore RGL automatically instantiates the default scene.
+The default scene can be referenced by passing null pointer where scene handle is expected.
 
-### Lidar
+Note: using multiple scenes is not yet implemented.
 
-Lidar represents properties of a Lidar such as:
-- laser firing pattern
-- range (may depend on angle)
-- its pose in the scene
+### Node
 
-Internally it is also associated with a number of GPU resources, which makes its creation/destruction cost significant.
-Operations involving different Lidars are done in parallel on the GPU.
+Performs a single operation, for example:
+ - set rays for raytracing from transforms 
+ - transform rays
+ - set the desired output format 
+ - compact result (remove non-hits)
+ - downsample result (merge points that are very close to each other)
+ - perform raytracing
+
+It has to be connected to other Nodes in order to function properly.
+If a node is active, it is executed while running the Graph.
+Nodes are active by default, but can be deactivated.
+Children of deactivated Nodes are also not executed while running the Graph.
+
+### Graph
+
+Connected Nodes create a Graph. The Graph can be run to calculate the result for each node.
+Using the graph concept the end user can easily tailor the functionality and output format to their needs by adding / removing certain Nodes.
+The typical use-case is simulating a Lidar.
 
 ## General approach
 
@@ -45,13 +56,12 @@ Usually, using the library will consist of the following steps:
 
 1. Create Meshes (e.g. use an external tool to read them from a file)
 2. Create Entities on the scene
-3. Create one or more Lidars
-4. Set Entities' poses
-5. Set Lidars' poses + configure other properties (e.g. range)
-6. Schedule raycasting.
-7. Get results
+3. Create Nodes
+4. Connect Nodes into Graph(s)
+5. Set Entities' poses
+6. Run Graph(s)
 
-RGL is optimized to be used in ever-changing scenes, therefore it is possible to repeat steps 4-7 dozens of times per second (may vary depending on the number of entites and total number of rays).
+RGL is optimized to be used in ever-changing scenes, therefore it is possible to repeat steps 5 and 6 dozens of times per second (may vary depending on the number of entites, rays and nodes).
 
 ## Minimal example
 
@@ -62,56 +72,51 @@ Full source code can be found [here](../test/src/apiReadmeExample.cpp)
 
 ```c
 // Create a mesh
-rgl_mesh_t mesh = 0;
-RGL_CHECK(rgl_mesh_create(/*arguments omitted for brevity*/));
+rgl_mesh_t cube_mesh = rgl_mesh_create(/* arguments skipped for the sake of brevity */);
 
 // Put an entity on the default scene
-rgl_entity_t entity = 0;
-RGL_CHECK(rgl_entity_create(&entity, NULL, mesh));
+rgl_entity_t cube_entity = 0;
+EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
 
 // Set position of the cube entity to (0, 0, 5)
 rgl_mat3x4f entity_tf = {
-    .value = {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 1, 5}
-    }
+.value = {
+    { 1, 0, 0, 0 },
+    { 0, 1, 0, 0 },
+    { 0, 0, 1, 5 } }
 };
-RGL_CHECK(rgl_entity_set_pose(entity, &entity_tf));
+EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
 
-// Create a description of lidar that sends 1 ray
-// By default, lidar will have infinite ray range
-// and will be placed in (0, 0, 0), facing positive Z
-rgl_lidar_t lidar = 0;
+// Create a graph representation of a lidar that sends 1 ray and is situated at (x,y,z) = (0, 0, 0), facing positive Z
 rgl_mat3x4f ray_tf = {
-    .value = {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 1, 0},
-    }
+.value = {
+    { 1, 0, 0, 0 },
+    { 0, 1, 0, 0 },
+    { 0, 0, 1, 0 },}
 };
-RGL_CHECK(rgl_lidar_create(&lidar, &ray_tf, 1));
 
-// Start raytracing on the default scene
-RGL_CHECK(rgl_lidar_raytrace_async(NULL, lidar));
+rgl_node_t useRays = nullptr, raytrace = nullptr;
 
-// Wait for raytracing (if needed) and collect results
-int hitpointCount = 0;
-rgl_vec3f results[1] = {0};
-RGL_CHECK(rgl_lidar_get_output_size(lidar, &hitpointCount));
-RGL_CHECK(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
+EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1));
+EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
 
-printf("Got %d hitpoint(s)\n", hitpointCount);
-for (int i = 0; i < hitpointCount; ++i) {
-    printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
+// you can run the graph using any one of its nodes
+EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+// Wait for the Graph to run (if needed) and collect results
+int32_t hitpoint_count = 0;
+int32_t size;
+rgl_vec3f results[1] = { 0 };
+EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &size));
+EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results));
+
+printf("Got %d hitpoint(s)\n", hitpoint_count);
+for (int i = 0; i < hitpoint_count; ++i) {
+printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
 }
 ```
 
 ### API documentation
 
-More details can be found [here](../include/rgl/api/experimental.h).
-
-### API stability
-
-Currently, the API is experimental - no ground-breaking changes are planned, however minor breaking changes may occur.
-API stabilization is planned for the second half of 2022.
+More details can be found [here](../include/rgl/api/core.h).
