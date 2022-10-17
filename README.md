@@ -20,9 +20,19 @@ If you would like to have a custom integration, feel free to [contact us](https:
 
 ## Features
 
-- GPU-accelerated
-- Configurable LiDAR pattern and range
+|   |   |
+|---|---|
+| **Configurable LiDAR pattern and range** | **High performance** |
+| ![](docs/gif/flexible_pattern.GIF) | ![](docs/gif/high_performance.GIF) |
+| **GPU-accelerated pointcloud processing** | **Flexible pipeline creation** |
+| ![](docs/gif/pointcloud_processing.GIF) | ![](docs/image/flexible_pipeline.png) |
+
+And more:
 - Asynchronous raytracing
+- Removing non-hit points
+- Converting to custom binary output
+- Downsampling
+- Writing to PCD file
 - Optional Gaussian noise (see [documentation](docs/GaussianNoise.md))
 
 ## Usage
