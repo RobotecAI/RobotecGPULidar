@@ -28,40 +28,40 @@ struct Mat3x4f
 
 	static Mat3x4f identity()
 	{
-		return {.rc = {
+		return {
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0
-		}};
+		};
 	}
 
 	static inline Mat3x4f scale(float x, float y, float z)
 	{
-		return { .rc = {
+		return {
 			x, 0, 0, 0,
 			0, y, 0, 0,
 			0, 0, z, 0
-		}};
+		};
 	}
 
 	static inline Mat3x4f rotationRad(float x, float y, float z)
 	{
 		// https://en.wikipedia.org/wiki/Rotation_matrix#Basic_rotations
-		Mat3x4f rx = { .rc = {
+		Mat3x4f rx = {
 			1,       0,        0, 0,
 			0, cosf(x), -sinf(x), 0,
 			0, sinf(x),  cosf(x), 0
-		}};
-		Mat3x4f ry = { .rc = {
+		};
+		Mat3x4f ry = {
 			 cosf(y), 0, sinf(y), 0,
 			       0, 1,       0, 0,
 			-sinf(y), 0, cosf(y), 0
-		}};
-		Mat3x4f rz = { .rc = {
+		};
+		Mat3x4f rz = {
 			cosf(z), -sinf(z), 0, 0,
 			sinf(z),  cosf(z), 0, 0,
 			      0,        0, 1, 0
-		}};
+		};
 		return rz * ry * rx;
 	}
 
@@ -73,11 +73,11 @@ struct Mat3x4f
 
 	static inline Mat3x4f translation(float x, float y, float z)
 	{
-		return {.rc = {
+		return {
 			1, 0, 0, x,
 			0, 1, 0, y,
 			0, 0, 1, z
-		}};
+		};
 	}
 
 	static inline Mat3x4f TRS(Vec3f t, Vec3f r={0, 0, 0}, Vec3f s={1, 1, 1})
@@ -90,11 +90,11 @@ struct Mat3x4f
 
 	static inline Mat3x4f shear(Vec2f x, Vec2f y={0, 0}, Vec2f z={0,0})
 	{
-		return {.rc = {
+		return {
 			   1, y[0], z[0], 0,
 			x[0],    1, z[1], 0,
 			x[1], y[1],    1, 0
-		}};
+		};
 	}
 
 	static inline Mat3x4f fromRaw(const float* data)
@@ -111,20 +111,20 @@ struct Mat3x4f
 
 	static inline Mat3x4f fromRGL(const rgl_mat3x4f& m)
 	{
-		return { .rc = {
+		return {
 			m.value[0][0], m.value[0][1], m.value[0][2], m.value[0][3],
 			m.value[1][0], m.value[1][1], m.value[1][2], m.value[1][3],
-			m.value[2][0], m.value[2][1], m.value[2][2], m.value[2][3],
-		}};
+			m.value[2][0], m.value[2][1], m.value[2][2], m.value[2][3]
+		};
 	}
 
 	inline rgl_mat3x4f toRGL()
 	{
-		return { .value = {
+		return {
 			rc[0][0], rc[0][1], rc[0][2], rc[0][3],
 			rc[1][0], rc[1][1], rc[1][2], rc[1][3],
 			rc[2][0], rc[2][1], rc[2][2], rc[2][3],
-		}};
+		};
 	}
 
 	inline bool operator==(const Mat3x4f& other) const
@@ -146,11 +146,11 @@ struct Mat3x4f
 
 	__host__ __device__ inline Mat3x4f rotation()
 	{
-		return { .rc = {
+		return {
 			rc[0][0], rc[0][1], rc[0][2], 0.0f,
 			rc[1][0], rc[1][1], rc[1][2], 0.0f,
-			rc[2][0], rc[2][1], rc[2][2], 0.0f,
-		}};
+			rc[2][0], rc[2][1], rc[2][2], 0.0f
+		};
 	}
 
 	inline Mat3x4f& operator=(const Mat3x4f& other) = default;
@@ -162,11 +162,11 @@ struct Mat3x4f
 __host__ __device__ inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs)
 {
 #define MUL(y, x) ((lhs.rc[y][0] * rhs.rc[0][x]) + (lhs.rc[y][1] * rhs.rc[1][x]) + (lhs.rc[y][2] * rhs.rc[2][x]))
-	return {.rc = {
+	return {
 	MUL(0, 0), MUL(0, 1), MUL(0, 2), MUL(0, 3) + lhs.rc[0][3],
 	MUL(1, 0), MUL(1, 1), MUL(1, 2), MUL(1, 3) + lhs.rc[1][3],
-	MUL(2, 0), MUL(2, 1), MUL(2, 2), MUL(2, 3) + lhs.rc[2][3],
-	}};
+	MUL(2, 0), MUL(2, 1), MUL(2, 2), MUL(2, 3) + lhs.rc[2][3]
+	};
 #undef MUL
 }
 
