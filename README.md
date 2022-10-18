@@ -23,9 +23,9 @@ If you would like to have a custom integration, feel free to [contact us](https:
 |   |   |
 |---|---|
 | **Configurable LiDAR pattern and range** | **High performance** |
-| ![](docs/gif/flexible_pattern.GIF) | ![](docs/gif/high_performance.GIF) |
+| ![](docs/gif/flexible_pattern.gif) | ![](docs/gif/high_performance.gif) |
 | **GPU-accelerated pointcloud processing** | **Flexible pipeline creation** |
-| ![](docs/gif/pointcloud_processing.GIF) | ![](docs/image/flexible_pipeline.png) |
+| ![](docs/gif/pointcloud_processing.gif) | ![](docs/image/flexible_pipeline.png) |
 
 And more:
 - Asynchronous raytracing
