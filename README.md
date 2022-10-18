@@ -42,12 +42,12 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 ## Building on Ubuntu
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2.
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
 4. Use `setup.bash --cmake --make` script.
-   - It will install dependencies from `apt`.
+   - It will install dependencies from `apt` and [vcpkg](https://vcpkg.io/en/index.html).
    - It will run CMake and then make.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.bash --cmake -DCMAKE_BUILD_TYPE=Debug --make -j 16`
@@ -55,9 +55,9 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 ## Building on Windows
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2.
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
-3. Install [PCL](https://pointclouds.org/) 1.12 on Windows (on Linux this will be done automatically by using a prepared script).
+3. Install [PCL](https://pointclouds.org/) 1.12:
     1. Get [vcpkg](https://vcpkg.io/en/index.html):\
        `git clone -b 2022.08.15 --single-branch --depth 1 https://github.com/microsoft/vcpkg`
     2. Bootstrap `vcpkg`:\
