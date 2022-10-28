@@ -7,6 +7,13 @@ CUDA_MIN_VER_MAJOR="11"
 CUDA_MIN_VER_MINOR="2"
 VCPKG_INSTALL_DIR="external/vcpkg"
 VCPKG_TAG="2022.08.15"
+INSIDE_DOCKER=false
+
+if [ -f /.dockerenv ]; then
+    VCPKG_INSTALL_DIR="/rgldep/vcpkg"
+    INSIDE_DOCKER=true
+    echo "Setup inside docker"
+fi
 
 CMAKE_ARGS=()
 MAKE_ARGS=()
@@ -38,16 +45,18 @@ if [ "$CUDA_MAJOR" -lt $CUDA_MIN_VER_MAJOR ] ||
     echo "CUDA version not supported! Get $CUDA_MIN_VER_MAJOR.$CUDA_MIN_VER_MINOR+" && exit 1;
 fi
 
-# Check OptiX_INSTALL_DIR
-if [ -z "$OptiX_INSTALL_DIR" ]; then
+# Check OptiX_INSTALL_DIR if building RGL
+if [ -z "$OptiX_INSTALL_DIR" ] && { [ "$DO_CMAKE" = true ] || [ "$DO_MAKE" = true ]; }; then
     echo "OptiX not found! Make sure you export environment variable OptiX_INSTALL_DIR" && exit 1;
 fi
 
 # Install PCL using vcpkg
 if [ ! -d "$VCPKG_INSTALL_DIR" ]; then
-    echo "Installing dependencies for vcpkg..."
-    sudo apt update
-    sudo apt install git curl zip unzip tar freeglut3-dev
+    if [ "$INSIDE_DOCKER" = false ]; then  # Inside docker already provided
+        echo "Installing dependencies for vcpkg..."
+        sudo apt update
+        sudo apt install git curl zip unzip tar freeglut3-dev
+    fi
     git clone -b $VCPKG_TAG --single-branch --depth 1 https://github.com/microsoft/vcpkg $VCPKG_INSTALL_DIR
 fi
 if [ ! -f $VCPKG_INSTALL_DIR"/vcpkg" ]; then $VCPKG_INSTALL_DIR"/bootstrap-vcpkg.sh"; fi

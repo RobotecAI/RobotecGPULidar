@@ -39,6 +39,23 @@ And more:
 
 An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
 
+## Building in Docker (Linux)
+
+1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
+2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
+3. `docker build . --tag rgl`
+4. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker):
+    - `distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
+      && curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+      && curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+            sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+            sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list`
+    - `sudo apt-get update`
+    - `sudo apt-get install -y nvidia-docker2`
+    - `sudo systemctl restart docker`
+4. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl /bin/bash`
+5. `./setup.bash --cmake --make -j`
+
 ## Building on Ubuntu
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
