@@ -61,7 +61,7 @@ if [ ! -d "$VCPKG_INSTALL_DIR" ]; then
 fi
 if [ ! -f $VCPKG_INSTALL_DIR"/vcpkg" ]; then $VCPKG_INSTALL_DIR"/bootstrap-vcpkg.sh"; fi
 
-$VCPKG_INSTALL_DIR"/vcpkg" "install" "pcl[core,visualization]"
+$VCPKG_INSTALL_DIR"/vcpkg" "install" "--clean-after-build" "pcl[core,visualization]"
 
 # Build
 if [ ! -d "build" ]; then mkdir build; fi
