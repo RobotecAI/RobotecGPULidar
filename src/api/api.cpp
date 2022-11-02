@@ -322,7 +322,7 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		} else {
 			auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 			auto output = pointCloudNode->getFieldData(field, nullptr);
-			elemCount = (int32_t)output->getCount();
+			elemCount = (int32_t)output->getElemCount();
 			elemSize = (int32_t)output->getElemSize();
 		}
 
@@ -349,7 +349,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		}
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
-		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getCount() * output->getElemSize(), cudaMemcpyDefault));
+		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));
 	});
 }
 

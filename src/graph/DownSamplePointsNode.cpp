@@ -42,7 +42,7 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
 	voxelGrid.filter(*filtered);
 	RGL_WARN("Original: {} Filtered: {}", toFilter->size(), filtered->size());
-	filteredPoints->copyFrom(filtered->data(), filtered->size());
+	filteredPoints->setData(filtered->data(), filtered->size());
 	filteredIndices->resize(filtered->size(), false, false);
 
 	size_t offset = offsetof(PCLPoint, label);
