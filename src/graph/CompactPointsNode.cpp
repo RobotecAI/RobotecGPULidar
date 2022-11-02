@@ -13,7 +13,6 @@ void CompactPointsNode::validate()
 		unsigned flags = cudaEventDisableTiming;  // Provides better performance
 		CHECK_CUDA(cudaEventCreate(&finishedEvent, flags));
 	}
-	inclusivePrefixSum->hintLocation(VArray::GPU);
 }
 
 void CompactPointsNode::schedule(cudaStream_t stream)

@@ -61,7 +61,6 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field)) {
 			fieldData.insert({field, VArray::create(field)});
-			fieldData[field]->hintLocation(VArray::GPU);
 		}
 	}
 }

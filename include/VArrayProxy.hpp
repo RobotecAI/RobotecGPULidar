@@ -40,8 +40,6 @@ struct VArrayProxy
 	T&       operator[](int idx)       { return (reinterpret_cast<T*>(src->managedData))[idx]; }
 	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->managedData))[idx]; }
 
-	void hintLocation(int location) const { src->hintLocation(location); }
-
 private:
 	VArrayProxy(VArray::Ptr src=nullptr) : src(src == nullptr ? VArray::create<T>() : src) {}
 	VArrayProxy(std::size_t initialSize) : src(VArray::create<T>(initialSize)) {}

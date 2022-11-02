@@ -14,6 +14,4 @@ void SetRingIdsRaysNode::validate()
 		    "RayCount({}) mod RingIdsCount({}) should be zero", input->getRayCount(), ringIds->getCount());
 		throw InvalidPipeline(msg);
 	}
-
-	ringIds->hintLocation(VArray::GPU);
 }

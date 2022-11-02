@@ -37,7 +37,6 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
 	}
-	inputFmtData->hintLocation(VArray::GPU);
 	pcl::VoxelGrid<PCLPoint> voxelGrid {};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());

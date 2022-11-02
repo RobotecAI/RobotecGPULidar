@@ -60,7 +60,6 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
 	// Convert to PCL cloud
-	inputFmtData->hintLocation(VArray::CPU);
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::host()));
 
 	std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
@@ -69,7 +68,6 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	cloudPCL->assign(data, data + cloudPCL->size(), input->getWidth());
 	cloudPCL->is_dense = input->isDense();
 
-	inputFmtData->hintLocation(VArray::GPU);
 
 	// Colorize
 	const auto [minPt, maxPt] = std::minmax_element(cloudPCL->begin(), cloudPCL->end(),
