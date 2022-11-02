@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 add_executable(RobotecGPULidar_test
     src/graphTest.cpp
     src/apiReadmeExample.cpp
+    src/VArrayTest.cpp
 #    src/apiSurfaceTests.cpp
 #    src/features/range.cpp
 #    src/features/gaussianNoise.cpp
