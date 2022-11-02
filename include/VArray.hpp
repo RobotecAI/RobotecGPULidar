@@ -15,6 +15,20 @@ struct VArrayProxy;
 template<typename T>
 struct VArrayTyped;
 
+struct MemLoc
+{
+	static MemLoc host() { return MemLoc(-1); };
+	bool isHost() const { return _location == -1; }
+
+	static MemLoc device() { return MemLoc(0); };
+	bool isDevice() const { return _location == 0; }
+
+private:
+	MemLoc(int) : _location(_location) {}
+
+	int _location;
+};
+
 /**
  * Dynamically typed, virtual (accessible from GPU & CPU) array.
  */
@@ -57,8 +71,10 @@ struct VArray : std::enable_shared_from_this<VArray>
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
 	void hintLocation(int location) const;
-	inline void* getDevicePtr() const { return managedData; }
-	inline void* getHostPtr() const { return managedData; }
+
+	void* getWritePtr(MemLoc location);
+	const void* getReadPtr(MemLoc location) const;
+
 	inline std::size_t getElemSize() const { return sizeOfType; }
 	inline std::size_t getCount() const { return elemCount; }
 

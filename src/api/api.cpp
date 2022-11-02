@@ -349,7 +349,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		}
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
-		CHECK_CUDA(cudaMemcpy(data, output->getHostPtr(), output->getCount() * output->getElemSize(), cudaMemcpyDefault));
+		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::device()), output->getCount() * output->getElemSize(), cudaMemcpyDefault));
 	});
 }
 

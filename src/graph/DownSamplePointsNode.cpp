@@ -27,13 +27,12 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
 	// Downsample
-	inputFmtData->hintLocation(VArray::CPU);
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	auto pointCount = input->getPointCount();
 	toFilter->reserve(pointCount);
-	PCLPoint* begin = static_cast<PCLPoint*>(inputFmtData->getHostPtr());
-	PCLPoint* end = begin + pointCount;
+	const PCLPoint* begin = static_cast<const PCLPoint*>(inputFmtData->getReadPtr(MemLoc::host()));
+	const PCLPoint* end = begin + pointCount;
 	toFilter->assign(begin, end, pointCount);
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
@@ -51,7 +50,7 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	size_t stride = sizeof(PCLPoint);
 	size_t size = sizeof(PCLPoint::label);
 	auto&& dst = (char*) filteredIndices->getDevicePtr();
-	auto&& src = (const char*) filteredPoints->getDevicePtr();
+	auto&& src = (const char*) filteredPoints->getReadPtr(MemLoc::device());
 	gpuCutField(stream, filtered->size(), dst, src, offset, stride, size);
 	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
 }
@@ -72,8 +71,8 @@ VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStrea
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(filteredIndices->getCount(), false, false);
-		char* outPtr = static_cast<char *>(fieldData->getDevicePtr());
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getDevicePtr());
+		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::device()));
+		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getReadPtr(MemLoc::device()));
 		gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), outPtr, inputPtr, getFieldSize(field));
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		cacheManager.setUpdated(field);

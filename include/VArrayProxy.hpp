@@ -31,12 +31,12 @@ struct VArrayProxy
 	std::size_t getBytesInUse() const { return src->elemCount * sizeof(T); }
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true) { src->resize(newCount, zeroInit, preserveData); }
 
+	T*          getHostPtr()           { return reinterpret_cast<T*>(src->getWritePtr(MemLoc::host())); }
+	const T*    getHostPtr()     const { return reinterpret_cast<const T*>(src->getReadPtr(MemLoc::device())); }
+	T*          getDevicePtr()         { return reinterpret_cast<T*>(src->getWritePtr(MemLoc::device())); }
+	const T*    getDevicePtr()   const { return reinterpret_cast<const T*>(src->getReadPtr(MemLoc::device())); }
+	CUdeviceptr getCUdeviceptr() const { return reinterpret_cast<CUdeviceptr>(src->getWritePtr(MemLoc::device())); }
 
-	T*          getDevicePtr()         { return reinterpret_cast<T*>(src->getDevicePtr()); }
-	T*          getHostPtr()           { return reinterpret_cast<T*>(src->getHostPtr()); }
-	CUdeviceptr getCUdeviceptr() const { return reinterpret_cast<CUdeviceptr>(src->getDevicePtr()); }
-	const T*    getDevicePtr()   const { return reinterpret_cast<const T*>(src->getDevicePtr()); }
-	const T*    getHostPtr()     const { return reinterpret_cast<const T*>(src->getHostPtr()); }
 	T&       operator[](int idx)       { return (reinterpret_cast<T*>(src->managedData))[idx]; }
 	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->managedData))[idx]; }
 
