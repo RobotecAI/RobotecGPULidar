@@ -15,7 +15,7 @@ template <typename T>
 struct HostPinnedBuffer
 {
 private:
-	static_assert(std::is_trivially_copyable<T>::value, "HostPinnedBuffer is instantiable only for types that can be copied between HostFn and GPU");
+	static_assert(std::is_trivially_copyable<T>::value, "HostPinnedBuffer is instantiable only for types that can be copied between CPU and GPU");
 
 	T* data {nullptr};
 	std::size_t elemCount {0};
