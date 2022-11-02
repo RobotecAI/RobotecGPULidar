@@ -1,6 +1,7 @@
 #pragma once
 
 #include <typeindex>
+
 #include <cuda_runtime.h>
 #include <macros/cuda.hpp>
 
@@ -15,18 +16,10 @@ struct VArrayProxy;
 template<typename T>
 struct VArrayTyped;
 
-struct MemLoc
+enum struct MemLoc
 {
-	static MemLoc host() { return MemLoc(-1); };
-	bool isHost() const { return _location == -1; }
-
-	static MemLoc device() { return MemLoc(0); };
-	bool isDevice() const { return _location == 0; }
-
-private:
-	MemLoc(int) : _location(_location) {}
-
-	int _location;
+	Host,
+	Device
 };
 
 /**
@@ -37,15 +30,23 @@ struct VArray : std::enable_shared_from_this<VArray>
 	using Ptr = std::shared_ptr<VArray>;
 	using ConstPtr = std::shared_ptr<const VArray>;
 
-	static constexpr int CPU = -1;
-	static constexpr int GPU = 0;
+	// struct State
+	// {
+	// 	void* data = nullptr;
+	// 	int64_t version = 0;
+	// 	int64_t elemCount = 0;
+	// 	int64_t elemCapacity = 0;
+	// };
+
+	// Static construction
+	static VArray::Ptr create(rgl_field_t type, std::size_t initialSize=0);
 
 	template<typename T>
 	static VArray::Ptr create(std::size_t initialSize=0)
 	{ return VArray::Ptr(new VArray(typeid(T), sizeof(T), initialSize)); }
 
-	static VArray::Ptr create(rgl_field_t type, std::size_t initialSize=0);
 
+	// Typed proxy construction
 	template<typename T>
 	typename VArrayProxy<T>::Ptr getTypedProxy()
 	{
@@ -60,22 +61,17 @@ struct VArray : std::enable_shared_from_this<VArray>
 	typename VArrayProxy<T>::ConstPtr getTypedProxy() const
 	{ return VArrayProxy<T>::create(shared_from_this()); }
 
-	template<typename T>
-	typename VArrayTyped<T>::Ptr intoTypedWrapper() &&
-	{ return VArrayTyped<T>::create(std::move(*this)); }
 
-	~VArray() { cudaFree(managedData); managedData = nullptr; }
-
+	// Methods
 	VArray::Ptr clone() const;
+	void* getWritePtr(MemLoc location);
+	const void* getReadPtr(MemLoc location) const;
 	void copyFrom(const void* src, std::size_t elements);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
-
-	void* getWritePtr(MemLoc location);
-	const void* getReadPtr(MemLoc location) const;
-
 	inline std::size_t getElemSize() const { return sizeOfType; }
 	inline std::size_t getCount() const { return elemCount; }
+	~VArray() { cudaFree(managedData); managedData = nullptr; }
 
 private:
 	std::reference_wrapper<const std::type_info> typeInfo;

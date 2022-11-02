@@ -18,7 +18,7 @@ void WritePCDFilePointsNode::schedule(cudaStream_t stream)
 	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
 	// Convert to PCL cloud
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::host()));
+	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
 	pcl::PointCloud<PCLPointType> cloud;
 	cloud.resize(input->getWidth(), input->getHeight());
 	cloud.assign(data, data + cloud.size(), input->getWidth());

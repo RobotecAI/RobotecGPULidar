@@ -21,7 +21,7 @@ struct DeviceBuffer
 {
 	typedef T ValueType;
 private:
-	static_assert(std::is_trivially_copyable<T>::value, "DeviceBuffer is instantiable only for types that can be copied between Host and GPU");
+	static_assert(std::is_trivially_copyable<T>::value, "DeviceBuffer is instantiable only for types that can be copied between HostFn and GPU");
 
 	T* data {nullptr};
 	std::size_t elemCount {0};

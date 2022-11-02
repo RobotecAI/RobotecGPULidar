@@ -30,6 +30,6 @@ do                                                                              
 }                                                                                           \
 while(false)
 
-#define HD __host__ __device__
-#define Dev __device__
-#define Host __host__
+#define HostDevFn __host__ __device__
+#define DevFn __device__
+#define HostFn __host__

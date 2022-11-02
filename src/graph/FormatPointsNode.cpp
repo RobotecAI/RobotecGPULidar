@@ -27,7 +27,7 @@ void FormatPointsNode::formatAsync(const VArray::Ptr& output, const IPointsNode:
 	std::size_t pointCount = input->getPointCount();
 	output->resize(pointCount * pointSize, false, false);
 	auto gpuFields = getGPUFields(input, fields, stream);
-	char* outputPtr = static_cast<char*>(output->getWritePtr(MemLoc::device()));
+	char* outputPtr = static_cast<char*>(output->getWritePtr(MemLoc::Device));
 	gpuFormat(stream, pointCount, pointSize, fields.size(), gpuFields->getDevicePtr(), outputPtr);
 }
 
@@ -40,7 +40,7 @@ VArrayProxy<GPUFieldDesc>::Ptr FormatPointsNode::getGPUFields(IPointsNode::Ptr i
 		if (!isDummy(fields[i])) {
 			(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
 			// TODO(prybicki): distinguish between read / write fields here
-			.data = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::device())),
+			.data = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device)),
 			.size = getFieldSize(fields[i]),
 			.dstOffset = offset,
 			};

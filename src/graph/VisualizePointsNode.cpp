@@ -60,7 +60,7 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
 
 	// Convert to PCL cloud
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::host()));
+	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
 
 	std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
 
