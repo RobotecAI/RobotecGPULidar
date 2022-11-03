@@ -39,6 +39,7 @@ find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization
 # Includes
 include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
+include_directories(${spdlog_SOURCE_DIR}/include)
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
 add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)
