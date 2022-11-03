@@ -36,6 +36,11 @@ do if (!(expr)) {                                                               
     throw std::invalid_argument(msg);                                                            \
 } while(0)
 
+#define TAPE_HOOK(...)                                                        \
+do if (tapeRecord.has_value()) {                                              \
+    tapeRecord->recordApiCall(__PRETTY_FUNCTION__ __VA_OPT__(,) __VA_ARGS__); \
+} while(0)
+
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
 
@@ -174,6 +179,8 @@ rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool
 		// Constructing string from nullptr is undefined behavior!
 		auto logFilePath = log_file_path == nullptr ? std::nullopt : std::optional(log_file_path);
 		Logger::instance().configure(log_level, logFilePath, use_stdout);
+
+		TAPE_HOOK(log_level, log_file_path, use_stdout);
 	});
 }
 
@@ -226,6 +233,8 @@ rgl_cleanup(void)
 			Node::Ptr node = Node::instances.begin()->second;
 			destroyGraph(node);
 		}
+
+		TAPE_HOOK();
 	});
 }
 
@@ -244,9 +253,8 @@ rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
 		                         index_count).get();
-		if (tapeRecord.has_value()) {
-			tapeRecord->recordMeshCreate(out_mesh, vertices, vertex_count, indices, index_count);
-		}
+
+		TAPE_HOOK(out_mesh, vertices, vertex_count, indices, index_count);
 	});
 }
 
@@ -258,9 +266,8 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 		CHECK_ARG(mesh != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Mesh::release(mesh);
-		if (tapeRecord.has_value()) {
-			tapeRecord->recordMeshDestroy(mesh);
-		}
+
+		TAPE_HOOK(mesh);
 	});
 }
 
@@ -273,9 +280,8 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t ver
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
-		if (tapeRecord.has_value()) {
-			tapeRecord->recordMeshUpdateVertices(mesh, vertices, vertex_count);
-		}
+
+		TAPE_HOOK(mesh, vertices, vertex_count);
 	});
 }
 
@@ -291,9 +297,8 @@ rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
-		if (tapeRecord.has_value()) {
-			tapeRecord->recordEntityCreate(out_entity, scene, mesh);
-		}
+
+		TAPE_HOOK(out_entity, scene, mesh);
 	});
 }
 
@@ -311,9 +316,8 @@ rgl_entity_destroy(rgl_entity_t entity)
 		} else {
 			throw std::logic_error("Entity's scene does not exist");
 		}
-		if (tapeRecord.has_value()) {
-			tapeRecord->recordEntityDestroy(entity);
-		}
+
+		TAPE_HOOK(entity);
 	});
 }
 
@@ -326,9 +330,8 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* local_to_world_tf)
 		CHECK_ARG(local_to_world_tf != nullptr);
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&local_to_world_tf->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
-		if (tapeRecord.has_value()) {
-			tapeRecord->recordEntitySetPose(entity, local_to_world_tf);
-		}
+
+		TAPE_HOOK(entity, local_to_world_tf);
 	});
 }
 
@@ -339,6 +342,8 @@ rgl_graph_run(rgl_node_t node)
 		RGL_DEBUG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		runGraph(Node::validatePtr(node));
+
+		TAPE_HOOK(node);
 	});
 }
 
@@ -350,6 +355,8 @@ rgl_graph_destroy(rgl_node_t node)
 		CHECK_ARG(node != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		destroyGraph(Node::validatePtr(node));
+
+		TAPE_HOOK(node);
 	});
 }
 
@@ -393,6 +400,8 @@ rgl_graph_node_set_active(rgl_node_t node, bool active)
 		CHECK_ARG(node != nullptr);
 
 		node->setActive(active);
+
+		TAPE_HOOK(node, active);
 	});
 }
 
@@ -405,6 +414,8 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(child != nullptr);
 
 		parent->addChild(Node::validatePtr(child));
+
+		TAPE_HOOK(parent, child);
 	});
 }
 
@@ -417,6 +428,8 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(child != nullptr);
 
 		parent->removeChild(Node::validatePtr(child));
+
+		TAPE_HOOK(parent, child);
 	});
 }
 
@@ -428,6 +441,8 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ra
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
+
+		TAPE_HOOK(node, rays, ray_count);
 	});
 }
 
@@ -439,6 +454,8 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
 		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t)ring_ids_count);
+
+		TAPE_HOOK(node, ring_ids, ring_ids_count);
 	});
 }
 
@@ -450,6 +467,8 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
+
+		TAPE_HOOK(node, transform);
 	});
 }
 
@@ -462,6 +481,8 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
+
+		TAPE_HOOK(node, transform);
 	});
 }
 
@@ -478,6 +499,8 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 		}
 
 		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene), range);
+
+		TAPE_HOOK(node, scene, range);
 	});
 }
 
@@ -490,6 +513,8 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t fiel
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<FormatPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
+
+		TAPE_HOOK(node, fields, field_count);
 	});
 }
 
@@ -502,6 +527,8 @@ rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<YieldPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
+
+		TAPE_HOOK(node, fields, field_count);
 	});
 }
 
@@ -512,6 +539,8 @@ rgl_node_points_compact(rgl_node_t* node)
 		RGL_DEBUG("rgl_node_points_compact(node={})", repr(node));
 
 		createOrUpdateNode<CompactPointsNode>(node);
+
+		TAPE_HOOK(node);
 	});
 }
 
@@ -522,6 +551,8 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
 		RGL_DEBUG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
 
 		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
+
+		TAPE_HOOK(node, leaf_size_x, leaf_size_y, leaf_size_z);
 	});
 }
 
@@ -534,6 +565,8 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 		CHECK_ARG(file_path[0] != '\0');
 
 		createOrUpdateNode<WritePCDFilePointsNode>(node, file_path);
+
+		TAPE_HOOK(node, file_path);
 	});
 }
 
@@ -549,6 +582,8 @@ rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t win
 		CHECK_ARG(window_height > 0);
 
 		createOrUpdateNode<VisualizePointsNode>(node, window_name, window_width, window_height, fullscreen);
+
+		TAPE_HOOK(node, window_name, window_width, window_height, fullscreen);
 	});
 }
 

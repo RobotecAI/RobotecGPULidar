@@ -31,17 +31,8 @@ void TapeRecord::recordRGLVersion(YAML::Node& node)
 	node[RGL_VERSION] = rglVersion;
 }
 
-void TapeRecord::yamlNodeAdd(YAML::Node& node, const char* name)
+void TapeRecord::writeToBin(const void* source, size_t elemSize, size_t elemCount, FILE* file)
 {
-	YAML::Node nameNode;
-	nameNode[name] = node;
-	yamlRecording.push_back(nameNode);
-}
-
-template<typename T>
-size_t TapeRecord::writeToBin(const T* source, size_t elemCount, FILE* file)
-{
-	size_t elemSize = sizeof(T);
 	uint8_t remainder = (elemSize * elemCount) % 16;
 	uint8_t bytesToAdd = (16 - remainder) % 16;
 
@@ -50,83 +41,9 @@ size_t TapeRecord::writeToBin(const T* source, size_t elemCount, FILE* file)
 		uint8_t zeros[16];
 		fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
 	}
-
-	currentOffset += elemSize * elemCount + bytesToAdd;
-	return currentOffset - elemSize * elemCount - bytesToAdd;
+	currentBinOffset += elemSize * elemCount + bytesToAdd;
 }
 
-size_t TapeRecord::saveNewMeshId(rgl_mesh_t mesh)
-{
-	meshId.insert(std::make_pair(mesh, nextMeshId));
-	nextMeshId++;
-	return nextMeshId - 1;
-}
-
-size_t TapeRecord::saveNewEntityId(rgl_entity_t entity)
-{
-	entityId.insert(std::make_pair(entity, nextEntityId));
-	nextEntityId++;
-	return nextEntityId - 1;
-}
-
-void TapeRecord::recordMeshCreate(rgl_mesh_t* outMesh,
-				  const rgl_vec3f* vertices,
-				  int vertexCount,
-				  const rgl_vec3i* indices,
-				  int indexCount)
-{
-	YAML::Node rglMeshCreate;
-	rglMeshCreate["mesh_id"] = saveNewMeshId(*outMesh);
-	rglMeshCreate["vertices_offset"] = writeToBin<rgl_vec3f>(vertices, vertexCount, fileBin);
-	rglMeshCreate["vertex_count"] = vertexCount;
-	rglMeshCreate["indices_offset"] = writeToBin<rgl_vec3i>(indices, indexCount, fileBin);
-	rglMeshCreate["index_count"] = indexCount;
-	yamlNodeAdd(rglMeshCreate, MESH_CREATE);
-}
-
-void TapeRecord::recordMeshDestroy(rgl_mesh_t mesh)
-{
-	YAML::Node rglMeshDestroy;
-	rglMeshDestroy["mesh_id"] = meshId[mesh];
-	meshId.erase(mesh);
-	yamlNodeAdd(rglMeshDestroy, MESH_DESTROY);
-}
-
-void TapeRecord::recordMeshUpdateVertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int vertexCount)
-{
-	YAML::Node rglMeshUpdateVertices;
-	rglMeshUpdateVertices["mesh_id"] = meshId[mesh];
-	rglMeshUpdateVertices["vertices_offset"] = writeToBin<rgl_vec3f>(vertices, vertexCount, fileBin);
-	rglMeshUpdateVertices["vertex_count"] = vertexCount;
-	yamlNodeAdd(rglMeshUpdateVertices, MESH_UPDATE_VERTICES);
-}
-
-// the scene parameter is not used since for now we can only use the default scene,
-// left it here in case it will be useful later
-void TapeRecord::recordEntityCreate(rgl_entity_t* outEntity, rgl_scene_t, rgl_mesh_t mesh)
-{
-	YAML::Node rglEntityCreate;
-	rglEntityCreate["entity_id"] = saveNewEntityId(*outEntity);
-	rglEntityCreate["scene"] = "default scene";
-	rglEntityCreate["mesh_id"] = meshId[mesh];
-	yamlNodeAdd(rglEntityCreate, ENTITY_CREATE);
-}
-
-void TapeRecord::recordEntityDestroy(rgl_entity_t entity)
-{
-	YAML::Node rglEntityDestroy;
-	rglEntityDestroy["entity_id"] = entityId[entity];
-	entityId.erase(entity);
-	yamlNodeAdd(rglEntityDestroy, ENTITY_DESTROY);
-}
-
-void TapeRecord::recordEntitySetPose(rgl_entity_t entity, const rgl_mat3x4f* localToWorldTf)
-{
-	YAML::Node rglEntitySetPose;
-	rglEntitySetPose["entity_id"] = entityId[entity];
-	rglEntitySetPose["local_to_world_tf_offset"] = writeToBin<rgl_mat3x4f>(localToWorldTf, 1, fileBin);
-	yamlNodeAdd(rglEntitySetPose, ENTITY_SET_POSE);
-}
 
 TapePlay::TapePlay(const char* path)
 {

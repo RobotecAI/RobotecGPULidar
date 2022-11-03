@@ -1,17 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
 
 add_executable(RobotecGPULidar_test
-    src/graphTest.cpp
-    src/apiReadmeExample.cpp
-    src/VArrayTest.cpp
+    src/tmpTapeTest.cpp
+    #src/graphTest.cpp
+    #src/apiReadmeExample.cpp
+    #src/VArrayTest.cpp
 #    src/apiSurfaceTests.cpp
 #    src/features/range.cpp
-    src/features/tape.cpp
+#    src/features/tape.cpp
 #    src/features/gaussianNoise.cpp
 #    src/features/mesh.cpp
 #    src/features/transforms.cpp
 #    src/features/pcdOutput.cpp
-    src/testMat3x4f.cpp
+#    src/testMat3x4f.cpp
 )
 
 target_link_libraries(RobotecGPULidar_test

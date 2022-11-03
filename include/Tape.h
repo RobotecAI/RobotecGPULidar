@@ -2,14 +2,21 @@
 
 #include <fcntl.h>
 #include <fstream>
+#include <string> 
 #include <optional>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <unordered_map>
 
+#include <typeindex>
+#include <typeinfo>
+#include <map>
+
 #include <spdlog/fmt/bundled/format.h>
 #include <yaml-cpp/yaml.h>
+
+#include <Logger.hpp>
 
 #include <RGLExceptions.hpp>
 #include <rgl/api/core.h>
@@ -27,48 +34,116 @@
 
 class TapeRecord
 {
+	struct ToBinDataInfo
+	{
+		const void* data = nullptr;
+		size_t elemSize;
+		int elemCount;
+	};
+
 	YAML::Node yamlRoot;
 	YAML::Node yamlRecording;
-	size_t currentOffset = 0;
+	size_t currentBinOffset = 0;
 	FILE* fileBin;
 	std::ofstream fileYaml;
-	size_t nextMeshId = 0;
-	size_t nextEntityId = 0;
-	std::unordered_map<rgl_mesh_t, size_t> meshId;
-	std::unordered_map<rgl_entity_t, size_t> entityId;
+	std::optional<ToBinDataInfo> valueToBin;
 
-	void yamlNodeAdd(YAML::Node& node, const char* name);
-
-	template<typename T>
-	size_t writeToBin(const T* source, size_t elemCount, FILE* file);
-
-	size_t saveNewMeshId(rgl_mesh_t mesh);
-
-	size_t saveNewEntityId(rgl_entity_t entity);
+	void writeToBin(const void* source, size_t elemSize, size_t elemCount, FILE* file);
 
 	static void recordRGLVersion(YAML::Node& node);
 
-public:
+	template<typename T, typename... Args>
+	void recordApiArguments(YAML::Node& node, int currentArgIdx, T currentArg, Args... remainingArgs)
+	{
+		node[std::to_string(currentArgIdx)] = valueToYaml(currentArg);
 
+		if constexpr(sizeof...(remainingArgs) > 0) {
+			recordApiArguments(node, ++currentArgIdx, remainingArgs...);
+			return;
+		}
+		resolveBinQueueIfNeeded();
+	}
+
+	std::string fnPrettyToShortName(std::string prettyFn)
+	{
+		return prettyFn.substr(0, prettyFn.find('('));
+	}
+
+	template<typename T>
+	T valueToYaml(T value) { return value; }
+
+	intptr_t valueToYaml(rgl_node_t value) { return (intptr_t)value; }
+	intptr_t valueToYaml(rgl_node_t* value) { return (intptr_t)*value; }
+
+	intptr_t valueToYaml(rgl_entity_t value) { return (intptr_t)value; }
+	intptr_t valueToYaml(rgl_entity_t* value) { return (intptr_t)*value; }
+
+	intptr_t valueToYaml(rgl_mesh_t value) { return (intptr_t)value; }
+	intptr_t valueToYaml(rgl_mesh_t* value) { return (intptr_t)*value; }
+
+	intptr_t valueToYaml(rgl_scene_t value) { return (intptr_t)value; }
+	intptr_t valueToYaml(rgl_scene_t* value) { return (intptr_t)*value; }
+
+	int valueToYaml(rgl_log_level_t value) { return (int)value; }
+
+	size_t valueToYaml(const rgl_vec3f* value) { addToBinQueue(value); return currentBinOffset; }
+	size_t valueToYaml(const rgl_vec3i* value) { addToBinQueue(value); return currentBinOffset; }
+	size_t valueToYaml(const rgl_mat3x4f* value) { addToBinQueue(value); return currentBinOffset; }
+	size_t valueToYaml(const int32_t* value) { addToBinQueue(value); return currentBinOffset; }
+	size_t valueToYaml(const rgl_field_t* value) { addToBinQueue(value); return currentBinOffset; }
+
+	int32_t valueToYaml(int32_t value)
+	{
+		if (valueToBin.has_value())
+		{
+			addToBinQueue((int)value);
+			resolveBinQueueIfNeeded();
+		}
+		return value;
+	}
+
+	template<typename T>
+	void addToBinQueue(T data)
+	{
+		resolveBinQueueIfNeeded();
+		size_t elemSize = sizeof(T);
+		ToBinDataInfo a;
+		a.data = reinterpret_cast<const void*>(data);
+		a.elemSize = elemSize;
+		a.elemCount = 1;
+		valueToBin.emplace(a);
+	}
+
+	void addToBinQueue(int dataCount)
+	{
+		if (!valueToBin.has_value()) return;
+		valueToBin.value().elemCount = dataCount;
+	}
+
+	void resolveBinQueueIfNeeded()
+	{
+		if (!valueToBin.has_value()) return;
+		writeToBin(valueToBin.value().data, valueToBin.value().elemSize, valueToBin.value().elemCount, fileBin);
+		valueToBin.reset();
+	}
+
+public:
 	explicit TapeRecord(const char* path);
 
 	~TapeRecord();
 
-	void recordMeshCreate(rgl_mesh_t* outMesh,
-			      const rgl_vec3f* vertices,
-			      int vertexCount,
-			      const rgl_vec3i* indices,
-			      int indexCount);
+	template<typename... Args>
+	void recordApiCall(std::string prettyFn, Args... args)
+	{
+		YAML::Node argsNode;
+		if constexpr(sizeof...(args) > 0) {
+			recordApiArguments(argsNode, 0, args...);
+		}
 
-	void recordMeshDestroy(rgl_mesh_t mesh);
-
-	void recordMeshUpdateVertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int vertexCount);
-
-	void recordEntityCreate(rgl_entity_t* outEntity, rgl_scene_t scene, rgl_mesh_t mesh);
-
-	void recordEntityDestroy(rgl_entity_t entity);
-
-	void recordEntitySetPose(rgl_entity_t entity, const rgl_mat3x4f* localToWorldTf);
+		YAML::Node apiCallNode;
+		apiCallNode[fnPrettyToShortName(prettyFn)] = argsNode;
+		yamlRecording.push_back(apiCallNode);
+	}
 };
 
 class TapePlay
