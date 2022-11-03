@@ -39,6 +39,20 @@ And more:
 
 An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
 
+## Building in Docker (Linux)
+
+Two dockerfiles are prepared:
+- `DockerfileMinimal` - image designed to meet RGL minimal requirements
+- `DockerfileLatest` - image with latest Ubuntu and CUDA Toolkit version
+
+Build instructions:
+1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
+2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
+3. `docker build . -f DockerfileMinimal --tag rgl:minimal`
+4. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
+6. `./setup.bash --cmake --make -j`
+
 ## Building on Ubuntu
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
