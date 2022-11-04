@@ -55,7 +55,7 @@ if [ ! -d "$VCPKG_INSTALL_DIR" ]; then
     if [ "$INSIDE_DOCKER" = false ]; then  # Inside docker already provided
         echo "Installing dependencies for vcpkg..."
         sudo apt update
-        sudo apt install git curl zip unzip tar freeglut3-dev
+        sudo apt install git curl zip unzip tar freeglut3-dev libglew-dev libglfw3-dev
     fi
     git clone -b $VCPKG_TAG --single-branch --depth 1 https://github.com/microsoft/vcpkg $VCPKG_INSTALL_DIR
 fi
