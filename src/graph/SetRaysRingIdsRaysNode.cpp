@@ -2,7 +2,7 @@
 
 void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
 {
-	ringIds->copyFrom(ringIdsRaw, ringIdsCount);
+	ringIds->setData(ringIdsRaw, ringIdsCount);
 }
 
 void SetRingIdsRaysNode::validate()

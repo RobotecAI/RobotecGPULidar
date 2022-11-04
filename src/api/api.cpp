@@ -339,14 +339,8 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(data != nullptr);
 
-		VArray::ConstPtr output;
-		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-			auto formatNode = Node::validatePtr<FormatPointsNode>(node);
-			output = formatNode->getData();
-		} else {
-			auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-			output = pointCloudNode->getFieldData(field, nullptr);
-		}
+		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
 		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));

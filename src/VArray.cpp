@@ -79,6 +79,7 @@ VArray::~VArray()
 	for (auto&& [location, state] : instance) {
 		if (state.data != nullptr) {
 			memFree(state.data, {location});
+			state = {0};
 		}
 	}
 }
@@ -109,6 +110,9 @@ void VArray::memFree(void* ptr, std::optional<MemLoc> locationHint) const
 
 void VArray::migrateToLocation(MemLoc newLoc)
 {
+	if (currentLocation == newLoc) {
+		return;
+	}
 	void* srcData = current().data;
 	size_t elemCount = current().elemCount;
 	currentLocation = newLoc;

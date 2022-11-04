@@ -21,7 +21,7 @@ struct VArrayProxy
 	VArray::Ptr untyped() { return src; };
 	VArray::ConstPtr untyped() const { return src; };
 
-	void copyFrom(const T* srcRaw, std::size_t count) { src->setData(srcRaw, count); }
+	void setData(const T* srcRaw, std::size_t count) { src->setData(srcRaw, count); }
 
 	std::size_t getCount() const { return src->getElemCount(); }
 	std::size_t getCapacity() const { return src->getElemCapacity(); }
