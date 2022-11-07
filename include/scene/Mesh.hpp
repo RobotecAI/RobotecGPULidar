@@ -38,6 +38,8 @@ private:
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;
+	CUdeviceptr vertexBuffers[1];
+	unsigned triangleInputFlags;
 	OptixAccelBuildOptions buildOptions;
 
 };

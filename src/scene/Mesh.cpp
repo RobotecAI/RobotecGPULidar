@@ -67,8 +67,8 @@ void Mesh::updateGAS()
 
 OptixTraversableHandle Mesh::buildGAS()
 {
-	constexpr unsigned triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
-	const CUdeviceptr vertexBuffers[1] = {dVertices.readDeviceRaw()};
+	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
+	vertexBuffers[0] = dVertices.readDeviceRaw();
 
 	buildInput = {
 		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
