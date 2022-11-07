@@ -73,6 +73,7 @@ static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::strin
 template<typename Fn>
 static rgl_status_t rglSafeCall(Fn fn)
 {
+	static auto& _ = Optix::instance(); // Trigger initialization on the first API call
 	if (!canContinueAfterStatus(lastStatusCode)) {
 		if (lastStatusCode != RGL_LOGGING_ERROR) {
 			RGL_CRITICAL("Logging disabled due to the previous fatal error");
