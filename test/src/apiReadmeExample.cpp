@@ -1,4 +1,3 @@
-#include <Logger.hpp>
 #include <gtest/gtest.h>
 #include <rgl/api/core.h>
 #include <scenes.hpp>
@@ -7,7 +6,7 @@ TEST(EndToEnd, ReadmeExample)
 {
 	int major, minor, patch;
 	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
-	RGL_INFO("RGL version: {}.{}.{}", major, minor, patch);
+	printf("RGL version: %d.%d.%d\n", major, minor, patch);
 
 	rgl_mesh_t cube_mesh = makeCubeMesh();
 
