@@ -47,8 +47,6 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		.intensityIdx = getPtrTo<INTENSITY_F32>(),
 	};
 
-	// TODO(prybicki): VArray may use CUDA managed memory, which hasn't been proven to work with OptiX.
-	// TODO(prybicki): Based on my intuition, it should work fine, but beware.
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
 	CHECK_OPTIX(optixLaunch(Optix::instance().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
@@ -61,7 +59,6 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field)) {
 			fieldData.insert({field, VArray::create(field)});
-			fieldData[field]->hintLocation(VArray::GPU);
 		}
 	}
 }

@@ -18,29 +18,28 @@ struct VArrayProxy
 	static VArrayProxy<T>::ConstPtr create(std::shared_ptr<const VArray> src)
 	{ return VArrayProxy<T>::ConstPtr(new VArrayProxy<T>(std::const_pointer_cast<VArray>(src))); }
 
-	VArrayProxy<T>::Ptr clone() const
-	{ return VArrayProxy<T>::create(src->clone()); }
-
 	VArray::Ptr untyped() { return src; };
 	VArray::ConstPtr untyped() const { return src; };
 
-	void copyFrom(const T* srcRaw, std::size_t count) { src->copyFrom(srcRaw, count); }
+	void setData(const T* srcRaw, std::size_t count) { src->setData(srcRaw, count); }
 
-	std::size_t getCount() const { return src->elemCount; }
-	std::size_t getCapacity() const { return src->elemCapacity; }
-	std::size_t getBytesInUse() const { return src->elemCount * sizeof(T); }
+	std::size_t getCount() const { return src->getElemCount(); }
+	std::size_t getCapacity() const { return src->getElemCapacity(); }
+	std::size_t getBytesInUse() const { return src->getElemCount() * sizeof(T); }
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true) { src->resize(newCount, zeroInit, preserveData); }
 
+	T* getWritePtr(MemLoc location) { return reinterpret_cast<T*>(src->getWritePtr(location)); }
+	const T* getReadPtr(MemLoc location) const { return reinterpret_cast<const T*>(src->getReadPtr(location)); }
+	CUdeviceptr getCUdeviceptr() { return reinterpret_cast<CUdeviceptr>(src->getWritePtr(MemLoc::Device)); }
 
-	T*          getDevicePtr()         { return reinterpret_cast<T*>(src->getDevicePtr()); }
-	T*          getHostPtr()           { return reinterpret_cast<T*>(src->getHostPtr()); }
-	CUdeviceptr getCUdeviceptr() const { return reinterpret_cast<CUdeviceptr>(src->getDevicePtr()); }
-	const T*    getDevicePtr()   const { return reinterpret_cast<const T*>(src->getDevicePtr()); }
-	const T*    getHostPtr()     const { return reinterpret_cast<const T*>(src->getHostPtr()); }
-	T&       operator[](int idx)       { return (reinterpret_cast<T*>(src->managedData))[idx]; }
-	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->managedData))[idx]; }
+	// TODO(prybicki): remove these in favor of ...(location)
+	T*          getHostPtr()           { return reinterpret_cast<T*>(src->getWritePtr(MemLoc::Host)); }
+	const T*    getHostPtr()     const { return reinterpret_cast<const T*>(src->getReadPtr(MemLoc::Device)); }
+	T*          getDevicePtr()         { return reinterpret_cast<T*>(src->getWritePtr(MemLoc::Device)); }
+	const T*    getDevicePtr()   const { return reinterpret_cast<const T*>(src->getReadPtr(MemLoc::Device)); }
 
-	void hintLocation(int location) const { src->hintLocation(location); }
+	T&       operator[](int idx)       { return (reinterpret_cast<T*>(src->getWritePtr(MemLoc::Host)))[idx]; }
+	const T& operator[](int idx) const { return (reinterpret_cast<const T*>(src->getReadPtr(MemLoc::Host)))[idx]; }
 
 private:
 	VArrayProxy(VArray::Ptr src=nullptr) : src(src == nullptr ? VArray::create<T>() : src) {}
@@ -49,3 +48,4 @@ private:
 private:
 	VArray::Ptr src;
 };
+
