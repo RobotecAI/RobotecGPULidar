@@ -2,91 +2,119 @@
 
 #include <RGLFields.hpp>
 
+VArray::VArray(const std::type_info &type, std::size_t sizeOfType, std::size_t initialSize)
+: typeInfo(type)
+, sizeOfType(sizeOfType)
+{
+	instance[MemLoc::Host] = {0};
+	instance[MemLoc::Device] = {0};
+	currentLocation = MemLoc::Device;
+	this->resize(initialSize);
+}
+
+const void* VArray::getReadPtr(MemLoc location) const
+{
+	// TODO(prybicki): optimize: do not move if not changed
+	if (currentLocation != location) {
+		// TODO(prybicki): Refactor it to avoid this hack:
+		const_cast<VArray*>(this)->migrateToLocation(location);
+	}
+	return current().data;
+}
+
+void* VArray::getWritePtr(MemLoc location)
+{
+	return const_cast<void*>(getReadPtr(location));
+}
+
+
 VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize)
 {
 	return createVArray(type, initialSize);
 }
 
-VArray::Ptr VArray::clone() const
-{ return VArray::Ptr(new VArray(*this)); }
-
-void VArray::copyFrom(const void *src, std::size_t elements)
+void VArray::setData(const void *src, std::size_t elements)
 {
 	resize(elements, false, false);
-	CHECK_CUDA(cudaMemcpy(managedData, src, sizeOfType * elements, cudaMemcpyDefault));
+	CHECK_CUDA(cudaMemcpy(current().data, src, sizeOfType * elements, cudaMemcpyDefault));
 }
 
 void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 {
-	// If !preserveData, reserve(...) zeroes elemCount
 	reserve(newCount, preserveData);
-	if (zeroInit && elemCount < newCount) {
-		char* start = (char*) managedData + sizeOfType * elemCount;
-		std::size_t bytesToClear = sizeOfType * (newCount - elemCount);
+	if (zeroInit && current().elemCount < newCount) {
+		char* start = (char*) current().data + sizeOfType * current().elemCount;
+		std::size_t bytesToClear = sizeOfType * (newCount - current().elemCount);
 		CHECK_CUDA(cudaMemset(start, 0, bytesToClear));
 	}
-	elemCount = newCount;
+	current().elemCount = newCount;
 }
 
 void VArray::reserve(std::size_t newCapacity, bool preserveData)
 {
 	if (!preserveData) {
-		elemCount = 0;
+		current().elemCount = 0;
 	}
 
-	if(elemCapacity >= newCapacity) {
+	if(current().elemCapacity >= newCapacity) {
 		return;
 	}
 
-	void* newMem = nullptr;
-	CHECK_CUDA(cudaMallocManaged(&newMem, newCapacity * sizeOfType));
+	void* newMem = memAlloc(newCapacity * sizeOfType);
 
-	if (preserveData && managedData != nullptr) {
-		CHECK_CUDA(cudaMemcpy(newMem, managedData, sizeOfType * elemCount, cudaMemcpyDefault));
+	if (preserveData && current().data != nullptr) {
+		CHECK_CUDA(cudaMemcpy(newMem, current().data, sizeOfType * current().elemCount, cudaMemcpyDefault));
 	}
 
-	if (managedData != nullptr) {
-		CHECK_CUDA(cudaFree(managedData));
+	if (current().data != nullptr) {
+		memFree(current().data);
 	}
 
-	managedData = newMem;
-	elemCapacity = newCapacity;
+	current().data = newMem;
+	current().elemCapacity = newCapacity;
 }
 
-void VArray::hintLocation(int location) const
+VArray::~VArray()
 {
-	if (elemCapacity > 0) {
-		// TODO: use stream?
-		CHECK_CUDA(cudaMemPrefetchAsync(managedData, elemCapacity * sizeOfType, location, nullptr));
+	for (auto&& [location, state] : instance) {
+		if (state.data != nullptr) {
+			memFree(state.data, {location});
+			state = {0};
+		}
 	}
-	// TODO: potential optimization - memorize the hint and use it after first allocation
 }
 
-VArray::VArray(const std::type_info &type, std::size_t sizeOfType, std::size_t initialSize)
-: typeInfo(type)
-, sizeOfType(sizeOfType)
+void* VArray::memAlloc(std::size_t bytes, std::optional<MemLoc> locationHint) const
 {
-	this->resize(initialSize);
+	MemLoc location = locationHint.has_value() ? locationHint.value() : currentLocation;
+	void* ptr = nullptr;
+	if (location == MemLoc::Host) {
+		CHECK_CUDA(cudaMallocHost(&ptr, bytes));
+	}
+	if (location == MemLoc::Device) {
+		CHECK_CUDA(cudaMalloc(&ptr, bytes));
+	}
+	return ptr;
 }
 
-VArray::VArray(const VArray &other)
-: typeInfo(other.typeInfo)
-, sizeOfType(other.sizeOfType)
-, elemCapacity(other.elemCapacity)
-, elemCount(other.elemCount)
+void VArray::memFree(void* ptr, std::optional<MemLoc> locationHint) const
 {
-	CHECK_CUDA(cudaMallocManaged(&managedData, elemCapacity * sizeOfType));
-	CHECK_CUDA(cudaMemcpy(managedData, other.managedData, elemCapacity * sizeOfType, cudaMemcpyDefault));
+	MemLoc location = locationHint.has_value() ? locationHint.value() : currentLocation;
+	if (location == MemLoc::Host) {
+		CHECK_CUDA(cudaFreeHost(ptr));
+	}
+	if (location == MemLoc::Device) {
+		CHECK_CUDA(cudaFree(ptr));
+	}
 }
 
-VArray::VArray(VArray &&src)
-: typeInfo(src.typeInfo)
-, sizeOfType(src.sizeOfType)
-, managedData(src.managedData)
-, elemCapacity(src.elemCapacity)
-, elemCount(src.elemCount)
+void VArray::migrateToLocation(MemLoc newLoc)
 {
-	managedData = nullptr;
-	elemCapacity = 0;
-	elemCount = 0;
+	if (currentLocation == newLoc) {
+		return;
+	}
+	void* srcData = current().data;
+	size_t elemCount = current().elemCount;
+	currentLocation = newLoc;
+	setData(srcData, elemCount);
 }

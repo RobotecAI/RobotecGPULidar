@@ -2,7 +2,7 @@
 
 void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
 {
-	ringIds->copyFrom(ringIdsRaw, ringIdsCount);
+	ringIds->setData(ringIdsRaw, ringIdsCount);
 }
 
 void SetRingIdsRaysNode::validate()
@@ -14,6 +14,4 @@ void SetRingIdsRaysNode::validate()
 		    "RayCount({}) mod RingIdsCount({}) should be zero", input->getRayCount(), ringIds->getCount());
 		throw InvalidPipeline(msg);
 	}
-
-	ringIds->hintLocation(VArray::GPU);
 }

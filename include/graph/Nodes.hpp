@@ -32,7 +32,7 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatPointsNode : Node, IPointCloudDescription
+struct FormatPointsNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
 
@@ -42,8 +42,7 @@ struct FormatPointsNode : Node, IPointCloudDescription
 
 	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
 	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
-
-	inline VArray::ConstPtr getData() const { return output; }
+	static VArrayProxy<GPUFieldDesc>::Ptr getGPUFields(IPointsNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
 	inline size_t getFormattedPointSize() const { return getPointSize(fields); }
 
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
@@ -51,6 +50,9 @@ struct FormatPointsNode : Node, IPointCloudDescription
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
 	inline size_t getHeight() const override { return input->getHeight(); }
+
+
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 
 private:
