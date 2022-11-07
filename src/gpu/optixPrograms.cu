@@ -46,9 +46,9 @@ void saveRayResult(Vec3f* xyz=nullptr)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	Vec3f origin = decodePayloadVec3f({
-		.p0 = optixGetPayload_0(),
-		.p1 = optixGetPayload_1(),
-		.p2 = optixGetPayload_2()
+		optixGetPayload_0(),
+		optixGetPayload_1(),
+		optixGetPayload_2()
 	});
 
 	if (ctx.xyz != nullptr) {

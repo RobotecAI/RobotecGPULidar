@@ -46,8 +46,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	void setActive(bool active) { this->active = active; }
 
 protected:
-	template <template <typename _> typename Container>
-	static std::string getNodeTypeNames(const Container<Node::Ptr>& nodes, std::string_view separator=", ")
+	template<template<typename _1, typename _2> typename Container>
+	static std::string getNodeTypeNames(const Container<Node::Ptr, std::allocator<Node::Ptr>>& nodes, std::string_view separator=", ")
 	{
 		std::string output{};
 		for (auto&& node: nodes) {
@@ -62,8 +62,8 @@ protected:
 		return output;
 	}
 
-	template<typename T, template<typename _> typename Container>
-	static std::vector<typename T::Ptr> filter(const Container<Node::Ptr>& nodes)
+	template<typename T, template<typename _1, typename _2> typename Container>
+	static std::vector<typename T::Ptr> filter(const Container<Node::Ptr, std::allocator<Node::Ptr>>& nodes)
 	{
 		std::vector<typename T::Ptr> typedNodes {};
 		for (auto&& node : nodes) {
@@ -75,8 +75,8 @@ protected:
 		return typedNodes;
 	}
 
-	template<typename T, template<typename _> typename Container>
-	static typename T::Ptr getExactlyOne(const Container<Node::Ptr>& nodes)
+	template<typename T, template<typename _1, typename _2> typename Container>
+	static typename T::Ptr getExactlyOne(const Container<Node::Ptr, std::allocator<Node::Ptr>>& nodes)
 	{
 		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes);
 		if (typedNodes.size() != 1) {
@@ -117,7 +117,7 @@ struct fmt::formatter<Node>
 
 	template<typename FormatContext>
 	auto format(const Node& node, FormatContext& ctx) {
-		return fmt::format_to(ctx.out(), "{}(in=[{}], out=[{}])",
+		return fmt::format_to(ctx.out(), fmt::runtime("{}(in=[{}], out=[{}])"),
 		                      node.getName(),
 		                      Node::getNodeTypeNames(node.inputs),
 		                      Node::getNodeTypeNames(node.outputs));

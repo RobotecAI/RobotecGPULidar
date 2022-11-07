@@ -24,6 +24,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 # Fix Windows problems
 if (WIN32)
     add_definitions(-DNOMINMAX)  # http://www.suodenjoki.dk/us/archive/2010/min-max.htm
+    add_definitions(-D_USE_MATH_DEFINES)
 endif()
 
 # External dependencies

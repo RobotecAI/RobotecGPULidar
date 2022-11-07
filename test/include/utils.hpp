@@ -77,8 +77,7 @@ std::pair<T, T> mean_and_stdev(std::vector<T> v) {
 	float mean = sum / v.size();
 
 	std::vector<float> diff(v.size());
-	std::transform(v.begin(), v.end(), diff.begin(),
-	               std::bind2nd(std::minus<T>(), mean));
+	std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
 	float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
 	float stdev = std::sqrt(sq_sum / v.size());
 
