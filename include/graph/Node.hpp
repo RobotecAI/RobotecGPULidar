@@ -80,7 +80,7 @@ protected:
 	{
 		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes);
 		if (typedNodes.size() != 1) {
-			auto msg = fmt::format(fmt::runtime("looked for {}, but found [{}]"), name(typeid(T)), getNodeTypeNames(nodes));
+			auto msg = fmt::format("looked for {}, but found [{}]", name(typeid(T)), getNodeTypeNames(nodes));
 			throw InvalidPipeline(msg);
 		}
 		return typedNodes[0];
