@@ -1,7 +1,7 @@
 
 #include <vector>
 #include <rgl/api/core.h>
-#include <RGLFields.hpp>
+#include "../../../src/RGLFields.hpp"
 #include <math/Mat3x4f.hpp>
 #include <scenes.hpp>
 #include <macroCheckRGL.hpp>

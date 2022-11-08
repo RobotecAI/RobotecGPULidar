@@ -17,7 +17,11 @@ target_link_libraries(RobotecGPULidar_test
     gmock_main
     RobotecGPULidar
 )
-target_include_directories(RobotecGPULidar_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(RobotecGPULidar_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 include(GoogleTest)
 gtest_discover_tests(RobotecGPULidar_test)
