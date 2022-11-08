@@ -12,11 +12,13 @@ add_executable(RobotecGPULidar_test
 #    src/features/pcdOutput.cpp
     src/testMat3x4f.cpp
 )
+
 target_link_libraries(RobotecGPULidar_test
     gtest_main
     gmock_main
     RobotecGPULidar
 )
+
 target_include_directories(RobotecGPULidar_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
@@ -24,15 +26,5 @@ target_include_directories(RobotecGPULidar_test PRIVATE
 )
 
 include(GoogleTest)
+
 gtest_discover_tests(RobotecGPULidar_test)
-
-#find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS visualization)
-add_executable(interactiveTestAWSIM src/interactive/awsim.cpp)
-message("LIBS: ${PCL_LIBRARIES}")
-
-target_link_libraries(interactiveTestAWSIM RobotecGPULidar
-    gtest_main
-    gmock_main
-    ${PCL_LIBRARIES}
-)
-target_include_directories(interactiveTestAWSIM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
