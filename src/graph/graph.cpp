@@ -18,7 +18,7 @@
 #include <graph/Nodes.hpp>
 #include <RGLFields.hpp>
 
-static std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
+std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 {
 	std::set<Node::Ptr> visited = {};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {

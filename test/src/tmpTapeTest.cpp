@@ -31,4 +31,8 @@ TEST_F(TmpTapeTest, record)
 	rgl_graph_node_set_active(compact, false);
 
 	rgl_tape_record_end();
+	
+	rgl_cleanup();
+
+	rgl_tape_play("/home/mateusz/Music/recording");
 }

@@ -31,6 +31,7 @@ void TapeRecord::recordRGLVersion(YAML::Node& node)
 	node[RGL_VERSION] = rglVersion;
 }
 
+
 TapePlay::TapePlay(const char* path)
 {
 	std::string pathYaml = std::string(path) + YAML_EXTENSION;
@@ -45,22 +46,20 @@ TapePlay::TapePlay(const char* path)
 		throw RecordError("recording version does not match rgl version");
 	}
 
-	for (const auto& functionCall: yamlRecording) {
-		if (functionCall[MESH_CREATE]) {
-			playMeshCreate(functionCall[MESH_CREATE]);
-		} else if (functionCall[MESH_DESTROY]) {
-			playMeshDestroy(functionCall[MESH_DESTROY]);
-		} else if (functionCall[MESH_UPDATE_VERTICES]) {
-			playMeshUpdateVertices(functionCall[MESH_UPDATE_VERTICES]);
-		} else if (functionCall[ENTITY_CREATE]) {
-			playEntityCreate(functionCall[ENTITY_CREATE]);
-		} else if (functionCall[ENTITY_DESTROY]) {
-			playEntityDestroy(functionCall[ENTITY_DESTROY]);
-		} else if (functionCall[ENTITY_SET_POSE]) {
-			playEntitySetPose(functionCall[ENTITY_SET_POSE]);
-		}
-	}
+	for (YAML::iterator it = yamlRecording.begin(); it != yamlRecording.end(); ++it) {
+		const YAML::Node& node = *it;
+		std::string functionName = node["name"].as<std::string>();
 
+		if (!tapeFunctions.contains(functionName)) {
+			throw RecordError(fmt::format("unknown function to play: {}", functionName));
+		}
+
+		tapeFunctions[functionName](node);
+	}
+}
+
+TapePlay::~TapePlay()
+{
 	munmap(fileMmap, mmapSize);
 }
 
@@ -83,51 +82,4 @@ void TapePlay::mmapInit(const char* path)
 		throw InvalidFilePath(fmt::format("rgl_tape_play: could not open binary file: {}", path));
 	}
 	close(fd);
-}
-
-void TapePlay::playMeshCreate(YAML::Node meshCreate)
-{
-	rgl_mesh_t mesh;
-	rgl_mesh_create(&mesh,
-			reinterpret_cast<const rgl_vec3f*>(fileMmap + meshCreate["vertices_offset"].as<size_t>()),
-			meshCreate["vertex_count"].as<int>(),
-			reinterpret_cast<const rgl_vec3i*>(fileMmap + meshCreate["indices_offset"].as<size_t>()),
-			meshCreate["index_count"].as<int>());
-	meshId.insert(std::make_pair(meshCreate["mesh_id"].as<size_t>(), mesh));
-}
-
-void TapePlay::playMeshDestroy(YAML::Node meshDestroy)
-{
-	auto id = meshDestroy["mesh_id"].as<size_t>();
-	rgl_mesh_destroy(meshId[id]);
-	meshId.erase(id);
-}
-
-void TapePlay::playMeshUpdateVertices(YAML::Node meshUpdateVertices)
-{
-	rgl_mesh_update_vertices(meshId[meshUpdateVertices["mesh_id"].as<size_t>()],
-				 reinterpret_cast<const rgl_vec3f*>
-				 (fileMmap + meshUpdateVertices["vertices_offset"].as<size_t>()),
-				 meshUpdateVertices["vertex_count"].as<int>());
-}
-
-void TapePlay::playEntityCreate(YAML::Node entityCreate)
-{
-	rgl_entity_t entity;
-	rgl_entity_create(&entity, nullptr, meshId[entityCreate["mesh_id"].as<size_t>()]);
-	entityId.insert(std::make_pair(entityCreate["entity_id"].as<size_t>(), entity));
-}
-
-void TapePlay::playEntityDestroy(YAML::Node entityDestroy)
-{
-	auto id = entityDestroy["entity_id"].as<size_t>();
-	rgl_entity_destroy(entityId[id]);
-	entityId.erase(id);
-}
-
-void TapePlay::playEntitySetPose(YAML::Node entitySetPose)
-{
-	rgl_entity_set_pose(entityId[entitySetPose["entity_id"].as<size_t>()],
-			    reinterpret_cast<const rgl_mat3x4f*>
-			    (fileMmap + entitySetPose["local_to_world_tf_offset"].as<size_t>()));
 }
