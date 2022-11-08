@@ -29,6 +29,7 @@
 #include <gpu/optixProgramsPtx.hpp>
 #include <macros/optix.hpp>
 #include <macros/cuda.hpp>
+#include <git.h>
 
 #define OPTIX_LOG_LEVEL_FATAL 1
 #define OPTIX_LOG_LEVEL_ERROR 2
@@ -85,6 +86,10 @@ static std::string getCurrentDeviceName()
 
 void Optix::logVersions()
 {
+	// Location of these logs is somewhat non-trivial, so it would be good conceive something better.
+	RGL_INFO("RGL Version {}.{}.{} branch={} commitSHA1={}",
+	         RGL_VERSION_MAJOR, RGL_VERSION_MINOR, RGL_VERSION_PATCH, git::Branch(), git::CommitSHA1());
+
 	RGL_INFO("Running on GPU: {}", getCurrentDeviceName());
 
 	auto optixMajor =  OPTIX_VERSION / 10000;
@@ -117,6 +122,7 @@ void Optix::logVersions()
 		strncpy(driverVersionStr, msg.c_str(), sizeof(driverVersionStr));
 	}
 	RGL_INFO("Installed NVidia kernel driver version: {}", driverVersionStr);
+
 }
 
 Optix& Optix::instance()

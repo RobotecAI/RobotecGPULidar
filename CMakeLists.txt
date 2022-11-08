@@ -52,6 +52,17 @@ add_custom_command(
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
+# Include info about commit hash
+set(GIT_COMMAND git rev-parse --verify HEAD)
+add_custom_command(
+    OUTPUT buildInfo.cpp
+    COMMAND echo -n "const char* commitHash = \"" > buildinfo.cpp
+    COMMAND ${GIT_COMMAND} | tr -d "\\n" >> buildinfo.cpp
+    COMMAND echo "\";" >> buildinfo.cpp
+    DEPENDS
+    VERBATIM
+)
+
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
     src/Logger.cpp
@@ -80,6 +91,10 @@ add_library(RobotecGPULidar SHARED
 target_include_directories(RobotecGPULidar
     PUBLIC include
     PRIVATE ${PCL_INCLUDE_DIRS}
+)
+
+target_link_libraries(RobotecGPULidar PRIVATE
+    cmake_git_version_tracking
 )
 
 target_link_directories(RobotecGPULidar PUBLIC
