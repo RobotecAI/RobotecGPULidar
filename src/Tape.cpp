@@ -31,20 +31,6 @@ void TapeRecord::recordRGLVersion(YAML::Node& node)
 	node[RGL_VERSION] = rglVersion;
 }
 
-void TapeRecord::writeToBin(const void* source, size_t elemSize, size_t elemCount, FILE* file)
-{
-	uint8_t remainder = (elemSize * elemCount) % 16;
-	uint8_t bytesToAdd = (16 - remainder) % 16;
-
-	fwrite(source, elemSize, elemCount, file);
-	if (remainder != 0) {
-		uint8_t zeros[16];
-		fwrite(zeros, sizeof(uint8_t), bytesToAdd, file);
-	}
-	currentBinOffset += elemSize * elemCount + bytesToAdd;
-}
-
-
 TapePlay::TapePlay(const char* path)
 {
 	std::string pathYaml = std::string(path) + YAML_EXTENSION;

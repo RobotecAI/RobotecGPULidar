@@ -36,11 +36,6 @@ do if (!(expr)) {                                                               
     throw std::invalid_argument(msg);                                                            \
 } while(0)
 
-#define TAPE_HOOK(...)                                                        \
-do if (tapeRecord.has_value()) {                                              \
-    tapeRecord->recordApiCall(__PRETTY_FUNCTION__ __VA_OPT__(,) __VA_ARGS__); \
-} while(0)
-
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
 
@@ -158,7 +153,7 @@ rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
 	// 0.10.0: entities can now share meshes
 	// 0.10.1: API const correctness, added INVALID_OBJECT error, minor internal changes
 	// 0.10.2: Fixed Lidar::getResults writing too many bytes
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major,
 			  (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
@@ -168,20 +163,22 @@ rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
 		*out_minor = RGL_VERSION_MINOR;
 		*out_patch = RGL_VERSION_PATCH;
 	});
+	TAPE_HOOK(out_major, out_minor, out_patch);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		// No logging here, Logger::configure() will print logs after its initialization.
 		CHECK_ARG(0 <= log_level && log_level <= 6);
 		// Constructing string from nullptr is undefined behavior!
 		auto logFilePath = log_file_path == nullptr ? std::nullopt : std::optional(log_file_path);
 		Logger::instance().configure(log_level, logFilePath, use_stdout);
-
-		TAPE_HOOK(log_level, log_file_path, use_stdout);
 	});
+	TAPE_HOOK(log_level, log_file_path, use_stdout);
+	return status;
 }
 
 RGL_API void
@@ -223,7 +220,7 @@ rgl_get_last_error_string(const char** out_error_string)
 RGL_API rgl_status_t
 rgl_cleanup(void)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Entity::instances.clear();
 		Mesh::instances.clear();
@@ -233,15 +230,15 @@ rgl_cleanup(void)
 			Node::Ptr node = Node::instances.begin()->second;
 			destroyGraph(node);
 		}
-
-		TAPE_HOOK();
 	});
+	TAPE_HOOK();
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_count, const rgl_vec3i* indices, int32_t index_count)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_mesh_create(out_mesh={}, vertices={}, indices={})",
 			  (void*) out_mesh, repr(vertices, vertex_count), repr(indices, index_count, 1));
 		CHECK_ARG(out_mesh != nullptr);
@@ -253,42 +250,42 @@ rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
 		                         index_count).get();
-
-		TAPE_HOOK(out_mesh, vertices, vertex_count, indices, index_count);
 	});
+	TAPE_HOOK(out_mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_mesh_destroy(rgl_mesh_t mesh)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Mesh::release(mesh);
-
-		TAPE_HOOK(mesh);
 	});
+	TAPE_HOOK(mesh);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
-
-		TAPE_HOOK(mesh, vertices, vertex_count);
 	});
+	TAPE_HOOK(mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
         RGL_DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
@@ -297,15 +294,15 @@ rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
-
-		TAPE_HOOK(out_entity, scene, mesh);
 	});
+	TAPE_HOOK(out_entity, scene, mesh);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_entity_destroy(rgl_entity_t entity)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
@@ -316,54 +313,54 @@ rgl_entity_destroy(rgl_entity_t entity)
 		} else {
 			throw std::logic_error("Entity's scene does not exist");
 		}
-
-		TAPE_HOOK(entity);
 	});
+	TAPE_HOOK(entity);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* local_to_world_tf)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity, repr(local_to_world_tf, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(local_to_world_tf != nullptr);
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&local_to_world_tf->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
-
-		TAPE_HOOK(entity, local_to_world_tf);
 	});
+	TAPE_HOOK(entity, local_to_world_tf);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_run(rgl_node_t node)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		runGraph(Node::validatePtr(node));
-
-		TAPE_HOOK(node);
 	});
+	TAPE_HOOK(node);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_destroy(rgl_node_t node)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_destroy(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		destroyGraph(Node::validatePtr(node));
-
-		TAPE_HOOK(node);
 	});
+	TAPE_HOOK(node);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
@@ -374,12 +371,14 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		if (out_count != nullptr) { *out_count = elemCount; }
 		if (out_size_of != nullptr) { *out_size_of = elemSize; }
 	});
+	TAPE_HOOK(node, field, out_count, out_size_of);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(data != nullptr);
@@ -390,106 +389,107 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
 		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));
 	});
+	TAPE_HOOK(node, field, data);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_node_set_active(rgl_node_t node, bool active)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_node_set_active(node={}, active={})", repr(node), active);
 		CHECK_ARG(node != nullptr);
 
 		node->setActive(active);
-
-		TAPE_HOOK(node, active);
 	});
+	TAPE_HOOK(node, active);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_node_add_child(parent={}, child={})", repr(parent), repr(child));
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
 		parent->addChild(Node::validatePtr(child));
-
-		TAPE_HOOK(parent, child);
 	});
+	TAPE_HOOK(parent, child);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_graph_node_remove_child(parent={}, child={})", repr(parent), repr(child));
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
 		parent->removeChild(Node::validatePtr(child));
-
-		TAPE_HOOK(parent, child);
 	});
+	TAPE_HOOK(parent, child);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
-
-		TAPE_HOOK(node, rays, ray_count);
 	});
+	TAPE_HOOK(node, TAPE_ARRAY(rays, ray_count), ray_count);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
 		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t)ring_ids_count);
-
-		TAPE_HOOK(node, ring_ids, ring_ids_count);
 	});
+	TAPE_HOOK(node, TAPE_ARRAY(ring_ids, ring_ids_count), ring_ids_count);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
-
-		TAPE_HOOK(node, transform);
 	});
+	TAPE_HOOK(node, transform);
+	return status;
 }
-
 
 RGL_API rgl_status_t
 rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_transform(node={}, transform={})", repr(node), repr(transform));
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
-
-		TAPE_HOOK(node, transform);
 	});
+	TAPE_HOOK(node, transform);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_raytrace(node={}, scene={}, range={})", repr(node), (void*) scene, range);
 		CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
@@ -499,81 +499,81 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 		}
 
 		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene), range);
-
-		TAPE_HOOK(node, scene, range);
 	});
+	TAPE_HOOK(node, scene, range);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<FormatPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
-
-		TAPE_HOOK(node, fields, field_count);
 	});
+	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<YieldPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
-
-		TAPE_HOOK(node, fields, field_count);
 	});
+	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_points_compact(rgl_node_t* node)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_compact(node={})", repr(node));
 
 		createOrUpdateNode<CompactPointsNode>(node);
-
-		TAPE_HOOK(node);
 	});
+	TAPE_HOOK(node);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
 
 		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
-
-		TAPE_HOOK(node, leaf_size_x, leaf_size_y, leaf_size_z);
 	});
+	TAPE_HOOK(node, leaf_size_x, leaf_size_y, leaf_size_z);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_write_pcd_file(node={}, file={})", repr(node), file_path);
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
 		createOrUpdateNode<WritePCDFilePointsNode>(node, file_path);
-
-		TAPE_HOOK(node, file_path);
 	});
+	TAPE_HOOK(node, file_path);
+	return status;
 }
 
 RGL_API rgl_status_t
 rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width, int32_t window_height, bool fullscreen)
 {
-	return rglSafeCall([&]() {
+	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
 		          repr(node), window_name, window_width, window_height, fullscreen);
 		CHECK_ARG(window_name != nullptr);
@@ -582,9 +582,9 @@ rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t win
 		CHECK_ARG(window_height > 0);
 
 		createOrUpdateNode<VisualizePointsNode>(node, window_name, window_width, window_height, fullscreen);
-
-		TAPE_HOOK(node, window_name, window_width, window_height, fullscreen);
 	});
+	TAPE_HOOK(node, window_name, window_width, window_height, fullscreen);
+	return status;
 }
 
 RGL_API rgl_status_t

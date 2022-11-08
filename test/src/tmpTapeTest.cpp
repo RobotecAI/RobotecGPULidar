@@ -19,6 +19,9 @@ TEST_F(TmpTapeTest, record)
 
 	rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, "/tmp/test.log", true);
 
+	int32_t a,b,c;
+	rgl_get_version_info(&a,&b,&c);
+
 	rgl_node_raytrace(&raytrace, nullptr, 1000);
 	rgl_node_points_compact(&compact);
 

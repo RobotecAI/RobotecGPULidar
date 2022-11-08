@@ -32,25 +32,42 @@
 #define MESH_UPDATE_VERTICES "rgl_mesh_update_vertices"
 #define RGL_VERSION "rgl_version"
 
+#define TAPE_HOOK(...)                                                        \
+do if (tapeRecord.has_value()) {                                              \
+    tapeRecord->recordApiCall(__FUNCTION__ __VA_OPT__(,) __VA_ARGS__);        \
+} while(0)
+
+#define TAPE_ARRAY(data, count) std::make_pair(data, count)
+
 class TapeRecord
 {
-	struct ToBinDataInfo
-	{
-		const void* data = nullptr;
-		size_t elemSize;
-		int elemCount;
-	};
-
 	YAML::Node yamlRoot;
 	YAML::Node yamlRecording;
-	size_t currentBinOffset = 0;
+
 	FILE* fileBin;
 	std::ofstream fileYaml;
-	std::optional<ToBinDataInfo> valueToBin;
 
-	void writeToBin(const void* source, size_t elemSize, size_t elemCount, FILE* file);
+	size_t currentBinOffset = 0;
 
 	static void recordRGLVersion(YAML::Node& node);
+
+	template<typename T>
+	size_t writeToBin(const T* source, size_t elemCount)
+	{
+		size_t elemSize = sizeof(T);
+		uint8_t remainder = (elemSize * elemCount) % 16;
+		uint8_t bytesToAdd = (16 - remainder) % 16;
+
+		fwrite(source, elemSize, elemCount, fileBin);
+		if (remainder != 0) {
+			uint8_t zeros[16];
+			fwrite(zeros, sizeof(uint8_t), bytesToAdd, fileBin);
+		}
+
+		size_t outBinOffest = currentBinOffset;
+		currentBinOffset += elemSize * elemCount + bytesToAdd;
+		return outBinOffest;
+	}
 
 	template<typename T, typename... Args>
 	void recordApiArguments(YAML::Node& node, int currentArgIdx, T currentArg, Args... remainingArgs)
@@ -61,14 +78,9 @@ class TapeRecord
 			recordApiArguments(node, ++currentArgIdx, remainingArgs...);
 			return;
 		}
-		resolveBinQueueIfNeeded();
 	}
 
-	std::string fnPrettyToShortName(std::string prettyFn)
-	{
-		return prettyFn.substr(0, prettyFn.find('('));
-	}
-
+	//// value to yaml converters
 	template<typename T>
 	T valueToYaml(T value) { return value; }
 
@@ -84,48 +96,17 @@ class TapeRecord
 	intptr_t valueToYaml(rgl_scene_t value) { return (intptr_t)value; }
 	intptr_t valueToYaml(rgl_scene_t* value) { return (intptr_t)*value; }
 
+	intptr_t valueToYaml(void* value) { return (intptr_t)value; }
+
+	int valueToYaml(int32_t* value) { return *value; }
+	int valueToYaml(rgl_field_t value) { return (int)value; }
 	int valueToYaml(rgl_log_level_t value) { return (int)value; }
 
-	size_t valueToYaml(const rgl_vec3f* value) { addToBinQueue(value); return currentBinOffset; }
-	size_t valueToYaml(const rgl_vec3i* value) { addToBinQueue(value); return currentBinOffset; }
-	size_t valueToYaml(const rgl_mat3x4f* value) { addToBinQueue(value); return currentBinOffset; }
-	size_t valueToYaml(const int32_t* value) { addToBinQueue(value); return currentBinOffset; }
-	size_t valueToYaml(const rgl_field_t* value) { addToBinQueue(value); return currentBinOffset; }
+	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
 
-	int32_t valueToYaml(int32_t value)
-	{
-		if (valueToBin.has_value())
-		{
-			addToBinQueue((int)value);
-			resolveBinQueueIfNeeded();
-		}
-		return value;
-	}
-
-	template<typename T>
-	void addToBinQueue(T data)
-	{
-		resolveBinQueueIfNeeded();
-		size_t elemSize = sizeof(T);
-		ToBinDataInfo a;
-		a.data = reinterpret_cast<const void*>(data);
-		a.elemSize = elemSize;
-		a.elemCount = 1;
-		valueToBin.emplace(a);
-	}
-
-	void addToBinQueue(int dataCount)
-	{
-		if (!valueToBin.has_value()) return;
-		valueToBin.value().elemCount = dataCount;
-	}
-
-	void resolveBinQueueIfNeeded()
-	{
-		if (!valueToBin.has_value()) return;
-		writeToBin(valueToBin.value().data, valueToBin.value().elemSize, valueToBin.value().elemCount, fileBin);
-		valueToBin.reset();
-	}
+	// TAPE_ARRAY
+	template<typename T, typename N>
+	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
 
 public:
 	explicit TapeRecord(const char* path);
@@ -133,7 +114,7 @@ public:
 	~TapeRecord();
 
 	template<typename... Args>
-	void recordApiCall(std::string prettyFn, Args... args)
+	void recordApiCall(std::string fnName, Args... args)
 	{
 		YAML::Node argsNode;
 		if constexpr(sizeof...(args) > 0) {
@@ -141,7 +122,7 @@ public:
 		}
 
 		YAML::Node apiCallNode;
-		apiCallNode[fnPrettyToShortName(prettyFn)] = argsNode;
+		apiCallNode[fnName] = argsNode;
 		yamlRecording.push_back(apiCallNode);
 	}
 };

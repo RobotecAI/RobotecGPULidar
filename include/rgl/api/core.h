@@ -130,7 +130,7 @@ typedef enum
 	/**
 	* Indicates that a tape operation was not successful.
 	*/
-     	RGL_TAPE_ERROR,
+	RGL_TAPE_ERROR,
 
 	/**
 	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
