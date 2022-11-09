@@ -16,6 +16,7 @@
 #include <spdlog/common.h>
 
 #include <rgl/api/core.h>
+#include <rgl/api/extensions/tape.h>
 #include <rgl/api/extensions/visualize.h>
 
 #include <scene/Scene.hpp>
@@ -25,7 +26,7 @@
 #include <graph/Nodes.hpp>
 #include <graph/graph.hpp>
 
-#include <Tape.h>
+#include <Tape.hpp>
 #include <RGLExceptions.hpp>
 
 #include <repr.hpp>

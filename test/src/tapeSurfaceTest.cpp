@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 #include <models.hpp>
-#include <rgl/api/extensions/tape_api.h>
+#include <rgl/api/extensions/tape.h>
 
 #include <math/Mat3x4f.hpp>
 

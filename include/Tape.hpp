@@ -1,3 +1,17 @@
+// Copyright 2022 Robotec.AI
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 #include <fcntl.h>
@@ -8,28 +22,17 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <unordered_map>
-
-#include <typeindex>
-#include <typeinfo>
 #include <map>
 
 #include <spdlog/fmt/bundled/format.h>
 #include <yaml-cpp/yaml.h>
 
 #include <Logger.hpp>
-
 #include <RGLExceptions.hpp>
 #include <rgl/api/core.h>
 
 #define BIN_EXTENSION ".bin"
 #define YAML_EXTENSION ".yaml"
-
-#define ENTITY_CREATE "rgl_entity_create"
-#define ENTITY_DESTROY "rgl_entity_destroy"
-#define ENTITY_SET_POSE "rgl_entity_set_pose"
-#define MESH_CREATE "rgl_mesh_create"
-#define MESH_DESTROY "rgl_mesh_destroy"
-#define MESH_UPDATE_VERTICES "rgl_mesh_update_vertices"
 #define RGL_VERSION "rgl_version"
 
 #define TAPE_HOOK(...)                                                        \
