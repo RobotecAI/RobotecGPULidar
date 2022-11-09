@@ -833,6 +833,11 @@ void TapePlay::tape_node_points_visualize(const YAML::Node& yamlNode)
 RGL_API rgl_status_t
 rgl_tape_record_begin(const char* path)
 {
+	#ifdef _WIN32
+	return rglSafeCall([&]() {
+		throw RecordError("rgl_tape_record_begin not supported on Windows");
+	});
+	#endif
 	return rglSafeCall([&]() {
 		CHECK_ARG(path != nullptr);
 		RGL_DEBUG("rgl_tape_record_begin(path={})", path);
@@ -847,6 +852,11 @@ rgl_tape_record_begin(const char* path)
 RGL_API rgl_status_t
 rgl_tape_record_end()
 {
+	#ifdef _WIN32
+	return rglSafeCall([&]() {
+		throw RecordError("rgl_tape_record_end not supported on Windows");
+	});
+	#endif
 	return rglSafeCall([&]() {
 		RGL_DEBUG("rgl_tape_record_end()");
 		if (!tapeRecord.has_value()) {
@@ -860,6 +870,11 @@ rgl_tape_record_end()
 RGL_API rgl_status_t
 rgl_tape_play(const char* path)
 {
+	#ifdef _WIN32
+	return rglSafeCall([&]() {
+		throw RecordError("rgl_tape_play not supported on Windows");
+	});
+	#endif
 	return rglSafeCall([&]() {
 		CHECK_ARG(path != nullptr);
 		RGL_DEBUG("rgl_tape_play(path={})", path);

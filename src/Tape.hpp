@@ -14,13 +14,24 @@
 
 #pragma once
 
+// Hack to complete compilation on Windows. In runtime it is never used.
+#ifdef _WIN32
+#include <io.h>
+#define PROT_READ 1
+#define MAP_PRIVATE 1
+#define MAP_FAILED nullptr
+static void munmap(void* addr, size_t length) { }
+static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
+#else
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif // _WIN32
+
 #include <fcntl.h>
 #include <fstream>
 #include <string> 
 #include <optional>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <unordered_map>
 #include <map>
 
@@ -35,10 +46,14 @@
 #define YAML_EXTENSION ".yaml"
 #define RGL_VERSION "rgl_version"
 
-#define TAPE_HOOK(...)                                                        \
-do if (tapeRecord.has_value()) {                                              \
-    tapeRecord->recordApiCall(__FUNCTION__ __VA_OPT__(,) __VA_ARGS__);        \
-} while(0)
+#ifdef _WIN32
+#define TAPE_HOOK(...) ;
+#else
+#define TAPE_HOOK(...)                                              \
+do if (tapeRecord.has_value()) {                                    \
+    tapeRecord->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
+} while (0)
+#endif // _WIN32
 
 #define TAPE_ARRAY(data, count) std::make_pair(data, count)
 
