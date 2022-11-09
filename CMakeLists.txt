@@ -44,6 +44,7 @@ include_directories(${spdlog_SOURCE_DIR}/include)
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
 add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)
+target_include_directories(optixProgramsPtx PRIVATE src include)
 set_target_properties(optixProgramsPtx PROPERTIES CUDA_PTX_COMPILATION ON)
 add_custom_command(
     OUTPUT optixProgramsPtx.c
@@ -90,7 +91,7 @@ add_library(RobotecGPULidar SHARED
 
 target_include_directories(RobotecGPULidar
     PUBLIC include
-    PRIVATE ${PCL_INCLUDE_DIRS}
+    PRIVATE src ${PCL_INCLUDE_DIRS}
 )
 
 target_link_libraries(RobotecGPULidar PRIVATE

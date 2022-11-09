@@ -26,7 +26,6 @@
 #include <graph/graph.hpp>
 
 #include <RGLExceptions.hpp>
-#include <macros/visibility.h>
 
 #include <repr.hpp>
 
