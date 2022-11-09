@@ -22,6 +22,7 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(yaml-cpp)
+set_property(TARGET yaml-cpp PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if (UNIX)
     # This is a fix for:
