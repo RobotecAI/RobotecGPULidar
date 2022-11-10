@@ -360,7 +360,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
  * The node converts internal representation into a binary format defined by `fields` array.
  * Note: It is a user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
  * Graph input: point cloud
- * Graph output: none
+ * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param fields Subsequent fields to be present in the binary output
  * @param field_count Number of elements in the `fields` array
@@ -393,6 +393,8 @@ rgl_node_points_compact(rgl_node_t* node);
 /**
  * Creates or modifies DownSampleNode.
  * The node uses VoxelGrid down-sampling filter from PCL library to reduce the number of points.
+ * Graph input: point cloud
+ * Graph output: point cloud (downsampled)
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
  */
@@ -402,6 +404,8 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
 /**
  * Creates or modifies WritePCDFileNode.
  * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
+ * Graph input: point cloud
+ * Graph output: none
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param file_path Path to the output pcd file.
  */

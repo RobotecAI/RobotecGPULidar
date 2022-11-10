@@ -328,17 +328,9 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		RGL_DEBUG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
-		int32_t elemSize, elemCount;
-		if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-			auto formatNode = Node::validatePtr<FormatPointsNode>(node);
-			elemCount = (int32_t)formatNode->getPointCount();
-			elemSize = (int32_t)formatNode->getFormattedPointSize();
-		} else {
-			auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-			auto output = pointCloudNode->getFieldData(field, nullptr);
-			elemCount = (int32_t)output->getElemCount();
-			elemSize = (int32_t)output->getElemSize();
-		}
+		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		int32_t elemCount = (int32_t)pointCloudNode->getPointCount();
+		int32_t elemSize = (int32_t)pointCloudNode->getFieldPointSize(field);
 
 		if (out_count != nullptr) { *out_count = elemCount; }
 		if (out_size_of != nullptr) { *out_size_of = elemSize; }
