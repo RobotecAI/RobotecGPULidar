@@ -7,6 +7,8 @@
 /**
  * Creates or modifies VisualizePointsNode.
  * The node creates and manages PCLVisualizer to visualize output point cloud from previous node in the graph.
+ * Graph input: point cloud
+ * Graph output: none
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param window_name The window name.
  * @param window_width The window width (default: 1280).

@@ -48,9 +48,10 @@ struct IPointsNode : public IPointCloudDescription
 	using Ptr = std::shared_ptr<IPointsNode>;
 
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
+	virtual std::size_t getFieldPointSize(rgl_field_t field) const
+	{ return getFieldSize(field); }
 
 	template<rgl_field_t field>
 	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
 	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
-
 };
