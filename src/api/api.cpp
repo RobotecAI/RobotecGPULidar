@@ -329,8 +329,8 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		CHECK_ARG(node != nullptr);
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		int32_t elemCount = (int32_t)pointCloudNode->getFieldDataElemCount(field, nullptr);
-		int32_t elemSize = (int32_t)pointCloudNode->getFieldDataElemSize(field, nullptr);
+		int32_t elemCount = (int32_t)pointCloudNode->getPointCount();
+		int32_t elemSize = (int32_t)pointCloudNode->getFieldPointSize(field);
 
 		if (out_count != nullptr) { *out_count = elemCount; }
 		if (out_size_of != nullptr) { *out_size_of = elemSize; }

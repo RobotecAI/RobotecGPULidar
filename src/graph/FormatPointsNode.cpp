@@ -74,18 +74,10 @@ VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field, cudaStream_t 
 	return input->getFieldData(field, stream);
 }
 
-std::size_t FormatPointsNode::getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const
+std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
 {
 	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
 		return getPointSize(fields);
 	}
-	return getFieldData(field, stream)->getElemSize();
-}
-
-std::size_t FormatPointsNode::getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const
-{
-	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-		return getPointCount();
-	}
-	return getFieldData(field, stream)->getElemCount();
+	return getFieldSize(field);
 }

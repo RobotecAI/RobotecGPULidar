@@ -54,8 +54,7 @@ struct FormatPointsNode : Node, IPointsNode
 	void schedule(cudaStream_t stream) override;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
-	std::size_t getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const override;
-	std::size_t getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const override;
+	std::size_t getFieldPointSize(rgl_field_t field) const override;
 
 	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
 	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
@@ -87,10 +86,6 @@ struct CompactPointsNode : Node, IPointsNode
 	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return true; }
 	inline size_t getHeight() const override { return 1; }
-	inline std::size_t getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemSize(); }
-	inline std::size_t getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemCount(); }
 
 private:
 	size_t width;
@@ -114,10 +109,6 @@ struct DownSamplePointsNode : Node, IPointsNode
 	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
 	inline bool isDense() const override { return false; }
 	inline size_t getHeight() const override { return 1; }
-	inline std::size_t getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemSize(); }
-	inline std::size_t getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemCount(); }
 
 private:
 	Vec3f leafDims;
@@ -147,10 +138,6 @@ struct RaytraceNode : Node, IPointsNode
 	inline size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
 	inline VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
-	inline std::size_t getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemSize(); }
-	inline std::size_t getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemCount(); }
 
 private:
 	float range;
@@ -178,10 +165,6 @@ struct TransformPointsNode : Node, IPointsNode
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
 	inline size_t getHeight() const override { return input->getHeight(); }
-	inline std::size_t getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemSize(); }
-	inline std::size_t getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemCount(); }
 
 private:
 	Mat3x4f transform;
@@ -276,10 +259,6 @@ struct YieldPointsNode : Node, IPointsNode
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 	inline VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return results.at(field); }
-	inline std::size_t getFieldDataElemSize(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemSize(); }
-	inline std::size_t getFieldDataElemCount(rgl_field_t field, cudaStream_t stream) const override
-	{ return getFieldData(field, stream)->getElemCount(); }
 	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
 	inline bool isDense() const override { return input->isDense(); }
 	inline size_t getWidth() const override { return input->getWidth(); }
