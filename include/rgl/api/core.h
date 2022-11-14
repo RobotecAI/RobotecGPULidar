@@ -259,7 +259,7 @@ rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool
  * Returned pointer is valid only until next RGL API call.
  * @param out_error Address to store pointer to string explaining the cause of the given error.
  */
-RGL_API void
+RGL_API rgl_status_t
 rgl_get_last_error_string(const char **out_error_string);
 
 /**
