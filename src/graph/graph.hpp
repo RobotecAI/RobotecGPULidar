@@ -14,5 +14,6 @@
 
 #include <graph/Node.hpp>
 
+std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode);
 void runGraph(Node::Ptr userNode);
 void destroyGraph(Node::Ptr userNode);
