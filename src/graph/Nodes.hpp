@@ -108,7 +108,7 @@ struct DownSamplePointsNode : Node, IPointsNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	// Point cloud description
 	bool isDense() const override { return false; }
@@ -120,8 +120,6 @@ struct DownSamplePointsNode : Node, IPointsNodeSingleInput
 
 private:
 	Vec3f leafDims;
-	std::vector<rgl_field_t> requiredFields
-	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32}; // pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
 	VArray::Ptr inputFmtData = VArray::create<char>();
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
@@ -172,14 +170,13 @@ struct TransformPointsNode : Node, IPointsNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 private:
 	Mat3x4f transform;
-	std::vector<rgl_field_t> requiredFields{XYZ_F32};
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 };
 
@@ -251,12 +248,11 @@ struct WritePCDFilePointsNode : Node, IPointsNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	virtual ~WritePCDFilePointsNode();
 
 private:
-	std::vector<rgl_field_t> requiredFields{XYZ_F32, PADDING_32};
 	VArray::Ptr inputFmtData = VArray::create<char>();
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
@@ -295,14 +291,12 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	void runVisualize();
 	virtual ~VisualizePointsNode();
 
 private:
-	std::vector<rgl_field_t> requiredFields
-	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 	VArray::Ptr inputFmtData = VArray::create<char>();
 
 	PCLVisualizerFix::Ptr viewer;

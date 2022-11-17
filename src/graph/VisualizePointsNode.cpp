@@ -71,7 +71,7 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
+	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
 
 	// Convert to PCL cloud
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
@@ -108,4 +108,9 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 VisualizePointsNode::~VisualizePointsNode()
 {
 	visThread.join();
+}
+
+std::vector<rgl_field_t> VisualizePointsNode::getRequiredFieldList() const
+{
+	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }
