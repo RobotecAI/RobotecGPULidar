@@ -16,19 +16,20 @@
 
 // Hack to complete compilation on Windows. In runtime it is never used.
 #ifdef _WIN32
-#include <io.h>
-#define PROT_READ 1
-#define MAP_PRIVATE 1
-#define MAP_FAILED nullptr
-static void munmap(void* addr, size_t length) { }
-static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
+	#include <io.h>
+	#define PROT_READ 1
+	#define MAP_PRIVATE 1
+	#define MAP_FAILED nullptr
+	static int munmap(void* addr, size_t length) { return -1; }
+	static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
 #else
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
+	#include <sys/mman.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
 #endif // _WIN32
 
 #include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <string> 
 #include <optional>
@@ -47,22 +48,24 @@ static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_
 #define RGL_VERSION "rgl_version"
 
 #ifdef _WIN32
-#define TAPE_HOOK(...) ;
+#define TAPE_HOOK(...)
 #else
 #define TAPE_HOOK(...)                                              \
 do if (tapeRecord.has_value()) {                                    \
-    tapeRecord->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
+	tapeRecord->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
 } while (0)
 #endif // _WIN32
 
 #define TAPE_ARRAY(data, count) std::make_pair(data, count)
-
-using namespace std::placeholders;
+#define FWRITE(source, elemSize, elemCount, file)                          \
+do if (fwrite(source, elemSize, elemCount, file) != elemCount) {           \
+    throw RecordError(fmt::format("Failed to write data to binary file")); \
+} while(0)
 
 class TapeRecord
 {
-	YAML::Node yamlRoot;
-	YAML::Node yamlRecording;
+	YAML::Node yamlRoot; // Represents the whole yaml file
+	YAML::Node yamlRecording; // The sequence of API calls
 
 	FILE* fileBin;
 	std::ofstream fileYaml;
@@ -78,10 +81,10 @@ class TapeRecord
 		uint8_t remainder = (elemSize * elemCount) % 16;
 		uint8_t bytesToAdd = (16 - remainder) % 16;
 
-		fwrite(source, elemSize, elemCount, fileBin);
+		FWRITE(source, elemSize, elemCount, fileBin);
 		if (remainder != 0) {
 			uint8_t zeros[16];
-			fwrite(zeros, sizeof(uint8_t), bytesToAdd, fileBin);
+			FWRITE(zeros, sizeof(uint8_t), bytesToAdd, fileBin);
 		}
 
 		size_t outBinOffest = currentBinOffset;
@@ -92,7 +95,7 @@ class TapeRecord
 	template<typename T, typename... Args>
 	void recordApiArguments(YAML::Node& node, int currentArgIdx, T currentArg, Args... remainingArgs)
 	{
-		node[std::to_string(currentArgIdx)] = valueToYaml(currentArg);
+		node[currentArgIdx] = valueToYaml(currentArg);
 
 		if constexpr(sizeof...(remainingArgs) > 0) {
 			recordApiArguments(node, ++currentArgIdx, remainingArgs...);
@@ -104,19 +107,19 @@ class TapeRecord
 	template<typename T>
 	T valueToYaml(T value) { return value; }
 
-	intptr_t valueToYaml(rgl_node_t value) { return (intptr_t)value; }
-	intptr_t valueToYaml(rgl_node_t* value) { return (intptr_t)*value; }
+	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t)value; }
+	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t)*value; }
 
-	intptr_t valueToYaml(rgl_entity_t value) { return (intptr_t)value; }
-	intptr_t valueToYaml(rgl_entity_t* value) { return (intptr_t)*value; }
+	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t)value; }
+	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t)*value; }
 
-	intptr_t valueToYaml(rgl_mesh_t value) { return (intptr_t)value; }
-	intptr_t valueToYaml(rgl_mesh_t* value) { return (intptr_t)*value; }
+	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t)value; }
+	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t)*value; }
 
-	intptr_t valueToYaml(rgl_scene_t value) { return (intptr_t)value; }
-	intptr_t valueToYaml(rgl_scene_t* value) { return (intptr_t)*value; }
+	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t)value; }
+	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t)*value; }
 
-	intptr_t valueToYaml(void* value) { return (intptr_t)value; }
+	uintptr_t valueToYaml(void* value) { return (uintptr_t)value; }
 
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int)value; }
@@ -155,35 +158,7 @@ class TapePlay
 	std::unordered_map<size_t, rgl_entity_t> tapeEntities;
 	std::unordered_map<size_t, rgl_node_t> tapeNodes;
 
-	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions {
-		{ "rgl_get_version_info", std::bind(&TapePlay::tape_get_version_info, this, _1) },
-		{ "rgl_configure_logging", std::bind(&TapePlay::tape_configure_logging, this, _1) },
-		{ "rgl_cleanup", std::bind(&TapePlay::tape_cleanup, this, _1) },
-		{ "rgl_mesh_create", std::bind(&TapePlay::tape_mesh_create, this, _1) },
-		{ "rgl_mesh_destroy", std::bind(&TapePlay::tape_mesh_destroy, this, _1) },
-		{ "rgl_mesh_update_vertices", std::bind(&TapePlay::tape_mesh_update_vertices, this, _1) },
-		{ "rgl_entity_create", std::bind(&TapePlay::tape_entity_create, this, _1) },
-		{ "rgl_entity_destroy", std::bind(&TapePlay::tape_entity_destroy, this, _1) },
-		{ "rgl_entity_set_pose", std::bind(&TapePlay::tape_entity_set_pose, this, _1) },
-		{ "rgl_graph_run", std::bind(&TapePlay::tape_graph_run, this, _1) },
-		{ "rgl_graph_destroy", std::bind(&TapePlay::tape_graph_destroy, this, _1) },
-		{ "rgl_graph_get_result_size", std::bind(&TapePlay::tape_graph_get_result_size, this, _1) },
-		{ "rgl_graph_get_result_data", std::bind(&TapePlay::tape_graph_get_result_data, this, _1) },
-		{ "rgl_graph_node_set_active", std::bind(&TapePlay::tape_graph_node_set_active, this, _1) },
-		{ "rgl_graph_node_add_child", std::bind(&TapePlay::tape_graph_node_add_child, this, _1) },
-		{ "rgl_graph_node_remove_child", std::bind(&TapePlay::tape_graph_node_remove_child, this, _1) },
-		{ "rgl_node_rays_from_mat3x4f", std::bind(&TapePlay::tape_node_rays_from_mat3x4f, this, _1) },
-		{ "rgl_node_rays_set_ring_ids", std::bind(&TapePlay::tape_node_rays_set_ring_ids, this, _1) },
-		{ "rgl_node_rays_transform", std::bind(&TapePlay::tape_node_rays_transform, this, _1) },
-		{ "rgl_node_points_transform", std::bind(&TapePlay::tape_node_points_transform, this, _1) },
-		{ "rgl_node_raytrace", std::bind(&TapePlay::tape_node_raytrace, this, _1) },
-		{ "rgl_node_points_format", std::bind(&TapePlay::tape_node_points_format, this, _1) },
-		{ "rgl_node_points_yield", std::bind(&TapePlay::tape_node_points_yield, this, _1) },
-		{ "rgl_node_points_compact", std::bind(&TapePlay::tape_node_points_compact, this, _1) },
-		{ "rgl_node_points_downsample", std::bind(&TapePlay::tape_node_points_downsample, this, _1) },
-		{ "rgl_node_points_write_pcd_file", std::bind(&TapePlay::tape_node_points_write_pcd_file, this, _1) },
-		{ "rgl_node_points_visualize", std::bind(&TapePlay::tape_node_points_visualize, this, _1) },
-	};
+	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions;
 
 	void tape_get_version_info(const YAML::Node& yamlNode);
 	void tape_configure_logging(const YAML::Node& yamlNode);

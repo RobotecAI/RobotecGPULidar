@@ -24,6 +24,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(yaml-cpp)
 set_property(TARGET yaml-cpp PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+# Disable compilation warnings for dependencies
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(DISABLE_WARNINGS_FLAG "/W3")
+endif()
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(DISABLE_WARNINGS_FLAG "-w")
+endif()
+if (DEFINED DISABLE_WARNINGS_FLAG)
+    target_compile_options(yaml-cpp PRIVATE ${DISABLE_WARNINGS_FLAG})
+    target_compile_options(spdlog PRIVATE ${DISABLE_WARNINGS_FLAG})
+endif()
+
 if (UNIX)
     # This is a fix for:
     # relocation R_X86_64_TPOFF32 against `_ZGVZN6spdlog7details2os9thread_idEvE3tid'
