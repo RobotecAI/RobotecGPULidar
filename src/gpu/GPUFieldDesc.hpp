@@ -14,9 +14,12 @@
 
 #pragma once
 
+// Used to send e.g. formatting request to GPU
 struct GPUFieldDesc
 {
 	const char* data;
 	size_t size;
 	size_t dstOffset;
 };
+static_assert(std::is_trivially_copyable<GPUFieldDesc>::value);
+

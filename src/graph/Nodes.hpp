@@ -46,75 +46,82 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatPointsNode : Node, IPointsNode
+struct FormatPointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
+
+	// Point cloud description
+	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
+
+	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 	std::size_t getFieldPointSize(rgl_field_t field) const override;
 
+	// Actual implementation of formatting made public for other nodes
 	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
 	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
-	static VArrayProxy<GPUFieldDesc>::Ptr getGPUFields(IPointsNode::Ptr input, const std::vector<rgl_field_t>& fields, cudaStream_t stream);
-
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
-	inline bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
-	inline bool isDense() const override { return input->isDense(); }
-	inline size_t getWidth() const override { return input->getWidth(); }
-	inline size_t getHeight() const override { return input->getHeight(); }
 
 private:
 	std::vector<rgl_field_t> fields;
-	IPointsNode::Ptr input;
 	VArray::Ptr output = VArray::create<char>();
 };
 
-struct CompactPointsNode : Node, IPointsNode
+struct CompactPointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<CompactPointsNode>;
+	void setParameters() {}
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	size_t getWidth() const override;
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
-	inline void setParameters() {}
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
-	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
-	inline bool isDense() const override { return true; }
-	inline size_t getHeight() const override { return 1; }
+	// Point cloud description
+	bool isDense() const override { return true; }
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 private:
 	size_t width;
-	IPointsNode::Ptr input;
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
-struct DownSamplePointsNode : Node, IPointsNode
+struct DownSamplePointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<DownSamplePointsNode>;
+	void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	size_t getWidth() const override;
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
-	inline void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
-	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
-	inline bool isDense() const override { return false; }
-	inline size_t getHeight() const override { return 1; }
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+
+	// Point cloud description
+	bool isDense() const override { return false; }
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 private:
 	Vec3f leafDims;
 	std::vector<rgl_field_t> requiredFields
 	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32}; // pcl::PointXYZL is SSE-aligned to 32 bytes ¯\_(ツ)_/¯
-	IPointsNode::Ptr input;
 	VArray::Ptr inputFmtData = VArray::create<char>();
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
@@ -125,20 +132,24 @@ private:
 struct RaytraceNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
+	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	void setFields(const std::set<rgl_field_t>& fields);
 
-	inline void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
-	inline bool hasField(rgl_field_t field) const override	{ return fields.contains(field); }
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
-	inline bool isDense() const override { return false; }
-	inline size_t getWidth() const override { return raysNode->getRays()->getCount(); }
-	inline size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
-	inline VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	// Point cloud description
+	bool isDense() const override { return false; }
+	bool hasField(rgl_field_t field) const override { return fields.contains(field); }
+	size_t getWidth() const override { return raysNode->getRays()->getCount(); }
+	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
+
+	void setFields(const std::set<rgl_field_t>& fields);
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
@@ -151,144 +162,147 @@ private:
 	auto getPtrTo();
 };
 
-struct TransformPointsNode : Node, IPointsNode
+struct TransformPointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformPointsNode>;
+	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
-	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
-	inline bool hasField(rgl_field_t field) const override { return input->hasField(field); }
-	inline bool isDense() const override { return input->isDense(); }
-	inline size_t getWidth() const override { return input->getWidth(); }
-	inline size_t getHeight() const override { return input->getHeight(); }
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 private:
 	Mat3x4f transform;
 	std::vector<rgl_field_t> requiredFields{XYZ_F32};
-	IPointsNode::Ptr input;
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 };
 
-struct TransformRaysNode : Node, IRaysNode
+struct TransformRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformRaysNode>;
+	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
-	inline void setParameters(Mat3x4f transform) { this->transform = transform; }
-	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-	inline size_t getRayCount() const override { return input->getRayCount(); }
-	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
-	inline std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
+	// Data getters
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 
 private:
 	Mat3x4f transform;
-	IRaysNode::Ptr input;
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct FromMat3x4fRaysNode : Node, IRaysNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
-
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
-	void validate() override;
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
-	inline void schedule(cudaStream_t stream) override {}
-	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-	inline size_t getRayCount() const override { return rays->getCount(); }
-	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
-	inline std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override {}
+
+	// Rays description
+	size_t getRayCount() const override { return rays->getCount(); }
+	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
+
+	// Data getters
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct SetRingIdsRaysNode : Node, IRaysNode
+struct SetRingIdsRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
-
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
-	void validate() override;
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return {}; }
-	inline void schedule(cudaStream_t stream) override {}
-	inline VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); }
-	inline size_t getRayCount() const override { return input->getRayCount(); }
-	inline std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
-	inline std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override {}
+
+	// Rays description
+	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
+
+	// Data getters
+	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
 
 private:
-	IRaysNode::Ptr input;
 	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
-struct WritePCDFilePointsNode : Node
+struct WritePCDFilePointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<WritePCDFilePointsNode>;
 	using PCLPointType = pcl::PointXYZ;
+	void setParameters(const char* filePath) { this->filePath = filePath; }
 
+	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	virtual ~WritePCDFilePointsNode();
 
+	// Node requirements
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
-	inline void setParameters(const char* filePath) { this->filePath = filePath; }
+
+	virtual ~WritePCDFilePointsNode();
 
 private:
 	std::vector<rgl_field_t> requiredFields{XYZ_F32, PADDING_32};
-	IPointsNode::Ptr input;
 	VArray::Ptr inputFmtData = VArray::create<char>();
 	std::filesystem::path filePath{};
 	pcl::PointCloud<PCLPointType> cachedPCLs;
 };
 
-struct YieldPointsNode : Node, IPointsNode
+struct YieldPointsNode : Node, IPointsNodeSingleInput
 {
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
-	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
-	inline VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return results.at(field); }
-	inline bool hasField(rgl_field_t field) const override	{ return input->hasField(field); }
-	inline bool isDense() const override { return input->isDense(); }
-	inline size_t getWidth() const override { return input->getWidth(); }
-	inline size_t getHeight() const override { return input->getHeight(); }
 
 private:
-	IPointsNode::Ptr input;
 	std::vector<rgl_field_t> fields;
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
 };
 
-struct VisualizePointsNode : Node
+struct VisualizePointsNode : Node, IPointsNodeSingleInput
 {
+	static const int FRAME_RATE = 60;
 	using Ptr = std::shared_ptr<VisualizePointsNode>;
 	using PCLPointType = pcl::PointXYZRGB;
-
-	static const int FRAME_RATE = 60;
-
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
-	void runVisualize();
-	virtual ~VisualizePointsNode();
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
 	inline std::vector<rgl_field_t> getRequiredFieldList() const override { return requiredFields; }
+
+	void runVisualize();
+	virtual ~VisualizePointsNode();
 
 private:
 	std::vector<rgl_field_t> requiredFields
 	{XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
-	IPointsNode::Ptr input;
 	VArray::Ptr inputFmtData = VArray::create<char>();
 
 	PCLVisualizerFix::Ptr viewer;
