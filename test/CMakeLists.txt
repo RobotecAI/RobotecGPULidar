@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_executable(RobotecGPULidar_test
+set(RGL_TEST_FILES
     src/graphTest.cpp
     src/apiReadmeExample.cpp
     src/VArrayTest.cpp
@@ -12,6 +12,15 @@ add_executable(RobotecGPULidar_test
 #    src/features/pcdOutput.cpp
     src/testMat3x4f.cpp
 )
+
+if (NOT WIN32)
+    set(RGL_TEST_FILES ${RGL_TEST_FILES}
+        src/tapeSurfaceTest.cpp
+        src/features/tapeScene.cpp
+    )
+endif()
+
+add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
 target_link_libraries(RobotecGPULidar_test
     gtest_main

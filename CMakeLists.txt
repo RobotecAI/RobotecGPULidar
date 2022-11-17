@@ -66,6 +66,7 @@ add_custom_command(
 
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
+    src/Tape.cpp
     src/Logger.cpp
     src/VArray.cpp
     src/gpu/Optix.cpp
@@ -104,6 +105,7 @@ target_link_directories(RobotecGPULidar PUBLIC
 
 target_link_libraries(RobotecGPULidar PUBLIC
     spdlog
+    yaml-cpp
     optixPrograms
     CUDA::nvml
     CUDA::cudart

@@ -8,11 +8,33 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-FetchContent_Declare(cmake_git_version_tracking
+FetchContent_Declare(
+    cmake_git_version_tracking
     GIT_REPOSITORY https://github.com/andrew-hardin/cmake-git-version-tracking.git
     GIT_TAG 904dbda1336ba4b9a1415a68d5f203f576b696bb
-    )
+)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
+
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG yaml-cpp-0.7.0
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(yaml-cpp)
+set_property(TARGET yaml-cpp PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# Disable compilation warnings for dependencies
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(DISABLE_WARNINGS_FLAG "/W3")
+endif()
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(DISABLE_WARNINGS_FLAG "-w")
+endif()
+if (DEFINED DISABLE_WARNINGS_FLAG)
+    target_compile_options(yaml-cpp PRIVATE ${DISABLE_WARNINGS_FLAG})
+    target_compile_options(spdlog PRIVATE ${DISABLE_WARNINGS_FLAG})
+endif()
 
 if (UNIX)
     # This is a fix for:
