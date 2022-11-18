@@ -53,17 +53,6 @@ add_custom_command(
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
-# Include info about commit hash
-set(GIT_COMMAND git rev-parse --verify HEAD)
-add_custom_command(
-    OUTPUT buildInfo.cpp
-    COMMAND echo -n "const char* commitHash = \"" > buildinfo.cpp
-    COMMAND ${GIT_COMMAND} | tr -d "\\n" >> buildinfo.cpp
-    COMMAND echo "\";" >> buildinfo.cpp
-    DEPENDS
-    VERBATIM
-)
-
 add_library(RobotecGPULidar SHARED
     src/api/api.cpp
     src/Tape.cpp
