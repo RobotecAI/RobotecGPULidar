@@ -22,16 +22,6 @@
 
 #include <rgl/api/core.h>
 
-
-template <typename... Args>
-void logInfo(Args&&... args) {}
-
-template <typename... Args>
-void logWarn(Args&&... args) {}
-
-template <typename... Args>
-void logError(Args&&... args) {}
-
 struct Logger
 {
 	static Logger& instance();
