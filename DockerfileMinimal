@@ -28,3 +28,5 @@ RUN /setup.bash
 RUN rm /setup.bash
 
 WORKDIR /code
+
+RUN git config --system --add safe.directory /code
