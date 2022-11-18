@@ -30,28 +30,64 @@ struct IRaysNode
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
 };
 
-struct IPointCloudDescription
+struct IRaysNodeSingleInput : IRaysNode
 {
-	virtual bool hasField(rgl_field_t field) const = 0;
-	virtual bool isDense() const = 0;
-	virtual std::size_t getWidth() const = 0;
-	virtual std::size_t getHeight() const = 0;
-	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
+	using Ptr = std::shared_ptr<IRaysNodeSingleInput>;
+
+	// Rays description
+	size_t getRayCount() const override { return input->getRayCount(); }
+	std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
+
+	// Data getters
+	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const { return input->getRays(); };
+	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+
+protected:
+	IRaysNode::Ptr input;
 };
 
 // TODO(prybicki): getFieldData* may act lazily, so they take stream as a parameter to do the lazy evaluation.
 // TODO(prybicki): This requires synchronizing with the potentially different stream provided by the schedule(...)
 // TODO(prybicki): This situation is bug-prone, requiring greater mental effort when implementing nodes.
 // TODO(prybicki): It might be better to remove stream as a parameter and assume that all pipeline nodes are using common stream.
-struct IPointsNode : public IPointCloudDescription
+struct IPointsNode
 {
 	using Ptr = std::shared_ptr<IPointsNode>;
 
+	// Node requirements
+	virtual std::vector<rgl_field_t> getRequiredFieldList() const { return {}; };
+
+	// Point cloud description
+	virtual bool isDense() const = 0;
+	virtual bool hasField(rgl_field_t field) const = 0;
+	virtual std::size_t getWidth() const = 0;
+	virtual std::size_t getHeight() const = 0;
+	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
+
+	// Data getters
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
-	virtual std::size_t getFieldPointSize(rgl_field_t field) const
-	{ return getFieldSize(field); }
+	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 
 	template<rgl_field_t field>
-	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
+	typename VArrayProxy<typename Field<field>::type>::ConstPtr
+	getFieldDataTyped(cudaStream_t stream)
 	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
+};
+
+struct IPointsNodeSingleInput : IPointsNode
+{
+	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;
+
+	// Point cloud description
+	bool isDense() const override { return input->isDense(); }
+	size_t getWidth() const override { return input->getWidth(); }
+	size_t getHeight() const override { return input->getHeight(); }
+
+	// Data getters
+	bool hasField(rgl_field_t field) const { return input->hasField(field); }
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	{ return input->getFieldData(field, stream); }
+
+protected:
+	IPointsNode::Ptr input;
 };
