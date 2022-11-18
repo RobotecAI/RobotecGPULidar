@@ -38,7 +38,7 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, requiredFields, stream);
+	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
 
 	// Downsample
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
@@ -92,4 +92,10 @@ VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStrea
 	}
 
 	return std::const_pointer_cast<const VArray>(cacheManager.getValue(field));
+}
+
+std::vector<rgl_field_t> DownSamplePointsNode::getRequiredFieldList() const
+{
+	// pcl::PointXYZL is aligned to 32 bytes for SSE2 ¯\_(ツ)_/¯
+	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }

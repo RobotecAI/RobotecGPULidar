@@ -74,9 +74,11 @@ void runGraph(Node::Ptr userNode)
 
 	std::set<rgl_field_t> fields;
 	for (auto&& node : nodesInExecOrder) {
-		for (auto&& field : node->getRequiredFieldList()) {
-			if (!isDummy(field)) {
-				fields.insert(field);
+		if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
+			for (auto&& field : pointNode->getRequiredFieldList()) {
+				if (!isDummy(field)) {
+					fields.insert(field);
+				}
 			}
 		}
 	}

@@ -27,7 +27,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	using Ptr = std::shared_ptr<Node>;
 
 	Node() = default;
-	virtual ~Node() = default;
+	~Node() override = default;
 	void addParent(Node::Ptr parent);
 
 	void addChild(Node::Ptr child);
@@ -49,14 +49,12 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 */
 	virtual void schedule(cudaStream_t stream) = 0;
 
-	virtual std::vector<rgl_field_t> getRequiredFieldList() const = 0;
-
 	inline std::string getName() const { return name(typeid(*this)); }
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
-	bool isActive() { return active; }
+	bool isActive() const { return active; }
 	void setActive(bool active) { this->active = active; }
 
 protected:
