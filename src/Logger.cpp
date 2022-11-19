@@ -14,7 +14,7 @@
 
 #include <Logger.hpp>
 
-Logger &Logger::instance()
+Logger &Logger::getOrCreate()
 {
 	static Logger instance;
 	return instance;

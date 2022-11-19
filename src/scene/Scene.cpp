@@ -79,7 +79,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		auto& mesh = entity->mesh;
 		hHitgroupRecords.emplace_back(); // TODO(prybicki): fix, this is weird
 		HitgroupRecord *hr = &(*hHitgroupRecords.rbegin());
-		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().hitgroupPG, hr));
+		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, hr));
 		hr->data = TriangleMeshSBTData{
 			.vertex = mesh->dVertices.readDevice(),
 			.index = mesh->dIndices.readDevice(),
@@ -90,11 +90,11 @@ OptixShaderBindingTable Scene::buildSBT()
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);
 
 	RaygenRecord hRaygenRecord;
-	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().raygenPG, &hRaygenRecord));
+	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().raygenPG, &hRaygenRecord));
 	dRaygenRecords.copyFromHost(&hRaygenRecord, 1);
 
 	MissRecord hMissRecord;
-	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().missPG, &hMissRecord));
+	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().missPG, &hMissRecord));
 	dMissRecords.copyFromHost(&hMissRecord, 1);
 
 	return OptixShaderBindingTable{
@@ -147,7 +147,7 @@ OptixTraversableHandle Scene::buildAS()
 	};
 
 	OptixTraversableHandle sceneHandle;
-	CHECK_OPTIX(optixAccelBuild(Optix::instance().context,
+	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
 	                            nullptr, // TODO(prybicki): run in stream
 	                            &accelBuildOptions,
 	                            &instanceInput,

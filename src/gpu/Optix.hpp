@@ -19,7 +19,7 @@
 // RAII object to (de)initialize OptiX and CUDA
 struct Optix
 {
-	static Optix& instance();
+	static Optix& getOrCreate();
 	static void logVersions();
 
 	Optix();
