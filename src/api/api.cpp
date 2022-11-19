@@ -73,13 +73,23 @@ static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::strin
 	return status;
 }
 
+static void rgl_lazy_init()
+{
+	// Trigger initialization on the first API call
+	static bool firstCall = true;
+	if (firstCall && RGL_TAPE_FORCE) {
+		firstCall = false; // Set to false before calling to prevent infinite recursion
+		rgl_tape_record_begin(RGL_TAPE_PATH); // Calls rglSafeCall to handle exceptions
+		// If rgl_tape_record_begin(...) failed, it will turn into RGL_UNRECOVERABLE_ERROR after continuing rglSafeCall.
+	}
+	static auto& _logger = Logger::getOrCreate();
+	static auto& _optix = Optix::getOrCreate();
+}
+
 template<typename Fn>
 static rgl_status_t rglSafeCall(Fn fn)
 {
-	// Trigger initialization on the first API call
-	static auto& _logger = Logger::getOrCreate();
-	static auto& _optix = Optix::getOrCreate();
-
+	rgl_lazy_init(); // This must be a separate function, since this is a template where static variables do not work.
 	if (!canContinueAfterStatus(lastStatusCode)) {
 		if (lastStatusCode != RGL_LOGGING_ERROR) {
 			RGL_CRITICAL("Logging disabled due to the previous fatal error");
@@ -855,6 +865,10 @@ rgl_tape_record_begin(const char* path)
 	return rglSafeCall([&]() {
 		CHECK_ARG(path != nullptr);
 		RGL_DEBUG("rgl_tape_record_begin(path={})", path);
+		if (RGL_TAPE_FORCE) {
+			// If any forced tapes, then replace it with the requested one.
+			tapeRecord.reset();
+		}
 		if (tapeRecord.has_value()) {
 			throw RecordError("rgl_tape_record_begin: recording already active");
 		} else {

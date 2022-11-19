@@ -13,7 +13,9 @@ set(RGL_TEST_FILES
     src/testMat3x4f.cpp
 )
 
-if (NOT WIN32)
+# On Windows, tape is not available since it uses Linux sys-calls (mmap)
+# If RGL_TAPE_FORCE is ON, it interferes with its tests (double rgl_tape_record_begin()) which is non-trivial to fix.
+if ((NOT WIN32) AND (NOT RGL_TAPE_FORCE))
     set(RGL_TEST_FILES ${RGL_TEST_FILES}
         src/tapeSurfaceTest.cpp
         src/features/tapeScene.cpp
