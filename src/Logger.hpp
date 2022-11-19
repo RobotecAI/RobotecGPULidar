@@ -24,6 +24,9 @@
 
 struct Logger
 {
+	/**
+	 * @return The existing logger or creates a new configured with to RGL_LOG* CMake variables.
+	 */
 	static Logger& instance();
 	void configure(rgl_log_level_t logLevel, std::optional<std::filesystem::path> logFilePath, bool useStdout);
 	void flush() { mainLogger->flush(); }
