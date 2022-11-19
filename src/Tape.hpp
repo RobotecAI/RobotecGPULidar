@@ -69,6 +69,7 @@ class TapeRecord
 
 	FILE* fileBin;
 	std::ofstream fileYaml;
+	std::string givenPath;
 
 	size_t currentBinOffset = 0;
 
@@ -107,19 +108,20 @@ class TapeRecord
 	template<typename T>
 	T valueToYaml(T value) { return value; }
 
-	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t)value; }
-	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t)*value; }
+	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
 
-	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t)value; }
-	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t)*value; }
+	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t) *value; }
 
-	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t)value; }
-	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t)*value; }
+	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
 
-	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t)value; }
-	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t)*value; }
+	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
 
-	uintptr_t valueToYaml(void* value) { return (uintptr_t)value; }
+	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(const char* value) { return (uintptr_t) value;}
 
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int)value; }
