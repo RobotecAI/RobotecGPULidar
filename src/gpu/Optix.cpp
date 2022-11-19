@@ -125,7 +125,7 @@ void Optix::logVersions()
 
 }
 
-Optix& Optix::instance()
+Optix& Optix::getOrCreate()
 {
 	static Optix instance;
 	return instance;
