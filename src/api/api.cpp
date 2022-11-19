@@ -89,7 +89,6 @@ static void rgl_lazy_init()
 template<typename Fn>
 static rgl_status_t rglSafeCall(Fn fn)
 {
-	rgl_lazy_init(); // This must be a separate function, since this is a template where static variables do not work.
 	if (!canContinueAfterStatus(lastStatusCode)) {
 		if (lastStatusCode != RGL_LOGGING_ERROR) {
 			RGL_CRITICAL("Logging disabled due to the previous fatal error");
@@ -101,6 +100,7 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
+		rgl_lazy_init(); // We're in  a template where static variables do not work, hence calling function.
 		std::invoke(fn);
 	}
 	catch (spdlog::spdlog_ex& e) {
