@@ -103,6 +103,22 @@ target_link_libraries(RobotecGPULidar PUBLIC
 )
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+# Create a CMake list with available log levels (rgl_log_level_t)
+set(RGL_AVAILABLE_LOG_LEVELS
+    RGL_LOG_LEVEL_ALL
+    RGL_LOG_LEVEL_TRACE
+    RGL_LOG_LEVEL_DEBUG
+    RGL_LOG_LEVEL_INFO
+    RGL_LOG_LEVEL_WARN
+    RGL_LOG_LEVEL_ERROR
+    RGL_LOG_LEVEL_CRITICAL
+    RGL_LOG_LEVEL_OFF
+)
+
+# Check if RGL_LOG_LEVEL is a valid variable
+if (NOT ("RGL_LOG_LEVEL_${RGL_LOG_LEVEL}" IN_LIST RGL_AVAILABLE_LOG_LEVELS))
+    message(FATAL_ERROR "Incorrect RGL_LOG_LEVEL value: ${RGL_LOG_LEVEL}")
+endif()
 
 # Pass #define-s to RGL compilation
 target_compile_definitions(RobotecGPULidar
