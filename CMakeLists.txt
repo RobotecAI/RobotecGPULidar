@@ -8,7 +8,7 @@ set(RGL_LOG_STDOUT ON CACHE BOOL
     "Enables logging to STDOUT")
 set(RGL_LOG_LEVEL INFO CACHE STRING
     "Specifies minimal severity of log message to be printed (TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF)")
-set(RGL_LOG_FILE "rgl-log.txt" CACHE PATH
+set(RGL_LOG_FILE "" CACHE PATH
     "Defines a file path to store RGL log")
 set(RGL_TAPE_FORCE OFF CACHE BOOL
     "Calls rgl_tape_record_begin(RGL_TAPE_PATH) on RGL initialization")
