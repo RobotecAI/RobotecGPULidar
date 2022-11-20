@@ -26,6 +26,11 @@
 
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
+// TODO: workaround for missing pow2 function on Windows
+__device__ float pow2Tmp(float x, int _unused) {
+	return x * x;
+}
+
 struct Vec3fPayload
 {
 	unsigned p0;
@@ -80,10 +85,10 @@ void saveRayResult(Vec3f* xyz=nullptr)
 	}
 	if (ctx.distanceIdx != nullptr) {
 		ctx.distanceIdx[rayIdx] = isFinite
-		                        ? sqrt(pow(
+		                        ? sqrt(pow2Tmp(
 		                            (*xyz)[0] - origin[0], 2) +
-		                            pow((*xyz)[1] - origin[1], 2) +
-		                            pow((*xyz)[2] - origin[2], 2))
+		                            pow2Tmp((*xyz)[1] - origin[1], 2) +
+		                            pow2Tmp((*xyz)[2] - origin[2], 2))
 		                        : CUDART_INF_F;
 	}
 	if (ctx.intensityIdx != nullptr) {
