@@ -43,6 +43,8 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
 endif()
 
 find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 # Includes
 include_directories(include)
@@ -77,6 +79,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/DownSamplePointsNode.cpp
     src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
+    src/graph/Ros2PublishPointsNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
@@ -88,7 +91,7 @@ add_library(RobotecGPULidar SHARED
 
 target_include_directories(RobotecGPULidar
     PUBLIC include
-    PRIVATE src ${PCL_INCLUDE_DIRS}
+    PRIVATE src ${PCL_INCLUDE_DIRS} ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS}
 )
 
 target_link_libraries(RobotecGPULidar PRIVATE
@@ -107,6 +110,8 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::cudart_static
     CUDA::cuda_driver
     ${PCL_LIBRARIES}
+    ${rclcpp_LIBRARIES}
+    ${sensor_msgs_LIBRARIES}
 )
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 

@@ -18,6 +18,7 @@
 #include <rgl/api/core.h>
 #include <rgl/api/extensions/tape.h>
 #include <rgl/api/extensions/visualize.h>
+#include <rgl/api/extensions/ros2.h>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
@@ -919,5 +920,20 @@ rgl_tape_play(const char* path)
 		}
 	});
 	#endif //_WIN32
+}
+
+RGL_API rgl_status_t
+rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_points_ros2_publish(node={}, topic_name={}, frame_id={})", repr(node), topic_name, frame_id);
+		CHECK_ARG(topic_name != nullptr);
+		CHECK_ARG(topic_name[0] != '\0');
+		CHECK_ARG(frame_id != nullptr);
+		CHECK_ARG(frame_id[0] != '\0');
+
+		createOrUpdateNode<Ros2PublishPointsNode>(node, topic_name, frame_id);
+	});
+	return status;
 }
 }

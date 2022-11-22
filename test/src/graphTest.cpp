@@ -6,6 +6,8 @@
 
 #include <math/Mat3x4f.hpp>
 
+#include <rgl/api/extensions/ros2.h>
+
 class Graph : public RGLAutoCleanupTest {};
 
 TEST_F(Graph, FullLinear)
@@ -45,6 +47,13 @@ TEST_F(Graph, NodeActivation)
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
+	rgl_node_t ros2pub=nullptr;
+	rgl_node_t format=nullptr;
+
+	std::vector<rgl_field_t> formatFields = {
+		XYZ_F32,
+		PADDING_32
+	};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -59,11 +68,17 @@ TEST_F(Graph, NodeActivation)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "two_boxes_activation.pcd"));
 
+	rgl_node_points_ros2_publish(&ros2pub, "a", "b");
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
+
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, write));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, ros2pub));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 
@@ -76,6 +91,10 @@ TEST_F(Graph, NodeActivation)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, true));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
+
+	while(1) {
+		EXPECT_RGL_SUCCESS(rgl_graph_run(write));
+	};
 }
 
 TEST_F(Graph, NodeRemoval)
