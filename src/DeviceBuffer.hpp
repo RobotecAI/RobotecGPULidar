@@ -116,17 +116,16 @@ public:
 
 private:
 	bool ensureDeviceCanFit(std::size_t newElemCount) {
-		if (newElemCount == 0) {
-			auto msg = fmt::format("Attempted to allocate {} bytes of memory", newElemCount);
-			throw std::logic_error(msg);
-		}
 		if (elemCapacity >= newElemCount) {
 			return false;
 		}
 		if (data != nullptr) {
 			CHECK_CUDA(cudaFree(data));
+			data = nullptr;
 		}
-		CHECK_CUDA(cudaMalloc(reinterpret_cast<void**>(&data), newElemCount * sizeof(T)));
+		if (newElemCount > 0) {
+			CHECK_CUDA(cudaMalloc(reinterpret_cast<void**>(&data), newElemCount * sizeof(T)));
+		}
 		elemCapacity = newElemCount;
 		return true;
 	}
