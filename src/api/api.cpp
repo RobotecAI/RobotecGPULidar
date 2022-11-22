@@ -154,6 +154,7 @@ rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
 	// 0.10.0: entities can now share meshes
 	// 0.10.1: API const correctness, added INVALID_OBJECT error, minor internal changes
 	// 0.10.2: Fixed Lidar::getResults writing too many bytes
+	// 0.11.0: implement Graph API (Gaussian noise temporarily removed)
 	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major,
 			  (void*) out_minor, (void*) out_patch);
