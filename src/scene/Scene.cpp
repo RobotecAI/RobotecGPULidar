@@ -102,7 +102,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		.missRecordBase = dMissRecords.readDeviceRaw(),
 		.missRecordStrideInBytes = sizeof(MissRecord),
 		.missRecordCount = 1U,
-		.hitgroupRecordBase = dHitgroupRecords.readDeviceRaw(),
+		.hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords.readDeviceRaw() : static_cast<CUdeviceptr>(0),
 		.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord),
 		.hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords.getElemCount()),
 	};
@@ -110,6 +110,9 @@ OptixShaderBindingTable Scene::buildSBT()
 
 OptixTraversableHandle Scene::buildAS()
 {
+	if (getObjectCount() == 0) {
+		return static_cast<OptixTraversableHandle>(0);
+	}
 	std::vector<OptixInstance> instances;
 	for (auto&& entity : entities) {
 		// TODO(prybicki): this is somewhat inefficient, because most of the time only transform changes.

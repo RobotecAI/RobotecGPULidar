@@ -36,6 +36,7 @@ struct RaytraceRequestContext
 	Field<IS_HIT_I32>::type* isHit;
 	Field<RAY_IDX_U32>::type* rayIdx;
 	Field<RING_ID_U16>::type* ringIdx;
-	Field<DISTANCE_F32>::type* distanceIdx;
-	Field<INTENSITY_F32>::type* intensityIdx;
+	Field<DISTANCE_F32>::type* distance;
+	Field<INTENSITY_F32>::type* intensity;
 };
+static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

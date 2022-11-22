@@ -23,7 +23,6 @@
 #include <gpu/RaytraceRequestContext.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
 
-
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
 struct Vec3fPayload
@@ -53,21 +52,14 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 	};
 }
 
-
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(Vec3f* xyz=nullptr)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
-	Vec3f origin = decodePayloadVec3f({
-		optixGetPayload_0(),
-		optixGetPayload_1(),
-		optixGetPayload_2()
-	});
-
 	if (ctx.xyz != nullptr) {
-		// Return actual XYZ of the hit point or infinity vector with signs of the ray.
-		ctx.xyz[rayIdx] = isFinite ? *xyz : ctx.rays[rayIdx] * Vec3f{CUDART_INF_F, CUDART_INF_F, CUDART_INF_F};
+		// Return actual XYZ of the hit point or infinity vector.
+		ctx.xyz[rayIdx] = isFinite ? *xyz : Vec3f{CUDART_INF_F, CUDART_INF_F, CUDART_INF_F};
 	}
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = isFinite;
@@ -78,21 +70,26 @@ void saveRayResult(Vec3f* xyz=nullptr)
 	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
 		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
 	}
-	if (ctx.distanceIdx != nullptr) {
-		ctx.distanceIdx[rayIdx] = isFinite
-		                        ? sqrt(pow(
-		                            (*xyz)[0] - origin[0], 2) +
-		                            pow((*xyz)[1] - origin[1], 2) +
-		                            pow((*xyz)[2] - origin[2], 2))
+	if (ctx.distance != nullptr) {
+		ctx.distance[rayIdx] = isFinite
+		                        ? sqrt(
+		                            pow((*xyz)[0] - (*origin)[0], 2) +
+		                            pow((*xyz)[1] - (*origin)[1], 2) +
+		                            pow((*xyz)[2] - (*origin)[2], 2))
 		                        : CUDART_INF_F;
 	}
-	if (ctx.intensityIdx != nullptr) {
-		ctx.intensityIdx[rayIdx] = 100;
+	if (ctx.intensity != nullptr) {
+		ctx.intensity[rayIdx] = 100;
 	}
 }
 
 extern "C" __global__ void __raygen__()
 {
+	if (ctx.scene == 0) {
+		saveRayResult<false>();
+		return;
+	}
+
 	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
 
 	Vec3f origin = ray * Vec3f{0, 0, 0};
@@ -124,7 +121,12 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
-	saveRayResult<true>(&hitWorld);
+	Vec3f origin = decodePayloadVec3f({
+		optixGetPayload_0(),
+		optixGetPayload_1(),
+		optixGetPayload_2()
+	});
+	saveRayResult<true>(&hitWorld, &origin);
 }
 
 extern "C" __global__ void __miss__()
