@@ -8,11 +8,12 @@ TEST(EndToEnd, ReadmeExample)
 	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
 	printf("RGL version: %d.%d.%d\n", major, minor, patch);
 
+	// Create a mesh by using helper function from test/include/scenes.hpp
 	rgl_mesh_t cube_mesh = makeCubeMesh();
 
 	// Put an entity on the default scene
-	rgl_entity_t cube_entity = 0;
-	EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
+	rgl_entity_t cube_entity = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, nullptr, cube_mesh));
 
 	// Set position of the cube entity to (0, 0, 5)
 	rgl_mat3x4f entity_tf = {
@@ -42,10 +43,10 @@ TEST(EndToEnd, ReadmeExample)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	// Wait for the Graph to run (if needed) and collect results
-	int32_t hitpoint_count = 0;
-	int32_t size;
-	rgl_vec3f results[1] = { 0 };
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &size));
+	int32_t hitpoint_count;
+	int32_t point_size;
+	rgl_vec3f results[1];
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &point_size));
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results));
 
 	printf("Got %d hitpoint(s)\n", hitpoint_count);

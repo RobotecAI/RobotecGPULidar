@@ -72,44 +72,45 @@ Full source code can be found [here](../test/src/apiReadmeExample.cpp)
 
 ```c
 // Create a mesh
-rgl_mesh_t cube_mesh = rgl_mesh_create(/* arguments skipped for the sake of brevity */);
+rgl_mesh_t cube_mesh = nullptr;
+rgl_mesh_create(&cube_mesh, /* remaining arguments skipped for the sake of brevity */);
 
 // Put an entity on the default scene
-rgl_entity_t cube_entity = 0;
-EXPECT_RGL_SUCCESS(rgl_entity_create(&cube_entity, NULL, cube_mesh));
+rgl_entity_t cube_entity = nullptr;
+rgl_entity_create(&cube_entity, nullptr, cube_mesh);
 
 // Set position of the cube entity to (0, 0, 5)
 rgl_mat3x4f entity_tf = {
 .value = {
     { 1, 0, 0, 0 },
     { 0, 1, 0, 0 },
-    { 0, 0, 1, 5 } }
+    { 0, 0, 1, 5 }}
 };
-EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
+rgl_entity_set_pose(cube_entity, &entity_tf);
 
 // Create a graph representation of a lidar that sends 1 ray and is situated at (x,y,z) = (0, 0, 0), facing positive Z
 rgl_mat3x4f ray_tf = {
 .value = {
     { 1, 0, 0, 0 },
     { 0, 1, 0, 0 },
-    { 0, 0, 1, 0 },}
+    { 0, 0, 1, 0 }}
 };
 
 rgl_node_t useRays = nullptr, raytrace = nullptr;
 
-EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1));
-EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
-EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
+rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1);
+rgl_node_raytrace(&raytrace, nullptr, 1000);
+rgl_graph_node_add_child(useRays, raytrace);
 
 // you can run the graph using any one of its nodes
-EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+rgl_graph_run(raytrace);
 
 // Wait for the Graph to run (if needed) and collect results
-int32_t hitpoint_count = 0;
-int32_t size;
-rgl_vec3f results[1] = { 0 };
-EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &size));
-EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results));
+int32_t hitpoint_count;
+int32_t point_size;
+rgl_vec3f results[1];
+rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &point_size);
+rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results);
 
 printf("Got %d hitpoint(s)\n", hitpoint_count);
 for (int i = 0; i < hitpoint_count; ++i) {
