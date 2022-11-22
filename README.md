@@ -33,7 +33,6 @@ And more:
 - Converting to custom binary output
 - Downsampling
 - Writing to PCD file
-- Optional Gaussian noise (see [documentation](docs/GaussianNoise.md))
 
 ## Usage
 
@@ -68,7 +67,7 @@ Build instructions:
 
 ## Building on Windows
 
-1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
+1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.4.4+.
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2.
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
 3. Install [PCL](https://pointclouds.org/) 1.12:
