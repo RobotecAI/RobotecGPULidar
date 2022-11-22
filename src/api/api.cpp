@@ -77,13 +77,16 @@ static void rgl_lazy_init()
 {
 	// Trigger initialization on the first API call
 	static bool firstCall = true;
-	if (firstCall && RGL_TAPE_FORCE) {
-		firstCall = false; // Set to false before calling to prevent infinite recursion
-		rgl_tape_record_begin(RGL_TAPE_PATH); // Calls rglSafeCall to handle exceptions
-		// If rgl_tape_record_begin(...) failed, it will turn into RGL_UNRECOVERABLE_ERROR after continuing rglSafeCall.
+	if (!firstCall {
+	    return;
 	}
 	static auto& _logger = Logger::getOrCreate();
 	static auto& _optix = Optix::getOrCreate();
+	firstCall = false; // Set to false before RGL_TAPE_FORCE to prevent infinite recursion
+	if (RGL_TAPE_FORCE) {
+		rgl_tape_record_begin(RGL_TAPE_PATH); // Calls rglSafeCall to handle exceptions
+		// If rgl_tape_record_begin(...) failed, it will turn into RGL_UNRECOVERABLE_ERROR after continuing rglSafeCall.
+	}
 }
 
 template<typename Fn>
@@ -100,7 +103,7 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
-		rgl_lazy_init(); // We're in  a template where static variables do not work, hence calling function.
+		rgl_lazy_init(); // We're in a template where static variables do not work, hence calling function.
 		std::invoke(fn);
 	}
 	catch (spdlog::spdlog_ex& e) {
