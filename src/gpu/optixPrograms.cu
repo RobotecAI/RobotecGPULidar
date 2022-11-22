@@ -57,10 +57,9 @@ __forceinline__ __device__
 void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
-
 	if (ctx.xyz != nullptr) {
 		// Return actual XYZ of the hit point or infinity vector with signs of the ray.
-		ctx.xyz[rayIdx] = isFinite ? *xyz : ctx.rays[rayIdx] * Vec3f{CUDART_INF_F, CUDART_INF_F, CUDART_INF_F};
+		ctx.xyz[rayIdx] = isFinite ? *xyz : Vec3f{CUDART_INF_F, CUDART_INF_F, CUDART_INF_F};
 	}
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = isFinite;
