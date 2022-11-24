@@ -47,7 +47,7 @@ struct CacheManager
 
 	void setUpdated(Key key) { cacheAge.at(key) = 0; }
 	bool isLatest(Key key) const { return cacheAge.at(key) == 0; }
-	bool contains(Key key) const { return cache.contains(key); }
+	bool contains(Key key) const { return cache.count(key) > 0; }
 	CacheType& getValue(Key key) { return cache.at(key); }
 
 private:

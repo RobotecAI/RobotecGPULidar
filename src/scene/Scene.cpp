@@ -80,12 +80,12 @@ OptixShaderBindingTable Scene::buildSBT()
 		hHitgroupRecords.emplace_back(); // TODO(prybicki): fix, this is weird
 		HitgroupRecord *hr = &(*hHitgroupRecords.rbegin());
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().hitgroupPG, hr));
-		hr->data = TriangleMeshSBTData{
-			.vertex = mesh->dVertices.readDevice(),
-			.index = mesh->dIndices.readDevice(),
-			.vertex_count = mesh->dVertices.getElemCount(),
-			.index_count = mesh->dIndices.getElemCount(),
-		};
+		TriangleMeshSBTData data{};
+		data.vertex = mesh->dVertices.readDevice();
+		data.index = mesh->dIndices.readDevice();
+		data.vertex_count = mesh->dVertices.getElemCount();
+		data.index_count = mesh->dIndices.getElemCount();
+		hr->data = data;
 	}
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);
 
@@ -97,15 +97,15 @@ OptixShaderBindingTable Scene::buildSBT()
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::instance().missPG, &hMissRecord));
 	dMissRecords.copyFromHost(&hMissRecord, 1);
 
-	return OptixShaderBindingTable{
-		.raygenRecord = dRaygenRecords.readDeviceRaw(),
-		.missRecordBase = dMissRecords.readDeviceRaw(),
-		.missRecordStrideInBytes = sizeof(MissRecord),
-		.missRecordCount = 1U,
-		.hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords.readDeviceRaw() : static_cast<CUdeviceptr>(0),
-		.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord),
-		.hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords.getElemCount()),
-	};
+	OptixShaderBindingTable outSBT{};
+	outSBT.raygenRecord = dRaygenRecords.readDeviceRaw();
+	outSBT.missRecordBase = dMissRecords.readDeviceRaw();
+	outSBT.missRecordStrideInBytes = sizeof(MissRecord);
+	outSBT.missRecordCount = 1U;
+	outSBT.hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords.readDeviceRaw() : static_cast<CUdeviceptr>(0);
+	outSBT.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
+	outSBT.hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords.getElemCount());
+	return outSBT;
 }
 
 OptixTraversableHandle Scene::buildAS()
@@ -124,27 +124,25 @@ OptixTraversableHandle Scene::buildAS()
 	dInstances.resizeToFit(instances.size());
 	dInstances.copyFromHost(instances);
 
-	OptixBuildInput instanceInput = {
-	.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES,
-	.instanceArray = {
-	.instances = dInstances.readDeviceRaw(),
-	.numInstances = static_cast<unsigned int>(dInstances.getElemCount())
-	},
-	};
+	OptixBuildInputInstanceArray instanceArray{};
+	instanceArray.instances = dInstances.readDeviceRaw();
+	instanceArray.numInstances = static_cast<unsigned int>(dInstances.getElemCount());
 
-	OptixAccelBuildOptions accelBuildOptions = {
-	.buildFlags =
-	OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
-	| OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
-	.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	OptixBuildInput instanceInput{};
+	instanceInput.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+	instanceInput.instanceArray = instanceArray;
+
+	OptixAccelBuildOptions accelBuildOptions{};
+	accelBuildOptions.buildFlags =
+	    OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
+	    | OPTIX_BUILD_FLAG_ALLOW_COMPACTION;
+	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
 	scratchpad.resizeToFit(instanceInput, accelBuildOptions);
 
-	OptixAccelEmitDesc emitDesc = {
-	.result = scratchpad.dCompactedSize.readDeviceRaw(),
-	.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
-	};
+	OptixAccelEmitDesc emitDesc{};
+	emitDesc.result = scratchpad.dCompactedSize.readDeviceRaw();
+	emitDesc.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
 
 	OptixTraversableHandle sceneHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::instance().context,

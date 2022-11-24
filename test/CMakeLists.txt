@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 set(RGL_TEST_FILES
     src/graphTest.cpp
     src/apiReadmeExample.cpp
-    src/VArrayTest.cpp
+#    src/VArrayTest.cpp
 #    src/apiSurfaceTests.cpp
 #    src/features/range.cpp
 #    src/features/gaussianNoise.cpp
@@ -17,6 +17,7 @@ if (NOT WIN32)
     set(RGL_TEST_FILES ${RGL_TEST_FILES}
         src/tapeSurfaceTest.cpp
         src/features/tapeScene.cpp
+        src/VArrayTest.cpp # doesn't work on windows
     )
 endif()
 

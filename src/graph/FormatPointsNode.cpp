@@ -72,12 +72,12 @@ static VArrayProxy<GPUFieldDesc>::Ptr makeGPUFieldDesc(IPointsNode::Ptr input, c
 	std::size_t gpuFieldIdx = 0;
 	for (size_t i = 0; i < fields.size(); ++i) {
 		if (!isDummy(fields[i])) {
-			(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
+			GPUFieldDesc gpuFieldDesc{};
 			// TODO(prybicki): distinguish between read / write fields here
-			.data = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device)),
-			.size = getFieldSize(fields[i]),
-			.dstOffset = offset,
-			};
+			gpuFieldDesc.data = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device));
+			gpuFieldDesc.size = getFieldSize(fields[i]);
+			gpuFieldDesc.dstOffset = offset;
+			(*gpuFields)[gpuFieldIdx] = gpuFieldDesc;
 			gpuFieldIdx += 1;
 		}
 		offset += getFieldSize(fields[i]);

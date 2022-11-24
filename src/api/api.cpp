@@ -51,7 +51,7 @@ static bool canContinueAfterStatus(rgl_status_t status)
 		RGL_NOT_IMPLEMENTED,
 		RGL_TAPE_ERROR
 	};
-	return status == RGL_SUCCESS || recoverableErrors.contains(status);
+	return status == RGL_SUCCESS || recoverableErrors.count(status) > 0;
 };
 
 static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt)
@@ -598,7 +598,7 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ra
 void TapePlay::tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_rays_from_mat3x4f(&node,
 		reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()),
 		yamlNode[2].as<int>());
@@ -621,7 +621,7 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
 void TapePlay::tape_node_rays_set_ring_ids(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_rays_set_ring_ids(&node,
 		reinterpret_cast<const int32_t*>(fileMmap + yamlNode[1].as<size_t>()),
 		yamlNode[2].as<int>());
@@ -644,7 +644,7 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 void TapePlay::tape_node_rays_transform(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_rays_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()));
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
@@ -665,7 +665,7 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 void TapePlay::tape_node_points_transform(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()));
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
@@ -691,7 +691,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 void TapePlay::tape_node_raytrace(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_raytrace(&node,
 		nullptr,  // TODO(msz-rai) support multiple scenes
 		yamlNode[2].as<float>());
@@ -715,7 +715,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t fiel
 void TapePlay::tape_node_points_format(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_format(&node,
 		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
 		yamlNode[2].as<int>());
@@ -739,7 +739,7 @@ rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field
 void TapePlay::tape_node_points_yield(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_yield(&node,
 		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
 		yamlNode[2].as<int>());
@@ -761,7 +761,7 @@ rgl_node_points_compact(rgl_node_t* node)
 void TapePlay::tape_node_points_compact(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_compact(&node);
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
@@ -781,7 +781,7 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
 void TapePlay::tape_node_points_downsample(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_downsample(&node,
 		yamlNode[1].as<float>(),
 		yamlNode[2].as<float>(),
@@ -806,7 +806,7 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
 void TapePlay::tape_node_points_write_pcd_file(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_write_pcd_file(&node, yamlNode[1].as<std::string>().c_str());
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
@@ -831,7 +831,7 @@ rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t win
 void TapePlay::tape_node_points_visualize(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<size_t>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_t node = tapeNodes.count(nodeId) > 0 ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_visualize(&node,
 		yamlNode[1].as<std::string>().c_str(),
 		yamlNode[2].as<int>(),

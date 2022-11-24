@@ -84,31 +84,30 @@ OptixTraversableHandle Mesh::buildGAS()
 	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 	vertexBuffers[0] = dVertices.readDeviceRaw();
 
-	buildInput = {
-		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-		.triangleArray = {
-			.vertexBuffers = vertexBuffers,
-			.numVertices = static_cast<unsigned int>(dVertices.getElemCount()),
-			.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-			.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType),
-			.indexBuffer = dIndices.readDeviceRaw(),
-			.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount()),
-			.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-			.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType),
-			.flags = &triangleInputFlags,
-			.numSbtRecords = 1,
-			.sbtIndexOffsetBuffer = 0,
-			.sbtIndexOffsetSizeInBytes = 0,
-			.sbtIndexOffsetStrideInBytes = 0,
-		}
-	};
+	OptixBuildInputTriangleArray triangleArray{};
+	triangleArray.vertexBuffers = vertexBuffers;
+	triangleArray.numVertices = static_cast<unsigned int>(dVertices.getElemCount());
+	triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+	triangleArray.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType);
+	triangleArray.indexBuffer = dIndices.readDeviceRaw();
+	triangleArray.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount());
+	triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+	triangleArray.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType);
+	triangleArray.flags = &triangleInputFlags;
+	triangleArray.numSbtRecords = 1;
+	triangleArray.sbtIndexOffsetBuffer = 0;
+	triangleArray.sbtIndexOffsetSizeInBytes = 0;
+	triangleArray.sbtIndexOffsetStrideInBytes = 0;
 
-	buildOptions = {
-		.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-		              // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-		.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	buildInput = OptixBuildInput();
+	buildInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+	buildInput.triangleArray = triangleArray;
+
+	buildOptions = OptixAccelBuildOptions();
+	buildOptions.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
+	                          | OPTIX_BUILD_FLAG_ALLOW_UPDATE;
+	                          // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION; // Temporarily disabled
+	buildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 

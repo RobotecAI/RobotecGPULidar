@@ -24,12 +24,12 @@ std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
 		visited.insert(current);
 		for (auto&& output : current->getOutputs()) {
-			if (!visited.contains(output)) {
+			if (visited.count(output) == 0) {
 				dfsRec(output);
 			}
 		}
 		for (auto&& input : current->getInputs()) {
-			if (!visited.contains(input)) {
+			if (visited.count(input) == 0) {
 				dfsRec(input);
 			}
 		}
@@ -55,7 +55,7 @@ static std::vector<Node::Ptr> findExecutionOrder(std::set<Node::Ptr> nodes)
 		}
 		nodes.erase(current);
 		for (auto&& output : current->getOutputs()) {
-			if (nodes.contains(output)) {
+			if (nodes.count(output) > 0) {
 				dfsRec(output);
 			}
 		}

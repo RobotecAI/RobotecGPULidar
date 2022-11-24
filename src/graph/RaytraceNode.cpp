@@ -21,7 +21,7 @@ void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
 
-	if (fields.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
+	if (fields.count(RING_ID_U16) > 0 && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
 		throw InvalidPipeline(msg);
 	}
@@ -30,7 +30,7 @@ void RaytraceNode::validate()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fields.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fields.count(field) > 0 ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
 void RaytraceNode::schedule(cudaStream_t stream)
@@ -46,20 +46,20 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	// Optional
 	auto ringIds = raysNode->getRingIds();
 
-	(*requestCtx)[0] = RaytraceRequestContext{
-		.rays = rays->getDevicePtr(),
-		.rayCount = rays->getCount(),
-		.rayRange = range,
-		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
-		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
-		.scene = sceneAS,
-		.xyz = getPtrTo<XYZ_F32>(),
-		.isHit = getPtrTo<IS_HIT_I32>(),
-		.rayIdx = getPtrTo<RAY_IDX_U32>(),
-		.ringIdx = getPtrTo<RING_ID_U16>(),
-		.distance = getPtrTo<DISTANCE_F32>(),
-		.intensity = getPtrTo<INTENSITY_F32>(),
-	};
+	RaytraceRequestContext rrc{};
+	rrc.rays = rays->getDevicePtr();
+	rrc.rayCount = rays->getCount();
+	rrc.rayRange = range;
+	rrc.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr;
+	rrc.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0;
+	rrc.scene = sceneAS;
+	rrc.xyz = getPtrTo<XYZ_F32>();
+	rrc.isHit = getPtrTo<IS_HIT_I32>();
+	rrc.rayIdx = getPtrTo<RAY_IDX_U32>();
+	rrc.ringIdx = getPtrTo<RING_ID_U16>();
+	rrc.distance = getPtrTo<DISTANCE_F32>();
+	rrc.intensity = getPtrTo<INTENSITY_F32>();
+	(*requestCtx)[0] = rrc;
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
@@ -71,7 +71,7 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	this->fields = std::move(fields);
 	for (auto&& field : fields) {
-		if (!fieldData.contains(field)) {
+		if (fieldData.count(field) == 0) {
 			fieldData.insert({field, VArray::create(field)});
 		}
 	}

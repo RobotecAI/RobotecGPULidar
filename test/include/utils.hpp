@@ -114,11 +114,11 @@ static std::string readFileStr(std::filesystem::path path)
 
 
 // TODO(prybicki): replace this with a proper Matrix class
-static rgl_mat3x4f identity = { .value = {
+static rgl_mat3x4f identity = {
 	1, 0, 0, 0,
 	0, 1, 0, 0,
 	0, 0, 1, 0
-}};
+};
 
 // static rgl_lidar_t makeTrivialLidar()
 // {

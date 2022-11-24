@@ -108,7 +108,7 @@ TapePlay::TapePlay(const char* path)
 		const YAML::Node& node = *it;
 		std::string functionName = node["name"].as<std::string>();
 
-		if (!tapeFunctions.contains(functionName)) {
+		if (tapeFunctions.count(functionName) == 0) {
 			throw RecordError(fmt::format("unknown function to play: {}", functionName));
 		}
 

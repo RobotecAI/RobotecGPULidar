@@ -138,7 +138,7 @@ struct RaytraceNode : Node, IPointsNode
 
 	// Point cloud description
 	bool isDense() const override { return false; }
-	bool hasField(rgl_field_t field) const override { return fields.contains(field); }
+	bool hasField(rgl_field_t field) const override { return fields.count(field) > 0; }
 	size_t getWidth() const override { return raysNode->getRays()->getCount(); }
 	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
 

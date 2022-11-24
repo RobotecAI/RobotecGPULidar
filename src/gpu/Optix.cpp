@@ -181,34 +181,31 @@ Optix::~Optix()
 
 void Optix::initializeStaticOptixStructures()
 {
-	OptixModuleCompileOptions moduleCompileOptions = {
-		.maxRegisterCount = 100,
+	OptixModuleCompileOptions moduleCompileOptions{};
+	moduleCompileOptions.maxRegisterCount = 100;
 #ifdef NDEBUG
-		.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE
+	moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2;
+	moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
 #else
-		.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0,
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL
+	moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0;
+	moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
 #endif
-	};
 
-	OptixPipelineCompileOptions pipelineCompileOptions = {
-		.usesMotionBlur = false,
-		.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
-		.numPayloadValues = 3,  // Ray origin: X, Y, Z
-		.numAttributeValues = 2,  // Triangle barycentrics: X, Y
-		.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
-		.pipelineLaunchParamsVariableName = "ctx",
-	};
+	OptixPipelineCompileOptions pipelineCompileOptions{};
+	pipelineCompileOptions.usesMotionBlur = false;
+	pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
+	pipelineCompileOptions.numPayloadValues = 3;  // Ray origin: X, Y, Z
+	pipelineCompileOptions.numAttributeValues = 2;  // Triangle barycentrics: X, Y
+	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
+	pipelineCompileOptions.pipelineLaunchParamsVariableName = "ctx";
 
-	OptixPipelineLinkOptions pipelineLinkOptions = {
-		.maxTraceDepth = 2,
+	OptixPipelineLinkOptions pipelineLinkOptions{};
+	pipelineLinkOptions.maxTraceDepth = 2;
 #ifdef NDEBUG
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
+	pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
 #else
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
+	pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
 #endif
-	};
 
 	CHECK_OPTIX(optixModuleCreateFromPTX(context,
 		&moduleCompileOptions,
@@ -220,35 +217,35 @@ void Optix::initializeStaticOptixStructures()
 	));
 
 	OptixProgramGroupOptions pgOptions = {};
-	OptixProgramGroupDesc raygenDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
-		.raygen = {
-			.module = module,
-			.entryFunctionName = "__raygen__" }
-	};
+
+	OptixProgramGroupSingleModule raygenModule{};
+	raygenModule.module = module;
+	raygenModule.entryFunctionName = "__raygen__";
+	OptixProgramGroupDesc raygenDesc{};
+	raygenDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
+	raygenDesc.raygen = raygenModule;
 
 	CHECK_OPTIX(optixProgramGroupCreate(
 		context, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
 
-	OptixProgramGroupDesc missDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
-		.miss = {
-			.module = module,
-			.entryFunctionName = "__miss__" },
-	};
+	OptixProgramGroupSingleModule missModule{};
+	missModule.module = module;
+	missModule.entryFunctionName = "__miss__";
+	OptixProgramGroupDesc missDesc{};
+	missDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+	missDesc.miss = missModule;
 
 	CHECK_OPTIX(optixProgramGroupCreate(
 		context, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
 
-	OptixProgramGroupDesc hitgroupDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
-		.hitgroup = {
-			.moduleCH = module,
-			.entryFunctionNameCH = "__closesthit__",
-			.moduleAH = module,
-			.entryFunctionNameAH = "__anyhit__",
-		}
-	};
+	OptixProgramGroupHitgroup hitgroupModule{};
+	hitgroupModule.moduleCH = module;
+	hitgroupModule.entryFunctionNameCH = "__closesthit__";
+	hitgroupModule.moduleAH = module;
+	hitgroupModule.entryFunctionNameAH = "__anyhit__";
+	OptixProgramGroupDesc hitgroupDesc{};
+	hitgroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+	hitgroupDesc.hitgroup = hitgroupModule;
 
 	CHECK_OPTIX(optixProgramGroupCreate(
 		context, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
