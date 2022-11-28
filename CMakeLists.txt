@@ -97,7 +97,7 @@ target_link_libraries(RobotecGPULidar PUBLIC
     yaml-cpp
     optixPrograms
     CUDA::nvml
-    CUDA::cudart
+    CUDA::cudart_static
     CUDA::cuda_driver
     ${PCL_LIBRARIES}
 )
