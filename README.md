@@ -34,6 +34,11 @@ And more:
 - Downsampling
 - Writing to PCD file
 
+## Runtime requirements
+  - Nvidia Driver:
+    - Linux >= 460.27.03
+    - Windows >= 472.50
+
 ## Usage
 
 An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
@@ -45,10 +50,10 @@ Two dockerfiles are prepared:
 - `DockerfileLatest` - image with latest Ubuntu and CUDA Toolkit version
 
 Build instructions:
-1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
-2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
-3. `docker build . -f DockerfileMinimal --tag rgl:minimal`
-4. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+1. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
+3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
+4. `docker build . -f DockerfileMinimal --tag rgl:minimal`
 5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
 6. `./setup.bash --cmake --make -j`
 
@@ -85,20 +90,6 @@ Build instructions:
 4. Build the project:
    - You can use [CLion IDE](https://www.jetbrains.com/clion/) (tested)
    - Alternatively - [cmake-gui](https://cmake.org/download/) and Microsoft Visual Studio
-
-## Troubleshooting
-
-### Linux
-
-To verify that your drivers and libraries are correctly installed, do the following:
-*  Run `nvidia-smi` in your command line and see if the output shows the correct version of driver and CUDA (455.28+, 11.2+)
-*  Check the CUDA compiler: `nvcc -V` in your command line. It should show the correct version (11.2+). If it points to an old version, make sure you uninstall `nvidia-cuda-toolkit` package and add the following to your library (cuda-11.2 toolkit should be installed if you followed the steps before: `export PATH=/usr/local/cuda-11.2/bin${PATH:+:${PATH}}
-   export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64\${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}`)
-*  Run `locate libnvoptix`. It should point to the 455.28+ version of the library. If you uninstalled the old drivers, run `ubdatedb` first.
-*  Run `ls ${OptiX_INSTALL_DIR}` in your terminal. It should list directories of your OptiX SDK.
-*  Build OptiX SDK and run `./optixHello` from the `${OptiX_INSTALL_DIR}/SDK/build/bin` directory. It should run without error and show green window.
-
-If all of these work correctly, your environment is likely setup correctly. Some problems are solved by restarting your computer (especially after you change/install drivers).
 
 ## Acknowledgements
 
