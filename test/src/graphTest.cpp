@@ -47,13 +47,6 @@ TEST_F(Graph, NodeActivation)
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
-	rgl_node_t ros2pub=nullptr;
-	rgl_node_t format=nullptr;
-
-	std::vector<rgl_field_t> formatFields = {
-		XYZ_F32,
-		PADDING_32
-	};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -68,17 +61,11 @@ TEST_F(Graph, NodeActivation)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "two_boxes_activation.pcd"));
 
-	rgl_node_points_ros2_publish(&ros2pub, "a", "b");
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
-
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, write));
-
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, ros2pub));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 
@@ -91,10 +78,6 @@ TEST_F(Graph, NodeActivation)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, true));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
-
-	while(1) {
-		EXPECT_RGL_SUCCESS(rgl_graph_run(write));
-	};
 }
 
 TEST_F(Graph, NodeRemoval)
@@ -193,6 +176,63 @@ TEST_F(Graph, FormatNodeResults)
 		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], 1e-6);
 		EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
 	}
+}
+
+TEST_F(Graph, Ros2PublishTmp)
+{
+	auto mesh = makeCubeMesh();
+
+	auto entity = makeEntity(mesh);
+	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr;
+
+	rgl_node_t ros2pub=nullptr;
+	rgl_node_t format=nullptr;
+
+	rgl_node_t ros2pub2=nullptr;
+	rgl_node_t format2=nullptr;
+
+	std::vector<rgl_field_t> formatFields = {
+		XYZ_F32,
+		PADDING_32
+	};
+
+	std::vector<rgl_field_t> formatFields2 = {
+		XYZ_F32,
+		PADDING_32,
+		INTENSITY_F32
+	};
+
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
+	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
+	rgl_mat3x4f translateXTf = Mat3x4f::TRS({3, 0, 0}).toRGL();
+
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateXTf));
+
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
+
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub2, "pointcloud2", "rgl"));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format2, formatFields2.data(), formatFields2.size()));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, transformPts));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, ros2pub));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, format2));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format2, ros2pub2));
+
+	while(1) {
+		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+	};
 }
 
 /* TEST_F(Pipeline, AWSIM)
