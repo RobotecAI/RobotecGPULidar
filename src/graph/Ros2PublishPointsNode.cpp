@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Nodes.hpp>
-
+#include <graph/NodesRos2.hpp>
 
 RglRos2Node::RglRos2Node(std::string topicName)
 : Node(std::string("rgl_") + topicName)

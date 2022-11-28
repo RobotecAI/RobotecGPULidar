@@ -32,10 +32,6 @@
 #include <VArrayProxy.hpp>
 #include <gpu/nodeKernels.hpp>
 
-#include <std_msgs/msg/string.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <rclcpp/rclcpp.hpp>
-
 /**
  * Notes for maintainers:
  *
@@ -313,39 +309,4 @@ private:
 	int windowHeight;
 	bool fullscreen;
 	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
-};
-
-class RglRos2Node : public rclcpp::Node
-{
-public:
-    using SharedPtr = std::shared_ptr<RglRos2Node>;
-
-    RglRos2Node(std::string topicName);
-	void constructRos2Msg(std::vector<rgl_field_t> fields);
-    void publish(const void* rawData, int count);
-
-  private:
-	sensor_msgs::msg::PointField createPointFieldMsg(std::string name, int offset, int datatype, int count);
-
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_;
-    sensor_msgs::msg::PointCloud2 msg_;
-};
-
-struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
-{
-	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
-
-	void setParameters(const char* topicName, const char* frameId);
-
-	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
-
-private:
-	VArray::Ptr inputFmtData = VArray::create<char>();
-
-	std::string topicName{};
-	std::string frameId{};
-
-	RglRos2Node::SharedPtr ros2Node;
 };

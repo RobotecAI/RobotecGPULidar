@@ -25,6 +25,10 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
+# Extensions configuration
+set(RGL_BUILD_ROS2_EXTENSION ON CACHE BOOL
+    "Enables building ROS2 extension. It requires installed and sourced ROS2.")
+
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
@@ -43,8 +47,6 @@ if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
 endif()
 
 find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
-find_package(rclcpp REQUIRED)
-find_package(sensor_msgs REQUIRED)
 
 # Includes
 include_directories(include)
@@ -63,7 +65,7 @@ add_custom_command(
 add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
-    src/api/api.cpp
+    src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
     src/VArray.cpp
@@ -89,31 +91,36 @@ add_library(RobotecGPULidar SHARED
     src/graph/YieldPointsNode.cpp
 )
 
+if (RGL_BUILD_ROS2_EXTENSION)
+    find_package(rclcpp REQUIRED)
+    find_package(sensor_msgs REQUIRED)
+    target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp)
+    target_include_directories(RobotecGPULidar PRIVATE ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
+    target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
+endif()
+
 target_include_directories(RobotecGPULidar
     PUBLIC include
-    PRIVATE src ${PCL_INCLUDE_DIRS} ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS}
+    PRIVATE src ${PCL_INCLUDE_DIRS}
 )
 
-target_link_libraries(RobotecGPULidar PRIVATE
-    cmake_git_version_tracking
-)
-
-target_link_directories(RobotecGPULidar PUBLIC
+target_link_directories(RobotecGPULidar PRIVATE
     ${PCL_LIBRARY_DIRS}
 )
 
-target_link_libraries(RobotecGPULidar PUBLIC
+target_link_libraries(RobotecGPULidar PRIVATE
     spdlog
     yaml-cpp
     optixPrograms
+    cmake_git_version_tracking
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart_static
     CUDA::cuda_driver
-    ${PCL_LIBRARIES}
-    ${rclcpp_LIBRARIES}
-    ${sensor_msgs_LIBRARIES}
 )
-set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Create a CMake list with available log levels (rgl_log_level_t)
 set(RGL_AVAILABLE_LOG_LEVELS
@@ -135,6 +142,8 @@ endif()
 if (WIN32 AND RGL_AUTO_TAPE_PATH)
     message(FATAL_ERROR "(Auto)Tape not supported on Windows")
 endif()
+
+set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Pass #define-s to RGL compilation
 target_compile_definitions(RobotecGPULidar

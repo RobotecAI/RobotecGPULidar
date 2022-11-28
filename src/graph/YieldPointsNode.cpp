@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Nodes.hpp>
+#include <graph/NodesCore.hpp>
 
 void YieldPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
