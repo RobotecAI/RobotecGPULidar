@@ -137,7 +137,7 @@ extern "C" {
 RGL_API rgl_status_t
 rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
 {
-	// Short API version history:
+	// Short pre-changelog API version history:
 	// This is a brief shortcut for devs!
 	// 0.1: PoC via dlopen
 	// 0.2: added E2E PCL formats (12, 24, 48), ringIds, postRaycastTransform

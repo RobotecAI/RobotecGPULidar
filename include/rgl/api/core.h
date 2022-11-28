@@ -29,7 +29,7 @@
 
 #define RGL_VERSION_MAJOR 0
 #define RGL_VERSION_MINOR 11
-#define RGL_VERSION_PATCH 0
+#define RGL_VERSION_PATCH 1
 
 /**
  * Three consecutive 32-bit floats.
