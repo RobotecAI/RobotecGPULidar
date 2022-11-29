@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
+# Build Release by default; CMAKE_BUILD_TYPE needs to be set before project(...)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
 project(RobotecGPULidar C CXX CUDA)
 
 # Logging default settings (can be changed via API call)
@@ -19,12 +24,6 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
-
-# Build Release by default
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
 
 # Fix Windows problems
 if (WIN32)
