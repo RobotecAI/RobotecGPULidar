@@ -53,6 +53,8 @@ private:
 	inline static rclcpp::Node::SharedPtr ros2Node = nullptr;
 	inline static std::string ros2NodeName = "RobotecGPULidar";
 	inline static std::set<std::string> ros2TopicNames{};
+	inline static rclcpp::executors::StaticSingleThreadedExecutor::SharedPtr
+		ros2Executor = nullptr;
 
 	void constructRos2Message(std::vector<rgl_field_t> fields, bool isDense);
 	sensor_msgs::msg::PointField createPointFieldMsg(

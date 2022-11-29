@@ -21,8 +21,16 @@ void Ros2PublishPointsNode::setParameters(
 	rgl_qos_policy_history_t qosHistory, int32_t qosDepth)
 {
 	if (ros2Node.get() == nullptr) {
-		rclcpp::init(0, nullptr);
+		static char *args[] = {
+			(char*)"--ros-args",
+			(char*)"--disable-external-lib-logs",
+			nullptr
+		};
+		rclcpp::init(2, args);
+
 		ros2Node = std::make_shared<rclcpp::Node>(ros2NodeName);
+		ros2Executor = std::make_shared<rclcpp::executors::StaticSingleThreadedExecutor>();
+		ros2Executor->add_node(ros2Node);
 	}
 
 	if (ros2TopicNames.contains(topicName) && this->topicName != topicName) {
@@ -62,12 +70,19 @@ void Ros2PublishPointsNode::schedule(cudaStream_t stream)
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
 	ros2Publisher->publish(ros2Message);
+	ros2Executor->spin_some();
 }
 
 Ros2PublishPointsNode::~Ros2PublishPointsNode()
 {
 	ros2TopicNames.erase(topicName);
 	ros2Publisher.reset();
+
+	if (ros2TopicNames.empty()) {
+		rclcpp::shutdown();
+		ros2Node.reset();
+		ros2Executor.reset();
+	}
 }
 
 void Ros2PublishPointsNode::constructRos2Message(std::vector<rgl_field_t> fields, bool isDense)
