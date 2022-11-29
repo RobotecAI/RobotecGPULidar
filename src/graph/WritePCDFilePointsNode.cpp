@@ -46,7 +46,7 @@ WritePCDFilePointsNode::~WritePCDFilePointsNode()
 		RGL_WARN("{}: skipped saving PCD file {} - empty point cloud", getName(), filePath.string());
 		return;
 	}
-	pcl::io::savePCDFileASCII(filePath.string(), cachedPCLs);
+	pcl::io::savePCDFileBinary(filePath.string(), cachedPCLs);
 }
 
 std::vector<rgl_field_t> WritePCDFilePointsNode::getRequiredFieldList() const
