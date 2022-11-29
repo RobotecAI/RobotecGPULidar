@@ -15,6 +15,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
+# An attempt to disable targets from yaml-cpp; had difficulties with some of them
+# More details here: https://github.com/jbeder/yaml-cpp/issues/1158
+set(YAML_CPP_BUILD_TESTS OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
+set(YAML_CPP_BUILD_TOOLS OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
+set(YAML_CPP_INSTALL OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
+set(YAML_CPP_FORMAT_SOURCE OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
 FetchContent_Declare(
     yaml-cpp
     GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
