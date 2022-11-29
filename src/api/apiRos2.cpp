@@ -24,13 +24,37 @@ RGL_API rgl_status_t
 rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_points_ros2_publish(node={}, topic_name={}, frame_id={})", repr(node), topic_name, frame_id);
+		RGL_DEBUG("rgl_node_points_ros2_publish(node={}, topic_name={}, frame_id={})",
+		          repr(node), topic_name, frame_id);
 		CHECK_ARG(topic_name != nullptr);
 		CHECK_ARG(topic_name[0] != '\0');
 		CHECK_ARG(frame_id != nullptr);
 		CHECK_ARG(frame_id[0] != '\0');
 
 		createOrUpdateNode<Ros2PublishPointsNode>(node, topic_name, frame_id);
+	});
+	return status;
+}
+
+RGL_API rgl_status_t
+rgl_node_points_ros2_publish_with_qos(
+	rgl_node_t* node, const char* topic_name, const char* frame_id,
+	rgl_qos_policy_reliability_t qos_reliability, rgl_qos_policy_durability_t qos_durability,
+	rgl_qos_policy_history_t qos_history, int32_t qos_depth)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_points_ros2_publish_with_qos(node={}, topic_name={}, frame_id={},"
+		          "qos_reliability={}, qos_durability={}, qos_history={}, qos_depth={})",
+		          repr(node), topic_name, frame_id,
+		          qos_reliability, qos_durability, qos_history, qos_depth);
+		CHECK_ARG(topic_name != nullptr);
+		CHECK_ARG(topic_name[0] != '\0');
+		CHECK_ARG(frame_id != nullptr);
+		CHECK_ARG(frame_id[0] != '\0');
+		CHECK_ARG(qos_depth >= 0);
+
+		createOrUpdateNode<Ros2PublishPointsNode>(
+			node, topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_depth);
 	});
 	return status;
 }

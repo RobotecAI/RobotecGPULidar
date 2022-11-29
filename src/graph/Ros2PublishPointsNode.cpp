@@ -14,7 +14,11 @@
 
 #include <graph/NodesRos2.hpp>
 
-void Ros2PublishPointsNode::setParameters(const char* topicName, const char* frameId)
+void Ros2PublishPointsNode::setParameters(
+	const char* topicName, const char* frameId,
+	rgl_qos_policy_reliability_t qosReliability,
+	rgl_qos_policy_durability_t qosDurability,
+	rgl_qos_policy_history_t qosHistory, int32_t qosDepth)
 {
 	if (ros2Node.get() == nullptr) {
 		rclcpp::init(0, nullptr);
@@ -34,7 +38,12 @@ void Ros2PublishPointsNode::setParameters(const char* topicName, const char* fra
 	this->frameId = frameId;
 	ros2TopicNames.insert(topicName);
 
-	ros2Publisher = ros2Node->create_publisher<sensor_msgs::msg::PointCloud2>(topicName, 10);
+	rclcpp::QoS qos = rclcpp::QoS(qosDepth);
+	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
+	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
+	qos.history(static_cast<rmw_qos_history_policy_t>(qosHistory));
+
+	ros2Publisher = ros2Node->create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
 void Ros2PublishPointsNode::validate()
