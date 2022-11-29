@@ -55,7 +55,12 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
 	voxelGrid.filter(*filtered);
-	RGL_WARN("Original: {} Filtered: {}", toFilter->size(), filtered->size());
+	bool pclReduced = filtered->size() < toFilter->size();
+	if (!pclReduced) {
+		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}",
+		                           toFilter->size(), filtered->size(), leafDims);
+		RGL_WARN("Down-sampling node had no effect! ({})", details);
+	}
 	filteredPoints->setData(filtered->data(), filtered->size());
 	filteredIndices->resize(filtered->size(), false, false);
 
