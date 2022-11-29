@@ -40,6 +40,8 @@ do if (!(expr)) {                                                               
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
 
+static bool isCompiledWithAutoTape() { return !std::string(RGL_AUTO_TAPE_PATH).empty(); }
+
 static bool canContinueAfterStatus(rgl_status_t status)
 {
 	// Set constructor may throw, hence lazy initialization.
@@ -75,17 +77,15 @@ static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::strin
 
 static void rgl_lazy_init()
 {
-	// Trigger initialization on the first API call
-	static bool firstCall = true;
-	if (!firstCall {
-	    return;
+	static bool initDone = false;
+	if (initDone) {
+		return;
 	}
 	static auto& _logger = Logger::getOrCreate();
 	static auto& _optix = Optix::getOrCreate();
-	firstCall = false; // Set to false before RGL_TAPE_FORCE to prevent infinite recursion
-	if (RGL_TAPE_FORCE) {
-		rgl_tape_record_begin(RGL_TAPE_PATH); // Calls rglSafeCall to handle exceptions
-		// If rgl_tape_record_begin(...) failed, it will turn into RGL_UNRECOVERABLE_ERROR after continuing rglSafeCall.
+	initDone = true; // Set to true before RGL_TAPE_FORCE to prevent infinite recursion
+	if (isCompiledWithAutoTape()) {
+		tapeRecord.emplace(std::filesystem::path(RGL_AUTO_TAPE_PATH));
 	}
 }
 
@@ -103,7 +103,7 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
-		rgl_lazy_init(); // We're in a template where static variables do not work, hence calling function.
+		rgl_lazy_init(); // Trigger initialization on the first API call
 		std::invoke(fn);
 	}
 	catch (spdlog::spdlog_ex& e) {
@@ -206,9 +206,7 @@ rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool
 	auto status = rglSafeCall([&]() {
 		// No logging here, Logger::configure() will print logs after its initialization.
 		CHECK_ARG(0 <= log_level && log_level <= 6);
-		// Constructing string from nullptr is undefined behavior!
-		auto logFilePath = log_file_path == nullptr ? std::nullopt : std::optional(log_file_path);
-		Logger::getOrCreate().configure(log_level, logFilePath, use_stdout);
+		Logger::getOrCreate().configure(log_level, log_file_path, use_stdout);
 	});
 	TAPE_HOOK(log_level, log_file_path, use_stdout);
 	return status;
@@ -868,10 +866,6 @@ rgl_tape_record_begin(const char* path)
 	return rglSafeCall([&]() {
 		CHECK_ARG(path != nullptr);
 		RGL_DEBUG("rgl_tape_record_begin(path={})", path);
-		if (RGL_TAPE_FORCE) {
-			// If any forced tapes, then replace it with the requested one.
-			tapeRecord.reset();
-		}
 		if (tapeRecord.has_value()) {
 			throw RecordError("rgl_tape_record_begin: recording already active");
 		} else {

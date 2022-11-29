@@ -121,7 +121,6 @@ class TapeRecord
 	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
 
 	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(const char* value) { return (uintptr_t) value;}
 
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int)value; }
@@ -134,7 +133,7 @@ class TapeRecord
 	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
 
 public:
-	explicit TapeRecord(const char* path);
+	explicit TapeRecord(const std::filesystem::path& path);
 
 	~TapeRecord();
 

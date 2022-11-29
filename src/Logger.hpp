@@ -29,6 +29,7 @@ struct Logger
 	 */
 	static Logger& getOrCreate();
 	void configure(rgl_log_level_t logLevel, std::optional<std::filesystem::path> logFilePath, bool useStdout);
+	void configure(rgl_log_level_t logLevel, const char* logFilePath, bool useStdout);
 	void flush() { mainLogger->flush(); }
 	spdlog::logger& getLogger() { return *mainLogger; }
 private:

@@ -19,9 +19,8 @@ namespace fs = std::filesystem;
 
 std::optional<TapeRecord> tapeRecord;
 
-TapeRecord::TapeRecord(const char* path)
+TapeRecord::TapeRecord(const fs::path& path)
 {
-	givenPath = std::string(path);
 	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
 	std::string pathBin = fs::path(path).concat(BIN_EXTENSION).string();
 
