@@ -81,7 +81,6 @@ add_library(RobotecGPULidar SHARED
     src/graph/DownSamplePointsNode.cpp
     src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
-    src/graph/Ros2PublishPointsNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
@@ -94,9 +93,10 @@ add_library(RobotecGPULidar SHARED
 if (RGL_BUILD_ROS2_EXTENSION)
     find_package(rclcpp REQUIRED)
     find_package(sensor_msgs REQUIRED)
-    target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp)
+    target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp src/graph/Ros2PublishPointsNode.cpp)
     target_include_directories(RobotecGPULidar PRIVATE ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
     target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
+    target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 endif()
 
 target_include_directories(RobotecGPULidar
