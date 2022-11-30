@@ -69,7 +69,6 @@ class TapeRecord
 
 	FILE* fileBin;
 	std::ofstream fileYaml;
-	std::string givenPath;
 
 	size_t currentBinOffset = 0;
 
