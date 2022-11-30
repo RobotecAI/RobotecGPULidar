@@ -65,6 +65,7 @@ add_custom_command(
 add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
+    src/api/apiCommon.cpp
     src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
