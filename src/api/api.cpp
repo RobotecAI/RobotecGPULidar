@@ -134,7 +134,9 @@ static void rglLazyInit()
 		Logger::getOrCreate();
 		Optix::getOrCreate();
 		if (isCompiledWithAutoTape()) {
-			tapeRecord.emplace(std::filesystem::path(RGL_AUTO_TAPE_PATH));
+			auto path = std::filesystem::path(RGL_AUTO_TAPE_PATH);
+			RGL_INFO("Starting RGL Auto Tape on path '{}'", path.string());
+			tapeRecord.emplace(path);
 		}
 	});
 	if (initStatus != RGL_SUCCESS) {
