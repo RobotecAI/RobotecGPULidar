@@ -63,7 +63,7 @@ void Mesh::updateGAS()
 
 	// Fun fact: calling optixAccelBuild does not change anything visually, but introduces a significant slowdown
 	// Investigation is needed whether it needs to be called at all (OptiX documentation says yes, but it works without)
-	CHECK_OPTIX(optixAccelBuild(Optix::instance().context,
+	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
 	                            nullptr, // TODO: stream
 	                            &updateOptions,
 	                            &updateInput,
@@ -118,7 +118,7 @@ OptixTraversableHandle Mesh::buildGAS()
 	// };
 
 	OptixTraversableHandle gasHandle;
-	CHECK_OPTIX(optixAccelBuild(Optix::instance().context,
+	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
 	                            nullptr, // TODO: stream
 	                            &buildOptions,
 	                            &buildInput,

@@ -14,7 +14,7 @@
 
 #include <Logger.hpp>
 
-Logger &Logger::instance()
+Logger &Logger::getOrCreate()
 {
 	static Logger instance;
 	return instance;
@@ -26,7 +26,14 @@ Logger::Logger()
 	configure(RGL_LOG_LEVEL, RGL_LOG_FILE, RGL_LOG_STDOUT);
 }
 
-void Logger::configure(rgl_log_level_t logLevel, std::optional <std::filesystem::path> logFilePath, bool useStdout)
+void Logger::configure(rgl_log_level_t logLevel, const char* logFilePath, bool useStdout)
+{
+	// Constructing string from nullptr is an undefined behavior!
+	bool hasLogFilePath = logFilePath != nullptr && strlen(logFilePath) > 0;
+	configure(logLevel, hasLogFilePath ? std::optional(logFilePath) : std::nullopt, useStdout);
+}
+
+void Logger::configure(rgl_log_level_t logLevel, std::optional<std::filesystem::path> logFilePath, bool useStdout)
 {
 	if (logLevel != RGL_LOG_LEVEL_OFF && !logFilePath.has_value() && !useStdout) {
 		throw spdlog::spdlog_ex("logging enabled but all sinks are disabled");

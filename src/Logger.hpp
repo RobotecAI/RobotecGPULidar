@@ -22,20 +22,14 @@
 
 #include <rgl/api/core.h>
 
-
-template <typename... Args>
-void logInfo(Args&&... args) {}
-
-template <typename... Args>
-void logWarn(Args&&... args) {}
-
-template <typename... Args>
-void logError(Args&&... args) {}
-
 struct Logger
 {
-	static Logger& instance();
+	/**
+	 * @return The existing logger or creates a new configured with to RGL_LOG* CMake variables.
+	 */
+	static Logger& getOrCreate();
 	void configure(rgl_log_level_t logLevel, std::optional<std::filesystem::path> logFilePath, bool useStdout);
+	void configure(rgl_log_level_t logLevel, const char* logFilePath, bool useStdout);
 	void flush() { mainLogger->flush(); }
 	spdlog::logger& getLogger() { return *mainLogger; }
 private:
@@ -43,9 +37,9 @@ private:
 	std::shared_ptr<spdlog::logger> mainLogger;
 };
 
-#define RGL_TRACE Logger::instance().getLogger().trace
-#define RGL_DEBUG Logger::instance().getLogger().debug
-#define RGL_INFO Logger::instance().getLogger().info
-#define RGL_WARN Logger::instance().getLogger().warn
-#define RGL_ERROR Logger::instance().getLogger().error
-#define RGL_CRITICAL Logger::instance().getLogger().critical
+#define RGL_TRACE Logger::getOrCreate().getLogger().trace
+#define RGL_DEBUG Logger::getOrCreate().getLogger().debug
+#define RGL_INFO Logger::getOrCreate().getLogger().info
+#define RGL_WARN Logger::getOrCreate().getLogger().warn
+#define RGL_ERROR Logger::getOrCreate().getLogger().error
+#define RGL_CRITICAL Logger::getOrCreate().getLogger().critical

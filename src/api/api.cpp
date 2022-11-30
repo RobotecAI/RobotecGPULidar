@@ -40,6 +40,8 @@ do if (!(expr)) {                                                               
 static rgl_status_t lastStatusCode = RGL_SUCCESS;
 static std::optional<std::string> lastStatusString = std::nullopt;
 
+static bool isCompiledWithAutoTape() { return !std::string(RGL_AUTO_TAPE_PATH).empty(); }
+
 static bool canContinueAfterStatus(rgl_status_t status)
 {
 	// Set constructor may throw, hence lazy initialization.
@@ -68,26 +70,40 @@ static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::strin
 		else {
 			RGL_CRITICAL("Unrecoverable error (code={}): {}", lastStatusCode, msg);
 		}
-		Logger::instance().flush();
+		Logger::getOrCreate().flush();
 	}
 	return status;
+}
+
+static void rgl_lazy_init()
+{
+	static bool initDone = false;
+	if (initDone) {
+		return;
+	}
+	static auto& _logger = Logger::getOrCreate();
+	static auto& _optix = Optix::getOrCreate();
+	initDone = true; // Set to true before RGL_TAPE_FORCE to prevent infinite recursion
+	if (isCompiledWithAutoTape()) {
+		tapeRecord.emplace(std::filesystem::path(RGL_AUTO_TAPE_PATH));
+	}
 }
 
 template<typename Fn>
 static rgl_status_t rglSafeCall(Fn fn)
 {
-	static auto& _ = Optix::instance(); // Trigger initialization on the first API call
 	if (!canContinueAfterStatus(lastStatusCode)) {
 		if (lastStatusCode != RGL_LOGGING_ERROR) {
 			RGL_CRITICAL("Logging disabled due to the previous fatal error");
 			try {
-				Logger::instance().configure(RGL_LOG_LEVEL_OFF, std::nullopt, false);
+				Logger::getOrCreate().configure(RGL_LOG_LEVEL_OFF, std::nullopt, false);
 			}
 			catch (std::exception& e) {}
 		}
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
+		rgl_lazy_init(); // Trigger initialization on the first API call
 		std::invoke(fn);
 	}
 	catch (spdlog::spdlog_ex& e) {
@@ -157,7 +173,7 @@ rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
 	// 0.11.0: implement Graph API (Gaussian noise temporarily removed)
 	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_get_version_info(out_major={}, out_minor={}, out_patch={})", (void*) out_major,
-			  (void*) out_minor, (void*) out_patch);
+		          (void*) out_minor, (void*) out_patch);
 		CHECK_ARG(out_major != nullptr);
 		CHECK_ARG(out_minor != nullptr);
 		CHECK_ARG(out_patch != nullptr);
@@ -190,9 +206,7 @@ rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool
 	auto status = rglSafeCall([&]() {
 		// No logging here, Logger::configure() will print logs after its initialization.
 		CHECK_ARG(0 <= log_level && log_level <= 6);
-		// Constructing string from nullptr is undefined behavior!
-		auto logFilePath = log_file_path == nullptr ? std::nullopt : std::optional(log_file_path);
-		Logger::instance().configure(log_level, logFilePath, use_stdout);
+		Logger::getOrCreate().configure(log_level, log_file_path, use_stdout);
 	});
 	TAPE_HOOK(log_level, log_file_path, use_stdout);
 	return status;
@@ -344,7 +358,7 @@ RGL_API rgl_status_t
 rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {
-        RGL_DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
+		RGL_DEBUG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
 		if (scene == nullptr) {

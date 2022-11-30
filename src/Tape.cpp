@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 
 std::optional<TapeRecord> tapeRecord;
 
-TapeRecord::TapeRecord(const char* path)
+TapeRecord::TapeRecord(const fs::path& path)
 {
 	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
 	std::string pathBin = fs::path(path).concat(BIN_EXTENSION).string();
@@ -40,6 +40,7 @@ TapeRecord::TapeRecord(const char* path)
 
 TapeRecord::~TapeRecord()
 {
+	// TODO(prybicki): SIOF with Logger !!!
 	fileYaml << yamlRoot;
 	fileYaml.close();
 	if (fileYaml.fail()) {

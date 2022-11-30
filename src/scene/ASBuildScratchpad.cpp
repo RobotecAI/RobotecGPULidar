@@ -20,7 +20,7 @@
 bool ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options)
 {
 	OptixAccelBufferSizes bufferSizes;
-	CHECK_OPTIX(optixAccelComputeMemoryUsage(Optix::instance().context, &options, &input, 1, &bufferSizes));
+	CHECK_OPTIX(optixAccelComputeMemoryUsage(Optix::getOrCreate().context, &options, &input, 1, &bufferSizes));
 
         // Short-circuit evaluation workaround
         bool dTempResizeResult = dTemp.resizeToFit(bufferSizes.tempSizeInBytes);
@@ -43,7 +43,7 @@ void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
 	uint64_t compactedSize = *hCompactedSize.readHost();
 
 	dCompact.resizeToFit(compactedSize);
-	CHECK_OPTIX(optixAccelCompact(Optix::instance().context,
+	CHECK_OPTIX(optixAccelCompact(Optix::getOrCreate().context,
 	                              nullptr, // TODO: stream
 	                              handle,
 	                              dCompact.readDeviceRaw(),

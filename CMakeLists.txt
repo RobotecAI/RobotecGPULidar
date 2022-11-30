@@ -10,6 +10,8 @@ set(RGL_LOG_LEVEL INFO CACHE STRING
     "Specifies minimal severity of log message to be printed (TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF)")
 set(RGL_LOG_FILE "" CACHE PATH
     "Defines a file path to store RGL log")
+set(RGL_AUTO_TAPE_PATH "" CACHE PATH
+    "If non-empty, defines a path for the automatic tape (started on the first API call)")
 
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
@@ -18,7 +20,7 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 # Build Release by default
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # Fix Windows problems
@@ -103,12 +105,33 @@ target_link_libraries(RobotecGPULidar PUBLIC
 )
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+# Create a CMake list with available log levels (rgl_log_level_t)
+set(RGL_AVAILABLE_LOG_LEVELS
+    RGL_LOG_LEVEL_ALL
+    RGL_LOG_LEVEL_TRACE
+    RGL_LOG_LEVEL_DEBUG
+    RGL_LOG_LEVEL_INFO
+    RGL_LOG_LEVEL_WARN
+    RGL_LOG_LEVEL_ERROR
+    RGL_LOG_LEVEL_CRITICAL
+    RGL_LOG_LEVEL_OFF
+)
+
+# Check if RGL_LOG_LEVEL is a valid variable
+if (NOT ("RGL_LOG_LEVEL_${RGL_LOG_LEVEL}" IN_LIST RGL_AVAILABLE_LOG_LEVELS))
+    message(FATAL_ERROR "Incorrect RGL_LOG_LEVEL value: ${RGL_LOG_LEVEL}")
+endif()
+
+if (WIN32 AND RGL_AUTO_TAPE_PATH)
+    message(FATAL_ERROR "(Auto)Tape not supported on Windows")
+endif()
 
 # Pass #define-s to RGL compilation
 target_compile_definitions(RobotecGPULidar
     PUBLIC RGL_LOG_STDOUT=$<BOOL:${RGL_LOG_STDOUT}>
-    PUBLIC RGL_LOG_FILE={"${RGL_LOG_FILE}"}
+    PUBLIC RGL_LOG_FILE="${RGL_LOG_FILE}"
     PUBLIC RGL_LOG_LEVEL=RGL_LOG_LEVEL_${RGL_LOG_LEVEL}
+    PUBLIC RGL_AUTO_TAPE_PATH="${RGL_AUTO_TAPE_PATH}"
     PUBLIC ${PCL_DEFINITIONS}
 )
 
