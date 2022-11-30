@@ -35,9 +35,15 @@ And more:
 - Writing to PCD file
 
 ## Runtime requirements
-  - Nvidia Driver:
-    - Linux >= 460.27.03
-    - Windows >= 472.50
+
+|Hardware|Requirement|
+|:--|:--|
+|GPU|CUDA-enabled|
+
+|Software|Requirement|
+|:--|:--|
+|Nvidia Driver (Linux)|>=460.27.03|
+|Nvidia Driver (Windows)|>=472.50|
 
 ## Usage
 
@@ -51,7 +57,7 @@ Two dockerfiles are prepared:
 
 Build instructions:
 1. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/download) 7.2
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
 3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
 4. `docker build . -f DockerfileMinimal --tag rgl:minimal`
 5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
@@ -59,8 +65,8 @@ Build instructions:
 
 ## Building on Ubuntu
 
-1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.2+.
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2.
+1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.2+**.
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
@@ -72,8 +78,8 @@ Build instructions:
 
 ## Building on Windows
 
-1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11.4.4+.
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) 7.2.
+1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
+2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
 3. Install [PCL](https://pointclouds.org/) 1.12:
     1. Get [vcpkg](https://vcpkg.io/en/index.html):\

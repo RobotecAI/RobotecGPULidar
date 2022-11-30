@@ -43,16 +43,12 @@ CUDA_MINOR=$(echo "$CUDA_VERSION" | cut -d. -f2)
 if [ "$CUDA_MAJOR" -lt $CUDA_MIN_VER_MAJOR ] ||
     { [ "$CUDA_MAJOR" -eq $CUDA_MIN_VER_MAJOR ] && [ "$CUDA_MINOR" -lt $CUDA_MIN_VER_MINOR ]; }; then
     echo "CUDA missing or CUDA version not supported! Get CUDA $CUDA_MIN_VER_MAJOR.$CUDA_MIN_VER_MINOR+";
-    echo "Remember to extend environment variables:
-    - PATH with CUDA bin directory
-    - LD_LIBRARY_PATH with CUDA lib directory";
     exit 1;
 fi
 
 # Check OptiX_INSTALL_DIR if building RGL
 if [ -z "$OptiX_INSTALL_DIR" ] && { [ "$DO_CMAKE" = true ] || [ "$DO_MAKE" = true ]; }; then
-    echo "OptiX not found! Make sure you have installed OptiX (non-empty output from command: 'locate libnvoptix'),
-and you have exported environment variable OptiX_INSTALL_DIR";
+    echo "OptiX not found! Make sure you have exported environment variable OptiX_INSTALL_DIR";
     exit 1;
 fi
 
