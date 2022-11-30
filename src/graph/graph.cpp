@@ -69,38 +69,41 @@ static std::vector<Node::Ptr> findExecutionOrder(std::set<Node::Ptr> nodes)
 
 void runGraph(Node::Ptr userNode)
 {
-	std::set<Node::Ptr> nodes = findConnectedNodes(userNode);
-	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(nodes);
+	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(findConnectedNodes(userNode));
 
-	std::set<rgl_field_t> fields;
+	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
+
+	std::set<rgl_field_t> fieldsToCompute;
 	for (auto&& node : nodesInExecOrder) {
 		if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
 			for (auto&& field : pointNode->getRequiredFieldList()) {
 				if (!isDummy(field)) {
-					fields.insert(field);
+					fieldsToCompute.insert(field);
 				}
 			}
 		}
 	}
 
-	fields.insert(XYZ_F32);
+	fieldsToCompute.insert(XYZ_F32);
 
 	if (!Node::filter<CompactPointsNode>(nodesInExecOrder).empty()) {
-		fields.insert(IS_HIT_I32);
+		fieldsToCompute.insert(IS_HIT_I32);
 	}
 
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
-	rt->setFields(fields);
+	rt->setFields(fieldsToCompute);
 
 	for (auto&& current : nodesInExecOrder) {
-		RGL_TRACE("Validating node: {}", *current);
+		RGL_DEBUG("Validating node: {}", *current);
 		current->validate();
 	}
+	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
 	for (auto&& node : nodesInExecOrder) {
-		RGL_TRACE("Scheduling node: {}", *node);
+		RGL_DEBUG("Scheduling node: {}", *node);
 		node->schedule(nullptr);
 	}
+	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
 }
 
 void destroyGraph(Node::Ptr userNode)
