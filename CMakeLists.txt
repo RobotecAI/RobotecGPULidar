@@ -17,6 +17,9 @@ set(RGL_AUTO_TAPE_PATH "" CACHE PATH
 set(RGL_BUILD_TESTS ON CACHE BOOL
     "Enables building test. GTest will be automatically downloaded")
 
+# Tools configuration
+set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
+
 # Build Release by default
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -136,7 +139,12 @@ target_compile_definitions(RobotecGPULidar
 )
 
 # Include tests
-if (${RGL_BUILD_TESTS})
+if (RGL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
+endif()
+
+# Include tools
+if (RGL_BUILD_TOOLS)
+    add_subdirectory(tools)
 endif()

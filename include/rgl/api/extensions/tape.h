@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rgl/api/core.h>
+
 /**
  * Starts recording all API calls.
  * Two files will be created at the path location: .yaml and .bin file.
