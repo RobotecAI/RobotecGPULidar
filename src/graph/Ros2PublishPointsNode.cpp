@@ -21,11 +21,7 @@ void Ros2PublishPointsNode::setParameters(
 	rgl_qos_policy_history_t qosHistory, int32_t qosDepth)
 {
 	if (ros2Node.get() == nullptr) {
-		static char *args[] = {
-			(char*)"--ros-args",
-			(char*)"--disable-external-lib-logs",
-			nullptr
-		};
+		static const char *args[] = { "--ros-args", "--disable-external-lib-logs" };
 		rclcpp::init(2, args);
 
 		ros2Node = std::make_shared<rclcpp::Node>(ros2NodeName);
