@@ -77,23 +77,12 @@ static rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::strin
 	return status;
 }
 
-static void rgl_lazy_init()
-{
-	static bool initDone = false;
-	if (initDone) {
-		return;
-	}
-	static auto& _logger = Logger::getOrCreate();
-	static auto& _optix = Optix::getOrCreate();
-	initDone = true; // Set to true before RGL_TAPE_FORCE to prevent infinite recursion
-	if (isCompiledWithAutoTape()) {
-		tapeRecord.emplace(std::filesystem::path(RGL_AUTO_TAPE_PATH));
-	}
-}
+static void rglLazyInit();
 
 template<typename Fn>
 static rgl_status_t rglSafeCall(Fn fn)
 {
+	rglLazyInit(); // Trigger initialization on the first API call
 	if (!canContinueAfterStatus(lastStatusCode)) {
 		if (lastStatusCode != RGL_LOGGING_ERROR) {
 			RGL_CRITICAL("Logging disabled due to the previous fatal error");
@@ -105,7 +94,6 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
-		rgl_lazy_init(); // Trigger initialization on the first API call
 		std::invoke(fn);
 	}
 	catch (spdlog::spdlog_ex& e) {
@@ -133,6 +121,28 @@ static rgl_status_t rglSafeCall(Fn fn)
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, "exceptional exception");
 	}
 	return updateAPIState(RGL_SUCCESS);
+}
+
+static void rglLazyInit()
+{
+	static bool initCalled = false;
+	if (initCalled) {
+		return;
+	}
+	initCalled = true;
+	rgl_status_t initStatus = rglSafeCall([&]() {
+		Logger::getOrCreate();
+		Optix::getOrCreate();
+		if (isCompiledWithAutoTape()) {
+			auto path = std::filesystem::path(RGL_AUTO_TAPE_PATH);
+			RGL_INFO("Starting RGL Auto Tape on path '{}'", path.string());
+			tapeRecord.emplace(path);
+		}
+	});
+	if (initStatus != RGL_SUCCESS) {
+		// If initialization fails, change error code to unrecoverable one and preserve original message
+		updateAPIState(RGL_INITIALIZATION_ERROR, lastStatusString);
+	}
 }
 
 template<typename NodeType, typename... Args>
@@ -225,37 +235,26 @@ void TapePlay::tape_configure_logging(const YAML::Node& yamlNode)
 RGL_API void
 rgl_get_last_error_string(const char** out_error_string)
 {
-	// No logging here for now, since it may throw.
+	// By default, use lastStatusString value, which is usually a message from the caught exception
 	if (lastStatusString.has_value()) {
 		*out_error_string = lastStatusString->c_str();
 		return;
 	}
-	switch (lastStatusCode) {
-		case RGL_SUCCESS:
-			*out_error_string = "operation successful";
-			break;
-		case RGL_INVALID_ARGUMENT:
-			*out_error_string = "invalid argument";
-			break;
-		case RGL_INTERNAL_EXCEPTION:
-			*out_error_string = "unhandled internal exception";
-			break;
-		case RGL_INVALID_STATE:
-			*out_error_string = "invalid state - unrecoverable error occurred";
-			break;
-		case RGL_NOT_IMPLEMENTED:
-			*out_error_string = "operation not (yet) implemented";
-			break;
-		case RGL_LOGGING_ERROR:
-			*out_error_string = "spdlog error";
-		case RGL_INVALID_FILE_PATH:
-			*out_error_string = "invalid file path";
-		case RGL_TAPE_ERROR:
-			*out_error_string = "tape error";
-		default:
-			*out_error_string = "???";
-			break;
-	}
+	// If lastStatusString is not set, provide a fallback explanation:
+	static const std::unordered_map<rgl_status_t, const char*> fallbackStatusString = {
+		{ RGL_SUCCESS, "operation successful"},
+		{ RGL_INVALID_ARGUMENT, "invalid argument"},
+		{ RGL_INTERNAL_EXCEPTION, "unhandled internal exception"},
+		{ RGL_INVALID_STATE, "invalid state - unrecoverable error occurred"},
+		{ RGL_NOT_IMPLEMENTED, "operation not (yet) implemented"},
+		{ RGL_LOGGING_ERROR, "logging error"},
+		{ RGL_INVALID_FILE_PATH, "invalid file path"},
+		{ RGL_TAPE_ERROR, "tape error"},
+		{ RGL_INITIALIZATION_ERROR, "initialization error"}
+	};
+	*out_error_string = fallbackStatusString.contains(lastStatusCode)
+	                    ? fallbackStatusString.at(lastStatusCode)
+	                    : "???";
 }
 
 RGL_API rgl_status_t
@@ -859,6 +858,10 @@ void TapePlay::tape_node_points_visualize(const YAML::Node& yamlNode)
 RGL_API rgl_status_t
 rgl_tape_record_begin(const char* path)
 {
+	/**
+	 * Please be mindful that portions of this function have a copy in rglLazyInit()
+	 * Therefore, any changes must be also applied there (or refactored into a separate function).
+	 */
 	#ifdef _WIN32
 	return rglSafeCall([&]() {
 		RGL_API_LOG("rgl_tape_record_begin(path={})", path);

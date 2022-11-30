@@ -84,8 +84,7 @@ typedef struct Scene *rgl_scene_t;
 
 /**
  * Status (error) codes returned by all RGL API functions.
- * Errors that are not specified explicitly as recoverable
- * should be considered unrecoverable, e.g. requiring reloading the library (restarting the application).
+ * Unrecoverable errors require reloading the library (restarting the application).
  */
 typedef enum
 {
@@ -110,7 +109,7 @@ typedef enum
 
 	/**
 	 * Indicates that a logging operation (e.g. configuration) was not successful.
-	 * This is a recoverable error.
+	 * This is an unrecoverable error.
 	 */
 	RGL_LOGGING_ERROR,
 
@@ -124,18 +123,27 @@ typedef enum
 
 	/**
 	* Indicates that a given file could not be opened.
+	* This is a recoverable error.
 	*/
 	RGL_INVALID_FILE_PATH,
 
 	/**
 	* Indicates that a tape operation was not successful.
+	* This is a recoverable error.
 	*/
 	RGL_TAPE_ERROR,
 
 	/**
 	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
+	 * This is a recoverable error.
 	 */
 	RGL_INVALID_PIPELINE,
+
+	/**
+	 * Indicates a failure during (lazy) initialization.
+	 * This is an unrecoverable error.
+	 */
+	RGL_INITIALIZATION_ERROR,
 
 	/**
 	 * Requested functionality has been not yet implemented.
@@ -146,6 +154,7 @@ typedef enum
 	/**
 	 * An unhandled internal error has occurred.
 	 * If you see this error, please file a bug report.
+	 * This is an unrecoverable error.
 	 */
 	RGL_INTERNAL_EXCEPTION = 500,
 } rgl_status_t;
