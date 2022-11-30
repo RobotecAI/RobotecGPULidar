@@ -42,12 +42,14 @@ CUDA_MAJOR=$(echo "$CUDA_VERSION" | cut -d. -f1)
 CUDA_MINOR=$(echo "$CUDA_VERSION" | cut -d. -f2)
 if [ "$CUDA_MAJOR" -lt $CUDA_MIN_VER_MAJOR ] ||
     { [ "$CUDA_MAJOR" -eq $CUDA_MIN_VER_MAJOR ] && [ "$CUDA_MINOR" -lt $CUDA_MIN_VER_MINOR ]; }; then
-    echo "CUDA version not supported! Get $CUDA_MIN_VER_MAJOR.$CUDA_MIN_VER_MINOR+" && exit 1;
+    echo "CUDA missing or CUDA version not supported! Get CUDA $CUDA_MIN_VER_MAJOR.$CUDA_MIN_VER_MINOR+";
+    exit 1;
 fi
 
 # Check OptiX_INSTALL_DIR if building RGL
 if [ -z "$OptiX_INSTALL_DIR" ] && { [ "$DO_CMAKE" = true ] || [ "$DO_MAKE" = true ]; }; then
-    echo "OptiX not found! Make sure you export environment variable OptiX_INSTALL_DIR" && exit 1;
+    echo "OptiX not found! Make sure you have exported environment variable OptiX_INSTALL_DIR";
+    exit 1;
 fi
 
 # Install PCL using vcpkg
