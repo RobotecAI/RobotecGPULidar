@@ -24,9 +24,9 @@ struct CacheManager
 
 	void trigger()
 	{
-		auto it = cacheAge.cbegin();
+		auto it = cacheAge.begin();
 		while (it != cacheAge.cend()) {
-			if (it->second >= ageToDelete) {
+			if (++it->second >= ageToDelete) {
 				cache.erase(it->first);
 				it = cacheAge.erase(it);
 				continue;
