@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.11.2] 30 November 2022
+## [0.11.2] 1 December 2022
 
 ### Added
 - RGL Auto Tape - feature to start Tape on the first API call writing to a path given in compile-time. 
