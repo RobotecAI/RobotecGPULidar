@@ -25,6 +25,9 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
+# Hide automatically generated CTest targets
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
+
 # Fix Windows problems
 if (WIN32)
     add_definitions(-DNOMINMAX)  # http://www.suodenjoki.dk/us/archive/2010/min-max.htm
