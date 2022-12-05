@@ -63,7 +63,7 @@ do if (fwrite(source, elemSize, elemCount, file) != elemCount) {           \
     throw RecordError(fmt::format("Failed to write data to binary file")); \
 } while(0)
 
-class TapeRecord
+class TapeRecorder
 {
 	YAML::Node yamlRoot; // Represents the whole yaml file
 	YAML::Node yamlRecording; // The sequence of API calls
@@ -136,9 +136,9 @@ class TapeRecord
 	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
 
 public:
-	explicit TapeRecord(const std::filesystem::path& path);
+	explicit TapeRecorder(const std::filesystem::path& path);
 
-	~TapeRecord();
+	~TapeRecorder();
 
 	template<typename... Args>
 	void recordApiCall(std::string fnName, Args... args)
@@ -152,7 +152,7 @@ public:
 	}
 };
 
-class TapePlay
+class TapePlayer
 {
 	YAML::Node yamlRoot;
 	uint8_t* fileMmap{};
@@ -201,8 +201,8 @@ class TapePlay
 
 public:
 
-	explicit TapePlay(const char* path);
-	~TapePlay();
+	explicit TapePlayer(const char* path);
+	~TapePlayer();
 };
 
-extern std::optional<TapeRecord> tapeRecord;
+extern std::optional<TapeRecorder> tapeRecord;
