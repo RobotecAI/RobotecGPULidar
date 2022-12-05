@@ -440,6 +440,20 @@ RGL_API rgl_status_t
 rgl_node_points_compact(rgl_node_t* node);
 
 /**
+ * Creates or modifies SpatialMergePointsNode.
+ * The node merges point clouds spatially (e.g. multiple lidars outputs into one point cloud).
+ * Only provided fields are merged.
+ * Input point cloulds must be unorganized (height == 0).
+ * Graph input: point cloud(s)
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param fields Subsequent fields to be merged.
+ * @param field_count Number of elements in the `fields` array.
+ */
+RGL_API rgl_status_t
+rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
+
+/**
  * Creates or modifies GaussianNoiseAngularRayNode.
  * Applies angular noise to the rays before raycasting.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#ray-based-angular-noise

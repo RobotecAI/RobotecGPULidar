@@ -82,6 +82,55 @@ TEST_F(Graph, NodeRemoval)
 }
 #endif
 
+TEST_F(Graph, SpatialMerge)
+{
+	auto mesh = makeCubeMesh();
+
+	auto entity = makeEntity(mesh);
+	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
+	rgl_node_t transformPtsZero=nullptr, transformPtsX=nullptr, transformPtsY=nullptr;
+	rgl_node_t spatialMerge=nullptr;
+	std::vector<rgl_field_t> sMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
+	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
+	rgl_mat3x4f zeroTf = Mat3x4f::TRS({0, 0, 0}).toRGL();
+	rgl_mat3x4f translateXTf = Mat3x4f::TRS({3, 0, 0}).toRGL();
+	rgl_mat3x4f translateYTf = Mat3x4f::TRS({0, 3, 0}).toRGL();
+
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsZero, &zeroTf));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsX, &translateXTf));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsY, &translateYTf));
+	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "two_boxes_spatial_merge.pcd"));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPtsZero));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPtsX));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPtsY));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPtsZero, spatialMerge));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPtsX, spatialMerge));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPtsY, spatialMerge));
+
+	// Deactivate one of transform points node
+	// Output pcd should contain 2 boxes
+	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPtsX, false));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(spatialMerge, write));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+}
+
 TEST_F(Graph, FormatNodeResults)
 {
 	auto mesh = makeCubeMesh();

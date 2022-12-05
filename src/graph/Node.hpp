@@ -82,7 +82,7 @@ protected:
 		std::vector<typename T::Ptr> typedNodes {};
 		for (auto&& node : nodes) {
 			auto typedNode = std::dynamic_pointer_cast<T>(node);
-			if (typedNode != nullptr) {
+			if (typedNode != nullptr && (!onlyExecuted || node->isExecuted())) {
 				typedNodes.push_back(typedNode);
 			}
 		}
@@ -92,7 +92,7 @@ protected:
 	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
 	static typename T::Ptr getExactlyOne(const Container<Node::Ptr, CArgs...>& nodes)
 	{
-		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes);
+		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes, onlyExecuted);
 		if (typedNodes.size() != 1) {
 			auto msg = fmt::format("looked for {}, but found [{}]", name(typeid(T)), getNodeTypeNames(nodes));
 			throw InvalidPipeline(msg);
