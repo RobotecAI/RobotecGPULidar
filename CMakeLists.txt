@@ -91,11 +91,13 @@ add_library(RobotecGPULidar SHARED
     src/graph/YieldPointsNode.cpp
 )
 
+set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 if (RGL_BUILD_ROS2_EXTENSION)
     find_package(rclcpp REQUIRED)
     find_package(sensor_msgs REQUIRED)
     target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp src/graph/Ros2PublishPointsNode.cpp)
-    target_include_directories(RobotecGPULidar PRIVATE ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
+    target_include_directories(RobotecGPULidar PUBLIC ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
     target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 endif()
@@ -143,8 +145,6 @@ endif()
 if (WIN32 AND RGL_AUTO_TAPE_PATH)
     message(FATAL_ERROR "(Auto)Tape not supported on Windows")
 endif()
-
-set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Pass #define-s to RGL compilation
 target_compile_definitions(RobotecGPULidar

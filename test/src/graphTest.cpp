@@ -6,8 +6,6 @@
 
 #include <math/Mat3x4f.hpp>
 
-#include <rgl/api/extensions/ros2.h>
-
 class Graph : public RGLAutoCleanupTest {};
 
 TEST_F(Graph, FullLinear)

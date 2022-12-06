@@ -123,11 +123,11 @@ class TapeRecord
 	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
 
 	int valueToYaml(int32_t* value) { return *value; }
-	int valueToYaml(rgl_field_t value) { return (int)value; }
-	int valueToYaml(rgl_log_level_t value) { return (int)value; }
-	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int)value; }
-	int valueToYaml(rgl_qos_policy_durability_t value) { return (int)value; }
-	int valueToYaml(rgl_qos_policy_history_t value) { return (int)value; }
+	int valueToYaml(rgl_field_t value) { return (int) value; }
+	int valueToYaml(rgl_log_level_t value) { return (int) value; }
+	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }
+	int valueToYaml(rgl_qos_policy_durability_t value) { return (int) value; }
+	int valueToYaml(rgl_qos_policy_history_t value) { return (int) value; }
 
 	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
 
@@ -193,7 +193,7 @@ class TapePlay
 	void tape_node_points_visualize(const YAML::Node& yamlNode);
 
 	#ifdef RGL_BUILD_ROS2_EXTENSION
-    void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
+	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
 	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
 	#endif
 

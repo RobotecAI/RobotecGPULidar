@@ -33,7 +33,7 @@ struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
 		rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
 		rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
 		rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT,
-		int32_t qosDepth = 10);
+		int32_t qosHistoryDepth = 10);
 
 	// Node
 	void validate() override;
@@ -48,15 +48,12 @@ private:
 	std::string frameId{};
 
 	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ros2Publisher;
-    sensor_msgs::msg::PointCloud2 ros2Message;
+	sensor_msgs::msg::PointCloud2 ros2Message;
 
-	inline static rclcpp::Node::SharedPtr ros2Node = nullptr;
-	inline static std::string ros2NodeName = "RobotecGPULidar";
-	inline static std::set<std::string> ros2TopicNames{};
-	inline static rclcpp::executors::StaticSingleThreadedExecutor::SharedPtr
-		ros2Executor = nullptr;
+	static rclcpp::Node::SharedPtr ros2Node;
+	static std::string ros2NodeName;
+	static std::set<std::string> ros2TopicNames;
+	static rclcpp::executors::StaticSingleThreadedExecutor::SharedPtr ros2Executor;
 
-	void constructRos2Message(std::vector<rgl_field_t> fields, bool isDense);
-	sensor_msgs::msg::PointField createPointFieldMsg(
-		std::string name, int offset, int datatype, int count);
+	void updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense);
 };

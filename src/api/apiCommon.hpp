@@ -36,10 +36,10 @@ do if (!(expr)) {                                                               
 extern rgl_status_t lastStatusCode;
 extern std::optional<std::string> lastStatusString;
 
+void rglLazyInit();
 const char* getLastErrorString();
 bool canContinueAfterStatus(rgl_status_t status);
 rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt);
-void rglLazyInit();
 
 template<typename Fn>
 rgl_status_t rglSafeCall(Fn fn)
