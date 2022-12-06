@@ -155,9 +155,24 @@ public:
 	}
 };
 
-class TapePlayer
+struct TapePlayer
 {
-	YAML::Node yamlRoot;
+	explicit TapePlayer(const char* path);
+
+	std::optional<YAML::iterator> getFirstOf(std::string_view fnName);
+
+	void playNext();
+	void playUntil(std::optional<YAML::iterator> breakpoint= std::nullopt);
+	void rewindTo(YAML::iterator nextCall);
+
+	rgl_node_t getNode(TapeAPIObjectID key) { return tapeNodes.at(key); }
+
+	~TapePlayer();
+
+private:
+	YAML::Node yamlRoot{};
+	YAML::Node yamlRecording{};
+	YAML::iterator nextCall{};
 	uint8_t* fileMmap{};
 	size_t mmapSize{};
 
@@ -166,6 +181,10 @@ class TapePlayer
 	std::unordered_map<TapeAPIObjectID, rgl_node_t> tapeNodes;
 
 	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions;
+
+private:
+	void mmapInit(const char* path);
+	void playUnchecked(YAML::iterator);
 
 	void tape_get_version_info(const YAML::Node& yamlNode);
 	void tape_configure_logging(const YAML::Node& yamlNode);
@@ -199,13 +218,6 @@ class TapePlayer
 	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
 	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
 	#endif
-
-	void mmapInit(const char* path);
-
-public:
-
-	explicit TapePlayer(const char* path);
-	~TapePlayer();
 };
 
 extern std::optional<TapeRecorder> tapeRecord;

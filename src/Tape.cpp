@@ -103,23 +103,59 @@ TapePlayer::TapePlayer(const char* path)
 
 	mmapInit(pathBin.c_str());
 	yamlRoot = YAML::LoadFile(pathYaml);
-	auto yamlRecording = yamlRoot["recording"];
+	yamlRecording = yamlRoot["recording"];
 
 	if (yamlRoot[RGL_VERSION]["major"].as<int>() != RGL_VERSION_MAJOR ||
 	    yamlRoot[RGL_VERSION]["minor"].as<int>() != RGL_VERSION_MINOR) {
 		throw RecordError("recording version does not match rgl version");
 	}
 
+	nextCall = yamlRecording.begin();
+}
+
+std::optional<YAML::iterator> TapePlayer::getFirstOf(std::string_view fnName)
+{
 	for (YAML::iterator it = yamlRecording.begin(); it != yamlRecording.end(); ++it) {
 		const YAML::Node& node = *it;
-		std::string functionName = node["name"].as<std::string>();
-
-		if (!tapeFunctions.contains(functionName)) {
-			throw RecordError(fmt::format("unknown function to play: {}", functionName));
+		bool found = node["name"].as<std::string>() == fnName;
+		if (found) {
+			return {it};
 		}
-
-		tapeFunctions[functionName](node);
 	}
+	return std::nullopt;
+}
+
+void TapePlayer::playUntil(std::optional<YAML::iterator> breakpoint)
+{
+	auto end = breakpoint.value_or(yamlRecording.end());
+	for (; nextCall != end; ++nextCall) {
+		playUnchecked(nextCall);
+	}
+}
+
+void TapePlayer::playNext()
+{
+	if (nextCall == yamlRecording.end()) {
+		return;
+	}
+	playUnchecked(nextCall++);
+}
+
+void TapePlayer::rewindTo(YAML::iterator nextCall)
+{
+	this->nextCall = nextCall;
+}
+
+void TapePlayer::playUnchecked(YAML::iterator call)
+{
+	const YAML::Node& node = *call;
+	std::string functionName = node["name"].as<std::string>();
+
+	if (!tapeFunctions.contains(functionName)) {
+		throw RecordError(fmt::format("unknown function to playUntil: {}", functionName));
+	}
+
+	tapeFunctions[functionName](node);
 }
 
 TapePlayer::~TapePlayer()

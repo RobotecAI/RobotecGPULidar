@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rgl/api/core.h>
+#include "rgl/api/core.h"
 
 #define CHECK_RGL(call)                                               \
 do                                                                    \
@@ -11,7 +11,6 @@ do                                                                    \
         rgl_get_last_error_string(&errorMsg);                         \
         auto message = fmt::format("RGL error: {} (code={}) @ {}:{}", \
         errorMsg, status, __FILE__, __LINE__);                        \
-        onCUDAError();                                                \
         throw std::runtime_error(message);                            \
     }                                                                 \
 } while (false)
