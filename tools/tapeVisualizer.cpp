@@ -11,6 +11,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
+	fmt::print("Reading tape '{}' ...\n", argv[1]);
 	TapePlayer player {argv[1]};
 
 	// YAML::iterator beginIt = player.getNextCall().value();
@@ -23,10 +24,11 @@ int main(int argc, char** argv)
 	CHECK_RGL(rgl_node_points_visualize(&visualizeNode, "Tape Visualizer", 1920, 1080, false));
 	CHECK_RGL(rgl_graph_node_add_child(compactNode, visualizeNode));
 
-	YAML::iterator animationBegin = player.getFirstOf("rgl_entity_update").value();
+	YAML::iterator animationBegin = player.getFirstOf("rgl_entity_set_pose").value();
+	YAML::iterator animationEnd = player.getFirstOf("rgl_entity_destroy").value();
 
 	while (true) {
-		player.playUntil();
+		player.playUntil(animationEnd);
 		player.rewindTo(animationBegin);
 	}
 }
