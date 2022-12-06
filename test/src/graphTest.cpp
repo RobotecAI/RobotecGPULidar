@@ -90,7 +90,7 @@ TEST_F(Graph, SpatialMerge)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr, write=nullptr;
 	rgl_node_t transformPtsZero=nullptr, transformPtsX=nullptr, transformPtsY=nullptr;
 	rgl_node_t spatialMerge=nullptr;
 	std::vector<rgl_field_t> sMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
@@ -128,6 +128,52 @@ TEST_F(Graph, SpatialMerge)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(spatialMerge, write));
 
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+}
+
+TEST_F(Graph, TemporalMerge)
+{
+	auto mesh = makeCubeMesh();
+
+	auto entity = makeEntity(mesh);
+	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr, transformPts=nullptr, write=nullptr;
+	rgl_node_t temporalMerge=nullptr;
+	std::vector<rgl_field_t> tMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
+	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
+	rgl_mat3x4f zeroTf = Mat3x4f::TRS({0, 0, 0}).toRGL();
+	rgl_mat3x4f translateXTf = Mat3x4f::TRS({3, 0, 0}).toRGL();
+	rgl_mat3x4f translateYTf = Mat3x4f::TRS({0, 3, 0}).toRGL();
+
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
+	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "two_boxes_temporal_merge.pcd"));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, temporalMerge));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	// Deactivate transform points for one run to get two boxes on final pointcloud
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateXTf));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, false));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	// Activate transform points and connect write node to save output from temporalMerge
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, true));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(temporalMerge, write));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 }
 

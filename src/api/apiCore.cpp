@@ -635,6 +635,30 @@ void TapePlayer::tape_node_points_spatial_merge(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_temporal_merge(node={}, fields={})", repr(node), repr(fields, field_count));
+		CHECK_ARG(fields != nullptr);
+		CHECK_ARG(field_count > 0);
+
+		createOrUpdateNode<TemporalMergePointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
+	return status;
+}
+
+void TapePlayer::tape_node_points_temporal_merge(const YAML::Node& yamlNode)
+{
+	size_t nodeId = yamlNode[0].as<size_t>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
+	rgl_node_points_temporal_merge(&node,
+		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int>());
+	tapeNodes.insert(std::make_pair(nodeId, node));
+}
+
+RGL_API rgl_status_t
 rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis)
 {
 	auto status = rglSafeCall([&]() {

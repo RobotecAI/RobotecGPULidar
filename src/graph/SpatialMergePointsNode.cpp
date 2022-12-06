@@ -18,10 +18,11 @@
 void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
 	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
-		throw InvalidAPIArgument("cannot spatial merge field 'RGL_FIELD_DYNAMIC_FORMAT'");
+		throw InvalidAPIArgument("cannot perform spatial merge on field 'RGL_FIELD_DYNAMIC_FORMAT'");
 	}
 
 	mergedData.clear();
+	width = 0;
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {

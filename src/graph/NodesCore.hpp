@@ -264,6 +264,32 @@ private:
 	std::size_t width{0};
 };
 
+struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<YieldPointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+
+	// Point cloud description
+	std::size_t getWidth() const override { return width; }
+
+	// Data getters
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+
+private:
+	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::size_t width{0};
+};
+
 struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
