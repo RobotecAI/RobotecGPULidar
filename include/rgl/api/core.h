@@ -148,6 +148,12 @@ typedef enum
 	RGL_TAPE_ERROR,
 
 	/**
+	* Indicates that a ROS2 native library throws exception.
+	* This is a recoverable error.
+	*/
+	RGL_ROS2_ERROR,
+
+	/**
 	 * Indicates an error in the pipeline, such as adjacency of incompatible nodes.
 	 * This is a recoverable error.
 	 */

@@ -35,6 +35,7 @@ const char* getLastErrorString()
 		case RGL_LOGGING_ERROR: return "spdlog error";
 		case RGL_INVALID_FILE_PATH: return "invalid file path";
 		case RGL_TAPE_ERROR: return "tape error";
+		case RGL_ROS2_ERROR: return "ROS2 error";
 		default: return "???";
 	}
 }
@@ -48,7 +49,8 @@ bool canContinueAfterStatus(rgl_status_t status)
 		RGL_INVALID_PIPELINE,
 		RGL_INVALID_FILE_PATH,
 		RGL_NOT_IMPLEMENTED,
-		RGL_TAPE_ERROR
+		RGL_TAPE_ERROR,
+		RGL_ROS2_ERROR
 	};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
 };

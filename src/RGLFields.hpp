@@ -183,18 +183,18 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return { 4, 4, 4 };
-		case IS_HIT_I32: return { 4 };
-		case RAY_IDX_U32: return { 4 };
-		case INTENSITY_F32: return { 4 };
-		case RING_ID_U16: return { 2 };
-		case AZIMUTH_F32: return { 4 };
-		case DISTANCE_F32: return { 4 };
-		case RETURN_TYPE_U8: return { 1 };
-		case TIME_STAMP_F64: return { 8 };
-		case PADDING_8: return { 1 };
-		case PADDING_16: return { 2 };
-		case PADDING_32: return { 4 };
+		case XYZ_F32: return { sizeof(float), sizeof(float), sizeof(float) };
+		case IS_HIT_I32: return { getFieldSize(type) };
+		case RAY_IDX_U32: return { getFieldSize(type) };
+		case INTENSITY_F32: return { getFieldSize(type) };
+		case RING_ID_U16: return { getFieldSize(type) };
+		case AZIMUTH_F32: return { getFieldSize(type) };
+		case DISTANCE_F32: return { getFieldSize(type) };
+		case RETURN_TYPE_U8: return { getFieldSize(type) };
+		case TIME_STAMP_F64: return { getFieldSize(type) };
+		case PADDING_8: return { getFieldSize(type) };
+		case PADDING_16: return { getFieldSize(type) };
+		case PADDING_32: return { getFieldSize(type) };
 	}
 	throw std::invalid_argument(fmt::format("toRos2Sizes: unknown RGL field {}", type));
 }
