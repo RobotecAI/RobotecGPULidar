@@ -63,6 +63,9 @@ do if (fwrite(source, elemSize, elemCount, file) != elemCount) {           \
     throw RecordError(fmt::format("Failed to write data to binary file")); \
 } while(0)
 
+// Type used as a key in TapePlayer object registry
+using TapeAPIObjectID = size_t;
+
 class TapeRecorder
 {
 	YAML::Node yamlRoot; // Represents the whole yaml file
@@ -158,9 +161,9 @@ class TapePlayer
 	uint8_t* fileMmap{};
 	size_t mmapSize{};
 
-	std::unordered_map<size_t, rgl_mesh_t> tapeMeshes;
-	std::unordered_map<size_t, rgl_entity_t> tapeEntities;
-	std::unordered_map<size_t, rgl_node_t> tapeNodes;
+	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> tapeMeshes;
+	std::unordered_map<TapeAPIObjectID, rgl_entity_t> tapeEntities;
+	std::unordered_map<TapeAPIObjectID, rgl_node_t> tapeNodes;
 
 	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions;
 
