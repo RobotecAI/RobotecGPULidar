@@ -152,7 +152,7 @@ void TapePlayer::playUnchecked(YAML::iterator call)
 	std::string functionName = node["name"].as<std::string>();
 
 	if (!tapeFunctions.contains(functionName)) {
-		throw RecordError(fmt::format("unknown function to playUntil: {}", functionName));
+		throw RecordError(fmt::format("unknown function to play: {}", functionName));
 	}
 
 	tapeFunctions[functionName](node);

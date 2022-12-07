@@ -762,7 +762,8 @@ rgl_tape_play(const char* path)
 		if (tapeRecorder.has_value()) {
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
-			TapePlayer play(path);
+			TapePlayer player(path);
+			player.playUntil(std::nullopt);
 		}
 	});
 	#endif //_WIN32
