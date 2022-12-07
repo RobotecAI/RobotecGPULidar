@@ -91,6 +91,11 @@ TapePlay::TapePlay(const char* path)
 		{ "rgl_node_points_downsample", std::bind(&TapePlay::tape_node_points_downsample, this, _1) },
 		{ "rgl_node_points_write_pcd_file", std::bind(&TapePlay::tape_node_points_write_pcd_file, this, _1) },
 		{ "rgl_node_points_visualize", std::bind(&TapePlay::tape_node_points_visualize, this, _1) },
+
+		#ifdef RGL_BUILD_ROS2_EXTENSION
+		{ "rgl_node_points_ros2_publish", std::bind(&TapePlay::tape_node_points_ros2_publish, this, _1) },
+		{ "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlay::tape_node_points_ros2_publish_with_qos, this, _1) },
+		#endif
 	};
 
 	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
