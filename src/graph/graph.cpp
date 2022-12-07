@@ -15,7 +15,7 @@
 #include <set>
 #include <vector>
 #include <graph/graph.hpp>
-#include <graph/Nodes.hpp>
+#include <graph/NodesCore.hpp>
 #include <RGLFields.hpp>
 
 std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)

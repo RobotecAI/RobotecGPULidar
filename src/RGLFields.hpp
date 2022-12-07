@@ -136,3 +136,66 @@ inline std::string toString(rgl_field_t type)
 		default: return fmt::format("<unknown field {}>", static_cast<int>(type));
 	}
 }
+
+#ifdef RGL_BUILD_ROS2_EXTENSION
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
+inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
+{
+	switch (type) {
+		case XYZ_F32: return { sensor_msgs::msg::PointField::FLOAT32,
+		                       sensor_msgs::msg::PointField::FLOAT32,
+		                       sensor_msgs::msg::PointField::FLOAT32 };
+		case IS_HIT_I32: return { sensor_msgs::msg::PointField::INT32 };
+		case RAY_IDX_U32: return { sensor_msgs::msg::PointField::UINT32 };
+		case INTENSITY_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
+		case RING_ID_U16: return { sensor_msgs::msg::PointField::UINT16 };
+		case AZIMUTH_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
+		case DISTANCE_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
+		case RETURN_TYPE_U8: return { sensor_msgs::msg::PointField::UINT8 };
+		case TIME_STAMP_F64: return { sensor_msgs::msg::PointField::FLOAT64 };
+		case PADDING_8: return { };
+		case PADDING_16: return { };
+		case PADDING_32: return { };
+	}
+	throw std::invalid_argument(fmt::format("toRos2Fields: unknown RGL field {}", type));
+}
+
+inline std::vector<std::string> toRos2Names(rgl_field_t type)
+{
+	switch (type) {
+		case XYZ_F32: return { "x", "y", "z" };
+		case IS_HIT_I32: return { "is_hit" };
+		case RAY_IDX_U32: return { "ray_idx" };
+		case INTENSITY_F32: return { "intensity" };
+		case RING_ID_U16: return { "ring" };
+		case AZIMUTH_F32: return { "azimuth" };
+		case DISTANCE_F32: return { "distance" };
+		case RETURN_TYPE_U8: return { "return_type" };
+		case TIME_STAMP_F64: return { "time_stamp" };
+		case PADDING_8: return { };
+		case PADDING_16: return { };
+		case PADDING_32: return { };
+	}
+	throw std::invalid_argument(fmt::format("toRos2Names: unknown RGL field {}", type));
+}
+
+inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
+{
+	switch (type) {
+		case XYZ_F32: return { sizeof(float), sizeof(float), sizeof(float) };
+		case IS_HIT_I32: return { getFieldSize(type) };
+		case RAY_IDX_U32: return { getFieldSize(type) };
+		case INTENSITY_F32: return { getFieldSize(type) };
+		case RING_ID_U16: return { getFieldSize(type) };
+		case AZIMUTH_F32: return { getFieldSize(type) };
+		case DISTANCE_F32: return { getFieldSize(type) };
+		case RETURN_TYPE_U8: return { getFieldSize(type) };
+		case TIME_STAMP_F64: return { getFieldSize(type) };
+		case PADDING_8: return { getFieldSize(type) };
+		case PADDING_16: return { getFieldSize(type) };
+		case PADDING_32: return { getFieldSize(type) };
+	}
+	throw std::invalid_argument(fmt::format("toRos2Sizes: unknown RGL field {}", type));
+}
+#endif

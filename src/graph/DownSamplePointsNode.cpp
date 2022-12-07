@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Nodes.hpp>
+#include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
 #include <pcl/filters/voxel_grid.h>
