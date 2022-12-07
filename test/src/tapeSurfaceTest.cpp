@@ -2,6 +2,7 @@
 #include <utils.hpp>
 #include <models.hpp>
 #include <rgl/api/extensions/tape.h>
+#include <rgl/api/extensions/ros2.h>
 
 #include <math/Mat3x4f.hpp>
 
@@ -57,7 +58,18 @@ TEST_F(Tape, RecordPlayAllCalls)
 
 	rgl_node_t writePcd = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&writePcd, "Tape.RecordPlayAllCalls.pcd"));
-	
+
+	#ifdef RGL_BUILD_ROS2_EXTENSION
+		rgl_node_t ros2pub = nullptr;
+		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
+
+		rgl_node_t ros2pubqos = nullptr;
+		rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
+		rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
+		rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
+		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish_with_qos(&ros2pubqos, "pointcloud_ex", "rgl", qos_r, qos_d, qos_h, 10));
+	#endif
+
 	// Skipping rgl_node_points_visualize (user interaction needed)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(yield, false));
