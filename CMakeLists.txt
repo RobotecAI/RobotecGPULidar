@@ -25,6 +25,10 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
+# Extensions configuration
+set(RGL_BUILD_ROS2_EXTENSION ON CACHE BOOL
+    "Enables building ROS2 extension. It requires installed and sourced ROS2.")
+
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
@@ -61,7 +65,8 @@ add_custom_command(
 add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
-    src/api/api.cpp
+    src/api/apiCommon.cpp
+    src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
     src/VArray.cpp
@@ -86,29 +91,39 @@ add_library(RobotecGPULidar SHARED
     src/graph/YieldPointsNode.cpp
 )
 
+set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+if (RGL_BUILD_ROS2_EXTENSION)
+    find_package(rclcpp REQUIRED)
+    find_package(sensor_msgs REQUIRED)
+    target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp src/graph/Ros2PublishPointsNode.cpp)
+    target_include_directories(RobotecGPULidar PUBLIC ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
+    target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
+    target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
+endif()
+
 target_include_directories(RobotecGPULidar
     PUBLIC include
     PRIVATE src ${PCL_INCLUDE_DIRS}
 )
 
-target_link_libraries(RobotecGPULidar PRIVATE
-    cmake_git_version_tracking
-)
-
-target_link_directories(RobotecGPULidar PUBLIC
+target_link_directories(RobotecGPULidar PRIVATE
     ${PCL_LIBRARY_DIRS}
 )
 
-target_link_libraries(RobotecGPULidar PUBLIC
+target_link_libraries(RobotecGPULidar PRIVATE
     spdlog
     yaml-cpp
     optixPrograms
+    cmake_git_version_tracking
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart_static
     CUDA::cuda_driver
-    ${PCL_LIBRARIES}
 )
-set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Create a CMake list with available log levels (rgl_log_level_t)
 set(RGL_AVAILABLE_LOG_LEVELS

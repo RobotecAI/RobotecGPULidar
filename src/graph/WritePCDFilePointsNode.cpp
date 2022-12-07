@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Nodes.hpp>
+#include <graph/NodesCore.hpp>
 
 #include <pcl/io/pcd_io.h>
 
