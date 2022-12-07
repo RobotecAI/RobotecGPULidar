@@ -86,7 +86,7 @@ void rglLazyInit()
 		if (isCompiledWithAutoTape()) {
 			auto path = std::filesystem::path(RGL_AUTO_TAPE_PATH);
 			RGL_INFO("Starting RGL Auto Tape on path '{}'", path.string());
-			tapeRecord.emplace(path);
+			tapeRecorder.emplace(path);
 		}
 	});
 	if (initStatus != RGL_SUCCESS) {
