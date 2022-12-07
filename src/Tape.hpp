@@ -159,7 +159,7 @@ struct TapePlayer
 {
 	explicit TapePlayer(const char* path);
 
-	std::optional<YAML::iterator> getFirstOf(std::string_view fnName);
+	std::optional<YAML::iterator> getFirstOf(std::set<std::string_view> fnNames);
 
 	void playNext();
 	void playUntil(std::optional<YAML::iterator> breakpoint= std::nullopt);
