@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Nodes.hpp>
+#include <graph/NodesCore.hpp>
 #include <RGLFields.hpp>
 
 void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& fields)
@@ -33,7 +33,7 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 
 void SpatialMergePointsNode::validate()
 {
-	pointInputs = Node::filter<IPointsNode>(this->inputs, true);
+	pointInputs = Node::filter<IPointsNode>(this->inputs);
 
 	if (pointInputs.empty()) {
 		auto msg = "expected at least one IPointsNode input for SpatialMergePointsNode";

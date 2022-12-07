@@ -626,7 +626,7 @@ rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32
 
 void TapePlayer::tape_node_points_spatial_merge(const YAML::Node& yamlNode)
 {
-	size_t nodeId = yamlNode[0].as<size_t>();
+	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_spatial_merge(&node,
 		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
@@ -650,7 +650,7 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
 
 void TapePlayer::tape_node_points_temporal_merge(const YAML::Node& yamlNode)
 {
-	size_t nodeId = yamlNode[0].as<size_t>();
+	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_temporal_merge(&node,
 		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
