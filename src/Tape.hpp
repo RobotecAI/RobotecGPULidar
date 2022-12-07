@@ -52,8 +52,8 @@
 #define TAPE_HOOK(...)
 #else
 #define TAPE_HOOK(...)                                              \
-do if (tapeRecord.has_value()) {                                    \
-	tapeRecord->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
+do if (tapeRecorder.has_value()) {                                    \
+	tapeRecorder->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
 } while (0)
 #endif // _WIN32
 
@@ -63,7 +63,10 @@ do if (fwrite(source, elemSize, elemCount, file) != elemCount) {           \
     throw RecordError(fmt::format("Failed to write data to binary file")); \
 } while(0)
 
-class TapeRecord
+// Type used as a key in TapePlayer object registry
+using TapeAPIObjectID = size_t;
+
+class TapeRecorder
 {
 	YAML::Node yamlRoot; // Represents the whole yaml file
 	YAML::Node yamlRecording; // The sequence of API calls
@@ -136,9 +139,9 @@ class TapeRecord
 	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
 
 public:
-	explicit TapeRecord(const std::filesystem::path& path);
+	explicit TapeRecorder(const std::filesystem::path& path);
 
-	~TapeRecord();
+	~TapeRecorder();
 
 	template<typename... Args>
 	void recordApiCall(std::string fnName, Args... args)
@@ -152,17 +155,36 @@ public:
 	}
 };
 
-class TapePlay
+struct TapePlayer
 {
-	YAML::Node yamlRoot;
+	explicit TapePlayer(const char* path);
+
+	std::optional<YAML::iterator> getFirstOf(std::string_view fnName);
+
+	void playNext();
+	void playUntil(std::optional<YAML::iterator> breakpoint= std::nullopt);
+	void rewindTo(YAML::iterator nextCall);
+
+	rgl_node_t getNode(TapeAPIObjectID key) { return tapeNodes.at(key); }
+
+	~TapePlayer();
+
+private:
+	YAML::Node yamlRoot{};
+	YAML::Node yamlRecording{};
+	YAML::iterator nextCall{};
 	uint8_t* fileMmap{};
 	size_t mmapSize{};
 
-	std::unordered_map<size_t, rgl_mesh_t> tapeMeshes;
-	std::unordered_map<size_t, rgl_entity_t> tapeEntities;
-	std::unordered_map<size_t, rgl_node_t> tapeNodes;
+	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> tapeMeshes;
+	std::unordered_map<TapeAPIObjectID, rgl_entity_t> tapeEntities;
+	std::unordered_map<TapeAPIObjectID, rgl_node_t> tapeNodes;
 
 	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions;
+
+private:
+	void mmapInit(const char* path);
+	void playUnchecked(YAML::iterator);
 
 	void tape_get_version_info(const YAML::Node& yamlNode);
 	void tape_configure_logging(const YAML::Node& yamlNode);
@@ -196,13 +218,6 @@ class TapePlay
 	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
 	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
 	#endif
-
-	void mmapInit(const char* path);
-
-public:
-
-	explicit TapePlay(const char* path);
-	~TapePlay();
 };
 
-extern std::optional<TapeRecord> tapeRecord;
+extern std::optional<TapeRecorder> tapeRecorder;
