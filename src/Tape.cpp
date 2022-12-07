@@ -17,7 +17,7 @@
 using namespace std::placeholders;
 namespace fs = std::filesystem;
 
-std::optional<TapeRecorder> tapeRecord;
+std::optional<TapeRecorder> tapeRecorder;
 
 TapeRecorder::TapeRecorder(const fs::path& path)
 {

@@ -52,8 +52,8 @@
 #define TAPE_HOOK(...)
 #else
 #define TAPE_HOOK(...)                                              \
-do if (tapeRecord.has_value()) {                                    \
-	tapeRecord->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
+do if (tapeRecorder.has_value()) {                                    \
+	tapeRecorder->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
 } while (0)
 #endif // _WIN32
 
@@ -220,4 +220,4 @@ private:
 	#endif
 };
 
-extern std::optional<TapeRecorder> tapeRecord;
+extern std::optional<TapeRecorder> tapeRecorder;

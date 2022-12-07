@@ -718,10 +718,10 @@ rgl_tape_record_begin(const char* path)
 	return rglSafeCall([&]() {
 		CHECK_ARG(path != nullptr);
 		RGL_API_LOG("rgl_tape_record_begin(path={})", path);
-		if (tapeRecord.has_value()) {
+		if (tapeRecorder.has_value()) {
 			throw RecordError("rgl_tape_record_begin: recording already active");
 		} else {
-			tapeRecord.emplace(path);
+			tapeRecorder.emplace(path);
 		}
 	});
 	#endif //_WIN32
@@ -738,10 +738,10 @@ rgl_tape_record_end()
 	#else
 	return rglSafeCall([&]() {
 		RGL_API_LOG("rgl_tape_record_end()");
-		if (!tapeRecord.has_value()) {
+		if (!tapeRecorder.has_value()) {
 			throw RecordError("rgl_tape_record_end: no recording active");
 		} else {
-			tapeRecord.reset();
+			tapeRecorder.reset();
 		}
 	});
 	#endif //_WIN32
@@ -759,7 +759,7 @@ rgl_tape_play(const char* path)
 	return rglSafeCall([&]() {
 		CHECK_ARG(path != nullptr);
 		RGL_API_LOG("rgl_tape_play(path={})", path);
-		if (tapeRecord.has_value()) {
+		if (tapeRecorder.has_value()) {
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
 			TapePlayer play(path);
