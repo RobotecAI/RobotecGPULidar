@@ -113,11 +113,11 @@ TapePlayer::TapePlayer(const char* path)
 	nextCall = yamlRecording.begin();
 }
 
-std::optional<YAML::iterator> TapePlayer::getFirstOf(std::string_view fnName)
+std::optional<YAML::iterator> TapePlayer::getFirstOf(std::set<std::string_view> fnNames)
 {
 	for (YAML::iterator it = yamlRecording.begin(); it != yamlRecording.end(); ++it) {
 		const YAML::Node& node = *it;
-		bool found = node["name"].as<std::string>() == fnName;
+		bool found = fnNames.contains(node["name"].as<std::string>());
 		if (found) {
 			return {it};
 		}
