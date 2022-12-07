@@ -21,6 +21,8 @@ COLLECT_CMAKE_ARGS=false
 COLLECT_MAKE_ARGS=false
 DO_MAKE=false
 DO_CMAKE=false
+BUILD_DIR=build
+
 for arg in "$@"
 do
     if [ "$arg" = "--cmake" ]; then
@@ -31,6 +33,9 @@ do
     fi
     if [ "$COLLECT_CMAKE_ARGS" = true ]; then CMAKE_ARGS+=("$arg") && continue; fi
     if [ "$COLLECT_MAKE_ARGS" = true ]; then MAKE_ARGS+=("$arg") && continue; fi
+    if [[ ("${COLLECT_CMAKE_ARGS}" != true) && ("${COLLECT_MAKE_ARGS}" != true) ]]; then
+        BUILD_DIR="${arg}" && continue;
+    fi
 done
 
 cd "$(dirname "$0")"
@@ -66,8 +71,8 @@ if [ ! -f $VCPKG_INSTALL_DIR"/vcpkg" ]; then $VCPKG_INSTALL_DIR"/bootstrap-vcpkg
 $VCPKG_INSTALL_DIR"/vcpkg" "install" "--clean-after-build" "pcl[core,visualization]"
 
 # Build
-if [ ! -d "build" ]; then mkdir build; fi
-cd build
+if [ ! -d "${BUILD_DIR}" ]; then mkdir "${BUILD_DIR}"; fi
+cd "${BUILD_DIR}"
 if [ "$DO_CMAKE" = true ]; then
     cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALL_DIR"/scripts/buildsystems/vcpkg.cmake" "${CMAKE_ARGS[@]}";
 else
