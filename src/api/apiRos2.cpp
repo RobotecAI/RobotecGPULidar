@@ -52,9 +52,9 @@ rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const cha
 	return status;
 }
 
-void TapePlay::tape_node_points_ros2_publish(const YAML::Node& yamlNode)
+void TapePlayer::tape_node_points_ros2_publish(const YAML::Node& yamlNode)
 {
-	size_t nodeId = yamlNode[0].as<size_t>();
+	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_ros2_publish(&node,
 		yamlNode[1].as<std::string>().c_str(),
@@ -86,9 +86,9 @@ rgl_node_points_ros2_publish_with_qos(
 	return status;
 }
 
-void TapePlay::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode)
+void TapePlayer::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode)
 {
-	size_t nodeId = yamlNode[0].as<size_t>();
+	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
 	rgl_node_points_ros2_publish_with_qos(&node,
 		yamlNode[1].as<std::string>().c_str(),
@@ -96,7 +96,7 @@ void TapePlay::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode
 		(rgl_qos_policy_reliability_t) yamlNode[3].as<int>(),
 		(rgl_qos_policy_durability_t) yamlNode[4].as<int>(),
 		(rgl_qos_policy_history_t) yamlNode[5].as<int>(),
-		yamlNode[6].as<int>());
+		yamlNode[6].as<int32_t>());
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
 }
