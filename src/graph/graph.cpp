@@ -18,7 +18,7 @@
 #include <graph/NodesCore.hpp>
 #include <RGLFields.hpp>
 
-std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
+std::set<Node::Ptr> findConnectedNodes(Node::Ptr graphNode)
 {
 	std::set<Node::Ptr> visited = {};
 	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
@@ -34,7 +34,7 @@ std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode)
 			}
 		}
 	};
-	dfsRec(anyNode);
+	dfsRec(graphNode);
 	return visited;
 }
 
@@ -67,9 +67,9 @@ static std::vector<Node::Ptr> findExecutionOrder(std::set<Node::Ptr> nodes)
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
 
-void runGraph(Node::Ptr userNode)
+void runGraph(Node::Ptr graphNode)
 {
-	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(findConnectedNodes(userNode));
+	std::vector<Node::Ptr> nodesInExecOrder = findExecutionOrder(findConnectedNodes(graphNode));
 
 	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
 
@@ -106,9 +106,9 @@ void runGraph(Node::Ptr userNode)
 	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
 }
 
-void destroyGraph(Node::Ptr userNode)
+void destroyGraph(Node::Ptr graphNode)
 {
-	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
+	std::set<Node::Ptr> graph = findConnectedNodes(graphNode);
 
 	while (!graph.empty()) {
 		Node::Ptr node = *graph.begin();
@@ -118,4 +118,11 @@ void destroyGraph(Node::Ptr userNode)
 		node->outputs.clear();
 		Node::release(node.get());
 	}
+}
+
+NodeExecutionContext::Ptr NodeExecutionContext::getOrCreate(Node::Ptr)
+{
+	// Total number of graphs is expected to be low (<10), therefore, we do a simple linear search
+	// If needed, this can be improved e.g. by using a multi-index container from Boost
+	return NodeExecutionContext::Ptr();
 }

@@ -22,13 +22,14 @@
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 
+struct NodeExecutionContext;
+
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
 	using Ptr = std::shared_ptr<Node>;
 
 	Node() = default;
 	~Node() override = default;
-	void addParent(Node::Ptr parent);
 
 	void addChild(Node::Ptr child);
 	void removeChild(Node::Ptr child);
@@ -49,13 +50,16 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 */
 	virtual void schedule(cudaStream_t stream) = 0;
 
-	inline std::string getName() const { return name(typeid(*this)); }
+	std::string getName() const { return name(typeid(*this)); }
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 	bool isActive() const { return active; }
 	void setActive(bool active) { this->active = active; }
+
+	/** Destroys execution context of all nodes in the graph this node belongs to. **/
+	void clearExecutionContext(std::optional<std::reference_wrapper<const std::set<Node::Ptr>>> connectedNodesHint = std::nullopt);
 
 protected:
 	template<template<typename _1, typename _2> typename Container>
@@ -106,12 +110,11 @@ protected:
 	typename T::Ptr getValidInputFrom(const std::vector<Node::Ptr>& srcs)
 	{ return getExactlyOne<T>(srcs); }
 
-	void prependNode(Node::Ptr node);
-
 protected:
 	bool active {true};
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
+	std::optional<std::shared_ptr<NodeExecutionContext>> execCtx;
 
 	friend void runGraph(Node::Ptr);
 	friend void destroyGraph(Node::Ptr);

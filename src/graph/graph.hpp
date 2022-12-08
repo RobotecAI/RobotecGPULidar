@@ -12,8 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <list>
+
 #include <graph/Node.hpp>
 
-std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode);
-void runGraph(Node::Ptr userNode);
-void destroyGraph(Node::Ptr userNode);
+/**
+ * NodeExecutionContext is a structure shared between connected nodes.
+ * It encapsulates all the resources to start and track graph's execution.
+ * NodeExecutionContext should be considered a heavy structure (mostly due to CUDA stream creation time),
+ * therefore it is are created upon a request, usually on the first graph execution.
+ */
+struct NodeExecutionContext
+{
+	using Ptr = std::shared_ptr<NodeExecutionContext>;
+	// static std::list<NodeExecutionContext::Ptr> instances;
+	// static NodeExecutionContext::Ptr getOrCreate(Node::Ptr);
+	const std::vector<Node::Ptr>& getExecutionOrder();
+
+private:
+	std::optional<std::vector<Node::Ptr>> executionOrder;
+};
+
+std::set<Node::Ptr> findConnectedNodes(Node::Ptr graphNode);
+void runGraph(Node::Ptr graphNode);
+void destroyGraph(Node::Ptr graphNode);

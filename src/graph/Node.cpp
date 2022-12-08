@@ -13,23 +13,9 @@
 // limitations under the License.
 
 #include <graph/Node.hpp>
+#include <graph/graph.hpp>
 
 API_OBJECT_INSTANCE(Node);
-
-void Node::addParent(Node::Ptr parent)
-{
-	if (parent == nullptr) {
-		auto msg = fmt::format("attempted to set an empty parent for {}", getName());
-		throw InvalidPipeline(msg);
-	}
-	auto parentIt = std::find(this->inputs.begin(), this->inputs.end(), parent);
-	if (parentIt != this->inputs.end()) {
-		auto msg = fmt::format("attempted to add parent {} to child {} twice", parent->getName(), getName());
-		throw InvalidPipeline(msg);
-	}
-	this->inputs.push_back(parent);
-	parent->outputs.push_back(shared_from_this());
-}
 
 void Node::addChild(Node::Ptr child)
 {
@@ -42,45 +28,88 @@ void Node::addChild(Node::Ptr child)
 		auto msg = fmt::format("attempted to add child {} to parent {} twice", child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
+
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
+
+	//
+
+	// Both nodes have no execCtx
+	if (!execCtx.has_value() && !child->execCtx.has_value()) {
+		return;
+	}
+
+	if (execCtx.has_value() && child->execCtx.has_value()) {
+		if (execCtx.value() == child->execCtx.value()) {
+			return; // Nodes have common execCtx
+		}
+		// Each node has own execCtx:
+		// Reset one of the
+		// Propagate one of the execCtx
+	}
 }
 
 void Node::removeChild(Node::Ptr child)
 {
 	if (child == nullptr) {
 		auto msg = fmt::format("attempted to remove an empty child for {}", getName());
-		throw InvalidPipeline(msg);
+		throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
 	}
+
+	// Check, if it's our child
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
-	if (childIt == this->outputs.end()) {
+	bool itIsOurChild = childIt != this->outputs.end();
+	if (!itIsOurChild) {
 		auto msg = fmt::format("attempted to remove child {} from {},"
 		                       "but it was not found", child->getName(), getName());
-		throw InvalidPipeline(msg);
+		throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
 	}
-	// Remove child from our children
-	this->outputs.erase(childIt);
 
+	// Check, if we're the parent of the child
 	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
-	if (thisIt == child->inputs.end()) {
+	bool weAreParentOfTheChild = thisIt != child->inputs.end();
+	if (!weAreParentOfTheChild) {
 		auto msg = fmt::format("attempted to remove parent {} from {},"
 		                       "but it was not found", getName(), child->getName());
-		throw InvalidPipeline(msg);
+		throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
 	}
-	// Remove us as a parent of that child
-	child->inputs.erase(thisIt);
+
+	bool isExecCtxShared = execCtx.has_value() == child->execCtx.has_value();
+	if (!isExecCtxShared) {
+		// TODO(prybicki): All the ifs here should throw a stronger (unrecoverable) exception if an inconsistent state is found
+		auto msg = fmt::format("inconsistent execCtx state between parent {} and child {} ({}, {})",
+		                       getName(), child->getName(), execCtx.has_value(), child->execCtx.has_value());
+		throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
+	}
+
+	this->outputs.erase(childIt);  // Remove child from our children
+	child->inputs.erase(thisIt);  // Remove us as a parent of that child
+
+	// Based on the previous check (isExecCtxShared), either both have active execCtx or none of them has.
+	// If this operation splits the graph into two sub-graphs, they may no longer share this execCtx.
+	// A simple solution is to reset execCtx of one of the sub-graph, e.g. child's, which is likely smaller.
+	if (child->execCtx.has_value()) {
+		std::set<Node::Ptr> childGraphNodes = findConnectedNodes(child);
+		bool childGraphDisconnected = !childGraphNodes.contains(shared_from_this());
+		if (childGraphDisconnected) {
+			child->clearExecutionContext(childGraphNodes);
+		}
+	}
 }
 
-void Node::prependNode(Node::Ptr node)
+void Node::clearExecutionContext(std::optional<std::reference_wrapper<const std::set<Node::Ptr>>> connectedNodesHint)
 {
-	for (auto&& in : inputs) {
-		// Remove us as a child of our parents ;)
-		auto thisIt = std::find(in->outputs.begin(), in->outputs.end(), shared_from_this());
-		if (thisIt != in->outputs.end()) {
-			in->outputs.erase(thisIt);  // It is invalid to call erase() on end()
+	const std::set<Node::Ptr>& connectedNodes = connectedNodesHint.has_value()
+	                                          ? *connectedNodesHint
+	                                          : findConnectedNodes(shared_from_this());
+	// Note: recycling CUDA streams is possible here
+	// TODO(prybicki): at the review, make sure the implementation is complete
+	for (auto&& node : connectedNodes) {
+		if (!execCtx.has_value()) {
+			// This is a bit defensive, but may detect implementation bugs
+			auto msg = fmt::format("attempted to clear execCtx of {}, which is already empty", node->getName());
+			throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
 		}
-		node->addParent(in);
+		execCtx.reset();
 	}
-	inputs.clear();
-	addParent(node);
 }
