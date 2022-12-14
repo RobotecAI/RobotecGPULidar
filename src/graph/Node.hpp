@@ -59,7 +59,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	void setActive(bool active) { this->active = active; }
 
 	/** Destroys execution context of all nodes in the graph this node belongs to. **/
-	void clearExecutionContext(std::optional<std::reference_wrapper<const std::set<Node::Ptr>>> connectedNodesHint = std::nullopt);
+	void clearExecutionContext();
 
 protected:
 	template<template<typename _1, typename _2> typename Container>

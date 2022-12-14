@@ -25,8 +25,9 @@
 struct NodeExecutionContext
 {
 	using Ptr = std::shared_ptr<NodeExecutionContext>;
-	// static std::list<NodeExecutionContext::Ptr> instances;
-	// static NodeExecutionContext::Ptr getOrCreate(Node::Ptr);
+	using WeakPtr = std::shared_ptr<NodeExecutionContext>;
+	static std::list<NodeExecutionContext::WeakPtr> instances;
+	static NodeExecutionContext::Ptr getOrCreate(Node::Ptr);
 	const std::vector<Node::Ptr>& getExecutionOrder();
 
 private:

@@ -29,24 +29,11 @@ void Node::addChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
+	this->clearExecutionContext();
+	child->clearExecutionContext();
+
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
-
-	//
-
-	// Both nodes have no execCtx
-	if (!execCtx.has_value() && !child->execCtx.has_value()) {
-		return;
-	}
-
-	if (execCtx.has_value() && child->execCtx.has_value()) {
-		if (execCtx.value() == child->execCtx.value()) {
-			return; // Nodes have common execCtx
-		}
-		// Each node has own execCtx:
-		// Reset one of the
-		// Propagate one of the execCtx
-	}
 }
 
 void Node::removeChild(Node::Ptr child)
@@ -85,26 +72,18 @@ void Node::removeChild(Node::Ptr child)
 	this->outputs.erase(childIt);  // Remove child from our children
 	child->inputs.erase(thisIt);  // Remove us as a parent of that child
 
-	// Based on the previous check (isExecCtxShared), either both have active execCtx or none of them has.
-	// If this operation splits the graph into two sub-graphs, they may no longer share this execCtx.
-	// A simple solution is to reset execCtx of one of the sub-graph, e.g. child's, which is likely smaller.
-	if (child->execCtx.has_value()) {
-		std::set<Node::Ptr> childGraphNodes = findConnectedNodes(child);
-		bool childGraphDisconnected = !childGraphNodes.contains(shared_from_this());
-		if (childGraphDisconnected) {
-			child->clearExecutionContext(childGraphNodes);
-		}
-	}
+	this->clearExecutionContext();
+	child->clearExecutionContext();
 }
 
-void Node::clearExecutionContext(std::optional<std::reference_wrapper<const std::set<Node::Ptr>>> connectedNodesHint)
+void Node::clearExecutionContext()
 {
-	const std::set<Node::Ptr>& connectedNodes = connectedNodesHint.has_value()
-	                                          ? *connectedNodesHint
-	                                          : findConnectedNodes(shared_from_this());
+	if (!execCtx.has_value()) {
+		return;  // Empty execCtx implies that all connected nodes
+	}
 	// Note: recycling CUDA streams is possible here
-	// TODO(prybicki): at the review, make sure the implementation is complete
-	for (auto&& node : connectedNodes) {
+	for (auto&& node : findConnectedNodes(shared_from_this())) {
+		// TODO(prybicki): at the review, make sure the implementation is complete
 		if (!execCtx.has_value()) {
 			// This is a bit defensive, but may detect implementation bugs
 			auto msg = fmt::format("attempted to clear execCtx of {}, which is already empty", node->getName());
