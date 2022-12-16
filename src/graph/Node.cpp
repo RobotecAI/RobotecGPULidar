@@ -28,9 +28,9 @@ void Node::addChild(Node::Ptr child)
 		auto msg = fmt::format("attempted to add child {} to parent {} twice", child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
-	
-	Graph::destroy(graph);
-	Graph::destroy(child->graph);
+
+	Graph::destroy(shared_from_this(), true);
+	Graph::destroy(child, true);
 
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
@@ -56,7 +56,7 @@ void Node::removeChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
-	Graph::destroy(graph);
+	Graph::destroy(shared_from_this(), true);
 
 	// Remove child from our children
 	this->outputs.erase(childIt);

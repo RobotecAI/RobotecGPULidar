@@ -55,16 +55,32 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 	return graph;
 }
 
-void Graph::destroy(std::weak_ptr<Graph> graph)
+void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 {
-	if (auto graphShared = graph.lock()) {
-		auto graphIt = std::find(instances.begin(), instances.end(), graphShared);
-		if (graphIt == instances.end()) {
-			auto msg = fmt::format("attempted to remove a graph not in Graph::instances");
-			throw std::logic_error(msg);
+	if (!preserveNodes) {
+		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraph()
+		                                           ? anyNode->getGraph()->getNodes()
+												   : Graph::findConnectedNodes(anyNode); 
+		while (!graphNodes.empty()) {
+			std::shared_ptr<Node> node = *graphNodes.begin();
+			RGL_DEBUG("Destroying node {}", (void*) node.get());
+			graphNodes.erase(node);
+			node->inputs.clear();
+			node->outputs.clear();
+			Node::release(node.get());
 		}
-		instances.erase(graphIt);
 	}
+
+	if (!anyNode->hasGraph()) {
+		return;
+	}
+
+	auto graphIt = std::find(instances.begin(), instances.end(), anyNode->getGraph());
+	if (graphIt == instances.end()) {
+		auto msg = fmt::format("attempted to remove a graph not in Graph::instances");
+		throw std::logic_error(msg);
+	}
+	instances.erase(graphIt);
 }
 
 const std::vector<std::shared_ptr<Node>>& Graph::getExecutionOrder()

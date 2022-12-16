@@ -28,7 +28,7 @@ struct Graph
 
 	static std::shared_ptr<Graph> create(std::shared_ptr<Node> node);
 
-	static void destroy(std::weak_ptr<Graph> graph);
+	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
 
 	virtual ~Graph()
 	{
