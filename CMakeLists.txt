@@ -70,7 +70,7 @@ add_library(RobotecGPULidar SHARED
     src/Tape.cpp
     src/Logger.cpp
     src/VArray.cpp
-    src/gpu/Optix.cpp
+    src/Optix.cpp
     src/gpu/nodeKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp

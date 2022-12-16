@@ -19,7 +19,7 @@
 #include <optix_stubs.h>
 
 #include <APIObject.hpp>
-#include <gpu/Optix.hpp>
+#include <Optix.hpp>
 #include <DeviceBuffer.hpp>
 #include <math/Vector.hpp>
 #include <macros/cuda.hpp>
