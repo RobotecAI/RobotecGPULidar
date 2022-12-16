@@ -396,7 +396,7 @@ rgl_graph_node_set_active(rgl_node_t node, bool active)
 		RGL_API_LOG("rgl_graph_node_set_active(node={}, active={})", repr(node), active);
 		CHECK_ARG(node != nullptr);
 
-		node->setActive(active);
+		Node::validatePtr(node)->setActive(active);
 	});
 	TAPE_HOOK(node, active);
 	return status;
@@ -415,7 +415,7 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
-		parent->addChild(Node::validatePtr(child));
+		Node::validatePtr(parent)->addChild(Node::validatePtr(child));
 	});
 	TAPE_HOOK(parent, child);
 	return status;
@@ -434,7 +434,7 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
-		parent->removeChild(Node::validatePtr(child));
+		Node::validatePtr(parent)->removeChild(Node::validatePtr(child));
 	});
 	TAPE_HOOK(parent, child);
 	return status;
