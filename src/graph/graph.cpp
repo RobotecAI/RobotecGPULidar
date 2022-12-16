@@ -105,17 +105,3 @@ void runGraph(Node::Ptr userNode)
 	}
 	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
 }
-
-void destroyGraph(Node::Ptr userNode)
-{
-	std::set<Node::Ptr> graph = findConnectedNodes(userNode);
-
-	while (!graph.empty()) {
-		Node::Ptr node = *graph.begin();
-		RGL_DEBUG("Destroying node {}", (void*) node.get());
-		graph.erase(node);
-		node->inputs.clear();
-		node->outputs.clear();
-		Node::release(node.get());
-	}
-}

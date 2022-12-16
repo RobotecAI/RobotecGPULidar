@@ -23,6 +23,7 @@
 #include <scene/Mesh.hpp>
 
 #include <graph/NodesCore.hpp>
+#include <graph/Graph.hpp>
 #include <graph/graph.hpp>
 
 extern "C" {
@@ -113,9 +114,9 @@ rgl_cleanup(void)
 		Mesh::instances.clear();
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
-			// Note: destroyPipeline calls Node::release()
+			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
 			Node::Ptr node = Node::instances.begin()->second;
-			destroyGraph(node);
+			Graph::destroy(node, false);
 		}
 	});
 	TAPE_HOOK();
@@ -298,7 +299,7 @@ rgl_graph_destroy(rgl_node_t node)
 		RGL_API_LOG("rgl_graph_destroy(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		destroyGraph(Node::validatePtr(node));
+		Graph::destroy(Node::validatePtr(node), false);
 	});
 	TAPE_HOOK(node);
 	return status;
