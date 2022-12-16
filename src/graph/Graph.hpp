@@ -35,6 +35,9 @@ struct Graph
 		stream.reset();
 	}
 
+	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
+	const std::vector<std::shared_ptr<Node>>& getExecutionOrder();
+
 private:
 	Graph()
 	{
@@ -45,6 +48,12 @@ private:
 
 private:
 	std::shared_ptr<CudaStream> stream;
+	std::set<std::shared_ptr<Node>> nodes;
+
+	// Exection order may change due to e.g., node (de)activation
+	std::optional<std::vector<std::shared_ptr<Node>>> executionOrder;
 
 	static std::list<std::shared_ptr<Graph>> instances;
+
+	friend struct Node;
 };

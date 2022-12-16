@@ -59,7 +59,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 	bool isActive() const { return active; }
-	void setActive(bool active) { this->active = active; }
+	void setActive(bool active);
 
 protected:
 	template<template<typename _1, typename _2> typename Container>

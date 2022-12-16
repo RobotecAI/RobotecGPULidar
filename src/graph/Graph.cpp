@@ -40,9 +40,9 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 {
 	auto graph = std::shared_ptr<Graph>(new Graph());
 
-	auto graphNodes = Graph::findConnectedNodes(node);
+	graph->nodes = Graph::findConnectedNodes(node);
 
-	for (auto&& currentNode : graphNodes) {
+	for (auto&& currentNode : graph->nodes) {
 		if (currentNode->hasGraph()) {
 			auto msg = fmt::format("attempted to replace existing graph in node {} when creating for {}", currentNode->getName(), node->getName());
 			throw std::logic_error(msg);
@@ -51,8 +51,6 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 	}
 
 	instances.push_back(graph);
-
-	// TODO: cache connectedNodes? executionOrder?
 
 	return graph;
 }
@@ -67,6 +65,14 @@ void Graph::destroy(std::weak_ptr<Graph> graph)
 		}
 		instances.erase(graphIt);
 	}
+}
+
+const std::vector<std::shared_ptr<Node>>& Graph::getExecutionOrder()
+{
+	if (!executionOrder.has_value()) {
+		executionOrder = findExecutionOrder(nodes);
+	}
+	return executionOrder.value();
 }
 
 std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
