@@ -74,7 +74,7 @@ $VCPKG_INSTALL_DIR"/vcpkg" "install" "--clean-after-build" "pcl[core,visualizati
 if [ ! -d "${BUILD_DIR}" ]; then mkdir "${BUILD_DIR}"; fi
 cd "${BUILD_DIR}"
 if [ "$DO_CMAKE" = true ]; then
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALL_DIR"/scripts/buildsystems/vcpkg.cmake" --install-prefix $PWD -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,'\$ORIGIN',-rpath=.,--disable-new-dtags" "${CMAKE_ARGS[@]}";
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALL_DIR"/scripts/buildsystems/vcpkg.cmake" --install-prefix $PWD "${CMAKE_ARGS[@]}";
 else
     echo "--- IMPORTANT ---
 Remember to pass vcpkg's CMAKE_TOOLCHAIN_FILE to cmake. See:
