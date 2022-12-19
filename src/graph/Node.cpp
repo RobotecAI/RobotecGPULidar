@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/Node.hpp>
+#include <graph/Graph.hpp>
 #include <graph/graph.hpp>
 
 API_OBJECT_INSTANCE(Node);
@@ -29,8 +30,8 @@ void Node::addChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
-	this->clearExecutionContext();
-	child->clearExecutionContext();
+	this->releaseGraphCtxRecursively();
+	child->releaseGraphCtxRecursively();
 
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
@@ -61,34 +62,34 @@ void Node::removeChild(Node::Ptr child)
 		throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
 	}
 
-	bool isExecCtxShared = execCtx.has_value() == child->execCtx.has_value();
-	if (!isExecCtxShared) {
+	bool isGraphCtxShared = graph.has_value() == child->graph.has_value();
+	if (!isGraphCtxShared) {
 		// TODO(prybicki): All the ifs here should throw a stronger (unrecoverable) exception if an inconsistent state is found
 		auto msg = fmt::format("inconsistent execCtx state between parent {} and child {} ({}, {})",
-		                       getName(), child->getName(), execCtx.has_value(), child->execCtx.has_value());
+		                       getName(), child->getName(), graph.has_value(), child->graph.has_value());
 		throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
 	}
+
+	this->releaseGraphCtxRecursively();
+	child->releaseGraphCtxRecursively();
 
 	this->outputs.erase(childIt);  // Remove child from our children
 	child->inputs.erase(thisIt);  // Remove us as a parent of that child
 
-	this->clearExecutionContext();
-	child->clearExecutionContext();
+
 }
 
-void Node::clearExecutionContext()
+void Node::releaseGraphCtxRecursively()
 {
-	if (!execCtx.has_value()) {
+	if (!graph.has_value()) {
 		return;  // Empty execCtx implies that all connected nodes
 	}
+
+	// Before releasing graph, make sure all work is finished
+	graph.value()->sync();
+
 	// Note: recycling CUDA streams is possible here
-	for (auto&& node : findConnectedNodes(shared_from_this())) {
-		// TODO(prybicki): at the review, make sure the implementation is complete
-		if (!execCtx.has_value()) {
-			// This is a bit defensive, but may detect implementation bugs
-			auto msg = fmt::format("attempted to clear execCtx of {}, which is already empty", node->getName());
-			throw InvalidPipeline(msg); // TODO(prybicki): should be unrecoverable
-		}
-		execCtx.reset();
+	for (auto&& node : graph.value()->getConnectedNodes()) {
+		node->graph.reset();
 	}
 }

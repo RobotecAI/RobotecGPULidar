@@ -22,7 +22,7 @@
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 
-struct NodeExecutionContext;
+struct Graph;
 
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
@@ -57,9 +57,6 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	bool isActive() const { return active; }
 	void setActive(bool active) { this->active = active; }
-
-	/** Destroys execution context of all nodes in the graph this node belongs to. **/
-	void clearExecutionContext();
 
 protected:
 	template<template<typename _1, typename _2> typename Container>
@@ -110,15 +107,16 @@ protected:
 	typename T::Ptr getValidInputFrom(const std::vector<Node::Ptr>& srcs)
 	{ return getExactlyOne<T>(srcs); }
 
+	void releaseGraphCtxRecursively();
+
 protected:
 	bool active {true};
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
-	std::optional<std::shared_ptr<NodeExecutionContext>> execCtx;
+	std::optional<std::shared_ptr<Graph>> graph;
 
-	friend void runGraph(Node::Ptr);
-	friend void destroyGraph(Node::Ptr);
 	friend struct fmt::formatter<Node>;
+	friend struct Graph;
 };
 
 #ifndef __CUDACC__

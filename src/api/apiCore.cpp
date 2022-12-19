@@ -280,7 +280,7 @@ rgl_graph_run(rgl_node_t node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
-		runGraph(Node::validatePtr(node));
+		Graph::run(Node::validatePtr(node));
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -298,7 +298,7 @@ rgl_graph_destroy(rgl_node_t node)
 		RGL_API_LOG("rgl_graph_destroy(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		destroyGraph(Node::validatePtr(node));
+		Graph::destroy(Node::validatePtr(node));
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -307,7 +307,7 @@ rgl_graph_destroy(rgl_node_t node)
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = findConnectedNodes(Node::validatePtr(userNode));
+	std::set<Node::Ptr> graph = Graph::getConnectedNodes(Node::validatePtr(userNode));
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
@@ -329,53 +329,54 @@ void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 	}
 }
 
-RGL_API rgl_status_t
-rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
-		CHECK_ARG(node != nullptr);
-
-		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		auto elemCount = (int32_t) pointCloudNode->getPointCount();
-		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
-
-		if (out_count != nullptr) { *out_count = elemCount; }
-		if (out_size_of != nullptr) { *out_size_of = elemSize; }
-	});
-	TAPE_HOOK(node, field, out_count, out_size_of);
-	return status;
-}
-
-void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
-{
-	int32_t out_count, out_size_of;
-	rgl_graph_get_result_size(tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>()),
-		(rgl_field_t) yamlNode[1].as<int>(),
-		&out_count,
-		&out_size_of);
-
-	if (out_count != yamlNode[2].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_count mismatch");
-	if (out_size_of != yamlNode[3].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_size_of mismatch");
-}
-
-RGL_API rgl_status_t
-rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
-		CHECK_ARG(node != nullptr);
-		CHECK_ARG(data != nullptr);
-
-		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
-
-		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
-		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));
-	});
-	TAPE_HOOK(node, field, data);
-	return status;
-}
+// TODO: introduce per-node synchronization
+// RGL_API rgl_status_t
+// rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of)
+// {
+// 	auto status = rglSafeCall([&]() {
+// 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
+// 		CHECK_ARG(node != nullptr);
+//
+// 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+// 		auto elemCount = (int32_t) pointCloudNode->getPointCount();
+// 		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
+//
+// 		if (out_count != nullptr) { *out_count = elemCount; }
+// 		if (out_size_of != nullptr) { *out_size_of = elemSize; }
+// 	});
+// 	TAPE_HOOK(node, field, out_count, out_size_of);
+// 	return status;
+// }
+//
+// void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
+// {
+// 	int32_t out_count, out_size_of;
+// 	rgl_graph_get_result_size(tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>()),
+// 		(rgl_field_t) yamlNode[1].as<int>(),
+// 		&out_count,
+// 		&out_size_of);
+//
+// 	if (out_count != yamlNode[2].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_count mismatch");
+// 	if (out_size_of != yamlNode[3].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_size_of mismatch");
+// }
+//
+// RGL_API rgl_status_t
+// rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
+// {
+// 	auto status = rglSafeCall([&]() {
+// 		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
+// 		CHECK_ARG(node != nullptr);
+// 		CHECK_ARG(data != nullptr);
+//
+// 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+// 		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
+//
+// 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
+// 		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));
+// 	});
+// 	TAPE_HOOK(node, field, data);
+// 	return status;
+// }
 
 void TapePlayer::tape_graph_get_result_data(const YAML::Node& yamlNode)
 {
@@ -395,7 +396,7 @@ rgl_graph_node_set_active(rgl_node_t node, bool active)
 		RGL_API_LOG("rgl_graph_node_set_active(node={}, active={})", repr(node), active);
 		CHECK_ARG(node != nullptr);
 
-		node->setActive(active);
+		Node::validatePtr(node)->setActive(active);
 	});
 	TAPE_HOOK(node, active);
 	return status;
@@ -414,7 +415,8 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
-		parent->addChild(Node::validatePtr(child));
+		// Implicit sync inside
+		Node::validatePtr(parent)->addChild(Node::validatePtr(child));
 	});
 	TAPE_HOOK(parent, child);
 	return status;
@@ -433,7 +435,8 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
-		parent->removeChild(Node::validatePtr(child));
+		// Implicit sync inside
+		Node::validatePtr(parent)->removeChild(Node::validatePtr(child));
 	});
 	TAPE_HOOK(parent, child);
 	return status;

@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <spdlog/common.h>
+#include <graph/Graph.hpp>
 
 #ifdef RGL_BUILD_ROS2_EXTENSION
 #include <rclcpp/exceptions.hpp>
@@ -104,6 +105,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	}
 	else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
+		Graph::sync(node);
 	}
 	node->setParameters(args...);
 	*nodeRawPtr = node.get();
