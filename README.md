@@ -49,6 +49,11 @@ And more:
 
 An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
 
+## Extensions
+
+`RobotecGPULidar` library can be built with extensions that add nodes with different functionalities:
+- `ROS2` - enables publishing point cloud messages to [ROS2](https://www.ros.org/).
+
 ## Building in Docker (Linux)
 
 Two dockerfiles are prepared:
@@ -61,7 +66,7 @@ Build instructions:
 3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
 4. `docker build . -f DockerfileMinimal --tag rgl:minimal`
 5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
-6. `./setup.bash --cmake --make -j`
+6. `./setup.bash --make -j`
 
 ## Building on Ubuntu
 
@@ -70,11 +75,13 @@ Build instructions:
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
-4. Use `setup.bash --cmake --make` script.
+4. Use `setup.bash --rgl-install-deps` script to install RGL dependencies.
    - It will install dependencies from `apt` and [vcpkg](https://vcpkg.io/en/index.html).
+5. Use `setup.bash` script to build.
    - It will run CMake and then make.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.bash --cmake -DCMAKE_BUILD_TYPE=Debug --make -j 16`
+   - See `setup.bash --help` for usage information.
 
 ## Building on Windows
 

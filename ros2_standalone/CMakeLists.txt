@@ -122,9 +122,14 @@ endmacro()
 set(ros2_standalone_libs
   rcl
   rclcpp
-  visualization_msgs  # TODO: set sensor_msgs instead and make it install properly
+  sensor_msgs
+  visualization_msgs
+  rmw_implementation
+  CycloneDDS
+  rmw_cyclonedds_cpp
   FastRTPS
   rmw_fastrtps_cpp
+  rmw_dds_common
   rosidl_runtime_c
   rosidl_typesupport_c
   rosidl_typesupport_cpp

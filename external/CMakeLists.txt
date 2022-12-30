@@ -51,6 +51,7 @@ if (UNIX)
 endif()
 
 if (${RGL_BUILD_TESTS})
+    set(INSTALL_GTEST OFF CACHE INTERNAL "Disable installation of googletest")
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest

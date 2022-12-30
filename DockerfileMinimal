@@ -24,7 +24,7 @@ RUN apt install -y \
 
 # Install RGL dependencies via vcpkg
 COPY setup.bash /
-RUN /setup.bash
+RUN /setup.bash --rgl-install-deps
 RUN rm /setup.bash
 
 WORKDIR /code

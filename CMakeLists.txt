@@ -26,13 +26,13 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
 # Extensions configuration
-set(RGL_BUILD_ROS2_EXTENSION ON CACHE BOOL
+set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
 set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
     "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
 
 # Library configuration
-set(RGL_LIB_RPATH "." CACHE STRING
+set(RGL_LIB_RPATH "\$ORIGIN/" CACHE STRING
     "Adds a directory to the runtime library search path. It is usefull when linking shared objects (e.g. ROS2_STANDALONE")
 
 # Hide automatically generated CTest targets
@@ -111,7 +111,7 @@ if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 endif()
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=\$ORIGIN/${RGL_LIB_RPATH}")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=${RGL_LIB_RPATH}")
 
 target_include_directories(RobotecGPULidar
     PUBLIC include
