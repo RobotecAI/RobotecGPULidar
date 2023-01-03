@@ -103,18 +103,21 @@ if [ "$INSTALL_DEPS" = true ]; then
 fi
 
 # Check CUDA
+if ! command -v nvcc --version 2>/dev/null; then echo "CUDA not found. After installation remember to extend environment variables:
+  - PATH with CUDA bin directory
+  - LD_LIBRARY_PATH with CUDA lib directory" && exit 1; fi
 CUDA_VERSION=$(nvcc --version 2>/dev/null | grep -E -o "V[0-9]+.[0-9]+.[0-9]+" | cut -c2-)
 if [ -z "$CUDA_VERSION" ]; then echo "CUDA not found!" && exit 1; fi
 CUDA_MAJOR=$(echo "$CUDA_VERSION" | cut -d. -f1)
 CUDA_MINOR=$(echo "$CUDA_VERSION" | cut -d. -f2)
 if [ "$CUDA_MAJOR" -lt $CUDA_MIN_VER_MAJOR ] ||
     { [ "$CUDA_MAJOR" -eq $CUDA_MIN_VER_MAJOR ] && [ "$CUDA_MINOR" -lt $CUDA_MIN_VER_MINOR ]; }; then
-    echo "CUDA missing or CUDA version not supported! Get CUDA $CUDA_MIN_VER_MAJOR.$CUDA_MIN_VER_MINOR+";
+    echo "CUDA version not supported! Get CUDA $CUDA_MIN_VER_MAJOR.$CUDA_MIN_VER_MINOR+";
     exit 1;
 fi
 
-# Check OptiX_INSTALL_DIR if building RGL
-if [ -z "$OptiX_INSTALL_DIR" ] && { [ "$DO_CMAKE" = true ] || [ "$DO_MAKE" = true ]; }; then
+# Check OptiX_INSTALL_DIR
+if [ -z "$OptiX_INSTALL_DIR" ]; then
     echo "OptiX not found! Make sure you have exported environment variable OptiX_INSTALL_DIR";
     exit 1;
 fi
@@ -125,6 +128,6 @@ if [ ! -d "${BUILD_DIR}" ]; then mkdir "${BUILD_DIR}"; fi
 cd "${BUILD_DIR}"
 
 CMAKE_ARGS+=("-DRGL_LIB_RPATH=${RGL_LIB_RPATH}");
-cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALL_DIR"/scripts/buildsystems/vcpkg.cmake" --install-prefix $PWD "${CMAKE_ARGS[@]}";
+cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALL_DIR"/scripts/buildsystems/vcpkg.cmake" --install-prefix "$PWD" "${CMAKE_ARGS[@]}";
 make "${MAKE_ARGS[@]}";
 if [ "${DO_INSTALL}" = true ]; then make install; fi
