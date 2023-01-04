@@ -33,7 +33,11 @@ set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
 
 # Library configuration
 set(RGL_LIB_RPATH "\$ORIGIN/" CACHE STRING
-    "Adds a directory to the runtime library search path. It is usefull when linking shared objects (e.g. ROS2_STANDALONE")
+    "Adds a directory to the runtime library search path (Linux only). It is usefull when linking shared objects (e.g. ROS2_STANDALONE")
+
+if (NOT WIN32)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=${RGL_LIB_RPATH}")
+endif()
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -110,8 +114,6 @@ if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
     target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 endif()
-
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=${RGL_LIB_RPATH}")
 
 target_include_directories(RobotecGPULidar
     PUBLIC include

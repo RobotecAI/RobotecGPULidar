@@ -88,21 +88,16 @@ Build instructions:
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
-3. Install [PCL](https://pointclouds.org/) 1.12:
-    1. Get [vcpkg](https://vcpkg.io/en/index.html):\
-       `git clone -b 2022.08.15 --single-branch --depth 1 https://github.com/microsoft/vcpkg`
-    2. Bootstrap `vcpkg`:\
-       `.\vcpkg\bootstrap-vcpkg.bat`
-    3. Install PCL:\
-       `.\vcpkg\vcpkg.exe install pcl[core,visualization]:x64-windows`
-    4. In order to use vcpkg with Visual Studio, run the following command (may require administrator elevation):\
-       `.\vcpkg\vcpkg.exe integrate install`
-    5. In order to use vcpkg with CMake, you can use the toolchain file:\
-       `cmake -B [build directory] -S . "-DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake"`\
-       `cmake --build [build directory]`
-4. Build the project:
-   - You can use [CLion IDE](https://www.jetbrains.com/clion/) (tested)
-   - Alternatively - [cmake-gui](https://cmake.org/download/) and Microsoft Visual Studio
+3. Download [Python3](https://www.python.org/downloads/).
+4. Install [Microsoft Visual Studio](https://visualstudio.microsoft.com/pl/downloads/) with **C++ CMake tools for Windows** component.
+5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to RGL repository.
+6. Run `py setup_win.py --rgl-install-deps` command to install RGL dependencies.
+   - It will install dependencies from [vcpkg](https://vcpkg.io/en/index.html).
+7. Run `py setup_win.py` command to build the project.
+   - It will use CMake.
+   - You can pass optional CMake parameters, e.g.
+     - `py setup_win.py --cmake -DCMAKE_BUILD_TYPE=Debug`
+   - See `py setup_win.py --help` for usage information.
 
 ## Acknowledgements
 

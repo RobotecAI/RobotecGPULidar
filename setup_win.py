@@ -55,6 +55,7 @@ if os.environ["OptiX_INSTALL_DIR"] == "":
     sys.exit(1)
 
 os.chdir(sys.path[0])
+# Extend Path with libRobotecGPULidar location to link tests properly during the build
 os.environ["Path"] = os.environ["Path"] + ";" + os.path.join(os.getcwd(), args.build_dir)
 
 # Build
