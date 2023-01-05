@@ -25,6 +25,29 @@ endmacro()
 macro(get_standalone_dependencies _library_name)
     find_package(${_library_name} REQUIRED)
 
+    # Get cyclonedds DDSC
+    if("${_library_name}" STREQUAL "CycloneDDS")
+        if(WIN32)
+            fetch_target_lib(CycloneDDS::ddsc)
+            fetch_target_lib(CycloneDDS::idl)
+            list(APPEND REQ_STANDALONE_LIBS
+              ${CycloneDDS_ddsc_LIB_PATH}
+              ${CycloneDDS_idl_LIB_PATH}
+              ${CycloneDDS_dds_security_ac_LIB_PATH}
+              ${CycloneDDS_dds_security_auth_LIB_PATH}
+              ${CycloneDDS_dds_security_crypto_LIB_PATH})
+        elseif(UNIX)
+            fetch_target_lib(CycloneDDS::ddsc)
+        list(APPEND REQ_STANDALONE_LIBS ${CycloneDDS_ddsc_LIB_PATH})
+      endif()
+    endif()
+
+    # Get rmw_cyclonedds_cpp
+    if("${_library_name}" STREQUAL "rmw_cyclonedds_cpp")
+        fetch_target_lib(rmw_cyclonedds_cpp::rmw_cyclonedds_cpp)
+        list(APPEND REQ_STANDALONE_LIBS ${rmw_cyclonedds_cpp_rmw_cyclonedds_cpp_LIB_PATH})
+    endif()
+
     # We skip python libs
     set(PYTHON_LIB_REGEX ".*python[0-9]*\.[0-9]*\.so")
     if(WIN32)
@@ -101,6 +124,8 @@ set(ros2_standalone_libs
   rmw_implementation
   FastRTPS
   rmw_fastrtps_cpp
+  CycloneDDS
+  rmw_cyclonedds_cpp
   rmw_dds_common
   rosidl_runtime_c
   rosidl_typesupport_c
