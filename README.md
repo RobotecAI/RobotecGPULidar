@@ -52,7 +52,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 ## Extensions
 
 `RobotecGPULidar` library can be built with extensions that add nodes with different functionalities:
-- `ROS2` - enables publishing point cloud messages to [ROS2](https://www.ros.org/).
+- `ROS2` - enables publishing point cloud messages to [ROS2](https://www.ros.org/). Check [ROS2 extension doc](docs/Ros2Extension.md) for more information, build instruction and usage.
 
 ## Building in Docker (Linux)
 
