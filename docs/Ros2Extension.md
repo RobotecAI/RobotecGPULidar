@@ -1,6 +1,6 @@
 # RGL ROS2 extension
 
-The extension introduces node to publish [PointCloud2](https://docs.ros2.org/foxy/api/sensor_msgs/msg/PointCloud2.html) messages to ROS2. RGL creates a ROS2 node named `RobotecGPULidar` and registers publishers based on constructed RGL nodes.
+The extension introduces the node to publish [PointCloud2](https://docs.ros2.org/foxy/api/sensor_msgs/msg/PointCloud2.html) messages to ROS2. RGL creates a ROS2 node named `RobotecGPULidar` and registers publishers based on constructed RGL nodes.
 
 Supported ROS2 distributions:
 - Humble
@@ -39,7 +39,7 @@ RGL ROS2 extension can be built in two flavors:
     - You can specify run-time search path for RGL library by adding option `--rgl-lib-rpath <path>`.
 2. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `libRobotecGPULidar.so` location (or location defined with `--rgl-lib-rpath`).
 
-#### Tips for integration RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
+#### Tips for integrating RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
 1. Build RGL with command:
     ```bash
     ./setup.bash --rgl-with-ros2-standalone --rgl-lib-rpath \$ORIGIN/.plugin --make -j
@@ -56,6 +56,11 @@ This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated 
 
 - Requirements listed in the main [README](../README.md) (section `Building on Windows`).
 - ROS2 installed on the system and sourced.
+- Fixed ROS2 logging macros in rclcpp package to make it compile with C++20. More about this bug: [github PR](https://github.com/ros2/rclcpp/pull/2063).
+  - Use `fix_ros2_humble.py` script to apply those changes:
+    ```bash
+    py ros2_standalone\fix_ros2_humble.py <your-path-to-ros2>
+    ```
 - For standalone build:
   - If you have installed ROS2 with binaries, there is `rmw_cyclonedds_cpp` package missing. You need to build this one from source:
     1. Make sure you have installed [ROS2 prerequisites](https://docs.ros.org/en/humble/Installation/Alternatives/Windows-Development-Setup.html#installing-prerequisites).
@@ -76,19 +81,19 @@ This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated 
 
 #### Steps for standalone
 1. Run `x64 Native Tools Command Prompt for VS 2019` and navigate to RGL repository.
-2. Run `py setup_win.py --rgl-with-ros2-standalone`.
+2. Run `py setup_win.py --rgl-with-ros2-standalone` command to build RGL with ROS2 extension and install ROS2 libraries.
 3. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` into `RobotecGPULidar.dll` location, or extend environment variable `Path` appropriately.
 
-#### Tips for integration RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
+#### Tips for integrating RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
 1. Build RGL with ROS2 standalone as described above.
-2. Copy `<build-dir>/RobotecGPULidar.dll` and all depend libraries in `<build-dir>` to appropriate directory in your RGLUnityPlugin.
+2. Copy `<build-dir>/RobotecGPULidar.dll` and all depend libraries located in `<build-dir>` to appropriate directory in your RGLUnityPlugin.
 3. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `Ros2ForUnity\Plugins\Windows\x86_64` directory. Skip for duplicates.
 
 In this case, RGL's ROS2 standalone build is dependent on ROS2ForUnity's ROS2 standalone build. RobotecGPULidar library will find ROS2 because ROS2ForUnity sets environment variable `Path` for the ROS2 libraries.
 
 ## Usage
 
-Each RGL node for ROS2 publishing must be connected to format node that defines fields and their layout in the binary data. For example, to publish PointCloud2 message with fields XYZ and DISTANCE, the code should look as follow:
+Each RGL node for ROS2 publishing must be connected to a format node that defines fields and their layout in the binary data. For example, to publish PointCloud2 message with fields XYZ and DISTANCE, the code should look as follow:
 ```c
 ...
 rgl_node_t nodeFormat = nullptr, nodeRos2 = nullptr;
