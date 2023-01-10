@@ -27,22 +27,15 @@ struct Graph
 	static std::set<std::shared_ptr<Node>> findConnectedNodes(std::shared_ptr<Node> anyNode);
 
 	static std::shared_ptr<Graph> create(std::shared_ptr<Node> node);
-
 	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
 
-	virtual ~Graph()
-	{
-		stream.reset();
-	}
-
+	void run();
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 	const std::vector<std::shared_ptr<Node>>& getExecutionOrder();
 
+	virtual ~Graph();
 private:
-	Graph()
-	{
-		stream = std::make_shared<CudaStream>();
-	}
+	Graph() { stream = std::make_shared<CudaStream>(); }
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
@@ -50,7 +43,7 @@ private:
 	std::shared_ptr<CudaStream> stream;
 	std::set<std::shared_ptr<Node>> nodes;
 
-	// Exection order may change due to e.g., node (de)activation
+	// Execution order may change due to e.g., node (de)activation
 	std::optional<std::vector<std::shared_ptr<Node>>> executionOrder;
 
 	static std::list<std::shared_ptr<Graph>> instances;

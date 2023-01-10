@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/Graph.hpp>
+#include <graph/NodesCore.hpp>
 
 std::list<std::shared_ptr<Graph>> Graph::instances;
 
@@ -53,6 +54,45 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 	instances.push_back(graph);
 
 	return graph;
+}
+
+void Graph::run()
+{
+	const auto& nodesInExecOrder = getExecutionOrder();
+
+	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
+
+	std::set<rgl_field_t> fieldsToCompute;
+	for (auto&& node : nodesInExecOrder) {
+		if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
+			for (auto&& field : pointNode->getRequiredFieldList()) {
+				if (!isDummy(field)) {
+					fieldsToCompute.insert(field);
+				}
+			}
+		}
+	}
+
+	fieldsToCompute.insert(XYZ_F32);
+
+	if (!Node::filter<CompactPointsNode>(nodesInExecOrder).empty()) {
+		fieldsToCompute.insert(IS_HIT_I32);
+	}
+
+	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
+	rt->setFields(fieldsToCompute);
+
+	for (auto&& current : nodesInExecOrder) {
+		RGL_DEBUG("Validating node: {}", *current);
+		current->validate();
+	}
+	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
+
+	for (auto&& node : nodesInExecOrder) {
+		RGL_DEBUG("Scheduling node: {}", *node);
+		node->schedule(nullptr);
+	}
+	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
 }
 
 void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
@@ -119,3 +159,9 @@ std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::share
 	}
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
+
+Graph::~Graph()
+{
+	stream.reset();
+}
+

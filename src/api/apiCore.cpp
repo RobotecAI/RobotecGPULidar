@@ -24,7 +24,6 @@
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
-#include <graph/graph.hpp>
 
 extern "C" {
 
@@ -281,7 +280,7 @@ rgl_graph_run(rgl_node_t node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
-		runGraph(Node::validatePtr(node));
+		Node::validatePtr(node)->getGraph()->run();
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -308,7 +307,7 @@ rgl_graph_destroy(rgl_node_t node)
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = findConnectedNodes(Node::validatePtr(userNode));
+	std::set<Node::Ptr> graph = Graph::findConnectedNodes(Node::validatePtr(userNode));
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
