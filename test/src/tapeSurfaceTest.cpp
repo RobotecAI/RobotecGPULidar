@@ -10,6 +10,9 @@ class Tape : public RGLAutoCleanupTest {};
 TEST_F(Tape, RecordPlayAllCalls)
 {
 	EXPECT_RGL_SUCCESS(rgl_tape_record_begin("all_calls_recording"));
+	bool isTapeRecordActive = false;
+	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
+	EXPECT_TRUE(isTapeRecordActive);
 
 	rgl_mat3x4f identityTf = Mat3x4f::identity().toRGL();
 
@@ -84,6 +87,9 @@ TEST_F(Tape, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_cleanup());
 
 	EXPECT_RGL_SUCCESS(rgl_tape_record_end());
+
+	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
+	EXPECT_FALSE(isTapeRecordActive);
 
 	EXPECT_RGL_SUCCESS(rgl_tape_play("all_calls_recording"));
 }

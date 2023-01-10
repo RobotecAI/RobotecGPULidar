@@ -18,6 +18,13 @@ RGL_API rgl_status_t rgl_tape_record_begin(const char* path);
 RGL_API rgl_status_t rgl_tape_record_end();
 
 /**
+ * Returns whether tape recording is active or not.
+ * Currently, Windows is not supported: throws RGL_TAPE_ERROR
+ * @param is_active address to store tape recording activation status
+ */
+RGL_API rgl_status_t rgl_tape_record_is_active(bool* is_active);
+
+/**
  * Loads recorded API calls from files and exectues them.
  * Currently, Windows is not supported: throws RGL_TAPE_ERROR
  * @param path path to recording files (should contain filename without extension)

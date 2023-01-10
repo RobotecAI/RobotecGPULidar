@@ -869,8 +869,9 @@ rgl_tape_record_begin(const char* path)
 	});
 	#else
 	return rglSafeCall([&]() {
-		CHECK_ARG(path != nullptr);
 		RGL_API_LOG("rgl_tape_record_begin(path={})", path);
+		CHECK_ARG(path != nullptr);
+		CHECK_ARG(path[0] != '\0');
 		if (tapeRecord.has_value()) {
 			throw RecordError("rgl_tape_record_begin: recording already active");
 		} else {
@@ -901,6 +902,23 @@ rgl_tape_record_end()
 }
 
 RGL_API rgl_status_t
+rgl_tape_record_is_active(bool* is_active)
+{
+	#ifdef _WIN32
+	return rglSafeCall([&]() {
+		RGL_API_LOG("rgl_tape_record_is_active(is_active={})", (void*) is_active);
+		throw RecordError("rgl_tape_record_is_active() is not supported on Windows");
+	});
+	#else
+	return rglSafeCall([&]() {
+		RGL_API_LOG("rgl_tape_record_is_active(is_active={}", (void*) is_active);
+		CHECK_ARG(is_active != nullptr);
+		*is_active = tapeRecord.has_value();
+	});
+	#endif //_WIN32
+}
+
+RGL_API rgl_status_t
 rgl_tape_play(const char* path)
 {
 	#ifdef _WIN32
@@ -910,8 +928,9 @@ rgl_tape_play(const char* path)
 	});
 	#else
 	return rglSafeCall([&]() {
-		CHECK_ARG(path != nullptr);
 		RGL_API_LOG("rgl_tape_play(path={})", path);
+		CHECK_ARG(path != nullptr);
+		CHECK_ARG(path[0] != '\0');
 		if (tapeRecord.has_value()) {
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
