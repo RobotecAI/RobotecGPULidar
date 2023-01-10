@@ -36,7 +36,7 @@ void Logger::configure(rgl_log_level_t logLevel, const char* logFilePath, bool u
 void Logger::configure(rgl_log_level_t logLevel, std::optional<std::filesystem::path> logFilePath, bool useStdout)
 {
 	if (logLevel != RGL_LOG_LEVEL_OFF && !logFilePath.has_value() && !useStdout) {
-		throw spdlog::spdlog_ex("logging enabled but all sinks are disabled");
+		throw std::invalid_argument("invalid logger configuration: logging enabled but all sinks are disabled");
 	}
 	std::vector<spdlog::sink_ptr> sinkList;
 	if (logFilePath.has_value() && !logFilePath.value().empty()) {
