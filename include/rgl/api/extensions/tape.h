@@ -19,7 +19,6 @@ RGL_API rgl_status_t rgl_tape_record_end();
 
 /**
  * Returns whether tape recording is active or not.
- * Currently, Windows is not supported: throws RGL_TAPE_ERROR
  * @param is_active address to store tape recording activation status
  */
 RGL_API rgl_status_t rgl_tape_record_is_active(bool* is_active);
