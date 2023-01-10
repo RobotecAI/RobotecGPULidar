@@ -716,8 +716,9 @@ rgl_tape_record_begin(const char* path)
 	});
 	#else
 	return rglSafeCall([&]() {
-		CHECK_ARG(path != nullptr);
 		RGL_API_LOG("rgl_tape_record_begin(path={})", path);
+		CHECK_ARG(path != nullptr);
+		CHECK_ARG(path[0] != '\0');
 		if (tapeRecorder.has_value()) {
 			throw RecordError("rgl_tape_record_begin: recording already active");
 		} else {
@@ -774,8 +775,9 @@ rgl_tape_play(const char* path)
 	});
 	#else
 	return rglSafeCall([&]() {
-		CHECK_ARG(path != nullptr);
 		RGL_API_LOG("rgl_tape_play(path={})", path);
+		CHECK_ARG(path != nullptr);
+		CHECK_ARG(path[0] != '\0');
 		if (tapeRecorder.has_value()) {
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
