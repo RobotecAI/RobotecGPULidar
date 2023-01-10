@@ -751,18 +751,11 @@ rgl_tape_record_end()
 RGL_API rgl_status_t
 rgl_tape_record_is_active(bool* is_active)
 {
-	#ifdef _WIN32
-	return rglSafeCall([&]() {
-		RGL_API_LOG("rgl_tape_record_is_active(is_active={})", (void*) is_active);
-		throw RecordError("rgl_tape_record_is_active() is not supported on Windows");
-	});
-	#else
 	return rglSafeCall([&]() {
 		RGL_API_LOG("rgl_tape_record_is_active(is_active={}", (void*) is_active);
 		CHECK_ARG(is_active != nullptr);
 		*is_active = tapeRecorder.has_value();
 	});
-	#endif //_WIN32
 }
 
 RGL_API rgl_status_t
