@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.11.3] 11 January 2023
+
+### Added
+- API call for tape recording activation status
+
+### Fixed
+- Fixed dependencies for tapePlayer tool
+- Handle invalid logger configuration properly
+- Handle empty path passed to tape
+
 ## [0.11.2] 1 December 2022
 
 ### Added
