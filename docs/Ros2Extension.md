@@ -32,17 +32,17 @@ RGL ROS2 extension can be built in two flavors:
     ```
 
 #### Steps for overlay
-1. Use script `setup.bash` with option `--rgl-with-ros2`.
+1. Use script `setup.py` with option `--with-ros2`.
 
 #### Steps for standalone
-1. Use script `setup.bash` with option `--rgl-with-ros2-standalone`
-    - You can specify run-time search path for RGL library by adding option `--rgl-lib-rpath <path>`.
-2. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `libRobotecGPULidar.so` location (or location defined with `--rgl-lib-rpath`).
+1. Use script `setup.py` with option `--with-ros2-standalone`
+    - You can specify run-time search path(s) for RGL library by adding option `--lib-rpath <paths>`.
+2. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `libRobotecGPULidar.so` location (or location defined with `--lib-rpath`).
 
 #### Tips for integrating RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
 1. Build RGL with command:
     ```bash
-    ./setup.bash --rgl-with-ros2-standalone --rgl-lib-rpath \$ORIGIN/.plugin --make -j
+    ./setup.py --with-ros2-standalone --lib-rpath \$ORIGIN/.plugin --make="-j"
     ```
 2. Copy library `<build-dir>/libRobotecGPULidar.so` to the appropriate directory in your RGLUnityPlugin.
 3. Create a new directory named `.plugin` in location where `libRobotecGPULidar.so` is.
@@ -77,11 +77,11 @@ This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated 
 
 #### Steps for overlay
 1. Run `x64 Native Tools Command Prompt for VS 2019` and navigate to RGL repository.
-2. Run `py setup_win.py --rgl-with-ros2` command to build RGL with ROS2 extension.
+2. Run `python setup.py --with-ros2` command to build RGL with ROS2 extension.
 
 #### Steps for standalone
 1. Run `x64 Native Tools Command Prompt for VS 2019` and navigate to RGL repository.
-2. Run `py setup_win.py --rgl-with-ros2-standalone` command to build RGL with ROS2 extension and install ROS2 libraries.
+2. Run `python setup.py --with-ros2-standalone` command to build RGL with ROS2 extension and install ROS2 libraries.
 3. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` into `RobotecGPULidar.dll` location, or extend environment variable `Path` appropriately.
 
 #### Tips for integrating RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.

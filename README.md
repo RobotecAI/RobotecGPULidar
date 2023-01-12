@@ -66,7 +66,7 @@ Build instructions:
 3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
 4. `docker build . -f DockerfileMinimal --tag rgl:minimal`
 5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
-6. `./setup.bash --make -j`
+6. `./setup.py --make="-j"`
 
 ## Building on Ubuntu
 
@@ -75,13 +75,13 @@ Build instructions:
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
-4. Use `setup.bash --rgl-install-deps` script to install RGL dependencies.
+4. Run `./setup.py --install-deps` to install RGL dependencies.
    - It will install dependencies from `apt` and [vcpkg](https://vcpkg.io/en/index.html).
-5. Use `setup.bash` script to build.
-   - It will run CMake and then make.
+5. Use `setup.py` script to build.
+   - It will use CMake to generate files for build system (make) and build.
    - You can pass optional CMake and make parameters, e.g.
-     - `./setup.bash --cmake -DCMAKE_BUILD_TYPE=Debug --make -j 16`
-   - See `setup.bash --help` for usage information.
+     - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
+   - See `setup.py --help` for usage information.
 
 ## Building on Windows
 
@@ -89,15 +89,15 @@ Build instructions:
 2. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
 3. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
-4. Download [Python3](https://www.python.org/downloads/).
+4. Install [Python3](https://www.python.org/downloads/).
 5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to RGL repository.
-6. Run `py setup_win.py --rgl-install-deps` command to install RGL dependencies.
+6. Run `python setup.py --install-deps` command to install RGL dependencies.
    - It will install dependencies from [vcpkg](https://vcpkg.io/en/index.html).
-7. Run `py setup_win.py` command to build the project.
-   - It will use CMake.
-   - You can pass optional CMake parameters, e.g.
-     - `py setup_win.py --cmake -DCMAKE_BUILD_TYPE=Debug`
-   - See `py setup_win.py --help` for usage information.
+7. Run `python setup.py` command to build the project.
+   - It will use CMake to generate files for build system (ninja) and build.
+   - You can pass optional CMake and ninja parameters, e.g.
+     - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
+   - See `python setup.py --help` for usage information.
 
 ## Acknowledgements
 

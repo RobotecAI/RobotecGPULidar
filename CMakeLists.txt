@@ -31,14 +31,6 @@ set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
 set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
     "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
 
-# Library configuration
-set(RGL_LIB_RPATH "\$ORIGIN/" CACHE STRING
-    "Adds a directory to the runtime library search path (Linux only). It is usefull when linking shared objects (e.g. ROS2_STANDALONE")
-
-if (NOT WIN32)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=${RGL_LIB_RPATH}")
-endif()
-
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
