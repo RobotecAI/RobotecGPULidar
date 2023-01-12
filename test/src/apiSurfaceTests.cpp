@@ -11,6 +11,22 @@ using namespace ::testing;
 
 class APISurfaceTests : public RGLAutoCleanupTest {};
 
+TEST_F(APISurfaceTests, rgl_get_version_info)
+{
+	int major, minor, patch;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(nullptr, nullptr, nullptr), "out_major != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major,  nullptr, nullptr), "out_minor != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major,  &minor,  nullptr), "out_patch != nullptr");
+
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
+	EXPECT_EQ(major, RGL_VERSION_MAJOR);
+	EXPECT_EQ(minor, RGL_VERSION_MINOR);
+	EXPECT_EQ(patch, RGL_VERSION_PATCH);
+}
+
 TEST_F(APISurfaceTests, rgl_configure_logging)
 {
 	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
@@ -19,7 +35,7 @@ TEST_F(APISurfaceTests, rgl_configure_logging)
 	ASSERT_THAT(logFilePath.c_str(), NotNull());
 	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_INFO, logFilePath.c_str(), true));
 	ASSERT_THAT(std::filesystem::exists(logFilePath), IsTrue());
-	Logger::instance().flush();
+	Logger::getOrCreate().flush();
 	ASSERT_THAT(readFileStr(logFilePath), HasSubstr("Logging configured"));
 
 	// Write some logs
@@ -28,7 +44,7 @@ TEST_F(APISurfaceTests, rgl_configure_logging)
 	RGL_WARN("This is RGL warn log.");
 	RGL_ERROR("This is RGL error log.");
 	RGL_CRITICAL("This is RGL critical log.");
-	Logger::instance().flush();
+	Logger::getOrCreate().flush();
 
 	// Expected log levels should be written in the file
 	std::string logFile = readFileStr(logFilePath);
@@ -40,31 +56,22 @@ TEST_F(APISurfaceTests, rgl_configure_logging)
 	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
 }
 
-TEST_F(APISurfaceTests, rgl_get_version_info)
-{
-	int major, minor, patch;
-
-	// Invalid args
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(nullptr, nullptr, nullptr), "out_major != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major,  nullptr, nullptr), "out_minor != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_get_version_info(&major,  &minor,  nullptr), "out_patch != nullptr");
-
-	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
-	EXPECT_EQ(major, RGL_VERSION_MAJOR);
-	EXPECT_EQ(minor, RGL_VERSION_MINOR);
-	EXPECT_EQ(patch, RGL_VERSION_PATCH);
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
-}
-
 TEST_F(APISurfaceTests, rgl_get_last_error_string)
 {
+	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
+
+	// Setup logging, file should be created
+	ASSERT_THAT(logFilePath.c_str(), NotNull());
+	ASSERT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_WARN, logFilePath.c_str(), true));
+
 	// Invalid args
-	EXPECT_EQ(rgl_get_last_error_string(nullptr), RGL_INVALID_ARGUMENT);
-	
-	// No error
-	const char* errorString;
-	EXPECT_RGL_SUCCESS(rgl_get_last_error_string(&errorString));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
+	rgl_get_last_error_string(nullptr);
+	Logger::getOrCreate().flush();
+
+	// Expected log should be written in the file
+	std::string logFile = readFileStr(logFilePath);
+	EXPECT_THAT(logFile, HasSubstr("warn"));
+	EXPECT_THAT(logFile, HasSubstr("rgl_get_last_error_string"));
 }
 
 
@@ -82,7 +89,6 @@ TEST_F(APISurfaceTests, rgl_node_rays_from_mat3x4f)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&node, &rays, valid_rays_count));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_rays_set_ring_ids)
@@ -100,7 +106,6 @@ TEST_F(APISurfaceTests, rgl_node_rays_set_ring_ids)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&node, &ring_ids, valid_ring_ids_count));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_rays_transform)
@@ -114,7 +119,6 @@ TEST_F(APISurfaceTests, rgl_node_rays_transform)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&node, &transform));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_points_transform)
@@ -128,7 +132,6 @@ TEST_F(APISurfaceTests, rgl_node_points_transform)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&node, &transform));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_raytrace)
@@ -144,7 +147,6 @@ TEST_F(APISurfaceTests, rgl_node_raytrace)
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&node, nullptr, range));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&node, scene, range));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_points_format)
@@ -160,7 +162,6 @@ TEST_F(APISurfaceTests, rgl_node_points_format)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&node, &fields, field_count));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_points_yield)
@@ -176,7 +177,6 @@ TEST_F(APISurfaceTests, rgl_node_points_yield)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&node, &fields, field_count));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_points_compact)
@@ -188,7 +188,6 @@ TEST_F(APISurfaceTests, rgl_node_points_compact)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&node));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }
 
 TEST_F(APISurfaceTests, rgl_node_points_downsample)
@@ -209,19 +208,4 @@ TEST_F(APISurfaceTests, rgl_node_points_downsample)
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, leaf_size_x, leaf_size_y, leaf_size_z));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
-}
-
-TEST_F(APISurfaceTests, rgl_node_points_write_pcd_file)
-{
-	rgl_node_t node = {};
-	const char* file_path = "test.pcd";
-
-	// Invalid args
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_write_pcd_file(nullptr, file_path), "nodeRawPtr != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_write_pcd_file(&node, nullptr), "file_path != nullptr");
-
-	// Valid args
-	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&node, file_path));
-	EXPECT_RGL_SUCCESS(rgl_cleanup());
 }

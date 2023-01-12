@@ -22,8 +22,8 @@
         EXPECT_EQ(actual, expected);                                    \
         const char* error_string;                                       \
         rgl_get_last_error_string(&error_string);                       \
-        EXPECT_THAT(error_string, HasSubstr(error_prefix));       \
-        EXPECT_THAT(error_string, HasSubstr(error_detail));         \
+        EXPECT_THAT(error_string, HasSubstr(error_prefix));       		\
+        EXPECT_THAT(error_string, HasSubstr(error_detail));         	\
     }                                                                   \
     while(false)
 
