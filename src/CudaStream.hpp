@@ -27,9 +27,14 @@ struct CudaStream
 	~CudaStream()
 	{
 		if (stream != nullptr) {
-			CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
-			CHECK_CUDA(cudaStreamDestroy(stream));
-			stream = nullptr;
+			try {
+				CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
+				CHECK_CUDA(cudaStreamDestroy(stream));
+				stream = nullptr;
+			}
+			catch(std::exception& e) {
+				RGL_ERROR("Error in ~CudaStream: {}", e.what());
+			}
 		}
 	}
 
