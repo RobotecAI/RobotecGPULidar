@@ -100,7 +100,7 @@ void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 	if (!preserveNodes) {
 		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraph()
 		                                           ? anyNode->getGraph()->getNodes()
-												   : Graph::findConnectedNodes(anyNode); 
+		                                           : Graph::findConnectedNodes(anyNode);
 		while (!graphNodes.empty()) {
 			std::shared_ptr<Node> node = *graphNodes.begin();
 			RGL_DEBUG("Destroying node {}", (void*) node.get());
