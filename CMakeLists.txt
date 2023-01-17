@@ -72,13 +72,13 @@ add_library(RobotecGPULidar SHARED
     src/Tape.cpp
     src/Logger.cpp
     src/VArray.cpp
-    src/gpu/Optix.cpp
+    src/Optix.cpp
     src/gpu/nodeKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
-    src/graph/graph.cpp
+    src/graph/Graph.cpp
     src/graph/Node.cpp
     src/graph/CompactPointsNode.cpp
     src/graph/DownSamplePointsNode.cpp

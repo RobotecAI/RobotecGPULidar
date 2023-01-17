@@ -12,8 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Node.hpp>
+#pragma once
 
-std::set<Node::Ptr> findConnectedNodes(Node::Ptr anyNode);
-void runGraph(Node::Ptr userNode);
-void destroyGraph(Node::Ptr userNode);
+#include <macros/cuda.hpp>
+
+// RAII object to (de)initialize cudaStream_t
+struct CudaStream
+{   
+	CudaStream()
+	{
+		CHECK_CUDA(cudaStreamCreate(&stream));
+	}
+
+	~CudaStream()
+	{
+		if (stream != nullptr) {
+			try {
+				CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
+				CHECK_CUDA(cudaStreamDestroy(stream));
+				stream = nullptr;
+			}
+			catch(std::exception& e) {
+				RGL_ERROR("Error in ~CudaStream: {}", e.what());
+			}
+		}
+	}
+
+private:
+	cudaStream_t stream {nullptr};
+};

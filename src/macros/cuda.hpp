@@ -33,17 +33,6 @@ do                                                                              
 }                                                                                                   \
 while(false)
 
-#define CHECK_CUDA_NO_THROW(call)                                                           \
-do                                                                                          \
-{                                                                                           \
-    cudaError_t status = call;                                                              \
-    if (status != cudaSuccess) {                                                            \
-        fmt::print(stderr, "cuda error: {} (code={})", cudaGetErrorString(status), status); \
-        std::exit(EXIT_FAILURE);                                                            \
-    }                                                                                       \
-}                                                                                           \
-while(false)
-
 #define HostDevFn __host__ __device__
 #define DevFn __device__
 #define HostFn __host__

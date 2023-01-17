@@ -24,7 +24,7 @@
 #include <cuda_runtime_api.h>
 #include <spdlog/fmt/fmt.h>
 
-#include <gpu/Optix.hpp>
+#include <Optix.hpp>
 #include <Logger.hpp>
 #include <gpu/optixProgramsPtx.hpp>
 #include <macros/optix.hpp>

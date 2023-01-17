@@ -21,7 +21,7 @@
 
 #include <rgl/api/core.h>
 
-#include <gpu/Optix.hpp>
+#include <Optix.hpp>
 #include <graph/Node.hpp>
 
 #include <Tape.hpp>
