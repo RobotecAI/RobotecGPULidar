@@ -23,7 +23,7 @@
 #include <scene/Mesh.hpp>
 
 #include <graph/NodesCore.hpp>
-#include <graph/graph.hpp>
+#include <graph/Graph.hpp>
 
 extern "C" {
 
@@ -113,9 +113,9 @@ rgl_cleanup(void)
 		Mesh::instances.clear();
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
-			// Note: destroyPipeline calls Node::release()
+			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
 			Node::Ptr node = Node::instances.begin()->second;
-			destroyGraph(node);
+			Graph::destroy(node, false);
 		}
 	});
 	TAPE_HOOK();
@@ -300,7 +300,7 @@ rgl_graph_run(rgl_node_t node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
-		runGraph(Node::validatePtr(node));
+		Node::validatePtr(node)->getGraph()->run();
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -318,7 +318,7 @@ rgl_graph_destroy(rgl_node_t node)
 		RGL_API_LOG("rgl_graph_destroy(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		destroyGraph(Node::validatePtr(node));
+		Graph::destroy(Node::validatePtr(node), false);
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -327,7 +327,7 @@ rgl_graph_destroy(rgl_node_t node)
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = findConnectedNodes(Node::validatePtr(userNode));
+	std::set<Node::Ptr> graph = Graph::findConnectedNodes(Node::validatePtr(userNode));
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
@@ -415,7 +415,7 @@ rgl_graph_node_set_active(rgl_node_t node, bool active)
 		RGL_API_LOG("rgl_graph_node_set_active(node={}, active={})", repr(node), active);
 		CHECK_ARG(node != nullptr);
 
-		node->setActive(active);
+		Node::validatePtr(node)->setActive(active);
 	});
 	TAPE_HOOK(node, active);
 	return status;
@@ -434,7 +434,7 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
-		parent->addChild(Node::validatePtr(child));
+		Node::validatePtr(parent)->addChild(Node::validatePtr(child));
 	});
 	TAPE_HOOK(parent, child);
 	return status;
@@ -453,7 +453,7 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
 
-		parent->removeChild(Node::validatePtr(child));
+		Node::validatePtr(parent)->removeChild(Node::validatePtr(child));
 	});
 	TAPE_HOOK(parent, child);
 	return status;
