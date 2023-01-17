@@ -22,13 +22,13 @@
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 
+struct Graph;
+
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
 	using Ptr = std::shared_ptr<Node>;
 
-	Node() = default;
 	~Node() override = default;
-	void addParent(Node::Ptr parent);
 
 	void addChild(Node::Ptr child);
 	void removeChild(Node::Ptr child);
@@ -49,13 +49,17 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 */
 	virtual void schedule(cudaStream_t stream) = 0;
 
-	inline std::string getName() const { return name(typeid(*this)); }
+	std::shared_ptr<Graph> getGraph();
+
+	bool hasGraph() { return graph.lock() != nullptr; }
+
+	std::string getName() const { return name(typeid(*this)); }
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 	bool isActive() const { return active; }
-	void setActive(bool active) { this->active = active; }
+	void setActive(bool active);
 
 protected:
 	template<template<typename _1, typename _2> typename Container>
@@ -106,13 +110,17 @@ protected:
 	typename T::Ptr getValidInputFrom(const std::vector<Node::Ptr>& srcs)
 	{ return getExactlyOne<T>(srcs); }
 
-	void prependNode(Node::Ptr node);
+protected:
+	Node() = default;
 
 protected:
 	bool active {true};
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 
+	std::weak_ptr<Graph> graph;
+
+	friend struct Graph;
 	friend void runGraph(Node::Ptr);
 	friend void destroyGraph(Node::Ptr);
 	friend struct fmt::formatter<Node>;
