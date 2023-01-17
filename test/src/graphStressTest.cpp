@@ -9,15 +9,28 @@
 #include <math/Mat3x4f.hpp>
 #include <graph/NodesCore.hpp>
 
-// TODO: Feel free to change naming & organization here.
+// TODO(nebraszka): Feel free to change naming & organization here.
 
 using namespace ::testing;
 
+const Vec3f cubePosition = {0, 0, 5};
 struct GraphStress : public RGLAutoCleanupTest {};
 
 static std::random_device randomDevice;
 static auto randomSeed = randomDevice();
 static std::mt19937 randomGenerator {randomSeed};
+
+// randomizeIndices(10,3): 9, 0, 5
+std::vector<int> randomizeIndices(int containerSize, int firstN=0) {
+	std::vector<int> indices;
+	indices.resize(containerSize);
+	std::iota(indices.begin(), indices.end(), 0);
+	std::shuffle(indices.begin(), indices.end(), randomGenerator);
+	if (firstN > 0) {
+		indices.resize(containerSize);
+	}
+	return indices;
+}
 
 /**
  * Helper structure that builds a graph with a minimal linear part and then a random subtree of TransformPointsNodes.
@@ -104,7 +117,15 @@ struct RandomGraph
 	}
 };
 
-
+/* Helper structure for data associated with a single graph and a single run-modify-check cycle */
+struct GraphRun {
+	int expectedPointCount;
+	Vec3f expectedPointWorld;
+	rgl_node_t updateRaysAfterCheckingNode;
+	std::unordered_map<rgl_node_t, Mat3x4f> expectedTransform;
+	std::vector<int> nodeCheckOrder;
+	int nextNodeCheckOrderIndex;
+};
 
 /**
  * The test runs a graph and concurrently to its execution, it
@@ -113,85 +134,109 @@ struct RandomGraph
  * - may call rgl_graph_run while it is still running
  * The test aims to detect any inconsistency that would be caused by race condition bug.
  *
- * TODO: Possible improvements (perhaps separate tests):
+ * TODO: Possible improvements:
  * - When the graph is running, do also scene modifications to stress scene / graph concurrency.
+ *
  * - Except modifying just the first node, modify also parameters (transforms) of TransformPointsNodes
+ *   - May deteriorate testing concurrency, because requires a relatively long update of cumulative transform map.
  */
 TEST_F(GraphStress, Async)
 {
-	int GRAPH_COUNT = std::thread::hardware_concurrency()  * 2;
-	const int GRAPH_SIZE = 128;
-	const int GRAPH_QUERIES = 32;
-	const int GRAPH_RUNS = 1024;
-	const float EPSILON = 1E-6;
+	int GRAPH_COUNT = 16;  // Number of graphs executed in parallel
+	const int GRAPH_SIZE = 1024;  // Number of TransformPointsNodes in each graph
+	const int GRAPH_QUERIES = 32;  // How many nodes are checked for results (should be a subset)
+	const int GRAPH_EPOCHS = 32;  // How many times all graphs are executed, changed and queried
+	const float EPSILON = 2 * 1E-6;  // Tolerance for GPU-CPU matrix multiplication differences
 	ASSERT_THAT(GRAPH_QUERIES, Lt(GRAPH_SIZE));
 
 	// Optional logging
 	// EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true));
 
-	// Setup scene
-	Vec3f cubePosition = {0, 0, 5};
 	setupSceneCube(cubePosition);
 
 	// Print random seed for reproducibility
 	fmt::print(stderr, "Graph Stress Test random seed: {}\n", randomSeed);
 
-	// Setup random graph
-	RandomGraph graph {GRAPH_SIZE};
-	ASSERT_FALSE(HasFailure()); // Graph build must have succeeded.
+	// Setup random graphs and helper structures
+	std::vector<RandomGraph> graphs;
+	std::vector<GraphRun> runs;
+	runs.resize(GRAPH_COUNT);
+	for (int g = 0; g < GRAPH_COUNT; ++g) {
+		graphs.emplace_back(GRAPH_SIZE);
+	}
 
-	// Generate random order to query nodes for results
-	std::vector<int> checkOrder((graph.transformNodes.size()));
-	std::iota(checkOrder.begin(), checkOrder.end(), 0);
-	std::shuffle(checkOrder.begin(), checkOrder.end(), randomGenerator);
-	checkOrder.resize(GRAPH_QUERIES);
+	for (int e = 0; e < GRAPH_EPOCHS; ++e) {
+		// Randomize graph check order
+		std::vector<int> graphCheckOrder = randomizeIndices(GRAPH_COUNT);
 
-	for (int r = 0; r < GRAPH_RUNS; ++r) {
-		// Randomize node index that after querying it, graph will be modified (possibly when still running)
-		rgl_node_t updateRaysAfterCheckingNode = graph.transformNodes.at(
-		checkOrder.at(std::uniform_int_distribution(0UL, checkOrder.size() - 1)(randomGenerator)));
+		// Prepare graph-run associated - node check order, when apply changes, and expected*
+		for (int g = 0; g < GRAPH_COUNT; ++g) {
+			auto& run = runs.at(g);
+			auto& graph = graphs.at(g);
+			auto checksBeforeChange = std::uniform_int_distribution(0, GRAPH_QUERIES - 1)(randomGenerator);
+			run.nodeCheckOrder = randomizeIndices(GRAPH_SIZE, GRAPH_QUERIES);
+			run.updateRaysAfterCheckingNode = graph.transformNodes.at(run.nodeCheckOrder.at(checksBeforeChange));
+			run.expectedPointCount = graph.rayCount.x() * graph.rayCount.y();
+			run.expectedTransform = graph.getCumulativeTransform();
+			run.expectedPointWorld = Vec3f{graph.raysXY.x(), graph.raysXY.y(), cubePosition.z() - 1};
+			run.nextNodeCheckOrderIndex = 0;
+		}
 
-		// Copy expected values for results (point count and transforms for each node)
-		auto expectedPointCount = graph.rayCount.x() * graph.rayCount.y();
+		// Run all graphs at once
+		for (int g = 0; g < GRAPH_COUNT; ++g) {
+			EXPECT_RGL_SUCCESS(rgl_graph_run(graphs.at(g).useRaysNode));
+		}
+		ASSERT_FALSE(HasFailure());
 
-		// Save a map of expected transforms for each node
-		auto expectedTransform = graph.getCumulativeTransform();
+		// Iterate over graphs and check a single node at a time.
+		// Repeat until all graphs are checked (each node from run.nodeCheckOrder is checked)
+		bool allGraphsChecked = false;
+		while (!allGraphsChecked)
+		{
+			allGraphsChecked = true; // This will be and-ed with is-checked for all graphs
 
-		// Save expected hit point
-		Vec3f expectedPointWorld = Vec3f{graph.raysXY.x(), graph.raysXY.y(), cubePosition.z() - 1};
+			// Check a single node from each graph
+			for (auto&& g : graphCheckOrder) {
+				// Useful aliases
+				auto& graph = graphs.at(g);
+				auto& run = runs.at(g);
+				auto& checkedNode = graph.transformNodes.at(run.nodeCheckOrder.at(run.nextNodeCheckOrderIndex));
 
-		// Run graph asynchronously
-		EXPECT_RGL_SUCCESS(rgl_graph_run(graph.raytraceNode));
+				// Exit if all nodes in this graph were checked
+				bool allNodesChecked = run.nextNodeCheckOrderIndex == run.nodeCheckOrder.size();
+				if (allNodesChecked) {
+					allGraphsChecked = allGraphsChecked && allNodesChecked;
+					continue;
+				}
 
-		// Check output of nodes in previously generated random order
-		for (auto &&checkedNodeIndex: checkOrder) {
-			int pointCount = -1, pointSize = -1;
+				// Check if output size is not affected by graph modifications
+				int pointCount = -1, pointSize = -1;
+				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
+				EXPECT_THAT(pointCount, Eq(run.expectedPointCount));
 
-			// Check if output size is not affected by graph modifications
-			rgl_node_t checkedNode = graph.transformNodes.at(checkedNodeIndex);
-			EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
-			EXPECT_THAT(pointCount, Eq(expectedPointCount));
+				// Get results
+				std::vector<Vec3f> results(pointCount);
+				EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(checkedNode, RGL_FIELD_XYZ_F32, results.data()));
 
-			// Get results
-			std::vector<Vec3f> results(pointCount);
-			EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(checkedNode, RGL_FIELD_XYZ_F32, results.data()));
+				// Verify results are correctly transformed
+				Vec3f expectedPoint = run.expectedTransform.at(checkedNode) * run.expectedPointWorld;
+				EXPECT_THAT(results.at(0).x(), FloatNear(expectedPoint.x(), EPSILON));
+				EXPECT_THAT(results.at(0).y(), FloatNear(expectedPoint.y(), EPSILON));
+				EXPECT_THAT(results.at(0).z(), FloatNear(expectedPoint.z(), EPSILON));
 
-			// Verify results are correctly transformed
-			Vec3f expectedPoint = expectedTransform.at(checkedNode) * expectedPointWorld;
-			EXPECT_THAT(results[0].x(), FloatNear(expectedPoint.x(), EPSILON));
-			EXPECT_THAT(results[0].y(), FloatNear(expectedPoint.y(), EPSILON));
-			EXPECT_THAT(results[0].z(), FloatNear(expectedPoint.z(), EPSILON));
+				// All points should be equal
+				for (int i = 1; i < results.size(); ++i) {
+					EXPECT_THAT(results.at(i).x(), FloatEq(results.at(i - 1).x()));
+					EXPECT_THAT(results.at(i).y(), FloatEq(results.at(i - 1).y()));
+					EXPECT_THAT(results.at(i).z(), FloatEq(results.at(i - 1).z()));
+				}
 
-			// All points should be equal
-			for (int i = 1; i < results.size(); ++i) {
-				EXPECT_THAT(results[i].x(), FloatEq(results[i - 1].x()));
-				EXPECT_THAT(results[i].y(), FloatEq(results[i - 1].y()));
-				EXPECT_THAT(results[i].z(), FloatEq(results[i - 1].z()));
-			}
+				// At some point, modify rays while the graph may be still running
+				if (checkedNode == run.updateRaysAfterCheckingNode) {
+					graph.setRandomRays();
+				}
 
-			// At some point, modify rays while the graph may be still running
-			if (checkedNode == updateRaysAfterCheckingNode) {
-				graph.setRandomRays();
+				run.nextNodeCheckOrderIndex += 1;
 			}
 		}
 	}
