@@ -46,4 +46,5 @@ int main(int argc, char** argv)
 		player.playUntil(animationEnd);
 		player.rewindTo(animationBegin);
 	}
+	rgl_cleanup();
 }
