@@ -71,7 +71,7 @@ void Ros2PublishPointsNode::schedule(cudaStream_t stream)
 	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT, stream);
 	int count = input->getPointCount();
 	ros2Message.data.resize(ros2Message.point_step * count);
-	fieldData->getData(ros2Message.data.data(), count);
+	fieldData->getData(ros2Message.data.data(), ros2Message.point_step * count);
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
 	ros2Publisher->publish(ros2Message);
