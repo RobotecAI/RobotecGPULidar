@@ -64,8 +64,11 @@ void Graph::run()
 
 	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
 
-	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
-	rt->setFields(fieldsToCompute);
+	// If Graph has RaytraceNode set fields to compute
+	if (!Node::filter<RaytraceNode>(nodesInExecOrder).empty()) {
+		RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
+		rt->setFields(fieldsToCompute);
+	}
 
 	for (auto&& current : nodesInExecOrder) {
 		RGL_DEBUG("Validating node: {}", *current);

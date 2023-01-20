@@ -17,7 +17,8 @@
 // Used to send e.g. formatting request to GPU
 struct GPUFieldDesc
 {
-	const char* data;
+	const char* readDataPtr;
+	char* writeDataPtr;
 	size_t size;
 	size_t dstOffset;
 };

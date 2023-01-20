@@ -342,7 +342,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
 /******************************** NODES ********************************/
 
 /**
- * Creates or modifies UseRaysMat3x4fNode.
+ * Creates or modifies FromMat3x4fRaysNode.
  * The node provides initial rays for its children nodes.
  * Initial rays are usually provided in device-local coordinate frame, i.e. close to (0, 0, 0).
  * Input: none
@@ -355,7 +355,7 @@ RGL_API rgl_status_t
 rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count);
 
 /**
- * Creates or modifies UseRingIdsNode.
+ * Creates or modifies SetRingIdsRaysNode.
  * The node assigns ring ids for existing rays.
  * Input: rays
  * Output: rays
@@ -406,7 +406,7 @@ RGL_API rgl_status_t
 rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
 
 /**
- * Creates or modifies FormatNode.
+ * Creates or modifies FormatPointsNode.
  * The node converts internal representation into a binary format defined by `fields` array.
  * Note: It is a user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
  * Graph input: point cloud
@@ -431,7 +431,7 @@ RGL_API rgl_status_t
 rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
- * Creates or modifies CompactNode.
+ * Creates or modifies CompactPointsNode.
  * The node removes non-hit points. In other words, it converts a point cloud into a dense one.
  * Graph input: point cloud
  * Graph output: point cloud (compacted)
@@ -469,6 +469,20 @@ rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32
  */
 RGL_API rgl_status_t
 rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
+
+/**
+ * Creates or modifies FromArrayPointsNode.
+ * The node provides initial points for its children nodes.
+ * Input: none
+ * Output: point cloud
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param points Binary data with points.
+ * @param points_count Number of elements in the `points` array.
+ * @param rgl_field_t Subsequent fields to be present in the binary input.
+ * @param field_count Number of elements in the `fields` array.
+ */
+RGL_API rgl_status_t
+rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies GaussianNoiseAngularRayNode.

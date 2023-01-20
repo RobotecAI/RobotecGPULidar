@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <ranges>
+
 #include <graph/NodesCore.hpp>
 #include <scene/Scene.hpp>
 #include <macros/optix.hpp>
@@ -21,7 +23,7 @@ void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
 
-	if (fields.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
+	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
 		throw InvalidPipeline(msg);
 	}
@@ -30,13 +32,13 @@ void RaytraceNode::validate()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fields.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
 void RaytraceNode::schedule(cudaStream_t stream)
 {
-	for (auto&& field : fields) {
-		fieldData[field]->resize(raysNode->getRayCount(), false, false);
+	for (auto const& [field, data] : fieldData) {
+		data->resize(raysNode->getRayCount(), false, false);
 	}
 	auto rays = raysNode->getRays();
 	auto sceneAS = scene->getAS();
@@ -69,10 +71,19 @@ void RaytraceNode::schedule(cudaStream_t stream)
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
-	this->fields = std::move(fields);
+	auto keyViewer = std::views::keys(fieldData);
+	std::set<rgl_field_t> oldKeys { keyViewer.begin(), keyViewer.end() };
+
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field)) {
 			fieldData.insert({field, VArray::create(field)});
 		}
+		if (oldKeys.contains(field)) {
+			oldKeys.erase(field);
+		}
+	}
+
+	for (auto&& keyToErase : oldKeys) {
+		fieldData.erase(keyToErase);
 	}
 }
