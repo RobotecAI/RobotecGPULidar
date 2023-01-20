@@ -670,8 +670,21 @@ rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_
 
 		createOrUpdateNode<FromArrayPointsNode>(node, points, points_count, std::vector<rgl_field_t>{fields, fields + field_count});
 	});
-	//TAPE_HOOK(node, TAPE_ARRAY(points, points_count), points_count, TAPE_ARRAY(fields, field_count), field_count);
+	TAPE_HOOK(node, TAPE_ARRAY(static_cast<const char*>(points), points_count * getPointSize(std::vector<rgl_field_t>{fields, fields + field_count})),
+	          points_count, TAPE_ARRAY(fields, field_count), field_count);
 	return status;
+}
+
+void TapePlayer::tape_node_points_from_array(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_from_array(&node,
+		reinterpret_cast<const void*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>(),
+		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[3].as<size_t>()),
+		yamlNode[4].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t

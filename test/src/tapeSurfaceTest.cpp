@@ -11,6 +11,7 @@
 #include <rgl/api/extensions/ros2.h>
 #endif
 
+#include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 
 class Tape : public RGLAutoCleanupTest {};
@@ -70,6 +71,11 @@ TEST_F(Tape, RecordPlayAllCalls)
 	rgl_node_t temporalMerge = nullptr;
 	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
+
+	rgl_node_t usePoints = nullptr;
+	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_F32};
+	std::vector<::Field<XYZ_F32>::type> usePointsData = {{1, 2, 3}, {4, 5, 6}};
+	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(), usePointsFields.data(), usePointsFields.size()));
 
 	#ifdef RGL_BUILD_ROS2_EXTENSION
 		rgl_node_t ros2pub = nullptr;
