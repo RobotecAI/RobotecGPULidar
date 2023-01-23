@@ -24,5 +24,6 @@ int main(int argc, char** argv)
 
 	rgl_status_t status = rgl_tape_play(argv[1]);
 	fmt::print("Tape finished with status {}\n", status);
+	rgl_cleanup();
 	return status;
 }
