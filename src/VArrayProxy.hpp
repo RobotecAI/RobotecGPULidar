@@ -36,6 +36,7 @@ struct VArrayProxy
 	VArray::ConstPtr untyped() const { return src; };
 
 	void setData(const T* srcRaw, std::size_t count) { src->setData(srcRaw, count); }
+	void getData(T* dstRaw, std::size_t count) const { src->getData(dstRaw, count); }
 
 	std::size_t getCount() const { return src->getElemCount(); }
 	std::size_t getCapacity() const { return src->getElemCapacity(); }
