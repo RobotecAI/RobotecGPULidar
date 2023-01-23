@@ -9,12 +9,8 @@
 #include <math/Mat3x4f.hpp>
 #include <graph/NodesCore.hpp>
 
-// TODO(nebraszka): Feel free to change naming & organization here.
-
-using namespace ::testing;
-
-const Vec3f cubePosition = {0, 0, 5};
 struct GraphStress : public RGLAutoCleanupTest {};
+const Vec3f cubePosition = {0, 0, 5};
 
 static std::random_device randomDevice;
 static auto randomSeed = randomDevice();
@@ -27,7 +23,7 @@ std::vector<int> randomizeIndices(int containerSize, int firstN=0) {
 	std::iota(indices.begin(), indices.end(), 0);
 	std::shuffle(indices.begin(), indices.end(), randomGenerator);
 	if (firstN > 0) {
-		indices.resize(containerSize);
+		indices.resize(firstN);
 	}
 	return indices;
 }
@@ -142,6 +138,9 @@ struct GraphRun {
  */
 TEST_F(GraphStress, Async)
 {
+	using namespace testing;
+
+	// Config
 	int GRAPH_COUNT = 16;  // Number of graphs executed in parallel
 	const int GRAPH_SIZE = 1024;  // Number of TransformPointsNodes in each graph
 	const int GRAPH_QUERIES = 32;  // How many nodes are checked for results (should be a subset)
