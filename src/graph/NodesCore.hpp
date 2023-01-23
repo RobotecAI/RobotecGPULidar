@@ -310,3 +310,45 @@ private:
 	bool fullscreen;
 	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
 };
+
+struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
+
+	void setParameters(float mean, float st_dev, rgl_axis_t rotation_axis) { ; }
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+private:
+
+};
+
+struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseAngularHitpointNode>;
+
+	void setParameters(float mean, float st_dev, rgl_axis_t rotation_axis) { ; }
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+private:
+
+};
+
+struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
+
+	void setParameters(float mean, float st_dev_base, float st_dev_rise_per_meter) { ; }
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+private:
+
+};

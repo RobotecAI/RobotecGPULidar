@@ -128,6 +128,7 @@ class TapeRecorder
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int) value; }
 	int valueToYaml(rgl_log_level_t value) { return (int) value; }
+	int valueToYaml(rgl_axis_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_durability_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_history_t value) { return (int) value; }
@@ -212,6 +213,9 @@ private:
 	void tape_node_points_downsample(const YAML::Node& yamlNode);
 	void tape_node_points_write_pcd_file(const YAML::Node& yamlNode);
 	void tape_node_points_visualize(const YAML::Node& yamlNode);
+	void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode);
+	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
+	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
 
 	#ifdef RGL_BUILD_ROS2_EXTENSION
 	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
