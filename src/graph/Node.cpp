@@ -72,11 +72,3 @@ std::shared_ptr<Graph> Node::getGraph()
 	}
 	return Graph::create(shared_from_this());
 }
-
-void Node::setActive(bool active)
-{
-	if (auto graphShared = graph.lock()) {
-		graphShared->executionOrder.reset();
-	}
-	this->active = active;
-}

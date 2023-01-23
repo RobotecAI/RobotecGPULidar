@@ -42,6 +42,7 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 	auto graph = std::shared_ptr<Graph>(new Graph());
 
 	graph->nodes = Graph::findConnectedNodes(node);
+	graph->executionOrder = Graph::findExecutionOrder(graph->nodes);
 
 	for (auto&& currentNode : graph->nodes) {
 		if (currentNode->hasGraph()) {
@@ -58,7 +59,7 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 
 void Graph::run()
 {
-	const auto& nodesInExecOrder = getExecutionOrder();
+	const auto& nodesInExecOrder = executionOrder;
 
 	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
 
@@ -123,29 +124,10 @@ void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 	instances.erase(graphIt);
 }
 
-const std::vector<std::shared_ptr<Node>>& Graph::getExecutionOrder()
-{
-	if (!executionOrder.has_value()) {
-		executionOrder = findExecutionOrder(nodes);
-	}
-	return executionOrder.value();
-}
-
 std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
 {
 	std::vector<std::shared_ptr<Node>> reverseOrder {};
-	std::function<void(std::shared_ptr<Node>)> rmBranch = [&](std::shared_ptr<Node> current) {
-		for (auto&& output : current->getOutputs()) {
-			rmBranch(output);
-		}
-		RGL_DEBUG("Removing node from execution: {}", *current);
-		nodes.erase(current);
-	};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
-		if (!current->isActive()) {
-			rmBranch(current);
-			return;
-		}
 		nodes.erase(current);
 		for (auto&& output : current->getOutputs()) {
 			if (nodes.contains(output)) {
@@ -164,4 +146,3 @@ Graph::~Graph()
 {
 	stream.reset();
 }
-

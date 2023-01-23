@@ -75,8 +75,6 @@ TEST_F(Tape, RecordPlayAllCalls)
 
 	// Skipping rgl_node_points_visualize (user interaction needed)
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(yield, false));
-
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
