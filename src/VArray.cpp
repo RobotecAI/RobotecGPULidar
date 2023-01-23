@@ -53,6 +53,11 @@ void VArray::setData(const void *src, std::size_t elements)
 	CHECK_CUDA(cudaMemcpy(current().data, src, sizeOfType * elements, cudaMemcpyDefault));
 }
 
+void VArray::getData(void* dst, std::size_t elements) const
+{
+	CHECK_CUDA(cudaMemcpy(dst, current().data, sizeOfType * elements, cudaMemcpyDefault));
+}
+
 void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 {
 	reserve(newCount, preserveData);
