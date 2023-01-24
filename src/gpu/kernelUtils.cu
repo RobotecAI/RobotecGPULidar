@@ -12,20 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/NodesRos2.hpp>
-#include <gpu/gaussianNoiseKernels.hpp>
+#include <macros/cuda.hpp>
 
-void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
-{
-	;
-}
+#define LIMIT(count) const int tid = (blockIdx.x * blockDim.x + threadIdx.x); do {if (tid >= count) { return; }} while(false)
 
-void GaussianNoiseAngularHitpointNode::validate()
+template<typename Kernel, typename... KernelArgs>
+void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... kernelArgs)
 {
-	;
-}
-
-void GaussianNoiseAngularHitpointNode::schedule(cudaStream_t stream)
-{
-	;
+	int blockDim = 256;
+	int blockCount = 1 + threads / 256;
+	void* args[] = {&threads, &kernelArgs...};
+	CHECK_CUDA(cudaLaunchKernel(reinterpret_cast<void*>(kernel), blockCount, blockDim, args, 0, stream));
 }

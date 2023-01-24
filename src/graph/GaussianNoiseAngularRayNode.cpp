@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/NodesRos2.hpp>
+#include <gpu/gaussianNoiseKernels.hpp>
 
 void GaussianNoiseAngularRayNode::validate()
 {

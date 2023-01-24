@@ -1,0 +1,72 @@
+// Copyright 2023 Robotec.AI
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <cuda.h>
+#include <curand_kernel.h>
+
+#include <gpu/kernelUtils.cu>
+#include <gpu/gaussianNoiseUtils.cu>
+#include <gpu/gaussianNoiseKernels.hpp>
+
+// Philox algorithm chosen based on performance
+// https://stackoverflow.com/questions/18506697/curand-properties-of-generators
+
+__global__ void kSetupGaussianNoiseGenerator(int pointCount, unsigned int seed, curandStatePhilox4_32_10_t* states)
+{
+	LIMIT(pointCount);
+	/* Each thread gets same seed, a different sequence number, no offset */
+	curand_init(seed, tid, 0, &states[tid]);
+}
+
+__global__ void kAddGaussianNoiseAngularRay(int pointCount)
+{
+	LIMIT(pointCount);
+}
+
+__global__ void kAddGaussianNoiseAngularHitpoint(int pointCount)
+{
+	LIMIT(pointCount);
+}
+
+__global__ void kAddGaussianNoiseDistance(int pointCount, float mean, float stDevBase, float stDevRisePerMeter, curandStatePhilox4_32_10_t* randomStates,
+	const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+{
+	LIMIT(pointCount);
+
+	float distance = length(inPoints[tid]);
+	float distanceInducedStDev = distance * stDevRisePerMeter;
+	float totalStDev = distanceInducedStDev + stDevBase;
+
+	float distanceError = mean + curand_normal(&randomStates[tid]) * totalStDev;
+
+	if (outDistances != nullptr) {
+		outDistances[tid] = distance + distanceError;
+	}
+
+	outPoints[tid] = addDistanceNoise(inPoints[tid], distanceError);
+}
+
+
+void gpuSetupGaussianNoiseGenerator(cudaStream_t stream, size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* outPHILOXStates)
+{ run(kSetupGaussianNoiseGenerator, stream, pointCount, seed, outPHILOXStates); }
+
+void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t pointCount)
+{ run(kAddGaussianNoiseAngularRay, stream, pointCount); }
+
+void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount)
+{ run(kAddGaussianNoiseAngularHitpoint, stream, pointCount); }
+
+void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, curandStatePhilox4_32_10_t* randomStates,
+	const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+{ run(kAddGaussianNoiseDistance, stream, pointCount, mean, stDevBase, stDevRisePerMeter, randomStates, inPoints, outPoints, outDistances); }

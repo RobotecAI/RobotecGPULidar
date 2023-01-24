@@ -490,7 +490,7 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
  * ...
- * Graph input: point cloud
+ * Graph input: RaytraceNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param mean ...

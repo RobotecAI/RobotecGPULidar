@@ -4,6 +4,10 @@
 #include <lidars.hpp>
 #include <RGLFields.hpp>
 
+#include <thread>
+#include <chrono>
+#include <rgl/api/extensions/visualize.h>
+
 #include <math/Mat3x4f.hpp>
 
 class Graph : public RGLAutoCleanupTest {};
@@ -131,6 +135,37 @@ TEST_F(Graph, FormatNodeResults)
 		EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], 1e-6);
 		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], 1e-6);
 		EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
+	}
+}
+
+using namespace std::chrono_literals;
+TEST_F(Graph, GaussianNoiseDistance)
+{
+	auto mesh = makeCubeMesh();
+
+	auto entity = makeEntity(mesh);
+	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+
+	rgl_node_t useRays=nullptr, lidarPose=nullptr, raytrace=nullptr, noise=nullptr, visualize=nullptr;
+
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
+	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
+
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noise, 0, 0.02, 0));
+	EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize, "test", 1920, 1080, false));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, noise));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(noise, visualize));
+
+	for (int i = 0; i < 10000; ++i) {
+		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+		std::this_thread::sleep_for(100ms);
 	}
 }
 

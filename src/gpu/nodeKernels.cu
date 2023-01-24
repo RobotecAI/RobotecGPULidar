@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gpu/kernelUtils.cu>
 #include <gpu/nodeKernels.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <macros/cuda.hpp>
@@ -19,17 +20,6 @@
 
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-
-#define LIMIT(count) const int tid = (blockIdx.x * blockDim.x + threadIdx.x); do {if (tid >= count) { return; }} while(false)
-
-template<typename Kernel, typename... KernelArgs>
-void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... kernelArgs)
-{
-	int blockDim = 256;
-	int blockCount = 1 + threads / 256;
-	void* args[] = {&threads, &kernelArgs...};
-	CHECK_CUDA(cudaLaunchKernel(reinterpret_cast<void*>(kernel), blockCount, blockDim, args, 0, stream));
-}
 
 __global__ void kFormat(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* fields, char* out)
 {

@@ -18,6 +18,8 @@
 #include <set>
 #include <memory>
 #include <thread>
+#include <random>
+#include <curand_kernel.h>
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
@@ -139,7 +141,7 @@ struct RaytraceNode : Node, IPointsNode
 	// Point cloud description
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fields.contains(field); }
-	size_t getWidth() const override { return raysNode->getRays()->getCount(); }
+	size_t getWidth() const override { return raysNode->getRayCount(); }
 	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
 
 	// Data getters
@@ -315,7 +317,7 @@ struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
 
-	void setParameters(float mean, float st_dev, rgl_axis_t rotation_axis) { ; }
+	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis) { ; }
 
 	// Node
 	void validate() override;
@@ -329,7 +331,7 @@ struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularHitpointNode>;
 
-	void setParameters(float mean, float st_dev, rgl_axis_t rotation_axis) { ; }
+	void setParameters(float mean, float stDev, rgl_axis_t rotationAxis);
 
 	// Node
 	void validate() override;
@@ -343,12 +345,25 @@ struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
 
-	void setParameters(float mean, float st_dev_base, float st_dev_rise_per_meter) { ; }
+	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
 
 	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
-private:
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+
+private:
+	float mean;
+	float stDevBase;
+	float stDevRisePerMeter;
+	std::random_device randomDevice;
+
+	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
+	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
+	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
