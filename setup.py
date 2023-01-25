@@ -48,15 +48,15 @@ def main():
                         help="Build RGL with ROS2 extension")
     parser.add_argument("--with-ros2-standalone", action='store_true',
                         help="Build RGL with ROS2 extension in standalone mode")
-    parser.add_argument("--cmake", type=str, nargs=1, default="",
+    parser.add_argument("--cmake", type=str, default="",
                         help="Pass arguments to cmake. Usage: --cmake=\"args...\"")
     if on_linux():
-        parser.add_argument("--make", type=str, nargs=1, default=f"-j{os.cpu_count()}", dest="build_args",
+        parser.add_argument("--make", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to make. Usage: --make=\"args...\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
                             help="Add run-time search path(s) for RGL library")
     if on_windows():
-        parser.add_argument("--ninja", type=str, nargs=1, default=f"-j{os.cpu_count()}", dest="build_args",
+        parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\"")
     args = parser.parse_args()
 
