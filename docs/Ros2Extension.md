@@ -13,10 +13,11 @@ Supported DDS implementations for ROS2 standalone build:
 
 RGL ROS2 extension can be built in two flavors:
 
-- **overlay** - (assuming existing (supported) ROS2 installation on the target machine). It will only extend RGL library with new API calls.
-- **standalone** - (no ROS2 installation required on the target machine). All required dependencies are installed and can be used.
+- **standalone** - ROS2 installation is not required on the target machine. RGL build will include all required ROS2 dependencies.
+- **overlay** - Assumes existence of supported ROS2 installation on the target machine. RGL will try to use the existing installation of ROS2 dependencies.
 
-### Linux
+
+### Ubuntu 22
 
 #### Prerequisites
 
@@ -36,7 +37,7 @@ RGL ROS2 extension can be built in two flavors:
 
 #### Steps for standalone
 1. Use script `setup.py` with option `--with-ros2-standalone`
-    - You can specify run-time search path(s) for RGL library by adding option `--lib-rpath <paths>`.
+    - You can specify run-time search path(s) of RGL dependencies by adding option `--lib-rpath <paths>`. This can be useful if you want RGL to search for ROS2 libraries in a different directory than RGL, e.g., if you work with a library providing its own ROS2 libraries such as [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity).
 2. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `libRobotecGPULidar.so` location (or location defined with `--lib-rpath`).
 
 #### Tips for integrating RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
@@ -48,7 +49,7 @@ RGL ROS2 extension can be built in two flavors:
 3. Create a new directory named `.plugin` in location where `libRobotecGPULidar.so` is.
 4. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to the newly created  `.plugin` directory.
 
-This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated and not loaded twice by Unity.
+Unity ignores dynamic libraries in directories named `.plugin`. This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated and not loaded twice by Unity.
 
 ### Windows
 
@@ -62,10 +63,10 @@ This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated 
     py ros2_standalone\fix_ros2_humble.py <your-path-to-ros2>
     ```
 - For standalone build:
-  - If you have installed ROS2 with binaries, there is `rmw_cyclonedds_cpp` package missing. You need to build this one from source:
+  - If you have installed ROS2 from pre-built binaries, there is `rmw_cyclonedds_cpp` package missing. You need to build this one from the source:
     1. Make sure you have installed [ROS2 prerequisites](https://docs.ros.org/en/humble/Installation/Alternatives/Windows-Development-Setup.html#installing-prerequisites).
     2. Good practice is to disable Windows path limits, [see](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry).
-    3. Run `x64 Native Tools Command Prompt for VS 2019`, setup development folder (let say: `C:\rosrmw`), clone ROS2 repos, and build:
+    3. Run `x64 Native Tools Command Prompt for VS 2019`, setup development folder (e.g., `C:\rosrmw`), clone ROS2 repos, and build:
         ```bash
         md \rosrmw\src
         cd \rosrmw

@@ -1,10 +1,11 @@
 import sys
 import os.path as path
+import platform
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 2 or platform.system() != "Windows":
     print("""\
 This script will apply changes to rclcpp package from https://github.com/ros2/rclcpp/pull/2063
-to make it compile with C++20.
+to make it compile with C++20 on Windows.
 
 Usage:  fix_ros2_humble path-to-ros2
 """)
