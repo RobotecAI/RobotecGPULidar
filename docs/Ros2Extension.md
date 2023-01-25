@@ -61,7 +61,7 @@ Unity ignores dynamic libraries in directories named `.plugin`. This way, ROS2 s
 - Fixed ROS2 logging macros in rclcpp package to make it compile with C++20. More about this bug: [github PR](https://github.com/ros2/rclcpp/pull/2063).
   - Use `fix_ros2_humble.py` script to apply those changes:
     ```bash
-    py ros2_standalone\fix_ros2_humble.py <your-path-to-ros2>
+    python ros2_standalone\fix_ros2_humble.py <your-path-to-ros2>
     ```
 - For standalone build:
   - If you have installed ROS2 from pre-built binaries, there is `rmw_cyclonedds_cpp` package missing. You need to build this one from the source:
