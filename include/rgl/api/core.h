@@ -42,8 +42,8 @@
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 11
-#define RGL_VERSION_PATCH 3
+#define RGL_VERSION_MINOR 12
+#define RGL_VERSION_PATCH 0
 
 /**
  * Three consecutive 32-bit floats.
