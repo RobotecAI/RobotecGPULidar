@@ -26,8 +26,10 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
 # Extensions configuration
-set(RGL_BUILD_ROS2_EXTENSION ON CACHE BOOL
+set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
+set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
+    "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -93,7 +95,10 @@ add_library(RobotecGPULidar SHARED
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-if (RGL_BUILD_ROS2_EXTENSION)
+if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+    if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
+      message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Only humble is available.")
+    endif()
     find_package(rclcpp REQUIRED)
     find_package(sensor_msgs REQUIRED)
     target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp src/graph/Ros2PublishPointsNode.cpp)
@@ -164,4 +169,9 @@ endif()
 # Include tools
 if (RGL_BUILD_TOOLS)
     add_subdirectory(tools)
+endif()
+
+# Include ros2_standalone
+if(RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+    add_subdirectory(ros2_standalone)
 endif()

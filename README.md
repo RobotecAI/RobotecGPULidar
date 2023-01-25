@@ -49,6 +49,11 @@ And more:
 
 An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
 
+## Extensions
+
+`RobotecGPULidar` library can be built with extensions enhancing RGL with additional functions:
+- `ROS2` - adds a node to publish point cloud messages to [ROS2](https://www.ros.org/). Check [ROS2 extension doc](docs/Ros2Extension.md) for more information, build instructions, and usage.
+
 ## Building in Docker (Linux)
 
 Two dockerfiles are prepared:
@@ -61,7 +66,7 @@ Build instructions:
 3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
 4. `docker build . -f DockerfileMinimal --tag rgl:minimal`
 5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
-6. `./setup.bash --cmake --make -j`
+6. `./setup.py --make="-j"`
 
 ## Building on Ubuntu
 
@@ -70,32 +75,29 @@ Build instructions:
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
-4. Use `setup.bash --cmake --make` script.
+4. Run `./setup.py --install-deps` to install RGL dependencies.
    - It will install dependencies from `apt` and [vcpkg](https://vcpkg.io/en/index.html).
-   - It will run CMake and then make.
+5. Use `setup.py` script to build.
+   - It will use CMake to generate files for build system (make) and build.
    - You can pass optional CMake and make parameters, e.g.
-     - `./setup.bash --cmake -DCMAKE_BUILD_TYPE=Debug --make -j 16`
+     - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
+   - See `./setup.py --help` for usage information.
 
 ## Building on Windows
 
-1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
+1. Install [Microsoft Visual Studio](https://visualstudio.microsoft.com/pl/downloads/) (Visual Studio 2019 when using ROS2 extension) with **C++ CMake tools for Windows** component.
+2. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
+3. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
-3. Install [PCL](https://pointclouds.org/) 1.12:
-    1. Get [vcpkg](https://vcpkg.io/en/index.html):\
-       `git clone -b 2022.08.15 --single-branch --depth 1 https://github.com/microsoft/vcpkg`
-    2. Bootstrap `vcpkg`:\
-       `.\vcpkg\bootstrap-vcpkg.bat`
-    3. Install PCL:\
-       `.\vcpkg\vcpkg.exe install pcl[core,visualization]:x64-windows`
-    4. In order to use vcpkg with Visual Studio, run the following command (may require administrator elevation):\
-       `.\vcpkg\vcpkg.exe integrate install`
-    5. In order to use vcpkg with CMake, you can use the toolchain file:\
-       `cmake -B [build directory] -S . "-DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake"`\
-       `cmake --build [build directory]`
-4. Build the project:
-   - You can use [CLion IDE](https://www.jetbrains.com/clion/) (tested)
-   - Alternatively - [cmake-gui](https://cmake.org/download/) and Microsoft Visual Studio
+4. Install [Python3](https://www.python.org/downloads/).
+5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to RGL repository.
+6. Run `python setup.py --install-deps` command to install RGL dependencies.
+   - It will install dependencies from [vcpkg](https://vcpkg.io/en/index.html).
+7. Run `python setup.py` command to build the project.
+   - It will use CMake to generate files for build system (ninja) and build.
+   - You can pass optional CMake and ninja parameters, e.g.
+     - `python setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
+   - See `python setup.py --help` for usage information.
 
 ## Acknowledgements
 
