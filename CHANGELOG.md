@@ -1,5 +1,24 @@
 # Change Log
 
+## [0.12.0] 25 January 2023
+
+### Added
+- ROS2 extension providing a node to publish point cloud into ROS2 topic
+  - Added API calls (`rgl/api/extensions/ros2.h`):
+    - `rgl_node_points_ros2_publish`
+    - `rgl_node_points_ros2_publish_with_qos`
+  - Necessary scripting to build ROS2 integration in the standalone mode (not requiring ROS2 installation)
+- TapeVisualizer tool (PoC)
+  - Currently, it does not handle multiple graphs in the tape, to be improved
+
+### Changed
+- Rewritten build script from bash to python to enable easy building on Windows
+
+### Fixed
+- Minor fixes and refactor in the Tape code
+  - Use safer .at() instead of operator[]
+  - Using alias type APIObjectID instead of size_t
+
 ## [0.11.3] 11 January 2023
 
 ### Added
