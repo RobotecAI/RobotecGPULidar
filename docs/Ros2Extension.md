@@ -43,14 +43,14 @@ RGL ROS2 extension can be built in two flavors:
 #### Tips for integrating RGL + ROS2 standalone with Unity and [ROS2ForUnity](https://github.com/RobotecAI/ros2-for-unity) plugin.
 1. Build RGL with command:
     ```bash
-    ./setup.py --with-ros2-standalone --lib-rpath \$ORIGIN/.plugin --make="-j"
+    ./setup.py --with-ros2-standalone --lib-rpath \$ORIGIN/../../../../Ros2ForUnity/Plugins/Linux/x86_64/
     ```
-    *$ORIGIN represents the directory in which an object (library) originated. It is resolved at run-time.*
+    *$ORIGIN represents the directory in which an object (library) originated. It is resolved at run-time.*\
+    *Your rpath may differ. It depends on your relative location between RGLUnityPlugin and Ros2ForUnity.*
 2. Copy library `<build-dir>/libRobotecGPULidar.so` to the appropriate directory in your RGLUnityPlugin.
-3. Create a new directory named `.plugin` in location where `libRobotecGPULidar.so` is.
-4. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to the newly created  `.plugin` directory.
+3. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `Ros2ForUnity\Plugins\Linux\x86_64` directory. Skip for duplicates.
 
-Unity ignores dynamic libraries in directories named `.plugin`. This way, ROS2 standalone builds for `ROS2ForUnity` and `RGL` will be separated and not loaded twice by Unity.
+RGL's ROS2 standalone build is dependent on ROS2ForUnity's ROS2 standalone build. RobotecGPULidar library will find ROS2 because we have set the appropriate rpath for the ROS2 libraries in ROS2ForUnity.
 
 ### Windows
 
@@ -91,7 +91,7 @@ Unity ignores dynamic libraries in directories named `.plugin`. This way, ROS2 s
 2. Copy `<build-dir>/RobotecGPULidar.dll` and all depend libraries located in `<build-dir>` to appropriate directory in your RGLUnityPlugin.
 3. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to `Ros2ForUnity\Plugins\Windows\x86_64` directory. Skip for duplicates.
 
-In this case, RGL's ROS2 standalone build is dependent on ROS2ForUnity's ROS2 standalone build. RobotecGPULidar library will find ROS2 because ROS2ForUnity sets environment variable `Path` for the ROS2 libraries.
+RGL's ROS2 standalone build is dependent on ROS2ForUnity's ROS2 standalone build. RobotecGPULidar library will find ROS2 because ROS2ForUnity sets environment variable `Path` for the ROS2 libraries.
 
 ## Usage
 
