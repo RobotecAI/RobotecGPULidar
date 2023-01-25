@@ -81,7 +81,7 @@ Build instructions:
    - It will use CMake to generate files for build system (make) and build.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
-   - See `setup.py --help` for usage information.
+   - See `./setup.py --help` for usage information.
 
 ## Building on Windows
 
@@ -96,7 +96,7 @@ Build instructions:
 7. Run `python setup.py` command to build the project.
    - It will use CMake to generate files for build system (ninja) and build.
    - You can pass optional CMake and ninja parameters, e.g.
-     - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
+     - `python setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
    - See `python setup.py --help` for usage information.
 
 ## Acknowledgements
