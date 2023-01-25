@@ -45,6 +45,7 @@ RGL ROS2 extension can be built in two flavors:
     ```bash
     ./setup.py --with-ros2-standalone --lib-rpath \$ORIGIN/.plugin --make="-j"
     ```
+    *$ORIGIN represents the directory in which an object (library) originated. It is resolved at run-time.*
 2. Copy library `<build-dir>/libRobotecGPULidar.so` to the appropriate directory in your RGLUnityPlugin.
 3. Create a new directory named `.plugin` in location where `libRobotecGPULidar.so` is.
 4. Copy all ROS2 libraries from `<build-dir>/ros2_standalone/` to the newly created  `.plugin` directory.
