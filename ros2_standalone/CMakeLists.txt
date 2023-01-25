@@ -53,7 +53,7 @@ macro(get_standalone_dependencies _library_name)
     # We skip python libs
     set(PYTHON_LIB_REGEX ".*python[0-9]*\.[0-9]*\.so")
     if(WIN32)
-        set(PYTHON_LIB_REGEX ".*libs\/python[0-9]*\.lib" )
+        set(PYTHON_LIB_REGEX ".*(l|L)ib(s|)\/python[0-9]*\.lib" )
     endif()
     foreach(entry ${${_library_name}_LIBRARIES})
         string(REGEX MATCH ${PYTHON_LIB_REGEX} _found ${entry})
