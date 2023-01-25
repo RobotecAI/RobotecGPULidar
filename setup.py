@@ -52,12 +52,12 @@ def main():
                         help="Pass arguments to cmake. Usage: --cmake=\"args...\"")
     if on_linux():
         parser.add_argument("--make", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
-                            help="Pass arguments to make. Usage: --make=\"args...\"")
+                            help="Pass arguments to make. Usage: --make=\"args...\". Defaults to \"-j <cpu count>\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
                             help="Add run-time search path(s) for RGL library")
     if on_windows():
         parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
-                            help="Pass arguments to ninja. Usage: --ninja=\"args...\"")
+                            help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
     args = parser.parse_args()
 
     # Install RGL dependencies
