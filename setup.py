@@ -27,7 +27,7 @@ class Config:
 
         if on_windows():
             self.CUDA_MIN_VER_MINOR = 4
-            self.CUDA_MIN_VER_PATCH = 4
+            self.CUDA_MIN_VER_PATCH = 152  # patch for CUDA 11.4 Update 4
             self.CMAKE_GENERATOR = "Ninja"
             self.VCPKG_EXEC = "vcpkg.exe"
             self.VCPKG_BOOTSTRAP = "bootstrap-vcpkg.bat"
