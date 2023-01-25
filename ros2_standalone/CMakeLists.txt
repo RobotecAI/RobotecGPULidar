@@ -11,6 +11,7 @@ endif()
 set(REQ_STANDALONE_LIBS "")
 set(REQ_STANDALONE_DLLS "")
 
+# Get location for library target
 macro(fetch_target_lib _target)
     string(REGEX REPLACE "::" "_" _target_normalized ${_target})
     set(_locations IMPORTED_LOCATION_NONE IMPORTED_LOCATION_NOCONFIG IMPORTED_LOCATION_RELEASE IMPORTED_LOCATION_RELWITHDEBINFO IMPORTED_LOCATION_DEBUG)
@@ -22,6 +23,7 @@ macro(fetch_target_lib _target)
     endforeach()
 endmacro()
 
+# Extend REQ_STANDALONE_LIBS with _library_name dependencies
 macro(get_standalone_dependencies _library_name)
     find_package(${_library_name} REQUIRED)
 
@@ -61,6 +63,7 @@ macro(get_standalone_dependencies _library_name)
     endforeach()
 endmacro()
 
+# Install all libraries listed in REQ_STANDALONE_LIBS
 macro(install_standalone_dependencies)
     # Filter valid libraries
     list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9])*$")
@@ -74,7 +77,7 @@ macro(install_standalone_dependencies)
         endforeach()
         install(FILES ${REQ_STANDALONE_DLLS}
           DESTINATION ros2_standalone
-      )
+        )
     elseif(UNIX)
         set(_resolvedFiles "")
         foreach(lib_path ${REQ_STANDALONE_LIBS})
@@ -86,7 +89,7 @@ macro(install_standalone_dependencies)
           DESTINATION ros2_standalone
         )
 
-      # Fix soversion files
+        # Fix soversion files
         foreach(_resolvedFile ${_resolvedFiles})
             if("${_resolvedFile}" MATCHES "so(\.[0-9]+)+$")
                 # Get file path without so
@@ -116,6 +119,7 @@ macro(install_standalone_dependencies)
     endif()
 endmacro()
 
+# Libraries required by RGL
 set(ros2_standalone_libs
   rcl
   rclcpp
