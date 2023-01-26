@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <RGLExceptions.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <graph/Interfaces.hpp>
 #include <graph/NodesCore.hpp>
@@ -22,25 +23,14 @@
 struct GPUFieldDescBuilder
 {
 	static VArrayProxy<GPUFieldDesc>::Ptr buildReadable(IPointsNode::Ptr input, const std::vector<rgl_field_t> &fields, cudaStream_t stream)
-	{
-		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
-		std::size_t offset = 0;
-		std::size_t gpuFieldIdx = 0;
-		for (size_t i = 0; i < fields.size(); ++i) {
-			if (!isDummy(fields[i])) {
-				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
-					.readDataPtr = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device)),
-					.size = getFieldSize(fields[i]),
-					.dstOffset = offset,
-				};
-				gpuFieldIdx += 1;
-			}
-			offset += getFieldSize(fields[i]);
-		}
-		return gpuFields;
-	}
+	{ return GPUFieldDescBuilder::build(input, fields, stream, true); }
 
 	static VArrayProxy<GPUFieldDesc>::Ptr buildWritable(IPointsSourceNode::Ptr input, const std::vector<rgl_field_t> &fields, cudaStream_t stream)
+	{ return GPUFieldDescBuilder::build(input, fields, stream, false); }
+
+private:
+	template<typename T>
+	static VArrayProxy<GPUFieldDesc>::Ptr build(T input, const std::vector<rgl_field_t> &fields, cudaStream_t stream, bool makeDataConst)
 	{
 		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
 		std::size_t offset = 0;
@@ -48,10 +38,20 @@ struct GPUFieldDescBuilder
 		for (size_t i = 0; i < fields.size(); ++i) {
 			if (!isDummy(fields[i])) {
 				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
-					.writeDataPtr = static_cast<char*>(input->fieldData[fields[i]]->getWritePtr(MemLoc::Device)),
+					.readDataPtr = nullptr,
+					.writeDataPtr = nullptr,
 					.size = getFieldSize(fields[i]),
-					.dstOffset = offset,
+					.dstOffset = offset
 				};
+				if (makeDataConst) {
+					(*gpuFields)[gpuFieldIdx].readDataPtr = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device));
+				} else {
+					if constexpr (requires { input->fieldData[fields[i]]; }) {
+						(*gpuFields)[gpuFieldIdx].writeDataPtr = static_cast<char*>(input->fieldData[fields[i]]->getWritePtr(MemLoc::Device));
+					} else {
+						throw InvalidAPIObject("attempted to get writable pointer to field that is not available.");
+					}
+				}
 				gpuFieldIdx += 1;
 			}
 			offset += getFieldSize(fields[i]);
