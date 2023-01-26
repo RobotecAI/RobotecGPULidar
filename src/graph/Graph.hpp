@@ -31,7 +31,6 @@ struct Graph
 
 	void run();
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
-	const std::vector<std::shared_ptr<Node>>& getExecutionOrder() const { return executionOrder; }
 
 	virtual ~Graph();
 private:
