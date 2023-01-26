@@ -58,12 +58,9 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
-	bool isActive() const { return active; }
-	void setActive(bool active);
-
 protected:
-	template<template<typename _1, typename _2> typename Container>
-	static std::string getNodeTypeNames(const Container<Node::Ptr, std::allocator<Node::Ptr>>& nodes, std::string_view separator=", ")
+	template<template<typename, typename...> typename Container, typename...CArgs>
+	static std::string getNodeTypeNames(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator=", ")
 	{
 		std::string output{};
 		for (auto&& node: nodes) {
@@ -78,8 +75,8 @@ protected:
 		return output;
 	}
 
-	template<typename T, template<typename _1, typename _2> typename Container>
-	static std::vector<typename T::Ptr> filter(const Container<Node::Ptr, std::allocator<Node::Ptr>>& nodes)
+	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
+	static std::vector<typename T::Ptr> filter(const Container<Node::Ptr, CArgs...>& nodes)
 	{
 		std::vector<typename T::Ptr> typedNodes {};
 		for (auto&& node : nodes) {
@@ -91,8 +88,8 @@ protected:
 		return typedNodes;
 	}
 
-	template<typename T, template<typename _1, typename _2> typename Container>
-	static typename T::Ptr getExactlyOne(const Container<Node::Ptr, std::allocator<Node::Ptr>>& nodes)
+	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
+	static typename T::Ptr getExactlyOne(const Container<Node::Ptr, CArgs...>& nodes)
 	{
 		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes);
 		if (typedNodes.size() != 1) {
@@ -114,15 +111,12 @@ protected:
 	Node() = default;
 
 protected:
-	bool active {true};
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 
 	std::weak_ptr<Graph> graph;
 
 	friend struct Graph;
-	friend void runGraph(Node::Ptr);
-	friend void destroyGraph(Node::Ptr);
 	friend struct fmt::formatter<Node>;
 };
 

@@ -389,24 +389,6 @@ void TapePlayer::tape_graph_get_result_data(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_node_set_active(rgl_node_t node, bool active)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_node_set_active(node={}, active={})", repr(node), active);
-		CHECK_ARG(node != nullptr);
-
-		Node::validatePtr(node)->setActive(active);
-	});
-	TAPE_HOOK(node, active);
-	return status;
-}
-
-void TapePlayer::tape_graph_node_set_active(const YAML::Node& yamlNode)
-{
-	rgl_graph_node_set_active(tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<bool>());
-}
-
-RGL_API rgl_status_t
 rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 {
 	auto status = rglSafeCall([&]() {

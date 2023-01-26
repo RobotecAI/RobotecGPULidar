@@ -491,16 +491,6 @@ RGL_API rgl_status_t
 rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data);
 
 /**
- * Activates or deactivates node in the graph.
- * Children of inactive nodes do not execute as well.
- * Nodes are active by default.
- * @param node Node to activate/deactivate.
- * @param active Whether node active or not.
- */
-RGL_API rgl_status_t
-rgl_graph_node_set_active(rgl_node_t node, bool active);
-
-/**
  * Adds child to the parent node 
  * @param parent Node that will be set as the parent of (child)
  * @param child Node that will be set as the child of (parent)
