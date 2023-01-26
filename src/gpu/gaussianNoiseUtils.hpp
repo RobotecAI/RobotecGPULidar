@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <math/Mat3x4f.hpp>
+
 template<class T>
 __device__ float length(const T& vector) {
 	return sqrt(vector.x() * vector.x() + vector.y() * vector.y() + vector.z() * vector.z());
@@ -38,4 +40,34 @@ __device__ T addDistanceNoise(const T& point, float distanceError)
 	float newDistance = distance + distanceError;
 
 	return scale(pointNormalized, newDistance);
+}
+
+__device__ Mat3x4f getRotationAroundAxis(float angleRad, rgl_axis_t axis) {
+	switch (axis)
+	{
+	case RGL_AXIS_X:
+		return {
+			1, 0,             0,              0,
+			0, cos(angleRad), -sin(angleRad), 0,
+			0, sin(angleRad),  cos(angleRad), 0
+		};
+	case RGL_AXIS_Y:
+		return {
+			cos(angleRad),  0,  sin(angleRad),  0,
+			0,              1,  0,              0,
+			-sin(angleRad), 0, cos(angleRad),   0
+		};
+	case RGL_AXIS_Z:
+		return {
+			cos(angleRad), -sin(angleRad), 0, 0,
+			sin(angleRad),  cos(angleRad), 0, 0,
+			0,             0,              1, 0
+		};
+	default:  // should not happen
+		return {
+			0, 0, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, 0
+		};
+	}
 }

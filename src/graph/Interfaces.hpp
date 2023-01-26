@@ -28,6 +28,7 @@ struct IRaysNode
 	virtual std::size_t getRayCount() const = 0;
 	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
+	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
 };
 
 struct IRaysNodeSingleInput : IRaysNode
@@ -39,8 +40,9 @@ struct IRaysNodeSingleInput : IRaysNode
 	std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 
 	// Data getters
-	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const { return input->getRays(); };
-	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
+	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:
 	IRaysNode::Ptr input;

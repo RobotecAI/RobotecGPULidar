@@ -150,6 +150,7 @@ struct RaytraceNode : Node, IPointsNode
 
 
 	void setFields(const std::set<rgl_field_t>& fields);
+	Mat3x4f getToOriginTransform() const { return raysNode->getCumulativeRayTransfrom().inverse(); }
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
@@ -193,6 +194,7 @@ struct TransformRaysNode : Node, IRaysNodeSingleInput
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
 
 private:
 	Mat3x4f transform;
@@ -317,14 +319,24 @@ struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
 
-	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis) { ; }
+	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 
 	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
-private:
+	// Data getters
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 
+private:
+	float mean;
+	float stDev;
+	rgl_axis_t rotationAxis;
+	std::random_device randomDevice;
+	Mat3x4f toOriginTransform;
+
+	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
+	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
@@ -337,8 +349,22 @@ struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
-private:
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+
+private:
+	float mean;
+	float stDev;
+	rgl_axis_t rotationAxis;
+	std::random_device randomDevice;
+	Mat3x4f toOriginTransform;
+
+	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
+	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
+	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
 struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput

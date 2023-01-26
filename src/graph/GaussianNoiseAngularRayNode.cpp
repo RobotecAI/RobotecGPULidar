@@ -15,12 +15,26 @@
 #include <graph/NodesRos2.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
+void GaussianNoiseAngularRayNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
+{
+	this->mean = mean;
+	this->stDev = stDev;
+	this->rotationAxis = rotationAxis;
+}
+
 void GaussianNoiseAngularRayNode::validate()
 {
-	;
+	input = getValidInput<IRaysNode>();
+	toOriginTransform = input->getCumulativeRayTransfrom().inverse();
+	auto rayCount = input->getRayCount();
+	rays->resize(rayCount, false, false);
+	randomizationStates->resize(rayCount, false, false);
+	gpuSetupGaussianNoiseGenerator(nullptr, rayCount, randomDevice(), randomizationStates->getDevicePtr());
 }
 
 void GaussianNoiseAngularRayNode::schedule(cudaStream_t stream)
 {
-	;
+	const auto* inRaysPtr = input->getRays()->getDevicePtr();
+	auto* outRaysPtr = rays->getDevicePtr();
+	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, toOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
 }

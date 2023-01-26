@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gpu/kernelUtils.cu>
+#include <gpu/kernelUtils.hpp>
 #include <gpu/nodeKernels.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <macros/cuda.hpp>

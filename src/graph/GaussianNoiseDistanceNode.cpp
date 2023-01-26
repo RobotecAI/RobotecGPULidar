@@ -24,7 +24,7 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 
 void GaussianNoiseDistanceNode::validate()
 {
-	input = getValidInput<RaytraceNode>();
+	input = getValidInput<IPointsNode>();
 
 	outDistance.reset();
 	if (input->hasField(DISTANCE_F32)) {

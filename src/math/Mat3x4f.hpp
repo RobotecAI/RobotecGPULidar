@@ -85,12 +85,21 @@ struct Mat3x4f
 		return rotationRad(x * toRad, y * toRad, z * toRad);
 	}
 
-	static inline Mat3x4f translation(float x, float y, float z)
+	static __host__ __device__ inline Mat3x4f translation(float x, float y, float z)
 	{
 		return {
 			1, 0, 0, x,
 			0, 1, 0, y,
 			0, 0, 1, z
+		};
+	}
+
+	static __host__ __device__ inline Mat3x4f translation(const Vec3f point)
+	{
+		return {
+			1, 0, 0, point.x(),
+			0, 1, 0, point.y(),
+			0, 0, 1, point.z()
 		};
 	}
 
@@ -167,6 +176,76 @@ struct Mat3x4f
 		};
 	}
 
+	// Converts to Matrix 4x4 and performs inverse operation.
+	// If determinant is zero (cannot inverse) it returns Matrix filled with zeros.
+	__host__ __device__ inline Mat3x4f inverse() const
+	{
+		// Convert to 4x4
+		float m[4][4] = {
+			rc[0][0], rc[0][1], rc[0][2], rc[0][3],
+			rc[1][0], rc[1][1], rc[1][2], rc[1][3],
+			rc[2][0], rc[2][1], rc[2][2], rc[2][3],
+			0,        0,        0,        1
+		};
+		// Based on https://stackoverflow.com/a/60374938
+		float A2323 = m[2][2] * m[3][3] - m[2][3] * m[3][2];
+    	float A1323 = m[2][1] * m[3][3] - m[2][3] * m[3][1];
+    	float A1223 = m[2][1] * m[3][2] - m[2][2] * m[3][1];
+    	float A0323 = m[2][0] * m[3][3] - m[2][3] * m[3][0];
+    	float A0223 = m[2][0] * m[3][2] - m[2][2] * m[3][0];
+    	float A0123 = m[2][0] * m[3][1] - m[2][1] * m[3][0];
+    	float A2313 = m[1][2] * m[3][3] - m[1][3] * m[3][2];
+    	float A1313 = m[1][1] * m[3][3] - m[1][3] * m[3][1];
+    	float A1213 = m[1][1] * m[3][2] - m[1][2] * m[3][1];
+    	float A2312 = m[1][2] * m[2][3] - m[1][3] * m[2][2];
+    	float A1312 = m[1][1] * m[2][3] - m[1][3] * m[2][1];
+    	float A1212 = m[1][1] * m[2][2] - m[1][2] * m[2][1];
+    	float A0313 = m[1][0] * m[3][3] - m[1][3] * m[3][0];
+    	float A0213 = m[1][0] * m[3][2] - m[1][2] * m[3][0];
+    	float A0312 = m[1][0] * m[2][3] - m[1][3] * m[2][0];
+    	float A0212 = m[1][0] * m[2][2] - m[1][2] * m[2][0];
+    	float A0113 = m[1][0] * m[3][1] - m[1][1] * m[3][0];
+    	float A0112 = m[1][0] * m[2][1] - m[1][1] * m[2][0];
+
+		float det = m[0][0] * ( m[1][1] * A2323 - m[1][2] * A1323 + m[1][3] * A1223 )
+		            - m[0][1] * ( m[1][0] * A2323 - m[1][2] * A0323 + m[1][3] * A0223 )
+		            + m[0][2] * ( m[1][0] * A1323 - m[1][1] * A0323 + m[1][3] * A0123 )
+		            - m[0][3] * ( m[1][0] * A1223 - m[1][1] * A0223 + m[1][2] * A0123 );
+
+    	if (det == 0.0f) {
+			return {
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0
+			};
+		}
+		float idet = 1.0f / det;
+
+		float im[4][4];
+		im[0][0] = idet *   ( m[1][1] * A2323 - m[1][2] * A1323 + m[1][3] * A1223 );
+		im[0][1] = idet * - ( m[0][1] * A2323 - m[0][2] * A1323 + m[0][3] * A1223 );
+		im[0][2] = idet *   ( m[0][1] * A2313 - m[0][2] * A1313 + m[0][3] * A1213 );
+		im[0][3] = idet * - ( m[0][1] * A2312 - m[0][2] * A1312 + m[0][3] * A1212 );
+		im[1][0] = idet * - ( m[1][0] * A2323 - m[1][2] * A0323 + m[1][3] * A0223 );
+		im[1][1] = idet *   ( m[0][0] * A2323 - m[0][2] * A0323 + m[0][3] * A0223 );
+		im[1][2] = idet * - ( m[0][0] * A2313 - m[0][2] * A0313 + m[0][3] * A0213 );
+		im[1][3] = idet *   ( m[0][0] * A2312 - m[0][2] * A0312 + m[0][3] * A0212 );
+		im[2][0] = idet *   ( m[1][0] * A1323 - m[1][1] * A0323 + m[1][3] * A0123 );
+		im[2][1] = idet * - ( m[0][0] * A1323 - m[0][1] * A0323 + m[0][3] * A0123 );
+		im[2][2] = idet *   ( m[0][0] * A1313 - m[0][1] * A0313 + m[0][3] * A0113 );
+		im[2][3] = idet * - ( m[0][0] * A1312 - m[0][1] * A0312 + m[0][3] * A0112 );
+		im[3][0] = idet * - ( m[1][0] * A1223 - m[1][1] * A0223 + m[1][2] * A0123 );
+		im[3][1] = idet *   ( m[0][0] * A1223 - m[0][1] * A0223 + m[0][2] * A0123 );
+		im[3][2] = idet * - ( m[0][0] * A1213 - m[0][1] * A0213 + m[0][2] * A0113 );
+		im[3][3] = idet *   ( m[0][0] * A1212 - m[0][1] * A0212 + m[0][2] * A0112 );
+
+		return {
+			im[0][0], im[0][1], im[0][2], im[0][3],
+			im[1][0], im[1][1], im[1][2], im[1][3],
+			im[2][0], im[2][1], im[2][2], im[2][3],
+		};
+	}
+
 	inline Mat3x4f& operator=(const Mat3x4f& other) = default;
 
 	__host__ __device__ float& operator[](int i) {return rc[i/4][i%4];}
@@ -211,7 +290,7 @@ struct fmt::formatter<Mat3x4f>
 
 		for (int y = 0; y < Mat3x4f::ROWS; ++y) {
 			for (int x = 0; x < Mat3x4f::COLS; ++x) {
-				fmt::format_to(ctx.out(), "{:4} ", m.rc[y][x]);
+				fmt::format_to(ctx.out(), "{:.4f} ", m.rc[y][x]);
 			}
 			fmt::format_to(ctx.out(), "\n");
 		}
