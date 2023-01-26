@@ -41,11 +41,13 @@ void SpatialMergePointsNode::validate()
 	}
 
 	for (const auto& input : pointInputs) {
+		// Check input pointcloud is unorganized
 		if (input->getHeight() != 1) {
 			auto msg = "Spatial points merge could be proceed on unorganized pointclouds only";
 			throw InvalidPipeline(msg);
 		}
 
+		// Check input pointcloud has required fields
 		for (const auto& [requiredField, _] : mergedData) {
 			if (!input->hasField(requiredField)) {
 				auto msg = fmt::format("SpatialMergePointsNode input has not required field '{}'",
