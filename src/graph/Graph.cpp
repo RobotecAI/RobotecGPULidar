@@ -42,6 +42,8 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 	auto graph = std::shared_ptr<Graph>(new Graph());
 
 	graph->nodes = Graph::findConnectedNodes(node);
+	graph->executionOrder = Graph::findExecutionOrder(graph->nodes);
+	graph->fieldsToCompute = Graph::findFieldsToCompute(graph->nodes);
 
 	for (auto&& currentNode : graph->nodes) {
 		if (currentNode->hasGraph()) {
@@ -58,26 +60,9 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 
 void Graph::run()
 {
-	const auto& nodesInExecOrder = getExecutionOrder();
+	const auto& nodesInExecOrder = executionOrder;
 
 	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
-
-	std::set<rgl_field_t> fieldsToCompute;
-	for (auto&& node : nodesInExecOrder) {
-		if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
-			for (auto&& field : pointNode->getRequiredFieldList()) {
-				if (!isDummy(field)) {
-					fieldsToCompute.insert(field);
-				}
-			}
-		}
-	}
-
-	fieldsToCompute.insert(XYZ_F32);
-
-	if (!Node::filter<CompactPointsNode>(nodesInExecOrder).empty()) {
-		fieldsToCompute.insert(IS_HIT_I32);
-	}
 
 	RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
 	rt->setFields(fieldsToCompute);
@@ -123,29 +108,10 @@ void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 	instances.erase(graphIt);
 }
 
-const std::vector<std::shared_ptr<Node>>& Graph::getExecutionOrder()
-{
-	if (!executionOrder.has_value()) {
-		executionOrder = findExecutionOrder(nodes);
-	}
-	return executionOrder.value();
-}
-
 std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
 {
 	std::vector<std::shared_ptr<Node>> reverseOrder {};
-	std::function<void(std::shared_ptr<Node>)> rmBranch = [&](std::shared_ptr<Node> current) {
-		for (auto&& output : current->getOutputs()) {
-			rmBranch(output);
-		}
-		RGL_DEBUG("Removing node from execution: {}", *current);
-		nodes.erase(current);
-	};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
-		if (!current->isActive()) {
-			rmBranch(current);
-			return;
-		}
 		nodes.erase(current);
 		for (auto&& output : current->getOutputs()) {
 			if (nodes.contains(output)) {
@@ -160,8 +126,29 @@ std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::share
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
 
+std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes)
+{
+	std::set<rgl_field_t> outFields;
+	for (auto&& node : nodes) {
+		if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
+			for (auto&& field : pointNode->getRequiredFieldList()) {
+				if (!isDummy(field)) {
+					outFields.insert(field);
+				}
+			}
+		}
+	}
+
+	outFields.insert(XYZ_F32);
+
+	if (!Node::filter<CompactPointsNode>(nodes).empty()) {
+		outFields.insert(IS_HIT_I32);
+	}
+
+	return outFields;
+}
+
 Graph::~Graph()
 {
 	stream.reset();
 }
-
