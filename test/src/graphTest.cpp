@@ -37,48 +37,6 @@ TEST_F(Graph, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
 }
 
-TEST_F(Graph, NodeActivation)
-{
-	auto mesh = makeCubeMesh();
-
-	auto entity = makeEntity(mesh);
-	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
-
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
-
-	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
-	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
-	rgl_mat3x4f zeroTf = Mat3x4f::TRS({0, 0, 0}).toRGL();
-	rgl_mat3x4f translateXTf = Mat3x4f::TRS({3, 0, 0}).toRGL();
-	rgl_mat3x4f translateYTf = Mat3x4f::TRS({0, 3, 0}).toRGL();
-
-	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
-	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
-	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "two_boxes_activation.pcd"));
-
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, write));
-
-	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
-
-	// Deactivate transform points
-	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateXTf));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, false));
-	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
-
-	// Activate transform points
-	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(transformPts, true));
-	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
-}
-
 TEST_F(Graph, NodeRemoval)
 {
 	auto mesh = makeCubeMesh();
