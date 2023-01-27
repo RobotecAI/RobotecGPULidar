@@ -58,12 +58,12 @@ typedef enum
 /**
  * Creates or modifies Ros2PublishPointsNode.
  * The node publishes a PointCloud2 message to the ROS2 topic using default Quality of Service settings.
- * Fields and their layout in the binary data blob will be automatically determined based on the preceding FormatNode.
+ * Fields and their layout in the binary data blob will be automatically determined based on the preceding FormatNode.
  * Graph input: FormatNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param topic_name Topic name to publish on.
- * @param frame_id Frame this data is associated with.
+ * @param frame_id Frame this data is associated with.
  */
 RGL_API rgl_status_t
 rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id);
@@ -71,12 +71,12 @@ rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const cha
 /**
  * Creates or modifies Ros2PublishPointsNode.
  * The node publishes a PointCloud2 message to the ROS2 topic with Quality of Service specified.
- * Fields and their layout in the binary data blob will be automatically determined based on the preceding FormatNode.
+ * Fields and their layout in the binary data blob will be automatically determined based on the preceding FormatNode.
  * Graph input: FormatNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param topic_name Topic name to publish on.
- * @param frame_id Frame this data is associated with.
+ * @param frame_id Frame this data is associated with.
  * @param qos_reliability QoS reliability policy.
  * @param qos_durability QoS durability policy.
  * @param qos_history QoS history policy.

@@ -95,7 +95,7 @@ RGL's ROS2 standalone build is dependent on ROS2ForUnity's ROS2 standalone build
 
 ## Usage
 
-Each RGL node for ROS2 publishing must be connected to a format node that defines fields and their layout in the binary data. For example, to publish PointCloud2 message with fields XYZ and DISTANCE, the code should look as follow:
+Each RGL node for ROS2 publishing must be connected to a format node that defines fields and their layout in the binary data. For example, to publish PointCloud2 message with fields XYZ and DISTANCE, the code should look as follow:
 ```c
 ...
 rgl_node_t nodeFormat = nullptr, nodeRos2 = nullptr;
