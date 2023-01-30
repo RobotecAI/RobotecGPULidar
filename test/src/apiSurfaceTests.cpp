@@ -167,21 +167,18 @@ TEST_F(APISurfaceTests, rgl_entity_set_pose)
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identity));
 }
 
-// TEST_F(APISurfaceTests, rgl_node_rays_from_mat3x4f)
-// {
-// 	rgl_node_t node = {};
-// 	rgl_mat3x4f rays;
-// 	int32_t invalid_rays_count = 0;
-// 	int32_t valid_rays_count = 1;
+TEST_F(APISurfaceTests, rgl_node_rays_from_mat3x4f)
+{
+	rgl_node_t node = nullptr;
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(nullptr, &rays, valid_rays_count), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, nullptr, valid_rays_count), "rays != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, &rays, invalid_rays_count), "ray_count > 0");
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(nullptr, nullptr, 0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, nullptr, 0), "rays != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, &identity, 0), "ray_count > 0");
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&node, &rays, valid_rays_count));
-// }
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&node, &identity, 1));
+}
 
 // TEST_F(APISurfaceTests, rgl_node_rays_set_ring_ids)
 // {

@@ -33,6 +33,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_write_pcd_file(node={}, file={})", repr(node), file_path);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(file_path != nullptr);
 		CHECK_ARG(file_path[0] != '\0');
 
@@ -72,6 +73,7 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
+		CHECK_ARG(node != nullptr);
 
 		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
 	});
@@ -96,6 +98,7 @@ rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t win
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
 		          repr(node), window_name, window_width, window_height, fullscreen);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(window_name != nullptr);
 		CHECK_ARG(window_name[0] != '\0');
 		CHECK_ARG(window_width > 0);

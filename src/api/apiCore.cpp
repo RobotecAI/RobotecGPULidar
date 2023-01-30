@@ -435,6 +435,7 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ra
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
@@ -458,6 +459,7 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
 		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t) ring_ids_count);
@@ -481,6 +483,7 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
@@ -502,6 +505,7 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_transform(node={}, transform={})", repr(node), repr(transform));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
@@ -523,6 +527,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_raytrace(node={}, scene={}, range={})", repr(node), (void*) scene, range);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
 
@@ -551,6 +556,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t fiel
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
@@ -575,6 +581,7 @@ rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
@@ -599,6 +606,7 @@ rgl_node_points_compact(rgl_node_t* node)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_compact(node={})", repr(node));
+		CHECK_ARG(node != nullptr);
 
 		createOrUpdateNode<CompactPointsNode>(node);
 	});
@@ -619,6 +627,7 @@ rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_spatial_merge(node={}, fields={})", repr(node), repr(fields, field_count));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
@@ -643,6 +652,7 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_temporal_merge(node={}, fields={})", repr(node), repr(fields, field_count));
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
@@ -667,6 +677,7 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_angular_ray(node={}, mean={}, stDev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
@@ -692,6 +703,7 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_angular_hitpoint(node={}, mean={}, st_dev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
@@ -717,6 +729,7 @@ rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_distance(node={}, mean={}, st_dev_base={}, st_dev_rise_per_meter={})", repr(node), mean, st_dev_base, st_dev_rise_per_meter);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(st_dev_base >= 0);
 		CHECK_ARG(st_dev_rise_per_meter >= 0);
 

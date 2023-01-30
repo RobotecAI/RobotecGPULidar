@@ -41,6 +41,7 @@ rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const cha
 	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_ros2_publish(node={}, topic_name={}, frame_id={})",
 		          repr(node), topic_name, frame_id);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(topic_name != nullptr);
 		CHECK_ARG(topic_name[0] != '\0');
 		CHECK_ARG(frame_id != nullptr);
@@ -73,6 +74,7 @@ rgl_node_points_ros2_publish_with_qos(
 		          "qos_reliability={}, qos_durability={}, qos_history={}, qos_history_depth={})",
 		          repr(node), topic_name, frame_id,
 		          qos_reliability, qos_durability, qos_history, qos_history_depth);
+		CHECK_ARG(node != nullptr);
 		CHECK_ARG(topic_name != nullptr);
 		CHECK_ARG(topic_name[0] != '\0');
 		CHECK_ARG(frame_id != nullptr);
