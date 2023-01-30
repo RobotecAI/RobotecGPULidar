@@ -31,20 +31,12 @@
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
 
-void configureLogging()
-{
-	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("rgl-test.log") };
-	Logger::getOrCreate().setAdditionalLogFilePath(logFilePath.c_str());
-	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_CRITICAL, nullptr, false));
-}
-
-struct RGLAutoSetUpTest : public ::testing::Test {
+struct RGLAutoCleanUp : public ::testing::Test {
 protected:
 
-	RGLAutoSetUpTest()
+	virtual ~RGLAutoCleanUp()
 	{
 		EXPECT_RGL_SUCCESS(rgl_cleanup());
-		configureLogging();
 	}
 };
 

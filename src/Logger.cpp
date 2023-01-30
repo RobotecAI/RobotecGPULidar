@@ -35,16 +35,12 @@ void Logger::configure(rgl_log_level_t logLevel, const char* logFilePath, bool u
 
 void Logger::configure(rgl_log_level_t logLevel, std::optional<std::filesystem::path> logFilePath, bool useStdout)
 {
-	if (logLevel != RGL_LOG_LEVEL_OFF && !logFilePath.has_value() && !useStdout && !additionalLogFilePath.has_value()) {
+	if (logLevel != RGL_LOG_LEVEL_OFF && !logFilePath.has_value() && !useStdout) {
 		throw std::invalid_argument("invalid logger configuration: logging enabled but all sinks are disabled");
 	}
 	std::vector<spdlog::sink_ptr> sinkList;
 	if (logFilePath.has_value() && !logFilePath.value().empty()) {
 		auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.value().string(), true);
-		sinkList.push_back(fileSink);
-	}
-	if (additionalLogFilePath.has_value() && !additionalLogFilePath.value().empty()) {
-		auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(additionalLogFilePath.value().string(), false);
 		sinkList.push_back(fileSink);
 	}
 	if (useStdout) {
@@ -62,11 +58,4 @@ void Logger::configure(rgl_log_level_t logLevel, std::optional<std::filesystem::
 	// https://spdlog.docsforge.com/master/3.custom-formatting/#pattern-flags
 	mainLogger->set_pattern("[%T][%6i us][%l]: %v");
 	mainLogger->set_level(static_cast<spdlog::level::level_enum>(logLevel));
-}
-
-void Logger::setAdditionalLogFilePath(const char* logFilePath)
-{
-	// Constructing string from nullptr is an undefined behavior!
-	bool hasLogFilePath = logFilePath != nullptr && strlen(logFilePath) > 0;
-	additionalLogFilePath = hasLogFilePath ? std::optional(logFilePath) : std::nullopt;
 }
