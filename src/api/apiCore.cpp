@@ -258,16 +258,16 @@ void TapePlayer::tape_entity_destroy(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* local_to_world_tf)
+rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_entity_set_pose(entity={}, local_to_world_tf={})", (void*) entity, repr(local_to_world_tf, 1));
+		RGL_API_LOG("rgl_entity_set_pose(entity={}, transform={})", (void*) entity, repr(transform, 1));
 		CHECK_ARG(entity != nullptr);
-		CHECK_ARG(local_to_world_tf != nullptr);
-		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&local_to_world_tf->value[0][0]));
+		CHECK_ARG(transform != nullptr);
+		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&transform->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
 	});
-	TAPE_HOOK(entity, local_to_world_tf);
+	TAPE_HOOK(entity, transform);
 	return status;
 }
 
