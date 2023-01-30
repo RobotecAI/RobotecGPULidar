@@ -105,7 +105,6 @@ TEST_F(APISurfaceTests, rgl_mesh_create_destroy)
 	// Invalid destroy
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_destroy(nullptr), "mesh != nullptr");
 	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_destroy((rgl_mesh_t) 0x1234), "Object does not exist: Mesh 0x1234");
-
 }
 
 TEST_F(APISurfaceTests, rgl_mesh_update_vertices)
@@ -147,6 +146,19 @@ TEST_F(APISurfaceTests, rgl_entity_create_destroy)
 	// Invalid destroy
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_destroy(nullptr), "entity != nullptr");
 	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy((rgl_entity_t) 0x1234), "Object does not exist: Entity 0x1234");
+}
+
+TEST_F(APISurfaceTests, rgl_entity_set_pose)
+{
+	rgl_entity_t entity = makeEntity();
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(nullptr, nullptr), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity,  nullptr), "transform != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_set_pose((rgl_entity_t) 0x1234, &identity), "Object does not exist: Entity 0x1234");
+
+	// Correct set_pose
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identity));
 }
 
 // TEST_F(APISurfaceTests, rgl_node_rays_from_mat3x4f)
