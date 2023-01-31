@@ -15,6 +15,7 @@
 #pragma once
 
 #include <rgl/api/core.h>
+#include <math/Mat3x4f.hpp>
 #include <RGLFields.hpp>
 
 void gpuSetupGaussianNoiseGenerator(cudaStream_t stream, size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* outPHILOXStates);

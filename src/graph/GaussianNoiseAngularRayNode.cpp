@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/NodesRos2.hpp>
+#include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
 void GaussianNoiseAngularRayNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
@@ -26,10 +26,14 @@ void GaussianNoiseAngularRayNode::validate()
 {
 	input = getValidInput<IRaysNode>();
 	toOriginTransform = input->getCumulativeRayTransfrom().inverse();
+
 	auto rayCount = input->getRayCount();
 	rays->resize(rayCount, false, false);
-	randomizationStates->resize(rayCount, false, false);
-	gpuSetupGaussianNoiseGenerator(nullptr, rayCount, randomDevice(), randomizationStates->getDevicePtr());
+
+	if (randomizationStates->getCount() < rayCount) {
+		randomizationStates->resize(rayCount, false, false);
+		gpuSetupGaussianNoiseGenerator(nullptr, rayCount, randomDevice(), randomizationStates->getDevicePtr());
+	}
 }
 
 void GaussianNoiseAngularRayNode::schedule(cudaStream_t stream)

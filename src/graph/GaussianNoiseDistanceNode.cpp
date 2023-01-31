@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/NodesRos2.hpp>
+#include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
 void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float stDevRisePerMeter)
@@ -24,16 +24,26 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 
 void GaussianNoiseDistanceNode::validate()
 {
-	input = getValidInput<IPointsNode>();
+	// Search for RaytraceNode and do an explicit cast to IPointsNode.
+	// Input must be RaytraceNode to have fixed size of pointcloud and setup randomizationStates once.
+	input = std::dynamic_pointer_cast<IPointsNode>(getValidInput<RaytraceNode>());
 
-	outDistance.reset();
+	// This node will modifty field DISTANCE_F32 if present.
+	// In the future: only one field should be modified.
+	// Other fields that depend on the main field (for now, it's XYZ_F32) should be calculated somewhere else (e.g., in data getters nodes).
 	if (input->hasField(DISTANCE_F32)) {
-		outDistance = VArrayProxy<Field<DISTANCE_F32>::type>::create();
+		if (outDistance == nullptr) {
+			outDistance = VArrayProxy<Field<DISTANCE_F32>::type>::create();
+		}
+	} else {
+		outDistance.reset();
 	}
 
 	auto pointCount = input->getPointCount();
-	randomizationStates->resize(pointCount, false, false);
-	gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+	if (randomizationStates->getCount() < pointCount) {
+		randomizationStates->resize(pointCount, false, false);
+		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+	}
 }
 
 void GaussianNoiseDistanceNode::schedule(cudaStream_t stream)

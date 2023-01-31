@@ -164,7 +164,7 @@ TEST_F(Graph, GaussianNoiseDistance)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
-	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noiseDist, 0, 0.0f, 0));
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noiseDist, 0, 0.01f, 0));
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_hitpoint(&noiseAngHit, 0, 0.01, RGL_AXIS_Z));
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noiseAngRay, 0, 0.01, RGL_AXIS_Z));
 	EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize, "test", 1920, 1080, false));

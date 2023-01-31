@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/NodesRos2.hpp>
+#include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
 void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
@@ -24,17 +24,29 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 
 void GaussianNoiseAngularHitpointNode::validate()
 {
-	toOriginTransform = getValidInput<RaytraceNode>()->getToOriginTransform();
-	input = getValidInput<IPointsNode>();
+	// Search for RaytraceNode to get ray origin transform (Should this transform be propagated over IPointsNodes?).
+	// Also, RaytraceNode guarantees fixed size of pointcloud to setup randomizationStates once.
+	RaytraceNode::Ptr rtNode = getValidInput<RaytraceNode>();
+	toOriginTransform = rtNode->getToOriginTransform();
+	// Explicit cast to IPointsNode.
+	input = std::dynamic_pointer_cast<IPointsNode>(rtNode);
 
-	outDistance.reset();
+	// This node will modifty field DISTANCE_F32 if present.
+	// In the future: only one field should be modified.
+	// Other fields that depend on the main field (for now, it's XYZ_F32) should be calculated somewhere else (e.g., in data getters nodes).
 	if (input->hasField(DISTANCE_F32)) {
-		outDistance = VArrayProxy<Field<DISTANCE_F32>::type>::create();
+		if (outDistance == nullptr) {
+			outDistance = VArrayProxy<Field<DISTANCE_F32>::type>::create();
+		}
+	} else {
+		outDistance.reset();
 	}
 
 	auto pointCount = input->getPointCount();
-	randomizationStates->resize(pointCount, false, false);
-	gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+	if (randomizationStates->getCount() < pointCount) {
+		randomizationStates->resize(pointCount, false, false);
+		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+	}
 }
 
 void GaussianNoiseAngularHitpointNode::schedule(cudaStream_t stream)

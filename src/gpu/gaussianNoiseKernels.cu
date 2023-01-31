@@ -16,7 +16,6 @@
 #include <curand_kernel.h>
 
 #include <gpu/kernelUtils.hpp>
-#include <gpu/gaussianNoiseUtils.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
 // Philox algorithm chosen based on performance
@@ -35,7 +34,10 @@ __global__ void kAddGaussianNoiseAngularRay(size_t rayCount, float mean, float s
 	LIMIT(rayCount);
 
 	float angularError = mean + curand_normal(&randomStates[tid]) * stDev;
-	outRays[tid] = toOriginTransform.inverse() * (getRotationAroundAxis(angularError, rotationAxis) * (toOriginTransform * inRays[tid]));
+	float rotX = rotationAxis == RGL_AXIS_X ? angularError : 0.0f;
+	float rotY = rotationAxis == RGL_AXIS_Y ? angularError : 0.0f;
+	float rotZ = rotationAxis == RGL_AXIS_Z ? angularError : 0.0f;
+	outRays[tid] = toOriginTransform.inverse() * (Mat3x4f::rotationRad(rotX, rotY, rotZ) * (toOriginTransform * inRays[tid]));
 }
 
 __global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f toOriginTransform,
@@ -44,10 +46,13 @@ __global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, 
 	LIMIT(pointCount);
 
 	float angularError = mean + curand_normal(&randomStates[tid]) * stDev;
-	outPoints[tid] = toOriginTransform.inverse() * (getRotationAroundAxis(angularError, rotationAxis) * (toOriginTransform * inPoints[tid]));
+	float rotX = rotationAxis == RGL_AXIS_X ? angularError : 0.0f;
+	float rotY = rotationAxis == RGL_AXIS_Y ? angularError : 0.0f;
+	float rotZ = rotationAxis == RGL_AXIS_Z ? angularError : 0.0f;
+	outPoints[tid] = toOriginTransform.inverse() * (Mat3x4f::rotationRad(rotX, rotY, rotZ) * (toOriginTransform * inPoints[tid]));
 
 	if (outDistances != nullptr) {
-		outDistances[tid] = length(outPoints[tid]);
+		outDistances[tid] = outPoints[tid].length();
 	}
 }
 
@@ -56,7 +61,7 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 {
 	LIMIT(pointCount);
 
-	float distance = length(inPoints[tid]);
+	float distance = inPoints[tid].length();
 	float distanceInducedStDev = distance * stDevRisePerMeter;
 	float totalStDev = distanceInducedStDev + stDevBase;
 
@@ -66,7 +71,7 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 		outDistances[tid] = distance + distanceError;
 	}
 
-	outPoints[tid] = addDistanceNoise(inPoints[tid], distanceError);
+	outPoints[tid] = inPoints[tid].normalize() * (distance + distanceError);
 }
 
 
