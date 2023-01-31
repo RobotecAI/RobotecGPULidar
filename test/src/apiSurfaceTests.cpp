@@ -95,7 +95,7 @@ TEST_F(APISurfaceTests, rgl_mesh_update_vertices)
 	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_update_vertices((rgl_mesh_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)), "Object does not exist: Mesh 0x1234");
 
 	// Correct update_vertices
-	ASSERT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES)));
+	EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES)));
 }
 
 TEST_F(APISurfaceTests, rgl_entity_create_destroy)
@@ -142,129 +142,145 @@ TEST_F(APISurfaceTests, rgl_node_rays_from_mat3x4f)
 	rgl_node_t node = nullptr;
 
 	// Invalid args
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(nullptr, nullptr, 0), "node != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, nullptr, 0), "rays != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, &identity, 0), "ray_count > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(nullptr, nullptr,   0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, 	nullptr,   0), "rays != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_from_mat3x4f(&node, 	&identity, 0), "ray_count > 0");
 
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&node, &identity, 1));
+	ASSERT_THAT(node, NotNull());
+
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&node, &identity, 1));
 }
 
-// TEST_F(APISurfaceTests, rgl_node_rays_set_ring_ids)
-// {
-// 	rgl_node_t node = {}; 
-// 	const int32_t ring_ids = 1; 
-// 	const int32_t invalid_ring_ids_count = 0;
-// 	const int32_t valid_ring_ids_count = 1;
+TEST_F(APISurfaceTests, rgl_node_rays_set_ring_ids)
+{
+	rgl_node_t node = nullptr; 
+	const int32_t ring_ids [] = {1, 2, 3};
 	
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(nullptr, nullptr,  0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(&node, 	nullptr,  0), "ring_ids != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(&node, 	ring_ids, 0), "ring_ids_count > 0");
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(nullptr, &ring_ids, valid_ring_ids_count), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(&node, nullptr, valid_ring_ids_count), "ring_ids != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(&node, &ring_ids, invalid_ring_ids_count), "ring_ids_count > 0");
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&node, ring_ids, 1));
+	ASSERT_THAT(node, NotNull());
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&node, &ring_ids, valid_ring_ids_count));
-// }
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&node, ring_ids, 1));
+}
 
-// TEST_F(APISurfaceTests, rgl_node_rays_transform)
-// {
-// 	rgl_node_t node = {};
-// 	rgl_mat3x4f transform;
+TEST_F(APISurfaceTests, rgl_node_rays_transform)
+{
+	rgl_node_t node = nullptr;
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(nullptr, &transform), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(&node, nullptr), "transform != nullptr");
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(nullptr, nullptr), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(&node,	 nullptr), "transform != nullptr");
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&node, &transform));
-// }
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&node, &identity));
+	ASSERT_THAT(node, NotNull());
 
-// TEST_F(APISurfaceTests, rgl_node_points_transform)
-// {
-// 	rgl_node_t node = {};
-// 	rgl_mat3x4f transform;
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&node, &identity));
+}
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(nullptr, &transform), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(&node, nullptr), "transform != nullptr");
+TEST_F(APISurfaceTests, rgl_node_points_transform)
+{
+	rgl_node_t node = nullptr;
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&node, &transform));
-// }
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(nullptr, nullptr), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(&node,   nullptr), "transform != nullptr");
 
-// TEST_F(APISurfaceTests, rgl_node_raytrace)
-// {
-// 	rgl_node_t node = {}; 
-// 	rgl_scene_t scene; 
-// 	float range = 1.0f;
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&node, &identity));
+	ASSERT_THAT(node, NotNull());
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace(nullptr, scene, range), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace(&node, scene, 0.0f), "range > 0.0f");
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&node, &identity));
+}
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&node, nullptr, range));
-// 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&node, scene, range));
-// }
+TEST_F(APISurfaceTests, rgl_node_raytrace)
+{
+	rgl_node_t node = nullptr; 
 
-// TEST_F(APISurfaceTests, rgl_node_points_format)
-// {
-// 	rgl_node_t node = {};
-// 	rgl_field_t fields;
-// 	int32_t field_count = 1;
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace(nullptr, nullptr, 0.0f), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace(&node, nullptr, 0.0f), "range > 0.0f");
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(nullptr, &fields, field_count), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(&node, nullptr, field_count), "fields != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(&node, &fields, 0), "field_count > 0");
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&node, nullptr, 1.0f));
+	ASSERT_THAT(node, NotNull());
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&node, &fields, field_count));
-// }
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&node, nullptr, 1.0f));
+}
 
-// TEST_F(APISurfaceTests, rgl_node_points_yield)
-// {
-// 	rgl_node_t node = {};
-// 	rgl_field_t fields;
-// 	int32_t field_count = 1;
+TEST_F(APISurfaceTests, rgl_node_points_format)
+{
+	rgl_node_t node = nullptr;
+	rgl_field_t fields;
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_yield(nullptr, &fields, field_count), "nodeRawPtr != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_yield(&node, nullptr, field_count), "fields != nullptr");
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_yield(&node, &fields, 0), "field_count > 0");
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(nullptr, nullptr, 0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(&node, nullptr, 0), "fields != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(&node, &fields, 0), "field_count > 0");
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&node, &fields, field_count));
-// }
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&node, &fields, 1));
+	ASSERT_THAT(node, NotNull());
 
-// TEST_F(APISurfaceTests, rgl_node_points_compact)
-// {
-// 	rgl_node_t node = {};
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&node, &fields, 1));
+}
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_compact(nullptr), "nodeRawPtr != nullptr");
+TEST_F(APISurfaceTests, rgl_node_points_yield)
+{
+	rgl_node_t node = nullptr;
+	rgl_field_t fields;
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&node));
-// }
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_yield(nullptr, nullptr, 0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_yield(&node, nullptr, 0), "fields != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_yield(&node, &fields, 0), "field_count > 0");
 
-// TEST_F(APISurfaceTests, rgl_node_points_downsample)
-// {
-// 	rgl_node_t node = {};
-// 	float leaf_size_x = 1.0f; 
-// 	float leaf_size_y = 2.0f;
-// 	float leaf_size_z = 3.0f;
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&node, &fields, 1));
+	ASSERT_THAT(node, NotNull());
 
-// 	// Invalid args
-// 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(nullptr, leaf_size_x, leaf_size_y, leaf_size_z), "nodeRawPtr != nullptr");
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&node, &fields, 1));
+}
 
-// 	// This are passing, assume they should fail if size less or eq to 0??
-// 	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, 0.0f, leaf_size_y, leaf_size_z), "leaf_size_x > 0.0f");
-// 	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, -1.0f, leaf_size_y, leaf_size_z), "leaf_size_x > 0.0f");
-// 	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, leaf_size_x, 0.0f, leaf_size_z), "leaf_size_y > 0.0f");
-// 	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, leaf_size_x, leaf_size_y, 0.0f), "leaf_size_z > 0.0f");
+TEST_F(APISurfaceTests, rgl_node_points_compact)
+{
+	rgl_node_t node = nullptr;
 
-// 	// Valid args
-// 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, leaf_size_x, leaf_size_y, leaf_size_z));
-// }
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_compact(nullptr), "node != nullptr");
+
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&node));
+	ASSERT_THAT(node, NotNull());
+
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&node));
+}
+
+TEST_F(APISurfaceTests, rgl_node_points_downsample)
+{
+	rgl_node_t node = nullptr;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(nullptr, 0.0f, 0.0f, 0.0f), "node != nullptr");
+	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, 0.0f, 0.0f, 0.0f), "leaf_size_x > 0.0f");
+	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, 1.0f, 0.0f, 0.0f), "leaf_size_y > 0.0f");
+	// EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(&node, 1.0f, 1.0f, 0.0f), "leaf_size_z > 0.0f");
+
+	// Valid args
+	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, 1.0f, 1.0f, 1.0f));
+}
