@@ -388,6 +388,7 @@ private:
 	float stDevBase;
 	float stDevRisePerMeter;
 	std::random_device randomDevice;
+	Mat3x4f toOriginTransform;
 
 	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();

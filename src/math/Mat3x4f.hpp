@@ -68,6 +68,14 @@ struct Mat3x4f
 		return rz * ry * rx;
 	}
 
+	static HostDevFn inline Mat3x4f rotationRad(rgl_axis_t axis, float angleRad)
+	{
+		float rotX = axis == RGL_AXIS_X ? angleRad : 0.0f;
+		float rotY = axis == RGL_AXIS_Y ? angleRad : 0.0f;
+		float rotZ = axis == RGL_AXIS_Z ? angleRad : 0.0f;
+		return rotationRad(rotX, rotY, rotZ);
+	}
+
 	static HostDevFn inline Mat3x4f rotation(float x, float y, float z)
 	{
 		float toRad = (M_PI / 180.0f);
@@ -151,12 +159,12 @@ struct Mat3x4f
 		return true;
 	}
 
-	HostDevFn inline Vec3f translation()
+	HostDevFn inline Vec3f translation() const
 	{
 		return {rc[0][3], rc[1][3], rc[2][3]};
 	}
 
-	HostDevFn inline Mat3x4f rotation()
+	HostDevFn inline Mat3x4f rotation() const
 	{
 		return {
 			rc[0][0], rc[0][1], rc[0][2], 0.0f,

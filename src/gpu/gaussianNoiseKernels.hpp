@@ -23,5 +23,5 @@ void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float m
 	curandStatePhilox4_32_10_t* randomStates, const Mat3x4f* inRays, Mat3x4f* outRays);
 void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f toOriginTransform,
 	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances);
-void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, curandStatePhilox4_32_10_t* randomStates,
-	const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances);
+void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, Mat3x4f toOriginTransform,
+	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances);

@@ -34,10 +34,7 @@ __global__ void kAddGaussianNoiseAngularRay(size_t rayCount, float mean, float s
 	LIMIT(rayCount);
 
 	float angularError = mean + curand_normal(&randomStates[tid]) * stDev;
-	float rotX = rotationAxis == RGL_AXIS_X ? angularError : 0.0f;
-	float rotY = rotationAxis == RGL_AXIS_Y ? angularError : 0.0f;
-	float rotZ = rotationAxis == RGL_AXIS_Z ? angularError : 0.0f;
-	outRays[tid] = toOriginTransform.inverse() * (Mat3x4f::rotationRad(rotX, rotY, rotZ) * (toOriginTransform * inRays[tid]));
+	outRays[tid] = toOriginTransform.inverse() * (Mat3x4f::rotationRad(rotationAxis, angularError) * (toOriginTransform * inRays[tid]));
 }
 
 __global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f toOriginTransform,
@@ -46,22 +43,23 @@ __global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, 
 	LIMIT(pointCount);
 
 	float angularError = mean + curand_normal(&randomStates[tid]) * stDev;
-	float rotX = rotationAxis == RGL_AXIS_X ? angularError : 0.0f;
-	float rotY = rotationAxis == RGL_AXIS_Y ? angularError : 0.0f;
-	float rotZ = rotationAxis == RGL_AXIS_Z ? angularError : 0.0f;
-	outPoints[tid] = toOriginTransform.inverse() * (Mat3x4f::rotationRad(rotX, rotY, rotZ) * (toOriginTransform * inPoints[tid]));
+	Field<XYZ_F32>::type originWithNoisePoint = Mat3x4f::rotationRad(rotationAxis, angularError) * (toOriginTransform * inPoints[tid]);
 
 	if (outDistances != nullptr) {
-		outDistances[tid] = outPoints[tid].length();
+		outDistances[tid] = originWithNoisePoint.length();
 	}
+
+	outPoints[tid] = toOriginTransform.inverse() * originWithNoisePoint;
 }
 
-__global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, curandStatePhilox4_32_10_t* randomStates,
-	const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+__global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, Mat3x4f toOriginTransform,
+	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
 {
 	LIMIT(pointCount);
 
-	float distance = inPoints[tid].length();
+	Field<XYZ_F32>::type originPoint = toOriginTransform * inPoints[tid];
+
+	float distance = originPoint.length();
 	float distanceInducedStDev = distance * stDevRisePerMeter;
 	float totalStDev = distanceInducedStDev + stDevBase;
 
@@ -71,7 +69,7 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 		outDistances[tid] = distance + distanceError;
 	}
 
-	outPoints[tid] = inPoints[tid].normalize() * (distance + distanceError);
+	outPoints[tid] = toOriginTransform.inverse() * (originPoint.normalize() * (distance + distanceError));
 }
 
 
@@ -86,6 +84,6 @@ void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, 
 	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
 { run(kAddGaussianNoiseAngularHitpoint, stream, pointCount, mean, stDev, rotationAxis, toOriginTransform, randomStates, inPoints, outPoints, outDistances); }
 
-void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, curandStatePhilox4_32_10_t* randomStates,
-	const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
-{ run(kAddGaussianNoiseDistance, stream, pointCount, mean, stDevBase, stDevRisePerMeter, randomStates, inPoints, outPoints, outDistances); }
+void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, Mat3x4f toOriginTransform,
+	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+{ run(kAddGaussianNoiseDistance, stream, pointCount, mean, stDevBase, stDevRisePerMeter, toOriginTransform, randomStates, inPoints, outPoints, outDistances); }

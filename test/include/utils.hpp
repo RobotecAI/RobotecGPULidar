@@ -39,43 +39,25 @@ protected:
 	}
 };
 
-
-template <typename T>
-std::vector<float> computeDistances(const T* data, int size)
-{
-    std::vector<float> return_data(size);
-    for (int i = 0; i < size; i++) {
-        return_data[i] = sqrt(data[i].value[0] * data[i].value[0] + data[i].value[1] * data[i].value[1] + data[i].value[2] * data[i].value[2]);
-    }
-    return return_data;
-}
-
 template <typename T>
 std::vector<float> computeAngles(const T* data, int size)
 {
-    std::vector<float> return_data(size);
+    std::vector<float> outAngles(size);
     for (int i = 0; i < size; i++) {
-        return_data[i] = std::atan2(data[i].value[2], data[i].value[0]);
+        outAngles[i] = std::atan2(data[i].z(), data[i].x());
     }
-    return return_data;
+    return outAngles;
 }
 
-// static void getLidarResults(rgl_lidar_t lidar, int* hitpointCount, void* results)
-// {
-// 	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
-// 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_size(lidar, hitpointCount));
-// 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, results));
-// }
-
 template<typename T>
-std::pair<T, T> mean_and_stdev(std::vector<T> v) {
+std::pair<T, T> calcMeanAndStdev(std::vector<T> v) {
 	float sum = std::accumulate(v.begin(), v.end(), 0.0);
 	float mean = sum / v.size();
 
 	std::vector<float> diff(v.size());
 	std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
-	float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-	float stdev = std::sqrt(sq_sum / v.size());
+	float sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+	float stdev = std::sqrt(sqSum / v.size());
 
 	return {mean, stdev};
 }
