@@ -61,6 +61,7 @@ struct IPointsNode
 
 	// Point cloud description
 	virtual bool isDense() const = 0;
+	virtual bool hasField(rgl_field_t field) const = 0;
 	virtual std::size_t getWidth() const = 0;
 	virtual std::size_t getHeight() const = 0;
 	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
@@ -68,7 +69,6 @@ struct IPointsNode
 	virtual Mat3x4f getLookAtOriginTransform() const = 0;
 
 	// Data getters
-	virtual bool hasField(rgl_field_t field) const = 0;
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 

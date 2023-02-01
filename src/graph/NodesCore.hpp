@@ -251,17 +251,17 @@ struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
 
 	// Point cloud description
 	bool isDense() const override;
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	std::size_t getWidth() const override { return width; }
 	std::size_t getHeight() const override { return 1; }
 
 	// Data getters
-	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
 
 private:
 	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
-	std::size_t width{0};
+	std::size_t width = 0;
 };
 
 struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
@@ -278,16 +278,16 @@ struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
 	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
 
 	// Point cloud description
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	std::size_t getWidth() const override { return width; }
 
 	// Data getters
-	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
 
 private:
 	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
-	std::size_t width{0};
+	std::size_t width = 0;
 };
 
 struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput

@@ -17,7 +17,7 @@
 
 void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
-	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
+	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field){ return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
 		throw InvalidAPIArgument("cannot perform spatial merge on field 'RGL_FIELD_DYNAMIC_FORMAT'");
 	}
 
@@ -48,9 +48,9 @@ void SpatialMergePointsNode::validate()
 		}
 
 		// Check input pointcloud has required fields
-		for (const auto& [requiredField, _] : mergedData) {
+		for (const auto& requiredField : std::views::keys(mergedData)) {
 			if (!input->hasField(requiredField)) {
-				auto msg = fmt::format("SpatialMergePointsNode input has not required field '{}'",
+				auto msg = fmt::format("SpatialMergePointsNode input does not have required field '{}'",
 				                       toString(requiredField));
 				throw InvalidPipeline(msg);
 			}
@@ -65,6 +65,7 @@ void SpatialMergePointsNode::schedule(cudaStream_t stream)
 		width += input->getWidth();
 	}
 
+	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {
 		data->resize(width, false, false);
 		size_t offset = 0;
@@ -79,9 +80,6 @@ void SpatialMergePointsNode::schedule(cudaStream_t stream)
 
 bool SpatialMergePointsNode::isDense() const
 {
-	auto notDense = [](IPointsNode::Ptr node) { return node->isDense() == false; };
-	if (std::any_of(pointInputs.begin(), pointInputs.end(), notDense)) {
-		return false;
-	}
-	return true;
+	return std::all_of(pointInputs.begin(), pointInputs.end(),
+	                   [](IPointsNode::Ptr node) { return node->isDense(); });
 }
