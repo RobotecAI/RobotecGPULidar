@@ -1,17 +1,10 @@
 #include <gtest/gtest.h>
-#include <numbers>
 
 #include <utils.hpp>
 #include <scenes.hpp>
 
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
-#include <graph/NodesCore.hpp>
-
-#include <rgl/api/extensions/visualize.h>
-#include <thread>
-#include <chrono>
-using namespace std::chrono_literals;
 
 using namespace ::testing;
 
@@ -143,6 +136,7 @@ TEST_F(GaussianStress, GaussianNoiseAngularHitpoint)
 
 		auto outAngles = computeAngles(outPoints.data(), outPoints.size());
 		auto [realMean, realStdev] = calcMeanAndStdev(outAngles);
+		// Not exactly expected hitpoint, but angle is the same
 		auto expectedHitpoint = (Mat3x4f::rotationRad(ANGULAR_AXIS, MEAN) * Mat3x4f::translation(noiselessHitpointInLidarFrame)).translation();
 		float expectedMean = computeAngles(&expectedHitpoint, 1)[0];
 

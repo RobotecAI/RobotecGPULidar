@@ -463,39 +463,39 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path);
 
 /**
  * Creates or modifies GaussianNoiseAngularRayNode.
- * ...
- * Graph input: point cloud
- * Graph output: point cloud
+ * Applies angular noise to the rays before raycasting.
+ * Graph input: rays
+ * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param mean ...
- * @param st_dev ...
- * @param axis ...
+ * @param mean Angular noise mean in radians.
+ * @param st_dev Angular noise standard deviation in radians.
+ * @param axis Axis on which angular noise will be perform.
  */
 RGL_API rgl_status_t
 rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
 
 /**
  * Creates or modifies GaussianNoiseAngularHitpointNode.
- * ...
- * Graph input: point cloud
+ * Adds angular noise to already computed hitpoints.
+ * Graph input: RaytraceNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param mean ...
- * @param st_dev ...
- * @param axis ...
+ * @param mean Angular noise mean in radians.
+ * @param st_dev Angular noise standard deviation in radians.
+ * @param axis Axis on which angular noise will be perform.
  */
 RGL_API rgl_status_t
 rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
 
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
- * ...
+ * Changes the distance between hitpoint and lidar's origin.
  * Graph input: RaytraceNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param mean ...
- * @param st_dev_base ...
- * @param st_dev_rise_per_meter ...
+ * @param mean Distance noise mean in meters.
+ * @param st_dev_base Distance noise standard deviation base in meters.
+ * @param st_dev_rise_per_meter Distance noise standard deviation rise per meter.
  */
 RGL_API rgl_status_t
 rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base, float st_dev_rise_per_meter);
