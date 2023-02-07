@@ -53,7 +53,6 @@ private:
 	static rclcpp::Node::SharedPtr ros2Node;
 	static std::string ros2NodeName;
 	static std::set<std::string> ros2TopicNames;
-	static rclcpp::executors::StaticSingleThreadedExecutor::SharedPtr ros2Executor;
 
 	void updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense);
 };

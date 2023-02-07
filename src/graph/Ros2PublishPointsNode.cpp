@@ -18,8 +18,6 @@
 rclcpp::Node::SharedPtr Ros2PublishPointsNode::ros2Node = nullptr;
 std::string Ros2PublishPointsNode::ros2NodeName = "RobotecGPULidar";
 std::set<std::string> Ros2PublishPointsNode::ros2TopicNames = {};
-rclcpp::executors::StaticSingleThreadedExecutor::SharedPtr
-	Ros2PublishPointsNode::ros2Executor = nullptr;
 
 void Ros2PublishPointsNode::setParameters(
 	const char* topicName, const char* frameId,
@@ -32,8 +30,6 @@ void Ros2PublishPointsNode::setParameters(
 		rclcpp::init(2, args);
 
 		ros2Node = std::make_shared<rclcpp::Node>(ros2NodeName);
-		ros2Executor = std::make_shared<rclcpp::executors::StaticSingleThreadedExecutor>();
-		ros2Executor->add_node(ros2Node);
 	}
 
 	if (ros2TopicNames.contains(topicName) && this->topicName != topicName) {
@@ -75,7 +71,6 @@ void Ros2PublishPointsNode::schedule(cudaStream_t stream)
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
 	ros2Publisher->publish(ros2Message);
-	ros2Executor->spin_some();
 }
 
 Ros2PublishPointsNode::~Ros2PublishPointsNode()
@@ -85,7 +80,6 @@ Ros2PublishPointsNode::~Ros2PublishPointsNode()
 
 	if (ros2TopicNames.empty()) {
 		rclcpp::shutdown();
-		ros2Executor.reset();
 		ros2Node.reset();
 	}
 }
