@@ -17,8 +17,8 @@ The next chapters describe them in greater detail.
 
 | Noise type | Visualization |
 |------------|---------------|
-| **Ray-based angular noise:** <li> Rotate rays around Y-axis of the lidar <br> <li> This kind of noise intends to model the noise in lidar's rotational speed |![Angular ray 2](image/Angular_ray_2.png)  |
-| **Hitpoint-based angular noise** <br> <li> Rotate hitpoints around Y-axis of the lidar <br> <li> This is different than rotating rays! Think of the effect on hitpoints on surfaces near-parallel to the ray <br> <li> This kind of noise could model e.g. error in reading position of the rotated laser or sensor | ![Angular hitpoint 3](image/Angular_hitpoint_3.png) |
+| **Ray-based angular noise:** <li> Rotate rays around selected axis of the lidar <br> <li> This kind of noise intends to model the noise in lidar's rotational speed |![Angular ray 2](image/Angular_ray_2.png)  |
+| **Hitpoint-based angular noise** <br> <li> Rotate hitpoints around selected axis of the lidar <br> <li> This is different than rotating rays! Think of the effect on hitpoints on surfaces near-parallel to the ray <br> <li> This kind of noise could model e.g. error in reading position of the rotated laser or sensor | ![Angular hitpoint 3](image/Angular_hitpoint_3.png) |
 | **Distance noise** <br> <li> This kind of noise can model e.g. error in measuring time-of-flight | ![Distance noise 3](image/Distance_3.png) |
 
 ## Ray-based angular noise
