@@ -81,6 +81,9 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
 	if (ctx.intensity != nullptr) {
 		ctx.intensity[rayIdx] = 100;
 	}
+	if (ctx.timestamp != nullptr) {
+		ctx.timestamp[rayIdx] = ctx.sceneTime;
+	}
 }
 
 extern "C" __global__ void __raygen__()

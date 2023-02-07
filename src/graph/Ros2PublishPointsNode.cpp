@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/NodesRos2.hpp>
+#include <scene/Scene.hpp>
 #include <RGLFields.hpp>
 
 rclcpp::Node::SharedPtr Ros2PublishPointsNode::ros2Node = nullptr;
@@ -70,6 +71,11 @@ void Ros2PublishPointsNode::schedule(cudaStream_t stream)
 	fieldData->getData(ros2Message.data.data(), ros2Message.point_step * count);
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
+	// TODO(msz-rai): Assign scene to the Graph.
+	// For now, only default scene is supported.
+	ros2Message.header.stamp = Scene::defaultInstance()->getTime().has_value() ?
+	                           Scene::defaultInstance()->getTime()->asRos2Msg() :
+	                           static_cast<builtin_interfaces::msg::Time>(ros2Node->get_clock()->now());
 	ros2Publisher->publish(ros2Message);
 }
 

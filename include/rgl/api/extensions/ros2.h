@@ -59,6 +59,7 @@ typedef enum
  * Creates or modifies Ros2PublishPointsNode.
  * The node publishes a PointCloud2 message to the ROS2 topic using default Quality of Service settings.
  * Fields and their layout in the binary data blob will be automatically determined based on the preceding FormatNode.
+ * The message header stamp gets time from the raytraced scene. If the scene has no time, header will get the actual time.
  * Graph input: FormatNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
@@ -72,6 +73,7 @@ rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const cha
  * Creates or modifies Ros2PublishPointsNode.
  * The node publishes a PointCloud2 message to the ROS2 topic with Quality of Service specified.
  * Fields and their layout in the binary data blob will be automatically determined based on the preceding FormatNode.
+ * The message header stamp gets time from the raytraced scene. If the scene has no time, header will get the actual time.
  * Graph input: FormatNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
