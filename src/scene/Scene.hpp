@@ -42,7 +42,7 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 	void clear();
 
 	void setTime(Time time) { this->time = time; }
-	Time getTime() { return time; }
+	std::optional<Time> getTime() { return time; }
 
 	std::size_t getObjectCount();
 
@@ -66,5 +66,5 @@ private:
 
 	DeviceBuffer<OptixInstance> dInstances;
 
-	Time time = Time::zero();
+	std::optional<Time> time;
 };

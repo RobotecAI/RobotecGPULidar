@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifdef RGL_BUILD_ROS2_EXTENSION
+#include <builtin_interfaces/msg/time.hpp>
+#endif
+
 struct Time
 {
 	using SecNanosecPair = std::pair<int32_t, uint32_t>;
@@ -30,6 +34,16 @@ struct Time
 	{ return static_cast<double>(time.first) + static_cast<double>(time.second) * 1.0e-9; };
 	SecNanosecPair asSecNanosec()
 	{ return time; };
+
+	#ifdef RGL_BUILD_ROS2_EXTENSION
+	builtin_interfaces::msg::Time asRos2Msg()
+	{
+		auto msg = builtin_interfaces::msg::Time();
+		msg.sec = time.first;
+		msg.nanosec = time.second;
+		return msg;
+	}
+	#endif
 
 	inline bool operator==(const Time& other) const
 	{ return time.first == other.time.first && time.second == other.time.second; }
