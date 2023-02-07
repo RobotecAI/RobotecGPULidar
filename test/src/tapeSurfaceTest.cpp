@@ -29,7 +29,7 @@ TEST_F(Tape, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
 
-	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, 1, 500));
+	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, 1.5 * 1e9));
 
 	rgl_node_t useRays = nullptr;
 	std::vector<rgl_mat3x4f> rays = {identityTf, identityTf};

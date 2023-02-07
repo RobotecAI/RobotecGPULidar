@@ -335,11 +335,10 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
  * Time indicates a specific point in time, relative to a clock's 0 point.
  * Timestamp is used to fill field RGL_FIELD_TIME_STAMP_F64 or for ROS2 publishing.
  * @param scene Scene where time will be set. Pass NULL to use the default scene.
- * @param seconds Seconds since clock's 0 point.
- * @param nanoseconds Nanoseconds since last second.
+ * @param nanoseconds Timestamp in nanoseconds.
  */
 RGL_API rgl_status_t
-rgl_scene_set_time(rgl_scene_t scene, int32_t seconds, uint32_t nanoseconds);
+rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds);
 
 /******************************** NODES ********************************/
 

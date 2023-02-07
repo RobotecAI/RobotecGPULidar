@@ -20,34 +20,25 @@
 
 struct Time
 {
-	using SecNanosecPair = std::pair<int32_t, uint32_t>;
+	static Time zero() { return Time(0); }
+	static Time seconds(double seconds) { return Time(static_cast<uint64_t>(seconds * 1.0e9)); }
+	static Time nanoseconds(uint64_t nanoseconds) { return Time(nanoseconds); }
 
-	static Time zero()
-	{ return Time(0, 0); }
-
-	Time(int32_t seconds, uint32_t nanoseconds)
-	{ time = std::make_pair(seconds, nanoseconds); }
-	Time(double seconds)
-	{ time = std::make_pair(static_cast<int32_t>(seconds), static_cast<uint32_t>(seconds * 1.0e9)); };
-
-	double asDouble()
-	{ return static_cast<double>(time.first) + static_cast<double>(time.second) * 1.0e-9; };
-	SecNanosecPair asSecNanosec()
-	{ return time; };
+	double asSeconds() { return static_cast<double>(timeNs) * 1.0e-9; };
+	uint64_t asNanoseconds() { return timeNs; }
 
 	#ifdef RGL_BUILD_ROS2_EXTENSION
 	builtin_interfaces::msg::Time asRos2Msg()
 	{
 		auto msg = builtin_interfaces::msg::Time();
-		msg.sec = time.first;
-		msg.nanosec = time.second;
+		msg.sec = timeNs / static_cast<uint64_t>(1e9);
+		msg.nanosec = timeNs % static_cast<uint64_t>(1e9);
 		return msg;
 	}
 	#endif
 
-	inline bool operator==(const Time& other) const
-	{ return time.first == other.time.first && time.second == other.time.second; }
-
 private:
-	SecNanosecPair time;
+	Time(uint64_t nanoseconds) { timeNs = nanoseconds; }
+
+	uint64_t timeNs;
 };
