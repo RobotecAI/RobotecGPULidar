@@ -53,12 +53,14 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
 		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 		.scene = sceneAS,
+		.sceneTime = scene->getTime().asDouble(),
 		.xyz = getPtrTo<XYZ_F32>(),
 		.isHit = getPtrTo<IS_HIT_I32>(),
 		.rayIdx = getPtrTo<RAY_IDX_U32>(),
 		.ringIdx = getPtrTo<RING_ID_U16>(),
 		.distance = getPtrTo<DISTANCE_F32>(),
 		.intensity = getPtrTo<INTENSITY_F32>(),
+		.timestamp = getPtrTo<TIME_STAMP_F64>(),
 	};
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();

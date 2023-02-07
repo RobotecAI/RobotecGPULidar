@@ -30,6 +30,7 @@ struct RaytraceRequestContext
 	size_t ringIdsCount;
 
 	OptixTraversableHandle scene;
+	double sceneTime;
 
 	// Output
 	Field<XYZ_F32>::type* xyz;
@@ -38,5 +39,6 @@ struct RaytraceRequestContext
 	Field<RING_ID_U16>::type* ringIdx;
 	Field<DISTANCE_F32>::type* distance;
 	Field<INTENSITY_F32>::type* intensity;
+	Field<TIME_STAMP_F64>::type* timestamp;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);
