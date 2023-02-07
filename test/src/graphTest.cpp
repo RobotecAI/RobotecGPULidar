@@ -3,6 +3,7 @@
 #include <scenes.hpp>
 #include <lidars.hpp>
 #include <RGLFields.hpp>
+#include <Time.hpp>
 
 #include <math/Mat3x4f.hpp>
 
@@ -140,8 +141,12 @@ TEST_F(Graph, FormatNodeResults)
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
 	std::vector<rgl_field_t> formatFields = {
 		XYZ_F32,
-		PADDING_32
+		PADDING_32,
+		TIME_STAMP_F64
 	};
+
+	Time timestamp = Time::seconds(1.5);
+	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, timestamp.asNanoseconds()));
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
@@ -161,6 +166,7 @@ TEST_F(Graph, FormatNodeResults)
 	{
 		Field<XYZ_F32>::type xyz;
 		Field<PADDING_32>::type padding;
+		Field<TIME_STAMP_F64>::type timestamp;
 	} formatStruct;
 
 	EXPECT_EQ(outCount, rays.size());
@@ -173,6 +179,7 @@ TEST_F(Graph, FormatNodeResults)
 		EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], 1e-6);
 		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], 1e-6);
 		EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
+		EXPECT_EQ(formatData[i].timestamp, timestamp.asSeconds());
 	}
 }
 

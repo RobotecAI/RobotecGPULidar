@@ -25,6 +25,11 @@ void RaytraceNode::validate()
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
 		throw InvalidPipeline(msg);
 	}
+
+	if (fields.contains(TIME_STAMP_F64) && !scene->getTime().has_value()) {
+		auto msg = fmt::format("requested for field TIME_STAMP_F64, but RaytraceNode cannot get time from scene");
+		throw InvalidPipeline(msg);
+	}
 }
 
 template<rgl_field_t field>
@@ -53,12 +58,14 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
 		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 		.scene = sceneAS,
+		.sceneTime = scene->getTime()->asSeconds(),
 		.xyz = getPtrTo<XYZ_F32>(),
 		.isHit = getPtrTo<IS_HIT_I32>(),
 		.rayIdx = getPtrTo<RAY_IDX_U32>(),
 		.ringIdx = getPtrTo<RING_ID_U16>(),
 		.distance = getPtrTo<DISTANCE_F32>(),
 		.intensity = getPtrTo<INTENSITY_F32>(),
+		.timestamp = getPtrTo<TIME_STAMP_F64>(),
 	};
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
