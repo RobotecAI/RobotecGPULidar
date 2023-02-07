@@ -21,6 +21,7 @@
 #include <scene/ASBuildScratchpad.hpp>
 #include <APIObject.hpp>
 
+#include <Time.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
 
 struct Entity;
@@ -39,6 +40,9 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 	void addEntity(std::shared_ptr<Entity> entity);
 	void removeEntity(std::shared_ptr<Entity> entity);
 	void clear();
+
+	void setTime(Time time) { this->time = time; }
+	Time getTime() { return time; }
 
 	std::size_t getObjectCount();
 
@@ -61,4 +65,6 @@ private:
 	std::optional<OptixShaderBindingTable> cachedSBT;
 
 	DeviceBuffer<OptixInstance> dInstances;
+
+	Time time = Time::zero();
 };

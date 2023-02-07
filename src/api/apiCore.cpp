@@ -275,6 +275,27 @@ void TapePlayer::tape_entity_set_pose(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_scene_set_time(rgl_scene_t scene, int32_t seconds, uint32_t nanoseconds)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_scene_set_time(scene={}, seconds={}, nanoseconds={})", (void*) scene, seconds, nanoseconds);
+		if (scene == nullptr) {
+			scene = Scene::defaultInstance().get();
+		}
+		Scene::validatePtr(scene)->setTime(Time(seconds, nanoseconds));
+	});
+	TAPE_HOOK(scene, seconds, nanoseconds);
+	return status;
+}
+
+void TapePlayer::tape_scene_set_time(const YAML::Node& yamlNode)
+{
+	rgl_scene_set_time(nullptr,  // TODO(msz-rai) support multiple scenes
+		yamlNode[1].as<int32_t>(),
+		yamlNode[2].as<uint32_t>());
+}
+
+RGL_API rgl_status_t
 rgl_graph_run(rgl_node_t node)
 {
 	auto status = rglSafeCall([&]() {
