@@ -33,6 +33,7 @@ And more:
 - Converting to custom binary output
 - Downsampling
 - Writing to PCD file
+- Gaussian noise (see [documentation](docs/GaussianNoise.md))
 
 ## Runtime requirements
 

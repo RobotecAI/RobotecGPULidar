@@ -98,7 +98,7 @@ NAMED_GETTER(z, 2)
 		}                               \
 		return *this;                   \
 	}                                   \
-HostDevFn friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs; } \
+	HostDevFn friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs; } \
 
 	PIECEWISE_OPERATOR(+, +=)
 	PIECEWISE_OPERATOR(-, -=)
@@ -106,16 +106,19 @@ HostDevFn friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs;
 	PIECEWISE_OPERATOR(/, /=)
 #undef PIECEWISE_OPERATOR
 
-HostDevFn T lengthSquared() const {
+	HostDevFn T lengthSquared() const {
 		auto sum = static_cast<T>(0);
 		for (int i = 0; i < dim; ++i) {
 			sum += row[i] * row[i];
 		}
 		return sum;
 	}
+
 	HostDevFn T length() const { return std::sqrt(lengthSquared()); }
 
 	HostDevFn V half() const { return *this / V {static_cast<T>(2)}; }
+
+	HostDevFn V normalize() const { return *this / length(); }
 
 	HostDevFn T min() const {
 		T value = std::numeric_limits<T>::max();

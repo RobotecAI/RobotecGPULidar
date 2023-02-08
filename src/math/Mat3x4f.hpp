@@ -14,24 +14,13 @@
 
 #pragma once
 
-#ifndef __host__
-#define __host__
-#endif
-
-#ifndef __device__
-#define __device__
-#endif
-
+#include <macros/cuda.hpp>
 #include <math/floatComparison.hpp>
-#include <rgl/api/core.h>
 #include <math/Vector.hpp>
-
-#ifndef __CUDACC__
-#include <spdlog/fmt/fmt.h>
-#endif
+#include <rgl/api/core.h>
 
 struct Mat3x4f;
-__host__ __device__ Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs);
+HostDevFn Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs);
 
 struct Mat3x4f
 {
@@ -40,7 +29,7 @@ struct Mat3x4f
 
 	float rc[ROWS][COLS];
 
-	static Mat3x4f identity()
+	static HostDevFn Mat3x4f identity()
 	{
 		return {
 			1, 0, 0, 0,
@@ -49,7 +38,7 @@ struct Mat3x4f
 		};
 	}
 
-	static inline Mat3x4f scale(float x, float y, float z)
+	static HostDevFn inline Mat3x4f scale(float x, float y, float z)
 	{
 		return {
 			x, 0, 0, 0,
@@ -58,34 +47,45 @@ struct Mat3x4f
 		};
 	}
 
-	static inline Mat3x4f rotationRad(float x, float y, float z)
+	static HostDevFn inline Mat3x4f rotationRad(float x, float y, float z)
 	{
-		// https://en.wikipedia.org/wiki/Rotation_matrix#Basic_rotations
-		Mat3x4f rx = {
-			1,       0,        0, 0,
-			0, cosf(x), -sinf(x), 0,
-			0, sinf(x),  cosf(x), 0
-		};
-		Mat3x4f ry = {
-			 cosf(y), 0, sinf(y), 0,
-			       0, 1,       0, 0,
-			-sinf(y), 0, cosf(y), 0
-		};
-		Mat3x4f rz = {
-			cosf(z), -sinf(z), 0, 0,
-			sinf(z),  cosf(z), 0, 0,
-			      0,        0, 1, 0
-		};
-		return rz * ry * rx;
+		// Based on https://github.com/microsoft/DirectXMath/blob/main/Inc/DirectXMathMatrix.inl#L1697
+		// Instead of creating three matrices and muling, we create subproducts of the matrix, ommiting zeros elements.
+		float cr = cosf(x);
+		float sr = sinf(x);
+		float cp = cosf(y);
+		float sp = sinf(y);
+		float cy = cosf(z);
+		float sy = sinf(z);
+
+		Mat3x4f m = Mat3x4f::identity();
+		m.rc[0][0] = cp * cy;
+		m.rc[0][1] = sr * sp * cy - cr * sy;
+		m.rc[0][2] = sr * sy + cr * sp * cy;
+		m.rc[1][0] = cp * sy;
+		m.rc[1][1] = cr * cy + sr * sp * sy;
+		m.rc[1][2] = cr * sp * sy - sr * cy;
+		m.rc[2][0] = -sp;
+		m.rc[2][1] = sr * cp;
+		m.rc[2][2] = cr * cp;
+		return m;
 	}
 
-	static inline Mat3x4f rotation(float x, float y, float z)
+	static HostDevFn inline Mat3x4f rotationRad(rgl_axis_t axis, float angleRad)
+	{
+		float rotX = axis == RGL_AXIS_X ? angleRad : 0.0f;
+		float rotY = axis == RGL_AXIS_Y ? angleRad : 0.0f;
+		float rotZ = axis == RGL_AXIS_Z ? angleRad : 0.0f;
+		return rotationRad(rotX, rotY, rotZ);
+	}
+
+	static HostDevFn inline Mat3x4f rotation(float x, float y, float z)
 	{
 		float toRad = (M_PI / 180.0f);
 		return rotationRad(x * toRad, y * toRad, z * toRad);
 	}
 
-	static inline Mat3x4f translation(float x, float y, float z)
+	static HostDevFn inline Mat3x4f translation(float x, float y, float z)
 	{
 		return {
 			1, 0, 0, x,
@@ -94,7 +94,16 @@ struct Mat3x4f
 		};
 	}
 
-	static inline Mat3x4f TRS(Vec3f t, Vec3f r={0, 0, 0}, Vec3f s={1, 1, 1})
+	static HostDevFn inline Mat3x4f translation(const Vec3f point)
+	{
+		return {
+			1, 0, 0, point.x(),
+			0, 1, 0, point.y(),
+			0, 0, 1, point.z()
+		};
+	}
+
+	static HostDevFn inline Mat3x4f TRS(Vec3f t, Vec3f r={0, 0, 0}, Vec3f s={1, 1, 1})
 	{
 		auto T = Mat3x4f::translation(t.x(), t.y(), t.z());
 		auto R = Mat3x4f::rotation(r.x(), r.y(), r.z());
@@ -102,7 +111,7 @@ struct Mat3x4f
 		return T * R * S;
 	}
 
-	static inline Mat3x4f shear(Vec2f x, Vec2f y={0, 0}, Vec2f z={0,0})
+	static HostDevFn inline Mat3x4f shear(Vec2f x, Vec2f y={0, 0}, Vec2f z={0,0})
 	{
 		return {
 			   1, y[0], z[0], 0,
@@ -153,12 +162,12 @@ struct Mat3x4f
 		return true;
 	}
 
-	__host__ __device__ inline Vec3f translation()
+	HostDevFn inline Vec3f translation() const
 	{
 		return {rc[0][3], rc[1][3], rc[2][3]};
 	}
 
-	__host__ __device__ inline Mat3x4f rotation()
+	HostDevFn inline Mat3x4f rotation() const
 	{
 		return {
 			rc[0][0], rc[0][1], rc[0][2], 0.0f,
@@ -167,13 +176,83 @@ struct Mat3x4f
 		};
 	}
 
+	// Converts to Matrix 4x4 and performs inverse operation.
+	// If determinant is zero (cannot inverse) it returns Matrix filled with zeros.
+	HostDevFn inline Mat3x4f inverse() const noexcept
+	{
+		// Convert to 4x4
+		float m[4][4] = {
+			rc[0][0], rc[0][1], rc[0][2], rc[0][3],
+			rc[1][0], rc[1][1], rc[1][2], rc[1][3],
+			rc[2][0], rc[2][1], rc[2][2], rc[2][3],
+			0,        0,        0,        1
+		};
+		// Based on https://stackoverflow.com/a/60374938
+		float A2323 = m[2][2] * m[3][3] - m[2][3] * m[3][2];
+		float A1323 = m[2][1] * m[3][3] - m[2][3] * m[3][1];
+		float A1223 = m[2][1] * m[3][2] - m[2][2] * m[3][1];
+		float A0323 = m[2][0] * m[3][3] - m[2][3] * m[3][0];
+		float A0223 = m[2][0] * m[3][2] - m[2][2] * m[3][0];
+		float A0123 = m[2][0] * m[3][1] - m[2][1] * m[3][0];
+		float A2313 = m[1][2] * m[3][3] - m[1][3] * m[3][2];
+		float A1313 = m[1][1] * m[3][3] - m[1][3] * m[3][1];
+		float A1213 = m[1][1] * m[3][2] - m[1][2] * m[3][1];
+		float A2312 = m[1][2] * m[2][3] - m[1][3] * m[2][2];
+		float A1312 = m[1][1] * m[2][3] - m[1][3] * m[2][1];
+		float A1212 = m[1][1] * m[2][2] - m[1][2] * m[2][1];
+		float A0313 = m[1][0] * m[3][3] - m[1][3] * m[3][0];
+		float A0213 = m[1][0] * m[3][2] - m[1][2] * m[3][0];
+		float A0312 = m[1][0] * m[2][3] - m[1][3] * m[2][0];
+		float A0212 = m[1][0] * m[2][2] - m[1][2] * m[2][0];
+		float A0113 = m[1][0] * m[3][1] - m[1][1] * m[3][0];
+		float A0112 = m[1][0] * m[2][1] - m[1][1] * m[2][0];
+
+		float det = m[0][0] * ( m[1][1] * A2323 - m[1][2] * A1323 + m[1][3] * A1223 )
+		            - m[0][1] * ( m[1][0] * A2323 - m[1][2] * A0323 + m[1][3] * A0223 )
+		            + m[0][2] * ( m[1][0] * A1323 - m[1][1] * A0323 + m[1][3] * A0123 )
+		            - m[0][3] * ( m[1][0] * A1223 - m[1][1] * A0223 + m[1][2] * A0123 );
+
+		if (det == 0.0f) {
+			return {
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0
+			};
+		}
+		float idet = 1.0f / det;
+
+		float im[4][4];
+		im[0][0] = idet *   ( m[1][1] * A2323 - m[1][2] * A1323 + m[1][3] * A1223 );
+		im[0][1] = idet * - ( m[0][1] * A2323 - m[0][2] * A1323 + m[0][3] * A1223 );
+		im[0][2] = idet *   ( m[0][1] * A2313 - m[0][2] * A1313 + m[0][3] * A1213 );
+		im[0][3] = idet * - ( m[0][1] * A2312 - m[0][2] * A1312 + m[0][3] * A1212 );
+		im[1][0] = idet * - ( m[1][0] * A2323 - m[1][2] * A0323 + m[1][3] * A0223 );
+		im[1][1] = idet *   ( m[0][0] * A2323 - m[0][2] * A0323 + m[0][3] * A0223 );
+		im[1][2] = idet * - ( m[0][0] * A2313 - m[0][2] * A0313 + m[0][3] * A0213 );
+		im[1][3] = idet *   ( m[0][0] * A2312 - m[0][2] * A0312 + m[0][3] * A0212 );
+		im[2][0] = idet *   ( m[1][0] * A1323 - m[1][1] * A0323 + m[1][3] * A0123 );
+		im[2][1] = idet * - ( m[0][0] * A1323 - m[0][1] * A0323 + m[0][3] * A0123 );
+		im[2][2] = idet *   ( m[0][0] * A1313 - m[0][1] * A0313 + m[0][3] * A0113 );
+		im[2][3] = idet * - ( m[0][0] * A1312 - m[0][1] * A0312 + m[0][3] * A0112 );
+		im[3][0] = idet * - ( m[1][0] * A1223 - m[1][1] * A0223 + m[1][2] * A0123 );
+		im[3][1] = idet *   ( m[0][0] * A1223 - m[0][1] * A0223 + m[0][2] * A0123 );
+		im[3][2] = idet * - ( m[0][0] * A1213 - m[0][1] * A0213 + m[0][2] * A0113 );
+		im[3][3] = idet *   ( m[0][0] * A1212 - m[0][1] * A0212 + m[0][2] * A0112 );
+
+		return {
+			im[0][0], im[0][1], im[0][2], im[0][3],
+			im[1][0], im[1][1], im[1][2], im[1][3],
+			im[2][0], im[2][1], im[2][2], im[2][3],
+		};
+	}
+
 	inline Mat3x4f& operator=(const Mat3x4f& other) = default;
 
-	__host__ __device__ float& operator[](int i) {return rc[i/4][i%4];}
-	__host__ __device__ const float& operator[](int i) const {return rc[i/4][i%4];}
+	HostDevFn float& operator[](int i) {return rc[i/4][i%4];}
+	HostDevFn const float& operator[](int i) const {return rc[i/4][i%4];}
 };
 
-__host__ __device__ inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs)
+HostDevFn inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs)
 {
 #define MUL(y, x) ((lhs.rc[y][0] * rhs.rc[0][x]) + (lhs.rc[y][1] * rhs.rc[1][x]) + (lhs.rc[y][2] * rhs.rc[2][x]))
 	return {
@@ -184,7 +263,7 @@ __host__ __device__ inline Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& 
 #undef MUL
 }
 
-__host__ __device__ inline Vec3f operator*(const Mat3x4f& lhs, const Vec3f& rhs)
+HostDevFn inline Vec3f operator*(const Mat3x4f& lhs, const Vec3f& rhs)
 {
 #define MUL(i) ((lhs.rc[i][0] * rhs[0]) + (lhs.rc[i][1] * rhs[1]) + (lhs.rc[i][2] * rhs[2]))
 	return {
@@ -211,7 +290,7 @@ struct fmt::formatter<Mat3x4f>
 
 		for (int y = 0; y < Mat3x4f::ROWS; ++y) {
 			for (int x = 0; x < Mat3x4f::COLS; ++x) {
-				fmt::format_to(ctx.out(), "{:4} ", m.rc[y][x]);
+				fmt::format_to(ctx.out(), "{:.4f} ", m.rc[y][x]);
 			}
 			fmt::format_to(ctx.out(), "\n");
 		}

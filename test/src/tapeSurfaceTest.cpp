@@ -77,6 +77,15 @@ TEST_F(Tape, RecordPlayAllCalls)
 
 	// Skipping rgl_node_points_visualize (user interaction needed)
 
+	rgl_node_t noiseAngularRay = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noiseAngularRay, 0.1f, 0.1f, RGL_AXIS_X));
+
+	rgl_node_t noiseAngularHitpoint = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_hitpoint(&noiseAngularHitpoint, 0.1f, 0.1f, RGL_AXIS_X));
+
+	rgl_node_t noiseDistance = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noiseDistance, 0.1f, 0.1f, 0.01f));
+
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
