@@ -656,6 +656,81 @@ void TapePlayer::tape_node_points_write_pcd_file(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_gaussian_noise_angular_ray(node={}, mean={}, stDev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
+		CHECK_ARG(st_dev >= 0);
+		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
+
+		createOrUpdateNode<GaussianNoiseAngularRayNode>(node, mean, st_dev, rotation_axis);
+	});
+	TAPE_HOOK(node, mean, st_dev, rotation_axis);
+	return status;
+}
+
+void TapePlayer::tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_gaussian_noise_angular_ray(&node,
+		yamlNode[1].as<float>(),
+		yamlNode[2].as<float>(),
+		(rgl_axis_t)yamlNode[3].as<size_t>());
+	tapeNodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t
+rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_gaussian_noise_angular_hitpoint(node={}, mean={}, st_dev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
+		CHECK_ARG(st_dev >= 0);
+		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
+
+		createOrUpdateNode<GaussianNoiseAngularHitpointNode>(node, mean, st_dev, rotation_axis);
+	});
+	TAPE_HOOK(node, mean, st_dev, rotation_axis);
+	return status;
+}
+
+void TapePlayer::tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_gaussian_noise_angular_hitpoint(&node,
+		yamlNode[1].as<float>(),
+		yamlNode[2].as<float>(),
+		(rgl_axis_t)yamlNode[3].as<size_t>());
+	tapeNodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t
+rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base, float st_dev_rise_per_meter)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_gaussian_noise_distance(node={}, mean={}, st_dev_base={}, st_dev_rise_per_meter={})", repr(node), mean, st_dev_base, st_dev_rise_per_meter);
+		CHECK_ARG(st_dev_base >= 0);
+		CHECK_ARG(st_dev_rise_per_meter >= 0);
+
+		createOrUpdateNode<GaussianNoiseDistanceNode>(node, mean, st_dev_base, st_dev_rise_per_meter);
+	});
+	TAPE_HOOK(node, mean, st_dev_base, st_dev_rise_per_meter);
+	return status;
+}
+
+void TapePlayer::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_gaussian_noise_distance(&node,
+		yamlNode[1].as<float>(),
+		yamlNode[2].as<float>(),
+		yamlNode[3].as<float>());
+	tapeNodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t
 rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width, int32_t window_height, bool fullscreen)
 {
 	auto status = rglSafeCall([&]() {

@@ -28,6 +28,7 @@ struct IRaysNode
 	virtual std::size_t getRayCount() const = 0;
 	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
+	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
 };
 
 struct IRaysNodeSingleInput : IRaysNode
@@ -39,8 +40,9 @@ struct IRaysNodeSingleInput : IRaysNode
 	std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 
 	// Data getters
-	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const { return input->getRays(); };
-	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
+	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:
 	IRaysNode::Ptr input;
@@ -64,6 +66,8 @@ struct IPointsNode
 	virtual std::size_t getHeight() const = 0;
 	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
 
+	virtual Mat3x4f getLookAtOriginTransform() const = 0;
+
 	// Data getters
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
@@ -82,6 +86,8 @@ struct IPointsNodeSingleInput : IPointsNode
 	bool isDense() const override { return input->isDense(); }
 	size_t getWidth() const override { return input->getWidth(); }
 	size_t getHeight() const override { return input->getHeight(); }
+
+	Mat3x4f getLookAtOriginTransform() const override { return input->getLookAtOriginTransform(); }
 
 	// Data getters
 	bool hasField(rgl_field_t field) const { return input->hasField(field); }
