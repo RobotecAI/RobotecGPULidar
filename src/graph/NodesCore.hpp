@@ -144,13 +144,14 @@ struct RaytraceNode : Node, IPointsNode
 	size_t getWidth() const override { return raysNode->getRayCount(); }
 	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
 
+	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
+
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 
 	void setFields(const std::set<rgl_field_t>& fields);
-	Mat3x4f getLookAtOriginTransform() const { return raysNode->getCumulativeRayTransfrom().inverse(); }
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
@@ -174,6 +175,8 @@ struct TransformPointsNode : Node, IPointsNodeSingleInput
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;

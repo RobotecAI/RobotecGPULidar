@@ -24,12 +24,8 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 
 void GaussianNoiseAngularHitpointNode::validate()
 {
-	// Search for RaytraceNode to get ray origin transform (Should this transform be propagated over IPointsNodes?).
-	// Also, RaytraceNode guarantees fixed size of pointcloud to setup randomizationStates once.
-	RaytraceNode::Ptr rtNode = getValidInput<RaytraceNode>();
-	lookAtOriginTransform = rtNode->getLookAtOriginTransform();
-	// Explicit cast to IPointsNode.
-	input = std::dynamic_pointer_cast<IPointsNode>(rtNode);
+	input = getValidInput<IPointsNode>();
+	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.
 	// In the future: only one field should be modified.
@@ -40,12 +36,6 @@ void GaussianNoiseAngularHitpointNode::validate()
 		}
 	} else {
 		outDistance.reset();
-	}
-
-	auto pointCount = input->getPointCount();
-	if (randomizationStates->getCount() < pointCount) {
-		randomizationStates->resize(pointCount, false, false);
-		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
 	}
 }
 
@@ -58,6 +48,11 @@ void GaussianNoiseAngularHitpointNode::schedule(cudaStream_t stream)
 	if (outDistance != nullptr) {
 		outDistance->resize(pointCount, false, false);
 		outDistancePtr = outDistance->getDevicePtr();
+	}
+
+	if (randomizationStates->getCount() < pointCount) {
+		randomizationStates->resize(pointCount, false, false);
+		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
 	}
 
 	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);

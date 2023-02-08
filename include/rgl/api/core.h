@@ -478,8 +478,11 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
 /**
  * Creates or modifies GaussianNoiseAngularHitpointNode.
  * Adds angular noise to already computed hitpoints.
+ * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
+ * Should be used after raytrace node.
+ * Using this noise after nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#hitpoint-based-angular-noise
- * Graph input: RaytraceNode
+ * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param mean Angular noise mean in radians.
@@ -492,8 +495,11 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
  * Changes the distance between hitpoint and lidar's origin.
+ * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
+ * Should be used after raytrace node.
+ * Using this noise after nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#distance-noise
- * Graph input: RaytraceNode
+ * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param mean Distance noise mean in meters.
