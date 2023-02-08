@@ -18,6 +18,8 @@
 #include <set>
 #include <memory>
 #include <thread>
+#include <random>
+#include <curand_kernel.h>
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
@@ -139,8 +141,10 @@ struct RaytraceNode : Node, IPointsNode
 	// Point cloud description
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fields.contains(field); }
-	size_t getWidth() const override { return raysNode->getRays()->getCount(); }
+	size_t getWidth() const override { return raysNode->getRayCount(); }
 	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
+
+	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
@@ -172,6 +176,8 @@ struct TransformPointsNode : Node, IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
+	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
+
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
@@ -191,6 +197,7 @@ struct TransformRaysNode : Node, IRaysNodeSingleInput
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
 
 private:
 	Mat3x4f transform;
@@ -309,4 +316,84 @@ private:
 	int windowHeight;
 	bool fullscreen;
 	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+};
+
+struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
+
+	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Data getters
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+
+private:
+	float mean;
+	float stDev;
+	rgl_axis_t rotationAxis;
+	std::random_device randomDevice;
+	Mat3x4f lookAtOriginTransform;
+
+	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
+	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+};
+
+struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseAngularHitpointNode>;
+
+	void setParameters(float mean, float stDev, rgl_axis_t rotationAxis);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+
+private:
+	float mean;
+	float stDev;
+	rgl_axis_t rotationAxis;
+	std::random_device randomDevice;
+	Mat3x4f lookAtOriginTransform;
+
+	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
+	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
+	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+};
+
+struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
+
+	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+
+private:
+	float mean;
+	float stDevBase;
+	float stDevRisePerMeter;
+	std::random_device randomDevice;
+	Mat3x4f lookAtOriginTransform;
+
+	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
+	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
+	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
