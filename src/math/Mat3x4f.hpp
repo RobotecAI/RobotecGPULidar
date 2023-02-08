@@ -49,23 +49,26 @@ struct Mat3x4f
 
 	static HostDevFn inline Mat3x4f rotationRad(float x, float y, float z)
 	{
-		// https://en.wikipedia.org/wiki/Rotation_matrix#Basic_rotations
-		Mat3x4f rx = {
-			1,       0,        0, 0,
-			0, cosf(x), -sinf(x), 0,
-			0, sinf(x),  cosf(x), 0
-		};
-		Mat3x4f ry = {
-			 cosf(y), 0, sinf(y), 0,
-			       0, 1,       0, 0,
-			-sinf(y), 0, cosf(y), 0
-		};
-		Mat3x4f rz = {
-			cosf(z), -sinf(z), 0, 0,
-			sinf(z),  cosf(z), 0, 0,
-			      0,        0, 1, 0
-		};
-		return rz * ry * rx;
+		// Based on https://github.com/microsoft/DirectXMath/blob/main/Inc/DirectXMathMatrix.inl#L1697
+		// Instead of creating three matrices and muling, we create subproducts of the matrix, ommiting zeros elements.
+		float cr = cosf(x);
+		float sr = sinf(x);
+		float cp = cosf(y);
+		float sp = sinf(y);
+		float cy = cosf(z);
+		float sy = sinf(z);
+
+		Mat3x4f m = Mat3x4f::identity();
+		m.rc[0][0] = cp * cy;
+		m.rc[0][1] = sr * sp * cy - cr * sy;
+		m.rc[0][2] = sr * sy + cr * sp * cy;
+		m.rc[1][0] = cp * sy;
+		m.rc[1][1] = cr * cy + sr * sp * sy;
+		m.rc[1][2] = cr * sp * sy - sr * cy;
+		m.rc[2][0] = -sp;
+		m.rc[2][1] = sr * cp;
+		m.rc[2][2] = cr * cp;
+		return m;
 	}
 
 	static HostDevFn inline Mat3x4f rotationRad(rgl_axis_t axis, float angleRad)
