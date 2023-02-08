@@ -98,7 +98,7 @@ NAMED_GETTER(z, 2)
 		}                               \
 		return *this;                   \
 	}                                   \
-HostDevFn friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs; } \
+	HostDevFn friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs; } \
 
 	PIECEWISE_OPERATOR(+, +=)
 	PIECEWISE_OPERATOR(-, -=)

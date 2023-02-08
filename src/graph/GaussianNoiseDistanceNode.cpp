@@ -27,7 +27,7 @@ void GaussianNoiseDistanceNode::validate()
 	// Search for RaytraceNode to get ray origin transform (Should this transform be propagated over IPointsNodes?).
 	// Also, RaytraceNode guarantees fixed size of pointcloud to setup randomizationStates once.
 	RaytraceNode::Ptr rtNode = getValidInput<RaytraceNode>();
-	toOriginTransform = rtNode->getToOriginTransform();
+	lookAtOriginTransform = rtNode->getLookAtOriginTransform();
 	// Explicit cast to IPointsNode.
 	input = std::dynamic_pointer_cast<IPointsNode>(rtNode);
 
@@ -63,7 +63,7 @@ void GaussianNoiseDistanceNode::schedule(cudaStream_t stream)
 	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);
 	const auto* inXyzPtr = inXyz->getDevicePtr();
 	auto* outXyzPtr = outXyz->getDevicePtr();
-	gpuAddGaussianNoiseDistance(stream, pointCount, mean, stDevBase, stDevRisePerMeter, toOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseDistance(stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cudaStream_t stream) const

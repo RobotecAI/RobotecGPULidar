@@ -27,7 +27,7 @@ void GaussianNoiseAngularHitpointNode::validate()
 	// Search for RaytraceNode to get ray origin transform (Should this transform be propagated over IPointsNodes?).
 	// Also, RaytraceNode guarantees fixed size of pointcloud to setup randomizationStates once.
 	RaytraceNode::Ptr rtNode = getValidInput<RaytraceNode>();
-	toOriginTransform = rtNode->getToOriginTransform();
+	lookAtOriginTransform = rtNode->getLookAtOriginTransform();
 	// Explicit cast to IPointsNode.
 	input = std::dynamic_pointer_cast<IPointsNode>(rtNode);
 
@@ -63,7 +63,7 @@ void GaussianNoiseAngularHitpointNode::schedule(cudaStream_t stream)
 	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);
 	const auto* inXyzPtr = inXyz->getDevicePtr();
 	auto* outXyzPtr = outXyz->getDevicePtr();
-	gpuAddGaussianNoiseAngularHitpoint(stream, pointCount, mean, stDev, rotationAxis, toOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseAngularHitpoint(stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field, cudaStream_t stream) const

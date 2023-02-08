@@ -150,7 +150,7 @@ struct RaytraceNode : Node, IPointsNode
 
 
 	void setFields(const std::set<rgl_field_t>& fields);
-	Mat3x4f getToOriginTransform() const { return raysNode->getCumulativeRayTransfrom().inverse(); }
+	Mat3x4f getLookAtOriginTransform() const { return raysNode->getCumulativeRayTransfrom().inverse(); }
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
@@ -333,7 +333,7 @@ private:
 	float stDev;
 	rgl_axis_t rotationAxis;
 	std::random_device randomDevice;
-	Mat3x4f toOriginTransform;
+	Mat3x4f lookAtOriginTransform;
 
 	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
@@ -360,7 +360,7 @@ private:
 	float stDev;
 	rgl_axis_t rotationAxis;
 	std::random_device randomDevice;
-	Mat3x4f toOriginTransform;
+	Mat3x4f lookAtOriginTransform;
 
 	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
@@ -388,7 +388,7 @@ private:
 	float stDevBase;
 	float stDevRisePerMeter;
 	std::random_device randomDevice;
-	Mat3x4f toOriginTransform;
+	Mat3x4f lookAtOriginTransform;
 
 	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();

@@ -25,7 +25,7 @@ void GaussianNoiseAngularRayNode::setParameters(float mean, float stDev, rgl_axi
 void GaussianNoiseAngularRayNode::validate()
 {
 	input = getValidInput<IRaysNode>();
-	toOriginTransform = input->getCumulativeRayTransfrom().inverse();
+	lookAtOriginTransform = input->getCumulativeRayTransfrom().inverse();
 
 	auto rayCount = input->getRayCount();
 	rays->resize(rayCount, false, false);
@@ -40,5 +40,5 @@ void GaussianNoiseAngularRayNode::schedule(cudaStream_t stream)
 {
 	const auto* inRaysPtr = input->getRays()->getDevicePtr();
 	auto* outRaysPtr = rays->getDevicePtr();
-	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, toOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
+	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
 }

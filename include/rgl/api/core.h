@@ -464,6 +464,7 @@ rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path);
 /**
  * Creates or modifies GaussianNoiseAngularRayNode.
  * Applies angular noise to the rays before raycasting.
+ * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#ray-based-angular-noise
  * Graph input: rays
  * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
@@ -477,6 +478,7 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
 /**
  * Creates or modifies GaussianNoiseAngularHitpointNode.
  * Adds angular noise to already computed hitpoints.
+ * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#hitpoint-based-angular-noise
  * Graph input: RaytraceNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
@@ -490,6 +492,7 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
  * Changes the distance between hitpoint and lidar's origin.
+ * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#distance-noise
  * Graph input: RaytraceNode
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
