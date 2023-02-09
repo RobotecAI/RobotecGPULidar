@@ -31,9 +31,13 @@ And more:
 - Asynchronous raytracing
 - Removing non-hit points
 - Converting to custom binary output
-- Downsampling
-- Writing to PCD file
+- Downsampling *
+- Writing to PCD file *
+- Visualization *
+- ROS2 publishing *
 - Gaussian noise (see [documentation](docs/GaussianNoise.md))
+
+\* [extension](README.md#extensions) required.
 
 ## Runtime requirements
 
@@ -53,6 +57,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 ## Extensions
 
 `RobotecGPULidar` library can be built with extensions enhancing RGL with additional functions:
+- `PCL` - adds nodes and functions for point cloud processing that uses [Point Cloud Library](https://pointclouds.org/). See [documentation](docs/PclExtension.md).
 - `ROS2` - adds a node to publish point cloud messages to [ROS2](https://www.ros.org/). Check [ROS2 extension doc](docs/Ros2Extension.md) for more information, build instructions, and usage.
 
 ## Building in Docker (Linux)
