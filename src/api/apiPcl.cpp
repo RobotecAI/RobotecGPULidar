@@ -12,11 +12,60 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+
 #include <rgl/api/extensions/pcl.h>
 #include <api/apiCommon.hpp>
+#include <graph/NodesCore.hpp>
 #include <graph/NodesPcl.hpp>
 
+#include <RGLExceptions.hpp>
+#include <RGLFields.hpp>
+
 extern "C" {
+
+RGL_API rgl_status_t
+rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_graph_write_pcd_file(node={}, file={})", repr(node), file_path);
+		CHECK_ARG(file_path != nullptr);
+		CHECK_ARG(file_path[0] != '\0');
+
+		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+
+		if (!pointCloudNode->hasField(XYZ_F32)) {
+			throw InvalidAPIObject(fmt::format("Saving PCD file {} failed - requested node hasn't field XYZ.", file_path));
+		}
+
+		// Get formatted data
+		VArray::Ptr rglCloud = VArray::create<char>();
+		// TODO(msz-rai): CudaStream for formatAsync: nullptr or pointCloudNode->getGraph()->getStream()?
+		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, {XYZ_F32, PADDING_32}, nullptr);
+
+		// Convert to PCL cloud
+		pcl::PointCloud<pcl::PointXYZ> pclCloud;
+		const pcl::PointXYZ* data = reinterpret_cast<const pcl::PointXYZ*>(rglCloud->getReadPtr(MemLoc::Host));
+		pclCloud.resize(pointCloudNode->getWidth(), pointCloudNode->getHeight());
+		pclCloud.assign(data, data + pclCloud.size(), pointCloudNode->getWidth());
+		pclCloud.is_dense = pointCloudNode->isDense();
+
+		// Save to PCD file
+		pcl::io::savePCDFileBinary(std::string(file_path), pclCloud);
+	});
+	TAPE_HOOK(node, file_path);
+	return status;
+}
+
+void TapePlayer::tape_graph_write_pcd_file(const YAML::Node& yamlNode)
+{
+	rgl_graph_write_pcd_file(tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>()),
+		yamlNode[1].as<std::string>().c_str());
+}
 
 RGL_API rgl_status_t
 rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
@@ -38,28 +87,6 @@ void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode)
 		yamlNode[1].as<float>(),
 		yamlNode[2].as<float>(),
 		yamlNode[3].as<float>());
-	tapeNodes.insert(std::make_pair(nodeId, node));
-}
-
-RGL_API rgl_status_t
-rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_points_write_pcd_file(node={}, file={})", repr(node), file_path);
-		CHECK_ARG(file_path != nullptr);
-		CHECK_ARG(file_path[0] != '\0');
-
-		createOrUpdateNode<WritePCDFilePointsNode>(node, file_path);
-	});
-	TAPE_HOOK(node, file_path);
-	return status;
-}
-
-void TapePlayer::tape_node_points_write_pcd_file(const YAML::Node& yamlNode)
-{
-	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-	rgl_node_points_write_pcd_file(&node, yamlNode[1].as<std::string>().c_str());
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
 

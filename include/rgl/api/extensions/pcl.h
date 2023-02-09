@@ -16,6 +16,17 @@
 
 #include <rgl/api/core.h>
 
+/******************************** GRAPH ********************************/
+
+/**
+ * Obtains the point cloud of any node in the graph and saves to given file.
+ * Output file will be saved in PCD format (https://pointclouds.org/documentation/tutorials/pcd_file_format.html)
+ * @param node Node to get point cloud from.
+ * @param file_path Path to the output pcd file.
+ */
+RGL_API rgl_status_t
+rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path);
+
 /******************************** NODES ********************************/
 
 /**
@@ -28,17 +39,6 @@
  */
 RGL_API rgl_status_t
 rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
-
-/**
- * Creates or modifies WritePCDFileNode.
- * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
- * Graph input: point cloud
- * Graph output: none
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param file_path Path to the output pcd file.
- */
-RGL_API rgl_status_t
-rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path);
 
 /**
  * Creates or modifies VisualizePointsNode.

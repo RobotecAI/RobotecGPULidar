@@ -15,7 +15,7 @@ TEST_F(Graph, FullLinear)
 {
 	setupBoxesAlongAxes(nullptr);
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
@@ -27,16 +27,15 @@ TEST_F(Graph, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&shear, &shearTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 0.1f, 0.1f, 0.1f));
-	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "minimal.pcd"));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, shear));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(shear, downsample));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(downsample, write));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_run(write));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(downsample, "minimal.pcd"));
 }
 
 TEST_F(Graph, NodeRemoval)
@@ -47,7 +46,7 @@ TEST_F(Graph, NodeRemoval)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr, write=nullptr;
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -60,13 +59,12 @@ TEST_F(Graph, NodeRemoval)
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
-	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&write, "two_boxes_removal.pcd"));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, write));
+	// TODO(msz-rai): Add temporal merge node
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
@@ -79,6 +77,8 @@ TEST_F(Graph, NodeRemoval)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(transformPts, "two_boxes_removal.pcd"));
 }
 #endif
 
