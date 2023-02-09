@@ -2,7 +2,14 @@
 #include <utils.hpp>
 #include <models.hpp>
 #include <rgl/api/extensions/tape.h>
+
+#ifdef RGL_BUILD_PCL_EXTENSION
+#include <rgl/api/extensions/pcl.h>
+#endif
+
+#ifdef RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
+#endif
 
 #include <math/Mat3x4f.hpp>
 
@@ -56,11 +63,15 @@ TEST_F(Tape, RecordPlayAllCalls)
 	rgl_node_t compact = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 
-	rgl_node_t downsample = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
+	#ifdef RGL_BUILD_PCL_EXTENSION
+		rgl_node_t downsample = nullptr;
+		EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
 
-	rgl_node_t writePcd = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&writePcd, "Tape.RecordPlayAllCalls.pcd"));
+		rgl_node_t writePcd = nullptr;
+		EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&writePcd, "Tape.RecordPlayAllCalls.pcd"));
+
+		// Skipping rgl_node_points_visualize (user interaction needed)
+	#endif
 
 	#ifdef RGL_BUILD_ROS2_EXTENSION
 		rgl_node_t ros2pub = nullptr;
@@ -72,8 +83,6 @@ TEST_F(Tape, RecordPlayAllCalls)
 		rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
 		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish_with_qos(&ros2pubqos, "pointcloud_ex", "rgl", qos_r, qos_d, qos_h, 10));
 	#endif
-
-	// Skipping rgl_node_points_visualize (user interaction needed)
 
 	rgl_node_t noiseAngularRay = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noiseAngularRay, 0.1f, 0.1f, RGL_AXIS_X));

@@ -8,6 +8,9 @@
 
 class Graph : public RGLAutoCleanupTest {};
 
+#ifdef RGL_BUILD_PCL_EXTENSION
+#include <rgl/api/extensions/pcl.h>
+
 TEST_F(Graph, FullLinear)
 {
 	setupBoxesAlongAxes(nullptr);
@@ -77,6 +80,7 @@ TEST_F(Graph, NodeRemoval)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 }
+#endif
 
 TEST_F(Graph, FormatNodeResults)
 {

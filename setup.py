@@ -44,6 +44,8 @@ def main():
                         help="Install RGL dependencies and exit")
     parser.add_argument("--clean-build", action='store_true',
                         help="Remove build directory before cmake")
+    parser.add_argument("--with-pcl", action='store_true',
+                        help="Build RGL with PCL extension")
     parser.add_argument("--with-ros2", action='store_true',
                         help="Build RGL with ROS2 extension")
     parser.add_argument("--with-ros2-standalone", action='store_true',
@@ -115,7 +117,8 @@ def main():
 
     # Build
     cmake_args = [
-        f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake')}",
+        f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
+        f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION_STANDALONE={'ON' if args.with_ros2_standalone else 'OFF'}"
     ]
