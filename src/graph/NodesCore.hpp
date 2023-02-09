@@ -18,21 +18,17 @@
 #include <set>
 #include <memory>
 #include <thread>
+#include <typeinfo>
 #include <random>
 #include <curand_kernel.h>
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
 #include <gpu/RaytraceRequestContext.hpp>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <graph/PCLVisualizerFix.hpp>
-#include <typeinfo>
-
+#include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
-#include <gpu/nodeKernels.hpp>
 
 /**
  * Notes for maintainers:
@@ -168,10 +164,12 @@ struct TransformPointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformPointsNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
+	Mat3x4f getTransform() const { return transform; }
 
 	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
+	std::string getArgsString() const override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;

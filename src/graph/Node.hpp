@@ -54,6 +54,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	bool hasGraph() { return graph.lock() != nullptr; }
 
 	std::string getName() const { return name(typeid(*this)); }
+	virtual std::string getArgsString() const { return {}; }
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
@@ -131,10 +132,12 @@ struct fmt::formatter<Node>
 
 	template<typename FormatContext>
 	auto format(const Node& node, FormatContext& ctx) {
-		return fmt::format_to(ctx.out(), fmt::runtime("{}(in=[{}], out=[{}])"),
+
+		return fmt::format_to(ctx.out(), fmt::runtime("{}{{in=[{}], out=[{}]}}({})"),
 		                      node.getName(),
 		                      Node::getNodeTypeNames(node.inputs),
-		                      Node::getNodeTypeNames(node.outputs));
+		                      Node::getNodeTypeNames(node.outputs),
+		                      node.getArgsString());
 	}
 };
 #endif // __CUDACC__
