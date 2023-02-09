@@ -23,6 +23,7 @@
 #include <scene/Mesh.hpp>
 
 #include <graph/NodesCore.hpp>
+#include <graph/NodesPcl.hpp>
 #include <graph/Graph.hpp>
 
 extern "C" {
@@ -280,7 +281,8 @@ rgl_graph_run(rgl_node_t node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
-		Node::validatePtr(node)->getGraph()->run();
+		auto shptr = Node::validatePtr(node)->getGraph();
+		shptr->run();
 	});
 	TAPE_HOOK(node);
 	return status;
