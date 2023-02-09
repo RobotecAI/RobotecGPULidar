@@ -102,6 +102,9 @@ struct IPointsNodeMultiInput : IPointsNode
 {
 	using Ptr = std::shared_ptr<IPointsNodeMultiInput>;
 
+	// Unable to calcuate origin from multiple inputs.
+	Mat3x4f getLookAtOriginTransform() const override { return Mat3x4f::identity(); }
+
 protected:
 	std::vector<IPointsNode::Ptr> pointInputs;
 };
