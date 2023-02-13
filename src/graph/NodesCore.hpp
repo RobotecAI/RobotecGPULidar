@@ -19,6 +19,8 @@
 #include <memory>
 #include <thread>
 #include <typeinfo>
+#include <ranges>
+#include <algorithm>
 #include <random>
 #include <curand_kernel.h>
 
@@ -232,6 +234,60 @@ struct YieldPointsNode : Node, IPointsNodeSingleInput
 private:
 	std::vector<rgl_field_t> fields;
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
+};
+
+struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
+{
+	using Ptr = std::shared_ptr<SpatialMergePointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+
+	// Point cloud description
+	bool isDense() const override;
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
+	std::size_t getWidth() const override { return width; }
+	std::size_t getHeight() const override { return 1; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+
+private:
+	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::size_t width = 0;
+};
+
+struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<YieldPointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+
+	// Point cloud description
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
+	std::size_t getWidth() const override { return width; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+
+private:
+	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::size_t width = 0;
 };
 
 struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput

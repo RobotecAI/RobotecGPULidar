@@ -65,6 +65,14 @@ TEST_F(Tape, RecordPlayAllCalls)
 	rgl_node_t compact = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 
+	rgl_node_t spatialMerge = nullptr;
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));
+
+	rgl_node_t temporalMerge = nullptr;
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
+
 	#ifdef RGL_BUILD_ROS2_EXTENSION
 		rgl_node_t ros2pub = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
