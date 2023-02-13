@@ -85,7 +85,6 @@ TEST_F(Graph, NodeRemoval)
 	// Output pointcloud should contain two boxes
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(temporalMerge, "two_boxes_removal.pcd"));
 }
-#endif
 
 TEST_F(Graph, SpatialMerge)
 {
@@ -164,6 +163,7 @@ TEST_F(Graph, TemporalMerge)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(temporalMerge, "two_boxes_temporal_merge.pcd"));
 }
+#endif
 
 TEST_F(Graph, FormatNodeResults)
 {
