@@ -13,7 +13,10 @@
 
 #include <math/Mat3x4f.hpp>
 
-class Tape : public RGLAutoCleanupTest {};
+class Tape : public RGLAutoSetUp
+{
+	std::string getFilename() override { return FILENAME; }
+};
 
 TEST_F(Tape, RecordPlayAllCalls)
 {

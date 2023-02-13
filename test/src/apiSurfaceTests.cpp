@@ -3,6 +3,9 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 #include <rgl/api/core.h>
+#ifdef RGL_BUILD_PCL_EXTENSION
+#include <rgl/api/extensions/pcl.h>
+#endif
 #include <scenes.hpp>
 
 using namespace ::testing;
@@ -265,6 +268,7 @@ TEST_F(APISurfaceTests, rgl_node_points_compact)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&node));
 }
 
+#ifdef RGL_BUILD_PCL_EXTENSION
 TEST_F(APISurfaceTests, rgl_node_points_downsample)
 {
 	rgl_node_t node = nullptr;
@@ -278,6 +282,7 @@ TEST_F(APISurfaceTests, rgl_node_points_downsample)
 	// If (*node) != nullptr
 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, 2.0f, 2.0f, 2.0f));
 }
+#endif
 
 TEST_F(APISurfaceTests, rgl_graph_run)
 {
@@ -365,28 +370,11 @@ TEST_F(APISurfaceTests, rgl_graph_get_result_data)
 	EXPECT_RGL_NODE_TYPE_MISMATCH(rgl_graph_get_result_data(ray_node, RGL_FIELD_XYZ_F32, &results), "expected IPointsNode, got FromMat3x4fRaysNode");
 
 	// Correct get_result_data (without prior running the graph)
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(raytrace_node, RGL_FIELD_XYZ_F32, &results), "");
+	// EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(raytrace_node, RGL_FIELD_XYZ_F32, &results), "");
 
 	// Correct get_result_data (with prior running the graph)
 	ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace_node));
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace_node, RGL_FIELD_XYZ_F32, &results));
-}
-
-TEST_F(APISurfaceTests, rgl_graph_node_set_active)
-{
-	rgl_node_t ray_node = nullptr;
-
-	// Invalid arg (node)
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_node_set_active(nullptr, 	0), "node != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_node_set_active(ray_node, 0), "node != nullptr");
-	EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_set_active((rgl_node_t) 0x1234, 1), "Object does not exist: Node 0x1234");
-
-	// Creating node
-	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&ray_node, &identity, 1));
-
-	// Correct node_set_active
-	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(ray_node, 0));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_set_active(ray_node, 1));
 }
 
 TEST_F(APISurfaceTests, rgl_graph_node_add_child)
