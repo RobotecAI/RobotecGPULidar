@@ -79,6 +79,7 @@ struct VArray : std::enable_shared_from_this<VArray>
 	const void* getReadPtr(MemLoc location) const;
 	void setData(const void* src, std::size_t elements);
 	void getData(void* dstRaw, std::size_t count) const;
+	void insertData(const void *src, std::size_t elements, std::size_t offset);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
 	std::size_t getElemSize() const { return sizeOfType; }

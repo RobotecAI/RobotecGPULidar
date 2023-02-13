@@ -37,6 +37,7 @@ struct VArrayProxy
 
 	void setData(const T* srcRaw, std::size_t count) { src->setData(srcRaw, count); }
 	void getData(T* dstRaw, std::size_t count) const { src->getData(dstRaw, count); }
+	void insertData(const T* srcRaw, std::size_t count, std::size_t offset) { src->insertData(srcRaw, count, offset); }
 
 	std::size_t getCount() const { return src->getElemCount(); }
 	std::size_t getCapacity() const { return src->getElemCapacity(); }

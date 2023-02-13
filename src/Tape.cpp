@@ -87,6 +87,8 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_node_points_format", std::bind(&TapePlayer::tape_node_points_format, this, _1) },
 		{ "rgl_node_points_yield", std::bind(&TapePlayer::tape_node_points_yield, this, _1) },
 		{ "rgl_node_points_compact", std::bind(&TapePlayer::tape_node_points_compact, this, _1) },
+		{ "rgl_node_points_spatial_merge", std::bind(&TapePlayer::tape_node_points_spatial_merge, this, _1) },
+		{ "rgl_node_points_temporal_merge", std::bind(&TapePlayer::tape_node_points_temporal_merge, this, _1) },
 		{ "rgl_node_gaussian_noise_angular_ray", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_ray, this, _1) },
 		{ "rgl_node_gaussian_noise_angular_hitpoint", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1) },
 		{ "rgl_node_gaussian_noise_distance", std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1) },
