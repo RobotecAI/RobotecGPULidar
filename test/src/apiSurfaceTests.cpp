@@ -10,7 +10,7 @@ using namespace ::testing;
 #define VERTICES cubeVertices
 #define INDICES cubeIndices
 
-class APISurfaceTests : public RGLAutoCleanUp
+class APISurfaceTests : public RGLAutoSetUp
 {
 	std::string getFilename() override { return FILENAME; }
 };
@@ -403,7 +403,7 @@ TEST_F(APISurfaceTests, rgl_graph_node_add_child)
 	// Invalid arg (child)
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_node_add_child(parent,  nullptr), "child != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_node_add_child(parent,  child), 	"child != nullptr");
-	//EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_add_child(parent, (rgl_node_t) 0x1234), "Object does not exist: Node 0x1234");
+	EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_add_child(parent, (rgl_node_t) 0x1234), "Object does not exist: Node 0x1234");
 
 	// Creating raytrace node - child
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&child, nullptr, 1000));

@@ -15,7 +15,7 @@
 // 	return true;
 // });
 
-class Graph : public RGLAutoCleanUp
+class Graph : public RGLAutoSetUp
 {
 	std::string getFilename() override { return FILENAME; }
 	rgl_log_level_t getLogLevel() override { return RGL_LOG_LEVEL_ALL; }
