@@ -9,15 +9,6 @@ using namespace ::testing;
 
 #define VERTICES cubeVertices
 #define INDICES cubeIndices
-// TODO(nebraszka): What's the best way to handle this FILENAME without copying this directive to each test?
-//#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
-
-// static bool loggingConfigured = std::invoke([]() {
-// 	std::cout << "loggingConfigured for " << FILENAME << std::endl;
-// 	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path(FILENAME).concat(".log") };
-// 	rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, logFilePath.c_str(), false);
-// 	return true;
-// });
 
 class APISurfaceTests : public RGLAutoCleanUp
 {
@@ -342,8 +333,8 @@ TEST_F(APISurfaceTests, rgl_graph_get_result_size)
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(ray_node, raytrace_node));
 
 	// Correct get_result_size (without prior running the graph)
-	// EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace_node, RGL_FIELD_XYZ_F32, nullptr, nullptr));
-	// EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace_node, RGL_FIELD_XYZ_F32, &hitpoint_count, &point_size));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace_node, RGL_FIELD_XYZ_F32, nullptr, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace_node, RGL_FIELD_XYZ_F32, &hitpoint_count, &point_size));
 
 	// Correct get_result_size (with prior running the graph)
 	ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace_node));
@@ -374,7 +365,7 @@ TEST_F(APISurfaceTests, rgl_graph_get_result_data)
 	EXPECT_RGL_NODE_TYPE_MISMATCH(rgl_graph_get_result_data(ray_node, RGL_FIELD_XYZ_F32, &results), "expected IPointsNode, got FromMat3x4fRaysNode");
 
 	// Correct get_result_data (without prior running the graph)
-	// EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(raytrace_node, RGL_FIELD_XYZ_F32, &results), "");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(raytrace_node, RGL_FIELD_XYZ_F32, &results), "");
 
 	// Correct get_result_data (with prior running the graph)
 	ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace_node));
@@ -388,7 +379,7 @@ TEST_F(APISurfaceTests, rgl_graph_node_set_active)
 	// Invalid arg (node)
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_node_set_active(nullptr, 	0), "node != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_node_set_active(ray_node, 0), "node != nullptr");
-	// EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_set_active((rgl_node_t) 0x1234, 1), "Object does not exist: Node 0x1234");
+	EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_set_active((rgl_node_t) 0x1234, 1), "Object does not exist: Node 0x1234");
 
 	// Creating node
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&ray_node, &identity, 1));
@@ -418,7 +409,7 @@ TEST_F(APISurfaceTests, rgl_graph_node_add_child)
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&child, nullptr, 1000));
 
 	// Invalid arg (parent does not exist)
-	//EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_add_child((rgl_node_t) 0x1234, child), "Object does not exist: Node 0x1234");
+	EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_add_child((rgl_node_t) 0x1234, child), "Object does not exist: Node 0x1234");
 
 	// Correct add_child
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(parent, child));
@@ -444,7 +435,7 @@ TEST_F(APISurfaceTests, rgl_graph_node_remove_child)
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&child, nullptr, 1000));
 
 	// Invalid arg (parent does not exist)
-	//EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_remove_child((rgl_node_t) 0x1234, child), "Object does not exist: Node 0x1234");
+	EXPECT_RGL_OBJECT_NOT_EXISTS(rgl_graph_node_remove_child((rgl_node_t) 0x1234, child), "Object does not exist: Node 0x1234");
 
 	// Invalid args - nodes are not connected
 	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_node_remove_child(parent, child), "RaytraceNode from FromMat3x4fRaysNode");
