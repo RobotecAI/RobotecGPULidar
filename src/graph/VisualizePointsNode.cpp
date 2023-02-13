@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/NodesCore.hpp>
+#include <graph/NodesPcl.hpp>
 
 void VisualizePointsNode::setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen)
 {

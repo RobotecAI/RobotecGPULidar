@@ -48,3 +48,8 @@ std::vector<rgl_field_t> TransformPointsNode::getRequiredFieldList() const
 {
 	return {XYZ_F32};
 }
+
+std::string TransformPointsNode::getArgsString() const
+{
+	return fmt::format("TR={}", transform.translation());
+}
