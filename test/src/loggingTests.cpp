@@ -6,9 +6,12 @@
 
 using namespace ::testing;
 
-#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
+//#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
 
-class LoggingTests : public RGLAutoCleanUp {};
+class LoggingTests : public RGLAutoCleanUp
+{
+	std::string getFilename() override { return FILENAME; }
+};
 
 TEST_F(LoggingTests, rgl_configure_logging)
 {

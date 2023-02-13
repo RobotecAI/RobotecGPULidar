@@ -30,8 +30,22 @@
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
 #define EXPECT_RGL_INVALID_PIPELINE(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_PIPELINE, "attempted to remove child", error)
 
+#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
+
 struct RGLAutoCleanUp : public ::testing::Test {
 protected:
+	virtual std::string getFilename() = 0;
+	virtual rgl_log_level_t getLogLevel() { return RGL_LOG_LEVEL_INFO; };
+
+	inline static std::set<std::string> filenamesConfigured{};
+
+	void SetUp() override
+	{
+		if (!filenamesConfigured.contains(getFilename())) {
+			rgl_configure_logging(getLogLevel(), getFilename().c_str(), false);
+			filenamesConfigured.insert(getFilename());
+		}
+	}
 
 	virtual ~RGLAutoCleanUp()
 	{
