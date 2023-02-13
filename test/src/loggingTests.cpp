@@ -6,7 +6,7 @@
 
 using namespace ::testing;
 
-class LoggingTests : public RGLAutoCleanUp
+class LoggingTests : public RGLAutoSetUp
 {
 	std::string getFilename() override { return FILENAME; }
 };

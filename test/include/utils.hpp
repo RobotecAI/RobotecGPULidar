@@ -32,7 +32,7 @@
 
 #define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
 
-struct RGLAutoCleanUp : public ::testing::Test {
+struct RGLAutoSetUp : public ::testing::Test {
 protected:
 	virtual std::string getFilename() = 0;
 	virtual rgl_log_level_t getLogLevel() { return RGL_LOG_LEVEL_DEBUG; };
@@ -48,7 +48,7 @@ protected:
 		}
 	}
 
-	virtual ~RGLAutoCleanUp()
+	virtual ~RGLAutoSetUp()
 	{
 		EXPECT_RGL_SUCCESS(rgl_cleanup());
 	}
