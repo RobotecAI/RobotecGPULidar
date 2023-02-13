@@ -40,10 +40,12 @@ def main():
     parser = argparse.ArgumentParser(description="Helper script to build RGL.")
     parser.add_argument("--build-dir", type=str, nargs=1, default="build",
                         help="Path to build directory. Default: 'build'")
-    parser.add_argument("--install-deps", action='store_true',
-                        help="Install RGL dependencies and exit")
+    parser.add_argument("--install-pcl-deps", action='store_true',
+                        help="Install dependencies for PCL extension and exit")
     parser.add_argument("--clean-build", action='store_true',
                         help="Remove build directory before cmake")
+    parser.add_argument("--with-pcl", action='store_true',
+                        help="Build RGL with PCL extension")
     parser.add_argument("--with-ros2", action='store_true',
                         help="Build RGL with ROS2 extension")
     parser.add_argument("--with-ros2-standalone", action='store_true',
@@ -60,8 +62,8 @@ def main():
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
     args = parser.parse_args()
 
-    # Install RGL dependencies
-    if args.install_deps:
+    # Install dependencies for PCL extension
+    if args.install_pcl_deps:
         # Clone vcpkg
         if not os.path.isdir(cfg.VCPKG_INSTALL_DIR):
             if on_linux() and not inside_docker():  # Inside docker already installed
@@ -115,7 +117,8 @@ def main():
 
     # Build
     cmake_args = [
-        f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake')}",
+        f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
+        f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION_STANDALONE={'ON' if args.with_ros2_standalone else 'OFF'}"
     ]

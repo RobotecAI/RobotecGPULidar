@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/NodesCore.hpp>
+#include <graph/NodesPcl.hpp>
 
 #include <pcl/io/pcd_io.h>
 

@@ -440,28 +440,6 @@ RGL_API rgl_status_t
 rgl_node_points_compact(rgl_node_t* node);
 
 /**
- * Creates or modifies DownSampleNode.
- * The node uses VoxelGrid down-sampling filter from PCL library to reduce the number of points.
- * Graph input: point cloud
- * Graph output: point cloud (downsampled)
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
- */
-RGL_API rgl_status_t
-rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
-
-/**
- * Creates or modifies WritePCDFileNode.
- * The node accumulates (merges) point clouds on each run. On destruction, it saves it to the given file.
- * Graph input: point cloud
- * Graph output: none
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param file_path Path to the output pcd file.
- */
-RGL_API rgl_status_t
-rgl_node_points_write_pcd_file(rgl_node_t* node, const char* file_path);
-
-/**
  * Creates or modifies GaussianNoiseAngularRayNode.
  * Applies angular noise to the rays before raycasting.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#ray-based-angular-noise

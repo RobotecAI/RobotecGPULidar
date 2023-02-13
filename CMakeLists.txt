@@ -26,6 +26,8 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
 # Extensions configuration
+set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
+    "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
 set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
@@ -47,8 +49,6 @@ find_program(BIN2C bin2c DOC "Path to the cuda-sdk bin2c executable.")
 if (NOT DEFINED ENV{OptiX_INSTALL_DIR})
     message(FATAL_ERROR "Required environment variable OptiX_INSTALL_DIR is empty, aborting build")
 endif()
-
-find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
 
 # Includes
 include_directories(include)
@@ -85,19 +85,30 @@ add_library(RobotecGPULidar SHARED
     src/graph/GaussianNoiseAngularRayNode.cpp
     src/graph/GaussianNoiseDistanceNode.cpp
     src/graph/CompactPointsNode.cpp
-    src/graph/DownSamplePointsNode.cpp
     src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp
-    src/graph/WritePCDFilePointsNode.cpp
-    src/graph/VisualizePointsNode.cpp
     src/graph/YieldPointsNode.cpp
 )
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+if (RGL_BUILD_PCL_EXTENSION)
+    find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
+    target_sources(RobotecGPULidar PRIVATE
+        src/api/apiPcl.cpp
+        src/graph/DownSamplePointsNode.cpp
+        src/graph/WritePCDFilePointsNode.cpp
+        src/graph/VisualizePointsNode.cpp
+    )
+    target_include_directories(RobotecGPULidar PUBLIC ${PCL_INCLUDE_DIRS})
+    target_link_directories(RobotecGPULidar PRIVATE ${PCL_LIBRARY_DIRS})
+    target_link_libraries(RobotecGPULidar PRIVATE ${PCL_LIBRARIES})
+    target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}> ${PCL_DEFINITIONS})
+endif()
 
 if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
     if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
@@ -113,11 +124,7 @@ endif()
 
 target_include_directories(RobotecGPULidar
     PUBLIC include
-    PRIVATE src ${PCL_INCLUDE_DIRS}
-)
-
-target_link_directories(RobotecGPULidar PRIVATE
-    ${PCL_LIBRARY_DIRS}
+    PRIVATE src
 )
 
 target_link_libraries(RobotecGPULidar PRIVATE
@@ -125,7 +132,6 @@ target_link_libraries(RobotecGPULidar PRIVATE
     yaml-cpp
     optixPrograms
     cmake_git_version_tracking
-    ${PCL_LIBRARIES}
 )
 
 target_link_libraries(RobotecGPULidar PUBLIC
@@ -161,7 +167,6 @@ target_compile_definitions(RobotecGPULidar
     PUBLIC RGL_LOG_FILE="${RGL_LOG_FILE}"
     PUBLIC RGL_LOG_LEVEL=RGL_LOG_LEVEL_${RGL_LOG_LEVEL}
     PUBLIC RGL_AUTO_TAPE_PATH="${RGL_AUTO_TAPE_PATH}"
-    PUBLIC ${PCL_DEFINITIONS}
 )
 
 # Include tests

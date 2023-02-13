@@ -21,7 +21,7 @@ RUN apt install -y \
 
 # Install RGL dependencies via vcpkg
 COPY setup.py /
-RUN /setup.py --install-deps
+RUN /setup.py --install-pcl-deps
 RUN rm /setup.py
 
 WORKDIR /code

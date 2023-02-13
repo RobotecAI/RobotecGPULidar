@@ -31,9 +31,13 @@ And more:
 - Asynchronous raytracing
 - Removing non-hit points
 - Converting to custom binary output
-- Downsampling
-- Writing to PCD file
+- Downsampling *
+- Writing to PCD file *
+- Visualization *
+- ROS2 publishing *
 - Gaussian noise (see [documentation](docs/GaussianNoise.md))
+
+\* [extension](README.md#extensions) required.
 
 ## Runtime requirements
 
@@ -53,6 +57,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 ## Extensions
 
 `RobotecGPULidar` library can be built with extensions enhancing RGL with additional functions:
+- `PCL` - adds nodes and functions for point cloud processing that uses [Point Cloud Library](https://pointclouds.org/). See [documentation](docs/PclExtension.md).
 - `ROS2` - adds a node to publish point cloud messages to [ROS2](https://www.ros.org/). Check [ROS2 extension doc](docs/Ros2Extension.md) for more information, build instructions, and usage.
 
 ## Building in Docker (Linux)
@@ -76,9 +81,7 @@ Build instructions:
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
-4. Run `./setup.py --install-deps` to install RGL dependencies.
-   - It will install dependencies from `apt` and [vcpkg](https://vcpkg.io/en/index.html).
-5. Use `setup.py` script to build.
+4. Use `setup.py` script to build.
    - It will use CMake to generate files for build system (make) and build.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
@@ -92,9 +95,7 @@ Build instructions:
    - use the default location or set environment variable `OptiX_INSTALL_DIR`
 4. Install [Python3](https://www.python.org/downloads/).
 5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to RGL repository.
-6. Run `python setup.py --install-deps` command to install RGL dependencies.
-   - It will install dependencies from [vcpkg](https://vcpkg.io/en/index.html).
-7. Run `python setup.py` command to build the project.
+6. Run `python setup.py` command to build the project.
    - It will use CMake to generate files for build system (ninja) and build.
    - You can pass optional CMake and ninja parameters, e.g.
      - `python setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
