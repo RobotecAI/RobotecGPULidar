@@ -63,16 +63,6 @@ TEST_F(Tape, RecordPlayAllCalls)
 	rgl_node_t compact = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 
-	#ifdef RGL_BUILD_PCL_EXTENSION
-		rgl_node_t downsample = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
-
-		rgl_node_t writePcd = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_write_pcd_file(&writePcd, "Tape.RecordPlayAllCalls.pcd"));
-
-		// Skipping rgl_node_points_visualize (user interaction needed)
-	#endif
-
 	#ifdef RGL_BUILD_ROS2_EXTENSION
 		rgl_node_t ros2pub = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
@@ -100,6 +90,16 @@ TEST_F(Tape, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(raytrace, compact));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	#ifdef RGL_BUILD_PCL_EXTENSION
+		rgl_node_t downsample = nullptr;
+		EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
+
+		// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_F32 in raytrace.
+		EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
+
+		// Skipping rgl_node_points_visualize (user interaction needed)
+	#endif
 
 	int32_t outCount, outSizeOf;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));

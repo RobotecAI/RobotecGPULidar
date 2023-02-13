@@ -215,8 +215,8 @@ private:
 	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
 
 	#ifdef RGL_BUILD_PCL_EXTENSION
+	void tape_graph_write_pcd_file(const YAML::Node& yamlNode);
 	void tape_node_points_downsample(const YAML::Node& yamlNode);
-	void tape_node_points_write_pcd_file(const YAML::Node& yamlNode);
 	void tape_node_points_visualize(const YAML::Node& yamlNode);
 	#endif
 
