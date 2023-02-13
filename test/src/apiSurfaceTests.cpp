@@ -10,15 +10,19 @@ using namespace ::testing;
 #define VERTICES cubeVertices
 #define INDICES cubeIndices
 // TODO(nebraszka): What's the best way to handle this FILENAME without copying this directive to each test?
-#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
+//#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
 
-static bool loggingConfigured = std::invoke([]() {
-	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path(FILENAME).concat(".log") };
-	rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, logFilePath.c_str(), false);
-	return true;
-});
+// static bool loggingConfigured = std::invoke([]() {
+// 	std::cout << "loggingConfigured for " << FILENAME << std::endl;
+// 	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path(FILENAME).concat(".log") };
+// 	rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, logFilePath.c_str(), false);
+// 	return true;
+// });
 
-class APISurfaceTests : public RGLAutoCleanUp {};
+class APISurfaceTests : public RGLAutoCleanUp
+{
+	std::string getFilename() override { return FILENAME; }
+};
 
 TEST_F(APISurfaceTests, rgl_get_version_info)
 {
