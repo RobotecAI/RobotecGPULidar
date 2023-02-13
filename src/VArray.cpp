@@ -58,6 +58,13 @@ void VArray::getData(void* dst, std::size_t elements) const
 	CHECK_CUDA(cudaMemcpy(dst, current().data, sizeOfType * elements, cudaMemcpyDefault));
 }
 
+void VArray::insertData(const void *src, std::size_t elements, std::size_t offset)
+{
+	reserve(offset + elements, true);
+	CHECK_CUDA(cudaMemcpy((void *)((size_t)current().data + sizeOfType * offset), src, sizeOfType * elements, cudaMemcpyDefault));
+	current().elemCount = std::max(current().elemCount, int64_t(offset + elements));
+}
+
 void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 {
 	reserve(newCount, preserveData);

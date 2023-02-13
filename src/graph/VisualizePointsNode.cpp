@@ -33,6 +33,10 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 void VisualizePointsNode::validate()
 {
 	input = getValidInput<IPointsNode>();
+	if (!input->hasField(XYZ_F32)) {
+		auto msg = fmt::format("{} requires XYZ to be present", getName());
+		throw InvalidPipeline(msg);
+	}
 }
 
 void VisualizePointsNode::runVisualize()

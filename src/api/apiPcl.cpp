@@ -81,13 +81,13 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
 
 void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode)
 {
-	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
 	rgl_node_points_downsample(&node,
 		yamlNode[1].as<float>(),
 		yamlNode[2].as<float>(),
 		yamlNode[3].as<float>());
-	tapeNodes.insert(std::make_pair(nodeId, node));
+	tapeNodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t
@@ -109,13 +109,13 @@ rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t win
 
 void TapePlayer::tape_node_points_visualize(const YAML::Node& yamlNode)
 {
-	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
 	rgl_node_points_visualize(&node,
 		yamlNode[1].as<std::string>().c_str(),
 		yamlNode[2].as<int32_t>(),
 		yamlNode[3].as<int32_t>(),
 		yamlNode[4].as<bool>());
-	tapeNodes.insert(std::make_pair(nodeId, node));
+	tapeNodes.insert({nodeId, node});
 }
 }
