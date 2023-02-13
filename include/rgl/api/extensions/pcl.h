@@ -19,7 +19,7 @@
 /******************************** GRAPH ********************************/
 
 /**
- * Obtains the point cloud of any node in the graph and saves to given file.
+ * Obtains the point cloud of any node in the graph and saves it to given file.
  * Output file will be saved in PCD format (https://pointclouds.org/documentation/tutorials/pcd_file_format.html)
  * @param node Node to get point cloud from.
  * @param file_path Path to the output pcd file.

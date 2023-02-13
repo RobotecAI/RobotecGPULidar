@@ -39,7 +39,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 
 		if (!pointCloudNode->hasField(XYZ_F32)) {
-			throw InvalidAPIObject(fmt::format("Saving PCD file {} failed - requested node hasn't field XYZ.", file_path));
+			throw InvalidAPIObject(fmt::format("Saving PCD file {} failed - requested node does not have field XYZ.", file_path));
 		}
 
 		// Get formatted data
