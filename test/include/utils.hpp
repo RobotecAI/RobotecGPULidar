@@ -35,14 +35,15 @@
 struct RGLAutoCleanUp : public ::testing::Test {
 protected:
 	virtual std::string getFilename() = 0;
-	virtual rgl_log_level_t getLogLevel() { return RGL_LOG_LEVEL_INFO; };
+	virtual rgl_log_level_t getLogLevel() { return RGL_LOG_LEVEL_DEBUG; };
 
 	inline static std::set<std::string> filenamesConfigured{};
 
 	void SetUp() override
 	{
 		if (!filenamesConfigured.contains(getFilename())) {
-			rgl_configure_logging(getLogLevel(), getFilename().c_str(), false);
+			std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path(getFilename()).concat(".log") };
+			rgl_configure_logging(getLogLevel(), logFilePath.c_str(), false);
 			filenamesConfigured.insert(getFilename());
 		}
 	}
