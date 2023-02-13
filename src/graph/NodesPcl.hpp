@@ -53,28 +53,6 @@ private:
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
-struct WritePCDFilePointsNode : Node, IPointsNodeSingleInput
-{
-	using Ptr = std::shared_ptr<WritePCDFilePointsNode>;
-	using PCLPointType = pcl::PointXYZ;
-	void setParameters(const char* filePath) { this->filePath = filePath; }
-
-	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
-
-	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
-
-	virtual ~WritePCDFilePointsNode();
-
-private:
-	VArray::Ptr inputFmtData = VArray::create<char>();
-	std::filesystem::path filePath{};
-	pcl::PointCloud<PCLPointType> cachedPCLs;
-};
-
-
 struct VisualizePointsNode : Node, IPointsNodeSingleInput
 {
 	static const int FRAME_RATE = 60;
