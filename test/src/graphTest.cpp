@@ -6,15 +6,6 @@
 
 #include <math/Mat3x4f.hpp>
 
-//#define FILENAME (strrchr(__FILE__, std::filesystem::path::preferred_separator) ? strrchr(__FILE__, std::filesystem::path::preferred_separator) + 1 : __FILE__)
-
-// static bool loggingConfigured = std::invoke([]() {
-// 	std::cout << "loggingConfigured for " << FILENAME << std::endl;
-// 	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path(FILENAME).concat(".log") };
-// 	rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, logFilePath.c_str(), false);
-// 	return true;
-// });
-
 class Graph : public RGLAutoSetUp
 {
 	std::string getFilename() override { return FILENAME; }

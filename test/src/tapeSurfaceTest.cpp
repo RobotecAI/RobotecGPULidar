@@ -29,7 +29,6 @@ TEST_F(Tape, RecordPlayAllCalls)
 
 	int32_t major, minor, patch;
 	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
-	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, "Tape.RecordPlayAllCalls.log", true));
 
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));

@@ -24,9 +24,13 @@ const rgl_mat3x4f lidarRayTf = Mat3x4f::identity().toRGL();
 const std::vector<rgl_mat3x4f> lidarRays(LIDAR_RAYS_COUNT, lidarRayTf);
 const Vec3f noiselessHitpointInLidarFrame = {0.0f, 0.0f, 3.0f};
 
-struct GaussianStress : public RGLAutoSetUp {
-	GaussianStress()
+struct GaussianStress : public RGLAutoSetUp 
+{
+protected:
+	void SetUp() override
 	{
+		RGLAutoSetUp::SetUp();
+
 		// Setup scene
 		rgl_entity_t cube = makeEntity(makeCubeMesh());
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube, &cubePoseTf));
