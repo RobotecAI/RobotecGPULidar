@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 #include <rgl/api/core.h>
+#include <rgl/api/extensions/tape.h>
 
 using namespace ::testing;
 
@@ -38,4 +39,14 @@ TEST_F(LoggingTests, rgl_configure_logging)
 	EXPECT_THAT(logFile, HasSubstr("[error]: This is RGL error log."));
 	EXPECT_THAT(logFile, HasSubstr("[critical]: This is RGL critical log."));
 	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
+
+	// Logging configuration during tape recording 
+	bool isTapeRecordActive = false;
+	ASSERT_RGL_SUCCESS(rgl_tape_record_begin("logging_recording"));
+	ASSERT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
+	ASSERT_TRUE(isTapeRecordActive);
+
+	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, "Tape.RecordLogging.log", false));
+
+	EXPECT_RGL_SUCCESS(rgl_tape_record_end());
 }

@@ -2,11 +2,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <utils.hpp>
+#include <scenes.hpp>
 #include <rgl/api/core.h>
+
 #ifdef RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
 #endif
-#include <scenes.hpp>
+
+#ifdef RGL_BUILD_ROS2_EXTENSION
+#include <rgl/api/extensions/ros2.h>
+#endif
 
 using namespace ::testing;
 
@@ -268,21 +273,64 @@ TEST_F(APISurfaceTests, rgl_node_points_compact)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&node));
 }
 
-#ifdef RGL_BUILD_PCL_EXTENSION
-TEST_F(APISurfaceTests, rgl_node_points_downsample)
+TEST_F(APISurfaceTests, rgl_node_points_spatial_merge)
+{
+	rgl_node_t node = nullptr;
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_spatial_merge(nullptr, nullptr, 0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_spatial_merge(&node,   nullptr, 0), "fields != nullptr");
+
+	// Correct points_spatial_merge
+	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&node, sMergeFields.data(), sMergeFields.size()));
+}
+
+TEST_F(APISurfaceTests, rgl_node_points_temporal_merge)
+{
+	rgl_node_t node = nullptr;
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_temporal_merge(nullptr, nullptr, 0), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_temporal_merge(&node,   nullptr, 0), "fields != nullptr");
+
+	// Correct points_temporal_merge
+	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&node, tMergeFields.data(), tMergeFields.size()));
+}
+
+TEST_F(APISurfaceTests, rgl_node_gaussian_noise_angular_ray)
 {
 	rgl_node_t node = nullptr;
 
 	// Invalid arg (node)
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(nullptr, 0.0f, 0.0f, 0.0f), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_gaussian_noise_angular_ray(nullptr, 0.0f, 0.0f, RGL_AXIS_X), "node != nullptr");
 
-	// Correct points_downsample
-	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, 1.0f, 1.0f, 1.0f));
-
-	// If (*node) != nullptr
-	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, 2.0f, 2.0f, 2.0f));
+	// Correct gaussian_noise_angular_ray
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_hitpoint(&node, 0.1f, 0.1f, RGL_AXIS_X));
 }
-#endif
+
+TEST_F(APISurfaceTests, rgl_node_gaussian_noise_angular_hitpoint)
+{
+	rgl_node_t node = nullptr;
+
+	// Invalid arg (node)
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_gaussian_noise_angular_hitpoint(nullptr, 0.0f, 0.0f, RGL_AXIS_X), "node != nullptr");
+
+	// Correct gaussian_noise_angular_hitpoint
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_hitpoint(&node, 0.1f, 0.1f, RGL_AXIS_X));
+}
+
+TEST_F(APISurfaceTests, rgl_node_gaussian_noise_distance)
+{
+	rgl_node_t node = nullptr;
+
+	// Invalid arg (node)
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_gaussian_noise_distance(nullptr, 0.0f, 0.0f, 0.0f), "node != nullptr");
+
+	// Correct gaussian_noise_distance
+	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&node, 0.1f, 0.1f, 0.01f));
+}
 
 TEST_F(APISurfaceTests, rgl_graph_run)
 {
@@ -437,3 +485,63 @@ TEST_F(APISurfaceTests, rgl_graph_node_remove_child)
 	// Valid args
 	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(parent, child));
 }
+
+#ifdef RGL_BUILD_PCL_EXTENSION
+TEST_F(APISurfaceTests, rgl_node_points_downsample)
+{
+	rgl_node_t node = nullptr;
+
+	// Invalid arg (node)
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_downsample(nullptr, 0.0f, 0.0f, 0.0f), "node != nullptr");
+
+	// Correct points_downsample
+	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, 1.0f, 1.0f, 1.0f));
+
+	// If (*node) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&node, 2.0f, 2.0f, 2.0f));
+}
+
+TEST_F(APISurfaceTests, rgl_node_points_visualize)
+{
+	rgl_node_t node = nullptr;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_visualize(nullptr, nullptr), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_visualize(&node,   nullptr), "window_name != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_visualize(&node,   "window", 0), "window_width > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_visualize(&node,   "window", 1280, 0), "window_height > 0");
+
+	// Skipping valid args - avoiding the pop-up window
+}
+#endif
+
+#ifdef RGL_BUILD_ROS2_EXTENSION
+TEST_F(APISurfaceTests, rgl_node_points_ros2_publish)
+{
+	rgl_node_t node = nullptr;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_ros2_publish(nullptr, nullptr, 		nullptr), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_ros2_publish(&node,   nullptr, 		nullptr), "topic_name != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_ros2_publish(&node,   "topic_name", nullptr), "frame_id != nullptr");
+
+	// Correct points_ros2_publish
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&node, "topic_name", "frame_id"));
+}
+
+TEST_F(APISurfaceTests, rgl_node_points_ros2_publish_with_qos)
+{
+	rgl_node_t node = nullptr;
+	rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
+	rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
+	rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_ros2_publish_with_qos(nullptr, nullptr, 	 nullptr, qos_r, qos_d, qos_h), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_ros2_publish_with_qos(&node,   nullptr, 	 nullptr, qos_r, qos_d, qos_h), "topic_name != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_ros2_publish_with_qos(&node,   "topic_name", nullptr, qos_r, qos_d, qos_h), "frame_id != nullptr");
+
+	// Correct points_ros2_publish_with_qos
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publis_with_qos(&node, "topic_name", "frame_id", qos_r, qos_d, qos_h));
+}
+#endif
