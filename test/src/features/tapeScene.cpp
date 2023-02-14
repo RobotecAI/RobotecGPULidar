@@ -6,7 +6,7 @@
 
 #include <math/Mat3x4f.hpp>
 
-class Tape : public RGLAutoSetUp
+class TapeSceneTests : public RGLAutoSetUp
 {
 	std::string getFilename() override { return FILENAME; }
 };
@@ -60,7 +60,7 @@ void testCubeSceneOnGraph()
 	}
 }
 
-TEST_F(Tape, SceneReconstruction)
+TEST_F(TapeSceneTests, SceneReconstruction)
 {
 	rgl_tape_record_begin("cube_scene_recording");
 	auto mesh = makeCubeMesh();
