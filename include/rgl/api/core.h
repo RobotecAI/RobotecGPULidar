@@ -67,6 +67,7 @@ typedef struct
 
 /**
  * Row-major matrix with 3 rows and 4 columns of 32-bit floats.
+ * Right-handed coordinate system.
  */
 typedef struct
 {
