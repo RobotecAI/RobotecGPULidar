@@ -1,4 +1,16 @@
-﻿---
-BasedOnStyle: WebKit
-NamespaceIndentation: None
-...
+﻿BasedOnStyle: Mozilla
+
+AlignAfterOpenBracket: Align
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+BinPackParameters: true
+BinPackArguments: true
+BreakInheritanceList: AfterColon
+ColumnLimit: 128
+ContinuationIndentWidth: 4
+IndentWidth: 4
+MaxEmptyLinesToKeep: 2
+PenaltyBreakAssignment: 42
+SpaceAfterCStyleCast: true
+TabWidth: 4
+UseTab: ForIndentation
