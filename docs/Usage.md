@@ -15,6 +15,7 @@ Mesh is a handle to the on-GPU data of a 3D model provided by user.
 Entity represents a 3D object on the scene along with its pose (position and rotation).
 Entity is a lightweight object - it contains a reference to a heavier Mesh object and a transformation matrix.
 Entity's transform is a 3D affine matrix (therefore 3x4) describing entity's local to scene coordinate frame transform.
+The coordinate system in RGL is right-handed: the positive x and y axes point right and up, and the negative z axis points forward. Positive rotation is counterclockwise about the axis of rotation.
 When created, entity is bound to a scene. Entity cannot be unbound from a scene or bound to multiple scenes.
 To create an Entity it is required to provide a Mesh, which must be created first.
 Entities can share the same mesh.
