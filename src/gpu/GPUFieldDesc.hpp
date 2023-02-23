@@ -17,8 +17,12 @@
 // Used to send e.g. formatting request to GPU
 struct GPUFieldDesc
 {
+	// Only one DataPtr will be assigned (the other will be nullptr).
+	// Ideally, std::variant would simplify these two members, but CUDA doesn't support them.
+	// An alternative is a union, but this is not a safe solution.
 	const char* readDataPtr;
 	char* writeDataPtr;
+
 	size_t size;
 	size_t dstOffset;
 };

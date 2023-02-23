@@ -302,10 +302,8 @@ struct FromArrayPointsNode : Node, IPointsSourceNode
 	size_t getWidth() const override { return width; }
 	size_t getHeight() const override { return 1; }
 
-	Mat3x4f getLookAtOriginTransform() const override { return Mat3x4f::identity(); }
-
 private:
-	size_t width;
+	size_t width = 0;
 };
 
 struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <ranges>
+#include <iterator>
 
 #include <graph/NodesCore.hpp>
 #include <scene/Scene.hpp>
@@ -37,7 +38,7 @@ auto RaytraceNode::getPtrTo()
 
 void RaytraceNode::schedule(cudaStream_t stream)
 {
-	for (auto const& [field, data] : fieldData) {
+	for (auto const& [_, data] : fieldData) {
 		data->resize(raysNode->getRayCount(), false, false);
 	}
 	auto rays = raysNode->getRays();
@@ -72,18 +73,16 @@ void RaytraceNode::schedule(cudaStream_t stream)
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
-	std::set<rgl_field_t> oldKeys { keyViewer.begin(), keyViewer.end() };
+	std::set<rgl_field_t> currentFields { keyViewer.begin(), keyViewer.end() };
 
-	for (auto&& field : fields) {
-		if (!fieldData.contains(field)) {
-			fieldData.insert({field, VArray::create(field)});
-		}
-		if (oldKeys.contains(field)) {
-			oldKeys.erase(field);
-		}
+	std::set<rgl_field_t> toRemove, toInsert;
+	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));
+	std::ranges::set_difference(fields, currentFields, std::inserter(toInsert, toInsert.end()));
+
+	for (auto&& field : toRemove) {
+		fieldData.erase(field);
 	}
-
-	for (auto&& keyToErase : oldKeys) {
-		fieldData.erase(keyToErase);
+	for (auto&& field : toInsert) {
+		fieldData.insert({field, VArray::create(field)});
 	}
 }
