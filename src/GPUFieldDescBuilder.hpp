@@ -35,26 +35,26 @@ private:
 		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
 		std::size_t offset = 0;
 		std::size_t gpuFieldIdx = 0;
-		for (size_t i = 0; i < fields.size(); ++i) {
-			if (!isDummy(fields[i])) {
+		for (auto field : fields) {
+			if (!isDummy(field)) {
 				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
 					.readDataPtr = nullptr,
 					.writeDataPtr = nullptr,
-					.size = getFieldSize(fields[i]),
+					.size = getFieldSize(field),
 					.dstOffset = offset
 				};
 				if (makeDataConst) {
-					(*gpuFields)[gpuFieldIdx].readDataPtr = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device));
+					(*gpuFields)[gpuFieldIdx].readDataPtr = static_cast<const char*>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
 				} else {
-					if constexpr (requires { input->fieldData[fields[i]]; }) {
-						(*gpuFields)[gpuFieldIdx].writeDataPtr = static_cast<char*>(input->fieldData[fields[i]]->getWritePtr(MemLoc::Device));
+					if constexpr (requires { input->fieldData[field]; }) {
+						(*gpuFields)[gpuFieldIdx].writeDataPtr = static_cast<char*>(input->fieldData[field]->getWritePtr(MemLoc::Device));
 					} else {
 						throw InvalidAPIObject("attempted to get writable pointer to field that is not available.");
 					}
 				}
-				gpuFieldIdx += 1;
+				++gpuFieldIdx;
 			}
-			offset += getFieldSize(fields[i]);
+			offset += getFieldSize(field);
 		}
 		return gpuFields;
 	}

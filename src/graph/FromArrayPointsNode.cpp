@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include <graph/NodesCore.hpp>
-#include <gpu/nodeKernels.hpp>
-#include <RGLFields.hpp>
 
 void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields)
 {
@@ -28,7 +26,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 		}
 	}
 
-	VArray::Ptr inputData = VArray::create<char>();
+	auto inputData = VArray::create<char>();
 	inputData->setData(static_cast<const char*>(points), pointCount * getPointSize(fields));
 
 	std::size_t pointSize = getPointSize(fields);

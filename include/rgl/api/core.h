@@ -476,7 +476,16 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
  * Input: none
  * Output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param points Binary data with points.
+ * @param points Pointer to the array of points. Point is represented as a structure composed of fields.
+ * See RGLFields.hpp (https://github.com/RobotecAI/RobotecGPULidar/blob/main/src/RGLFields.hpp).
+ * Example of that structure:
+ * struct ExamplePoint
+ * {
+ *   Field<XYZ_F32>::type xyz;
+ *   Field<PADDING_32>::type padding;
+ *   Field<IS_HIT_I32>::type isHit;
+ *   Field<INTENSITY_F32>::type intensity;
+ * };
  * @param points_count Number of elements in the `points` array.
  * @param rgl_field_t Subsequent fields to be present in the binary input.
  * @param field_count Number of elements in the `fields` array.
