@@ -16,6 +16,10 @@
 
 void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields)
 {
+	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
+		throw InvalidAPIArgument("cannot create point cloud from field 'RGL_FIELD_DYNAMIC_FORMAT'");
+	}
+
 	// TODO(msz-rai): Optimize memory allocation. Do not clear all fields.
 	fieldData.clear();
 	width = pointCount;
@@ -30,7 +34,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	inputData->setData(static_cast<const char*>(points), pointCount * getPointSize(fields));
 
 	std::size_t pointSize = getPointSize(fields);
-	auto gpuFields = GPUFieldDescBuilder::buildWritable(std::dynamic_pointer_cast<IPointsSourceNode>(shared_from_this()), fields, nullptr);
+	auto gpuFields = GPUFieldDescBuilder::buildWritable(collectFieldRawData(fields));
 	const char* inputPtr = static_cast<const char*>(inputData->getReadPtr(MemLoc::Device));
 	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getDevicePtr());
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));  // May not be required, but it is safer
@@ -42,4 +46,13 @@ void FromArrayPointsNode::validate()
 		auto msg = fmt::format("inputs for node {} are not allowed", getName());
 		throw InvalidPipeline(msg);
 	}
+}
+
+std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::collectFieldRawData(const std::vector<rgl_field_t>& fields)
+{
+	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;
+	for (auto&& field : fields) {
+		outFieldsData.push_back({field, isDummy(field) ? nullptr : fieldData[field]->getWritePtr(MemLoc::Device)});
+	}
+	return outFieldsData;
 }

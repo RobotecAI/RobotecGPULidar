@@ -22,38 +22,50 @@
 // Builder for GPUFieldDesc. Separated struct to avoid polluting gpu-visible header (gpu/GPUFieldDesc.hpp).
 struct GPUFieldDescBuilder
 {
-	static VArrayProxy<GPUFieldDesc>::Ptr buildReadable(IPointsNode::Ptr input, const std::vector<rgl_field_t> &fields, cudaStream_t stream)
-	{ return GPUFieldDescBuilder::build(input, fields, stream, true); }
+	static VArrayProxy<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
+	{
+		std::vector<rgl_field_t> fields;
+		std::transform(fieldsData.begin(), fieldsData.end(), std::back_inserter(fields),
+		               [&](const auto fieldData) { return fieldData.first; });
+		auto gpuFields = GPUFieldDescBuilder::buildWithoutData(fields);
+		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
+			if (fieldsData[i].second == nullptr) {  // dummy field
+				continue;
+			}
+			(*gpuFields)[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
+		}
+		return gpuFields;
+	}
 
-	static VArrayProxy<GPUFieldDesc>::Ptr buildWritable(IPointsSourceNode::Ptr input, const std::vector<rgl_field_t> &fields, cudaStream_t stream)
-	{ return GPUFieldDescBuilder::build(input, fields, stream, false); }
+	static VArrayProxy<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
+	{
+		std::vector<rgl_field_t> fields;
+		std::transform(fieldsData.begin(), fieldsData.end(), std::back_inserter(fields),
+		               [&](const auto fieldData) { return fieldData.first; });
+		auto gpuFields = GPUFieldDescBuilder::buildWithoutData(fields);
+		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
+			if (fieldsData[i].second == nullptr) {  // dummy field
+				continue;
+			}
+			(*gpuFields)[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
+		}
+		return gpuFields;
+	}
 
 private:
-	template<typename T>
-	static VArrayProxy<GPUFieldDesc>::Ptr build(T input, const std::vector<rgl_field_t> &fields, cudaStream_t stream, bool makeDataConst)
+	static VArrayProxy<GPUFieldDesc>::Ptr buildWithoutData(const std::vector<rgl_field_t>& fields)
 	{
 		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
 		std::size_t offset = 0;
 		std::size_t gpuFieldIdx = 0;
 		for (auto field : fields) {
-			if (isDummy(field)) {
-				offset += getFieldSize(field);
-				continue;
-			}
-			(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
-				.readDataPtr = nullptr,
-				.writeDataPtr = nullptr,
-				.size = getFieldSize(field),
-				.dstOffset = offset
-			};
-			if (makeDataConst) {
-				(*gpuFields)[gpuFieldIdx].readDataPtr = static_cast<const char*>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
-			} else {
-				if constexpr (requires { input->fieldData[field]; }) {
-					(*gpuFields)[gpuFieldIdx].writeDataPtr = static_cast<char*>(input->fieldData[field]->getWritePtr(MemLoc::Device));
-				} else {
-					throw InvalidAPIObject("attempted to get writable pointer to field that is not available.");
-				}
+			if (!isDummy(field)) {
+				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
+					.readDataPtr = nullptr,
+					.writeDataPtr = nullptr,
+					.size = getFieldSize(field),
+					.dstOffset = offset
+				};
 			}
 			++gpuFieldIdx;
 			offset += getFieldSize(field);

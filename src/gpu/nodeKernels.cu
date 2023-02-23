@@ -24,7 +24,6 @@
 __global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *soaInData, char *aosOutData)
 {
 	LIMIT(pointCount);
-	// Implement padding
 	for (size_t i = 0; i < fieldCount; ++i) {
 		memcpy(aosOutData + pointSize * tid + soaInData[i].dstOffset, soaInData[i].readDataPtr + soaInData[i].size * tid, soaInData[i].size);
 	}
@@ -33,7 +32,6 @@ __global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fiel
 __global__ void kFormatAosToSoa(size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, GPUFieldDesc* soaOutData)
 {
 	LIMIT(pointCount);
-	// Implement padding
 	for (size_t i = 0; i < fieldCount; ++i) {
 		memcpy(soaOutData[i].writeDataPtr + soaOutData[i].size * tid, aosInData + pointSize * tid + soaOutData[i].dstOffset, soaOutData[i].size);
 	}

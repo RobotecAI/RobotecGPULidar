@@ -78,23 +78,6 @@ struct IPointsNode
 	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
 };
 
-struct IPointsSourceNode : IPointsNode
-{
-	using Ptr = std::shared_ptr<IPointsSourceNode>;
-
-	// Point cloud description
-	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
-
-	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
-
-protected:
-	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
-
-	friend struct GPUFieldDescBuilder;  // To access fieldData
-};
-
 struct IPointsNodeSingleInput : IPointsNode
 {
 	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;
