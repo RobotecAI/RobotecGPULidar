@@ -10,6 +10,7 @@ class Graph : public RGLAutoCleanupTest {};
 
 #ifdef RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
+#endif
 
 TEST_F(Graph, FullLinear)
 {
@@ -26,16 +27,26 @@ TEST_F(Graph, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&shear, &shearTf));
+
+#ifdef RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 0.1f, 0.1f, 0.1f));
+#endif
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, shear));
+
+#ifdef RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(shear, downsample));
+#endif
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+#ifdef RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(downsample, "minimal.pcd"));
+#else
+	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
+#endif
 }
 
 TEST_F(Graph, NodeRemoval)
@@ -82,7 +93,11 @@ TEST_F(Graph, NodeRemoval)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	// Output pointcloud should contain two boxes
+#ifdef RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(temporalMerge, "two_boxes_removal.pcd"));
+#else
+	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
+#endif
 }
 
 TEST_F(Graph, SpatialMerge)
@@ -121,7 +136,11 @@ TEST_F(Graph, SpatialMerge)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPtsY, spatialMerge));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+#ifdef RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(spatialMerge, "two_boxes_spatial_merge.pcd"));
+#else
+	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
+#endif
 }
 
 TEST_F(Graph, TemporalMerge)
@@ -160,9 +179,12 @@ TEST_F(Graph, TemporalMerge)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+#ifdef RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(temporalMerge, "two_boxes_temporal_merge.pcd"));
-}
+#else
+	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
 #endif
+}
 
 TEST_F(Graph, FormatNodeResults)
 {
@@ -219,41 +241,3 @@ TEST_F(Graph, FormatNodeResults)
 		EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
 	}
 }
-
-/* TEST_F(Pipeline, AWSIM)
-{
-	setupBoxesAlongAxes(nullptr);
-	std::vector<rgl_field_t> pcl24Fields =  {
-		XYZ_F32,
-		PADDING_32,
-		INTENSITY_F32,
-		RING_ID_U16
-	};
-	std::vector<rgl_field_t> pcl48Fields = {
-		XYZ_F32,
-		PADDING_32,
-		INTENSITY_F32,
-		RING_ID_U16,
-		AZIMUTH_F32,
-		DISTANCE_F32,
-		RETURN_TYPE_U8,
-		TIME_STAMP_F64
-	};
-
-	rgl_node_t useRays=nullptr, yield=nullptr, raytrace=nullptr, pose=nullptr, ros=nullptr, compact=nullptr, fmt24=nullptr, fmt48=nullptr;
-
-
-	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, nullptr, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_pipline_transform_rays(&pose, useRays, &lidarPose));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, pose, nullptr, 1000.0f));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact, raytrace));
-	// EXPECT_RGL_SUCCESS(rgl_node_points_transform())
-
-
-	// use_rays -> raytrace -> compact
-		// yield (XYZ_F32)
-		// transform (ROS)
-			// format PCL24
-			// format PCL48
-
-} */
