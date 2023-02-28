@@ -27,6 +27,9 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
 			mergedData.insert({field, VArray::create(field)});
+
+			// Make VArray reside on MemLoc::Host
+			mergedData.at(field)->getWritePtr(MemLoc::Host);
 		}
 	}
 }
@@ -37,7 +40,7 @@ void TemporalMergePointsNode::validate()
 
 	// Check input pointcloud is unorganized
 	if (input->getHeight() != 1) {
-		auto msg = "Temporal points merge could be proceed on unorganized pointclouds only";
+		auto msg = "Temporal points merge can process unorganized point clouds only";
 		throw InvalidPipeline(msg);
 	}
 
