@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <type_traits>
+#include <typeinfo>
+
 #include <RGLExceptions.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <graph/Interfaces.hpp>
@@ -24,36 +27,20 @@ struct GPUFieldDescBuilder
 {
 	static VArrayProxy<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
 	{
-		std::vector<rgl_field_t> fields;
-		std::transform(fieldsData.begin(), fieldsData.end(), std::back_inserter(fields),
-		               [&](const auto fieldData) { return fieldData.first; });
-		auto gpuFields = GPUFieldDescBuilder::buildWithoutData(fields);
-		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
-			if (fieldsData[i].second == nullptr) {  // dummy field
-				continue;
-			}
-			(*gpuFields)[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
-		}
+		auto gpuFields = GPUFieldDescBuilder::initialize(GPUFieldDescBuilder::getFields(fieldsData));
+		GPUFieldDescBuilder::fillWithData(gpuFields, fieldsData);
 		return gpuFields;
 	}
 
 	static VArrayProxy<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
 	{
-		std::vector<rgl_field_t> fields;
-		std::transform(fieldsData.begin(), fieldsData.end(), std::back_inserter(fields),
-		               [&](const auto fieldData) { return fieldData.first; });
-		auto gpuFields = GPUFieldDescBuilder::buildWithoutData(fields);
-		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
-			if (fieldsData[i].second == nullptr) {  // dummy field
-				continue;
-			}
-			(*gpuFields)[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
-		}
+		auto gpuFields = GPUFieldDescBuilder::initialize(GPUFieldDescBuilder::getFields(fieldsData));
+		GPUFieldDescBuilder::fillWithData(gpuFields, fieldsData);
 		return gpuFields;
 	}
 
 private:
-	static VArrayProxy<GPUFieldDesc>::Ptr buildWithoutData(const std::vector<rgl_field_t>& fields)
+	static VArrayProxy<GPUFieldDesc>::Ptr initialize(const std::vector<rgl_field_t>& fields)
 	{
 		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
 		std::size_t offset = 0;
@@ -71,5 +58,33 @@ private:
 			offset += getFieldSize(field);
 		}
 		return gpuFields;
+	}
+
+	template <typename T>
+	static std::vector<rgl_field_t> getFields(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
+	{
+		std::vector<rgl_field_t> fields;
+		std::transform(fieldsData.begin(), fieldsData.end(), std::back_inserter(fields),
+		               [&](const auto fieldData) { return fieldData.first; });
+		return fields;
+	}
+
+	template <typename T>
+	static void fillWithData(VArrayProxy<GPUFieldDesc>::Ptr& gpuFields, const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
+	{
+		static_assert(std::is_same_v<T, void*> || std::is_same_v<T, const void*>);
+		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
+			if (fieldsData[i].second == nullptr) {  // dummy field
+				continue;
+			}
+			if constexpr (std::is_same_v<T, const void*>) {
+				(*gpuFields)[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
+				continue;
+			}
+			if constexpr (std::is_same_v<T, void*>) {
+				(*gpuFields)[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
+				continue;
+			}
+		}
 	}
 };

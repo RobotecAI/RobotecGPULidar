@@ -37,7 +37,8 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	auto gpuFields = GPUFieldDescBuilder::buildWritable(collectFieldRawData(fields));
 	const char* inputPtr = static_cast<const char*>(inputData->getReadPtr(MemLoc::Device));
 	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getDevicePtr());
-	CHECK_CUDA(cudaStreamSynchronize(nullptr));  // May not be required, but it is safer
+	// TODO(msz-rai): check sync is necessary
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
 void FromArrayPointsNode::validate()
