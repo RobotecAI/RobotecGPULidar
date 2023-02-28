@@ -16,8 +16,6 @@
 #include <gpu/nodeKernels.hpp>
 #include <RGLFields.hpp>
 
-static VArrayProxy<GPUFieldDesc>::Ptr makeGPUFieldDesc(IPointsNode::Ptr input, const std::vector<rgl_field_t> &fields, cudaStream_t stream);
-
 void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
 	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
@@ -42,9 +40,9 @@ void FormatPointsNode::formatAsync(const VArray::Ptr& output, const IPointsNode:
 	std::size_t pointSize = getPointSize(fields);
 	std::size_t pointCount = input->getPointCount();
 	output->resize(pointCount * pointSize, false, false);
-	auto gpuFields = makeGPUFieldDesc(input, fields, stream);
+	auto gpuFields = GPUFieldDescBuilder::buildReadable(FormatPointsNode::collectFieldConstRawData(input, fields, stream));
 	char* outputPtr = static_cast<char*>(output->getWritePtr(MemLoc::Device));
-	gpuFormat(stream, pointCount, pointSize, fields.size(), gpuFields->getDevicePtr(), outputPtr);
+	gpuFormatSoaToAos(stream, pointCount, pointSize, fields.size(), gpuFields->getDevicePtr(), outputPtr);
 }
 
 VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
@@ -64,23 +62,13 @@ std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
 	return getFieldSize(field);
 }
 
-// Constructor for GPUFieldDesc, implemented here to avoid polluting gpu-visible header.
-static VArrayProxy<GPUFieldDesc>::Ptr makeGPUFieldDesc(IPointsNode::Ptr input, const std::vector<rgl_field_t> &fields, cudaStream_t stream)
+std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::collectFieldConstRawData(const IPointsNode::Ptr& input,
+                                                                                            const std::vector<rgl_field_t>& fields,
+                                                                                            cudaStream_t stream)
 {
-	auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
-	std::size_t offset = 0;
-	std::size_t gpuFieldIdx = 0;
-	for (size_t i = 0; i < fields.size(); ++i) {
-		if (!isDummy(fields[i])) {
-			(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
-			// TODO(prybicki): distinguish between read / write fields here
-			.data = static_cast<const char*>(input->getFieldData(fields[i], stream)->getReadPtr(MemLoc::Device)),
-			.size = getFieldSize(fields[i]),
-			.dstOffset = offset,
-			};
-			gpuFieldIdx += 1;
-		}
-		offset += getFieldSize(fields[i]);
+	std::vector<std::pair<rgl_field_t, const void*>> outFieldsData;
+	for (auto&& field : fields) {
+		outFieldsData.push_back({field, isDummy(field) ? nullptr : input->getFieldData(field, stream)->getReadPtr(MemLoc::Device)});
 	}
-	return gpuFields;
+	return outFieldsData;
 }
