@@ -29,6 +29,7 @@
 #include <gpu/RaytraceRequestContext.hpp>
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
+#include <GPUFieldDescBuilder.hpp>
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
 
@@ -70,6 +71,10 @@ struct FormatPointsNode : Node, IPointsNodeSingleInput
 	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
 
 private:
+	static std::vector<std::pair<rgl_field_t, const void*>> collectFieldConstRawData(const IPointsNode::Ptr& input,
+	                                                                                 const std::vector<rgl_field_t>& fields,
+	                                                                                 cudaStream_t stream);
+
 	std::vector<rgl_field_t> fields;
 	VArray::Ptr output = VArray::create<char>();
 };
@@ -109,7 +114,7 @@ struct RaytraceNode : Node, IPointsNode
 
 	// Point cloud description
 	bool isDense() const override { return false; }
-	bool hasField(rgl_field_t field) const override { return fields.contains(field); }
+	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
 	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
 
@@ -124,7 +129,6 @@ struct RaytraceNode : Node, IPointsNode
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
-	std::set<rgl_field_t> fields;
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
@@ -288,6 +292,32 @@ struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
 private:
 	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
 	std::size_t width = 0;
+};
+
+struct FromArrayPointsNode : Node, IPointsNode
+{
+	using Ptr = std::shared_ptr<FromArrayPointsNode>;
+	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override {}
+
+	// Point cloud description
+	bool isDense() const override { return false; }
+	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
+	size_t getWidth() const override { return width; }
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+
+private:
+	std::vector<std::pair<rgl_field_t, void*>> collectFieldRawData(const std::vector<rgl_field_t>& fields);
+
+	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+	size_t width = 0;
 };
 
 struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput

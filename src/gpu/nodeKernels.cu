@@ -21,12 +21,19 @@
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 
-__global__ void kFormat(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* fields, char* out)
+__global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *soaInData, char *aosOutData)
 {
 	LIMIT(pointCount);
-	// Implement padding
 	for (size_t i = 0; i < fieldCount; ++i) {
-		memcpy(out + pointSize * tid + fields[i].dstOffset, fields[i].data + fields[i].size * tid, fields[i].size);
+		memcpy(aosOutData + pointSize * tid + soaInData[i].dstOffset, soaInData[i].readDataPtr + soaInData[i].size * tid, soaInData[i].size);
+	}
+}
+
+__global__ void kFormatAosToSoa(size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, GPUFieldDesc* soaOutData)
+{
+	LIMIT(pointCount);
+	for (size_t i = 0; i < fieldCount; ++i) {
+		memcpy(soaOutData[i].writeDataPtr + soaOutData[i].size * tid, aosInData + pointSize * tid + soaOutData[i].dstOffset, soaOutData[i].size);
 	}
 }
 
@@ -77,8 +84,11 @@ void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HI
 	CHECK_CUDA(cudaMemcpyAsync(outHitCount, hitCountInclusive + pointCount - 1, sizeof(*hitCountInclusive), cudaMemcpyDefault, stream));
 }
 
-void gpuFormat(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *fields, char *out)
-{ run(kFormat, stream, pointCount, pointSize, fieldCount, fields, out); }
+void gpuFormatSoaToAos(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *soaInData, char *aosOutData)
+{ run(kFormatSoaToAos, stream, pointCount, pointSize, fieldCount, soaInData, aosOutData); }
+
+void gpuFormatAosToSoa(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, GPUFieldDesc* soaOutData)
+{ run(kFormatAosToSoa, stream, pointCount, pointSize, fieldCount, aosInData, soaOutData); }
 
 void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
 { run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
