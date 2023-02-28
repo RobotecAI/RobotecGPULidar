@@ -306,3 +306,51 @@ TEST_F(GraphCase, UsePointsFromArray)
 	expectNearPoints(outPoints[0], expectedPoints[0]);
 	expectNearPoints(outPoints[1], expectedPoints[1]);
 }
+
+/**
+ * Temporal merging can lead to exceptionally high memory consumption.
+ * In majority of cases CPU memory is much larger than GPU memory,
+ * therefore TemporalMergeNode should use by default CPU memory.
+ *
+ * This test uses CUDA API to get current total memory usage of the GPU,
+ * which makes this test inevitably prone to random fluctuations.
+ *
+ * In the future this might fixed by wrapping all CUDA allocations and exposing API to internally track memory usage.
+ *
+ * In RGL API we could give user control over which memory is used by this node.
+ * However, this raises question, why not allow it for all nodes, which
+ * summons another jungle of complexity, which I'd prefer to avoid until it is really necessary.
+ */
+TEST_F(GraphCase, TemporalMergeUsesHostMemory)
+{
+	const int32_t STEPS = 4;
+	const int32_t BYTES_PER_STEP = (32 * 1024 * 1024);
+	const int32_t allowedAllocatedBytes = (32 * 1024 * 1024); // Allow fluctuations much smaller than Node's memory needs.
+
+	// Graph variables
+	rgl_node_t usePoints = nullptr;
+	rgl_node_t temporalMerge = nullptr;
+	rgl_field_t fields[] = {RGL_FIELD_RETURN_TYPE_U8};
+	int32_t fieldCount = ARRAY_SIZE(fields);
+	std::vector<char> data(BYTES_PER_STEP);
+
+	// Setup graph
+	rgl_node_points_from_array(&usePoints, data.data(), BYTES_PER_STEP, fields, fieldCount);
+	rgl_node_points_temporal_merge(&temporalMerge, fields, fieldCount);
+	rgl_graph_node_add_child(usePoints, temporalMerge);
+
+	int64_t freeMemAfterPrevStep = 0;
+	int64_t allocatedBytes = 0;
+	CHECK_CUDA(cudaMemGetInfo(reinterpret_cast<size_t*>(&freeMemAfterPrevStep), nullptr));
+	for (int i = 0; i < STEPS; ++i) {
+		rgl_graph_run(usePoints);
+		int64_t currentFreeMem = 0;
+		CHECK_CUDA(cudaMemGetInfo(reinterpret_cast<size_t*>(&currentFreeMem), nullptr));
+		allocatedBytes += (freeMemAfterPrevStep - currentFreeMem);
+		freeMemAfterPrevStep = currentFreeMem;
+	}
+
+	if (allocatedBytes > allowedAllocatedBytes) {
+		FAIL() << fmt::format("TemporalMergeNode seems to allocate GPU memory (allocated {} b)", allocatedBytes);
+	}
+}
