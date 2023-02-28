@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <ranges>
+#include <iterator>
+
 #include <graph/NodesCore.hpp>
 #include <scene/Scene.hpp>
 #include <macros/optix.hpp>
@@ -21,12 +24,12 @@ void RaytraceNode::validate()
 {
 	raysNode = getValidInput<IRaysNode>();
 
-	if (fields.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
+	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
 		throw InvalidPipeline(msg);
 	}
 
-	if (fields.contains(TIME_STAMP_F64) && !scene->getTime().has_value()) {
+	if (fieldData.contains(TIME_STAMP_F64) && !scene->getTime().has_value()) {
 		auto msg = fmt::format("requested for field TIME_STAMP_F64, but RaytraceNode cannot get time from scene");
 		throw InvalidPipeline(msg);
 	}
@@ -35,13 +38,13 @@ void RaytraceNode::validate()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fields.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
 void RaytraceNode::schedule(cudaStream_t stream)
 {
-	for (auto&& field : fields) {
-		fieldData[field]->resize(raysNode->getRayCount(), false, false);
+	for (auto const& [_, data] : fieldData) {
+		data->resize(raysNode->getRayCount(), false, false);
 	}
 	auto rays = raysNode->getRays();
 	auto sceneAS = scene->getAS();
@@ -76,10 +79,17 @@ void RaytraceNode::schedule(cudaStream_t stream)
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
-	this->fields = std::move(fields);
-	for (auto&& field : fields) {
-		if (!fieldData.contains(field)) {
-			fieldData.insert({field, VArray::create(field)});
-		}
+	auto keyViewer = std::views::keys(fieldData);
+	std::set<rgl_field_t> currentFields { keyViewer.begin(), keyViewer.end() };
+
+	std::set<rgl_field_t> toRemove, toInsert;
+	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));
+	std::ranges::set_difference(fields, currentFields, std::inserter(toInsert, toInsert.end()));
+
+	for (auto&& field : toRemove) {
+		fieldData.erase(field);
+	}
+	for (auto&& field : toInsert) {
+		fieldData.insert({field, VArray::create(field)});
 	}
 }
