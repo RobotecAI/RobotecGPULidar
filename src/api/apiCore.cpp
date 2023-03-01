@@ -99,6 +99,10 @@ void TapePlayer::tape_configure_logging(const YAML::Node& yamlNode)
 RGL_API void
 rgl_get_last_error_string(const char** out_error_string)
 {
+        if (out_error_string == nullptr) {
+                RGL_WARN("Invalid Argument: rgl_get_last_error_string(nullptr).");
+                return;
+        }
 	// No logging here for now, since it may throw.
 	*out_error_string = getLastErrorString();
 }
@@ -431,7 +435,8 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ra
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
-		CHECK_ARG(rays != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
 	});
@@ -454,7 +459,8 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
-		CHECK_ARG(ring_ids != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(ring_ids != nullptr);
 		CHECK_ARG(ring_ids_count > 0);
 		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t) ring_ids_count);
 	});
@@ -477,7 +483,8 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
-		CHECK_ARG(transform != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
 	});
@@ -498,7 +505,8 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_transform(node={}, transform={})", repr(node), repr(transform));
-		CHECK_ARG(transform != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
 	});
@@ -519,7 +527,8 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_raytrace(node={}, scene={}, range={})", repr(node), (void*) scene, range);
-		CHECK_ARG(!std::isnan(range));
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(!std::isnan(range));
 		CHECK_ARG(range > 0.0f);
 
 		if (scene == nullptr) {
@@ -547,7 +556,8 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t fiel
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
-		CHECK_ARG(fields != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<FormatPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
@@ -571,7 +581,8 @@ rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
-		CHECK_ARG(fields != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<YieldPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
@@ -595,6 +606,7 @@ rgl_node_points_compact(rgl_node_t* node)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_compact(node={})", repr(node));
+                CHECK_ARG(node != nullptr);
 
 		createOrUpdateNode<CompactPointsNode>(node);
 	});
@@ -615,7 +627,8 @@ rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_spatial_merge(node={}, fields={})", repr(node), repr(fields, field_count));
-		CHECK_ARG(fields != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<SpatialMergePointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
@@ -639,7 +652,8 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_temporal_merge(node={}, fields={})", repr(node), repr(fields, field_count));
-		CHECK_ARG(fields != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
 
 		createOrUpdateNode<TemporalMergePointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
@@ -663,7 +677,8 @@ rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_from_array(node={}, points=[{},{}], fields={})", repr(node), (void*)points, points_count, repr(fields, field_count));
-		CHECK_ARG(points != nullptr);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(points != nullptr);
 		CHECK_ARG(points_count > 0);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
@@ -692,7 +707,8 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_angular_ray(node={}, mean={}, stDev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
-		CHECK_ARG(st_dev >= 0);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
 		createOrUpdateNode<GaussianNoiseAngularRayNode>(node, mean, st_dev, rotation_axis);
@@ -717,7 +733,8 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_angular_hitpoint(node={}, mean={}, st_dev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
-		CHECK_ARG(st_dev >= 0);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
 		createOrUpdateNode<GaussianNoiseAngularHitpointNode>(node, mean, st_dev, rotation_axis);
@@ -742,7 +759,8 @@ rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_distance(node={}, mean={}, st_dev_base={}, st_dev_rise_per_meter={})", repr(node), mean, st_dev_base, st_dev_rise_per_meter);
-		CHECK_ARG(st_dev_base >= 0);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(st_dev_base >= 0);
 		CHECK_ARG(st_dev_rise_per_meter >= 0);
 
 		createOrUpdateNode<GaussianNoiseDistanceNode>(node, mean, st_dev_base, st_dev_rise_per_meter);

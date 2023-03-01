@@ -97,7 +97,6 @@ rgl_status_t rglSafeCall(Fn fn)
 template<typename NodeType, typename... Args>
 void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 {
-	CHECK_ARG(nodeRawPtr != nullptr);
 	std::shared_ptr<NodeType> node;
 	if (*nodeRawPtr == nullptr) {
 		node = Node::create<NodeType>();
