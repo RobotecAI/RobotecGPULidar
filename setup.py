@@ -54,7 +54,7 @@ def main():
         parser.add_argument("--make", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to make. Usage: --make=\"args...\". Defaults to \"-j <cpu count>\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
-                            help="Add run-time search path(s) for RGL library")
+                            help="Add run-time search path(s) for RGL library. $ORIGIN (actual library path) is added by default.")
     if on_windows():
         parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
@@ -122,12 +122,12 @@ def main():
 
     if on_linux():
         # Set rpaths
+        linker_rpath_flags = ["-Wl,-rpath=\\$ORIGIN"]  # add directory in which an RGL library is located
         if args.lib_rpath is not None:
-            linker_rpath_flags = []
             for rpath in args.lib_rpath:
                 rpath = rpath.replace("$ORIGIN", "\\$ORIGIN")  # cmake should not treat this as variable
                 linker_rpath_flags.append(f"-Wl,-rpath={rpath}")
-            cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
+        cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
 
     if on_windows():
         cmake_args.append("-DRGL_BUILD_TOOLS=OFF")  # Tools are not available on Windows
