@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.12.0] 25 January 2023
+## [0.12.0] 06 February 2023
 
 ### Added
 - ROS2 extension providing a node to publish point cloud into ROS2 topic
@@ -8,6 +8,7 @@
     - `rgl_node_points_ros2_publish`
     - `rgl_node_points_ros2_publish_with_qos`
   - Necessary scripting to build ROS2 integration in the standalone mode (not requiring ROS2 installation)
+- API call for setting time on the scene
 - TapeVisualizer tool (PoC)
   - Currently, it does not handle multiple graphs in the tape, to be improved
 
