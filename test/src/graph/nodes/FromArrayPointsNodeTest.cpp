@@ -5,10 +5,9 @@
 
 struct PointStruct {
     Field<XYZ_F32>::type xyz;
-    Field<PADDING_32>::type padding;
     Field<IS_HIT_I32>::type isHit;
     Field<INTENSITY_F32>::type intensity;
-} pointStruct;
+};
 
 class FromArrayPointsNodeTest : public RGLAutoCleanupTestWithParam<int> {
 protected:
@@ -16,14 +15,13 @@ protected:
     {
         std::vector<PointStruct> points;
         for (int i = 0; i < count; ++i) {
-            points.push_back(PointStruct { .xyz = { i, i + 1, i + 2 }, .isHit = i % 2, .intensity = 100 });
+            points.emplace_back(PointStruct { .xyz = { i, i + 1, i + 2 }, .isHit = i % 2, .intensity = 100 });
         }
         return points;
     }
 
     std::vector<rgl_field_t> pointFields = {
         XYZ_F32,
-        PADDING_32,
         IS_HIT_I32,
         INTENSITY_F32
     };
@@ -31,7 +29,7 @@ protected:
 
 INSTANTIATE_TEST_SUITE_P(
     MyGroup, FromArrayPointsNodeTest,
-    testing::Values(1, 16, 65536),
+    testing::Values(1, 10, 100000),
     [](const auto& info) {
         return "pointsCount_" + std::to_string(info.param);
     });
@@ -66,37 +64,53 @@ TEST_P(FromArrayPointsNodeTest, use_case)
     auto inPoints = GeneratePointsArray(pointsCount);
 
     rgl_node_t usePointsNode = nullptr;
-    rgl_node_t formatNode = nullptr;
 
     EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
     ASSERT_THAT(usePointsNode, testing::NotNull());
 
-    EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, pointFields.data(), pointFields.size()));
-    ASSERT_THAT(formatNode, testing::NotNull());
-
-    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, formatNode));
-
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
-
-    int32_t outCount, outSizeOf;
-    EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(formatNode, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
-    EXPECT_EQ(outCount, inPoints.size());
-    EXPECT_EQ(outSizeOf, sizeof(pointStruct));
-
-    std::vector<PointStruct> outPoints { (size_t)outCount };
-    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(formatNode, RGL_FIELD_DYNAMIC_FORMAT, outPoints.data()));
 
     std::vector<PointStruct> expectedPoints = GeneratePointsArray(pointsCount);
 
-    auto expectNearPoints = [](PointStruct p1, PointStruct p2) {
-        EXPECT_NEAR(p1.xyz[0], p2.xyz[0], 1e-6);
-        EXPECT_NEAR(p1.xyz[1], p2.xyz[1], 1e-6);
-        EXPECT_NEAR(p1.xyz[2], p2.xyz[2], 1e-6);
-        EXPECT_EQ(p1.isHit, p2.isHit);
-        EXPECT_NEAR(p1.intensity, p2.intensity, 1e-6);
-    };
-
+    auto* expectedXYZ = new float[pointsCount * 3];
     for (int i = 0; i < pointsCount; ++i) {
-        expectNearPoints(outPoints[i], expectedPoints[i]);
+        expectedXYZ[3 * i] = expectedPoints[i].xyz[0];
+        expectedXYZ[(3 * i) + 1] = expectedPoints[i].xyz[1];
+        expectedXYZ[(3 * i) + 2] = expectedPoints[i].xyz[2];
+    }
+
+    auto* expectedIsHit = new int[pointsCount];
+    for (int i = 0; i < pointsCount; ++i) {
+        expectedIsHit[i] = expectedPoints[i].isHit;
+    }
+
+    auto* expectedIntensity = new float[pointsCount];
+    for (int i = 0; i < pointsCount; ++i) {
+        expectedIntensity[i] = expectedPoints[i].intensity;
+    }
+
+    for (auto field : pointFields) {
+        int32_t outCount, outSizeOf;
+        EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(usePointsNode, field, &outCount, &outSizeOf));
+        EXPECT_EQ(outCount, inPoints.size());
+        EXPECT_EQ(outSizeOf, getFieldSize(field));
+
+        void* outData = malloc(outCount * outSizeOf);
+        EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData));
+
+        for (int i = 0; i < outCount; ++i) {
+            if (field == XYZ_F32) {
+                EXPECT_NEAR(expectedXYZ[3 * i], ((float*)outData)[3 * i], 1e-6);
+                EXPECT_NEAR(expectedXYZ[(3 * i) + 1], ((float*)outData)[(3 * i) + 1], 1e-6);
+                EXPECT_NEAR(expectedXYZ[(3 * i) + 2], ((float*)outData)[(3 * i) + 2], 1e-6);
+            }
+            if (field == IS_HIT_I32) {
+                EXPECT_NEAR(expectedIsHit[i], ((int32_t*)outData)[i], 1e-6);
+            }
+            if (field == INTENSITY_F32) {
+                EXPECT_NEAR(expectedIntensity[i], ((float*)outData)[i], 1e-6);
+            }
+        }
+        free(outData);
     }
 }
