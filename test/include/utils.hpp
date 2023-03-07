@@ -14,6 +14,7 @@
 // TODO(msz-rai): Left this namespace for cleaner tests - fix namespace for rgl (Field)
 //using namespace ::testing;
 
+#define EPSILON_F 1e-6
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define EXPECT_RGL_STATUS(actual, expected, ...)                   \
