@@ -14,22 +14,21 @@
 // TODO(msz-rai): Left this namespace for cleaner tests - fix namespace for rgl (Field)
 //using namespace ::testing;
 
+#define EPSILON_F 1e-6
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
-#define EXPECT_RGL_STATUS(actual, expected, error_prefix, error_detail) \
-    do                                                                  \
-    {                                                                   \
-        EXPECT_EQ(actual, expected);                                    \
-        const char* error_string;                                       \
-        rgl_get_last_error_string(&error_string);                       \
-        EXPECT_THAT(error_string, HasSubstr(error_prefix));       \
-        EXPECT_THAT(error_string, HasSubstr(error_detail));         \
-    }                                                                   \
-    while(false)
+#define EXPECT_RGL_STATUS(actual, expected, ...)                   \
+    do {                                                           \
+        EXPECT_EQ(actual, expected);                               \
+        const char* error_string;                                  \
+        rgl_get_last_error_string(&error_string);                  \
+        for (auto&& substr : { __VA_ARGS__ }) {                    \
+            EXPECT_THAT(error_string, testing::HasSubstr(substr)); \
+        }                                                          \
+    } while (false)
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
-
 
 struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
@@ -37,6 +36,14 @@ protected:
 	{
 		EXPECT_RGL_SUCCESS(rgl_cleanup());
 	}
+};
+template <typename T>
+struct RGLAutoCleanupTestWithParam : public ::testing::TestWithParam<T> {
+    protected:
+        virtual ~RGLAutoCleanupTestWithParam() override
+        {
+                EXPECT_RGL_SUCCESS(rgl_cleanup());
+        }
 };
 
 template <typename T>
