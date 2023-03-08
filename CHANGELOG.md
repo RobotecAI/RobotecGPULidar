@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.12.0] 06 March 2023
+## [0.12.0] 8 March 2023
 
 ### Added
 - ROS2 extension providing a node to publish point cloud into ROS2 topic

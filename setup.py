@@ -132,11 +132,13 @@ def main():
     if on_windows():
         cmake_args.append("-DRGL_BUILD_TOOLS=OFF")  # Tools are not available on Windows
 
+    cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}")
+
     # Append user args, possibly overwriting
     cmake_args.append(args.cmake)
 
     cmake_args = " ".join(cmake_args)
-    run_subprocess_command(f"cmake -B {args.build_dir} -G {cfg.CMAKE_GENERATOR} --install-prefix {os.path.join(os.getcwd(), args.build_dir)} {cmake_args}")
+    run_subprocess_command(f"cmake -B {args.build_dir} -G {cfg.CMAKE_GENERATOR} {cmake_args}")
     run_subprocess_command(f"cmake --build {args.build_dir} -- {args.build_args}")
 
     if args.with_ros2_standalone:

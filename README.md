@@ -88,7 +88,7 @@ Build instructions:
 1. Install [Microsoft Visual Studio](https://visualstudio.microsoft.com/pl/downloads/) (Visual Studio 2019 when using ROS2 extension) with **C++ CMake tools for Windows** component.
 2. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
 3. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
-   - use the default location or set environment variable `OptiX_INSTALL_DIR`
+   - install the framework and set environment variable `OptiX_INSTALL_DIR`
 4. Install [Python3](https://www.python.org/downloads/).
 5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to RGL repository.
 6. Run `python setup.py --install-deps` command to install RGL dependencies.
