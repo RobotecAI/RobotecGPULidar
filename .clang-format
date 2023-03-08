@@ -1,16 +1,244 @@
-﻿BasedOnStyle: Mozilla
+﻿---
+# Note: There is a bug in overwriting options when using BasedOnStyle: Mozilla;
+#       Describtion of the bug: https://github.com/llvm/llvm-project/issues/61156#issuecomment-1453699064
+#       RGL manually edited options from the Mozilla style to overcome this bug.
+#
+# The file is divided into two sections; 
+# the first contains options customized for RGL, 
+# and the second includes options defined in Mozilla style.
 
-AlignAfterOpenBracket: Align
+# Options customized for RGL:
+
+AccessModifierOffset: -4
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AlignArrayOfStructures: Right
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: All
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
-BinPackParameters: true
 BinPackArguments: true
-BreakInheritanceList: AfterColon
+BinPackParameters: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterCaseLabel:  false
+    AfterClass:      false
+    AfterControlStatement: Never
+    AfterEnum:       true
+    AfterFunction:   true
+    AfterNamespace:  false
+    AfterObjCDeclaration: false
+    AfterStruct:     true
+    AfterUnion:      true
+    AfterExternBlock: false
+    BeforeCatch:     false
+    BeforeElse:      false
+    BeforeLambdaBody: false
+    BeforeWhile:     false
+    IndentBraces:    false
+    SplitEmptyFunction: true
+    SplitEmptyRecord: false
+    SplitEmptyNamespace: true
+BreakBeforeTernaryOperators: false
 ColumnLimit: 128
 ContinuationIndentWidth: 4
+IndentExternBlock: NoIndent
 IndentWidth: 4
 MaxEmptyLinesToKeep: 2
 PenaltyBreakAssignment: 42
+ReflowComments: false
+SortIncludes: false
 SpaceAfterCStyleCast: true
 TabWidth: 4
 UseTab: ForIndentation
+
+# All configuration options of Mozilla style:
+# Note: Labeling of commented options:
+#         (d) - deprecated option, see https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+#         (o) - overwritten option
+#         (u) - unused option
+
+Language: Cpp
+#(o) AccessModifierOffset: -2
+AlignAfterOpenBracket: Align
+#(o) AlignArrayOfStructures: None
+AlignConsecutiveMacros: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AllowShortEnumsOnASingleLine: true
+#(o) AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+#(o) AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+#(o) AlwaysBreakAfterDefinitionReturnType: TopLevel
+#(o) AlwaysBreakAfterReturnType: TopLevel
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+AttributeMacros:
+- __capability
+#(o) BinPackArguments: false
+#(o) BinPackParameters: false
+#(o) BraceWrapping:
+#        AfterCaseLabel:  false
+#        AfterClass:      true
+#        AfterControlStatement: Never
+#        AfterEnum:       true
+#        AfterFunction:   true
+#        AfterNamespace:  false
+#        AfterObjCDeclaration: false
+#        AfterStruct:     true
+#        AfterUnion:      true
+#        AfterExternBlock: true
+#        BeforeCatch:     false
+#        BeforeElse:      false
+#        BeforeLambdaBody: false
+#        BeforeWhile:     false
+#        IndentBraces:    false
+#        SplitEmptyFunction: true
+#        SplitEmptyRecord: false
+#        SplitEmptyNamespace: true
+BreakBeforeBinaryOperators: None
+BreakBeforeConceptDeclarations: true
+#(o) BreakBeforeBraces: Mozilla
+BreakBeforeInheritanceComma: false
+#(u) BreakInheritanceList: BeforeComma
+#(o) BreakBeforeTernaryOperators: true
+BreakConstructorInitializersBeforeComma: false
+#(u) BreakConstructorInitializers: BeforeComma
+BreakAfterJavaFieldAnnotations: false
+BreakStringLiterals: true
+#(o) ColumnLimit: 80
+CommentPragmas:  '^ IWYU pragma:'
+QualifierAlignment: Leave
+CompactNamespaces: false
+ConstructorInitializerIndentWidth: 2
+#(o) ContinuationIndentWidth: 2
+Cpp11BracedListStyle: false
+DeriveLineEnding: true
+DerivePointerAlignment: false
+DisableFormat:   false
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+ExperimentalAutoDetectBinPacking: false
+PackConstructorInitializers: BinPack
+BasedOnStyle:    ''
+#(d) ConstructorInitializerAllOnOneLineOrOnePerLine: false
+#(d) AllowAllConstructorInitializersOnNextLine: true
+FixNamespaceComments: false
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+IfMacros:
+  - KJ_IF_MAYBE
+IncludeBlocks:   Preserve
+IncludeCategories:
+  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
+    Priority:        2
+    SortPriority:    0
+    CaseSensitive:   false
+  - Regex:           '^(<|"(gtest|gmock|isl|json)/)'
+    Priority:        3
+    SortPriority:    0
+    CaseSensitive:   false
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+    CaseSensitive:   false
+IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainSourceRegex: ''
+IndentAccessModifiers: false
+IndentCaseLabels: true
+IndentCaseBlocks: false
+IndentGotoLabels: true
+IndentPPDirectives: None
+#(o) IndentExternBlock: AfterExternBlock
+IndentRequires:  false
+#(o) IndentWidth: 2
+IndentWrappedFunctionNames: false
+InsertTrailingCommas: None
+JavaScriptQuotes: Leave
+JavaScriptWrapImports: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+LambdaBodyIndentation: Signature
+MacroBlockBegin: ''
+MacroBlockEnd:   ''
+#(o) MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+ObjCBinPackProtocolList: Auto
+ObjCBlockIndentWidth: 2
+ObjCBreakBeforeNestedBlockParam: true
+ObjCSpaceAfterProperty: true
+ObjCSpaceBeforeProtocolList: false
+#(o) PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakOpenParenthesis: 0
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 200
+PenaltyIndentedWhitespace: 0
+PointerAlignment: Left
+PPIndentWidth:   -1
+ReferenceAlignment: Pointer
+#(o) ReflowComments: true
+RemoveBracesLLVM: false
+SeparateDefinitionBlocks: Leave
+ShortNamespaceLines: 1
+#(o) SortIncludes: CaseSensitive
+SortJavaStaticImport: Before
+SortUsingDeclarations: true
+#(o) SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterForeachMacros: true
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterIfMacros:   true
+  AfterOverloadedOperator: false
+  BeforeNonEmptyParentheses: false
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles:  Never
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+SpacesInLineCommentPrefix:
+  Minimum:         1
+  Maximum:         -1
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false
+BitFieldColonSpacing: Both
+Standard:        Latest
+StatementAttributeLikeMacros:
+  - Q_EMIT
+StatementMacros:
+  - Q_UNUSED
+  - QT_REQUIRE_VERSION
+#(o) TabWidth: 8
+UseCRLF:         false
+#(o) UseTab: Never
+WhitespaceSensitiveMacros:
+  - STRINGIZE
+  - PP_STRINGIZE
+  - BOOST_PP_STRINGIZE
+  - NS_SWIFT_NAME
+  - CF_SWIFT_NAME
+...
