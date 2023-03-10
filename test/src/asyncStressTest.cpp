@@ -11,6 +11,7 @@
 
 struct GraphStress : public RGLAutoCleanupTest {};
 const Vec3f cubePosition = {0, 0, 5};
+const Vec3f cubeDims = {2, 2, 2};
 
 static std::random_device randomDevice;
 static auto randomSeed = randomDevice();
@@ -82,11 +83,13 @@ struct RandomGraph
 			transformNodes.push_back(childNode);
 		}
 
-		setRandomRays();
+		generateRandomRays();
 	}
 
-	void setRandomRays()
+	// Function to re-randomize
+	void generateRandomRays()
 	{
+		// We want rays to hit the cube and do not bother with edge cases
 		std::uniform_real_distribution<float> randomFloat {-0.9, 0.9};
 		std::uniform_int_distribution<size_t> randomInt {1, 10};
 		raysXY = { randomFloat(randomGenerator), randomFloat(randomGenerator) };
@@ -164,6 +167,8 @@ TEST_F(GraphStress, Async)
 		graphs.emplace_back(GRAPH_SIZE);
 	}
 
+	// TODO: the outer loop (GRAPH_EPOCHS) could be replaced using gtest_repeat
+	// TODO: however, it would need external definition of GRAPH_EPOCHS, python script?
 	for (int e = 0; e < GRAPH_EPOCHS; ++e) {
 		// Randomize graph check order
 		std::vector<int> graphCheckOrder = randomizeIndices(GRAPH_COUNT);
@@ -211,7 +216,7 @@ TEST_F(GraphStress, Async)
 				// Check if output size is not affected by graph modifications
 				int pointCount = -1, pointSize = -1;
 				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
-				EXPECT_THAT(pointCount, Eq(run.expectedPointCount));
+				EXPECT_EQ(pointCount,run.expectedPointCount);
 
 				// Get results
 				std::vector<Vec3f> results(pointCount);
@@ -219,20 +224,20 @@ TEST_F(GraphStress, Async)
 
 				// Verify results are correctly transformed
 				Vec3f expectedPoint = run.expectedTransform.at(checkedNode) * run.expectedPointWorld;
-				EXPECT_THAT(results.at(0).x(), FloatNear(expectedPoint.x(), EPSILON));
-				EXPECT_THAT(results.at(0).y(), FloatNear(expectedPoint.y(), EPSILON));
-				EXPECT_THAT(results.at(0).z(), FloatNear(expectedPoint.z(), EPSILON));
+				EXPECT_NEAR(results.at(0).x(), expectedPoint.x(), EPSILON);
+				EXPECT_NEAR(results.at(0).y(), expectedPoint.y(), EPSILON);
+				EXPECT_NEAR(results.at(0).z(), expectedPoint.z(), EPSILON);
 
 				// All points should be equal
 				for (int i = 1; i < results.size(); ++i) {
-					EXPECT_THAT(results.at(i).x(), FloatEq(results.at(i - 1).x()));
-					EXPECT_THAT(results.at(i).y(), FloatEq(results.at(i - 1).y()));
-					EXPECT_THAT(results.at(i).z(), FloatEq(results.at(i - 1).z()));
+					EXPECT_EQ(results.at(i).x(), results.at(i - 1).x());
+					EXPECT_EQ(results.at(i).y(), results.at(i - 1).y());
+					EXPECT_EQ(results.at(i).z(), results.at(i - 1).z());
 				}
 
 				// At some point, modify rays while the graph may be still running
 				if (checkedNode == run.updateRaysAfterCheckingNode) {
-					graph.setRandomRays();
+					graph.generateRandomRays();
 				}
 
 				run.nextNodeCheckOrderIndex += 1;

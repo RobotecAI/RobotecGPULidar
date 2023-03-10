@@ -47,7 +47,7 @@ static std::vector<rgl_mat3x4f> makeGridOfParallelRays(Vec2f minCoord, Vec2f max
 				minCoord.y() + dy * static_cast<float>(y),
 				0.0f
 			};
-			rays.push_back(Mat3x4f::translation(origin.x(), origin.y(), origin.z()).toRGL());
+			rays.emplace_back(Mat3x4f::translation(origin.x(), origin.y(), origin.z()).toRGL());
 		}
 	}
 	return rays;
