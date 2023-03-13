@@ -48,6 +48,15 @@ struct CacheManager
 		cacheAge.erase(key);
 	}
 
+	std::vector<Key> getKeys() const {
+		std::vector<Key> result;
+		result.reserve(cache.size());
+		for (auto&& [key, _] : cache) {
+			result.emplace_back(key);
+		}
+		return result;
+	}
+
 	void setUpdated(Key key) { cacheAge.at(key) = 0; }
 	bool isLatest(Key key) const { return cacheAge.at(key) == 0; }
 	bool contains(Key key) const { return cache.contains(key); }

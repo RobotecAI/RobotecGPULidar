@@ -1,8 +1,7 @@
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
-#include "utils.hpp"
-#include "scenes.hpp"
+#include <helpers/sceneHelpers.hpp>
 
 using namespace ::testing;
 
@@ -20,7 +19,7 @@ TEST_F(VelocityDistortionTest, smoke_test)
 	rgl_node_t raytrace = nullptr;
 
 	// Prepare scene
-	spawnCubeOnScene(nullptr, Mat3x4f::identity());
+	spawnCubeOnScene(Mat3x4f::identity());
 
 	// Generate 10 rays in the same origin looking at the same direction with time offset of firing.
 	const int rayCount = 10;

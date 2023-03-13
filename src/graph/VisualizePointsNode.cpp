@@ -30,12 +30,12 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 		visualizeThread.emplace();
 	}
 	std::lock_guard lock { visualizeThread.value().visualizeNodesMutex };
-	visualizeThread->visualizeNodes.push_back(std::static_pointer_cast<VisualizePointsNode>(shared_from_this()));
+	visualizeThread->visualizeNodes.push_back(std::dynamic_pointer_cast<VisualizePointsNode>(shared_from_this()));
 }
 
-void VisualizePointsNode::validate()
+void VisualizePointsNode::validateImpl()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::validateImpl();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
@@ -127,8 +127,7 @@ catch (...) {
 	RGL_WARN("Visualize thread captured unknown exception :((");
 }
 
-
-void VisualizePointsNode::schedule(cudaStream_t stream)
+void VisualizePointsNode::enqueueExecImpl()
 {
 	if (isClosed) {
 		return;  // No need to update point cloud because viewer was closed
@@ -142,10 +141,11 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
+	FormatPointsNode::formatAsync(formattedInputDev, input, getRequiredFieldList(), gpuFieldDescBuilder);
+	formattedInputHst->copyFrom(formattedInputDev);
 
 	// Convert to PCL cloud
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
+	const auto* data = reinterpret_cast<const PCLPointType*>(formattedInputHst->getReadPtr());
 
 	std::lock_guard updateLock { updateCloudMutex };
 

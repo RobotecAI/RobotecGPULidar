@@ -26,43 +26,29 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
-			mergedData.insert({field, VArray::create(field)});
-
-			// Make VArray reside on MemLoc::Host
-			mergedData.at(field)->getWritePtr(MemLoc::Host);
+			mergedData.insert({field, createArray<HostPageableArray>(field)});
 		}
 	}
 }
 
-void TemporalMergePointsNode::validate()
+void TemporalMergePointsNode::validateImpl()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::validateImpl();
 
 	// Check input pointcloud is unorganized
 	if (input->getHeight() != 1) {
 		auto msg = "Temporal points merge can process unorganized point clouds only";
 		throw InvalidPipeline(msg);
 	}
-
-	// Check input pointcloud has required fields
-	for (const auto& requiredField : std::views::keys(mergedData)) {
-		if (!input->hasField(requiredField)) {
-			auto msg = fmt::format("TemporalMergePointsNode input does not have required field '{}'",
-			                       toString(requiredField));
-			throw InvalidPipeline(msg);
-		}
-	}
 }
 
-void TemporalMergePointsNode::schedule(cudaStream_t stream)
+void TemporalMergePointsNode::enqueueExecImpl()
 {
 	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {
 		size_t pointCount = input->getPointCount();
-		const auto toMergeData = input->getFieldData(field, stream);
-		data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, width);
-		// Double capacity of VArray if is close to run out. It prevents reallocating memory every insertion.
-		data->doubleCapacityIfRunningOut();
+		const auto toMergeData = input->getFieldData(field);
+		data->appendFrom(toMergeData);
 	}
 	width += input->getWidth();
 }

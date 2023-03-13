@@ -1,6 +1,8 @@
-#include "lidars.hpp"
-#include "scenes.hpp"
-#include "utils.hpp"
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+
+#include <RGLFields.hpp>
 
 #ifdef RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
@@ -36,9 +38,9 @@ TEST_F(EntityIdTest, BaseTest)
 	constexpr float BOX1_BOX2_BORDER = (BOX1_Y_POS + BOX2_Y_POS) / 2.0f;
 	constexpr float BOX2_BOX3_BORDER = (BOX2_Y_POS + BOX3_Y_POS) / 2.0f;
 
-	spawnCubeOnScene(nullptr, Mat3x4f::TRS({6, BOX1_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX1_ID);
-	spawnCubeOnScene(nullptr, Mat3x4f::TRS({6, BOX2_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX2_ID);
-	spawnCubeOnScene(nullptr, Mat3x4f::TRS({6, BOX3_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}));
+	spawnCubeOnScene(Mat3x4f::TRS({6, BOX1_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX1_ID);
+	spawnCubeOnScene(Mat3x4f::TRS({6, BOX2_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX2_ID);
+	spawnCubeOnScene(Mat3x4f::TRS({6, BOX3_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}));
 
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);

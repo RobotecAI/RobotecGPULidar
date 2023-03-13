@@ -1,6 +1,9 @@
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include <models.hpp>
+#include <filesystem>
+
+#include <helpers/geometryData.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/textureHelpers.hpp>
+
 #include <rgl/api/extensions/tape.h>
 
 #if RGL_BUILD_PCL_EXTENSION

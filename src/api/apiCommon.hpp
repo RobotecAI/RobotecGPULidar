@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #include <cmath>
+#include <thread>
 #include <spdlog/common.h>
 
 #if RGL_BUILD_ROS2_EXTENSION
@@ -23,6 +26,7 @@
 
 #include <Optix.hpp>
 #include <graph/Node.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 #include <Tape.hpp>
 #include <RGLExceptions.hpp>
@@ -41,7 +45,7 @@ extern rgl_status_t lastStatusCode;
 extern std::optional<std::string> lastStatusString;
 
 void rglLazyInit();
-const char* getLastErrorString();
+const char* getLastErrorString() noexcept;
 bool canContinueAfterStatus(rgl_status_t status);
 rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt);
 
@@ -104,6 +108,47 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
 	}
+	// TODO: The magic below detects calls changing rgl_field_t* (e.g. FormatPointsNode)
+	// TODO: Such changes may require recomputing required fields in RaytraceNode.
+	// TODO: However, taking care of this manually is very bug prone.
+	// TODO: There are other ways to automate this, however, for now this should be enough.
+	bool fieldsModified = ((std::is_same_v<Args, std::vector<rgl_field_t>> || ... ));
+	if (fieldsModified && node->hasGraphRunCtx()) {
+		node->getGraphRunCtx()->detachAndDestroy();
+	}
+
+	// As of now, there's no guarantee that changing node parameter won't influence other nodes
+	// Therefore, before changing them, we need to ensure all nodes are idle (not running in GraphRunCtx).
+	if (node->hasGraphRunCtx()) {
+		node->getGraphRunCtx()->synchronize();
+	}
 	node->setParameters(args...);
+	node->dirty = true;
 	*nodeRawPtr = node.get();
+}
+
+inline void handleDestructorException(std::exception_ptr e, const char* what)
+{
+	RGL_CRITICAL("Exception thrown from destructor!");
+	updateAPIState(RGL_INTERNAL_EXCEPTION, what);
+	// We got some exception thrown in some destructor
+	// We may be in graph thread which should get gracefully killed:
+	// TODO: Implement this in a thread-safe manner (accessing GraphRunCtx::instances)
+	for (auto&& ctx : GraphRunCtx::instances) {
+		if (!ctx->maybeThread.has_value()) {
+			continue;
+		}
+		if (ctx->maybeThread.value().get_id() != std::this_thread::get_id()) {
+			continue;
+		}
+		// We're a graph thread. Mark remaining nodes as executed and set exception.
+		for (auto&& [node, state] : ctx->executionStatus) {
+			if (state.enqueued.load(std::memory_order::relaxed)) {
+				continue;
+			}
+			state.exceptionPtr = std::current_exception();
+			state.enqueued.store(true, std::memory_order::release);
+			throw e; // In Graph thread, rethrow to die.
+		}
+	}
 }

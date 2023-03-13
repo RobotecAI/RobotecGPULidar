@@ -41,7 +41,7 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?
-	// Current copyFromHost and ensureDeviceCanFit are not working with cudaArray_t
+	// Current copyFromExternal and ensureDeviceCanFit are not working with cudaArray_t
 	CHECK_CUDA(cudaMallocArray(&dPixelArray, &channel_desc, width, height));
 
 	CHECK_CUDA(cudaMemcpy2DToArray(

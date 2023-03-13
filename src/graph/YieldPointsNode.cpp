@@ -17,25 +17,24 @@
 void YieldPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
 	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
-		throw InvalidAPIArgument("cannot yield field 'RGL_FIELD_DYNAMIC_FORMAT'");
+		throw InvalidAPIArgument("cannot yield field 'RGL_FIELD_DYNAMIC_FORMAT'"); // TODO: Yeah, but dummies are OK?
 	}
 	this->fields = fields;
 }
 
-void YieldPointsNode::schedule(cudaStream_t stream)
+void YieldPointsNode::enqueueExecImpl()
 {
 	for (auto&& field : fields) {
-		results[field] = input->getFieldData(field, stream);
+		results[field] = input->getFieldData(field);
 	}
+	if (results.contains(XYZ_F32)) {
+		xyzHostCache->resize(results.at(XYZ_F32)->getCount(), false, false);
+		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(),
+		                           results[XYZ_F32]->getRawReadPtr(),
+		                           xyzHostCache->getCount() * xyzHostCache->getSizeOf(),
+		                           cudaMemcpyDefault,
+		                           getStreamHandle()));
+	}
+
 }
 
-void YieldPointsNode::validate()
-{
-	input = getValidInput<IPointsNode>();
-	for (auto&& field : fields) {
-		if (!input->hasField(field)) {
-			auto msg = fmt::format("YieldPointsNode's input does not provide required field {}", toString(field));
-			throw InvalidPipeline(msg);
-		}
-	}
-}

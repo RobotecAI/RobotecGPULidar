@@ -24,14 +24,14 @@
 #include <graph/PCLVisualizerFix.hpp>
 #include <CacheManager.hpp>
 
-struct DownSamplePointsNode : Node, IPointsNodeSingleInput
+struct DownSamplePointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<DownSamplePointsNode>;
 	void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
@@ -42,18 +42,20 @@ struct DownSamplePointsNode : Node, IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	Vec3f leafDims;
-	VArray::Ptr inputFmtData = VArray::create<char>();
-	cudaEvent_t finishedEvent = nullptr;
-	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
-	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
-	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	DeviceAsyncArray<char>::Ptr formattedInput = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(arrayMgr);
+	DeviceAsyncArray<pcl::PointXYZL>::Ptr filteredPoints = DeviceAsyncArray<pcl::PointXYZL>::create(arrayMgr);
+	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+	std::mutex getFieldDataMutex;
+	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
-struct VisualizePointsNode : Node, IPointsNodeSingleInput
+struct VisualizePointsNode : IPointsNodeSingleInput
 {
 	static const int FRAME_RATE = 60;
 	using Ptr = std::shared_ptr<VisualizePointsNode>;
@@ -61,8 +63,8 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
@@ -70,6 +72,10 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 	virtual ~VisualizePointsNode();
 
 private:
+	DeviceAsyncArray<char>::Ptr formattedInputDev = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+
 	PCLVisualizerFix::Ptr viewer;
 	std::string windowName {};
 	int windowWidth;
@@ -82,7 +88,6 @@ private:
 	std::atomic<bool> hasNewPointCloud {false};
 	std::mutex updateCloudMutex;
 		pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
-	VArray::Ptr inputFmtData = VArray::create<char>();
 
 	struct VisualizeThread
 	{

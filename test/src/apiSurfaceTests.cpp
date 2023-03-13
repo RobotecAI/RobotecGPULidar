@@ -1,9 +1,8 @@
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
+
 #include <Logger.hpp>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include <rgl/api/core.h>
-#include <scenes.hpp>
 
 #define VERTICES cubeVertices
 #define INDICES cubeIndices

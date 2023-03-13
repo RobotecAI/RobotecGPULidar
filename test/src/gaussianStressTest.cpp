@@ -1,7 +1,6 @@
-#include <gtest/gtest.h>
-
-#include <utils.hpp>
-#include <scenes.hpp>
+#include <helpers/mathHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>

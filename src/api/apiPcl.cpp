@@ -44,14 +44,24 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 
 		// We are not using format node to avoid transferring huge point cloud to GPU (risk of cuda out of memory error)
 		// We are formatting manually on the CPU instead.
-		// TODO(msz-rai): CudaStream for getFieldDataTyped: nullptr or pointCloudNode->getGraph()->getStream()?
-		auto xyzTypedArray = pointCloudNode->getFieldDataTyped<XYZ_F32>(nullptr);
-		auto xyzData = xyzTypedArray->getReadPtr(MemLoc::Host);
+		pointCloudNode->waitForResults();
+		Array<Field<XYZ_F32>::type>::ConstPtr xyzTyped = pointCloudNode->getFieldDataTyped<XYZ_F32>();
+		HostArray<Field<XYZ_F32>::type>::ConstPtr xyzTypedHost = nullptr;
+		if (isHost(xyzTyped->getMemoryKind())) {
+			xyzTypedHost = xyzTyped->asSubclass<HostArray>();
+		}
+		else {
+			auto tmp = HostPinnedArray<Field<XYZ_F32>::type>::create();
+			tmp->copyFrom(xyzTyped);
+			xyzTypedHost = tmp;
+		}
+
+		auto xyzData = xyzTypedHost->getReadPtr();
 
 		// Convert to PCL cloud
 		pcl::PointCloud<pcl::PointXYZ> pclCloud;
 		pclCloud.resize(pointCloudNode->getWidth(), pointCloudNode->getHeight());
-		for (int i = 0; i < xyzTypedArray->getCount(); ++i) {
+		for (int i = 0; i < xyzTypedHost->getCount(); ++i) {
 			pclCloud[i] = pcl::PointXYZ(xyzData[i].x(), xyzData[i].y(), xyzData[i].z());
 		}
 		pclCloud.is_dense = pointCloudNode->isDense();

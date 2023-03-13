@@ -15,16 +15,16 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
-void GaussianNoiseAngularRayNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
+void GaussianNoiseAngularRaysNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
 {
 	this->mean = mean;
 	this->stDev = stDev;
 	this->rotationAxis = rotationAxis;
 }
 
-void GaussianNoiseAngularRayNode::validate()
+void GaussianNoiseAngularRaysNode::validateImpl()
 {
-	input = getValidInput<IRaysNode>();
+	IRaysNodeSingleInput::validateImpl();
 	lookAtOriginTransform = input->getCumulativeRayTransfrom().inverse();
 
 	auto rayCount = input->getRayCount();
@@ -32,13 +32,14 @@ void GaussianNoiseAngularRayNode::validate()
 
 	if (randomizationStates->getCount() < rayCount) {
 		randomizationStates->resize(rayCount, false, false);
-		gpuSetupGaussianNoiseGenerator(nullptr, rayCount, randomDevice(), randomizationStates->getDevicePtr());
+		gpuSetupGaussianNoiseGenerator(getStreamHandle(), rayCount, randomDevice(), randomizationStates->getWritePtr());
 	}
 }
 
-void GaussianNoiseAngularRayNode::schedule(cudaStream_t stream)
+void GaussianNoiseAngularRaysNode::enqueueExecImpl()
 {
-	const auto* inRaysPtr = input->getRays()->getDevicePtr();
-	auto* outRaysPtr = rays->getDevicePtr();
-	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
+	const auto* inRaysPtr = input->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto* outRaysPtr = rays->getWritePtr();
+	auto* randPtr = randomizationStates->getWritePtr();
+	gpuAddGaussianNoiseAngularRay(getStreamHandle(), getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randPtr, inRaysPtr, outRaysPtr);
 }

@@ -1,10 +1,9 @@
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
-#include "utils.hpp"
+#include <helpers/commonHelpers.hpp>
 
-
-class SetTimeOffsetsRaysNodeTest : public RGLTest, public RGLPointTestHelper {};
+class SetTimeOffsetsRaysNodeTest : public RGLTest {};
 
 TEST_F(SetTimeOffsetsRaysNodeTest, invalid_arguments)
 {

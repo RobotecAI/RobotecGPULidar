@@ -23,7 +23,8 @@
 #include <scene/Texture.hpp>
 
 #include <graph/NodesCore.hpp>
-#include <graph/Graph.hpp>
+#include <graph/GraphRunCtx.hpp>
+#include <NvtxWrappers.hpp>
 
 extern "C" {
 
@@ -127,11 +128,10 @@ void TapePlayer::tape_configure_logging(const YAML::Node& yamlNode)
 RGL_API void
 rgl_get_last_error_string(const char** out_error_string)
 {
-        if (out_error_string == nullptr) {
-                RGL_WARN("Invalid Argument: rgl_get_last_error_string(nullptr).");
-                return;
-        }
-	// No logging here for now, since it may throw.
+	if (out_error_string == nullptr) {
+		return;
+	}
+	// NO LOGGING HERE SINCE IT MAY THROW!
 	*out_error_string = getLastErrorString();
 }
 
@@ -139,16 +139,21 @@ RGL_API rgl_status_t
 rgl_cleanup(void)
 {
 	auto status = rglSafeCall([&]() {
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		// First, delete nodes, because there might be a thread accessing other structures.
+		while (!Node::instances.empty()) {
+			auto node = Node::instances.begin()->second;
+			if (node->hasGraphRunCtx()) {
+				node->getGraphRunCtx()->detachAndDestroy();
+			}
+			auto connectedNodes = node->disconnectConnectedNodes();
+			for (auto&& nodeToRelease : connectedNodes) {
+				Node::release(nodeToRelease.get());
+			}
+		}
 		Entity::instances.clear();
 		Mesh::instances.clear();
 		Texture::instances.clear();
 		Scene::defaultInstance()->clear();
-		while (!Node::instances.empty()) {
-			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
-			Node::Ptr node = Node::instances.begin()->second;
-			Graph::destroy(node, false);
-		}
 	});
 	TAPE_HOOK();
 	return status;
@@ -173,6 +178,7 @@ rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_
 		CHECK_ARG(vertex_count > 0);
 		CHECK_ARG(indices != nullptr);
 		CHECK_ARG(index_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
@@ -200,9 +206,8 @@ rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_co
 		            (void*) mesh, repr(uvs, uv_count), uv_count);
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(uvs != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		CHECK_ARG(uv_count == Mesh::validatePtr(mesh)->getVertexCount());
-
+		CHECK_ARG(uv_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::validatePtr(mesh)->setTexCoords(reinterpret_cast<const Vec2f*>(uvs), uv_count);
 
 	});
@@ -223,7 +228,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::release(mesh);
 	});
 	TAPE_HOOK(mesh);
@@ -245,6 +250,7 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t ver
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
 	});
 	TAPE_HOOK(mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count);
@@ -265,6 +271,7 @@ rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		RGL_API_LOG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
@@ -290,14 +297,10 @@ rgl_entity_destroy(rgl_entity_t entity)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
-		if (auto sceneShared = entitySafe->scene.lock()) {
-			sceneShared->removeEntity(entitySafe);
-			Entity::release(entity);
-		} else {
-			throw std::logic_error("Entity's scene does not exist");
-		}
+		entitySafe->scene->removeEntity(entitySafe);
+		Entity::release(entity);
 	});
 	TAPE_HOOK(entity);
 	return status;
@@ -317,6 +320,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
 		RGL_API_LOG("rgl_entity_set_pose(entity={}, transform={})", (void*) entity, repr(transform, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(transform != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&transform->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
 	});
@@ -337,6 +341,7 @@ rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 		RGL_API_LOG("rgl_entity_set_id(entity={}, id={})", (void *) entity, id);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(id != RGL_ENTITY_INVALID_ID);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Entity::validatePtr(entity)->setId(id);
 	});
 	TAPE_HOOK(entity, id);
@@ -345,8 +350,7 @@ rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 
 void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
 {
-	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
-					  yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
+	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
 }
 
 RGL_API rgl_status_t
@@ -356,6 +360,7 @@ rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture )
 		RGL_API_LOG("rgl_entity_set_intensity_texture(entity={}, texture={})", (void*) entity, (void*) texture);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(texture != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Entity::validatePtr(entity)->setIntensityTexture(Texture::validatePtr(texture));
 	});
 
@@ -378,7 +383,7 @@ rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width
 		CHECK_ARG(texels != nullptr);
 		CHECK_ARG(width > 0);
 		CHECK_ARG(height > 0);
-
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		*out_texture = Texture::create(texels, width, height).get();
 	});
 	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * sizeof(TextureTexelFormat))), width, height);
@@ -403,7 +408,7 @@ rgl_texture_destroy(rgl_texture_t texture)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_texture_destroy(texture={})", (void*) texture);
 		CHECK_ARG(texture != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Texture::release(texture);
 	});
 	TAPE_HOOK(texture);
@@ -422,6 +427,7 @@ rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_scene_set_time(scene={}, nanoseconds={})", (void*) scene, nanoseconds);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
@@ -438,15 +444,19 @@ void TapePlayer::tape_scene_set_time(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_run(rgl_node_t node)
+rgl_graph_run(rgl_node_t raw_node)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
-		CHECK_ARG(node != nullptr);
-		auto shptr = Node::validatePtr(node)->getGraph();
-		shptr->run();
+		RGL_API_LOG("rgl_graph_run(node={})", repr(raw_node));
+		CHECK_ARG(raw_node != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_run"};
+		auto node = Node::validatePtr(raw_node);
+		if (!node->hasGraphRunCtx()) {
+			GraphRunCtx::createAndAttach(node);
+		}
+		node->getGraphRunCtx()->executeAsync();
 	});
-	TAPE_HOOK(node);
+	TAPE_HOOK(raw_node);
 	return status;
 }
 
@@ -456,22 +466,28 @@ void TapePlayer::tape_graph_run(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_destroy(rgl_node_t node)
+rgl_graph_destroy(rgl_node_t raw_node)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_destroy(node={})", repr(node));
-		CHECK_ARG(node != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		Graph::destroy(Node::validatePtr(node), false);
+		RGL_API_LOG("rgl_graph_destroy(node={})", repr(raw_node));
+		CHECK_ARG(raw_node != nullptr);
+		auto node = Node::validatePtr(raw_node);
+		if (node->hasGraphRunCtx()) {
+			node->getGraphRunCtx()->detachAndDestroy();
+		}
+		auto allNodes = node->disconnectConnectedNodes();
+		for (auto&& nodeToRelease : allNodes) {
+			Node::release(nodeToRelease.get());
+		}
 	});
-	TAPE_HOOK(node);
+	TAPE_HOOK(raw_node);
 	return status;
 }
 
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = Graph::findConnectedNodes(Node::validatePtr(userNode));
+	std::set<Node::Ptr> graph = Node::validatePtr(userNode)->getConnectedNodes();
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
@@ -499,8 +515,10 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_size"};
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		pointCloudNode->waitForResults();
 		auto elemCount = (int32_t) pointCloudNode->getPointCount();
 		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
 
@@ -519,25 +537,68 @@ void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
 		&out_count,
 		&out_size_of);
 
-	if (out_count != yamlNode[2].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_count mismatch");
-	if (out_size_of != yamlNode[3].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_size_of mismatch");
+	auto tape_count = yamlNode[2].as<int32_t>();
+	auto tape_size_of = yamlNode[3].as<int32_t>();
+	// These warnings may be caused e.g. by gaussian noise (different seed -> different hits)
+	if (out_count != tape_count) {
+		RGL_WARN("tape_graph_get_result_size: actual count ({}) differs from tape count ({})", out_count, tape_count);
+	}
+	if (out_size_of != tape_size_of) {
+		RGL_WARN("tape_graph_get_result_size: actual sizeof ({}) differs from tape sizeof ({})", out_size_of, tape_size_of);
+	}
 }
 
 RGL_API rgl_status_t
-rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
+rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 {
+	static auto buffer = HostPinnedArray<char>::create();
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
+		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*) dst);
 		CHECK_ARG(node != nullptr);
-		CHECK_ARG(data != nullptr);
+		CHECK_ARG(dst != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_data"};
+
+		// This part is a bit tricky:
+		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.
+		// All its DAAs are bound to that stream. The stream may be busy with processing other nodes.
+		// We want to copy data without waiting until the aforementioned stream is synchronized.
+		// Therefore, we want to invoke the copy from the source DAA in a separate stream - copy stream.
+		// Take note, that since the source DAA is bound to a stream,
+		// it could be unsafe to issue operations in a different stream.
+		// E.g. If DAA was resized (data pointer already changed its value), but the reallocation didn't yet happen.
+		// However, with the current architecture, we can reasonably expect that no DAA is modified by other Node than its owner.
+		// Therefore, it should be sufficient to wait only for the stream operations issued by the given node (and, obviously, all previous).
+		// After that, all pending operations on the source DAA are done, and it is safe to use it in the copy stream.
+
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
-
-		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
-		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));
+		pointCloudNode->waitForResults();
+		if (!pointCloudNode->hasField(field)) {
+			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
+			throw InvalidPipeline(msg);
+		}
+                // Temporary optimization to yield better results in AWSIM:
+                // YieldNode (which has complementary part of this optimization) prefetches XYZ to host mem.
+                // If we are asked for XYZ from YieldNode, we can use its host cache and immediately memcpy it.
+                // TODO: This should work for any field in YieldNode (encountered test fails for other fields)
+		if (auto yieldNode = std::dynamic_pointer_cast<YieldPointsNode>(pointCloudNode)) {
+			if (field == XYZ_F32) {
+				auto fieldArray = yieldNode->getXYZCache();
+				size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
+				memcpy(dst, fieldArray->getRawReadPtr(), size);
+				return;
+			}
+		}
+		auto fieldArray = pointCloudNode->getFieldData(field);
+		buffer->resize(fieldArray->getCount() * fieldArray->getSizeOf(), false, false);
+		void* bufferDst = buffer->getWritePtr();
+		const void* src = fieldArray->getRawReadPtr();
+		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
+		CHECK_CUDA(cudaMemcpyAsync(bufferDst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
+		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
+		memcpy(dst, bufferDst, size);
 	});
-	TAPE_HOOK(node, field, data);
+	TAPE_HOOK(node, field, dst);
 	return status;
 }
 
@@ -559,6 +620,7 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		RGL_API_LOG("rgl_graph_node_add_child(parent={}, child={})", repr(parent), repr(child));
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
+		CHECK_ARG(parent != child);
 
 		Node::validatePtr(parent)->addChild(Node::validatePtr(child));
 	});
@@ -591,12 +653,65 @@ void TapePlayer::tape_graph_node_remove_child(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_graph_node_set_priority(rgl_node_t node, int32_t priority)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_graph_node_set_priority(node={}, priority={})", repr(node), priority);
+		CHECK_ARG(node != nullptr);
+
+		Node::Ptr nodeShared = Node::validatePtr(node);
+		if (nodeShared->hasGraphRunCtx()) {
+			nodeShared->getGraphRunCtx()->synchronize();
+		}
+		nodeShared->setPriority(priority);
+	});
+	TAPE_HOOK(node, priority);
+	return status;
+}
+
+void TapePlayer::tape_graph_node_set_priority(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.at(nodeId);
+	auto priority = yamlNode[1].as<int32_t>();
+	rgl_graph_node_set_priority(node, priority);
+}
+
+RGL_API rgl_status_t
+rgl_graph_node_get_priority(rgl_node_t node, int32_t* out_priority)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_graph_node_get_priority(node={}, priority={})", repr(node), (void*) out_priority);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(out_priority != nullptr);
+
+		Node::Ptr nodeShared = Node::validatePtr(node);
+		// No need to synchronize
+		*out_priority = nodeShared->getPriority();
+	});
+	TAPE_HOOK(node, out_priority);
+	return status;
+}
+
+void TapePlayer::tape_graph_node_get_priority(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.at(nodeId);
+	auto tape_priority = yamlNode[1].as<int32_t>();
+	int32_t out_priority;
+	rgl_graph_node_set_priority(node, out_priority);
+	if (tape_priority != out_priority) {
+		RGL_WARN("tape_graph_node_get_priority: actual priority ({}) differs from tape priority ({})", out_priority, tape_priority);
+	}
+}
+
+RGL_API rgl_status_t
 rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(rays != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
 	});
@@ -691,8 +806,8 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(transform != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
 	});
@@ -753,8 +868,7 @@ void TapePlayer::tape_node_raytrace(const YAML::Node& yamlNode)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-	rgl_node_raytrace(&node,
-		nullptr);  // TODO(msz-rai) support multiple scenes
+	rgl_node_raytrace(&node, nullptr);  // TODO(msz-rai) support multiple scenes
 	tapeNodes.insert({nodeId, node});
 }
 
@@ -917,8 +1031,8 @@ rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_from_array(node={}, points=[{},{}], fields={})", repr(node), (void*)points, points_count, repr(fields, field_count));
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(points != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(points != nullptr);
 		CHECK_ARG(points_count > 0);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
@@ -947,11 +1061,11 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_angular_ray(node={}, mean={}, stDev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(st_dev >= 0);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
-		createOrUpdateNode<GaussianNoiseAngularRayNode>(node, mean, st_dev, rotation_axis);
+		createOrUpdateNode<GaussianNoiseAngularRaysNode>(node, mean, st_dev, rotation_axis);
 	});
 	TAPE_HOOK(node, mean, st_dev, rotation_axis);
 	return status;
@@ -1093,7 +1207,7 @@ rgl_tape_play(const char* path)
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
 			TapePlayer player(path);
-			player.playUntil(std::nullopt);
+			player.playRealtime();
 		}
 	});
 	#endif //_WIN32

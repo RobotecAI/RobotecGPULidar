@@ -22,9 +22,9 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 	this->stDevRisePerMeter = stDevRisePerMeter;
 }
 
-void GaussianNoiseDistanceNode::validate()
+void GaussianNoiseDistanceNode::validateImpl()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::validateImpl();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.
@@ -32,14 +32,14 @@ void GaussianNoiseDistanceNode::validate()
 	// Other fields that depend on the main field (for now, it's XYZ_F32) should be calculated somewhere else (e.g., in data getters nodes).
 	if (input->hasField(DISTANCE_F32)) {
 		if (outDistance == nullptr) {
-			outDistance = VArrayProxy<Field<DISTANCE_F32>::type>::create();
+			outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr);
 		}
 	} else {
 		outDistance.reset();
 	}
 }
 
-void GaussianNoiseDistanceNode::schedule(cudaStream_t stream)
+void GaussianNoiseDistanceNode::enqueueExecImpl()
 {
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);
@@ -47,36 +47,27 @@ void GaussianNoiseDistanceNode::schedule(cudaStream_t stream)
 	Field<DISTANCE_F32>::type* outDistancePtr = nullptr;
 	if (outDistance != nullptr) {
 		outDistance->resize(pointCount, false, false);
-		outDistancePtr = outDistance->getDevicePtr();
+		outDistancePtr = outDistance->getWritePtr();
 	}
 
 	if (randomizationStates->getCount() < pointCount) {
 		randomizationStates->resize(pointCount, false, false);
-		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+		gpuSetupGaussianNoiseGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getWritePtr());
 	}
 
-	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);
-	const auto* inXyzPtr = inXyz->getDevicePtr();
-	auto* outXyzPtr = outXyz->getDevicePtr();
-	gpuAddGaussianNoiseDistance(stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
+	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto* outXyzPtr = outXyz->getWritePtr();
+	auto* randPtr = randomizationStates->getWritePtr();
+	gpuAddGaussianNoiseDistance(getStreamHandle(), pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
-VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+IAnyArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field)
 {
 	if (field == XYZ_F32) {
-		// TODO(msz-rai): check sync is necessary
-		CHECK_CUDA(cudaStreamSynchronize(stream));
-		return outXyz->untyped();
+		return outXyz;
 	}
 	if (field == DISTANCE_F32 && outDistance != nullptr) {
-		// TODO(msz-rai): check sync is necessary
-		CHECK_CUDA(cudaStreamSynchronize(stream));
-		return outDistance->untyped();
+		return outDistance;
 	}
-	return input->getFieldData(field, stream);
-}
-
-std::vector<rgl_field_t> GaussianNoiseDistanceNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
+	return input->getFieldData(field);
 }

@@ -41,7 +41,15 @@ if (WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)  # https://www.kitware.com//create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
 endif()
 
-# External dependencies
+if (WIN32 AND RGL_BUILD_TESTS)
+    # Sometimes, for convenience, tests reference non-public symbols from the library
+    # By default, those symbols are not visible and not annotated with __declspec(dllexport)
+    # However, there's a CMake workaround for such scenarios, described further at
+    # https://www.kitware.com//create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
+
+# `External` dependencies
 add_subdirectory(external)
 find_package(CUDAToolkit REQUIRED)
 find_program(BIN2C bin2c DOC "Path to the cuda-sdk bin2c executable.")
@@ -53,6 +61,7 @@ endif()
 include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
 include_directories(${spdlog_SOURCE_DIR}/include)
+include_directories(${YAML_CPP_SOURCE_DIR}/include)
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
 add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)
@@ -70,7 +79,6 @@ add_library(RobotecGPULidar SHARED
     src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
-    src/VArray.cpp
     src/Optix.cpp
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
@@ -79,7 +87,7 @@ add_library(RobotecGPULidar SHARED
     src/scene/Entity.cpp
     src/scene/Texture.cpp
     src/scene/ASBuildScratchpad.cpp
-    src/graph/Graph.cpp
+    src/graph/GraphRunCtx.cpp
     src/graph/Node.cpp
     src/graph/GaussianNoiseAngularHitpointNode.cpp
     src/graph/GaussianNoiseAngularRayNode.cpp
@@ -144,11 +152,12 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart_static
     CUDA::cuda_driver
+    CUDA::nvToolsExt
 )
 
 # Create a CMake list with available log levels (rgl_log_level_t)
 set(RGL_AVAILABLE_LOG_LEVELS
-    RGL_LOG_LEVEL_ALL
+    RGL_LOG_LEVEL_ALLc
     RGL_LOG_LEVEL_TRACE
     RGL_LOG_LEVEL_DEBUG
     RGL_LOG_LEVEL_INFO
@@ -173,6 +182,7 @@ target_compile_definitions(RobotecGPULidar
     PUBLIC RGL_LOG_FILE="${RGL_LOG_FILE}"
     PUBLIC RGL_LOG_LEVEL=RGL_LOG_LEVEL_${RGL_LOG_LEVEL}
     PUBLIC RGL_AUTO_TAPE_PATH="${RGL_AUTO_TAPE_PATH}"
+    PRIVATE RGL_BUILD # Used in headers to differentiate whether it is parsed as library or client's code, affects __declspec on Windows.
 )
 
 # Include tests

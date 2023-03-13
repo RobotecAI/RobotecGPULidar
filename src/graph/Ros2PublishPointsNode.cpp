@@ -59,21 +59,24 @@ void Ros2PublishPointsNode::setParameters(
 	ros2Publisher = ros2Node->create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
-void Ros2PublishPointsNode::validate()
+void Ros2PublishPointsNode::validateImpl()
 {
-	input = getValidInput<FormatPointsNode>();
+	IPointsNodeSingleInput::validateImpl();
 	if (input->getHeight() != 1) {
 		throw InvalidPipeline("ROS2 publish support unorganized pointclouds only");
 	}
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
-void Ros2PublishPointsNode::schedule(cudaStream_t stream)
+void Ros2PublishPointsNode::enqueueExecImpl()
 {
-	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT, stream);
+	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT)->asTyped<char>()->asSubclass<HostArray>();
 	int count = input->getPointCount();
 	ros2Message.data.resize(ros2Message.point_step * count);
-	fieldData->getData(ros2Message.data.data(), ros2Message.point_step * count);
+	const void* src = fieldData->getRawReadPtr();
+	size_t size = fieldData->getCount() * fieldData->getSizeOf();
+	CHECK_CUDA(cudaMemcpyAsync(ros2Message.data.data(), src, size, cudaMemcpyDefault, getStreamHandle()));
+	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
 	// TODO(msz-rai): Assign scene to the Graph.

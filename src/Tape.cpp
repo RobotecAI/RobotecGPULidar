@@ -36,6 +36,7 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 	}
 	TapeRecorder::recordRGLVersion(yamlRoot);
 	yamlRecording = yamlRoot["recording"];
+	beginTimestamp = std::chrono::steady_clock::now();
 }
 
 TapeRecorder::~TapeRecorder()
@@ -86,6 +87,8 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_graph_get_result_data", std::bind(&TapePlayer::tape_graph_get_result_data, this, _1) },
 		{ "rgl_graph_node_add_child", std::bind(&TapePlayer::tape_graph_node_add_child, this, _1) },
 		{ "rgl_graph_node_remove_child", std::bind(&TapePlayer::tape_graph_node_remove_child, this, _1) },
+		{ "rgl_graph_node_set_priority", std::bind(&TapePlayer::tape_graph_node_set_priority, this, _1) },
+		{ "rgl_graph_node_get_priority", std::bind(&TapePlayer::tape_graph_node_get_priority, this, _1) },
 		{ "rgl_node_rays_from_mat3x4f", std::bind(&TapePlayer::tape_node_rays_from_mat3x4f, this, _1) },
 		{ "rgl_node_rays_set_range", std::bind(&TapePlayer::tape_node_rays_set_range, this, _1) },
 		{ "rgl_node_rays_set_ring_ids", std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1) },
@@ -195,6 +198,18 @@ void TapePlayer::playThis(APICallIdx idx)
 	}
 
 	tapeFunctions[functionName](node);
+}
+
+#include <thread>
+void TapePlayer::playRealtime()
+{
+	auto beginTimestamp = std::chrono::steady_clock::now();
+	for (; nextCall < yamlRecording.size(); ++nextCall) {
+		auto nextCallNs = std::chrono::nanoseconds(yamlRecording[nextCall]["timestamp"].as<int64_t>());
+		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
+		std::this_thread::sleep_for(nextCallNs - elapsed);
+		playThis(nextCall);
+	}
 }
 
 TapePlayer::~TapePlayer()

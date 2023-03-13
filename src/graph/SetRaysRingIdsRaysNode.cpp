@@ -16,12 +16,12 @@
 
 void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
 {
-	ringIds->setData(ringIdsRaw, ringIdsCount);
+	ringIds->copyFromExternal(ringIdsRaw, ringIdsCount);
 }
 
-void SetRingIdsRaysNode::validate()
+void SetRingIdsRaysNode::validateImpl()
 {
-	input = getValidInput<IRaysNode>();
+	IRaysNodeSingleInput::validateImpl();
 
 	if (input->getRayCount() % ringIds->getCount() != 0) {
 		auto msg = fmt::format("ring ids doesn't match number of rays. "

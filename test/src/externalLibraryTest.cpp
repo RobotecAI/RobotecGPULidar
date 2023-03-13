@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest-death-test.h>
-#include <utils.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #if RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>

@@ -112,7 +112,7 @@ void Optix::logVersions()
 	RGL_INFO("Installed CUDA driver version: {}.{}", cudaDriverMajor, cudaDriverMinor);
 
 	if (auto err = wrapError(nvmlInit())) {
-		RGL_WARN("Failed to initialize NVidia Management Library (NVML): {}", err.value());
+		RGL_WARN("Failed to fillSizeAndOffset NVidia Management Library (NVML): {}", err.value());
 		return;
 	}
 

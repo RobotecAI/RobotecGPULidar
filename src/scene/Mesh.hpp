@@ -20,29 +20,45 @@
 
 #include <APIObject.hpp>
 #include <Optix.hpp>
-#include <DeviceBuffer.hpp>
 #include <math/Vector.hpp>
 #include <macros/cuda.hpp>
 #include <macros/optix.hpp>
 #include <scene/ASBuildScratchpad.hpp>
 
 #include <filesystem>
+#include <memory/Array.hpp>
 
-
+/**
+ * Represents mesh data (at the moment vertices and indices) stored on the GPU.
+ * Mesh, on its own, is not bound to any scene and can be used for different scenes.
+ */
 struct Mesh : APIObject<Mesh>
 {
-	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
-	OptixTraversableHandle getGAS();
-	int getVertexCount() const { return dVertices.getElemCount(); }
+	/**
+	 * Updates vertices of this mesh. Vertex count must remain unchanged, otherwise an exception is thrown.
+	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
+	 */
+	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
 
+	/**
+	 * Sets textures coordinates to the mesh. Vertex count and texture coordinates count must be equal.
+	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
+	 */
 	void setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount);
+
+	/**
+	 * Returns GAS for this mesh.
+	 * If no changes occurred (e.g. call to updateVertices), then returns cached GAS.
+	 * Otherwise, queues building GAS in the given stream, without synchronizing it.
+	 */
+	OptixTraversableHandle getGAS(CudaStream::Ptr stream);
 
 private:
 	Mesh(const Vec3f* vertices, std::size_t vertexCount,
 		 const Vec3i* indices, std::size_t indexCount);
 
-	OptixTraversableHandle buildGAS();
-	void updateGAS();
+	OptixTraversableHandle buildGAS(CudaStream::Ptr stream);
+	void updateGAS(CudaStream::Ptr stream);
 
 private:
 	friend APIObject<Mesh>;
@@ -50,9 +66,10 @@ private:
 	ASBuildScratchpad scratchpad;
 	bool gasNeedsUpdate;
 	std::optional<OptixTraversableHandle> cachedGAS;
-	DeviceBuffer<Vec3f> dVertices;
-	DeviceBuffer<Vec3i> dIndices;
-	std::optional<DeviceBuffer<Vec2f>> dTextureCoords;
+
+	DeviceSyncArray<Vec3f>::Ptr dVertices = DeviceSyncArray<Vec3f>::create();
+	DeviceSyncArray<Vec3i>::Ptr dIndices = DeviceSyncArray<Vec3i>::create();
+	std::optional<DeviceSyncArray<Vec2f>::Ptr> dTextureCoords;
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;
