@@ -101,7 +101,7 @@ typedef struct Scene *rgl_scene_t;
  * Status (error) codes returned by all RGL API functions.
  * Unrecoverable errors require reloading the library (restarting the application).
  */
-typedef enum
+typedef enum : int32_t
 {
 	/**
 	 * Operation successful.
@@ -183,7 +183,7 @@ typedef enum
 /**
  * Available logging verbosity levels.
  */
-typedef enum : int
+typedef enum : int32_t
 {
 	RGL_LOG_LEVEL_ALL = 0,
 	RGL_LOG_LEVEL_TRACE = 0,
@@ -199,7 +199,7 @@ typedef enum : int
 /**
  * Available point attributes, used to specify layout of the binary data.
  */
-typedef enum
+typedef enum : int32_t
 {
 	RGL_FIELD_XYZ_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
@@ -222,7 +222,7 @@ typedef enum
 /**
  * Helper enum for axis selection
  */
-typedef enum
+typedef enum : int32_t
 {
 	RGL_AXIS_X = 1,
 	RGL_AXIS_Y = 2,
