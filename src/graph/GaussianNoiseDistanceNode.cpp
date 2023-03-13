@@ -58,7 +58,8 @@ void GaussianNoiseDistanceNode::schedule(cudaStream_t stream)
 	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);
 	const auto* inXyzPtr = inXyz->getDevicePtr();
 	auto* outXyzPtr = outXyz->getDevicePtr();
-	gpuAddGaussianNoiseDistance(stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseDistance(stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform,
+	                            randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
@@ -76,7 +77,4 @@ VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cuda
 	return input->getFieldData(field, stream);
 }
 
-std::vector<rgl_field_t> GaussianNoiseDistanceNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
-}
+std::vector<rgl_field_t> GaussianNoiseDistanceNode::getRequiredFieldList() const { return { XYZ_F32 }; }

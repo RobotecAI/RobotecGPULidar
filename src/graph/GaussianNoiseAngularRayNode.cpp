@@ -40,5 +40,6 @@ void GaussianNoiseAngularRayNode::schedule(cudaStream_t stream)
 {
 	const auto* inRaysPtr = input->getRays()->getDevicePtr();
 	auto* outRaysPtr = rays->getDevicePtr();
-	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
+	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform,
+	                              randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
 }

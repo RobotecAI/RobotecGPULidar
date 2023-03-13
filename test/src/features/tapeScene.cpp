@@ -12,18 +12,11 @@ void testCubeSceneOnGraph()
 {
 	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, format = nullptr;
 
-	std::vector<rgl_mat3x4f> rays = {
-		Mat3x4f::TRS({ 0, 0, 0 }).toRGL(),
-		Mat3x4f::TRS({ 0.1, 0, 0 }).toRGL(),
-		Mat3x4f::TRS({ 0.2, 0, 0 }).toRGL(),
-		Mat3x4f::TRS({ 0.3, 0, 0 }).toRGL(),
-		Mat3x4f::TRS({ 0.4, 0, 0 }).toRGL()
-	};
+	std::vector<rgl_mat3x4f> rays = { Mat3x4f::TRS({ 0, 0, 0 }).toRGL(), Mat3x4f::TRS({ 0.1, 0, 0 }).toRGL(),
+		                              Mat3x4f::TRS({ 0.2, 0, 0 }).toRGL(), Mat3x4f::TRS({ 0.3, 0, 0 }).toRGL(),
+		                              Mat3x4f::TRS({ 0.4, 0, 0 }).toRGL() };
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
-	std::vector<rgl_field_t> formatFields = {
-		XYZ_F32,
-		PADDING_32
-	};
+	std::vector<rgl_field_t> formatFields = { XYZ_F32, PADDING_32 };
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
@@ -39,7 +32,8 @@ void testCubeSceneOnGraph()
 	int32_t outCount, outSizeOf;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 
-	struct FormatStruct {
+	struct FormatStruct
+	{
 		Field<XYZ_F32>::type xyz;
 		Field<PADDING_32>::type padding;
 	} formatStruct;
@@ -47,7 +41,7 @@ void testCubeSceneOnGraph()
 	EXPECT_EQ(outCount, rays.size());
 	EXPECT_EQ(outSizeOf, sizeof(formatStruct));
 
-	std::vector<FormatStruct> formatData { static_cast<long unsigned int>(outCount) };
+	std::vector<FormatStruct> formatData{ static_cast<long unsigned int>(outCount) };
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
 	for (int i = 0; i < formatData.size(); ++i) {

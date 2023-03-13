@@ -62,26 +62,26 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 protected:
-	template<template<typename, typename...> typename Container, typename...CArgs>
-	static std::string getNodeTypeNames(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator=", ")
+	template<template<typename, typename...> typename Container, typename... CArgs>
+	static std::string getNodeTypeNames(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator = ", ")
 	{
 		std::string output{};
-		for (auto&& node: nodes) {
+		for (auto&& node : nodes) {
 			output += node->getName();
 			output += separator;
 		}
 		if (!output.empty()) {
-			std::string_view view {output};
+			std::string_view view{ output };
 			view.remove_suffix(separator.size()); // Remove trailing separator
 			output = std::string(view);
 		}
 		return output;
 	}
 
-	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
+	template<typename T, template<typename, typename...> typename Container, typename... CArgs>
 	static std::vector<typename T::Ptr> filter(const Container<Node::Ptr, CArgs...>& nodes)
 	{
-		std::vector<typename T::Ptr> typedNodes {};
+		std::vector<typename T::Ptr> typedNodes{};
 		for (auto&& node : nodes) {
 			auto typedNode = std::dynamic_pointer_cast<T>(node);
 			if (typedNode != nullptr) {
@@ -91,7 +91,7 @@ protected:
 		return typedNodes;
 	}
 
-	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
+	template<typename T, template<typename, typename...> typename Container, typename... CArgs>
 	static typename T::Ptr getExactlyOne(const Container<Node::Ptr, CArgs...>& nodes)
 	{
 		std::vector<typename T::Ptr> typedNodes = Node::filter<T>(nodes);
@@ -104,18 +104,22 @@ protected:
 
 	template<typename T>
 	typename T::Ptr getValidInput()
-	{ return getValidInputFrom<T>(inputs); }
+	{
+		return getValidInputFrom<T>(inputs);
+	}
 
 	template<typename T>
 	typename T::Ptr getValidInputFrom(const std::vector<Node::Ptr>& srcs)
-	{ return getExactlyOne<T>(srcs); }
+	{
+		return getExactlyOne<T>(srcs);
+	}
 
 protected:
 	Node() = default;
 
 protected:
-	std::vector<Node::Ptr> inputs {};
-	std::vector<Node::Ptr> outputs {};
+	std::vector<Node::Ptr> inputs{};
+	std::vector<Node::Ptr> outputs{};
 
 	std::weak_ptr<Graph> graph;
 
@@ -128,18 +132,17 @@ template<>
 struct fmt::formatter<Node>
 {
 	template<typename ParseContext>
-	constexpr auto parse(ParseContext& ctx) {
+	constexpr auto parse(ParseContext& ctx)
+	{
 		return ctx.begin();
 	}
 
 	template<typename FormatContext>
-	auto format(const Node& node, FormatContext& ctx) {
+	auto format(const Node& node, FormatContext& ctx)
+	{
 
-		return fmt::format_to(ctx.out(), fmt::runtime("{}{{in=[{}], out=[{}]}}({})"),
-		                      node.getName(),
-		                      Node::getNodeTypeNames(node.inputs),
-		                      Node::getNodeTypeNames(node.outputs),
-		                      node.getArgsString());
+		return fmt::format_to(ctx.out(), fmt::runtime("{}{{in=[{}], out=[{}]}}({})"), node.getName(),
+		                      Node::getNodeTypeNames(node.inputs), Node::getNodeTypeNames(node.outputs), node.getArgsString());
 	}
 };
 #endif // __CUDACC__

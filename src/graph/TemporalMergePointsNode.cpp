@@ -17,7 +17,7 @@
 
 void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
-	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field){ return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
+	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field) { return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
 		throw InvalidAPIArgument("cannot perform temporal merge on field 'RGL_FIELD_DYNAMIC_FORMAT'");
 	}
 
@@ -26,7 +26,7 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
-			mergedData.insert({field, VArray::create(field)});
+			mergedData.insert({ field, VArray::create(field) });
 
 			// Make VArray reside on MemLoc::Host
 			mergedData.at(field)->getWritePtr(MemLoc::Host);
@@ -47,8 +47,7 @@ void TemporalMergePointsNode::validate()
 	// Check input pointcloud has required fields
 	for (const auto& requiredField : std::views::keys(mergedData)) {
 		if (!input->hasField(requiredField)) {
-			auto msg = fmt::format("TemporalMergePointsNode input does not have required field '{}'",
-			                       toString(requiredField));
+			auto msg = fmt::format("TemporalMergePointsNode input does not have required field '{}'", toString(requiredField));
 			throw InvalidPipeline(msg);
 		}
 	}

@@ -17,47 +17,44 @@
 #define EPSILON_F 1e-6
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
-#define EXPECT_RGL_STATUS(actual, expected, ...)                   \
-    do {                                                           \
-        EXPECT_EQ(actual, expected);                               \
-        const char* error_string;                                  \
-        rgl_get_last_error_string(&error_string);                  \
-        for (auto&& substr : { __VA_ARGS__ }) {                    \
-            EXPECT_THAT(error_string, testing::HasSubstr(substr)); \
-        }                                                          \
-    } while (false)
+#define EXPECT_RGL_STATUS(actual, expected, ...)                                                                               \
+	do {                                                                                                                       \
+		EXPECT_EQ(actual, expected);                                                                                           \
+		const char* error_string;                                                                                              \
+		rgl_get_last_error_string(&error_string);                                                                              \
+		for (auto&& substr : { __VA_ARGS__ }) {                                                                                \
+			EXPECT_THAT(error_string, testing::HasSubstr(substr));                                                             \
+		}                                                                                                                      \
+	} while (false)
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
 
-struct RGLAutoCleanupTest : public ::testing::Test {
+struct RGLAutoCleanupTest : public ::testing::Test
+{
 protected:
-	virtual ~RGLAutoCleanupTest() override
-	{
-		EXPECT_RGL_SUCCESS(rgl_cleanup());
-	}
+	virtual ~RGLAutoCleanupTest() override { EXPECT_RGL_SUCCESS(rgl_cleanup()); }
 };
-template <typename T>
-struct RGLAutoCleanupTestWithParam : public ::testing::TestWithParam<T> {
-    protected:
-        virtual ~RGLAutoCleanupTestWithParam() override
-        {
-                EXPECT_RGL_SUCCESS(rgl_cleanup());
-        }
+template<typename T>
+struct RGLAutoCleanupTestWithParam : public ::testing::TestWithParam<T>
+{
+protected:
+	virtual ~RGLAutoCleanupTestWithParam() override { EXPECT_RGL_SUCCESS(rgl_cleanup()); }
 };
 
-template <typename T>
+template<typename T>
 std::vector<float> computeAngles(const T* data, int size)
 {
-    std::vector<float> outAngles(size);
-    for (int i = 0; i < size; i++) {
-        outAngles[i] = std::atan2(data[i].z(), data[i].x());
-    }
-    return outAngles;
+	std::vector<float> outAngles(size);
+	for (int i = 0; i < size; i++) {
+		outAngles[i] = std::atan2(data[i].z(), data[i].x());
+	}
+	return outAngles;
 }
 
 template<typename T>
-std::pair<T, T> calcMeanAndStdev(std::vector<T> v) {
+std::pair<T, T> calcMeanAndStdev(std::vector<T> v)
+{
 	float sum = std::accumulate(v.begin(), v.end(), 0.0);
 	float mean = sum / v.size();
 
@@ -66,7 +63,7 @@ std::pair<T, T> calcMeanAndStdev(std::vector<T> v) {
 	float sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
 	float stdev = std::sqrt(sqSum / v.size());
 
-	return {mean, stdev};
+	return { mean, stdev };
 }
 
 template<typename T>
@@ -94,8 +91,14 @@ static std::vector<T> loadVec(std::filesystem::path path)
 static std::string readFileStr(std::filesystem::path path)
 {
 	std::vector<char> logFileChars = loadVec<char>(path);
-	return {logFileChars.begin(), logFileChars.end()};
+	return { logFileChars.begin(), logFileChars.end() };
 }
+
+
+// TODO(prybicki): replace this with a proper Matrix class
+static rgl_mat3x4f identity = {
+	.value = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}
+};
 
 // static rgl_lidar_t makeTrivialLidar()
 // {

@@ -16,12 +16,11 @@
 
 #include <RGLFields.hpp>
 
-VArray::VArray(const std::type_info &type, std::size_t sizeOfType, std::size_t initialSize)
-: typeInfo(type)
-, sizeOfType(sizeOfType)
+VArray::VArray(const std::type_info& type, std::size_t sizeOfType, std::size_t initialSize)
+  : typeInfo(type), sizeOfType(sizeOfType)
 {
-	instance[MemLoc::Host] = {0};
-	instance[MemLoc::Device] = {0};
+	instance[MemLoc::Host] = { 0 };
+	instance[MemLoc::Device] = { 0 };
 	currentLocation = MemLoc::Device;
 	this->resize(initialSize);
 }
@@ -36,18 +35,12 @@ const void* VArray::getReadPtr(MemLoc location) const
 	return current().data;
 }
 
-void* VArray::getWritePtr(MemLoc location)
-{
-	return const_cast<void*>(getReadPtr(location));
-}
+void* VArray::getWritePtr(MemLoc location) { return const_cast<void*>(getReadPtr(location)); }
 
 
-VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize)
-{
-	return createVArray(type, initialSize);
-}
+VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize) { return createVArray(type, initialSize); }
 
-void VArray::setData(const void *src, std::size_t elements)
+void VArray::setData(const void* src, std::size_t elements)
 {
 	resize(elements, false, false);
 	CHECK_CUDA(cudaMemcpy(current().data, src, sizeOfType * elements, cudaMemcpyDefault));
@@ -58,10 +51,11 @@ void VArray::getData(void* dst, std::size_t elements) const
 	CHECK_CUDA(cudaMemcpy(dst, current().data, sizeOfType * elements, cudaMemcpyDefault));
 }
 
-void VArray::insertData(const void *src, std::size_t elements, std::size_t offset)
+void VArray::insertData(const void* src, std::size_t elements, std::size_t offset)
 {
 	reserve(offset + elements, true);
-	CHECK_CUDA(cudaMemcpy((void *)((size_t)current().data + sizeOfType * offset), src, sizeOfType * elements, cudaMemcpyDefault));
+	CHECK_CUDA(
+	    cudaMemcpy((void*) ((size_t) current().data + sizeOfType * offset), src, sizeOfType * elements, cudaMemcpyDefault));
 	current().elemCount = std::max(current().elemCount, int64_t(offset + elements));
 }
 
@@ -82,7 +76,7 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 		current().elemCount = 0;
 	}
 
-	if(current().elemCapacity >= newCapacity) {
+	if (current().elemCapacity >= newCapacity) {
 		return;
 	}
 
@@ -104,8 +98,8 @@ VArray::~VArray()
 {
 	for (auto&& [location, state] : instance) {
 		if (state.data != nullptr) {
-			memFree(state.data, {location});
-			state = {0};
+			memFree(state.data, { location });
+			state = { 0 };
 		}
 	}
 }

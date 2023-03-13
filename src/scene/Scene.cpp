@@ -23,8 +23,7 @@ std::shared_ptr<Scene> Scene::defaultInstance()
 	return scene;
 }
 
-std::size_t Scene::getObjectCount()
-{ return entities.size(); }
+std::size_t Scene::getObjectCount() { return entities.size(); }
 
 void Scene::clear()
 {
@@ -139,10 +138,10 @@ OptixTraversableHandle Scene::buildAS()
 	};
 
 	OptixAccelBuildOptions accelBuildOptions = {
-	.buildFlags =
-	OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
-	| OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
-	.operation = OPTIX_BUILD_OPERATION_BUILD
+		.buildFlags =
+		    OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
+		    | OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
+		.operation = OPTIX_BUILD_OPERATION_BUILD
 	};
 
 	scratchpad.resizeToFit(instanceInput, accelBuildOptions);
@@ -172,12 +171,6 @@ OptixTraversableHandle Scene::buildAS()
 	return sceneHandle;
 }
 
-void Scene::requestASRebuild()
-{
-	cachedAS.reset();
-}
+void Scene::requestASRebuild() { cachedAS.reset(); }
 
-void Scene::requestSBTRebuild()
-{
-	cachedSBT.reset();
-}
+void Scene::requestSBTRebuild() { cachedSBT.reset(); }

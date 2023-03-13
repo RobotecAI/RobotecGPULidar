@@ -54,8 +54,7 @@ void VisualizePointsNode::runVisualize()
 	viewer->addPointCloud(cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(cloudPCL));
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 
-	while (!viewer->wasStopped ())
-	{
+	while (!viewer->wasStopped()) {
 		bool forceRedraw = false;
 		{
 			std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
@@ -79,7 +78,7 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
 
 	// Convert to PCL cloud
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
+	const PCLPointType* data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
 
 	std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
 
@@ -89,10 +88,8 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 
 
 	// Colorize
-	const auto [minPt, maxPt] = std::minmax_element(cloudPCL->begin(), cloudPCL->end(),
-	                                                [] (PCLPointType const &lhs, PCLPointType const &rhs) {
-	                                                    return lhs.z < rhs.z;
-	                                                });
+	const auto [minPt, maxPt] = std::minmax_element(
+	    cloudPCL->begin(), cloudPCL->end(), [](PCLPointType const& lhs, PCLPointType const& rhs) { return lhs.z < rhs.z; });
 	float min = (*minPt).z;
 	float max = (*maxPt).z;
 	float lutScale = 1.0;
@@ -110,12 +107,9 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	isNewCloud = true;
 }
 
-VisualizePointsNode::~VisualizePointsNode()
-{
-	visThread.join();
-}
+VisualizePointsNode::~VisualizePointsNode() { visThread.join(); }
 
 std::vector<rgl_field_t> VisualizePointsNode::getRequiredFieldList() const
 {
-	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
+	return { XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32 };
 }

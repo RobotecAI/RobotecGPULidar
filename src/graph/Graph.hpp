@@ -33,6 +33,7 @@ struct Graph
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
 	virtual ~Graph();
+
 private:
 	Graph() : stream(CudaStream::create()) {}
 

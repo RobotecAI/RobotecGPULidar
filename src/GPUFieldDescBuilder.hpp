@@ -47,11 +47,8 @@ private:
 		std::size_t gpuFieldIdx = 0;
 		for (auto field : fields) {
 			if (!isDummy(field)) {
-				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
-					.readDataPtr = nullptr,
-					.writeDataPtr = nullptr,
-					.size = getFieldSize(field),
-					.dstOffset = offset
+				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc{
+					.readDataPtr = nullptr, .writeDataPtr = nullptr, .size = getFieldSize(field), .dstOffset = offset
 				};
 			}
 			++gpuFieldIdx;
@@ -60,7 +57,7 @@ private:
 		return gpuFields;
 	}
 
-	template <typename T>
+	template<typename T>
 	static std::vector<rgl_field_t> getFields(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		std::vector<rgl_field_t> fields;
@@ -69,12 +66,13 @@ private:
 		return fields;
 	}
 
-	template <typename T>
-	static void fillWithData(VArrayProxy<GPUFieldDesc>::Ptr& gpuFields, const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
+	template<typename T>
+	static void fillWithData(VArrayProxy<GPUFieldDesc>::Ptr& gpuFields,
+	                         const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		static_assert(std::is_same_v<T, void*> || std::is_same_v<T, const void*>);
 		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
-			if (fieldsData[i].second == nullptr) {  // dummy field
+			if (fieldsData[i].second == nullptr) { // dummy field
 				continue;
 			}
 			if constexpr (std::is_same_v<T, const void*>) {

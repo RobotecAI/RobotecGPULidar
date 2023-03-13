@@ -47,7 +47,8 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 
 	for (auto&& currentNode : graph->nodes) {
 		if (currentNode->hasGraph()) {
-			auto msg = fmt::format("attempted to replace existing graph in node {} when creating for {}", currentNode->getName(), node->getName());
+			auto msg = fmt::format("attempted to replace existing graph in node {} when creating for {}",
+			                       currentNode->getName(), node->getName());
 			throw std::logic_error(msg);
 		}
 		currentNode->graph = graph;
@@ -74,21 +75,20 @@ void Graph::run()
 		RGL_DEBUG("Validating node: {}", *current);
 		current->validate();
 	}
-	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
+	RGL_DEBUG("Node validation completed"); // This also logs the time diff for the last one.
 
 	for (auto&& node : nodesInExecOrder) {
 		RGL_DEBUG("Scheduling node: {}", *node);
 		node->schedule(nullptr);
 	}
-	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
+	RGL_DEBUG("Node scheduling done"); // This also logs the time diff for the last one
 }
 
 void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 {
 	if (!preserveNodes) {
-		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraph()
-		                                           ? anyNode->getGraph()->getNodes()
-		                                           : Graph::findConnectedNodes(anyNode);
+		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraph() ? anyNode->getGraph()->getNodes() :
+		                                                                   Graph::findConnectedNodes(anyNode);
 		while (!graphNodes.empty()) {
 			std::shared_ptr<Node> node = *graphNodes.begin();
 			RGL_DEBUG("Destroying node {}", (void*) node.get());
@@ -113,7 +113,7 @@ void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 
 std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
 {
-	std::vector<std::shared_ptr<Node>> reverseOrder {};
+	std::vector<std::shared_ptr<Node>> reverseOrder{};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
 		nodes.erase(current);
 		for (auto&& output : current->getOutputs()) {
@@ -126,7 +126,7 @@ std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::share
 	while (!nodes.empty()) {
 		dfsRec(*nodes.begin());
 	}
-	return {reverseOrder.rbegin(), reverseOrder.rend()};
+	return { reverseOrder.rbegin(), reverseOrder.rend() };
 }
 
 std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes)
@@ -151,7 +151,4 @@ std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>>
 	return outFields;
 }
 
-Graph::~Graph()
-{
-	stream.reset();
-}
+Graph::~Graph() { stream.reset(); }

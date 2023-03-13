@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <math/Mat3x4f.hpp>
 
+// clang-format off
+
 TEST(Mat3x4f, Multiplication)
 {
 	Mat3x4f lhs = { .rc = {
@@ -21,3 +23,5 @@ TEST(Mat3x4f, Multiplication)
 
 	EXPECT_EQ(lhs * rhs, gold);
 }
+
+// clang-format on

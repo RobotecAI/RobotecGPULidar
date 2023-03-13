@@ -11,7 +11,7 @@ using namespace ::testing;
 constexpr int GRAPH_EPOCHS = 256;
 constexpr int LIDAR_RAYS_COUNT = 100000;
 constexpr float EPSILON_MUL = 2 * 1E-6;
-constexpr float EPSILON_NOISE = 0.002; 
+constexpr float EPSILON_NOISE = 0.002;
 constexpr float MEAN = 0.1;
 constexpr float STD_DEV = 0.01;
 constexpr float STD_DEV_PER_METER = 0.001;
@@ -22,9 +22,10 @@ const rgl_mat3x4f lidarPoseTf = Mat3x4f::translation(0, 0, 1).toRGL();
 const rgl_mat3x4f lidarPoseInvTf = Mat3x4f::fromRGL(lidarPoseTf).inverse().toRGL();
 const rgl_mat3x4f lidarRayTf = Mat3x4f::identity().toRGL();
 const std::vector<rgl_mat3x4f> lidarRays(LIDAR_RAYS_COUNT, lidarRayTf);
-const Vec3f noiselessHitpointInLidarFrame = {0.0f, 0.0f, 3.0f};
+const Vec3f noiselessHitpointInLidarFrame = { 0.0f, 0.0f, 3.0f };
 
-struct GaussianStress : public RGLAutoCleanupTest {
+struct GaussianStress : public RGLAutoCleanupTest
+{
 	GaussianStress()
 	{
 		// Setup scene
@@ -111,7 +112,8 @@ TEST_F(GaussianStress, GaussianNoiseAngularRay)
 
 		auto outAngles = computeAngles(outPoints.data(), outPoints.size());
 		auto [realMean, realStdev] = calcMeanAndStdev(outAngles);
-		auto expectedHitpoint = (Mat3x4f::rotationRad(ANGULAR_AXIS, MEAN) * Mat3x4f::translation(noiselessHitpointInLidarFrame)).translation();
+		auto expectedHitpoint =
+		    (Mat3x4f::rotationRad(ANGULAR_AXIS, MEAN) * Mat3x4f::translation(noiselessHitpointInLidarFrame)).translation();
 		float expectedMean = computeAngles(&expectedHitpoint, 1)[0];
 
 		EXPECT_THAT(expectedMean, FloatNear(realMean, EPSILON_NOISE));
@@ -137,7 +139,8 @@ TEST_F(GaussianStress, GaussianNoiseAngularHitpoint)
 		auto outAngles = computeAngles(outPoints.data(), outPoints.size());
 		auto [realMean, realStdev] = calcMeanAndStdev(outAngles);
 		// Not exactly expected hitpoint, but angle is the same
-		auto expectedHitpoint = (Mat3x4f::rotationRad(ANGULAR_AXIS, MEAN) * Mat3x4f::translation(noiselessHitpointInLidarFrame)).translation();
+		auto expectedHitpoint =
+		    (Mat3x4f::rotationRad(ANGULAR_AXIS, MEAN) * Mat3x4f::translation(noiselessHitpointInLidarFrame)).translation();
 		float expectedMean = computeAngles(&expectedHitpoint, 1)[0];
 
 		EXPECT_THAT(expectedMean, FloatNear(realMean, EPSILON_NOISE));

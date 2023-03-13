@@ -32,6 +32,7 @@ struct Logger
 	void configure(rgl_log_level_t logLevel, const char* logFilePath, bool useStdout);
 	void flush() { mainLogger->flush(); }
 	spdlog::logger& getLogger() { return *mainLogger; }
+
 private:
 	Logger();
 	std::shared_ptr<spdlog::logger> mainLogger;

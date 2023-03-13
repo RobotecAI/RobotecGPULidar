@@ -15,10 +15,7 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformRaysNode::validate()
-{
-	input = getValidInput<IRaysNode>();
-}
+void TransformRaysNode::validate() { input = getValidInput<IRaysNode>(); }
 
 void TransformRaysNode::schedule(cudaStream_t stream)
 {

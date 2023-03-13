@@ -25,7 +25,8 @@ void SetRingIdsRaysNode::validate()
 
 	if (input->getRayCount() % ringIds->getCount() != 0) {
 		auto msg = fmt::format("ring ids doesn't match number of rays. "
-		    "RayCount({}) mod RingIdsCount({}) should be zero", input->getRayCount(), ringIds->getCount());
+		                       "RayCount({}) mod RingIdsCount({}) should be zero",
+		                       input->getRayCount(), ringIds->getCount());
 		throw InvalidPipeline(msg);
 	}
 }

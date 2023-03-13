@@ -35,12 +35,10 @@ static_assert((int) QOS_POLICY_HISTORY_KEEP_ALL == (int) RMW_QOS_POLICY_HISTORY_
 
 extern "C" {
 
-RGL_API rgl_status_t
-rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id)
+RGL_API rgl_status_t rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_DEBUG("rgl_node_points_ros2_publish(node={}, topic_name={}, frame_id={})",
-		          repr(node), topic_name, frame_id);
+		RGL_DEBUG("rgl_node_points_ros2_publish(node={}, topic_name={}, frame_id={})", repr(node), topic_name, frame_id);
 		CHECK_ARG(topic_name != nullptr);
 		CHECK_ARG(topic_name[0] != '\0');
 		CHECK_ARG(frame_id != nullptr);
@@ -56,31 +54,27 @@ void TapePlayer::tape_node_points_ros2_publish(const YAML::Node& yamlNode)
 {
 	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
-	rgl_node_points_ros2_publish(&node,
-		yamlNode[1].as<std::string>().c_str(),
-		yamlNode[2].as<std::string>().c_str());
+	rgl_node_points_ros2_publish(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<std::string>().c_str());
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
 
-RGL_API rgl_status_t
-rgl_node_points_ros2_publish_with_qos(
-	rgl_node_t* node, const char* topic_name, const char* frame_id,
-	rgl_qos_policy_reliability_t qos_reliability, rgl_qos_policy_durability_t qos_durability,
-	rgl_qos_policy_history_t qos_history, int32_t qos_history_depth)
+RGL_API rgl_status_t rgl_node_points_ros2_publish_with_qos(rgl_node_t* node, const char* topic_name, const char* frame_id,
+                                                           rgl_qos_policy_reliability_t qos_reliability,
+                                                           rgl_qos_policy_durability_t qos_durability,
+                                                           rgl_qos_policy_history_t qos_history, int32_t qos_history_depth)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_DEBUG("rgl_node_points_ros2_publish_with_qos(node={}, topic_name={}, frame_id={},"
 		          "qos_reliability={}, qos_durability={}, qos_history={}, qos_history_depth={})",
-		          repr(node), topic_name, frame_id,
-		          qos_reliability, qos_durability, qos_history, qos_history_depth);
+		          repr(node), topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
 		CHECK_ARG(topic_name != nullptr);
 		CHECK_ARG(topic_name[0] != '\0');
 		CHECK_ARG(frame_id != nullptr);
 		CHECK_ARG(frame_id[0] != '\0');
 		CHECK_ARG(qos_history_depth >= 0);
 
-		createOrUpdateNode<Ros2PublishPointsNode>(
-			node, topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
+		createOrUpdateNode<Ros2PublishPointsNode>(node, topic_name, frame_id, qos_reliability, qos_durability, qos_history,
+		                                          qos_history_depth);
 	});
 	TAPE_HOOK(node, topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
 	return status;
@@ -90,13 +84,10 @@ void TapePlayer::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNo
 {
 	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes[nodeId] : nullptr;
-	rgl_node_points_ros2_publish_with_qos(&node,
-		yamlNode[1].as<std::string>().c_str(),
-		yamlNode[2].as<std::string>().c_str(),
-		(rgl_qos_policy_reliability_t) yamlNode[3].as<int>(),
-		(rgl_qos_policy_durability_t) yamlNode[4].as<int>(),
-		(rgl_qos_policy_history_t) yamlNode[5].as<int>(),
-		yamlNode[6].as<int32_t>());
+	rgl_node_points_ros2_publish_with_qos(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<std::string>().c_str(),
+	                                      (rgl_qos_policy_reliability_t) yamlNode[3].as<int>(),
+	                                      (rgl_qos_policy_durability_t) yamlNode[4].as<int>(),
+	                                      (rgl_qos_policy_history_t) yamlNode[5].as<int>(), yamlNode[6].as<int32_t>());
 	tapeNodes.insert(std::make_pair(nodeId, node));
 }
 }

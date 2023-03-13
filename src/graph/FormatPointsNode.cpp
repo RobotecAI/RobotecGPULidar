@@ -24,15 +24,9 @@ void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 	this->fields = fields;
 }
 
-void FormatPointsNode::validate()
-{
-	input = getValidInput<IPointsNode>();
-}
+void FormatPointsNode::validate() { input = getValidInput<IPointsNode>(); }
 
-void FormatPointsNode::schedule(cudaStream_t stream)
-{
-	formatAsync(output, input, fields, stream);
-}
+void FormatPointsNode::schedule(cudaStream_t stream) { formatAsync(output, input, fields, stream); }
 
 void FormatPointsNode::formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
                                    const std::vector<rgl_field_t>& fields, cudaStream_t stream)
@@ -62,13 +56,13 @@ std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
 	return getFieldSize(field);
 }
 
-std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::collectFieldConstRawData(const IPointsNode::Ptr& input,
-                                                                                            const std::vector<rgl_field_t>& fields,
-                                                                                            cudaStream_t stream)
+std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::collectFieldConstRawData(
+    const IPointsNode::Ptr& input, const std::vector<rgl_field_t>& fields, cudaStream_t stream)
 {
 	std::vector<std::pair<rgl_field_t, const void*>> outFieldsData;
 	for (auto&& field : fields) {
-		outFieldsData.push_back({field, isDummy(field) ? nullptr : input->getFieldData(field, stream)->getReadPtr(MemLoc::Device)});
+		outFieldsData.push_back(
+		    { field, isDummy(field) ? nullptr : input->getFieldData(field, stream)->getReadPtr(MemLoc::Device) });
 	}
 	return outFieldsData;
 }

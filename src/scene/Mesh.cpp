@@ -20,13 +20,13 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
+Mesh::Mesh(const Vec3f* vertices, size_t vertexCount, const Vec3i* indices, size_t indexCount)
 {
 	dVertices->copyFromHost(vertices, vertexCount);
 	dIndices->copyFromHost(indices, indexCount);
 }
 
-void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
+void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
 {
 	if (dVertices->getCount() != vertexCount) {
 		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
@@ -103,18 +103,15 @@ OptixTraversableHandle Mesh::buildGAS()
 		}
 	};
 
-	buildOptions = {
-		.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-		              // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-		.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	buildOptions = { .buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+		             // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
+		             .operation = OPTIX_BUILD_OPERATION_BUILD };
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 
 	// OptixAccelEmitDesc emitDesc = {
-		// .result = scratchpad.dCompactedSize.readDeviceRaw(),
-		// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
+	// .result = scratchpad.dCompactedSize.readDeviceRaw(),
+	// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
 	// };
 
 	OptixTraversableHandle gasHandle;
@@ -129,8 +126,7 @@ OptixTraversableHandle Mesh::buildGAS()
 	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
 	                            &gasHandle,
 	                            nullptr, // &emitDesc,
-	                            0
-	));
+	                            0));
 
 	// Compaction yields around 10% of memory and slows down a lot (e.g. 500us per model)
 	// scratchpad.doCompaction(gasHandle);

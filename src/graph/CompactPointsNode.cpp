@@ -24,7 +24,7 @@ void CompactPointsNode::validate()
 {
 	input = getValidInput<IPointsNode>();
 	if (finishedEvent == nullptr) {
-		unsigned flags = cudaEventDisableTiming;  // Provides better performance
+		unsigned flags = cudaEventDisableTiming; // Provides better performance
 		CHECK_CUDA(cudaEventCreate(&finishedEvent, flags));
 	}
 }
@@ -49,10 +49,10 @@ VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(width, false, false);
-		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::Device));
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
+		char* outPtr = static_cast<char*>(fieldData->getWritePtr(MemLoc::Device));
+		const char* inputPtr = static_cast<const char*>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
 		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
-		const CompactionIndexType * indices = inclusivePrefixSum->getDevicePtr();
+		const CompactionIndexType* indices = inclusivePrefixSum->getDevicePtr();
 		gpuApplyCompaction(stream, input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		cacheManager.setUpdated(field);

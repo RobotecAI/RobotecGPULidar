@@ -27,7 +27,7 @@ struct Time
 	double asSeconds() { return static_cast<double>(timeNs) * 1.0e-9; };
 	uint64_t asNanoseconds() { return timeNs; }
 
-	#ifdef RGL_BUILD_ROS2_EXTENSION
+#ifdef RGL_BUILD_ROS2_EXTENSION
 	builtin_interfaces::msg::Time asRos2Msg()
 	{
 		auto msg = builtin_interfaces::msg::Time();
@@ -35,7 +35,7 @@ struct Time
 		msg.nanosec = timeNs % static_cast<uint64_t>(1e9);
 		return msg;
 	}
-	#endif
+#endif
 
 private:
 	Time(uint64_t nanoseconds) { timeNs = nanoseconds; }

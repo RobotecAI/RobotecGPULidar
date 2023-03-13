@@ -15,7 +15,7 @@ TEST(VArray, Smoke)
 		// Goal:
 		// CPU: ||
 		// GPU: |4|
-		int *devicePtr = array->getWritePtr(MemLoc::Device);
+		int* devicePtr = array->getWritePtr(MemLoc::Device);
 		EXPECT_TRUE(devicePtr != nullptr);
 		CHECK_CUDA(cudaMemcpy(devicePtr, &value, sizeof(int), cudaMemcpyDefault));
 	}

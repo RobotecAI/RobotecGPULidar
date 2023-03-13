@@ -14,13 +14,19 @@
 
 #include <macros/cuda.hpp>
 
-#define LIMIT(count) const int tid = (blockIdx.x * blockDim.x + threadIdx.x); do {if (tid >= count) { return; }} while(false)
+#define LIMIT(count)                                                                                                           \
+	const int tid = (blockIdx.x * blockDim.x + threadIdx.x);                                                                   \
+	do {                                                                                                                       \
+		if (tid >= count) {                                                                                                    \
+			return;                                                                                                            \
+		}                                                                                                                      \
+	} while (false)
 
 template<typename Kernel, typename... KernelArgs>
 void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... kernelArgs)
 {
 	int blockDim = 256;
 	int blockCount = 1 + threads / 256;
-	void* args[] = {&threads, &kernelArgs...};
+	void* args[] = { &threads, &kernelArgs... };
 	CHECK_CUDA(cudaLaunchKernel(reinterpret_cast<void*>(kernel), blockCount, blockDim, args, 0, stream));
 }

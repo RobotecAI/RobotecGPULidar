@@ -73,9 +73,10 @@ struct IPointsNode
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 
 	template<rgl_field_t field>
-	typename VArrayProxy<typename Field<field>::type>::ConstPtr
-	getFieldDataTyped(cudaStream_t stream)
-	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
+	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
+	{
+		return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>();
+	}
 };
 
 struct IPointsNodeSingleInput : IPointsNode
@@ -92,7 +93,9 @@ struct IPointsNodeSingleInput : IPointsNode
 	// Data getters
 	bool hasField(rgl_field_t field) const { return input->hasField(field); }
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return input->getFieldData(field, stream); }
+	{
+		return input->getFieldData(field, stream);
+	}
 
 protected:
 	IPointsNode::Ptr input;

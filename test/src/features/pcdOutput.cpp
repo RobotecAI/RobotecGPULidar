@@ -12,7 +12,7 @@
 void captureToPCD(rgl_lidar_t lidar)
 {
 	pcl::PointCloud<pcl::PointXYZ> cloud;
-	cloud.height   = 1;
+	cloud.height = 1;
 	cloud.is_dense = true;
 
 	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
@@ -23,10 +23,10 @@ void captureToPCD(rgl_lidar_t lidar)
 	EXPECT_RGL_SUCCESS(rgl_lidar_get_output_data(lidar, RGL_FORMAT_XYZ, output.data()));
 
 	for (auto&& v : output) {
-		cloud.push_back({v.value[0], v.value[1], v.value[2]});
+		cloud.push_back({ v.value[0], v.value[1], v.value[2] });
 	}
 
-	pcl::io::savePCDFileASCII ("test_pcd.pcd", cloud);
+	pcl::io::savePCDFileASCII("test_pcd.pcd", cloud);
 }
 
 TEST(PCD_Output, Godzilla)
@@ -55,9 +55,9 @@ TEST(PCD_Output, Orientation)
 		ys.push_back(makeEntity(cube));
 		zs.push_back(makeEntity(cube));
 
-		rgl_mat3x4f xTf = Mat3x4f::TRS({(2 * scaleX + 2) * i, 0, 0}, {45, 0, 0}, {scaleX, 1, 1}).toRGL();
-		rgl_mat3x4f yTf = Mat3x4f::TRS({0, (2 * scaleY + 2) * i, 0}, {0, 45, 0}, {1, scaleY, 1}).toRGL();
-		rgl_mat3x4f zTf = Mat3x4f::TRS({0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ}).toRGL();
+		rgl_mat3x4f xTf = Mat3x4f::TRS({ (2 * scaleX + 2) * i, 0, 0 }, { 45, 0, 0 }, { scaleX, 1, 1 }).toRGL();
+		rgl_mat3x4f yTf = Mat3x4f::TRS({ 0, (2 * scaleY + 2) * i, 0 }, { 0, 45, 0 }, { 1, scaleY, 1 }).toRGL();
+		rgl_mat3x4f zTf = Mat3x4f::TRS({ 0, 0, (2 * scaleZ + 2) * i }, { 0, 0, 45 }, { 1, 1, scaleZ }).toRGL();
 
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(xs[i], &xTf));
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(ys[i], &yTf));
@@ -68,6 +68,4 @@ TEST(PCD_Output, Orientation)
 	rgl_mat3x4f lidarTf = Mat3x4f::translation(10.0f, 10.0f, 10.0f).toRGL();
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_pose(lidar, &lidarTf));
 	captureToPCD(lidar);
-
-
 }

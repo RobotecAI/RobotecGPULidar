@@ -17,10 +17,7 @@ TEST(EndToEnd, ReadmeExample)
 
 	// Set position of the cube entity to (0, 0, 5)
 	rgl_mat3x4f entity_tf = {
-		.value = {
-			{ 1, 0, 0, 0 },
-			{ 0, 1, 0, 0 },
-			{ 0, 0, 1, 5 } }
+		.value = {{ 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 5 }}
 	};
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
 

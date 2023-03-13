@@ -17,9 +17,9 @@
 API_OBJECT_INSTANCE(Entity);
 
 Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
-: mesh(std::move(mesh))
-, transform(Mat3x4f::identity())
-, humanReadableName(std::move(name)) { }
+  : mesh(std::move(mesh)), transform(Mat3x4f::identity()), humanReadableName(std::move(name))
+{
+}
 
 void Entity::setTransform(Mat3x4f newTransform)
 {

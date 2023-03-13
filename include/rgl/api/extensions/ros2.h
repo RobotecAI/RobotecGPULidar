@@ -66,8 +66,7 @@ typedef enum
  * @param topic_name Topic name to publish on.
  * @param frame_id Frame this data is associated with.
  */
-RGL_API rgl_status_t
-rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id);
+RGL_API rgl_status_t rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const char* frame_id);
 
 /**
  * Creates or modifies Ros2PublishPointsNode.
@@ -84,8 +83,7 @@ rgl_node_points_ros2_publish(rgl_node_t* node, const char* topic_name, const cha
  * @param qos_history QoS history policy.
  * @param qos_history_depth QoS history depth. If history policy is KEEP_ALL, depth is ignored but must always be non-negative.
  */
-RGL_API rgl_status_t
-rgl_node_points_ros2_publish_with_qos(
-	rgl_node_t* node, const char* topic_name, const char* frame_id,
-	rgl_qos_policy_reliability_t qos_reliability, rgl_qos_policy_durability_t qos_durability,
-	rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);
+RGL_API rgl_status_t rgl_node_points_ros2_publish_with_qos(rgl_node_t* node, const char* topic_name, const char* frame_id,
+                                                           rgl_qos_policy_reliability_t qos_reliability,
+                                                           rgl_qos_policy_durability_t qos_durability,
+                                                           rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);

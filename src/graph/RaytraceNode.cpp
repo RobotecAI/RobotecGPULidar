@@ -38,7 +38,8 @@ void RaytraceNode::validate()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() :
+	                                   nullptr;
 }
 
 void RaytraceNode::schedule(cudaStream_t stream)
@@ -49,7 +50,7 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto rays = raysNode->getRays();
 	auto sceneAS = scene->getAS();
 	auto sceneSBT = scene->getSBT();
-	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
+	dim3 launchDims = { static_cast<unsigned int>(rays->getCount()), 1, 1 };
 
 	// Optional
 	auto ringIds = raysNode->getRingIds();
@@ -73,14 +74,15 @@ void RaytraceNode::schedule(cudaStream_t stream)
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
-	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
+	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x,
+	                        launchDims.y, launchDims.y));
 	CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
-	std::set<rgl_field_t> currentFields { keyViewer.begin(), keyViewer.end() };
+	std::set<rgl_field_t> currentFields{ keyViewer.begin(), keyViewer.end() };
 
 	std::set<rgl_field_t> toRemove, toInsert;
 	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));
@@ -90,6 +92,6 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 		fieldData.erase(field);
 	}
 	for (auto&& field : toInsert) {
-		fieldData.insert({field, VArray::create(field)});
+		fieldData.insert({ field, VArray::create(field) });
 	}
 }

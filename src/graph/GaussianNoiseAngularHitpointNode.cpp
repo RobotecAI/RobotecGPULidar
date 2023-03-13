@@ -58,7 +58,8 @@ void GaussianNoiseAngularHitpointNode::schedule(cudaStream_t stream)
 	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);
 	const auto* inXyzPtr = inXyz->getDevicePtr();
 	auto* outXyzPtr = outXyz->getDevicePtr();
-	gpuAddGaussianNoiseAngularHitpoint(stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseAngularHitpoint(stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform,
+	                                   randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
@@ -76,7 +77,4 @@ VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t fiel
 	return input->getFieldData(field, stream);
 }
 
-std::vector<rgl_field_t> GaussianNoiseAngularHitpointNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
-}
+std::vector<rgl_field_t> GaussianNoiseAngularHitpointNode::getRequiredFieldList() const { return { XYZ_F32 }; }
