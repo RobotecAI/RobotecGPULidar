@@ -17,7 +17,8 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/time.h>
 
-class PCLVisualizerFix : public pcl::visualization::PCLVisualizer {
+class PCLVisualizerFix : public pcl::visualization::PCLVisualizer
+{
 public:
 	using Ptr = std::shared_ptr<PCLVisualizerFix>;
 	using ConstPtr = std::shared_ptr<const PCLVisualizerFix>;

@@ -111,5 +111,5 @@ VisualizePointsNode::~VisualizePointsNode() { visThread.join(); }
 
 std::vector<rgl_field_t> VisualizePointsNode::getRequiredFieldList() const
 {
-	return { XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32 };
+	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }

@@ -10,11 +10,12 @@ using namespace ::testing;
 #define VERTICES cube_vertices
 #define INDICES cube_indices
 
-class APISurfaceTests : public RGLAutoCleanupTest {};
+class APISurfaceTests : public RGLAutoCleanupTest
+{};
 
 TEST_F(APISurfaceTests, rgl_configure_logging)
 {
-	std::filesystem::path logFilePath{ std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt") };
+	std::filesystem::path logFilePath{std::filesystem::temp_directory_path() / std::filesystem::path("RGL-log.txt")};
 
 	// Setup logging, file should be created
 	ASSERT_THAT(logFilePath.c_str(), NotNull());
@@ -232,7 +233,7 @@ TEST_F(APISurfaceTests, rgl_lidar_get_output)
 TEST_F(APISurfaceTests, rgl_lidar_set_ring_indices)
 {
 	rgl_lidar_t lidar = makeTrivialLidar();
-	int ring_indices[] = { 0 };
+	int ring_indices[] = {0};
 
 	// Invalid args
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_lidar_set_ring_indices(nullptr, nullptr, 0), "lidar != nullptr");

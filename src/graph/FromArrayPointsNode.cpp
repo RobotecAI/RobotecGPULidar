@@ -26,7 +26,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field) && !isDummy(field)) {
-			fieldData.insert({ field, VArray::create(field, pointCount) });
+			fieldData.insert({field, VArray::create(field, pointCount)});
 		}
 	}
 
@@ -53,7 +53,7 @@ std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::collectFieldRawD
 {
 	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;
 	for (auto&& field : fields) {
-		outFieldsData.push_back({ field, isDummy(field) ? nullptr : fieldData[field]->getWritePtr(MemLoc::Device) });
+		outFieldsData.push_back({field, isDummy(field) ? nullptr : fieldData[field]->getWritePtr(MemLoc::Device)});
 	}
 	return outFieldsData;
 }

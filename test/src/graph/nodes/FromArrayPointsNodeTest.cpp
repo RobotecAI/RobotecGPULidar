@@ -12,7 +12,8 @@ struct PointStruct
 	::Field<INTENSITY_F32>::type intensity;
 };
 
-class FromArrayPointsNodeTest : public RGLAutoCleanupTestWithParam<int> {
+class FromArrayPointsNodeTest : public RGLAutoCleanupTestWithParam<int>
+{
 protected:
 	static std::vector<PointStruct> GeneratePointsArray(int count)
 	{
@@ -26,7 +27,7 @@ protected:
 		return points;
 	}
 
-	std::vector<rgl_field_t> pointFields = { XYZ_F32, IS_HIT_I32, INTENSITY_F32 };
+	std::vector<rgl_field_t> pointFields = {XYZ_F32, IS_HIT_I32, INTENSITY_F32};
 };
 
 INSTANTIATE_TEST_SUITE_P(FromArrayPointsNodeTests, FromArrayPointsNodeTest, testing::Values(1, 10, 100000),

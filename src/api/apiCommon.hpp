@@ -56,7 +56,8 @@ rgl_status_t rglSafeCall(Fn fn)
 			RGL_CRITICAL("Logging disabled due to the previous fatal error");
 			try {
 				Logger::getOrCreate().configure(RGL_LOG_LEVEL_OFF, std::nullopt, false);
-			} catch (std::exception& e) {
+			}
+			catch (std::exception& e) {
 			}
 		}
 		return updateAPIState(RGL_INVALID_STATE);
@@ -71,19 +72,26 @@ rgl_status_t rglSafeCall(Fn fn)
 #endif
 	catch (spdlog::spdlog_ex& e) {
 		return updateAPIState(RGL_LOGGING_ERROR, e.what());
-	} catch (InvalidAPIObject& e) {
+	}
+	catch (InvalidAPIObject& e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
-	} catch (InvalidPipeline& e) {
+	}
+	catch (InvalidPipeline& e) {
 		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
-	} catch (InvalidFilePath& e) {
+	}
+	catch (InvalidFilePath& e) {
 		return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
-	} catch (std::invalid_argument& e) {
+	}
+	catch (std::invalid_argument& e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
-	} catch (RecordError& e) {
+	}
+	catch (RecordError& e) {
 		return updateAPIState(RGL_TAPE_ERROR, e.what());
-	} catch (std::exception& e) {
+	}
+	catch (std::exception& e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
-	} catch (...) {
+	}
+	catch (...) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, "exceptional exception");
 	}
 	return updateAPIState(RGL_SUCCESS);

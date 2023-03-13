@@ -22,7 +22,7 @@
 		EXPECT_EQ(actual, expected);                                                                                           \
 		const char* error_string;                                                                                              \
 		rgl_get_last_error_string(&error_string);                                                                              \
-		for (auto&& substr : { __VA_ARGS__ }) {                                                                                \
+		for (auto&& substr : {__VA_ARGS__}) {                                                                                  \
 			EXPECT_THAT(error_string, testing::HasSubstr(substr));                                                             \
 		}                                                                                                                      \
 	} while (false)
@@ -63,7 +63,7 @@ std::pair<T, T> calcMeanAndStdev(std::vector<T> v)
 	float sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
 	float stdev = std::sqrt(sqSum / v.size());
 
-	return { mean, stdev };
+	return {mean, stdev};
 }
 
 template<typename T>
@@ -91,13 +91,13 @@ static std::vector<T> loadVec(std::filesystem::path path)
 static std::string readFileStr(std::filesystem::path path)
 {
 	std::vector<char> logFileChars = loadVec<char>(path);
-	return { logFileChars.begin(), logFileChars.end() };
+	return {logFileChars.begin(), logFileChars.end()};
 }
 
 
 // TODO(prybicki): replace this with a proper Matrix class
 static rgl_mat3x4f identity = {
-	.value = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}
+    .value = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}
 };
 
 // static rgl_lidar_t makeTrivialLidar()

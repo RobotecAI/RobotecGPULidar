@@ -45,7 +45,7 @@ struct Vector
 
 	// List constructor
 	template<typename... Args>
-	HostDevFn Vector(Args... args) : row{ static_cast<T>(args)... }
+	HostDevFn Vector(Args... args) : row{static_cast<T>(args)...}
 	{
 		static_assert(sizeof...(Args) == dim);
 	}
@@ -74,13 +74,12 @@ struct Vector
 
 	template<typename TT = T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
 	DevFn Vector(float3 v) : Vector(v.x, v.y, v.z)
-	{
-	}
+	{}
 
 	template<typename TT = T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
 	DevFn operator float3()
 	{
-		return float3{ row[0], row[1], row[2] };
+		return float3{row[0], row[1], row[2]};
 	}
 
 	// *** *** *** ACCESSORS *** *** *** //
@@ -138,7 +137,7 @@ struct Vector
 
 	HostDevFn T length() const { return std::sqrt(lengthSquared()); }
 
-	HostDevFn V half() const { return *this / V{ static_cast<T>(2) }; }
+	HostDevFn V half() const { return *this / V{static_cast<T>(2)}; }
 
 	HostDevFn V normalize() const { return *this / length(); }
 

@@ -70,7 +70,8 @@ static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_
 // Type used as a key in TapePlayer object registry
 using TapeAPIObjectID = size_t;
 
-class TapeRecorder {
+class TapeRecorder
+{
 	YAML::Node yamlRoot;      // Represents the whole yaml file
 	YAML::Node yamlRecording; // The sequence of API calls
 

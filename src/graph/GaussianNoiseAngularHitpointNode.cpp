@@ -77,4 +77,4 @@ VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t fiel
 	return input->getFieldData(field, stream);
 }
 
-std::vector<rgl_field_t> GaussianNoiseAngularHitpointNode::getRequiredFieldList() const { return { XYZ_F32 }; }
+std::vector<rgl_field_t> GaussianNoiseAngularHitpointNode::getRequiredFieldList() const { return {XYZ_F32}; }

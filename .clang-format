@@ -15,6 +15,7 @@ AllowAllParametersOfDeclarationOnNextLine: true
 AlignArrayOfStructures: Right
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 BinPackArguments: true
@@ -22,7 +23,7 @@ BinPackParameters: true
 BreakBeforeBraces: Custom
 BraceWrapping:
     AfterCaseLabel:  false
-    AfterClass:      false
+    AfterClass:      true
     AfterControlStatement: Never
     AfterEnum:       true
     AfterFunction:   true
@@ -31,12 +32,12 @@ BraceWrapping:
     AfterStruct:     true
     AfterUnion:      true
     AfterExternBlock: false
-    BeforeCatch:     false
+    BeforeCatch:     true
     BeforeElse:      false
     BeforeLambdaBody: false
     BeforeWhile:     false
     IndentBraces:    false
-    SplitEmptyFunction: true
+    SplitEmptyFunction: false
     SplitEmptyRecord: false
     SplitEmptyNamespace: true
 BreakBeforeTernaryOperators: false
@@ -49,6 +50,7 @@ PenaltyBreakAssignment: 42
 ReflowComments: false
 SortIncludes: false
 SpaceAfterCStyleCast: true
+Cpp11BracedListStyle: true
 TabWidth: 4
 UseTab: ForIndentation
 
@@ -68,7 +70,7 @@ AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
 AllowShortEnumsOnASingleLine: true
 #(o) AllowShortBlocksOnASingleLine: Never
-AllowShortCaseLabelsOnASingleLine: false
+#(o) AllowShortCaseLabelsOnASingleLine: false
 #(o) AllowShortFunctionsOnASingleLine: Inline
 AllowShortLambdasOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: Never
@@ -116,7 +118,7 @@ QualifierAlignment: Leave
 CompactNamespaces: false
 ConstructorInitializerIndentWidth: 2
 #(o) ContinuationIndentWidth: 2
-Cpp11BracedListStyle: false
+#(o) Cpp11BracedListStyle: false
 DeriveLineEnding: true
 DerivePointerAlignment: false
 DisableFormat:   false

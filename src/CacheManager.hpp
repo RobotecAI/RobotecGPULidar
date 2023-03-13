@@ -38,8 +38,8 @@ struct CacheManager
 	void insert(Key key, CacheType& value, bool needUpdate = false)
 	{
 		int age = needUpdate ? 1 : 0;
-		cache.insert({ key, value });
-		cacheAge.insert({ key, age });
+		cache.insert({key, value});
+		cacheAge.insert({key, age});
 	}
 
 	void remove(Key key)

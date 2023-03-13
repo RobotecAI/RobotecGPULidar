@@ -6,7 +6,8 @@
 
 using namespace ::testing;
 
-class Mesh : public ::testing::Test {
+class Mesh : public ::testing::Test
+{
 protected:
 	void SetUp() override { EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &ray_tf, 1)); }
 
@@ -17,14 +18,14 @@ protected:
 	rgl_lidar_t lidar = nullptr;
 
 	rgl_mat3x4f entity_tf = {
-		.value = {{ 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 5 }}
-	};
+	    .value = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 5}}
+    };
 	rgl_mat3x4f ray_tf = {
-        .value = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-        }
+	    .value = {
+	              {1, 0, 0, 0},
+	              {0, 1, 0, 0},
+	              {0, 0, 1, 0},
+	              }
     };
 
 	rgl_vec3f results[1];
@@ -77,7 +78,8 @@ TEST_F(Mesh, SetVertices)
 	EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
 }
 
-class MeshSharing : public ::testing::Test {
+class MeshSharing : public ::testing::Test
+{
 protected:
 	static constexpr int ENTITY_COUNT_X = 3;
 	static constexpr int ENTITY_COUNT_Y = 3;
@@ -94,19 +96,19 @@ protected:
 		for (int y = 0; y < ENTITY_COUNT_Y; ++y) {
 			for (int x = 0; x < ENTITY_COUNT_X; ++x) {
 				rays[ENTITY_COUNT_X * y + x] = {
-				.value = {
-				{1, 0, 0, 10 * static_cast<float>(x)},
-				{0, 1, 0, 10 * static_cast<float>(y)},
-				{0, 0, 1, 0},
-				}
-				};
+				    .value = {
+				              {1, 0, 0, 10 * static_cast<float>(x)},
+				              {0, 1, 0, 10 * static_cast<float>(y)},
+				              {0, 0, 1, 0},
+				              }
+                };
 				rgl_mat3x4f entity_tf = {
-				.value = {
-				{1, 0, 0, 10 * static_cast<float>(x)},
-				{0, 1, 0, 10 * static_cast<float>(y)},
-				{0, 0, 1, 10},
-				}
-				};
+				    .value = {
+				              {1, 0, 0, 10 * static_cast<float>(x)},
+				              {0, 1, 0, 10 * static_cast<float>(y)},
+				              {0, 0, 1, 10},
+				              }
+                };
 				EXPECT_RGL_SUCCESS(rgl_entity_create(&entities[y][x], nullptr, ((x % 2) == 0) ? cube_small : cube_big));
 				EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities[y][x], &entity_tf));
 			}
@@ -142,7 +144,7 @@ TEST_F(MeshSharing, TwoMeshesOneUpdated)
 		}
 	};
 
-	check({ 9.0, 8.0, 9.0 });
+	check({9.0, 8.0, 9.0});
 	rgl_mesh_update_vertices(cube_small, cube_vertices_big, cube_vertices_length);
-	check({ 8.0, 8.0, 8.0 });
+	check({8.0, 8.0, 8.0});
 }

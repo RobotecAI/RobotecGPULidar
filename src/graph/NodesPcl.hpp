@@ -76,11 +76,11 @@ private:
 	PCLVisualizerFix::Ptr viewer;
 	std::thread visThread;
 	std::mutex updateCloudMutex;
-	bool isNewCloud{ false };
+	bool isNewCloud{false};
 
 	std::string windowName{};
 	int windowWidth;
 	int windowHeight;
 	bool fullscreen;
-	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{ new pcl::PointCloud<PCLPointType> };
+	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
 };

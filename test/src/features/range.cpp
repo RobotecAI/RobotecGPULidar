@@ -11,17 +11,17 @@ TEST(Lidar, range)
 	rgl_entity_t cube;
 	rgl_lidar_t lidar;
 	rgl_mat3x4f entity_tf = {
-		.value = {{ 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 5 }}
-	};
+	    .value = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 5}}
+    };
 	rgl_mat3x4f ray_tf = {
-        .value = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-        }
+	    .value = {
+	              {1, 0, 0, 0},
+	              {0, 1, 0, 0},
+	              {0, 0, 1, 0},
+	              }
     };
 	int hitpointCount = 0;
-	rgl_vec3f results[1] = { 0 };
+	rgl_vec3f results[1] = {0};
 
 	EXPECT_EQ(rgl_mesh_create(&cube_mesh, cube_vertices, cube_vertices_length, cube_indices, cube_indices_length),
 	          rgl_status_t::RGL_SUCCESS);

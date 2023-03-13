@@ -65,50 +65,51 @@ void TapeRecorder::recordRGLVersion(YAML::Node& node)
 
 TapePlayer::TapePlayer(const char* path)
 {
+	// clang-format off
 	tapeFunctions = {
-		{		            "rgl_get_version_info",std::bind(&TapePlayer::tape_get_version_info, this, _1)                                                    },
-		{		           "rgl_configure_logging",                 std::bind(&TapePlayer::tape_configure_logging, this, _1)},
-		{		                     "rgl_cleanup",		                   std::bind(&TapePlayer::tape_cleanup, this, _1)},
-		{		                 "rgl_mesh_create",                       std::bind(&TapePlayer::tape_mesh_create, this, _1)},
-		{		                "rgl_mesh_destroy",                      std::bind(&TapePlayer::tape_mesh_destroy, this, _1)},
-		{		        "rgl_mesh_update_vertices",              std::bind(&TapePlayer::tape_mesh_update_vertices, this, _1)},
-		{		               "rgl_entity_create",                     std::bind(&TapePlayer::tape_entity_create, this, _1)},
-		{		              "rgl_entity_destroy",                    std::bind(&TapePlayer::tape_entity_destroy, this, _1)},
-		{		             "rgl_entity_set_pose",                   std::bind(&TapePlayer::tape_entity_set_pose, this, _1)},
-		{		              "rgl_scene_set_time",                    std::bind(&TapePlayer::tape_scene_set_time, this, _1)},
-		{		                   "rgl_graph_run",                         std::bind(&TapePlayer::tape_graph_run, this, _1)},
-		{		               "rgl_graph_destroy",                     std::bind(&TapePlayer::tape_graph_destroy, this, _1)},
-		{		       "rgl_graph_get_result_size",             std::bind(&TapePlayer::tape_graph_get_result_size, this, _1)},
-		{		       "rgl_graph_get_result_data",             std::bind(&TapePlayer::tape_graph_get_result_data, this, _1)},
-		{		        "rgl_graph_node_add_child",              std::bind(&TapePlayer::tape_graph_node_add_child, this, _1)},
-		{		     "rgl_graph_node_remove_child",           std::bind(&TapePlayer::tape_graph_node_remove_child, this, _1)},
-		{		      "rgl_node_rays_from_mat3x4f",            std::bind(&TapePlayer::tape_node_rays_from_mat3x4f, this, _1)},
-		{		      "rgl_node_rays_set_ring_ids",            std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1)},
-		{		         "rgl_node_rays_transform",               std::bind(&TapePlayer::tape_node_rays_transform, this, _1)},
-		{		       "rgl_node_points_transform",             std::bind(&TapePlayer::tape_node_points_transform, this, _1)},
-		{		               "rgl_node_raytrace",                     std::bind(&TapePlayer::tape_node_raytrace, this, _1)},
-		{		          "rgl_node_points_format",                std::bind(&TapePlayer::tape_node_points_format, this, _1)},
-		{		           "rgl_node_points_yield",                 std::bind(&TapePlayer::tape_node_points_yield, this, _1)},
-		{		         "rgl_node_points_compact",               std::bind(&TapePlayer::tape_node_points_compact, this, _1)},
-		{		   "rgl_node_points_spatial_merge",         std::bind(&TapePlayer::tape_node_points_spatial_merge, this, _1)},
-		{		  "rgl_node_points_temporal_merge",        std::bind(&TapePlayer::tape_node_points_temporal_merge, this, _1)},
-		{		      "rgl_node_points_from_array",            std::bind(&TapePlayer::tape_node_points_from_array, this, _1)},
-		{     "rgl_node_gaussian_noise_angular_ray",   std::bind(&TapePlayer::tape_node_gaussian_noise_angular_ray, this, _1)},
-		{"rgl_node_gaussian_noise_angular_hitpoint",
-         std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1)                                         },
-		{        "rgl_node_gaussian_noise_distance",      std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1)},
+		{ "rgl_get_version_info", std::bind(&TapePlayer::tape_get_version_info, this, _1) },
+		{ "rgl_configure_logging", std::bind(&TapePlayer::tape_configure_logging, this, _1) },
+		{ "rgl_cleanup", std::bind(&TapePlayer::tape_cleanup, this, _1) },
+		{ "rgl_mesh_create", std::bind(&TapePlayer::tape_mesh_create, this, _1) },
+		{ "rgl_mesh_destroy", std::bind(&TapePlayer::tape_mesh_destroy, this, _1) },
+		{ "rgl_mesh_update_vertices", std::bind(&TapePlayer::tape_mesh_update_vertices, this, _1) },
+		{ "rgl_entity_create", std::bind(&TapePlayer::tape_entity_create, this, _1) },
+		{ "rgl_entity_destroy", std::bind(&TapePlayer::tape_entity_destroy, this, _1) },
+		{ "rgl_entity_set_pose", std::bind(&TapePlayer::tape_entity_set_pose, this, _1) },
+		{ "rgl_scene_set_time", std::bind(&TapePlayer::tape_scene_set_time, this, _1) },
+		{ "rgl_graph_run", std::bind(&TapePlayer::tape_graph_run, this, _1) },
+		{ "rgl_graph_destroy", std::bind(&TapePlayer::tape_graph_destroy, this, _1) },
+		{ "rgl_graph_get_result_size", std::bind(&TapePlayer::tape_graph_get_result_size, this, _1) },
+		{ "rgl_graph_get_result_data", std::bind(&TapePlayer::tape_graph_get_result_data, this, _1) },
+		{ "rgl_graph_node_add_child", std::bind(&TapePlayer::tape_graph_node_add_child, this, _1) },
+		{ "rgl_graph_node_remove_child", std::bind(&TapePlayer::tape_graph_node_remove_child, this, _1) },
+		{ "rgl_node_rays_from_mat3x4f", std::bind(&TapePlayer::tape_node_rays_from_mat3x4f, this, _1) },
+		{ "rgl_node_rays_set_ring_ids", std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1) },
+		{ "rgl_node_rays_transform", std::bind(&TapePlayer::tape_node_rays_transform, this, _1) },
+		{ "rgl_node_points_transform", std::bind(&TapePlayer::tape_node_points_transform, this, _1) },
+		{ "rgl_node_raytrace", std::bind(&TapePlayer::tape_node_raytrace, this, _1) },
+		{ "rgl_node_points_format", std::bind(&TapePlayer::tape_node_points_format, this, _1) },
+		{ "rgl_node_points_yield", std::bind(&TapePlayer::tape_node_points_yield, this, _1) },
+		{ "rgl_node_points_compact", std::bind(&TapePlayer::tape_node_points_compact, this, _1) },
+		{ "rgl_node_points_spatial_merge", std::bind(&TapePlayer::tape_node_points_spatial_merge, this, _1) },
+		{ "rgl_node_points_temporal_merge", std::bind(&TapePlayer::tape_node_points_temporal_merge, this, _1) },
+		{ "rgl_node_points_from_array", std::bind(&TapePlayer::tape_node_points_from_array, this, _1) },
+		{ "rgl_node_gaussian_noise_angular_ray", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_ray, this, _1) },
+		{ "rgl_node_gaussian_noise_angular_hitpoint", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1) },
+		{ "rgl_node_gaussian_noise_distance", std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1) },
 
-#ifdef RGL_BUILD_PCL_EXTENSION
-		{		        "rgl_graph_write_pcd_file",              std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1)},
-		{		      "rgl_node_points_downsample",            std::bind(&TapePlayer::tape_node_points_downsample, this, _1)},
-		{		       "rgl_node_points_visualize",             std::bind(&TapePlayer::tape_node_points_visualize, this, _1)},
-#endif
+		#ifdef RGL_BUILD_PCL_EXTENSION
+		{ "rgl_graph_write_pcd_file", std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1) },
+		{ "rgl_node_points_downsample", std::bind(&TapePlayer::tape_node_points_downsample, this, _1) },
+		{ "rgl_node_points_visualize", std::bind(&TapePlayer::tape_node_points_visualize, this, _1) },
+		#endif
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
-		{		    "rgl_node_points_ros2_publish",          std::bind(&TapePlayer::tape_node_points_ros2_publish, this, _1)},
-		{   "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlayer::tape_node_points_ros2_publish_with_qos, this, _1)},
-#endif
+		#ifdef RGL_BUILD_ROS2_EXTENSION
+		{ "rgl_node_points_ros2_publish", std::bind(&TapePlayer::tape_node_points_ros2_publish, this, _1) },
+		{ "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlayer::tape_node_points_ros2_publish_with_qos, this, _1) },
+		#endif
 	};
+	// clang-format on
 
 	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
 	std::string pathBin = fs::path(path).concat(BIN_EXTENSION).string();
@@ -131,7 +132,7 @@ std::optional<YAML::iterator> TapePlayer::getFirstOf(std::set<std::string_view> 
 		const YAML::Node& node = *it;
 		bool found = fnNames.contains(node["name"].as<std::string>());
 		if (found) {
-			return { it };
+			return {it};
 		}
 	}
 	return std::nullopt;

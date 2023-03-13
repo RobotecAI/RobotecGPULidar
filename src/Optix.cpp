@@ -36,7 +36,7 @@
 #define OPTIX_LOG_LEVEL_WARN 3
 #define OPTIX_LOG_LEVEL_INFO 4
 
-static std::pair<int, int> getCudaMajorMinor(int version) { return { version / 1000, (version % 1000) / 10 }; }
+static std::pair<int, int> getCudaMajorMinor(int version) { return {version / 1000, (version % 1000) / 10}; }
 
 static std::optional<std::string> wrapError(nvmlReturn_t status)
 {
@@ -44,7 +44,7 @@ static std::optional<std::string> wrapError(nvmlReturn_t status)
 		return std::nullopt;
 	}
 	const char* err = nvmlErrorString(status);
-	return { std::string(err) };
+	return {std::string(err)};
 }
 
 static CUcontext getCurrentDeviceContext()
@@ -113,7 +113,7 @@ void Optix::logVersions()
 		return;
 	}
 
-	char driverVersionStr[128] = { 0 };
+	char driverVersionStr[128] = {0};
 	if (auto err = wrapError(nvmlSystemGetDriverVersion(driverVersionStr, sizeof(driverVersionStr)))) {
 		std::string msg = fmt::format("(nvml error: {})", err.value());
 		strncpy(driverVersionStr, msg.c_str(), sizeof(driverVersionStr));
@@ -160,7 +160,7 @@ Optix::~Optix()
 		optixPipelineDestroy(pipeline);
 	}
 
-	for (auto&& programGroup : { raygenPG, missPG, hitgroupPG }) {
+	for (auto&& programGroup : {raygenPG, missPG, hitgroupPG}) {
 		if (programGroup) {
 			optixProgramGroupDestroy(programGroup);
 		}
@@ -177,31 +177,32 @@ Optix::~Optix()
 
 void Optix::initializeStaticOptixStructures()
 {
-	OptixModuleCompileOptions moduleCompileOptions = { .maxRegisterCount = 100,
+	OptixModuleCompileOptions moduleCompileOptions = {
+	    .maxRegisterCount = 100,
 #ifdef NDEBUG
-		                                               .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
-		                                               .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE
+	    .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
 #else
-		                                               .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0,
-		                                               .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL
+	    .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
 #endif
 	};
 
 	OptixPipelineCompileOptions pipelineCompileOptions = {
-		.usesMotionBlur = false,
-		.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
-		.numPayloadValues = 3,   // Ray origin: X, Y, Z
-		.numAttributeValues = 2, // Triangle barycentrics: X, Y
-		.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
-		.pipelineLaunchParamsVariableName = "ctx",
+	    .usesMotionBlur = false,
+	    .traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
+	    .numPayloadValues = 3,   // Ray origin: X, Y, Z
+	    .numAttributeValues = 2, // Triangle barycentrics: X, Y
+	    .exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
+	    .pipelineLaunchParamsVariableName = "ctx",
 	};
 
 	OptixPipelineLinkOptions pipelineLinkOptions = {
-		.maxTraceDepth = 2,
+	    .maxTraceDepth = 2,
 #ifdef NDEBUG
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
 #else
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
 #endif
 	};
 
@@ -210,31 +211,31 @@ void Optix::initializeStaticOptixStructures()
 
 	OptixProgramGroupOptions pgOptions = {};
 	OptixProgramGroupDesc raygenDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN, .raygen = {.module = module, .entryFunctionName = "__raygen__"}
-	};
+	    .kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN, .raygen = {.module = module, .entryFunctionName = "__raygen__"}
+    };
 
 	CHECK_OPTIX(optixProgramGroupCreate(context, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
 
 	OptixProgramGroupDesc missDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
-		.miss = {.module = module, .entryFunctionName = "__miss__"},
+	    .kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
+	    .miss = {.module = module, .entryFunctionName = "__miss__"},
 	};
 
 	CHECK_OPTIX(optixProgramGroupCreate(context, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
 
 	OptixProgramGroupDesc hitgroupDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
-		.hitgroup = {
-			.moduleCH = module,
-			.entryFunctionNameCH = "__closesthit__",
-			.moduleAH = module,
-			.entryFunctionNameAH = "__anyhit__",
-		}
-	};
+	    .kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
+	    .hitgroup = {
+	                 .moduleCH = module,
+	                 .entryFunctionNameCH = "__closesthit__",
+	                 .moduleAH = module,
+	                 .entryFunctionNameAH = "__anyhit__",
+	                 }
+    };
 
 	CHECK_OPTIX(optixProgramGroupCreate(context, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
 
-	OptixProgramGroup programGroups[] = { raygenPG, missPG, hitgroupPG };
+	OptixProgramGroup programGroups[] = {raygenPG, missPG, hitgroupPG};
 
 	CHECK_OPTIX(optixPipelineCreate(context, &pipelineCompileOptions, &pipelineLinkOptions, programGroups,
 	                                sizeof(programGroups) / sizeof(programGroups[0]), nullptr, nullptr, &pipeline));

@@ -19,8 +19,8 @@
 VArray::VArray(const std::type_info& type, std::size_t sizeOfType, std::size_t initialSize)
   : typeInfo(type), sizeOfType(sizeOfType)
 {
-	instance[MemLoc::Host] = { 0 };
-	instance[MemLoc::Device] = { 0 };
+	instance[MemLoc::Host] = {0};
+	instance[MemLoc::Device] = {0};
 	currentLocation = MemLoc::Device;
 	this->resize(initialSize);
 }
@@ -98,8 +98,8 @@ VArray::~VArray()
 {
 	for (auto&& [location, state] : instance) {
 		if (state.data != nullptr) {
-			memFree(state.data, { location });
-			state = { 0 };
+			memFree(state.data, {location});
+			state = {0};
 		}
 	}
 }

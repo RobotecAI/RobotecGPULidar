@@ -48,7 +48,10 @@ private:
 		for (auto field : fields) {
 			if (!isDummy(field)) {
 				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc{
-					.readDataPtr = nullptr, .writeDataPtr = nullptr, .size = getFieldSize(field), .dstOffset = offset
+				    .readDataPtr = nullptr,
+				    .writeDataPtr = nullptr,
+				    .size = getFieldSize(field),
+				    .dstOffset = offset,
 				};
 			}
 			++gpuFieldIdx;

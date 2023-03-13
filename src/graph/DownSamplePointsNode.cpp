@@ -106,5 +106,5 @@ VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStrea
 std::vector<rgl_field_t> DownSamplePointsNode::getRequiredFieldList() const
 {
 	// pcl::PointXYZL is aligned to 32 bytes for SSE2 ¯\_(ツ)_/¯
-	return { XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32 };
+	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }

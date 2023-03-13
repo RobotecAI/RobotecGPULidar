@@ -44,7 +44,7 @@ VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream
 	return input->getFieldData(field, stream);
 }
 
-std::vector<rgl_field_t> TransformPointsNode::getRequiredFieldList() const { return { XYZ_F32 }; }
+std::vector<rgl_field_t> TransformPointsNode::getRequiredFieldList() const { return {XYZ_F32}; }
 
 std::string TransformPointsNode::getArgsString() const
 {

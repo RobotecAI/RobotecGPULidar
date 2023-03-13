@@ -6,7 +6,8 @@
 
 using namespace ::testing;
 
-class Transforms : public ::testing::Test {
+class Transforms : public ::testing::Test
+{
 protected:
 	void SetUp() override
 	{
@@ -34,53 +35,53 @@ protected:
 	// clang-format on
 
 	rgl_mat3x4f tf_zero = {
-        .value = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-        }
+	    .value = {
+	              {1, 0, 0, 0},
+	              {0, 1, 0, 0},
+	              {0, 0, 1, 0},
+	              }
     };
 
 	rgl_mat3x4f getTfX(float x, float y, float z, float angleX)
 	{
 		return {
-            .value = {
-                { 1, 0, 0, x },
-                { 0, std::cos(angleX), -std::sin(angleX), y },
-                { 0, std::sin(angleX), std::cos(angleX), z },
-            }
+		    .value = {
+		              {1, 0, 0, x},
+		              {0, std::cos(angleX), -std::sin(angleX), y},
+		              {0, std::sin(angleX), std::cos(angleX), z},
+		              }
         };
 	}
 
 	rgl_mat3x4f getTfY(float x, float y, float z, float angleY)
 	{
 		return {
-            .value = {
-                { std::cos(angleY), 0, std::sin(angleY), x },
-                { 0, 1, 0, y },
-                { -std::sin(angleY), 0, std::cos(angleY), z },
-            }
+		    .value = {
+		              {std::cos(angleY), 0, std::sin(angleY), x},
+		              {0, 1, 0, y},
+		              {-std::sin(angleY), 0, std::cos(angleY), z},
+		              }
         };
 	}
 
 	rgl_mat3x4f getTfZ(float x, float y, float z, float angleZ)
 	{
 		return {
-            .value = {
-                { std::cos(angleZ), -std::sin(angleZ), 0, x },
-                { std::sin(angleZ), std::cos(angleZ), 0, y },
-                { 0, 0, 1, z },
-            }
+		    .value = {
+		              {std::cos(angleZ), -std::sin(angleZ), 0, x},
+		              {std::sin(angleZ), std::cos(angleZ), 0, y},
+		              {0, 0, 1, z},
+		              }
         };
 	}
 
 	rgl_vec3f results[1];
 	int hitpointCount = 0;
 	float error = 10e-6;
-	std::vector<float> angles_in_entity = { -30.0f, -20.0f, -10.0f, 10.0f, 20.0f, 30.0f };
-	std::vector<float> angles_out_entity = { -60.0f, 60.0f };
-	std::vector<float> distances_in_entity = { -1.5f, -1.0f, 1.0f, 1.5f };
-	std::vector<float> distances_out_entity = { -3.0f, 3.0f };
+	std::vector<float> angles_in_entity = {-30.0f, -20.0f, -10.0f, 10.0f, 20.0f, 30.0f};
+	std::vector<float> angles_out_entity = {-60.0f, 60.0f};
+	std::vector<float> distances_in_entity = {-1.5f, -1.0f, 1.0f, 1.5f};
+	std::vector<float> distances_out_entity = {-3.0f, 3.0f};
 	float expected_distance_z = 3.0f;
 	int no_of_rays = 100000;
 	float distance_std_dev = 0.1;
@@ -167,8 +168,8 @@ TEST_F(Transforms, EntityMoveX)
 {
 	for (auto distance : distances_in_entity) {
 		rgl_mat3x4f tf_entity_moved = {
-			.value = {{ 1, 0, 0, distance }, { 0, 1, 0, 0 }, { 0, 0, 1, 5 }}
-		};
+		    .value = {{1, 0, 0, distance}, {0, 1, 0, 0}, {0, 0, 1, 5}}
+        };
 
 		rgl_entity_set_pose(entity, &tf_entity_moved);
 
@@ -184,8 +185,8 @@ TEST_F(Transforms, EntityMoveY)
 {
 	for (auto distance : distances_in_entity) {
 		rgl_mat3x4f tf_entity_moved = {
-			.value = {{ 1, 0, 0, 0 }, { 0, 1, 0, distance }, { 0, 0, 1, 5 }}
-		};
+		    .value = {{1, 0, 0, 0}, {0, 1, 0, distance}, {0, 0, 1, 5}}
+        };
 
 		rgl_entity_set_pose(entity, &tf_entity_moved);
 
@@ -201,8 +202,8 @@ TEST_F(Transforms, EntityMoveZ)
 {
 	for (auto distance : distances_in_entity) {
 		rgl_mat3x4f tf_entity_moved = {
-			.value = {{ 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 5.0f + distance }}
-		};
+		    .value = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 5.0f + distance}}
+        };
 
 		rgl_entity_set_pose(entity, &tf_entity_moved);
 
@@ -217,11 +218,11 @@ TEST_F(Transforms, EntityMoveZ)
 TEST_F(Transforms, RayMoveZ)
 {
 	rgl_mat3x4f tf_ray = {
-        .value = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 1 },
-        }
+	    .value = {
+	              {1, 0, 0, 0},
+	              {0, 1, 0, 0},
+	              {0, 0, 1, 1},
+	              }
     };
 	rgl_lidar_destroy(lidar);
 	rgl_lidar_create(&lidar, &tf_ray, 1);
@@ -237,11 +238,11 @@ TEST_F(Transforms, RayMoveY)
 {
 	for (auto ray_move_distance_y : distances_out_entity) {
 		rgl_mat3x4f tf_ray = {
-            .value = {
-                { 1, 0, 0, 0 },
-                { 0, 1, 0, ray_move_distance_y },
-                { 0, 0, 1, 0 },
-            }
+		    .value = {
+		              {1, 0, 0, 0},
+		              {0, 1, 0, ray_move_distance_y},
+		              {0, 0, 1, 0},
+		              }
         };
 		rgl_lidar_destroy(lidar);
 		rgl_lidar_create(&lidar, &tf_ray, 1);
@@ -255,11 +256,11 @@ TEST_F(Transforms, RayMoveX)
 {
 	for (auto ray_move_distance_x : distances_out_entity) {
 		rgl_mat3x4f tf_ray = {
-            .value = {
-                { 1, 0, 0, ray_move_distance_x },
-                { 0, 1, 0, 0 },
-                { 0, 0, 1, 0 },
-            }
+		    .value = {
+		              {1, 0, 0, ray_move_distance_x},
+		              {0, 1, 0, 0},
+		              {0, 0, 1, 0},
+		              }
         };
 		rgl_lidar_destroy(lidar);
 		rgl_lidar_create(&lidar, &tf_ray, 1);
@@ -272,11 +273,11 @@ TEST_F(Transforms, RayMoveX)
 TEST_F(Transforms, RayMoveZGaussianNoise)
 {
 	rgl_mat3x4f tf_ray_moved = {
-        .value = {
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 1 },
-        }
+	    .value = {
+	              {1, 0, 0, 0},
+	              {0, 1, 0, 0},
+	              {0, 0, 1, 1},
+	              }
     };
 	std::vector<rgl_mat3x4f> tf_rays_moved;
 	for (size_t i = 0; i < no_of_rays; ++i) {
@@ -302,11 +303,11 @@ TEST_F(Transforms, RayMoveYGaussianNoise)
 {
 	for (auto ray_move_distance_y : distances_out_entity) {
 		rgl_mat3x4f tf_ray_moved = {
-            .value = {
-                { 1, 0, 0, 0 },
-                { 0, 1, 0, ray_move_distance_y },
-                { 0, 0, 1, 0 },
-            }
+		    .value = {
+		              {1, 0, 0, 0},
+		              {0, 1, 0, ray_move_distance_y},
+		              {0, 0, 1, 0},
+		              }
         };
 		std::vector<rgl_mat3x4f> tf_rays_moved;
 		for (size_t i = 0; i < no_of_rays; ++i) {
@@ -329,11 +330,11 @@ TEST_F(Transforms, RayMoveXGaussianNoise)
 {
 	for (auto ray_move_distance_X : distances_out_entity) {
 		rgl_mat3x4f tf_ray_moved = {
-            .value = {
-                { 1, 0, 0, ray_move_distance_X },
-                { 0, 1, 0, 0 },
-                { 0, 0, 1, 0 },
-            }
+		    .value = {
+		              {1, 0, 0, ray_move_distance_X},
+		              {0, 1, 0, 0},
+		              {0, 0, 1, 0},
+		              }
         };
 		std::vector<rgl_mat3x4f> tf_rays_moved;
 		for (size_t i = 0; i < no_of_rays; ++i) {

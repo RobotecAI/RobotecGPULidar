@@ -126,7 +126,7 @@ std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::share
 	while (!nodes.empty()) {
 		dfsRec(*nodes.begin());
 	}
-	return { reverseOrder.rbegin(), reverseOrder.rend() };
+	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
 
 std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes)

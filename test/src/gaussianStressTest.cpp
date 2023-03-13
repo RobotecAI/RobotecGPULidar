@@ -22,7 +22,7 @@ const rgl_mat3x4f lidarPoseTf = Mat3x4f::translation(0, 0, 1).toRGL();
 const rgl_mat3x4f lidarPoseInvTf = Mat3x4f::fromRGL(lidarPoseTf).inverse().toRGL();
 const rgl_mat3x4f lidarRayTf = Mat3x4f::identity().toRGL();
 const std::vector<rgl_mat3x4f> lidarRays(LIDAR_RAYS_COUNT, lidarRayTf);
-const Vec3f noiselessHitpointInLidarFrame = { 0.0f, 0.0f, 3.0f };
+const Vec3f noiselessHitpointInLidarFrame = {0.0f, 0.0f, 3.0f};
 
 struct GaussianStress : public RGLAutoCleanupTest
 {
@@ -65,7 +65,7 @@ struct GaussianStress : public RGLAutoCleanupTest
 	rgl_node_t yield = nullptr;
 	rgl_node_t noise = nullptr;
 
-	std::vector<rgl_field_t> yieldFields = { XYZ_F32, DISTANCE_F32 };
+	std::vector<rgl_field_t> yieldFields = {XYZ_F32, DISTANCE_F32};
 
 	std::vector<::Field<XYZ_F32>::type> outPoints;
 	std::vector<::Field<DISTANCE_F32>::type> outDistances;

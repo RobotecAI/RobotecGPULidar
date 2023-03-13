@@ -27,6 +27,6 @@ void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... ker
 {
 	int blockDim = 256;
 	int blockCount = 1 + threads / 256;
-	void* args[] = { &threads, &kernelArgs... };
+	void* args[] = {&threads, &kernelArgs...};
 	CHECK_CUDA(cudaLaunchKernel(reinterpret_cast<void*>(kernel), blockCount, blockDim, args, 0, stream));
 }

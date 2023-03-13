@@ -45,7 +45,7 @@ RGL_API rgl_status_t rgl_graph_write_pcd_file(rgl_node_t node, const char* file_
 		// Get formatted data
 		VArray::Ptr rglCloud = VArray::create<char>();
 		// TODO(msz-rai): CudaStream for formatAsync: nullptr or pointCloudNode->getGraph()->getStream()?
-		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, { XYZ_F32, PADDING_32 }, nullptr);
+		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, {XYZ_F32, PADDING_32}, nullptr);
 
 		// Convert to PCL cloud
 		pcl::PointCloud<pcl::PointXYZ> pclCloud;
@@ -72,7 +72,7 @@ RGL_API rgl_status_t rgl_node_points_downsample(rgl_node_t* node, float leaf_siz
 		RGL_API_LOG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y,
 		            leaf_size_z);
 
-		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{ leaf_size_x, leaf_size_y, leaf_size_z });
+		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
 	});
 	TAPE_HOOK(node, leaf_size_x, leaf_size_y, leaf_size_z);
 	return status;
@@ -83,7 +83,7 @@ void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode)
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
 	rgl_node_points_downsample(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>());
-	tapeNodes.insert({ nodeId, node });
+	tapeNodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width,
@@ -109,6 +109,6 @@ void TapePlayer::tape_node_points_visualize(const YAML::Node& yamlNode)
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
 	rgl_node_points_visualize(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<int32_t>(),
 	                          yamlNode[3].as<int32_t>(), yamlNode[4].as<bool>());
-	tapeNodes.insert({ nodeId, node });
+	tapeNodes.insert({nodeId, node});
 }
 }

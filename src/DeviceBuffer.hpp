@@ -39,9 +39,9 @@ private:
 	static_assert(std::is_trivially_copyable<T>::value,
 	              "DeviceBuffer is instantiable only for types that can be copied between CPU and GPU");
 
-	T* data{ nullptr };
-	std::size_t elemCount{ 0 };
-	std::size_t elemCapacity{ 0 };
+	T* data{nullptr};
+	std::size_t elemCount{0};
+	std::size_t elemCapacity{0};
 
 public:
 	DeviceBuffer(DeviceBuffer&) = delete;

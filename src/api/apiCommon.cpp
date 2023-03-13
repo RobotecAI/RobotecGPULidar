@@ -27,35 +27,26 @@ const char* getLastErrorString()
 	}
 	// If lastStatusString is not set, provide a fallback explanation:
 	switch (lastStatusCode) {
-		case RGL_SUCCESS:
-			return "operation successful";
-		case RGL_INVALID_ARGUMENT:
-			return "invalid argument";
-		case RGL_INTERNAL_EXCEPTION:
-			return "unhandled internal exception";
-		case RGL_INVALID_STATE:
-			return "invalid state - unrecoverable error occurred";
-		case RGL_NOT_IMPLEMENTED:
-			return "operation not (yet) implemented";
-		case RGL_LOGGING_ERROR:
-			return "spdlog error";
-		case RGL_INVALID_FILE_PATH:
-			return "invalid file path";
-		case RGL_TAPE_ERROR:
-			return "tape error";
-		case RGL_ROS2_ERROR:
-			return "ROS2 error";
-		default:
-			return "???";
+		case RGL_SUCCESS: return "operation successful";
+		case RGL_INVALID_ARGUMENT: return "invalid argument";
+		case RGL_INTERNAL_EXCEPTION: return "unhandled internal exception";
+		case RGL_INVALID_STATE: return "invalid state - unrecoverable error occurred";
+		case RGL_NOT_IMPLEMENTED: return "operation not (yet) implemented";
+		case RGL_LOGGING_ERROR: return "spdlog error";
+		case RGL_INVALID_FILE_PATH: return "invalid file path";
+		case RGL_TAPE_ERROR: return "tape error";
+		case RGL_ROS2_ERROR: return "ROS2 error";
+		default: return "???";
 	}
 }
 
 bool canContinueAfterStatus(rgl_status_t status)
 {
 	// Set constructor may throw, hence lazy initialization.
-	static std::set recoverableErrors = { RGL_INVALID_ARGUMENT,  RGL_INVALID_API_OBJECT, RGL_INVALID_PIPELINE,
-		                                  RGL_INVALID_FILE_PATH, RGL_NOT_IMPLEMENTED,    RGL_TAPE_ERROR,
-		                                  RGL_ROS2_ERROR };
+	static std::set recoverableErrors = {
+	    RGL_INVALID_ARGUMENT, RGL_INVALID_API_OBJECT, RGL_INVALID_PIPELINE, RGL_INVALID_FILE_PATH,
+	    RGL_NOT_IMPLEMENTED,  RGL_TAPE_ERROR,         RGL_ROS2_ERROR,
+	};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
 };
 

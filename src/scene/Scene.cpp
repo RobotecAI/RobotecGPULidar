@@ -138,11 +138,10 @@ OptixTraversableHandle Scene::buildAS()
 	};
 
 	OptixAccelBuildOptions accelBuildOptions = {
-		.buildFlags =
-		    OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
-		    | OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
-		.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	    .buildFlags =
+	        OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
+	        | OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
+	    .operation = OPTIX_BUILD_OPERATION_BUILD};
 
 	scratchpad.resizeToFit(instanceInput, accelBuildOptions);
 

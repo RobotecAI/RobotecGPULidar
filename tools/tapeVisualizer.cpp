@@ -26,11 +26,11 @@ int main(int argc, char** argv)
 	}
 
 	fmt::print("Reading tape '{}' ...\n", argv[1]);
-	TapePlayer player{ argv[1] };
+	TapePlayer player{argv[1]};
 
 	// Note this will visualize only one (first) graph (lidar)
 	// This will be fixed after SpatialMergeNode is implemented
-	YAML::iterator compactIt = player.getFirstOf({ "rgl_node_points_compact" }).value();
+	YAML::iterator compactIt = player.getFirstOf({"rgl_node_points_compact"}).value();
 	player.playUntil(compactIt);
 	player.playNext();
 	rgl_node_t compactNode = player.getNode((*compactIt)[0].as<TapeAPIObjectID>());
@@ -39,8 +39,8 @@ int main(int argc, char** argv)
 	CHECK_RGL(rgl_node_points_visualize(&visualizeNode, "Tape Visualizer", 1920, 1080, false));
 	CHECK_RGL(rgl_graph_node_add_child(compactNode, visualizeNode));
 
-	YAML::iterator animationBegin = player.getFirstOf({ "rgl_entity_set_pose" }).value();
-	YAML::iterator animationEnd = player.getFirstOf({ "rgl_entity_destroy", "rgl_mesh_destroy" }).value();
+	YAML::iterator animationBegin = player.getFirstOf({"rgl_entity_set_pose"}).value();
+	YAML::iterator animationEnd = player.getFirstOf({"rgl_entity_destroy", "rgl_mesh_destroy"}).value();
 
 	while (true) {
 		player.playUntil(animationEnd);

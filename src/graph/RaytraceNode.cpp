@@ -50,26 +50,26 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto rays = raysNode->getRays();
 	auto sceneAS = scene->getAS();
 	auto sceneSBT = scene->getSBT();
-	dim3 launchDims = { static_cast<unsigned int>(rays->getCount()), 1, 1 };
+	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
 	// Optional
 	auto ringIds = raysNode->getRingIds();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
-		.rays = rays->getDevicePtr(),
-		.rayCount = rays->getCount(),
-		.rayRange = range,
-		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
-		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
-		.scene = sceneAS,
-		.sceneTime = scene->getTime()->asSeconds(),
-		.xyz = getPtrTo<XYZ_F32>(),
-		.isHit = getPtrTo<IS_HIT_I32>(),
-		.rayIdx = getPtrTo<RAY_IDX_U32>(),
-		.ringIdx = getPtrTo<RING_ID_U16>(),
-		.distance = getPtrTo<DISTANCE_F32>(),
-		.intensity = getPtrTo<INTENSITY_F32>(),
-		.timestamp = getPtrTo<TIME_STAMP_F64>(),
+	    .rays = rays->getDevicePtr(),
+	    .rayCount = rays->getCount(),
+	    .rayRange = range,
+	    .ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
+	    .ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
+	    .scene = sceneAS,
+	    .sceneTime = scene->getTime()->asSeconds(),
+	    .xyz = getPtrTo<XYZ_F32>(),
+	    .isHit = getPtrTo<IS_HIT_I32>(),
+	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
+	    .ringIdx = getPtrTo<RING_ID_U16>(),
+	    .distance = getPtrTo<DISTANCE_F32>(),
+	    .intensity = getPtrTo<INTENSITY_F32>(),
+	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
 	};
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
@@ -82,7 +82,7 @@ void RaytraceNode::schedule(cudaStream_t stream)
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
-	std::set<rgl_field_t> currentFields{ keyViewer.begin(), keyViewer.end() };
+	std::set<rgl_field_t> currentFields{keyViewer.begin(), keyViewer.end()};
 
 	std::set<rgl_field_t> toRemove, toInsert;
 	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));
@@ -92,6 +92,6 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 		fieldData.erase(field);
 	}
 	for (auto&& field : toInsert) {
-		fieldData.insert({ field, VArray::create(field) });
+		fieldData.insert({field, VArray::create(field)});
 	}
 }

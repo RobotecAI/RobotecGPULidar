@@ -62,7 +62,7 @@ std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::collectFieldC
 	std::vector<std::pair<rgl_field_t, const void*>> outFieldsData;
 	for (auto&& field : fields) {
 		outFieldsData.push_back(
-		    { field, isDummy(field) ? nullptr : input->getFieldData(field, stream)->getReadPtr(MemLoc::Device) });
+		    {field, isDummy(field) ? nullptr : input->getFieldData(field, stream)->getReadPtr(MemLoc::Device)});
 	}
 	return outFieldsData;
 }

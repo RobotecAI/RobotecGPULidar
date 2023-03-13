@@ -26,7 +26,7 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
-			mergedData.insert({ field, VArray::create(field) });
+			mergedData.insert({field, VArray::create(field)});
 
 			// Make VArray reside on MemLoc::Host
 			mergedData.at(field)->getWritePtr(MemLoc::Host);

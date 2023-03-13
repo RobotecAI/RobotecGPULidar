@@ -258,7 +258,7 @@ struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
-		return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() };
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
 	}
 
 	// Point cloud description
@@ -290,7 +290,7 @@ struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
-		return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() };
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
 	}
 
 	// Point cloud description

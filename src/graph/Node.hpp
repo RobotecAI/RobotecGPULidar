@@ -71,7 +71,7 @@ protected:
 			output += separator;
 		}
 		if (!output.empty()) {
-			std::string_view view{ output };
+			std::string_view view{output};
 			view.remove_suffix(separator.size()); // Remove trailing separator
 			output = std::string(view);
 		}

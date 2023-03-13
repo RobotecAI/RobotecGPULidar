@@ -14,7 +14,8 @@
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 
-class Tape : public RGLAutoCleanupTest {};
+class Tape : public RGLAutoCleanupTest
+{};
 
 TEST_F(Tape, RecordPlayAllCalls)
 {
@@ -40,11 +41,11 @@ TEST_F(Tape, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, 1.5 * 1e9));
 
 	rgl_node_t useRays = nullptr;
-	std::vector<rgl_mat3x4f> rays = { identityTf, identityTf };
+	std::vector<rgl_mat3x4f> rays = {identityTf, identityTf};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 
 	rgl_node_t setRingIds = nullptr;
-	std::vector<int> rings = { 0, 1 };
+	std::vector<int> rings = {0, 1};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIds, rings.data(), rings.size()));
 
 	rgl_node_t transformRays = nullptr;
@@ -57,7 +58,7 @@ TEST_F(Tape, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 100));
 
 	rgl_node_t format = nullptr;
-	std::vector<rgl_field_t> fields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 
 	rgl_node_t yield = nullptr;
@@ -67,19 +68,19 @@ TEST_F(Tape, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 
 	rgl_node_t spatialMerge = nullptr;
-	std::vector<rgl_field_t> sMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32 };
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));
 
 	rgl_node_t temporalMerge = nullptr;
-	std::vector<rgl_field_t> tMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32 };
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
 
 	rgl_node_t usePoints = nullptr;
-	std::vector<rgl_field_t> usePointsFields = { RGL_FIELD_XYZ_F32 };
+	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_F32};
 	std::vector<::Field<XYZ_F32>::type> usePointsData = {
-		{1, 2, 3},
+	    {1, 2, 3},
         {4, 5, 6}
-	};
+    };
 	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(),
 	                                              usePointsFields.data(), usePointsFields.size()));
 

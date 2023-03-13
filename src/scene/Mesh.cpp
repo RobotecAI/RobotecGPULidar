@@ -103,9 +103,9 @@ OptixTraversableHandle Mesh::buildGAS()
 		}
 	};
 
-	buildOptions = { .buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-		             // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-		             .operation = OPTIX_BUILD_OPERATION_BUILD };
+	buildOptions = {.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+	                // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
+	                .operation = OPTIX_BUILD_OPERATION_BUILD};
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 
