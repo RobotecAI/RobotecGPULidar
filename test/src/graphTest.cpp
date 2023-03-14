@@ -207,8 +207,8 @@ TEST_F(GraphCase, FormatNodeResults)
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
 	std::vector<rgl_field_t> formatFields = {
 		XYZ_F32,
-                TIME_STAMP_F64,
-		PADDING_32
+		PADDING_32,
+                TIME_STAMP_F64
 	};
 
         Time timestamp = Time::seconds(1.5);
