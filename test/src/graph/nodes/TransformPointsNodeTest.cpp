@@ -48,7 +48,7 @@ TEST_P(TransformPointsNodeTest, valid_arguments)
 TEST_P(TransformPointsNodeTest, use_case)
 {
     auto [pointsCount, transform] = GetParam();
-    auto inPoints = GeneratePointsArray(pointsCount);
+    auto inPoints = GenerateTestPointsArray(pointsCount);
 
     rgl_node_t usePointsNode = nullptr;
     rgl_node_t transformNode = nullptr;
@@ -73,7 +73,7 @@ TEST_P(TransformPointsNodeTest, use_case)
     outData.reserve(outCount);
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(transformNode, XYZ_F32, outData.data()));
 
-    std::vector<TestPointStruct> expectedPoints = GeneratePointsArray(outCount, transform);
+    std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(outCount, transform);
 
     // TODO When we are testing big values of point translation, numerical errors appears.
     //  For example for 100000 unit of translation, error after rotation can extend 0.001 unit.

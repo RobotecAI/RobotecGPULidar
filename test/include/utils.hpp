@@ -33,7 +33,6 @@
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
-#define EXPECT_RGL_INVALID_ARGUMENT_1(status) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", "")
 
 struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
@@ -145,7 +144,7 @@ static rgl_mesh_t loadMesh(std::filesystem::path path)
 	return mesh;
 }
 
-static std::vector<TestPointStruct> GeneratePointsArray(int count, rgl_mat3x4f transform = identityTestTransform)
+static std::vector<TestPointStruct> GenerateTestPointsArray(int count, rgl_mat3x4f transform = identityTestTransform)
 {
         std::vector<TestPointStruct> points;
         for (int i = 0; i < count; ++i) {

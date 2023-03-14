@@ -17,13 +17,13 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 {
     int pointsCount = GetParam();
-    auto inPoints = GeneratePointsArray(pointsCount);
+    auto inPoints = GenerateTestPointsArray(pointsCount);
     rgl_node_t usePointsNode = nullptr;
 
     auto initializeArgumentsLambda = [&pointsCount, &inPoints, &usePointsNode]() {
         pointsCount = FromArrayPointsNodeTest::GetParam();
 
-        inPoints = GeneratePointsArray(pointsCount);
+        inPoints = GenerateTestPointsArray(pointsCount);
 
         usePointsNode = nullptr;
     };
@@ -46,7 +46,7 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 TEST_P(FromArrayPointsNodeTest, valid_arguments)
 {
     int pointsCount = GetParam();
-    auto inPoints = GeneratePointsArray(pointsCount);
+    auto inPoints = GenerateTestPointsArray(pointsCount);
 
     rgl_node_t usePointsNode = nullptr;
 
@@ -57,7 +57,7 @@ TEST_P(FromArrayPointsNodeTest, valid_arguments)
 TEST_P(FromArrayPointsNodeTest, use_case)
 {
     int pointsCount = GetParam();
-    auto inPoints = GeneratePointsArray(pointsCount);
+    auto inPoints = GenerateTestPointsArray(pointsCount);
 
     rgl_node_t usePointsNode = nullptr;
 
@@ -67,7 +67,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
 
-    std::vector<TestPointStruct> expectedPoints = GeneratePointsArray(pointsCount);
+    std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(pointsCount);
 
     std::vector<::Field<XYZ_F32>::type> expectedXYZ;
     expectedXYZ.reserve(pointsCount);
