@@ -97,14 +97,6 @@ static std::string readFileStr(std::filesystem::path path)
 	return {logFileChars.begin(), logFileChars.end()};
 }
 
-
-// TODO(prybicki): replace this with a proper Matrix class
-static rgl_mat3x4f identity = { .value = {
-	1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 1, 0
-}};
-
 // static rgl_lidar_t makeTrivialLidar()
 // {
 // 	rgl_lidar_t lidar = nullptr;
