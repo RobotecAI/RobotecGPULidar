@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-        src/graphTest.cpp
-        src/apiReadmeExample.cpp
-        src/gaussianStressTest.cpp
+    src/graphCaseTest.cpp
+    src/asyncStressTest.cpp
+    src/apiReadmeExample.cpp
+    src/gaussianStressTest.cpp
         src/apiSurfaceTests.cpp
         #    src/features/range.cpp
         #    src/features/mesh.cpp
@@ -15,8 +16,7 @@ set(RGL_TEST_FILES
         src/graph/nodes/TransformPointsNodeTest.cpp
         src/scene/entityIdTest.cpp
         src/DistanceFieldTest.cpp
-        )
-
+)
 
 # Only Linux
 if ((NOT WIN32))
