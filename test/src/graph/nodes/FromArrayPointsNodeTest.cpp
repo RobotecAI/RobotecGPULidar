@@ -18,12 +18,13 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 {
     int pointsCount = GetParam();
     auto inPoints = GeneratePointsArray(pointsCount);
-
     rgl_node_t usePointsNode = nullptr;
 
     auto initializeArgumentsLambda = [&pointsCount, &inPoints, &usePointsNode]() {
         pointsCount = FromArrayPointsNodeTest::GetParam();
+
         inPoints = GeneratePointsArray(pointsCount);
+
         usePointsNode = nullptr;
     };
 
@@ -64,6 +65,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
     ASSERT_THAT(usePointsNode, testing::NotNull());
 
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
+
 
     std::vector<TestPointStruct> expectedPoints = GeneratePointsArray(pointsCount);
 
@@ -109,3 +111,4 @@ TEST_P(FromArrayPointsNodeTest, use_case)
         }
     }
 }
+

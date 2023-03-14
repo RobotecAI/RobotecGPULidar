@@ -35,7 +35,6 @@
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
 #define EXPECT_RGL_INVALID_ARGUMENT_1(status) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", "")
 
-
 struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
 	virtual ~RGLAutoCleanupTest() override
