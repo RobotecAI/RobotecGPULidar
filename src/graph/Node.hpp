@@ -54,6 +54,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	bool hasGraph() { return graph.lock() != nullptr; }
 
 	std::string getName() const { return name(typeid(*this)); }
+
+	/* Nodes may optionally override this function to provide debug info about their arguments */
 	virtual std::string getArgsString() const { return {}; }
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }

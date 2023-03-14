@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-        src/graphTest.cpp
-        src/apiReadmeExample.cpp
-        src/gaussianStressTest.cpp
+    src/graphCaseTest.cpp
+    src/asyncStressTest.cpp
+    src/apiReadmeExample.cpp
+    src/gaussianStressTest.cpp
         src/apiSurfaceTests.cpp
-        #    src/features/range.cpp
-        #    src/features/mesh.cpp
-        #    src/features/transforms.cpp
-        #    src/features/pcdOutput.cpp
-        src/testMat3x4f.cpp
-        src/graph/nodes/FromArrayPointsNodeTest.cpp
-        src/graph/nodes/TransformPointsNodeTest.cpp
-        )
-
+    #    src/features/range.cpp
+    #    src/features/mesh.cpp
+    #    src/features/transforms.cpp
+    #    src/features/pcdOutput.cpp
+    src/testMat3x4f.cpp
+    src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/graph/nodes/TransformPointsNodeTest.cpp
+)
 
 # Only Linux
 if ((NOT WIN32))

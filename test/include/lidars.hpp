@@ -31,3 +31,24 @@ static std::vector<rgl_mat3x4f> makeLidar3dRays(float fov_x, float fov_y,
 
     return rays;
 }
+
+static std::vector<rgl_mat3x4f> makeGridOfParallelRays(Vec2f minCoord, Vec2f maxCoord, Vec2i count)
+{
+	std::vector<rgl_mat3x4f> rays;
+	EXPECT_TRUE(count.x() > 0);
+	EXPECT_TRUE(count.y() > 0);
+
+	float dx = (maxCoord.x() - minCoord.x()) / count.x();
+	float dy = (maxCoord.y() - minCoord.y()) / count.y();
+	for (int y = 0; y < count.y(); ++y) {
+		for (int x = 0; x < count.x(); ++x) {
+			Vec3f origin {
+				minCoord.x() + dx * static_cast<float>(x),
+				minCoord.y() + dy * static_cast<float>(y),
+				0.0f
+			};
+			rays.emplace_back(Mat3x4f::translation(origin.x(), origin.y(), origin.z()).toRGL());
+		}
+	}
+	return rays;
+}

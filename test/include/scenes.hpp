@@ -24,6 +24,13 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 	return entity;
 }
 
+static void setupSceneCube(Vec3f position)
+{
+	rgl_entity_t cube = makeEntity(makeCubeMesh());
+	rgl_mat3x4f pose = Mat3x4f::translation(position.x(), position.y(), position.z()).toRGL();
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube, &pose));
+}
+
 static inline void setupBoxesAlongAxes(rgl_scene_t scene)
 {
 	std::vector<rgl_entity_t> xs, ys, zs;
