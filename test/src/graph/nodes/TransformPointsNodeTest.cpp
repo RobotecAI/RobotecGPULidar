@@ -70,7 +70,7 @@ TEST_P(TransformPointsNodeTest, use_case)
     EXPECT_EQ(outSizeOf, getFieldSize(XYZ_F32));
 
     std::vector<::Field<XYZ_F32>::type> outData;
-    outData.reserve(outCount);
+    outData.resize(outCount);
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(transformNode, XYZ_F32, outData.data()));
 
     std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(outCount, transform);
