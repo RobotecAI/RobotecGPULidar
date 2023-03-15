@@ -1,20 +1,24 @@
 #pragma once
 
-#include <vector>
+#include "gtest/gtest.h"
+#include <RGLFields.hpp>
 #include <cmath>
-#include <numeric>
 #include <filesystem>
 #include <fstream>
-#include "gtest/gtest.h"
-#include <rgl/api/core.h>
 #include <gmock/gmock-matchers.h>
-
+#include <graph/Node.hpp>
+#include <gtest/gtest.h>
+#include <math/Mat3x4f.hpp>
 #include <models.hpp>
+#include <numeric>
+#include <rgl/api/core.h>
+#include <utils.hpp>
+#include <vector>
 
 // TODO(msz-rai): Left this namespace for cleaner tests - fix namespace for rgl (Field)
-//using namespace ::testing;
+// using namespace ::testing;
 
-#define EPSILON_F 1e-6
+
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define EXPECT_RGL_STATUS(actual, expected, ...)                   \
@@ -30,20 +34,61 @@
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
 
+constexpr float EPSILON_F = 1e-6f;
+constexpr int maxGPUCoresTestCount = 20000;
+
+static rgl_mat3x4f identityTestTransform = Mat3x4f::identity().toRGL();
+static rgl_mat3x4f translationTestTransform = Mat3x4f::translation(1, 2, 3).toRGL();
+static rgl_mat3x4f rotationTestTransform = Mat3x4f::rotation(10, 30, 45).toRGL();
+static rgl_mat3x4f scalingTestTransform = Mat3x4f::scale(1, 2, 3).toRGL();
+static rgl_mat3x4f complexTestTransform = Mat3x4f::TRS(Vec3f(1, 2, 3), Vec3f(10, 30, 45)).toRGL();
+
 struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
-	virtual ~RGLAutoCleanupTest() override
-	{
-		EXPECT_RGL_SUCCESS(rgl_cleanup());
-	}
+    virtual ~RGLAutoCleanupTest() override
+    {
+        EXPECT_RGL_SUCCESS(rgl_cleanup());
+    }
 };
 template <typename T>
-struct RGLAutoCleanupTestWithParam : public ::testing::TestWithParam<T> {
-    protected:
-        virtual ~RGLAutoCleanupTestWithParam() override
-        {
-                EXPECT_RGL_SUCCESS(rgl_cleanup());
+struct RGLAutoCleanupTestWithParam : public RGLAutoCleanupTest, public ::testing::WithParamInterface<T> { };
+
+struct RGLPointTestHelper {
+
+protected:
+    std::vector<rgl_field_t> pointFields = {
+        XYZ_F32,
+        IS_HIT_I32,
+        INTENSITY_F32
+    };
+
+    struct TestPointStruct {
+        Field<XYZ_F32>::type xyz;
+        Field<IS_HIT_I32>::type isHit;
+        Field<INTENSITY_F32>::type intensity;
+    };
+
+    rgl_node_t usePointsNode = nullptr;
+    std::vector<TestPointStruct> inPoints;
+
+    std::vector<TestPointStruct> GenerateTestPointsArray(int count, rgl_mat3x4f transform = identityTestTransform)
+    {
+        std::vector<TestPointStruct> points;
+        for (int i = 0; i < count; ++i) {
+            auto currentPoint = TestPointStruct { .xyz = { i, i + 1, i + 2 }, .isHit = i % 2, .intensity = 100 };
+            currentPoint.xyz = Mat3x4f::fromRGL(transform) * currentPoint.xyz;
+            points.emplace_back(currentPoint);
         }
+        return points;
+    }
+
+    void CreateTestUsePointsNode(int pointsCount)
+    {
+        inPoints = GenerateTestPointsArray(pointsCount);
+
+        EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
+        ASSERT_THAT(usePointsNode, testing::NotNull());
+    }
 };
 
 template <typename T>
@@ -96,14 +141,6 @@ static std::string readFileStr(std::filesystem::path path)
 	std::vector<char> logFileChars = loadVec<char>(path);
 	return {logFileChars.begin(), logFileChars.end()};
 }
-
-
-// TODO(prybicki): replace this with a proper Matrix class
-static rgl_mat3x4f identity = { .value = {
-	1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 1, 0
-}};
 
 // static rgl_lidar_t makeTrivialLidar()
 // {
