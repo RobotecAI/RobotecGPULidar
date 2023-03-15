@@ -50,7 +50,7 @@ protected:
 template <typename T>
 struct RGLAutoCleanupTestWithParam : public RGLAutoCleanupTest, public ::testing::WithParamInterface<T> { };
 
-struct RGLGraphTest {
+struct RGLPointTestHelper {
 
 protected:
     std::vector<rgl_field_t> pointFields = {
