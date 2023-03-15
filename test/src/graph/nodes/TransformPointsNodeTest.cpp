@@ -5,21 +5,23 @@
 #include <utils.hpp>
 
 class TransformPointsNodeTest : public RGLAutoCleanupTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointTestHelper {
+protected:
+    static constexpr int TEST_PARAM_TRANSFORM_ID=1;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     TransformPointsNodeTests, TransformPointsNodeTest,
     testing::Combine(
-        testing::Values(1, 10, 100000),
+        testing::Values(1, 100, maxGPUCoresTestCount),
         testing::Values(identityTestTransform, translationTestTransform, rotationTestTransform, scalingTestTransform, complexTestTransform)));
 
 TEST_P(TransformPointsNodeTest, invalid_arguments)
 {
-    auto transform = std::get<1>(GetParam());
-    rgl_node_t transformPointsNode = nullptr;
+    rgl_mat3x4f transform;
+    rgl_node_t transformPointsNode;
 
     auto initializeArgumentsLambda = [&transform, &transformPointsNode]() {
-        transform = std::get<1>(GetParam());
+        transform = std::get<TEST_PARAM_TRANSFORM_ID>(GetParam());
         transformPointsNode = nullptr;
     };
 
@@ -35,7 +37,7 @@ TEST_P(TransformPointsNodeTest, invalid_arguments)
 
 TEST_P(TransformPointsNodeTest, valid_arguments)
 {
-    auto transform = std::get<1>(GetParam());
+    auto [_, transform] = GetParam();
     rgl_node_t transformPointsNode = nullptr;
 
     EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformPointsNode, &transform));
@@ -48,13 +50,10 @@ TEST_P(TransformPointsNodeTest, valid_arguments)
 TEST_P(TransformPointsNodeTest, use_case)
 {
     auto [pointsCount, transform] = GetParam();
-    auto inPoints = GenerateTestPointsArray(pointsCount);
 
-    rgl_node_t usePointsNode = nullptr;
     rgl_node_t transformNode = nullptr;
 
-    EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
-    ASSERT_THAT(usePointsNode, testing::NotNull());
+    CreateTestUsePointsNode(pointsCount);
 
     EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformNode, &transform));
     ASSERT_THAT(transformNode, testing::NotNull());
@@ -70,7 +69,7 @@ TEST_P(TransformPointsNodeTest, use_case)
     EXPECT_EQ(outSizeOf, getFieldSize(XYZ_F32));
 
     std::vector<::Field<XYZ_F32>::type> outData;
-    outData.reserve(outCount);
+    outData.resize(outCount);
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(transformNode, XYZ_F32, outData.data()));
 
     std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(outCount, transform);
@@ -82,8 +81,8 @@ TEST_P(TransformPointsNodeTest, use_case)
     // TODO 2 In the future, this and other tests, should check if every possible field has proper value, even if intact.
     for (int i = 0; i < pointsCount; ++i) {
         // For now use percent (0.1%) of value as error treshold.
-        EXPECT_NEAR(expectedPoints[i].xyz[0], outData[i][0], (outData[i][0]/ 1000));
-        EXPECT_NEAR(expectedPoints[i].xyz[1], outData[i][1], (outData[i][1] / 1000));
-        EXPECT_NEAR(expectedPoints[i].xyz[2], outData[i][2], (outData[i][2] / 1000));
+        EXPECT_NEAR(expectedPoints.at(i).xyz[0], outData.at(i)[0], (outData.at(i)[0] / 1000));
+        EXPECT_NEAR(expectedPoints.at(i).xyz[1], outData.at(i)[1], (outData.at(i)[1] / 1000));
+        EXPECT_NEAR(expectedPoints.at(i).xyz[2], outData.at(i)[2], (outData.at(i)[2] / 1000));
     }
 }

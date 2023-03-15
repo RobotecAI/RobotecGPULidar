@@ -18,7 +18,7 @@
 // TODO(msz-rai): Left this namespace for cleaner tests - fix namespace for rgl (Field)
 // using namespace ::testing;
 
-#define EPSILON_F 1e-6
+
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define EXPECT_RGL_STATUS(actual, expected, ...)                   \
@@ -33,6 +33,9 @@
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
+
+constexpr float EPSILON_F = 1e-6f;
+constexpr int maxGPUCoresTestCount = 20000;
 
 static rgl_mat3x4f identityTestTransform = Mat3x4f::identity().toRGL();
 static rgl_mat3x4f translationTestTransform = Mat3x4f::translation(1, 2, 3).toRGL();
@@ -65,7 +68,10 @@ protected:
         Field<INTENSITY_F32>::type intensity;
     };
 
-    static std::vector<TestPointStruct> GenerateTestPointsArray(int count, rgl_mat3x4f transform = identityTestTransform)
+    rgl_node_t usePointsNode = nullptr;
+    std::vector<TestPointStruct> inPoints;
+
+    std::vector<TestPointStruct> GenerateTestPointsArray(int count, rgl_mat3x4f transform = identityTestTransform)
     {
         std::vector<TestPointStruct> points;
         for (int i = 0; i < count; ++i) {
@@ -74,6 +80,14 @@ protected:
             points.emplace_back(currentPoint);
         }
         return points;
+    }
+
+    void CreateTestUsePointsNode(int pointsCount)
+    {
+        inPoints = GenerateTestPointsArray(pointsCount);
+
+        EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
+        ASSERT_THAT(usePointsNode, testing::NotNull());
     }
 };
 
