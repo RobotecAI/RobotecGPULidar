@@ -24,8 +24,8 @@ const rgl_mat3x4f lidarRayTf = Mat3x4f::identity().toRGL();
 const std::vector<rgl_mat3x4f> lidarRays(LIDAR_RAYS_COUNT, lidarRayTf);
 const Vec3f noiselessHitpointInLidarFrame = {0.0f, 0.0f, 3.0f};
 
-struct GaussianStress : public RGLAutoCleanupTest {
-	GaussianStress()
+struct GaussianStressTest : public RGLAutoCleanupTest {
+	GaussianStressTest()
 	{
 		// Setup scene
 		rgl_entity_t cube = makeEntity(makeCubeMesh());
@@ -70,7 +70,7 @@ struct GaussianStress : public RGLAutoCleanupTest {
 	std::vector<::Field<DISTANCE_F32>::type> outDistances;
 };
 
-TEST_F(GaussianStress, GaussianNoiseDistance)
+TEST_F(GaussianStressTest, GaussianNoiseDistance)
 {
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noise, MEAN, STD_DEV, STD_DEV_PER_METER));
 
@@ -94,7 +94,7 @@ TEST_F(GaussianStress, GaussianNoiseDistance)
 	}
 }
 
-TEST_F(GaussianStress, GaussianNoiseAngularRay)
+TEST_F(GaussianStressTest, GaussianNoiseAngularRay)
 {
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noise, MEAN, STD_DEV, ANGULAR_AXIS));
 
@@ -119,7 +119,7 @@ TEST_F(GaussianStress, GaussianNoiseAngularRay)
 	}
 }
 
-TEST_F(GaussianStress, GaussianNoiseAngularHitpoint)
+TEST_F(GaussianStressTest, GaussianNoiseAngularHitpoint)
 {
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_hitpoint(&noise, MEAN, STD_DEV, ANGULAR_AXIS));
 
