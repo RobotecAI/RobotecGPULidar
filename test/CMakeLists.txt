@@ -11,7 +11,9 @@ set(RGL_TEST_FILES
     #    src/features/transforms.cpp
     #    src/features/pcdOutput.cpp
     src/testMat3x4f.cpp
-    src/graph/nodes/FromArrayPointsNodeTest.cpp)
+    src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/ArrayTest.cpp
+)
 
 # Only Linux
 if ((NOT WIN32))
