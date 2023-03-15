@@ -337,7 +337,7 @@ rgl_entity_destroy(rgl_entity_t entity);
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (entity -> world) coordinate system transform.
  */
 RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *local_to_world_tf);
+rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
 
 /******************************** SCENE ********************************/
 

@@ -6,7 +6,7 @@
 
 #include <math/Mat3x4f.hpp>
 
-class Tape : public RGLAutoCleanupTest {};
+class Tape : public RGLTest {};
 
 void testCubeSceneOnGraph()
 {

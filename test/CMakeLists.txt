@@ -4,7 +4,7 @@ set(RGL_TEST_FILES
         src/graphTest.cpp
         src/apiReadmeExample.cpp
         src/gaussianStressTest.cpp
-        #    src/apiSurfaceTests.cpp
+        src/apiSurfaceTests.cpp
         #    src/features/range.cpp
         #    src/features/mesh.cpp
         #    src/features/transforms.cpp
