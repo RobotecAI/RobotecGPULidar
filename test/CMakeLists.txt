@@ -16,6 +16,7 @@ set(RGL_TEST_FILES
         src/graph/nodes/TransformPointsNodeTest.cpp
         src/scene/entityIdTest.cpp
         src/DistanceFieldTest.cpp
+    src/ArrayTest.cpp
 )
 
 # Only Linux
