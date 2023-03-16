@@ -22,19 +22,18 @@ API_OBJECT_INSTANCE(Mesh);
 
 Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
 {
-	dVertices.copyFromHost(vertices, vertexCount);
-	dIndices.copyFromHost(indices, indexCount);
+	dVertices->copyFromHost(vertices, vertexCount);
+	dIndices->copyFromHost(indices, indexCount);
 }
 
 void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
 {
-	if (dVertices.getElemCount() != vertexCount) {
-		auto msg = fmt::format(
-				"Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
-				dVertices.getElemCount(), vertexCount);
+	if (dVertices->getCount() != vertexCount) {
+		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
+		                        dVertices->getCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
-	dVertices.copyFromHost(vertices, vertexCount);
+	dVertices->copyFromHost(vertices, vertexCount);
 	gasNeedsUpdate = true;
 }
 
@@ -56,9 +55,9 @@ void Mesh::updateGAS()
 
 	// OptiX update disallows buffer sizes to change
 	OptixBuildInput updateInput = buildInput;
-	const CUdeviceptr vertexBuffers[1] = {dVertices.readDeviceRaw()};
+	const CUdeviceptr vertexBuffers[1] = {dVertices->getDeviceReadPtr()};
 	updateInput.triangleArray.vertexBuffers = vertexBuffers;
-	updateInput.triangleArray.indexBuffer = dIndices.readDeviceRaw();
+	updateInput.triangleArray.indexBuffer = dIndices->getDeviceReadPtr();
 
 	scratchpad.resizeToFit(updateInput, updateOptions);
 
@@ -69,10 +68,10 @@ void Mesh::updateGAS()
 	                            &updateOptions,
 	                            &updateInput,
 	                            1,
-	                            scratchpad.dTemp.readDeviceRaw(),
-	                            scratchpad.dTemp.getByteSize(),
-	                            scratchpad.dFull.readDeviceRaw(),
-	                            scratchpad.dFull.getByteSize(),
+	                            scratchpad.dTemp->getDeviceReadPtr(),
+	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
+	                            scratchpad.dFull->getDeviceReadPtr(),
+	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
 	                            &cachedGAS.value(),
 	                            nullptr, // &emitDesc,
 	                            0));
@@ -83,25 +82,25 @@ void Mesh::updateGAS()
 OptixTraversableHandle Mesh::buildGAS()
 {
 	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
-	vertexBuffers[0] = dVertices.readDeviceRaw();
+	vertexBuffers[0] = dVertices->getDeviceReadPtr();
 
 	buildInput = {
-			.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-			.triangleArray = {
-					.vertexBuffers = vertexBuffers,
-					.numVertices = static_cast<unsigned int>(dVertices.getElemCount()),
-					.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-					.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType),
-					.indexBuffer = dIndices.readDeviceRaw(),
-					.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount()),
-					.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-					.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType),
-					.flags = &triangleInputFlags,
-					.numSbtRecords = 1,
-					.sbtIndexOffsetBuffer = 0,
-					.sbtIndexOffsetSizeInBytes = 0,
-					.sbtIndexOffsetStrideInBytes = 0,
-			}
+		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
+		.triangleArray = {
+			.vertexBuffers = vertexBuffers,
+			.numVertices = static_cast<unsigned int>(dVertices->getCount()),
+			.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
+			.vertexStrideInBytes = sizeof(decltype(dVertices)::element_type::DataType),
+			.indexBuffer = dIndices->getDeviceReadPtr(),
+			.numIndexTriplets = static_cast<unsigned int>(dIndices->getCount()),
+			.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
+			.indexStrideInBytes = sizeof(decltype(dIndices)::element_type::DataType),
+			.flags = &triangleInputFlags,
+			.numSbtRecords = 1,
+			.sbtIndexOffsetBuffer = 0,
+			.sbtIndexOffsetSizeInBytes = 0,
+			.sbtIndexOffsetStrideInBytes = 0,
+		}
 	};
 
 	buildOptions = {
@@ -124,10 +123,10 @@ OptixTraversableHandle Mesh::buildGAS()
 	                            &buildOptions,
 	                            &buildInput,
 	                            1,
-	                            scratchpad.dTemp.readDeviceRaw(),
-	                            scratchpad.dTemp.getByteSize(),
-	                            scratchpad.dFull.readDeviceRaw(),
-	                            scratchpad.dFull.getByteSize(),
+	                            scratchpad.dTemp->getDeviceReadPtr(),
+	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
+	                            scratchpad.dFull->getDeviceReadPtr(),
+	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
 	                            &gasHandle,
 	                            nullptr, // &emitDesc,
 	                            0
@@ -142,19 +141,18 @@ OptixTraversableHandle Mesh::buildGAS()
 
 void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
 {
-	if (texCoordCount != dVertices.getElemCount()) {
+	if (texCoordCount != dVertices->getCount()) {
 		auto msg = fmt::format(
 				"Invalid argument: cannot set texture coordinates because vertex count do not match with texture coordinates count: vertices={}, texture_coords={}",
-				dVertices.getElemCount(), texCoordCount);
+				dVertices->getCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}
 
-	// TODO is dat valid approach?
-	if(!dTextureCoords.has_value())
+	if (!dTextureCoords.has_value())
 	{
-		dTextureCoords.emplace();
+		dTextureCoords = DeviceSyncArray<Vec2f>::create();
 	}
 
-	dTextureCoords->copyFromHost(texCoords, texCoordCount);
+	dTextureCoords.value()->copyFromHost(texCoords, texCoordCount);
 	gasNeedsUpdate = true;
 }

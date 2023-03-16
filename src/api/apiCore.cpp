@@ -200,9 +200,7 @@ rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_co
 		            (void*) mesh, repr(uvs, uv_count), uv_count);
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(uvs != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		CHECK_ARG(uv_count == Mesh::validatePtr(mesh)->getVertexCount());
-
+		CHECK_ARG(uv_count > 0);
 		Mesh::validatePtr(mesh)->setTexCoords(reinterpret_cast<const Vec2f*>(uvs), uv_count);
 
 	});

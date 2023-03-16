@@ -14,26 +14,28 @@
 
 #pragma once
 
-#include <optix_stubs.h>
-#include <Optix.hpp>
-#include <DeviceBuffer.hpp>
 #include <memory>
+
+#include <optix_stubs.h>
+
+#include <Optix.hpp>
+#include <memory/ConcreteArrays.hpp>
 
 /**
  * Helper class to manage buffers used for building acceleration (GAS, IAS) structures and perform their compaction.
  */
 struct ASBuildScratchpad
 {
-	bool resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options);
+	void resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options);
 	void doCompaction(OptixTraversableHandle& handle);
 
 private:
-	DeviceBuffer<uint64_t> dCompactedSize;
-	DeviceBuffer<std::byte> dTemp;
-	DeviceBuffer<std::byte> dFull;
-	DeviceBuffer<std::byte> dCompact;
+	HostPinnedArray<uint64_t>::Ptr hCompactedSize = HostPinnedArray<uint64_t>::create();
+	DeviceSyncArray<uint64_t>::Ptr dCompactedSize = DeviceSyncArray<uint64_t>::create();
+	DeviceSyncArray<std::byte>::Ptr dTemp = DeviceSyncArray<std::byte>::create();
+	DeviceSyncArray<std::byte>::Ptr dFull = DeviceSyncArray<std::byte>::create();
+	DeviceSyncArray<std::byte>::Ptr dCompact = DeviceSyncArray<std::byte>::create();
 
 	friend struct Mesh;
-	friend struct Object;
 	friend struct Scene;
 };

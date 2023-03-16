@@ -20,7 +20,6 @@
 
 #include <APIObject.hpp>
 #include <Optix.hpp>
-#include <DeviceBuffer.hpp>
 #include <math/Vector.hpp>
 #include <macros/cuda.hpp>
 #include <macros/optix.hpp>
@@ -33,7 +32,6 @@ struct Mesh : APIObject<Mesh>
 {
 	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
 	OptixTraversableHandle getGAS();
-	int getVertexCount() const { return dVertices.getElemCount(); }
 
 	void setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount);
 
@@ -50,9 +48,10 @@ private:
 	ASBuildScratchpad scratchpad;
 	bool gasNeedsUpdate;
 	std::optional<OptixTraversableHandle> cachedGAS;
-	DeviceBuffer<Vec3f> dVertices;
-	DeviceBuffer<Vec3i> dIndices;
-	std::optional<DeviceBuffer<Vec2f>> dTextureCoords;
+
+	DeviceSyncArray<Vec3f>::Ptr dVertices = DeviceSyncArray<Vec3f>::create();
+	DeviceSyncArray<Vec3i>::Ptr dIndices = DeviceSyncArray<Vec3i>::create();
+	std::optional<DeviceSyncArray<Vec2f>::Ptr> dTextureCoords;
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;
