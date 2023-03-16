@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,9 @@
 
 #pragma once
 
-#include <typeindex>
+#include <stdexcept>
 
-static std::string name(const std::type_index& typeIndex)
+struct InvalidArrayCast : public std::runtime_error
 {
-	std::string_view name = typeIndex.name();
-	name.remove_prefix(name.find_first_not_of("0123456789"));
-	return std::string(name);
-}
-
-static std::string name(const std::type_info& typeInfo)
-{
-	return name(std::type_index(typeInfo));
-}
+	using std::runtime_error::runtime_error;
+};

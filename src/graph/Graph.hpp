@@ -34,7 +34,7 @@ struct Graph
 
 	virtual ~Graph();
 private:
-	Graph() : stream(std::make_shared<CudaStream>()) {}
+	Graph() : stream(CudaStream::create()) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 	static std::set<rgl_field_t> findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes);

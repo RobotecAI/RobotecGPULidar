@@ -15,14 +15,25 @@
 #pragma once
 
 #include <macros/cuda.hpp>
+#include <Logger.hpp>
 
 // RAII object to (de)initialize cudaStream_t
 struct CudaStream
-{   
-	CudaStream()
+{
+	using Ptr = std::shared_ptr<CudaStream>;
+
+	static CudaStream::Ptr create()
 	{
-		CHECK_CUDA(cudaStreamCreate(&stream));
+		return CudaStream::Ptr(new CudaStream(0U));
 	}
+
+	static CudaStream::Ptr getNullStream()
+	{
+		static CudaStream::Ptr nullStream { new CudaStream() };
+		return nullStream;
+	}
+
+	cudaStream_t get() { return stream; }
 
 	~CudaStream()
 	{
@@ -37,6 +48,13 @@ struct CudaStream
 			}
 		}
 	}
+
+private:
+	// Wraps null stream
+	CudaStream() {}
+
+	// Constructs a new stream
+	explicit CudaStream(unsigned flags) { CHECK_CUDA(cudaStreamCreateWithFlags(&stream, flags)); }
 
 private:
 	cudaStream_t stream {nullptr};
