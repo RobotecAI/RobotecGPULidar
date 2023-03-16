@@ -24,6 +24,9 @@ static inline void onCUDAError() {}
 do                                                                                                  \
 {                                                                                                   \
     cudaError_t status = call;                                                                      \
+    if (status == cudaErrorCudartUnloading) {                                                       \
+        break;                                                                                      \
+    }                                                                                               \
     if (status != cudaSuccess) {                                                                    \
         auto message = fmt::format("cuda error: {} (code={}) @ {}:{}",                              \
         cudaGetErrorString(status), status, __FILE__, __LINE__);                                    \

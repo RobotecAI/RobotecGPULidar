@@ -5,7 +5,7 @@ set(RGL_TEST_FILES
     src/asyncStressTest.cpp
     src/apiReadmeExample.cpp
     src/gaussianStressTest.cpp
-        src/apiSurfaceTests.cpp
+    src/apiSurfaceTests.cpp
     #    src/features/range.cpp
     #    src/features/mesh.cpp
     #    src/features/transforms.cpp
@@ -13,6 +13,7 @@ set(RGL_TEST_FILES
     src/testMat3x4f.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
+    src/ArrayTest.cpp
 )
 
 # Only Linux
