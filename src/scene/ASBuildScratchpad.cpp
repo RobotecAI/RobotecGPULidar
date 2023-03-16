@@ -15,19 +15,16 @@
 #include <scene/ASBuildScratchpad.hpp>
 #include <macros/optix.hpp>
 #include <macros/cuda.hpp>
-#include <HostPinnedBuffer.hpp>
 
-bool ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options)
+void ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options)
 {
 	OptixAccelBufferSizes bufferSizes;
 	CHECK_OPTIX(optixAccelComputeMemoryUsage(Optix::getOrCreate().context, &options, &input, 1, &bufferSizes));
 
-        // Short-circuit evaluation workaround
-        bool dTempResizeResult = dTemp.resizeToFit(bufferSizes.tempSizeInBytes);
-        bool dFullResizeResult = dFull.resizeToFit(bufferSizes.outputSizeInBytes);
-        bool dCompactedSizeResizeResult = dCompactedSize.resizeToFit(1);
-
-	return dTempResizeResult || dFullResizeResult || dCompactedSizeResizeResult;
+	// Short-circuit evaluation workaround
+	dTemp->resize(bufferSizes.tempSizeInBytes, false, false);
+	dFull->resize(bufferSizes.outputSizeInBytes, false, false);
+	dCompactedSize->resize(1, false, false);
 }
 
 void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
@@ -36,17 +33,19 @@ void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
 	// TODO(prybicki): Too many lines for getting a number from GPU :(
 	// TODO(prybicki): Some time later, it turns out that this communication (async cpy + sync) is killing perf
 	// TODO(prybicki): This should remain disabled, until a real-world memory management subsystem is implemented
-	// TODO(prybicki): Copy here should be not async...
-	HostPinnedBuffer<uint64_t> hCompactedSize;
-	hCompactedSize.copyFromDeviceAsync(dCompactedSize, nullptr); // TODO: stream
-	CHECK_CUDA(cudaStreamSynchronize(nullptr));
-	uint64_t compactedSize = *hCompactedSize.readHost();
 
-	dCompact.resizeToFit(compactedSize);
-	CHECK_OPTIX(optixAccelCompact(Optix::getOrCreate().context,
-	                              nullptr, // TODO: stream
-	                              handle,
-	                              dCompact.readDeviceRaw(),
-	                              dCompact.getByteSize(),
-	                              &handle));
+	// Commented out due to introduction of Array<M,T>
+	// Should be re-implemented when needed using new interface
+
+	// hCompactedSize->copyFromDeviceAsync(dCompactedSize, nullptr); // TODO: stream
+	// CHECK_CUDA(cudaStreamSynchronize(nullptr));
+	// uint64_t compactedSize = *hCompactedSize->readHost();
+
+	// dCompact.resizeToFit(compactedSize);
+	// CHECK_OPTIX(optixAccelCompact(Optix::getOrCreate().context,
+	//                               nullptr, // TODO: stream
+	//                               handle,
+	//                               dCompact.readDeviceRaw(),
+	//                               dCompact.getByteSize(),
+	//                               &handle));
 }

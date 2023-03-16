@@ -31,7 +31,7 @@
 template<MemoryKind M, typename T>
 struct Array : public IAnyArray<M>
 {
-	static_assert(std::is_trivial<T>::value);
+	static_assert(std::is_trivially_copyable<T>::value);
 	using Ptr = std::shared_ptr<Array<M, T>>;
 	using ConstPtr = std::shared_ptr<const Array<M, T>>;
 	using DataType = T;
@@ -103,6 +103,19 @@ public:
 		capacity = newCapacity;
 	}
 
+	void clear(bool zero) override
+	{
+		if (data == nullptr) {
+			return;
+		}
+
+		if (zero) {
+			memOps.clear(data, 0, sizeof(T) * count);
+		}
+
+		count = 0;
+	}
+
 protected:
 	size_t count = { 0 };
 	size_t capacity = { 0 };
@@ -121,6 +134,12 @@ struct DeviceArray : public Array<M, T>
 	static_assert(M == MemoryKind::DeviceSync || M == MemoryKind::DeviceAsync);
 	using Ptr = std::shared_ptr<DeviceArray<M, T>>;
 	using ConstPtr = std::shared_ptr<const DeviceArray<M, T>>;
+
+	// Explanation why: https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members
+	// Note: do not repeat this for methods, since it inhibits virtual dispatch mechanism
+	using Array<M, T>::data;
+	using Array<M, T>::count;
+	using Array<M, T>::capacity;
 
 	void copyFrom(Array<MemoryKind::HostPageable, T>::ConstPtr src)
 	{

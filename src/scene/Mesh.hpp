@@ -20,7 +20,6 @@
 
 #include <APIObject.hpp>
 #include <Optix.hpp>
-#include <DeviceBuffer.hpp>
 #include <math/Vector.hpp>
 #include <macros/cuda.hpp>
 #include <macros/optix.hpp>
@@ -47,8 +46,8 @@ private:
 	ASBuildScratchpad scratchpad;
 	bool gasNeedsUpdate;
 	std::optional<OptixTraversableHandle> cachedGAS;
-	DeviceBuffer<Vec3f> dVertices;
-	DeviceBuffer<Vec3i> dIndices;
+	DeviceSyncArray<Vec3f>::Ptr dVertices = DeviceSyncArray<Vec3f>::create();
+	DeviceSyncArray<Vec3i>::Ptr dIndices = DeviceSyncArray<Vec3i>::create();
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;
