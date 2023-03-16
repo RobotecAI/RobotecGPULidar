@@ -69,42 +69,46 @@ OptixShaderBindingTable Scene::getSBT()
 
 OptixShaderBindingTable Scene::buildSBT()
 {
-	static DeviceBuffer<HitgroupRecord> dHitgroupRecords;
-	static DeviceBuffer<RaygenRecord> dRaygenRecords;
-	static DeviceBuffer<MissRecord> dMissRecords;
+	static DeviceSyncArray<HitgroupRecord>::Ptr dHitgroupRecords = DeviceSyncArray<HitgroupRecord>::create();
+	static DeviceSyncArray<RaygenRecord>::Ptr dRaygenRecords = DeviceSyncArray<RaygenRecord>::create();
+	static DeviceSyncArray<MissRecord>::Ptr dMissRecords = DeviceSyncArray<MissRecord>::create();
+	static HostPinnedArray<HitgroupRecord>::Ptr hHitgroupRecords = HostPinnedArray<HitgroupRecord>::create();
 
 	// TODO(prybicki): low priority: can HG count be reduced to be == count(GASes)? or must it be count(IASes)?
-	std::vector<HitgroupRecord> hHitgroupRecords;
+
+	hHitgroupRecords->reserve(entities.size(), false);
+	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
-		hHitgroupRecords.emplace_back(); // TODO(prybicki): fix, this is weird
-		HitgroupRecord *hr = &(*hHitgroupRecords.rbegin());
-		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, hr));
-		hr->data = TriangleMeshSBTData{
-			.vertex = mesh->dVertices.readDevice(),
-			.index = mesh->dIndices.readDevice(),
-			.vertex_count = mesh->dVertices.getElemCount(),
-			.index_count = mesh->dIndices.getElemCount(),
-		};
+		hHitgroupRecords->append(HitgroupRecord {
+			.data = {
+				.vertex = mesh->dVertices->getReadPtr(),
+				.index = mesh->dIndices->getReadPtr(),
+				.vertex_count = mesh->dVertices->getCount(),
+				.index_count = mesh->dIndices->getCount(),
+			}
+		});
+		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount()-1);
+		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, last.header));
 	}
-	dHitgroupRecords.copyFromHost(hHitgroupRecords);
+	dHitgroupRecords->copyFrom(hHitgroupRecords);
 
-	RaygenRecord hRaygenRecord;
+	RaygenRecord hRaygenRecord = {};
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().raygenPG, &hRaygenRecord));
-	dRaygenRecords.copyFromHost(&hRaygenRecord, 1);
+	dRaygenRecords->copyFromHost(&hRaygenRecord, 1);
 
-	MissRecord hMissRecord;
+	MissRecord hMissRecord = {};
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().missPG, &hMissRecord));
-	dMissRecords.copyFromHost(&hMissRecord, 1);
+	dMissRecords->copyFromHost(&hMissRecord, 1);
 
 	return OptixShaderBindingTable{
-		.raygenRecord = dRaygenRecords.readDeviceRaw(),
-		.missRecordBase = dMissRecords.readDeviceRaw(),
+		.raygenRecord = dRaygenRecords->getDeviceReadPtr(),
+		.missRecordBase = dMissRecords->getDeviceReadPtr(),
 		.missRecordStrideInBytes = sizeof(MissRecord),
 		.missRecordCount = 1U,
-		.hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords.readDeviceRaw() : static_cast<CUdeviceptr>(0),
+		.hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords->getDeviceReadPtr() : static_cast<CUdeviceptr>(0),
 		.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord),
-		.hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords.getElemCount()),
+		.hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords->getCount()),
 	};
 }
 
@@ -113,22 +117,24 @@ OptixTraversableHandle Scene::buildAS()
 	if (getObjectCount() == 0) {
 		return static_cast<OptixTraversableHandle>(0);
 	}
-	std::vector<OptixInstance> instances;
+	auto instances = HostPinnedArray<OptixInstance>::create();
+	instances->reserve(entities.size(), false);
 	for (auto&& entity : entities) {
 		// TODO(prybicki): this is somewhat inefficient, because most of the time only transform changes.
-		instances.push_back(entity->getIAS(static_cast<int>(instances.size())));
+		instances->append(entity->getIAS(static_cast<int>(instances->getCount())));
 	}
 
 	// *** *** *** ACHTUNG *** *** ***
 	// Calls to cudaMemcpy below are a duck-tape for synchronizing all streams from LidarContexts.
-	dInstances.resizeToFit(instances.size());
-	dInstances.copyFromHost(instances);
+
+	dInstances->resize(instances->getCount(), false, false);
+	dInstances->copyFrom(instances);
 
 	OptixBuildInput instanceInput = {
 	.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES,
 	.instanceArray = {
-	.instances = dInstances.readDeviceRaw(),
-	.numInstances = static_cast<unsigned int>(dInstances.getElemCount())
+	.instances = dInstances->getDeviceReadPtr(),
+	.numInstances = static_cast<unsigned int>(dInstances->getCount())
 	},
 	};
 
@@ -142,7 +148,7 @@ OptixTraversableHandle Scene::buildAS()
 	scratchpad.resizeToFit(instanceInput, accelBuildOptions);
 
 	OptixAccelEmitDesc emitDesc = {
-	.result = scratchpad.dCompactedSize.readDeviceRaw(),
+	.result = scratchpad.dCompactedSize->getDeviceReadPtr(),
 	.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
 	};
 
@@ -152,10 +158,10 @@ OptixTraversableHandle Scene::buildAS()
 	                            &accelBuildOptions,
 	                            &instanceInput,
 	                            1,
-	                            scratchpad.dTemp.readDeviceRaw(),
-	                            scratchpad.dTemp.getByteSize(),
-	                            scratchpad.dFull.readDeviceRaw(),
-	                            scratchpad.dFull.getByteSize(),
+	                            scratchpad.dTemp->getDeviceReadPtr(),
+	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
+	                            scratchpad.dFull->getDeviceReadPtr(),
+	                            scratchpad.dFull-> getSizeOf() * scratchpad.dFull->getCount(),
 	                            &sceneHandle,
 	                            &emitDesc,
 	                            1

@@ -64,7 +64,8 @@ private:
 	std::optional<OptixTraversableHandle> cachedAS;
 	std::optional<OptixShaderBindingTable> cachedSBT;
 
-	DeviceBuffer<OptixInstance> dInstances;
+	// TODO: allow non-heap creation;
+	DeviceSyncArray<OptixInstance>::Ptr dInstances = DeviceSyncArray<OptixInstance>::create();
 
 	std::optional<Time> time;
 };

@@ -88,7 +88,7 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray<M>>
 	virtual std::size_t getSizeOf() const = 0;
 
 	/**
-	 * Expands or shrinks the array, possibly erasing existing elements.
+	 * Expands or shrinks the array, possibly erasing existing elements. It does not reduce capacity.
 	 * @param newCount Desired element count after operation.
 	 * @param zeroInit If true, elements will be zero-initialized. Otherwise, elements may have garbage values.
 	 * @param preserveData If false, resize will skip copying old data as an optimization.
@@ -102,6 +102,12 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray<M>>
 	 * @param preserveData If false, reserve will skip copying old data as an optimization. Useful when the data would be overwritten anyway.
 	 */
 	virtual void reserve(std::size_t newCapacity, bool preserveData) = 0;
+
+	/**
+	 * Removes all elements, but keeps existing allocation.
+	 * @param zero If true, existing elements will be set to zero.
+	 */
+	virtual void clear(bool zero) = 0;
 
 	virtual ~IAnyArray() = default;
 };

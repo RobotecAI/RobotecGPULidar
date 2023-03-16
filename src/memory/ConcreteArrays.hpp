@@ -62,6 +62,12 @@ struct DeviceSyncArray : public DeviceArray<MemoryKind::DeviceSync, T>
 		CHECK_CUDA(cudaMemcpy(this->data, src->data, sizeof(T) * src->getCount(), cudaMemcpyHostToDevice));
 	}
 
+	void copyFromHost(const T* hostSrc, std::size_t count)
+	{
+		this->resize(count, false, false);
+		CHECK_CUDA(cudaMemcpy(this->data, hostSrc, sizeof(T) * count, cudaMemcpyHostToDevice));
+	}
+
 protected:
 	using DeviceArray<MemoryKind::DeviceSync, T>::DeviceArray;
 };
@@ -75,7 +81,7 @@ struct HostPageableArray : public HostArray<MemoryKind::HostPageable, T>
 	static HostPageableArray<T>::Ptr create()
 	{
 		return HostPageableArray<T>::Ptr {
-		new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>())
+			new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>())
 		};
 	}
 
