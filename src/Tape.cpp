@@ -63,6 +63,7 @@ void TapeRecorder::recordRGLVersion(YAML::Node& node)
 
 TapePlayer::TapePlayer(const char* path)
 {
+	// clang-format off
 	tapeFunctions = {
 		{ "rgl_get_version_info", std::bind(&TapePlayer::tape_get_version_info, this, _1) },
 		{ "rgl_configure_logging", std::bind(&TapePlayer::tape_configure_logging, this, _1) },
@@ -106,6 +107,7 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlayer::tape_node_points_ros2_publish_with_qos, this, _1) },
 		#endif
 	};
+	// clang-format on
 
 	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
 	std::string pathBin = fs::path(path).concat(BIN_EXTENSION).string();
