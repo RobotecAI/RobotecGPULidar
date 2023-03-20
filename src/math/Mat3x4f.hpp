@@ -22,6 +22,8 @@
 struct Mat3x4f;
 HostDevFn Mat3x4f operator*(const Mat3x4f& lhs, const Mat3x4f& rhs);
 
+// clang-format off
+
 struct Mat3x4f
 {
 	static constexpr int ROWS = 3;
@@ -303,3 +305,5 @@ static_assert(std::is_trivially_copyable<Mat3x4f>::value);
 static_assert(std::is_trivially_constructible<Mat3x4f>::value);
 static_assert(sizeof(Mat3x4f) == 12 * sizeof(float));
 static_assert(alignof(Mat3x4f) == 4);
+
+// clang-format on
