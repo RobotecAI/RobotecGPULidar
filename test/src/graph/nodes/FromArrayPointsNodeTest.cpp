@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 
-class FromArrayPointsNodeTest : public RGLAutoCleanupTestWithParam<int>, public RGLPointTestHelper {
+class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointTestHelper {
 protected:
 };
 

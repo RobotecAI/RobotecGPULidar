@@ -191,7 +191,7 @@ void TapePlayer::mmapInit(const char* path)
 	fileMmap = (uint8_t*) mmap(nullptr, staticBuffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	mmapSize = staticBuffer.st_size;
 	if (fileMmap == MAP_FAILED) {
-		throw InvalidFilePath(fmt::format("rgl_tape_play: could not open binary file: {}", path));
+		throw InvalidFilePath(fmt::format("rgl_tape_play: could not mmap binary file: {}", path));
 	}
 	if (close(fd)) {
 		RGL_WARN("rgl_tape_play: failed to close binary file: '{}' "

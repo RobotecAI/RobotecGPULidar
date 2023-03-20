@@ -24,7 +24,7 @@ const rgl_mat3x4f lidarRayTf = Mat3x4f::identity().toRGL();
 const std::vector<rgl_mat3x4f> lidarRays(LIDAR_RAYS_COUNT, lidarRayTf);
 const Vec3f noiselessHitpointInLidarFrame = {0.0f, 0.0f, 3.0f};
 
-struct GaussianStressTest : public RGLAutoCleanupTest {
+struct GaussianStressTest : public RGLTest {
 	GaussianStressTest()
 	{
 		// Setup scene

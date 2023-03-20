@@ -43,15 +43,20 @@ static rgl_mat3x4f rotationTestTransform = Mat3x4f::rotation(10, 30, 45).toRGL()
 static rgl_mat3x4f scalingTestTransform = Mat3x4f::scale(1, 2, 3).toRGL();
 static rgl_mat3x4f complexTestTransform = Mat3x4f::TRS(Vec3f(1, 2, 3), Vec3f(10, 30, 45)).toRGL();
 
-struct RGLAutoCleanupTest : public ::testing::Test {
+struct RGLTest : public ::testing::Test {
 protected:
-    virtual ~RGLAutoCleanupTest() override
+	void SetUp() override 
+	{
+		rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false);
+	}
+	
+    virtual ~RGLTest() override
     {
         EXPECT_RGL_SUCCESS(rgl_cleanup());
     }
 };
 template <typename T>
-struct RGLAutoCleanupTestWithParam : public RGLAutoCleanupTest, public ::testing::WithParamInterface<T> { };
+struct RGLTestWithParam : public RGLTest, public ::testing::WithParamInterface<T> { };
 
 struct RGLPointTestHelper {
 
