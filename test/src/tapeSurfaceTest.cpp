@@ -14,9 +14,9 @@
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 
-class Tape : public RGLAutoCleanupTest {};
+class TapeCase : public RGLTest {};
 
-TEST_F(Tape, RecordPlayAllCalls)
+TEST_F(TapeCase, RecordPlayAllCalls)
 {
 	EXPECT_RGL_SUCCESS(rgl_tape_record_begin("all_calls_recording"));
 	bool isTapeRecordActive = false;
@@ -27,7 +27,8 @@ TEST_F(Tape, RecordPlayAllCalls)
 
 	int32_t major, minor, patch;
 	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
-	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, "Tape.RecordPlayAllCalls.log", true));
+
+	// Note: the logging using tape test have been moved to the file loggingTests.cpp
 
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));

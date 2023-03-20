@@ -7,7 +7,7 @@
 
 #include <math/Mat3x4f.hpp>
 
-class GraphCase : public RGLAutoCleanupTest {};
+class GraphCase : public RGLTest {};
 
 #ifdef RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>

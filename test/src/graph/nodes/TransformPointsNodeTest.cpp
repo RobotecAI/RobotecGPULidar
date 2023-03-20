@@ -4,7 +4,7 @@
 #include <repr.hpp>
 #include <utils.hpp>
 
-class TransformPointsNodeTest : public RGLAutoCleanupTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointTestHelper {
+class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointTestHelper {
 protected:
     static constexpr int TEST_PARAM_TRANSFORM_ID=1;
 };
