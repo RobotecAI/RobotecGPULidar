@@ -56,7 +56,7 @@ protected:
     }
 };
 template <typename T>
-struct RGLAutoCleanupTestWithParam : public RGLTest, public ::testing::WithParamInterface<T> { };
+struct RGLTestWithParam : public RGLTest, public ::testing::WithParamInterface<T> { };
 
 struct RGLPointTestHelper {
 

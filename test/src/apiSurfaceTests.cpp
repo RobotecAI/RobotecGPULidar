@@ -8,6 +8,8 @@
 #define VERTICES cubeVertices
 #define INDICES cubeIndices
 
+using namespace ::testing;
+
 class APISurfaceTests : public RGLTest
 {};
 
@@ -40,7 +42,7 @@ TEST_F(APISurfaceTests, rgl_mesh_create_destroy)
 
 	// Correct create
 	ASSERT_RGL_SUCCESS(rgl_mesh_create(&mesh, VERTICES, ARRAY_SIZE(VERTICES), INDICES, ARRAY_SIZE(INDICES)));
-	ASSERT_THAT(mesh, testing::NotNull());
+	ASSERT_THAT(mesh, NotNull());
 
 	// Correct destroy
 	ASSERT_RGL_SUCCESS(rgl_mesh_destroy(mesh));
@@ -83,7 +85,7 @@ TEST_F(APISurfaceTests, rgl_entity_create_destroy)
 
 	// Correct create
 	ASSERT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-	ASSERT_THAT(entity, testing::NotNull());
+	ASSERT_THAT(entity, NotNull());
 
 	// Correct destroy
 	ASSERT_RGL_SUCCESS(rgl_entity_destroy(entity));
