@@ -64,7 +64,7 @@ add_custom_command(
     COMMAND ${BIN2C} -c --padd 0 --type char --name optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx> > optixProgramsPtx.c
     DEPENDS optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx>  # Should work with just optixProgramsPtx, but CMake..
     VERBATIM)
-add_library(optixPrograms optixProgramsPtx.c src/gpu/testKernel.hpp)
+add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
     src/api/apiCommon.cpp
@@ -75,6 +75,7 @@ add_library(RobotecGPULidar SHARED
     src/Optix.cpp
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
+    src/gpu/testKernel.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
@@ -94,8 +95,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/SetRaysRingIdsRaysNode.cpp
     src/graph/SpatialMergePointsNode.cpp
     src/graph/TemporalMergePointsNode.cpp
-    src/graph/YieldPointsNode.cpp
-        src/gpu/testKernel.cu)
+    src/graph/YieldPointsNode.cpp)
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
