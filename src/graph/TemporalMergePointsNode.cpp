@@ -43,15 +43,6 @@ void TemporalMergePointsNode::onInputChange()
 		auto msg = "Temporal points merge can process unorganized point clouds only";
 		throw InvalidPipeline(msg);
 	}
-
-	// Check input pointcloud has required fields
-	for (const auto& requiredField : std::views::keys(mergedData)) {
-		if (!input->hasField(requiredField)) {
-			auto msg = fmt::format("TemporalMergePointsNode input does not have required field '{}'",
-			                       toString(requiredField));
-			throw InvalidPipeline(msg);
-		}
-	}
 }
 
 void TemporalMergePointsNode::schedule(cudaStream_t stream)

@@ -48,10 +48,9 @@ void SpatialMergePointsNode::onInputChange()
 		}
 
 		// Check input pointcloud has required fields
-		for (const auto& requiredField : std::views::keys(mergedData)) {
+		for (const auto& requiredField : getRequiredFieldList()) {
 			if (!input->hasField(requiredField)) {
-				auto msg = fmt::format("SpatialMergePointsNode input does not have required field '{}'",
-				                       toString(requiredField));
+				auto msg = fmt::format("{} input does not have required field '{}'", getName(), toString(requiredField));
 				throw InvalidPipeline(msg);
 			}
 		}

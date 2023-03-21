@@ -75,8 +75,3 @@ VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cuda
 	}
 	return input->getFieldData(field, stream);
 }
-
-std::vector<rgl_field_t> GaussianNoiseDistanceNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
-}

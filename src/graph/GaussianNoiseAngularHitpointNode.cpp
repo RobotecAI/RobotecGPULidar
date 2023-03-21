@@ -27,7 +27,7 @@ void GaussianNoiseAngularHitpointNode::onInputChange()
 	IPointsNodeSingleInput::onInputChange();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
-	// This node will modifty field DISTANCE_F32 if present.
+	// This node will modify field DISTANCE_F32 if present.
 	// In the future: only one field should be modified.
 	// Other fields that depend on the main field (for now, it's XYZ_F32) should be calculated somewhere else (e.g., in data getters nodes).
 	if (input->hasField(DISTANCE_F32)) {
@@ -74,9 +74,4 @@ VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t fiel
 		return outDistance->untyped();
 	}
 	return input->getFieldData(field, stream);
-}
-
-std::vector<rgl_field_t> GaussianNoiseAngularHitpointNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
 }

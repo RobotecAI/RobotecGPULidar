@@ -90,7 +90,16 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 {
 	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;
 
-	virtual void onInputChange() override { input = getValidInput<IPointsNode>(); }
+	virtual void onInputChange() override
+	{
+		input = getValidInput<IPointsNode>();
+		for (auto&& field : getRequiredFieldList()) {
+			if (!input->hasField(field) && !isDummy(field)) {
+				auto msg = fmt::format("{} requires {} to be present", getName(), toString(field));
+				throw InvalidPipeline(msg);
+			}
+		}
+	}
 
 	// Point cloud description
 	virtual bool isDense() const override { return input->isDense(); }

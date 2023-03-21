@@ -145,12 +145,11 @@ struct TransformPointsNode : IPointsNodeSingleInput
 	Mat3x4f getTransform() const { return transform; }
 
 	// Node
-	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 	std::string getArgsString() const override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
@@ -224,7 +223,6 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -354,7 +352,7 @@ struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
@@ -382,7 +380,7 @@ struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
