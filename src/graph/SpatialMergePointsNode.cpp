@@ -35,8 +35,9 @@ void SpatialMergePointsNode::onInputChange()
 {
 	pointInputs = Node::filter<IPointsNode>(this->inputs);
 
-	if (pointInputs.empty()) {
-		auto msg = "expected at least one IPointsNode input for SpatialMergePointsNode";
+	if (pointInputs.size() < 2) {
+		// Having just one input does not make sense, because it is equivalent to removing this Node.
+		auto msg = fmt::format("{} requires >= 2 input nodes, found {}", getName(), pointInputs.size());
 		throw InvalidPipeline(msg);
 	}
 
