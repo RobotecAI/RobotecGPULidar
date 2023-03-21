@@ -17,7 +17,7 @@
 
 void TransformPointsNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);

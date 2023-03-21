@@ -24,7 +24,7 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 
 void GaussianNoiseAngularHitpointNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.

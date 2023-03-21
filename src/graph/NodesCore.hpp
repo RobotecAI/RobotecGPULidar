@@ -47,13 +47,12 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatPointsNode : Node, IPointsNodeSingleInput
+struct FormatPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -79,7 +78,7 @@ private:
 	VArray::Ptr output = VArray::create<char>();
 };
 
-struct CompactPointsNode : Node, IPointsNodeSingleInput
+struct CompactPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<CompactPointsNode>;
 	void setParameters() {}
@@ -103,7 +102,7 @@ private:
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
-struct RaytraceNode : Node, IPointsNode
+struct RaytraceNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
 	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
@@ -137,7 +136,7 @@ private:
 	auto getPtrTo();
 };
 
-struct TransformPointsNode : Node, IPointsNodeSingleInput
+struct TransformPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformPointsNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
@@ -178,13 +177,12 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct FromMat3x4fRaysNode : IRaysNode
+struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	// Node
-	void onInputChange() override {}
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
@@ -218,7 +216,7 @@ private:
 	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
-struct YieldPointsNode : Node, IPointsNodeSingleInput
+struct YieldPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
@@ -239,7 +237,7 @@ private:
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
 };
 
-struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
+struct SpatialMergePointsNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<SpatialMergePointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
@@ -263,11 +261,12 @@ struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
 	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
 
 private:
+	std::vector<IPointsNode::Ptr> pointInputs;
 	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
 	std::size_t width = 0;
 };
 
-struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
+struct TemporalMergePointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
@@ -293,13 +292,12 @@ private:
 	std::size_t width = 0;
 };
 
-struct FromArrayPointsNode : Node, IPointsNode
+struct FromArrayPointsNode : IPointsNode, INoInputNode
 {
 	using Ptr = std::shared_ptr<FromArrayPointsNode>;
 	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void onInputChange() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Point cloud description
@@ -343,7 +341,7 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
+struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularHitpointNode>;
 
@@ -371,7 +369,7 @@ private:
 	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
-struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
+struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
 

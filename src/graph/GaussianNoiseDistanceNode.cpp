@@ -24,7 +24,7 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 
 void GaussianNoiseDistanceNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.

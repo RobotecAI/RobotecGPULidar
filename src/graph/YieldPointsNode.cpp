@@ -31,7 +31,7 @@ void YieldPointsNode::schedule(cudaStream_t stream)
 
 void YieldPointsNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	for (auto&& field : fields) {
 		if (!input->hasField(field)) {
 			auto msg = fmt::format("YieldPointsNode's input does not provide required field {}", toString(field));

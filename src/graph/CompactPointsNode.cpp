@@ -22,7 +22,7 @@
 
 void CompactPointsNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	if (finishedEvent == nullptr) {
 		unsigned flags = cudaEventDisableTiming;  // Provides better performance
 		CHECK_CUDA(cudaEventCreate(&finishedEvent, flags));

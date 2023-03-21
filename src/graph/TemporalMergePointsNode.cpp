@@ -36,7 +36,7 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 
 void TemporalMergePointsNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 
 	// Check input pointcloud is unorganized
 	if (input->getHeight() != 1) {
