@@ -161,13 +161,12 @@ private:
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 };
 
-struct TransformRaysNode : Node, IRaysNodeSingleInput
+struct TransformRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformRaysNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
 	// Node
-	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
@@ -179,13 +178,13 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct FromMat3x4fRaysNode : Node, IRaysNode
+struct FromMat3x4fRaysNode : IRaysNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	// Node
-	void onInputChange() override;
+	void onInputChange() override {}
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
@@ -200,7 +199,7 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct SetRingIdsRaysNode : Node, IRaysNodeSingleInput
+struct SetRingIdsRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
@@ -320,9 +319,9 @@ private:
 	size_t width = 0;
 };
 
-struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
+struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 {
-	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
+	using Ptr = std::shared_ptr<GaussianNoiseAngularRaysNode>;
 
 	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 

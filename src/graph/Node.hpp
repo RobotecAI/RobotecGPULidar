@@ -34,11 +34,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	void removeChild(Node::Ptr child);
 
 	/**
-	 * Called on every node when the computation graph changes, e.g.:
-	 * - a node gets inserted or removed
-	 * - node parameters are changed
-	 * WARNING: onInputChange() should not depend on parents VArray buffer sizes
-	 * I.E. Operations such as resizing output buffers must be done in schedule()
+	 * Notifies node about changes in their input nodes.
+	 * The node may want to react by updating their cached input handle.
 	 */
 	virtual void onInputChange() = 0;
 

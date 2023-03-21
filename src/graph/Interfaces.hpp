@@ -21,19 +21,27 @@
 #include <RGLFields.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 
-struct IRaysNode
+struct IRaysNode : Node
 {
 	using Ptr = std::shared_ptr<IRaysNode>;
-	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const = 0;
+
+	// Rays
 	virtual std::size_t getRayCount() const = 0;
-	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
+	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const = 0;
+
+	// Ring Ids (client-specific data)
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
+	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
+
+	// Returns global transform in world coordinate system
 	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
 };
 
 struct IRaysNodeSingleInput : IRaysNode
 {
 	using Ptr = std::shared_ptr<IRaysNodeSingleInput>;
+
+	virtual void onInputChange() override { input = Node::getValidInput<IRaysNode>(); }
 
 	// Rays description
 	size_t getRayCount() const override { return input->getRayCount(); }

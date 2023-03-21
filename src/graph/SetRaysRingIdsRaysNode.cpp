@@ -21,7 +21,7 @@ void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCoun
 
 void SetRingIdsRaysNode::onInputChange()
 {
-	input = getValidInput<IRaysNode>();
+	IRaysNodeSingleInput::onInputChange();
 
 	if (input->getRayCount() % ringIds->getCount() != 0) {
 		auto msg = fmt::format("ring ids doesn't match number of rays. "
