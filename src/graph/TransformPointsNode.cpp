@@ -15,7 +15,7 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformPointsNode::validate()
+void TransformPointsNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 	if (!input->hasField(XYZ_F32)) {

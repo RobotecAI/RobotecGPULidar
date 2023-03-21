@@ -36,7 +36,7 @@ struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
 		int32_t qosHistoryDepth = 10);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	~Ros2PublishPointsNode();

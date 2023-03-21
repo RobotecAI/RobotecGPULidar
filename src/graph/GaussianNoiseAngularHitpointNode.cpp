@@ -22,7 +22,7 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 	this->rotationAxis = rotationAxis;
 }
 
-void GaussianNoiseAngularHitpointNode::validate()
+void GaussianNoiseAngularHitpointNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 	lookAtOriginTransform = input->getLookAtOriginTransform();

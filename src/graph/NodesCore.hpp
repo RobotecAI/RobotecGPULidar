@@ -53,7 +53,7 @@ struct FormatPointsNode : Node, IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -85,7 +85,7 @@ struct CompactPointsNode : Node, IPointsNodeSingleInput
 	void setParameters() {}
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Point cloud description
@@ -109,7 +109,7 @@ struct RaytraceNode : Node, IPointsNode
 	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Point cloud description
@@ -144,7 +144,7 @@ struct TransformPointsNode : Node, IPointsNodeSingleInput
 	Mat3x4f getTransform() const { return transform; }
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 	std::string getArgsString() const override;
 
@@ -167,7 +167,7 @@ struct TransformRaysNode : Node, IRaysNodeSingleInput
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
@@ -185,7 +185,7 @@ struct FromMat3x4fRaysNode : Node, IRaysNode
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
@@ -206,7 +206,7 @@ struct SetRingIdsRaysNode : Node, IRaysNodeSingleInput
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
@@ -225,7 +225,7 @@ struct YieldPointsNode : Node, IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -246,7 +246,7 @@ struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -274,7 +274,7 @@ struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -300,7 +300,7 @@ struct FromArrayPointsNode : Node, IPointsNode
 	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Point cloud description
@@ -327,7 +327,7 @@ struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
 	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
@@ -351,7 +351,7 @@ struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
 	void setParameters(float mean, float stDev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -379,7 +379,7 @@ struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
 	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements

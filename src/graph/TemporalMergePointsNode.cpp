@@ -34,7 +34,7 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 	}
 }
 
-void TemporalMergePointsNode::validate()
+void TemporalMergePointsNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 

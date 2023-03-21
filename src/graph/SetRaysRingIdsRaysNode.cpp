@@ -19,7 +19,7 @@ void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCoun
 	ringIds->setData(ringIdsRaw, ringIdsCount);
 }
 
-void SetRingIdsRaysNode::validate()
+void SetRingIdsRaysNode::onInputChange()
 {
 	input = getValidInput<IRaysNode>();
 

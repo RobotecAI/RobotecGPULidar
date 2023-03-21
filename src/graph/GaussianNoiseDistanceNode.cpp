@@ -22,7 +22,7 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 	this->stDevRisePerMeter = stDevRisePerMeter;
 }
 
-void GaussianNoiseDistanceNode::validate()
+void GaussianNoiseDistanceNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 	lookAtOriginTransform = input->getLookAtOriginTransform();

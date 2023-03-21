@@ -29,7 +29,7 @@ void YieldPointsNode::schedule(cudaStream_t stream)
 	}
 }
 
-void YieldPointsNode::validate()
+void YieldPointsNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 	for (auto&& field : fields) {

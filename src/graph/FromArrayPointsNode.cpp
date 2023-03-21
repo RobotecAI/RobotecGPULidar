@@ -41,7 +41,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
-void FromArrayPointsNode::validate()
+void FromArrayPointsNode::onInputChange()
 {
 	if (!inputs.empty()) {
 		auto msg = fmt::format("inputs for node {} are not allowed", getName());

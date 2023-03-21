@@ -22,7 +22,7 @@ void GaussianNoiseAngularRayNode::setParameters(float mean, float stDev, rgl_axi
 	this->rotationAxis = rotationAxis;
 }
 
-void GaussianNoiseAngularRayNode::validate()
+void GaussianNoiseAngularRayNode::onInputChange()
 {
 	input = getValidInput<IRaysNode>();
 	lookAtOriginTransform = input->getCumulativeRayTransfrom().inverse();

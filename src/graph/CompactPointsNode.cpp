@@ -20,7 +20,7 @@
 // TODO: WritePCD triggers cudaSynchronizeStream in its indirect input CompactNode
 // TODO: This can be alleviated with a stream-aware VArray :)
 
-void CompactPointsNode::validate()
+void CompactPointsNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 	if (finishedEvent == nullptr) {

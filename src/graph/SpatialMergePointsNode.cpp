@@ -31,7 +31,7 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 	}
 }
 
-void SpatialMergePointsNode::validate()
+void SpatialMergePointsNode::onInputChange()
 {
 	pointInputs = Node::filter<IPointsNode>(this->inputs);
 

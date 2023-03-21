@@ -15,7 +15,7 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformRaysNode::validate()
+void TransformRaysNode::onInputChange()
 {
 	input = getValidInput<IRaysNode>();
 }

@@ -37,10 +37,10 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * Called on every node when the computation graph changes, e.g.:
 	 * - a node gets inserted or removed
 	 * - node parameters are changed
-	 * WARNING: validate() should not depend on parents VArray buffer sizes
+	 * WARNING: onInputChange() should not depend on parents VArray buffer sizes
 	 * I.E. Operations such as resizing output buffers must be done in schedule()
 	 */
-	virtual void validate() = 0;
+	virtual void onInputChange() = 0;
 
 	/**
 	 * Prepare node computation and insert it into the given stream.

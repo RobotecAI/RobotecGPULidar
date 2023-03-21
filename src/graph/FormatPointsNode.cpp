@@ -24,7 +24,7 @@ void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 	this->fields = fields;
 }
 
-void FormatPointsNode::validate()
+void FormatPointsNode::onInputChange()
 {
 	input = getValidInput<IPointsNode>();
 }
