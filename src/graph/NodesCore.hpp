@@ -83,8 +83,10 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	using Ptr = std::shared_ptr<CompactPointsNode>;
 	void setParameters() {}
 
+	CompactPointsNode()	{ CHECK_CUDA(cudaEventCreate(&finishedEvent, cudaEventDisableTiming)); }
+	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
+
 	// Node
-	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Point cloud description
@@ -96,7 +98,7 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 private:
-	size_t width;
+	size_t width = {0};
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;

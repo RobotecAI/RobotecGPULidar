@@ -28,7 +28,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
 	using Ptr = std::shared_ptr<Node>;
 
-	~Node() override = default;
+	virtual ~Node() override = default;
 
 	void addChild(Node::Ptr child);
 	void removeChild(Node::Ptr child);

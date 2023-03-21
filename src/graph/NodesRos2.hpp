@@ -24,7 +24,7 @@
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
+struct Ros2PublishPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 

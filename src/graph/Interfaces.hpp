@@ -53,7 +53,7 @@ struct IRaysNodeSingleInput : virtual IRaysNode
 	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:
-	IRaysNode::Ptr input;
+	IRaysNode::Ptr input {0};
 };
 
 // TODO(prybicki): getFieldData* may act lazily, so they take stream as a parameter to do the lazy evaluation.
@@ -105,7 +105,7 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 	{ return input->getFieldData(field, stream); }
 
 protected:
-	IPointsNode::Ptr input;
+	IPointsNode::Ptr input {0};
 };
 
 struct INoInputNode : virtual Node
