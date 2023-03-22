@@ -38,7 +38,8 @@ void RaytraceNode::onInputChange()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() :
+	                                   nullptr;
 }
 
 void RaytraceNode::schedule(cudaStream_t stream)
@@ -55,32 +56,33 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto ringIds = raysNode->getRingIds();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
-		.rays = rays->getDevicePtr(),
-		.rayCount = rays->getCount(),
-		.rayRange = range,
-		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
-		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
-		.scene = sceneAS,
-		.sceneTime = scene->getTime()->asSeconds(),
-		.xyz = getPtrTo<XYZ_F32>(),
-		.isHit = getPtrTo<IS_HIT_I32>(),
-		.rayIdx = getPtrTo<RAY_IDX_U32>(),
-		.ringIdx = getPtrTo<RING_ID_U16>(),
-		.distance = getPtrTo<DISTANCE_F32>(),
-		.intensity = getPtrTo<INTENSITY_F32>(),
-		.timestamp = getPtrTo<TIME_STAMP_F64>(),
+	    .rays = rays->getDevicePtr(),
+	    .rayCount = rays->getCount(),
+	    .rayRange = range,
+	    .ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
+	    .ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
+	    .scene = sceneAS,
+	    .sceneTime = scene->getTime()->asSeconds(),
+	    .xyz = getPtrTo<XYZ_F32>(),
+	    .isHit = getPtrTo<IS_HIT_I32>(),
+	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
+	    .ringIdx = getPtrTo<RING_ID_U16>(),
+	    .distance = getPtrTo<DISTANCE_F32>(),
+	    .intensity = getPtrTo<INTENSITY_F32>(),
+	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
 	};
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
-	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
+	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x,
+	                        launchDims.y, launchDims.y));
 	CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
-	std::set<rgl_field_t> currentFields { keyViewer.begin(), keyViewer.end() };
+	std::set<rgl_field_t> currentFields{keyViewer.begin(), keyViewer.end()};
 
 	std::set<rgl_field_t> toRemove, toInsert;
 	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));

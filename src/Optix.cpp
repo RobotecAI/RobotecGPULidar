@@ -36,10 +36,7 @@
 #define OPTIX_LOG_LEVEL_WARN 3
 #define OPTIX_LOG_LEVEL_INFO 4
 
-static std::pair<int, int> getCudaMajorMinor(int version)
-{
-	return {version / 1000, (version % 1000) / 10};
-}
+static std::pair<int, int> getCudaMajorMinor(int version) { return {version / 1000, (version % 1000) / 10}; }
 
 static std::optional<std::string> wrapError(nvmlReturn_t status)
 {
@@ -77,7 +74,7 @@ static CUcontext getCurrentDeviceContext()
 static std::string getCurrentDeviceName()
 {
 	int currentDevice = -1;
-	cudaDeviceProp deviceProperties {};
+	cudaDeviceProp deviceProperties{};
 	CHECK_CUDA(cudaGetDevice(&currentDevice));
 	CHECK_CUDA(cudaGetDeviceProperties(&deviceProperties, currentDevice));
 	return std::string(deviceProperties.name);
@@ -87,14 +84,14 @@ static std::string getCurrentDeviceName()
 void Optix::logVersions()
 {
 	// Location of these logs is somewhat non-trivial, so it would be good conceive something better.
-	RGL_INFO("RGL Version {}.{}.{} branch={} commitSHA1={}",
-	         RGL_VERSION_MAJOR, RGL_VERSION_MINOR, RGL_VERSION_PATCH, git::Branch(), git::CommitSHA1());
+	RGL_INFO("RGL Version {}.{}.{} branch={} commitSHA1={}", RGL_VERSION_MAJOR, RGL_VERSION_MINOR, RGL_VERSION_PATCH,
+	         git::Branch(), git::CommitSHA1());
 
 	RGL_INFO("Running on GPU: {}", getCurrentDeviceName());
 
-	auto optixMajor =  OPTIX_VERSION / 10000;
+	auto optixMajor = OPTIX_VERSION / 10000;
 	auto optixMinor = (OPTIX_VERSION % 10000) / 100;
-	auto optixMicro =  OPTIX_VERSION % 100;
+	auto optixMicro = OPTIX_VERSION % 100;
 	RGL_INFO("Built against OptiX SDK version: {}.{}.{}", optixMajor, optixMinor, optixMicro);
 	RGL_INFO("Built against OptiX ABI version: {}", OPTIX_ABI_VERSION);
 
@@ -122,7 +119,6 @@ void Optix::logVersions()
 		strncpy(driverVersionStr, msg.c_str(), sizeof(driverVersionStr));
 	}
 	RGL_INFO("Installed NVidia kernel driver version: {}", driverVersionStr);
-
 }
 
 Optix& Optix::getOrCreate()
@@ -164,7 +160,7 @@ Optix::~Optix()
 		optixPipelineDestroy(pipeline);
 	}
 
-	for (auto&& programGroup : { raygenPG, missPG, hitgroupPG }) {
+	for (auto&& programGroup : {raygenPG, missPG, hitgroupPG}) {
 		if (programGroup) {
 			optixProgramGroupDestroy(programGroup);
 		}
@@ -182,94 +178,72 @@ Optix::~Optix()
 void Optix::initializeStaticOptixStructures()
 {
 	OptixModuleCompileOptions moduleCompileOptions = {
-		.maxRegisterCount = 100,
+	    .maxRegisterCount = 100,
 #ifdef NDEBUG
-		.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE
+	    .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_2,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
 #else
-		.optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0,
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL
+	    .optLevel = OPTIX_COMPILE_OPTIMIZATION_LEVEL_0,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
 #endif
 	};
 
 	OptixPipelineCompileOptions pipelineCompileOptions = {
-		.usesMotionBlur = false,
-		.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
-		.numPayloadValues = 3,  // Ray origin: X, Y, Z
-		.numAttributeValues = 2,  // Triangle barycentrics: X, Y
-		.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
-		.pipelineLaunchParamsVariableName = "ctx",
+	    .usesMotionBlur = false,
+	    .traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY,
+	    .numPayloadValues = 3,   // Ray origin: X, Y, Z
+	    .numAttributeValues = 2, // Triangle barycentrics: X, Y
+	    .exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE,
+	    .pipelineLaunchParamsVariableName = "ctx",
 	};
 
 	OptixPipelineLinkOptions pipelineLinkOptions = {
-		.maxTraceDepth = 2,
+	    .maxTraceDepth = 2,
 #ifdef NDEBUG
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
 #else
-		.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
+	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL,
 #endif
 	};
 
-	CHECK_OPTIX(optixModuleCreateFromPTX(context,
-		&moduleCompileOptions,
-		&pipelineCompileOptions,
-		optixProgramsPtx,
-		strlen(optixProgramsPtx),
-		nullptr, nullptr,
-		&module
-	));
+	CHECK_OPTIX(optixModuleCreateFromPTX(context, &moduleCompileOptions, &pipelineCompileOptions, optixProgramsPtx,
+	                                     strlen(optixProgramsPtx), nullptr, nullptr, &module));
 
 	OptixProgramGroupOptions pgOptions = {};
 	OptixProgramGroupDesc raygenDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN,
-		.raygen = {
-			.module = module,
-			.entryFunctionName = "__raygen__" }
-	};
+	    .kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN, .raygen = {.module = module, .entryFunctionName = "__raygen__"}
+    };
 
-	CHECK_OPTIX(optixProgramGroupCreate(
-		context, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
+	CHECK_OPTIX(optixProgramGroupCreate(context, &raygenDesc, 1, &pgOptions, nullptr, nullptr, &raygenPG));
 
 	OptixProgramGroupDesc missDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
-		.miss = {
-			.module = module,
-			.entryFunctionName = "__miss__" },
+	    .kind = OPTIX_PROGRAM_GROUP_KIND_MISS,
+	    .miss = {.module = module, .entryFunctionName = "__miss__"},
 	};
 
-	CHECK_OPTIX(optixProgramGroupCreate(
-		context, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
+	CHECK_OPTIX(optixProgramGroupCreate(context, &missDesc, 1, &pgOptions, nullptr, nullptr, &missPG));
 
 	OptixProgramGroupDesc hitgroupDesc = {
-		.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
-		.hitgroup = {
-			.moduleCH = module,
-			.entryFunctionNameCH = "__closesthit__",
-			.moduleAH = module,
-			.entryFunctionNameAH = "__anyhit__",
-		}
-	};
+	    .kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP,
+	    .hitgroup = {
+	                 .moduleCH = module,
+	                 .entryFunctionNameCH = "__closesthit__",
+	                 .moduleAH = module,
+	                 .entryFunctionNameAH = "__anyhit__",
+	                 }
+    };
 
-	CHECK_OPTIX(optixProgramGroupCreate(
-		context, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
+	CHECK_OPTIX(optixProgramGroupCreate(context, &hitgroupDesc, 1, &pgOptions, nullptr, nullptr, &hitgroupPG));
 
-	OptixProgramGroup programGroups[] = { raygenPG, missPG, hitgroupPG };
+	OptixProgramGroup programGroups[] = {raygenPG, missPG, hitgroupPG};
 
-	CHECK_OPTIX(optixPipelineCreate(
-		context,
-		&pipelineCompileOptions,
-		&pipelineLinkOptions,
-		programGroups,
-		sizeof(programGroups) / sizeof(programGroups[0]),
-		nullptr, nullptr,
-		&pipeline
-	));
+	CHECK_OPTIX(optixPipelineCreate(context, &pipelineCompileOptions, &pipelineLinkOptions, programGroups,
+	                                sizeof(programGroups) / sizeof(programGroups[0]), nullptr, nullptr, &pipeline));
 
-	CHECK_OPTIX(optixPipelineSetStackSize(
-		pipeline,
-		2 * 1024, // directCallableStackSizeFromTraversal
-		2 * 1024, // directCallableStackSizeFromState
-		2 * 1024, // continuationStackSize
-		3 // maxTraversableGraphDepth
-	));
+	CHECK_OPTIX(optixPipelineSetStackSize(pipeline,
+	                                      2 * 1024, // directCallableStackSizeFromTraversal
+	                                      2 * 1024, // directCallableStackSizeFromState
+	                                      2 * 1024, // continuationStackSize
+	                                      3         // maxTraversableGraphDepth
+	                                      ));
 }

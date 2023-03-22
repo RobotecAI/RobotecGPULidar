@@ -20,17 +20,17 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
+Mesh::Mesh(const Vec3f* vertices, size_t vertexCount, const Vec3i* indices, size_t indexCount)
 {
 	dVertices->copyFromHost(vertices, vertexCount);
 	dIndices->copyFromHost(indices, indexCount);
 }
 
-void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
+void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
 {
 	if (dVertices->getCount() != vertexCount) {
 		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
-		                        dVertices->getCount(), vertexCount);
+		                       dVertices->getCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
 	dVertices->copyFromHost(vertices, vertexCount);
@@ -65,14 +65,10 @@ void Mesh::updateGAS()
 	// Investigation is needed whether it needs to be called at all (OptiX documentation says yes, but it works without)
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
 	                            nullptr, // TODO: stream
-	                            &updateOptions,
-	                            &updateInput,
-	                            1,
-	                            scratchpad.dTemp->getDeviceReadPtr(),
+	                            &updateOptions, &updateInput, 1, scratchpad.dTemp->getDeviceReadPtr(),
 	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
 	                            scratchpad.dFull->getDeviceReadPtr(),
-	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
-	                            &cachedGAS.value(),
+	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &cachedGAS.value(),
 	                            nullptr, // &emitDesc,
 	                            0));
 
@@ -85,52 +81,44 @@ OptixTraversableHandle Mesh::buildGAS()
 	vertexBuffers[0] = dVertices->getDeviceReadPtr();
 
 	buildInput = {
-		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-		.triangleArray = {
-			.vertexBuffers = vertexBuffers,
-			.numVertices = static_cast<unsigned int>(dVertices->getCount()),
-			.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-			.vertexStrideInBytes = sizeof(decltype(dVertices)::element_type::DataType),
-			.indexBuffer = dIndices->getDeviceReadPtr(),
-			.numIndexTriplets = static_cast<unsigned int>(dIndices->getCount()),
-			.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-			.indexStrideInBytes = sizeof(decltype(dIndices)::element_type::DataType),
-			.flags = &triangleInputFlags,
-			.numSbtRecords = 1,
-			.sbtIndexOffsetBuffer = 0,
-			.sbtIndexOffsetSizeInBytes = 0,
-			.sbtIndexOffsetStrideInBytes = 0,
-		}
-	};
+	    .type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
+	    .triangleArray = {
+	                      .vertexBuffers = vertexBuffers,
+	                      .numVertices = static_cast<unsigned int>(dVertices->getCount()),
+	                      .vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
+	                      .vertexStrideInBytes = sizeof(decltype(dVertices)::element_type::DataType),
+	                      .indexBuffer = dIndices->getDeviceReadPtr(),
+	                      .numIndexTriplets = static_cast<unsigned int>(dIndices->getCount()),
+	                      .indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
+	                      .indexStrideInBytes = sizeof(decltype(dIndices)::element_type::DataType),
+	                      .flags = &triangleInputFlags,
+	                      .numSbtRecords = 1,
+	                      .sbtIndexOffsetBuffer = 0,
+	                      .sbtIndexOffsetSizeInBytes = 0,
+	                      .sbtIndexOffsetStrideInBytes = 0,
+	                      }
+    };
 
-	buildOptions = {
-		.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-		              // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-		.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	buildOptions = {.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+	                // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
+	                .operation = OPTIX_BUILD_OPERATION_BUILD};
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 
 	// OptixAccelEmitDesc emitDesc = {
-		// .result = scratchpad.dCompactedSize.readDeviceRaw(),
-		// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
+	// .result = scratchpad.dCompactedSize.readDeviceRaw(),
+	// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
 	// };
 
 	OptixTraversableHandle gasHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
 	                            nullptr, // TODO: stream
-	                            &buildOptions,
-	                            &buildInput,
-	                            1,
-	                            scratchpad.dTemp->getDeviceReadPtr(),
+	                            &buildOptions, &buildInput, 1, scratchpad.dTemp->getDeviceReadPtr(),
 	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
 	                            scratchpad.dFull->getDeviceReadPtr(),
-	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
-	                            &gasHandle,
+	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &gasHandle,
 	                            nullptr, // &emitDesc,
-	                            0
-	));
+	                            0));
 
 	// Compaction yields around 10% of memory and slows down a lot (e.g. 500us per model)
 	// scratchpad.doCompaction(gasHandle);

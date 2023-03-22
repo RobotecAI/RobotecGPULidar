@@ -30,12 +30,11 @@
 
 struct Mesh : APIObject<Mesh>
 {
-	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
+	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
 	OptixTraversableHandle getGAS();
 
 private:
-	Mesh(const Vec3f *vertices, std::size_t vertexCount,
-		 const Vec3i *indices, std::size_t indexCount);
+	Mesh(const Vec3f* vertices, std::size_t vertexCount, const Vec3i* indices, std::size_t indexCount);
 
 	OptixTraversableHandle buildGAS();
 	void updateGAS();
@@ -54,5 +53,4 @@ private:
 	CUdeviceptr vertexBuffers[1];
 	unsigned triangleInputFlags;
 	OptixAccelBuildOptions buildOptions;
-
 };

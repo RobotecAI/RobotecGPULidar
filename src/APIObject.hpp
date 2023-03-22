@@ -64,7 +64,8 @@ struct APIObject
 	{
 		auto it = instances.find(rawPtr);
 		if (it == instances.end()) {
-			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name(typeid(T)), reinterpret_cast<void*>(rawPtr));
+			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name(typeid(T)),
+			                       reinterpret_cast<void*>(rawPtr));
 			throw InvalidAPIObject(msg);
 		}
 		return it->second;
@@ -78,9 +79,9 @@ struct APIObject
 		if (subclass != nullptr) {
 			return subclass;
 		}
-		auto msg = fmt::format("RGL API Error: Node type mismatch: expected {}, got {}", name(typeid(SubClass)), name(typeid(*node)));
+		auto msg = fmt::format("RGL API Error: Node type mismatch: expected {}, got {}", name(typeid(SubClass)),
+		                       name(typeid(*node)));
 		throw InvalidAPIObject(msg);
-
 	}
 
 	static void release(T* toDestroy)
@@ -94,12 +95,13 @@ struct APIObject
 	APIObject<T>& operator=(APIObject<T>&) = delete;
 	APIObject<T>& operator=(APIObject<T>&&) = delete;
 	virtual ~APIObject() = default;
+
 protected:
 	APIObject() = default;
 };
 
 // This should be used in .cpp file to make an instance of static variable(s) of APIObject<Type>
-#define API_OBJECT_INSTANCE(Type)                \
-template<typename T>                             \
-std::unordered_map<APIObject<T>*, std::shared_ptr<T>> APIObject<T>::instances; \
-template struct APIObject<Type>
+#define API_OBJECT_INSTANCE(Type)                                                                                              \
+	template<typename T>                                                                                                       \
+	std::unordered_map<APIObject<T>*, std::shared_ptr<T>> APIObject<T>::instances;                                             \
+	template struct APIObject<Type>

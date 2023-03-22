@@ -18,40 +18,37 @@
 #include <memory/MemoryKind.hpp>
 #include <memory/AbstractArrays.hpp>
 
-template <typename T>
+template<typename T>
 struct DeviceAsyncArray;
 
-template <typename T>
+template<typename T>
 struct DeviceSyncArray;
 
-template <typename T>
+template<typename T>
 struct HostPageableArray;
 
-template <typename T>
+template<typename T>
 struct HostPinnedArray;
 
-template <typename T>
+template<typename T>
 struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>
 {
 	using Ptr = std::shared_ptr<DeviceAsyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceAsyncArray<T>>;
 
-	static DeviceAsyncArray<T>::Ptr create()
-	{
-		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray());
-	}
+	static DeviceAsyncArray<T>::Ptr create() { return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray()); }
 
 protected:
 	using DeviceArray<MemoryKind::DeviceAsync, T>::DeviceArray;
 };
 
-template <typename T>
+template<typename T>
 struct DeviceSyncArray : public DeviceArray<MemoryKind::DeviceSync, T>
 {
 	using Ptr = std::shared_ptr<DeviceSyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceSyncArray<T>>;
 
-	static DeviceSyncArray<T>::Ptr create(CudaStream::Ptr stream=CudaStream::getNullStream())
+	static DeviceSyncArray<T>::Ptr create(CudaStream::Ptr stream = CudaStream::getNullStream())
 	{
 		return DeviceSyncArray<T>::Ptr(new DeviceSyncArray(MemoryOperations::get<MemoryKind::DeviceSync>()));
 	}
@@ -72,7 +69,7 @@ protected:
 	using DeviceArray<MemoryKind::DeviceSync, T>::DeviceArray;
 };
 
-template <typename T>
+template<typename T>
 struct HostPageableArray : public HostArray<MemoryKind::HostPageable, T>
 {
 	using Ptr = std::shared_ptr<HostPageableArray<T>>;
@@ -80,16 +77,14 @@ struct HostPageableArray : public HostArray<MemoryKind::HostPageable, T>
 
 	static HostPageableArray<T>::Ptr create()
 	{
-		return HostPageableArray<T>::Ptr {
-			new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>())
-		};
+		return HostPageableArray<T>::Ptr{new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>())};
 	}
 
 protected:
 	using HostArray<MemoryKind::HostPageable, T>::HostArray;
 };
 
-template <typename T>
+template<typename T>
 struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
 {
 	using Ptr = std::shared_ptr<HostPinnedArray<T>>;
@@ -97,9 +92,7 @@ struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
 
 	static HostPinnedArray<T>::Ptr create()
 	{
-		return HostPinnedArray<T>::Ptr {
-			new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())
-		};
+		return HostPinnedArray<T>::Ptr{new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())};
 	}
 
 protected:

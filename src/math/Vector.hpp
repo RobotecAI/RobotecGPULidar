@@ -34,23 +34,26 @@ struct Vector
 	HostDevFn Vector() : Vector(static_cast<T>(0)) {}
 
 	// Uniform constructor
-	HostDevFn Vector(T scalar) {
+	HostDevFn Vector(T scalar)
+	{
 		for (auto&& v : row) {
 			v = scalar;
 		}
 	}
 
-	Vector(const std::array<T, dim>& values)
-	{ std::copy(values.begin(), values.end(), row); }
+	Vector(const std::array<T, dim>& values) { std::copy(values.begin(), values.end(), row); }
 
 	// List constructor
 	template<typename... Args>
 	HostDevFn Vector(Args... args) : row{static_cast<T>(args)...}
-	{ static_assert(sizeof...(Args) == dim); }
+	{
+		static_assert(sizeof...(Args) == dim);
+	}
 
 	// Type cast constructor
 	template<typename U>
-	HostDevFn Vector(const Vector<dim, U>& other) {
+	HostDevFn Vector(const Vector<dim, U>& other)
+	{
 		for (int i = 0; i < dim; ++i) {
 			row[i] = static_cast<T>(other.row[i]);
 		}
@@ -69,36 +72,53 @@ struct Vector
 		}
 	}
 
-	template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
-	DevFn Vector(float3 v) : Vector(v.x, v.y, v.z) {}
+	template<typename TT = T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
+	DevFn Vector(float3 v) : Vector(v.x, v.y, v.z)
+	{}
 
-	template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
-	DevFn operator float3() { return float3 {row[0], row[1], row[2]}; }
+	template<typename TT = T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
+	DevFn operator float3()
+	{
+		return float3{row[0], row[1], row[2]};
+	}
 
 	// *** *** *** ACCESSORS *** *** *** //
 
 	FORWARD_ITERATION(row, HostDevFn)
 	FORWARD_INDEX_OPERATOR(row, HostDevFn)
 
-#define NAMED_GETTER(name, index) \
-HostDevFn T name() { static_assert(dim > index); return row[index]; } \
-HostDevFn const T name() const { static_assert(dim > index); return row[index]; }
+#define NAMED_GETTER(name, index)                                                                                              \
+	HostDevFn T name()                                                                                                         \
+	{                                                                                                                          \
+		static_assert(dim > index);                                                                                            \
+		return row[index];                                                                                                     \
+	}                                                                                                                          \
+	HostDevFn const T name() const                                                                                             \
+	{                                                                                                                          \
+		static_assert(dim > index);                                                                                            \
+		return row[index];                                                                                                     \
+	}
 
-NAMED_GETTER(x, 0)
-NAMED_GETTER(y, 1)
-NAMED_GETTER(z, 2)
+	NAMED_GETTER(x, 0)
+	NAMED_GETTER(y, 1)
+	NAMED_GETTER(z, 2)
 #undef NAMED_GETTER
 
-// *** *** *** PIECEWISE OPERATORS (VECTOR + SCALAR) *** *** *** //
+	// *** *** *** PIECEWISE OPERATORS (VECTOR + SCALAR) *** *** *** //
 
-#define PIECEWISE_OPERATOR(OP, OPEQ)    \
-	HostDevFn V& operator OPEQ(const V& rhs) { \
-		for (int i = 0; i < dim; ++i) { \
-			row[i] OPEQ rhs[i];         \
-		}                               \
-		return *this;                   \
-	}                                   \
-	HostDevFn friend V operator OP(V lhs, const V& rhs) { 	lhs OPEQ rhs; return lhs; } \
+#define PIECEWISE_OPERATOR(OP, OPEQ)                                                                                           \
+	HostDevFn V& operator OPEQ(const V& rhs)                                                                                   \
+	{                                                                                                                          \
+		for (int i = 0; i < dim; ++i) {                                                                                        \
+			row[i] OPEQ rhs[i];                                                                                                \
+		}                                                                                                                      \
+		return *this;                                                                                                          \
+	}                                                                                                                          \
+	HostDevFn friend V operator OP(V lhs, const V& rhs)                                                                        \
+	{                                                                                                                          \
+		lhs OPEQ rhs;                                                                                                          \
+		return lhs;                                                                                                            \
+	}
 
 	PIECEWISE_OPERATOR(+, +=)
 	PIECEWISE_OPERATOR(-, -=)
@@ -106,7 +126,8 @@ NAMED_GETTER(z, 2)
 	PIECEWISE_OPERATOR(/, /=)
 #undef PIECEWISE_OPERATOR
 
-	HostDevFn T lengthSquared() const {
+	HostDevFn T lengthSquared() const
+	{
 		auto sum = static_cast<T>(0);
 		for (int i = 0; i < dim; ++i) {
 			sum += row[i] * row[i];
@@ -116,11 +137,12 @@ NAMED_GETTER(z, 2)
 
 	HostDevFn T length() const { return std::sqrt(lengthSquared()); }
 
-	HostDevFn V half() const { return *this / V {static_cast<T>(2)}; }
+	HostDevFn V half() const { return *this / V{static_cast<T>(2)}; }
 
 	HostDevFn V normalize() const { return *this / length(); }
 
-	HostDevFn T min() const {
+	HostDevFn T min() const
+	{
 		T value = std::numeric_limits<T>::max();
 		for (int i = 0; i < dim; ++i) {
 			value = row[i] < value ? row[i] : value;
@@ -128,7 +150,8 @@ NAMED_GETTER(z, 2)
 		return value;
 	}
 
-	HostDevFn T product() const {
+	HostDevFn T product() const
+	{
 		T value = static_cast<T>(1);
 		for (auto&& v : *this) {
 			value *= v;
@@ -146,12 +169,14 @@ template<int dim, typename T>
 struct fmt::formatter<Vector<dim, T>>
 {
 	template<typename ParseContext>
-	constexpr auto parse(ParseContext& ctx) {
+	constexpr auto parse(ParseContext& ctx)
+	{
 		return ctx.begin();
 	}
 
 	template<typename FormatContext>
-	auto format(Vector<dim, T> const& vec, FormatContext& ctx) {
+	auto format(Vector<dim, T> const& vec, FormatContext& ctx)
+	{
 
 		fmt::format_to(ctx.out(), "(");
 		for (int i = 0; i < dim; ++i) {

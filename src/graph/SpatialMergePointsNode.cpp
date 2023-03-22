@@ -17,7 +17,7 @@
 
 void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
-	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field){ return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
+	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field) { return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
 		throw InvalidAPIArgument("cannot perform spatial merge on field 'RGL_FIELD_DYNAMIC_FORMAT'");
 	}
 
@@ -80,6 +80,5 @@ void SpatialMergePointsNode::schedule(cudaStream_t stream)
 
 bool SpatialMergePointsNode::isDense() const
 {
-	return std::all_of(pointInputs.begin(), pointInputs.end(),
-	                   [](IPointsNode::Ptr node) { return node->isDense(); });
+	return std::all_of(pointInputs.begin(), pointInputs.end(), [](IPointsNode::Ptr node) { return node->isDense(); });
 }

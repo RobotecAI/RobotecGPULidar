@@ -51,8 +51,8 @@ public:
 
 	Array(const Array<M, T>&) = delete;
 	Array(Array<M, T>&&) = delete;
-	Array<M,T>& operator=(const Array<M, T>&) = delete;
-	Array<M,T>& operator=(Array<M, T>&&) = delete;
+	Array<M, T>& operator=(const Array<M, T>&) = delete;
+	Array<M, T>& operator=(Array<M, T>&&) = delete;
 
 public:
 	T* getWritePtr() { return data; }
@@ -85,7 +85,7 @@ public:
 			count = 0;
 		}
 
-		if(capacity >= newCapacity) {
+		if (capacity >= newCapacity) {
 			return;
 		}
 
@@ -117,9 +117,9 @@ public:
 	}
 
 protected:
-	size_t count = { 0 };
-	size_t capacity = { 0 };
-	DataType* data = { nullptr };
+	size_t count = {0};
+	size_t capacity = {0};
+	DataType* data = {nullptr};
 	MemoryOperations memOps;
 };
 
@@ -128,7 +128,7 @@ protected:
  * @tparam M See base class
  * @tparam T See base class
  */
-template <MemoryKind M, typename T>
+template<MemoryKind M, typename T>
 struct DeviceArray : public Array<M, T>
 {
 	static_assert(M == MemoryKind::DeviceSync || M == MemoryKind::DeviceAsync);
@@ -149,6 +149,7 @@ struct DeviceArray : public Array<M, T>
 
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
+
 protected:
 	using Array<M, T>::Array;
 };
@@ -175,9 +176,7 @@ struct HostArray : public Array<M, T>
 	void append(T value)
 	{
 		if (count + 1 > capacity) {
-			auto newCapacity = (capacity > 0)
-			                   ? (capacity * 2)
-			                   : 1;
+			auto newCapacity = (capacity > 0) ? (capacity * 2) : 1;
 			this->reserve(newCapacity, true);
 		}
 		data[count] = std::move(value);
@@ -204,7 +203,8 @@ struct HostArray : public Array<M, T>
 	T& operator[](size_t idx) { return data[idx]; }
 
 	/** Const overload */
-	const T& operator[](size_t idx) const {return data[idx]; }
+	const T& operator[](size_t idx) const { return data[idx]; }
+
 protected:
 	using Array<M, T>::Array;
 };

@@ -66,8 +66,8 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	std::size_t getFieldPointSize(rgl_field_t field) const override;
 
 	// Actual implementation of formatting made public for other nodes
-	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
-	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
+	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input, const std::vector<rgl_field_t>& fields,
+	                        cudaStream_t stream);
 
 private:
 	static std::vector<std::pair<rgl_field_t, const void*>> collectFieldConstRawData(const IPointsNode::Ptr& input,
@@ -107,7 +107,11 @@ private:
 struct RaytraceNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
-	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
+	void setParameters(std::shared_ptr<Scene> scene, float range)
+	{
+		this->scene = scene;
+		this->range = range;
+	}
 
 	// Node
 	void onInputChange() override;
@@ -117,16 +121,19 @@ struct RaytraceNode : IPointsNode
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
-	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
+	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+	{
+		return std::const_pointer_cast<const VArray>(fieldData.at(field));
+	}
 
 
 	void setFields(const std::set<rgl_field_t>& fields);
+
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
@@ -229,8 +236,7 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return results.at(field); }
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override { return results.at(field); }
 
 private:
 	std::vector<rgl_field_t> fields;
@@ -248,7 +254,9 @@ struct SpatialMergePointsNode : IPointsNode
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+	{
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
+	}
 
 	// Point cloud description
 	bool isDense() const override;
@@ -258,7 +266,9 @@ struct SpatialMergePointsNode : IPointsNode
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+	{
+		return std::const_pointer_cast<const VArray>(mergedData.at(field));
+	}
 
 private:
 	std::vector<IPointsNode::Ptr> pointInputs;
@@ -277,7 +287,9 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+	{
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
+	}
 
 	// Point cloud description
 	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
@@ -285,7 +297,9 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+	{
+		return std::const_pointer_cast<const VArray>(mergedData.at(field));
+	}
 
 private:
 	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
@@ -308,7 +322,9 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+	{
+		return std::const_pointer_cast<const VArray>(fieldData.at(field));
+	}
 
 private:
 	std::vector<std::pair<rgl_field_t, void*>> collectFieldRawData(const std::vector<rgl_field_t>& fields);

@@ -45,14 +45,16 @@ void Node::removeChild(Node::Ptr child)
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt == this->outputs.end()) {
 		auto msg = fmt::format("attempted to remove child {} from {},"
-		                       "but it was not found", child->getName(), getName());
+		                       "but it was not found",
+		                       child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
-	
+
 	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
 	if (thisIt == child->inputs.end()) {
 		auto msg = fmt::format("attempted to remove parent {} from {},"
-		                       "but it was not found", getName(), child->getName());
+		                       "but it was not found",
+		                       getName(), child->getName());
 		throw InvalidPipeline(msg);
 	}
 

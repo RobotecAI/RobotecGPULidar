@@ -7,7 +7,8 @@
 
 #include <math/Mat3x4f.hpp>
 
-class GraphCase : public RGLAutoCleanupTest {};
+class GraphCase : public RGLAutoCleanupTest
+{};
 
 #ifdef RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
@@ -17,11 +18,12 @@ TEST_F(GraphCase, FullLinear)
 {
 	setupBoxesAlongAxes(nullptr);
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, shear = nullptr, compact = nullptr,
+	           downsample = nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
-	rgl_mat3x4f shearTf = Mat3x4f::shear({0,0}, {-1, -1}, {0, 0}).toRGL();
+	rgl_mat3x4f shearTf = Mat3x4f::shear({0, 0}, {-1, -1}, {0, 0}).toRGL();
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
@@ -58,9 +60,10 @@ TEST_F(GraphCase, NodeRemoval)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr;
-	rgl_node_t temporalMerge=nullptr;
-	std::vector<rgl_field_t> tMergeFields = { RGL_FIELD_XYZ_F32 };
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, transformPts = nullptr, compact = nullptr,
+	           downsample = nullptr;
+	rgl_node_t temporalMerge = nullptr;
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -109,10 +112,10 @@ TEST_F(GraphCase, SpatialMerge)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr;
-	rgl_node_t transformPtsZero=nullptr, transformPtsY=nullptr;
-	rgl_node_t spatialMerge=nullptr;
-	std::vector<rgl_field_t> sMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, compact = nullptr;
+	rgl_node_t transformPtsZero = nullptr, transformPtsY = nullptr;
+	rgl_node_t spatialMerge = nullptr;
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -152,9 +155,9 @@ TEST_F(GraphCase, TemporalMerge)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr, transformPts=nullptr;
-	rgl_node_t temporalMerge=nullptr;
-	std::vector<rgl_field_t> tMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, compact = nullptr, transformPts = nullptr;
+	rgl_node_t temporalMerge = nullptr;
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -195,21 +198,13 @@ TEST_F(GraphCase, FormatNodeResults)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, format=nullptr;
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, format = nullptr;
 
-	std::vector<rgl_mat3x4f> rays = {
-		Mat3x4f::TRS({0, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.2, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.4, 0, 0}).toRGL()
-	};
+	std::vector<rgl_mat3x4f> rays = {Mat3x4f::TRS({0, 0, 0}).toRGL(), Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
+	                                 Mat3x4f::TRS({0.2, 0, 0}).toRGL(), Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
+	                                 Mat3x4f::TRS({0.4, 0, 0}).toRGL()};
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
-	std::vector<rgl_field_t> formatFields = {
-		XYZ_F32,
-		PADDING_32,
-		TIME_STAMP_F64
-	};
+	std::vector<rgl_field_t> formatFields = {XYZ_F32, PADDING_32, TIME_STAMP_F64};
 
 	Time timestamp = Time::seconds(1.5);
 	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, timestamp.asNanoseconds()));
@@ -238,7 +233,7 @@ TEST_F(GraphCase, FormatNodeResults)
 	EXPECT_EQ(outCount, rays.size());
 	EXPECT_EQ(outSizeOf, sizeof(formatStruct));
 
-	std::vector<FormatStruct> formatData{(size_t)outCount};
+	std::vector<FormatStruct> formatData{(size_t) outCount};
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
 	for (int i = 0; i < formatData.size(); ++i) {

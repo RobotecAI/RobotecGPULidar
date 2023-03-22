@@ -22,14 +22,11 @@ struct CudaStream
 {
 	using Ptr = std::shared_ptr<CudaStream>;
 
-	static CudaStream::Ptr create()
-	{
-		return CudaStream::Ptr(new CudaStream(0U));
-	}
+	static CudaStream::Ptr create() { return CudaStream::Ptr(new CudaStream(0U)); }
 
 	static CudaStream::Ptr getNullStream()
 	{
-		static CudaStream::Ptr nullStream { new CudaStream() };
+		static CudaStream::Ptr nullStream{new CudaStream()};
 		return nullStream;
 	}
 
@@ -39,11 +36,11 @@ struct CudaStream
 	{
 		if (stream != nullptr) {
 			try {
-				CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
+				CHECK_CUDA(cudaStreamSynchronize(stream)); // May not be required, but it is safer
 				CHECK_CUDA(cudaStreamDestroy(stream));
 				stream = nullptr;
 			}
-			catch(std::exception& e) {
+			catch (std::exception& e) {
 				RGL_ERROR("Error in ~CudaStream: {}", e.what());
 			}
 		}
@@ -57,5 +54,5 @@ private:
 	explicit CudaStream(unsigned flags) { CHECK_CUDA(cudaStreamCreateWithFlags(&stream, flags)); }
 
 private:
-	cudaStream_t stream {nullptr};
+	cudaStream_t stream{nullptr};
 };

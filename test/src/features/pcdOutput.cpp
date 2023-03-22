@@ -12,7 +12,7 @@
 void captureToPCD(rgl_lidar_t lidar)
 {
 	pcl::PointCloud<pcl::PointXYZ> cloud;
-	cloud.height   = 1;
+	cloud.height = 1;
 	cloud.is_dense = true;
 
 	EXPECT_RGL_SUCCESS(rgl_lidar_raytrace_async(nullptr, lidar));
@@ -26,7 +26,7 @@ void captureToPCD(rgl_lidar_t lidar)
 		cloud.push_back({v.value[0], v.value[1], v.value[2]});
 	}
 
-	pcl::io::savePCDFileASCII ("test_pcd.pcd", cloud);
+	pcl::io::savePCDFileASCII("test_pcd.pcd", cloud);
 }
 
 TEST(PCD_Output, Godzilla)
@@ -68,6 +68,4 @@ TEST(PCD_Output, Orientation)
 	rgl_mat3x4f lidarTf = Mat3x4f::translation(10.0f, 10.0f, 10.0f).toRGL();
 	EXPECT_RGL_SUCCESS(rgl_lidar_set_pose(lidar, &lidarTf));
 	captureToPCD(lidar);
-
-
 }

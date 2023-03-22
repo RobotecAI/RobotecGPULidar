@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	}
 
 	fmt::print("Reading tape '{}' ...\n", argv[1]);
-	TapePlayer player {argv[1]};
+	TapePlayer player{argv[1]};
 
 	// Note this will visualize only one (first) graph (lidar)
 	// This will be fixed after SpatialMergeNode is implemented

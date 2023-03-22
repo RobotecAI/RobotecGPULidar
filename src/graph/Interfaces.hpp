@@ -53,7 +53,7 @@ struct IRaysNodeSingleInput : virtual IRaysNode
 	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:
-	IRaysNode::Ptr input {0};
+	IRaysNode::Ptr input{0};
 };
 
 // TODO(prybicki): getFieldData* may act lazily, so they take stream as a parameter to do the lazy evaluation.
@@ -81,9 +81,10 @@ struct IPointsNode : virtual Node
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 
 	template<rgl_field_t field>
-	typename VArrayProxy<typename Field<field>::type>::ConstPtr
-	getFieldDataTyped(cudaStream_t stream)
-	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
+	typename VArrayProxy<typename Field<field>::type>::ConstPtr getFieldDataTyped(cudaStream_t stream)
+	{
+		return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>();
+	}
 };
 
 struct IPointsNodeSingleInput : virtual IPointsNode
@@ -111,10 +112,12 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
 	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return input->getFieldData(field, stream); }
+	{
+		return input->getFieldData(field, stream);
+	}
 
 protected:
-	IPointsNode::Ptr input {0};
+	IPointsNode::Ptr input{0};
 };
 
 struct INoInputNode : virtual Node

@@ -13,7 +13,7 @@ static rgl_mesh_t makeCubeMesh()
 	return mesh;
 }
 
-static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullptr)
+static rgl_entity_t makeEntity(rgl_mesh_t mesh = nullptr, rgl_scene_t scene = nullptr)
 {
 	if (mesh == nullptr) {
 		mesh = makeCubeMesh();

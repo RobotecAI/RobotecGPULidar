@@ -27,12 +27,14 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 	fileBin = fopen(pathBin.c_str(), "wb");
 	if (nullptr == fileBin) {
 		throw InvalidFilePath(fmt::format("rgl_tape_record_begin: could not open binary file '{}' "
-		                                  "due to the error: {}", pathBin, std::strerror(errno)));
+		                                  "due to the error: {}",
+		                                  pathBin, std::strerror(errno)));
 	}
 	fileYaml.open(pathYaml);
 	if (fileYaml.fail()) {
 		throw InvalidFilePath(fmt::format("rgl_tape_record_begin: could not open yaml file '{}' "
-		                                  "due to the error: {}", pathYaml, std::strerror(errno)));
+		                                  "due to the error: {}",
+		                                  pathYaml, std::strerror(errno)));
 	}
 	TapeRecorder::recordRGLVersion(yamlRoot);
 	yamlRecording = yamlRoot["recording"];
@@ -152,10 +154,7 @@ void TapePlayer::playNext()
 	playUnchecked(nextCall++);
 }
 
-void TapePlayer::rewindTo(YAML::iterator nextCall)
-{
-	this->nextCall = nextCall;
-}
+void TapePlayer::rewindTo(YAML::iterator nextCall) { this->nextCall = nextCall; }
 
 void TapePlayer::playUnchecked(YAML::iterator call)
 {
@@ -181,10 +180,12 @@ void TapePlayer::mmapInit(const char* path)
 	int fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		throw InvalidFilePath(fmt::format("rgl_tape_play: could not open binary file: '{}' "
-		                                  " due to the error: {}", path, std::strerror(errno)));
+		                                  " due to the error: {}",
+		                                  path, std::strerror(errno)));
 	}
 
-	struct stat staticBuffer{};
+	struct stat staticBuffer
+	{};
 	int err = fstat(fd, &staticBuffer);
 	if (err < 0) {
 		throw RecordError("rgl_tape_play: couldn't read bin file length");
@@ -197,6 +198,7 @@ void TapePlayer::mmapInit(const char* path)
 	}
 	if (close(fd)) {
 		RGL_WARN("rgl_tape_play: failed to close binary file: '{}' "
-		         "due to the error: {}", path, std::strerror(errno));
+		         "due to the error: {}",
+		         path, std::strerror(errno));
 	}
 }

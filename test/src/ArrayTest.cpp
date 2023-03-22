@@ -60,20 +60,32 @@ protected:
 		int clearCount = {0};
 	};
 
-	ArrayOps()
-	: array(std::static_pointer_cast<ArrayExposed>(ArrayExposed::create()))
-	{
-		hijack(array->memOps);
-	}
+	ArrayOps() : array(std::static_pointer_cast<ArrayExposed>(ArrayExposed::create())) { hijack(array->memOps); }
 
 	void hijack(MemoryOperations& source)
 	{
 		origMemOps = source;
 		source = {
-			.allocate = [&](size_t bytes) { stats.allocCount += 1; return origMemOps.allocate(bytes); },
-			.deallocate = [&](void* ptr) { stats.deallocCount += 1; return origMemOps.deallocate(ptr); },
-			.copy = [&](void* dst, const void* src, size_t bytes) { stats.copyCount += 1; return origMemOps.copy(dst, src, bytes); },
-			.clear = [&](void* ptr, int value, size_t bytes) { stats.clearCount += 1; return origMemOps.clear(ptr, value, bytes); },
+		    .allocate =
+		        [&](size_t bytes) {
+			        stats.allocCount += 1;
+			        return origMemOps.allocate(bytes);
+		        },
+		    .deallocate =
+		        [&](void* ptr) {
+			        stats.deallocCount += 1;
+			        return origMemOps.deallocate(ptr);
+		        },
+		    .copy =
+		        [&](void* dst, const void* src, size_t bytes) {
+			        stats.copyCount += 1;
+			        return origMemOps.copy(dst, src, bytes);
+		        },
+		    .clear =
+		        [&](void* ptr, int value, size_t bytes) {
+			        stats.clearCount += 1;
+			        return origMemOps.clear(ptr, value, bytes);
+		        },
 		};
 	}
 
@@ -133,7 +145,7 @@ TEST_F(ArrayOps, ResizeChangesCount)
 	EXPECT_EQ(array->getCapacity(), 0);
 	EXPECT_THROW(array->at(0), std::out_of_range);
 	array->resize(END_SIZE, true, false);
-	EXPECT_EQ(array->at(END_SIZE-1), 0);
+	EXPECT_EQ(array->at(END_SIZE - 1), 0);
 	EXPECT_EQ(array->getCount(), END_SIZE);
 	EXPECT_LE(array->getCapacity(), END_SIZE);
 }

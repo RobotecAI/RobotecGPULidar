@@ -24,8 +24,7 @@
  * @param node Node to get point cloud from.
  * @param file_path Path to the output pcd file.
  */
-RGL_API rgl_status_t
-rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path);
+RGL_API rgl_status_t rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path);
 
 /******************************** NODES ********************************/
 
@@ -37,8 +36,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path);
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param leaf_size_* Dimensions of the leaf voxel passed to VoxelGrid filter.
  */
-RGL_API rgl_status_t
-rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
+RGL_API rgl_status_t rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z);
 
 /**
  * Creates or modifies VisualizePointsNode.
@@ -51,5 +49,5 @@ rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_
  * @param window_height The window height (default: 1024).
  * @param fullscreen true for window full screen mode, false otherwise (default: false).
  */
-RGL_API rgl_status_t
-rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_width = 1280, int window_height = 1024, bool fullscreen = false);
+RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_width = 1280,
+                                               int window_height = 1024, bool fullscreen = false);

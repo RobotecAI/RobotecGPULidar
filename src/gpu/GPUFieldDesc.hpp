@@ -27,4 +27,3 @@ struct GPUFieldDesc
 	size_t dstOffset;
 };
 static_assert(std::is_trivially_copyable<GPUFieldDesc>::value);
-

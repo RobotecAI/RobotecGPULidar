@@ -31,11 +31,13 @@
 
 #define RGL_API_LOG RGL_TRACE
 
-#define CHECK_ARG(expr)                                                                          \
-do if (!(expr)) {                                                                                \
-    auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr); \
-    throw std::invalid_argument(msg);                                                            \
-} while(0)
+#define CHECK_ARG(expr)                                                                                                        \
+	do                                                                                                                         \
+		if (!(expr)) {                                                                                                         \
+			auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr);                       \
+			throw std::invalid_argument(msg);                                                                                  \
+		}                                                                                                                      \
+	while (0)
 
 extern rgl_status_t lastStatusCode;
 extern std::optional<std::string> lastStatusString;
@@ -55,31 +57,32 @@ rgl_status_t rglSafeCall(Fn fn)
 			try {
 				Logger::getOrCreate().configure(RGL_LOG_LEVEL_OFF, std::nullopt, false);
 			}
-			catch (std::exception& e) {}
+			catch (std::exception& e) {
+			}
 		}
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
 		std::invoke(fn);
 	}
-	#ifdef RGL_BUILD_ROS2_EXTENSION
+#ifdef RGL_BUILD_ROS2_EXTENSION
 	catch (rclcpp::exceptions::RCLErrorBase& e) {
 		return updateAPIState(RGL_ROS2_ERROR, e.message.c_str());
 	}
-	#endif
+#endif
 	catch (spdlog::spdlog_ex& e) {
 		return updateAPIState(RGL_LOGGING_ERROR, e.what());
 	}
 	catch (InvalidAPIObject& e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
-	catch (InvalidPipeline &e) {
+	catch (InvalidPipeline& e) {
 		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
 	}
 	catch (InvalidFilePath& e) {
 		return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
 	}
-	catch (std::invalid_argument &e) {
+	catch (std::invalid_argument& e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
 	catch (RecordError& e) {
@@ -100,8 +103,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	std::shared_ptr<NodeType> node;
 	if (*nodeRawPtr == nullptr) {
 		node = Node::create<NodeType>();
-	}
-	else {
+	} else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
 	}
 	node->setParameters(args...);

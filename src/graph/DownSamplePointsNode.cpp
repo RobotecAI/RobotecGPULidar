@@ -53,14 +53,13 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
 	}
-	pcl::VoxelGrid<PCLPoint> voxelGrid {};
+	pcl::VoxelGrid<PCLPoint> voxelGrid{};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
 	voxelGrid.filter(*filtered);
 	bool pclReduced = filtered->size() < toFilter->size();
 	if (!pclReduced) {
-		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}",
-		                           toFilter->size(), filtered->size(), leafDims);
+		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}", toFilter->size(), filtered->size(), leafDims);
 		RGL_WARN("Down-sampling node had no effect! ({})", details);
 	}
 	filteredPoints->setData(filtered->data(), filtered->size());
@@ -91,8 +90,8 @@ VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStrea
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(filteredIndices->getCount(), false, false);
-		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::Device));
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
+		char* outPtr = static_cast<char*>(fieldData->getWritePtr(MemLoc::Device));
+		const char* inputPtr = static_cast<const char*>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
 		gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), outPtr, inputPtr, getFieldSize(field));
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		cacheManager.setUpdated(field);

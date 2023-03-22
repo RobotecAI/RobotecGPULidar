@@ -36,7 +36,4 @@ VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream
 }
 
 
-std::string TransformPointsNode::getArgsString() const
-{
-	return fmt::format("TR={}", transform.translation());
-}
+std::string TransformPointsNode::getArgsString() const { return fmt::format("TR={}", transform.translation()); }

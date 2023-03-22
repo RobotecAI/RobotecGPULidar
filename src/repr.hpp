@@ -21,10 +21,14 @@ template<>
 struct fmt::formatter<rgl_vec3f>
 {
 	template<typename ParseContext>
-	constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
 	template<typename FormatContext>
-	auto format(const rgl_vec3f& v, FormatContext& ctx) {
+	auto format(const rgl_vec3f& v, FormatContext& ctx)
+	{
 		return fmt::format_to(ctx.out(), "({}, {}, {})", v.value[0], v.value[1], v.value[2]);
 	}
 };
@@ -33,10 +37,14 @@ template<>
 struct fmt::formatter<rgl_vec3i>
 {
 	template<typename ParseContext>
-	constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
 	template<typename FormatContext>
-	auto format(const rgl_vec3i& v, FormatContext& ctx) {
+	auto format(const rgl_vec3i& v, FormatContext& ctx)
+	{
 		return fmt::format_to(ctx.out(), "({}, {}, {})", v.value[0], v.value[1], v.value[2]);
 	}
 };
@@ -45,17 +53,21 @@ template<>
 struct fmt::formatter<rgl_mat3x4f>
 {
 	template<typename ParseContext>
-	constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
 	template<typename FormatContext>
-	auto format(const rgl_mat3x4f& m, FormatContext& ctx) {
+	auto format(const rgl_mat3x4f& m, FormatContext& ctx)
+	{
 		// TODO: add scale and rotation, if you are bored enough
 		return fmt::format_to(ctx.out(), "Mat3x4{{T={{{}, {}, {}}}}}", m.value[0][3], m.value[1][3], m.value[2][3]);
 	}
 };
 
 template<typename ArrayT>
-std::string repr(ArrayT* elements, long long elemCount=1, int elemLimit=3)
+std::string repr(ArrayT* elements, long long elemCount = 1, int elemLimit = 3)
 {
 #define PUSH(...) fmt::format_to(std::back_inserter(out), __VA_ARGS__)
 	if (elements == nullptr) {
@@ -104,10 +116,7 @@ std::string repr(ArrayT* elements, long long elemCount=1, int elemLimit=3)
 #undef PUSH
 }
 
-static inline std::string repr(rgl_node_t node)
-{
-	return fmt::format("{}", (void*) node);
-}
+static inline std::string repr(rgl_node_t node) { return fmt::format("{}", (void*) node); }
 
 static inline std::string repr(rgl_node_t* node)
 {

@@ -14,7 +14,13 @@
 
 #include <macros/cuda.hpp>
 
-#define LIMIT(count) const int tid = (blockIdx.x * blockDim.x + threadIdx.x); do {if (tid >= count) { return; }} while(false)
+#define LIMIT(count)                                                                                                           \
+	const int tid = (blockIdx.x * blockDim.x + threadIdx.x);                                                                   \
+	do {                                                                                                                       \
+		if (tid >= count) {                                                                                                    \
+			return;                                                                                                            \
+		}                                                                                                                      \
+	} while (false)
 
 template<typename Kernel, typename... KernelArgs>
 void run(Kernel&& kernel, cudaStream_t stream, size_t threads, KernelArgs... kernelArgs)

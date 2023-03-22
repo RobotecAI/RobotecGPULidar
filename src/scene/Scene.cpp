@@ -23,8 +23,7 @@ std::shared_ptr<Scene> Scene::defaultInstance()
 	return scene;
 }
 
-std::size_t Scene::getObjectCount()
-{ return entities.size(); }
+std::size_t Scene::getObjectCount() { return entities.size(); }
 
 void Scene::clear()
 {
@@ -80,15 +79,15 @@ OptixShaderBindingTable Scene::buildSBT()
 	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
-		hHitgroupRecords->append(HitgroupRecord {
-			.data = {
-				.vertex = mesh->dVertices->getReadPtr(),
-				.index = mesh->dIndices->getReadPtr(),
-				.vertex_count = mesh->dVertices->getCount(),
-				.index_count = mesh->dIndices->getCount(),
-			}
-		});
-		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount()-1);
+		hHitgroupRecords->append(HitgroupRecord{
+		    .data = {
+		             .vertex = mesh->dVertices->getReadPtr(),
+		             .index = mesh->dIndices->getReadPtr(),
+		             .vertex_count = mesh->dVertices->getCount(),
+		             .index_count = mesh->dIndices->getCount(),
+		             }
+        });
+		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, last.header));
 	}
 	dHitgroupRecords->copyFrom(hHitgroupRecords);
@@ -102,13 +101,13 @@ OptixShaderBindingTable Scene::buildSBT()
 	dMissRecords->copyFromHost(&hMissRecord, 1);
 
 	return OptixShaderBindingTable{
-		.raygenRecord = dRaygenRecords->getDeviceReadPtr(),
-		.missRecordBase = dMissRecords->getDeviceReadPtr(),
-		.missRecordStrideInBytes = sizeof(MissRecord),
-		.missRecordCount = 1U,
-		.hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords->getDeviceReadPtr() : static_cast<CUdeviceptr>(0),
-		.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord),
-		.hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords->getCount()),
+	    .raygenRecord = dRaygenRecords->getDeviceReadPtr(),
+	    .missRecordBase = dMissRecords->getDeviceReadPtr(),
+	    .missRecordStrideInBytes = sizeof(MissRecord),
+	    .missRecordCount = 1U,
+	    .hitgroupRecordBase = getObjectCount() > 0 ? dHitgroupRecords->getDeviceReadPtr() : static_cast<CUdeviceptr>(0),
+	    .hitgroupRecordStrideInBytes = sizeof(HitgroupRecord),
+	    .hitgroupRecordCount = static_cast<unsigned>(dHitgroupRecords->getCount()),
 	};
 }
 
@@ -131,53 +130,37 @@ OptixTraversableHandle Scene::buildAS()
 	dInstances->copyFrom(instances);
 
 	OptixBuildInput instanceInput = {
-	.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES,
-	.instanceArray = {
-	.instances = dInstances->getDeviceReadPtr(),
-	.numInstances = static_cast<unsigned int>(dInstances->getCount())
-	},
+	    .type = OPTIX_BUILD_INPUT_TYPE_INSTANCES,
+	    .instanceArray = {.instances = dInstances->getDeviceReadPtr(),
+	                      .numInstances = static_cast<unsigned int>(dInstances->getCount())},
 	};
 
 	OptixAccelBuildOptions accelBuildOptions = {
-	.buildFlags =
-	OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
-	| OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
-	.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	    .buildFlags =
+	        OPTIX_BUILD_FLAG_ALLOW_UPDATE // TODO(prybicki): figure out if there's a faster way to update than the current one
+	        | OPTIX_BUILD_FLAG_ALLOW_COMPACTION,
+	    .operation = OPTIX_BUILD_OPERATION_BUILD};
 
 	scratchpad.resizeToFit(instanceInput, accelBuildOptions);
 
 	OptixAccelEmitDesc emitDesc = {
-	.result = scratchpad.dCompactedSize->getDeviceReadPtr(),
-	.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
+	    .result = scratchpad.dCompactedSize->getDeviceReadPtr(),
+	    .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
 	};
 
 	OptixTraversableHandle sceneHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
 	                            nullptr, // TODO(prybicki): run in stream
-	                            &accelBuildOptions,
-	                            &instanceInput,
-	                            1,
-	                            scratchpad.dTemp->getDeviceReadPtr(),
+	                            &accelBuildOptions, &instanceInput, 1, scratchpad.dTemp->getDeviceReadPtr(),
 	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
 	                            scratchpad.dFull->getDeviceReadPtr(),
-	                            scratchpad.dFull-> getSizeOf() * scratchpad.dFull->getCount(),
-	                            &sceneHandle,
-	                            &emitDesc,
-	                            1
-	));
+	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &sceneHandle, &emitDesc, 1));
 
 	// scratchpad.doCompaction(sceneHandle);
 
 	return sceneHandle;
 }
 
-void Scene::requestASRebuild()
-{
-	cachedAS.reset();
-}
+void Scene::requestASRebuild() { cachedAS.reset(); }
 
-void Scene::requestSBTRebuild()
-{
-	cachedSBT.reset();
-}
+void Scene::requestSBTRebuild() { cachedSBT.reset(); }
