@@ -38,7 +38,7 @@ def main():
     cfg = Config()
     # Parse arguments
     parser = argparse.ArgumentParser(description="Helper script to build RGL.")
-    parser.add_argument("--build-dir", type=str, nargs=1, default="build",
+    parser.add_argument("--build-dir", type=str, default="build",
                         help="Path to build directory. Default: 'build'")
     parser.add_argument("--install-pcl-deps", action='store_true',
                         help="Install dependencies for PCL extension and exit")
