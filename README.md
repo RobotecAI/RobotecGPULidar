@@ -42,7 +42,7 @@ And more:
 
 |Software|Requirement|
 |:--|:--|
-|Nvidia Driver (Linux)|>=460.27.03|
+|Nvidia Driver (Linux)|>=515.43.04|
 |Nvidia Driver (Windows)|>=472.50|
 
 ## Usage
