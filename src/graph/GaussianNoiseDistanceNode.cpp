@@ -22,9 +22,9 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 	this->stDevRisePerMeter = stDevRisePerMeter;
 }
 
-void GaussianNoiseDistanceNode::validate()
+void GaussianNoiseDistanceNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.
@@ -74,9 +74,4 @@ VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cuda
 		return outDistance->untyped();
 	}
 	return input->getFieldData(field, stream);
-}
-
-std::vector<rgl_field_t> GaussianNoiseDistanceNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
 }

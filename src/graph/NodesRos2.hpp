@@ -24,7 +24,7 @@
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
+struct Ros2PublishPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 
@@ -36,7 +36,7 @@ struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
 		int32_t qosHistoryDepth = 10);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	~Ros2PublishPointsNode();

@@ -20,7 +20,7 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
-void RaytraceNode::validate()
+void RaytraceNode::onInputChange()
 {
 	raysNode = getValidInput<IRaysNode>();
 

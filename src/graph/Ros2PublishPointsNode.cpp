@@ -54,9 +54,9 @@ void Ros2PublishPointsNode::setParameters(
 	ros2Publisher = ros2Node->create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
-void Ros2PublishPointsNode::validate()
+void Ros2PublishPointsNode::onInputChange()
 {
-	input = getValidInput<FormatPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	if (input->getHeight() != 1) {
 		throw InvalidPipeline("ROS2 publish support unorganized pointclouds only");
 	}

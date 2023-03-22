@@ -506,7 +506,7 @@ RGL_API rgl_status_t
 rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count, const rgl_field_t* fields, int32_t field_count);
 
 /**
- * Creates or modifies GaussianNoiseAngularRayNode.
+ * Creates or modifies GaussianNoiseAngularRaysNode.
  * Applies angular noise to the rays before raycasting.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#ray-based-angular-noise
  * Graph input: rays

@@ -731,7 +731,7 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
                 CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
-		createOrUpdateNode<GaussianNoiseAngularRayNode>(node, mean, st_dev, rotation_axis);
+		createOrUpdateNode<GaussianNoiseAngularRaysNode>(node, mean, st_dev, rotation_axis);
 	});
 	TAPE_HOOK(node, mean, st_dev, rotation_axis);
 	return status;
