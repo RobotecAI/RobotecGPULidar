@@ -15,15 +15,6 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformPointsNode::validate()
-{
-	input = getValidInput<IPointsNode>();
-	if (!input->hasField(XYZ_F32)) {
-		auto msg = fmt::format("{} requires XYZ to be present", getName());
-		throw InvalidPipeline(msg);
-	}
-}
-
 void TransformPointsNode::schedule(cudaStream_t stream)
 {
 	auto pointCount = input->getWidth() * input->getHeight();
@@ -44,10 +35,6 @@ VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream
 	return input->getFieldData(field, stream);
 }
 
-std::vector<rgl_field_t> TransformPointsNode::getRequiredFieldList() const
-{
-	return {XYZ_F32};
-}
 
 std::string TransformPointsNode::getArgsString() const
 {

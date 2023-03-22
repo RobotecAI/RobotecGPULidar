@@ -34,23 +34,14 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 	}
 }
 
-void TemporalMergePointsNode::validate()
+void TemporalMergePointsNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 
 	// Check input pointcloud is unorganized
 	if (input->getHeight() != 1) {
 		auto msg = "Temporal points merge can process unorganized point clouds only";
 		throw InvalidPipeline(msg);
-	}
-
-	// Check input pointcloud has required fields
-	for (const auto& requiredField : std::views::keys(mergedData)) {
-		if (!input->hasField(requiredField)) {
-			auto msg = fmt::format("TemporalMergePointsNode input does not have required field '{}'",
-			                       toString(requiredField));
-			throw InvalidPipeline(msg);
-		}
 	}
 }
 

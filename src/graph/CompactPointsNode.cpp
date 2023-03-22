@@ -20,15 +20,6 @@
 // TODO: WritePCD triggers cudaSynchronizeStream in its indirect input CompactNode
 // TODO: This can be alleviated with a stream-aware VArray :)
 
-void CompactPointsNode::validate()
-{
-	input = getValidInput<IPointsNode>();
-	if (finishedEvent == nullptr) {
-		unsigned flags = cudaEventDisableTiming;  // Provides better performance
-		CHECK_CUDA(cudaEventCreate(&finishedEvent, flags));
-	}
-}
-
 void CompactPointsNode::schedule(cudaStream_t stream)
 {
 	cacheManager.trigger();
@@ -41,6 +32,7 @@ void CompactPointsNode::schedule(cudaStream_t stream)
 
 VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
 {
+	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	if (!cacheManager.contains(field)) {
 		auto fieldData = VArray::create(field, width);
 		cacheManager.insert(field, fieldData, true);

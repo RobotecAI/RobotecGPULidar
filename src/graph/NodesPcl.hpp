@@ -24,13 +24,16 @@
 #include <graph/PCLVisualizerFix.hpp>
 #include <CacheManager.hpp>
 
-struct DownSamplePointsNode : Node, IPointsNodeSingleInput
+struct DownSamplePointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<DownSamplePointsNode>;
 	void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
 
+	DownSamplePointsNode() { CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming)); }
+	virtual ~DownSamplePointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
+
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -44,6 +47,8 @@ struct DownSamplePointsNode : Node, IPointsNodeSingleInput
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
+
+
 private:
 	Vec3f leafDims;
 	VArray::Ptr inputFmtData = VArray::create<char>();
@@ -53,7 +58,7 @@ private:
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
-struct VisualizePointsNode : Node, IPointsNodeSingleInput
+struct VisualizePointsNode : IPointsNodeSingleInput
 {
 	static const int FRAME_RATE = 60;
 	using Ptr = std::shared_ptr<VisualizePointsNode>;
@@ -61,7 +66,7 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements

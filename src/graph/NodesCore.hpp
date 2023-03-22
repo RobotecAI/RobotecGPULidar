@@ -47,13 +47,12 @@
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
 // TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
 
-struct FormatPointsNode : Node, IPointsNodeSingleInput
+struct FormatPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -79,13 +78,15 @@ private:
 	VArray::Ptr output = VArray::create<char>();
 };
 
-struct CompactPointsNode : Node, IPointsNodeSingleInput
+struct CompactPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<CompactPointsNode>;
 	void setParameters() {}
 
+	CompactPointsNode()	{ CHECK_CUDA(cudaEventCreate(&finishedEvent, cudaEventDisableTiming)); }
+	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
+
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -100,19 +101,19 @@ struct CompactPointsNode : Node, IPointsNodeSingleInput
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
 
 private:
-	size_t width;
+	size_t width = {0};
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
-struct RaytraceNode : Node, IPointsNode
+struct RaytraceNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
 	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Point cloud description
@@ -141,19 +142,18 @@ private:
 	void setFields(const std::set<rgl_field_t>& fields);
 };
 
-struct TransformPointsNode : Node, IPointsNodeSingleInput
+struct TransformPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformPointsNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 	Mat3x4f getTransform() const { return transform; }
 
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override;
 	std::string getArgsString() const override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
@@ -165,13 +165,12 @@ private:
 	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 };
 
-struct TransformRaysNode : Node, IRaysNodeSingleInput
+struct TransformRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformRaysNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
@@ -183,13 +182,12 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct FromMat3x4fRaysNode : Node, IRaysNode
+struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
@@ -204,13 +202,13 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct SetRingIdsRaysNode : Node, IRaysNodeSingleInput
+struct SetRingIdsRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
@@ -223,13 +221,12 @@ private:
 	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
-struct YieldPointsNode : Node, IPointsNodeSingleInput
+struct YieldPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -244,13 +241,13 @@ private:
 	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
 };
 
-struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
+struct SpatialMergePointsNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<SpatialMergePointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -268,17 +265,18 @@ struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
 	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
 
 private:
+	std::vector<IPointsNode::Ptr> pointInputs;
 	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
 	std::size_t width = 0;
 };
 
-struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
+struct TemporalMergePointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
@@ -298,13 +296,12 @@ private:
 	std::size_t width = 0;
 };
 
-struct FromArrayPointsNode : Node, IPointsNode
+struct FromArrayPointsNode : IPointsNode, INoInputNode
 {
 	using Ptr = std::shared_ptr<FromArrayPointsNode>;
 	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
 	void schedule(cudaStream_t stream) override {}
 
 	// Point cloud description
@@ -324,14 +321,14 @@ private:
 	size_t width = 0;
 };
 
-struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
+struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 {
-	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
+	using Ptr = std::shared_ptr<GaussianNoiseAngularRaysNode>;
 
 	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
@@ -348,18 +345,18 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
+struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularHitpointNode>;
 
 	void setParameters(float mean, float stDev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
@@ -376,18 +373,18 @@ private:
 	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
-struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
+struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
 
 	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
 
 	// Node
-	void validate() override;
+	void onInputChange() override;
 	void schedule(cudaStream_t stream) override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
 
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;

@@ -64,7 +64,7 @@ void Graph::run()
 
 	for (auto&& current : nodesInExecOrder) {
 		RGL_DEBUG("Validating node: {}", *current);
-		current->validate();
+		current->onInputChange();
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 

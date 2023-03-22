@@ -15,16 +15,16 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
-void GaussianNoiseAngularRayNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
+void GaussianNoiseAngularRaysNode::setParameters(float mean, float stDev, rgl_axis_t rotationAxis)
 {
 	this->mean = mean;
 	this->stDev = stDev;
 	this->rotationAxis = rotationAxis;
 }
 
-void GaussianNoiseAngularRayNode::validate()
+void GaussianNoiseAngularRaysNode::onInputChange()
 {
-	input = getValidInput<IRaysNode>();
+	IRaysNodeSingleInput::onInputChange();
 	lookAtOriginTransform = input->getCumulativeRayTransfrom().inverse();
 
 	auto rayCount = input->getRayCount();
@@ -36,7 +36,7 @@ void GaussianNoiseAngularRayNode::validate()
 	}
 }
 
-void GaussianNoiseAngularRayNode::schedule(cudaStream_t stream)
+void GaussianNoiseAngularRaysNode::schedule(cudaStream_t stream)
 {
 	const auto* inRaysPtr = input->getRays()->getDevicePtr();
 	auto* outRaysPtr = rays->getDevicePtr();
