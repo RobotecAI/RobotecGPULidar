@@ -68,9 +68,9 @@ Build instructions:
 5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
 6. `./setup.py --make="-j"`
 
-## Building on Ubuntu
+## Building on Ubuntu 22
 
-1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.2+**.
+1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.7+**.
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
     1. You may be asked to create Nvidia account to download
 3. Export environment variable:
