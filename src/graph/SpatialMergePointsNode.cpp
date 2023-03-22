@@ -31,12 +31,13 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 	}
 }
 
-void SpatialMergePointsNode::validate()
+void SpatialMergePointsNode::onInputChange()
 {
 	pointInputs = Node::filter<IPointsNode>(this->inputs);
 
-	if (pointInputs.empty()) {
-		auto msg = "expected at least one IPointsNode input for SpatialMergePointsNode";
+	if (pointInputs.size() < 2) {
+		// Having just one input does not make sense, because it is equivalent to removing this Node.
+		auto msg = fmt::format("{} requires >= 2 input nodes, found {}", getName(), pointInputs.size());
 		throw InvalidPipeline(msg);
 	}
 
@@ -48,10 +49,9 @@ void SpatialMergePointsNode::validate()
 		}
 
 		// Check input pointcloud has required fields
-		for (const auto& requiredField : std::views::keys(mergedData)) {
+		for (const auto& requiredField : getRequiredFieldList()) {
 			if (!input->hasField(requiredField)) {
-				auto msg = fmt::format("SpatialMergePointsNode input does not have required field '{}'",
-				                       toString(requiredField));
+				auto msg = fmt::format("{} input does not have required field '{}'", getName(), toString(requiredField));
 				throw InvalidPipeline(msg);
 			}
 		}

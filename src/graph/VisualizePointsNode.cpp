@@ -30,9 +30,9 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 	visThread = std::thread(&VisualizePointsNode::runVisualize, this);
 }
 
-void VisualizePointsNode::validate()
+void VisualizePointsNode::onInputChange()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::onInputChange();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);

@@ -41,14 +41,6 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
-void FromArrayPointsNode::validate()
-{
-	if (!inputs.empty()) {
-		auto msg = fmt::format("inputs for node {} are not allowed", getName());
-		throw InvalidPipeline(msg);
-	}
-}
-
 std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::collectFieldRawData(const std::vector<rgl_field_t>& fields)
 {
 	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;

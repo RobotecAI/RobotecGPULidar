@@ -20,7 +20,7 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
-void RaytraceNode::validate()
+void RaytraceNode::onInputChange()
 {
 	// It should be viewed as a temporary solution. Will change in v14.
 	setFields(findFieldsToCompute());

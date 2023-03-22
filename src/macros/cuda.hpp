@@ -36,6 +36,16 @@ do                                                                              
 }                                                                                                   \
 while(false)
 
+#define CHECK_CUDA_NO_THROW(call) \
+do {                              \
+    try {                         \
+        CHECK_CUDA(call);         \
+    }                             \
+    catch(...)                    \
+    { }                           \
+}                                 \
+while(false)
+
 #define HostDevFn __host__ __device__
 #define DevFn __device__
 #define HostFn __host__

@@ -35,7 +35,7 @@ When this type of noise is applied, points stay on the obstacle surface
 
 ### Usage
 
-Create `GaussianNoiseAngularRayNode` using API call `rgl_node_gaussian_noise_angular_ray`. Next, add this node to the RGL pipeline before `RaytraceNode`.
+Create `GaussianNoiseAngularRaysNode` using API call `rgl_node_gaussian_noise_angular_ray`. Next, add this node to the RGL pipeline before `RaytraceNode`.
 
 | Parameter name | Type | Description |
 |----------------|------|-------------|
