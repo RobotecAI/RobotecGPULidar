@@ -26,6 +26,8 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
 # Extensions configuration
+set(RGL_BUILD_ALL OFF CACHE BOOL
+        "Enables all possible extensions, tools and tests.")
 set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
@@ -99,7 +101,7 @@ add_library(RobotecGPULidar SHARED
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-if (RGL_BUILD_PCL_EXTENSION)
+if (RGL_BUILD_PCL_EXTENSION OR RGL_BUILD_ALL)
     find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
     target_sources(RobotecGPULidar PRIVATE
         src/api/apiPcl.cpp
@@ -112,7 +114,7 @@ if (RGL_BUILD_PCL_EXTENSION)
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}> ${PCL_DEFINITIONS})
 endif()
 
-if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE OR RGL_BUILD_ALL)
     if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
       message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Only humble is available.")
     endif()
@@ -172,13 +174,13 @@ target_compile_definitions(RobotecGPULidar
 )
 
 # Include tests
-if (RGL_BUILD_TESTS)
+if (RGL_BUILD_TESTS OR RGL_BUILD_ALL)
     enable_testing()
     add_subdirectory(test)
 endif()
 
 # Include tools
-if (RGL_BUILD_TOOLS)
+if (RGL_BUILD_TOOLS OR RGL_BUILD_ALL)
     add_subdirectory(tools)
 endif()
 
