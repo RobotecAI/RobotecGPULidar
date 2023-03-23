@@ -1,8 +1,7 @@
 #include <RGLFields.hpp>
-
-#include "../gpu/testKernel.hpp"
 #include <gtest/gtest.h>
 #include <utils.hpp>
+#include "testKernel.hpp"
 
 using namespace testing;
 
@@ -46,8 +45,8 @@ TEST_F(StreamsTest, basic_streams)
     // Record synchronization event to the stream after sensitive job.
     cudaEventRecord(jobDoneEvent, graphStream);
 
-    //Synchronize streams. This is pass or not for the test.
-    // All API Calls in given stream, will wait for the event  to be completed.
+    // Synchronize streams. This is pass or not for the test.
+    //  All API Calls in given stream, will wait for the event  to be completed.
     cudaStreamWaitEvent(copyStream, jobDoneEvent);
 
     // Copy result from device memory to host memory by substream

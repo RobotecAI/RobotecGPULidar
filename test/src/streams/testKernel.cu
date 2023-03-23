@@ -1,20 +1,22 @@
-//
-// Created by piotr on 16.03.23.
-//
-#include "testKernel.hpp"
-
 
 using clock_value_t = long long;
 
-#define LIMIT(count) const int tid = (blockIdx.x * blockDim.x + threadIdx.x); do {if (tid >= count) { return; }} while(false)
+#define LIMIT(count)                                         \
+    const int tid = (blockIdx.x * blockDim.x + threadIdx.x); \
+    do {                                                     \
+        if (tid >= count) {                                  \
+            return;                                          \
+        }                                                    \
+    } while (false)
 
 __global__ void testKernel(size_t pointCount, float* infloats)
 {
     // Waste some time
     clock_value_t start = clock64();
     clock_value_t cycles_elapsed;
-    do { cycles_elapsed = clock64() - start; }
-    while (cycles_elapsed < 2000000000);
+    do {
+        cycles_elapsed = clock64() - start;
+    } while (cycles_elapsed < 2000000000);
 
     LIMIT(pointCount);
     infloats[tid] = infloats[tid] * infloats[tid];
