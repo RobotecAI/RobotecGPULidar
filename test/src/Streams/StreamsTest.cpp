@@ -1,6 +1,6 @@
 #include <RGLFields.hpp>
-#include <gpu/testKernel.hpp>
-#include <graph/Node.hpp>
+
+#include "../gpu/testKernel.hpp"
 #include <gtest/gtest.h>
 #include <utils.hpp>
 
@@ -10,7 +10,7 @@ class StreamsTest : public RGLAutoCleanupTest {
 protected:
 };
 
-TEST_F(StreamsTest, valid_arguments)
+TEST_F(StreamsTest, basic_streams)
 {
     // Prepare two non-default streams.
     cudaStream_t graphStream;

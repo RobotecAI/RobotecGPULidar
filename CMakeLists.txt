@@ -75,7 +75,6 @@ add_library(RobotecGPULidar SHARED
     src/Optix.cpp
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
-    src/gpu/testKernel.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
