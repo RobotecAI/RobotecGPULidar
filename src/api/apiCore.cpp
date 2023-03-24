@@ -419,6 +419,7 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		RGL_API_LOG("rgl_graph_node_add_child(parent={}, child={})", repr(parent), repr(child));
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
+		CHECK_ARG(parent != child);
 
 		Node::validatePtr(parent)->addChild(Node::validatePtr(child));
 	});
