@@ -64,6 +64,11 @@ def main():
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
     args = parser.parse_args()
 
+    if args.with_all:
+        args.install_pcl_deps = True
+        args.with_pcl = True
+        args.with_ros2 = True
+
     # Install dependencies for PCL extension
     if args.install_pcl_deps:
         # Clone vcpkg
@@ -117,10 +122,10 @@ def main():
     if on_windows():
         os.environ["Path"] = os.environ["Path"] + ";" + os.path.join(os.getcwd(), args.build_dir)
 
+
     # Build
     cmake_args = [
         f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
-        f"-DRGL_BUILD_ALL={'ON' if args.with_all else 'OFF'}",
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION_STANDALONE={'ON' if args.with_ros2_standalone else 'OFF'}"

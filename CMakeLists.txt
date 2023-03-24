@@ -26,8 +26,6 @@ set(RGL_BUILD_TESTS ON CACHE BOOL
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
 
 # Extensions configuration
-set(RGL_BUILD_ALL OFF CACHE BOOL
-        "Enables all possible extensions, tools and tests.")
 set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
