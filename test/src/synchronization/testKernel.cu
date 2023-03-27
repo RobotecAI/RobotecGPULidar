@@ -16,7 +16,7 @@ __global__ void testKernel(size_t pointCount, float* infloats)
     clock_value_t cycles_elapsed;
     do {
         cycles_elapsed = clock64() - start;
-    } while (cycles_elapsed < 200000);
+    } while (cycles_elapsed < 100000);
 
     LIMIT(pointCount);
     infloats[tid] = infloats[tid] * infloats[tid];
