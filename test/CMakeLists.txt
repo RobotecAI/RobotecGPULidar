@@ -17,7 +17,8 @@ set(RGL_TEST_FILES
         src/scene/entityIdTest.cpp
         src/DistanceFieldTest.cpp
     src/ArrayTest.cpp
-)
+    src/synchronization/syncTest.cpp
+    src/synchronization/testKernel.cu)
 
 # Only Linux
 if ((NOT WIN32))
@@ -48,6 +49,7 @@ target_include_directories(RobotecGPULidar_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/synchronization
 )
 
 include(GoogleTest)

@@ -1,23 +1,22 @@
 #pragma once
 
-#include "gtest/gtest.h"
-#include <RGLFields.hpp>
+#include <numeric>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
-#include <gmock/gmock-matchers.h>
-#include <graph/Node.hpp>
-#include <gtest/gtest.h>
-#include <math/Mat3x4f.hpp>
-#include <models.hpp>
-#include <numeric>
-#include <rgl/api/core.h>
-#include <utils.hpp>
 #include <vector>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock-matchers.h>
+
+#include <rgl/api/core.h>
+#include <graph/Node.hpp>
+#include <math/Mat3x4f.hpp>
+#include <RGLFields.hpp>
+#include <models.hpp>
 
 // TODO(msz-rai): Left this namespace for cleaner tests - fix namespace for rgl (Field)
 // using namespace ::testing;
-
 
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
@@ -45,16 +44,17 @@ static rgl_mat3x4f complexTestTransform = Mat3x4f::TRS(Vec3f(1, 2, 3), Vec3f(10,
 
 struct RGLTest : public ::testing::Test {
 protected:
-	void SetUp() override 
+	RGLTest()
 	{
 		rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false);
 	}
-	
+
     virtual ~RGLTest() override
     {
         EXPECT_RGL_SUCCESS(rgl_cleanup());
     }
 };
+
 template <typename T>
 struct RGLTestWithParam : public RGLTest, public ::testing::WithParamInterface<T> { };
 
