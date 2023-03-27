@@ -22,6 +22,8 @@
 
 void RaytraceNode::validate()
 {
+	setFields(findFieldsToCompute());
+
 	raysNode = getValidInput<IRaysNode>();
 
 	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
@@ -92,4 +94,32 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 	for (auto&& field : toInsert) {
 		fieldData.insert({field, VArray::create(field)});
 	}
+}
+
+std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
+{
+	std::set<rgl_field_t> outFields;
+
+	// Add primary field
+	outFields.insert(XYZ_F32);
+
+	// dfsInputs - if false dfs for outputs
+	std::function<void(Node::Ptr, bool)> dfsRet = [&](const Node::Ptr & current, bool dfsInputs) {
+		auto dfsNodes = dfsInputs ? current->getInputs() : current->getOutputs();
+		for (auto&& node : dfsNodes) {
+			if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
+				for (auto&& field : pointNode->getRequiredFieldList()) {
+					if (!isDummy(field)) {
+						outFields.insert(field);
+					}
+				}
+				dfsRet(node, dfsInputs);
+			}
+		}
+	};
+
+	dfsRet(shared_from_this(), true);  // Search in inputs
+	dfsRet(shared_from_this(), false);  // Search in outputs
+
+	return outFields;
 }
