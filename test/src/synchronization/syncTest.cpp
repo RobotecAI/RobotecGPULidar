@@ -1,7 +1,8 @@
+#include "testKernel.hpp"
 #include <RGLFields.hpp>
+#include <cuda.h>
 #include <gtest/gtest.h>
 #include <utils.hpp>
-#include "testKernel.hpp"
 
 using namespace testing;
 
@@ -15,18 +16,23 @@ TEST_F(SyncTests, GraphAndCopyStream)
     cudaStream_t graphStream;
     cudaStream_t copyStream;
 
+    cudaFree(0);
     CHECK_CUDA(cudaStreamCreate(&graphStream));
-    cudaStreamCreate(&copyStream);
-
+    CHECK_CUDA(cudaStreamCreate(&copyStream));
+    
     auto testDataCount = 20000;
     size_t size = testDataCount * sizeof(float);
 
     // Allocate input vector hostArray in host memory
     float* hostArray = (float*)malloc(size);
 
+    //Create dummy arrays in order to perform parallel asynchronous copy operation on the copy stream.
+    float* dummyHostArray = (float*)malloc(size);
+
     // Initialize input vectors
     for (int i = 0; i < testDataCount; ++i) {
         hostArray[i] = i;
+        dummyHostArray[i] = i;
     }
     // Create event for sensitive job (kernel) end.
     cudaEvent_t jobDoneEvent;
@@ -49,6 +55,12 @@ TEST_F(SyncTests, GraphAndCopyStream)
 
     // Record synchronization event to the stream after sensitive job.
     CHECK_CUDA(cudaEventRecord(jobDoneEvent, graphStream));
+
+    // Perform copy operation on the copyStream parallel to graphStream kernel.
+    float* dummyDeviceArray;
+    CHECK_CUDA(cudaMallocAsync(&dummyDeviceArray, size, copyStream));
+    CHECK_CUDA(cudaMemcpyAsync(dummyDeviceArray, dummyHostArray, size, cudaMemcpyHostToDevice, copyStream));
+    CHECK_CUDA(cudaMemcpyAsync(dummyHostArray, dummyDeviceArray, size, cudaMemcpyDeviceToHost, copyStream));
 
     // Synchronize streams. This is pass or not for the test.
     //  All API Calls in given stream, will wait for the event  to be completed.
