@@ -32,8 +32,7 @@ struct Vec3fPayload
 	unsigned p2;
 };
 
-__forceinline__ __device__
-Vec3fPayload encodePayloadVec3f(const Vec3f& src)
+__forceinline__ __device__ Vec3fPayload encodePayloadVec3f(const Vec3f& src)
 {
 	Vec3fPayload dst;
 	dst.p0 = *(reinterpret_cast<const unsigned*>(&src[0]));
@@ -42,19 +41,17 @@ Vec3fPayload encodePayloadVec3f(const Vec3f& src)
 	return dst;
 }
 
-__forceinline__ __device__
-Vec3f decodePayloadVec3f(const Vec3fPayload& src)
+__forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 {
-	return Vec3f {
-		*reinterpret_cast<const float*>(&src.p0),
-		*reinterpret_cast<const float*>(&src.p1),
-		*reinterpret_cast<const float*>(&src.p2),
+	return Vec3f{
+	    *reinterpret_cast<const float*>(&src.p0),
+	    *reinterpret_cast<const float*>(&src.p1),
+	    *reinterpret_cast<const float*>(&src.p2),
 	};
 }
 
 template<bool isFinite>
-__forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
+__forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, const Vec3f* origin = nullptr)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -71,12 +68,9 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
 		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
 	}
 	if (ctx.distance != nullptr) {
-		ctx.distance[rayIdx] = isFinite
-		                        ? sqrt(
-		                            pow((*xyz)[0] - (*origin)[0], 2) +
-		                            pow((*xyz)[1] - (*origin)[1], 2) +
-		                            pow((*xyz)[2] - (*origin)[2], 2))
-		                        : CUDART_INF_F;
+		ctx.distance[rayIdx] = isFinite ? sqrt(pow((*xyz)[0] - (*origin)[0], 2) + pow((*xyz)[1] - (*origin)[1], 2) +
+		                                       pow((*xyz)[2] - (*origin)[2], 2)) :
+		                                  CUDART_INF_F;
 	}
 	if (ctx.intensity != nullptr) {
 		ctx.intensity[rayIdx] = 100;
@@ -100,8 +94,8 @@ extern "C" __global__ void __raygen__()
 
 	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
 	Vec3fPayload originPayload = encodePayloadVec3f(origin);
-	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0,
-	           originPayload.p0, originPayload.p1, originPayload.p2);
+	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0, originPayload.p0,
+	           originPayload.p1, originPayload.p2);
 }
 
 extern "C" __global__ void __closesthit__()
@@ -124,17 +118,10 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
-	Vec3f origin = decodePayloadVec3f({
-		optixGetPayload_0(),
-		optixGetPayload_1(),
-		optixGetPayload_2()
-	});
+	Vec3f origin = decodePayloadVec3f({optixGetPayload_0(), optixGetPayload_1(), optixGetPayload_2()});
 	saveRayResult<true>(&hitWorld, &origin);
 }
 
-extern "C" __global__ void __miss__()
-{
-	saveRayResult<false>();
-}
+extern "C" __global__ void __miss__() { saveRayResult<false>(); }
 
-extern "C" __global__ void __anyhit__(){}
+extern "C" __global__ void __anyhit__() {}
