@@ -13,8 +13,8 @@ set(RGL_TEST_FILES
     src/testMat3x4f.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/ArrayTest.cpp
-    src/streams/streamsTest.cpp
-    src/streams/testKernel.cu)
+    src/synchronization/syncTest.cpp
+    src/synchronization/testKernel.cu)
 
 # Only Linux
 if ((NOT WIN32))
