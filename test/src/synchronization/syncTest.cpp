@@ -1,5 +1,4 @@
-#include "testKernel.hpp"
-#include <RGLFields.hpp>
+#include <testKernel.hpp>
 #include <cuda.h>
 #include <gtest/gtest.h>
 #include <utils.hpp>
@@ -16,10 +15,13 @@ TEST_F(SyncTests, GraphAndCopyStream)
     cudaStream_t graphStream;
     cudaStream_t copyStream;
 
-    cudaFree(0);
+    // Initialize CUDA device.
+    CHECK_CUDA(cudaSetDevice(0));
+
+    // Create two non-default streams.
     CHECK_CUDA(cudaStreamCreate(&graphStream));
     CHECK_CUDA(cudaStreamCreate(&copyStream));
-    
+
     auto testDataCount = 20000;
     size_t size = testDataCount * sizeof(float);
 
