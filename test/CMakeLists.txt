@@ -45,7 +45,6 @@ target_include_directories(RobotecGPULidar_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src/synchronization
-
 )
 
 include(GoogleTest)
