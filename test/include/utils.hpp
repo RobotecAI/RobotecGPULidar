@@ -14,7 +14,6 @@
 // TODO(msz-rai): Left this namespace for cleaner tests - fix namespace for rgl (Field)
 //using namespace ::testing;
 
-#define EPSILON_F 1e-6
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define EXPECT_RGL_STATUS(actual, expected, ...)                   \
@@ -29,6 +28,9 @@
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
 #define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
+
+constexpr float EPSILON_F = 1e-6f;
+constexpr int maxGPUCoresTestCount = 20000;
 
 struct RGLAutoCleanupTest : public ::testing::Test {
 protected:
