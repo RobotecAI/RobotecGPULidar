@@ -242,6 +242,9 @@ TEST_F(GraphCase, FormatNodeResults)
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, format=nullptr;
 
+	// The cube located in 0,0,0 with width equals 1, rays shoot in perpendicular direction
+	constexpr float EXPECTED_HITPOINT_Z = 1.0f;
+	constexpr float EXPECTED_RAY_DISTANCE = 1.0f;
 	std::vector<rgl_mat3x4f> rays = {
 		Mat3x4f::TRS({0, 0, 0}).toRGL(),
 		Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
@@ -253,11 +256,17 @@ TEST_F(GraphCase, FormatNodeResults)
 	std::vector<rgl_field_t> formatFields = {
 		XYZ_F32,
 		PADDING_32,
-                TIME_STAMP_F64
+		TIME_STAMP_F64
 	};
+	struct FormatStruct
+	{
+		Field<XYZ_F32>::type xyz;
+		Field<PADDING_32>::type padding;
+		Field<TIME_STAMP_F64>::type timestamp;
+	} formatStruct;
 
-        Time timestamp = Time::seconds(1.5);
-        EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, timestamp.asNanoseconds()));
+	Time timestamp = Time::seconds(1.5);
+	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, timestamp.asNanoseconds()));
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
@@ -273,24 +282,46 @@ TEST_F(GraphCase, FormatNodeResults)
 	int32_t outCount, outSizeOf;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 
-	struct FormatStruct
-	{
-		Field<XYZ_F32>::type xyz;
-		Field<PADDING_32>::type padding;
-                Field<TIME_STAMP_F64>::type timestamp;
-	} formatStruct;
-
 	EXPECT_EQ(outCount, rays.size());
 	EXPECT_EQ(outSizeOf, sizeof(formatStruct));
 
-	std::vector<FormatStruct> formatData{(size_t)outCount};
+	std::vector<FormatStruct> formatData(outCount);
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
 	for (int i = 0; i < formatData.size(); ++i) {
-		EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], 1e-6);
-		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], 1e-6);
-		EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
-                EXPECT_EQ(formatData[i].timestamp, timestamp.asSeconds());
+		EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], EPSILON_F);
+		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], EPSILON_F);
+		EXPECT_NEAR(formatData[i].xyz[2], EXPECTED_HITPOINT_Z, EPSILON_F);
+		EXPECT_EQ(formatData[i].timestamp, timestamp.asSeconds());
+	}
+
+	// Test if fields update is propagated over graph properly
+	formatFields.push_back(DISTANCE_F32);  // Add distance field
+	formatFields.push_back(PADDING_32);  // Align to 8 bytes
+	struct FormatStructExtended : public  FormatStruct
+	{
+		Field<DISTANCE_F32>::type distance;
+		Field<PADDING_32>::type padding2;  // Align to 8 bytes
+	} formatStructEx;
+
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	outCount = -1;  // reset variables
+	outSizeOf = -1;
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
+	EXPECT_EQ(outCount, rays.size());
+	EXPECT_EQ(outSizeOf, sizeof(formatStructEx));
+
+	std::vector<FormatStructExtended> formatDataEx{(size_t)outCount};
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatDataEx.data()));
+
+	for (int i = 0; i < formatDataEx.size(); ++i) {
+		EXPECT_NEAR(formatDataEx[i].xyz[0], rays[i].value[0][3], EPSILON_F);
+		EXPECT_NEAR(formatDataEx[i].xyz[1], rays[i].value[1][3], EPSILON_F);
+		EXPECT_NEAR(formatDataEx[i].xyz[2], EXPECTED_HITPOINT_Z, EPSILON_F);
+		EXPECT_NEAR(formatDataEx[i].distance, EXPECTED_RAY_DISTANCE, EPSILON_F);
+		EXPECT_EQ(formatDataEx[i].timestamp, timestamp.asSeconds());
 	}
 }
 
