@@ -31,7 +31,7 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 	}
 }
 
-void SpatialMergePointsNode::onInputChange()
+void SpatialMergePointsNode::onInputChangeImpl()
 {
 	pointInputs = Node::filter<IPointsNode>(this->inputs);
 
@@ -58,7 +58,7 @@ void SpatialMergePointsNode::onInputChange()
 	}
 }
 
-void SpatialMergePointsNode::schedule(cudaStream_t stream)
+void SpatialMergePointsNode::executeImpl(cudaStream_t stream)
 {
 	width = 0;
 	for (const auto& input : pointInputs) {

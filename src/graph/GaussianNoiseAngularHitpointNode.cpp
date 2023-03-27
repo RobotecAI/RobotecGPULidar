@@ -22,9 +22,9 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 	this->rotationAxis = rotationAxis;
 }
 
-void GaussianNoiseAngularHitpointNode::onInputChange()
+void GaussianNoiseAngularHitpointNode::onInputChangeImpl()
 {
-	IPointsNodeSingleInput::onInputChange();
+	IPointsNodeSingleInput::onInputChangeImpl();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modify field DISTANCE_F32 if present.
@@ -39,7 +39,7 @@ void GaussianNoiseAngularHitpointNode::onInputChange()
 	}
 }
 
-void GaussianNoiseAngularHitpointNode::schedule(cudaStream_t stream)
+void GaussianNoiseAngularHitpointNode::executeImpl(cudaStream_t stream)
 {
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);

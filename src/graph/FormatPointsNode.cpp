@@ -24,7 +24,7 @@ void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 	this->fields = fields;
 }
 
-void FormatPointsNode::schedule(cudaStream_t stream)
+void FormatPointsNode::executeImpl(cudaStream_t stream)
 {
 	formatAsync(output, input, fields, stream);
 }

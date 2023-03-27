@@ -22,9 +22,9 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 	this->stDevRisePerMeter = stDevRisePerMeter;
 }
 
-void GaussianNoiseDistanceNode::onInputChange()
+void GaussianNoiseDistanceNode::onInputChangeImpl()
 {
-	IPointsNodeSingleInput::onInputChange();
+	IPointsNodeSingleInput::onInputChangeImpl();
 	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.
@@ -39,7 +39,7 @@ void GaussianNoiseDistanceNode::onInputChange()
 	}
 }
 
-void GaussianNoiseDistanceNode::schedule(cudaStream_t stream)
+void GaussianNoiseDistanceNode::executeImpl(cudaStream_t stream)
 {
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);

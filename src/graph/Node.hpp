@@ -37,14 +37,14 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * Notifies node about changes in their input nodes.
 	 * The node may want to react by updating their cached input handle.
 	 */
-	virtual void onInputChange() = 0;
+	void onInputChange();
 
 	/**
 	 * Prepare node computation and insert it into the given stream.
 	 * Note: This method may cause stream synchronization!
-	 * @param stream Stream to perform computations in
+	 * @param stream Stream to perform computations in.
 	 */
-	virtual void schedule(cudaStream_t stream) = 0;
+	void execute();
 
 	std::shared_ptr<Graph> getGraph();
 
@@ -59,6 +59,9 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 protected:
+	virtual void onInputChangeImpl() = 0;
+	virtual void executeImpl(cudaStream_t stream) = 0;
+
 	template<template<typename, typename...> typename Container, typename...CArgs>
 	static std::string getNodeTypeNames(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator=", ")
 	{
@@ -115,6 +118,7 @@ protected:
 	std::vector<Node::Ptr> outputs {};
 
 	std::weak_ptr<Graph> graph;
+	bool inputOK {false };
 
 	friend struct Graph;
 	friend struct fmt::formatter<Node>;

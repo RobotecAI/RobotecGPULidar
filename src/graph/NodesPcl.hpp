@@ -33,8 +33,8 @@ struct DownSamplePointsNode : IPointsNodeSingleInput
 	virtual ~DownSamplePointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void onInputChangeImpl() override;
+	void executeImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
@@ -66,8 +66,8 @@ struct VisualizePointsNode : IPointsNodeSingleInput
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void onInputChangeImpl() override;
+	void executeImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;

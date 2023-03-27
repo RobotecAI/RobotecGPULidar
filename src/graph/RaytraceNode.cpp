@@ -20,7 +20,7 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
-void RaytraceNode::onInputChange()
+void RaytraceNode::onInputChangeImpl()
 {
 	raysNode = getValidInput<IRaysNode>();
 
@@ -41,7 +41,7 @@ auto RaytraceNode::getPtrTo()
 	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
-void RaytraceNode::schedule(cudaStream_t stream)
+void RaytraceNode::executeImpl(cudaStream_t stream)
 {
 	for (auto const& [_, data] : fieldData) {
 		data->resize(raysNode->getRayCount(), false, false);

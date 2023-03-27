@@ -72,3 +72,26 @@ std::shared_ptr<Graph> Node::getGraph()
 	}
 	return Graph::create(shared_from_this());
 }
+
+void Node::execute()
+{
+	if (!inputOK) {
+		onInputChange();
+	}
+	executeImpl(nullptr);
+	// TODO: insert CUDA event to the stream
+}
+
+void Node::onInputChange()
+{
+	try
+	{
+		onInputChangeImpl();
+		inputOK = true;
+	}
+	catch (...)
+	{
+		inputOK = false;
+		throw;
+	}
+}

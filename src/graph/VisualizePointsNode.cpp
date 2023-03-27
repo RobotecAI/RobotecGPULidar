@@ -30,9 +30,9 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 	visThread = std::thread(&VisualizePointsNode::runVisualize, this);
 }
 
-void VisualizePointsNode::onInputChange()
+void VisualizePointsNode::onInputChangeImpl()
 {
-	IPointsNodeSingleInput::onInputChange();
+	IPointsNodeSingleInput::onInputChangeImpl();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
@@ -69,7 +69,7 @@ void VisualizePointsNode::runVisualize()
 	}
 }
 
-void VisualizePointsNode::schedule(cudaStream_t stream)
+void VisualizePointsNode::executeImpl(cudaStream_t stream)
 {
 	if (input->getPointCount() == 0) {
 		return;

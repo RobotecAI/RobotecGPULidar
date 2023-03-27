@@ -72,13 +72,13 @@ void Graph::run()
 
 	for (auto&& current : nodesInExecOrder) {
 		RGL_DEBUG("Validating node: {}", *current);
-		current->onInputChange();
+		current->onInputChangeImpl();
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
 	for (auto&& node : nodesInExecOrder) {
 		RGL_DEBUG("Scheduling node: {}", *node);
-		node->schedule(nullptr);
+		node->executeImpl(nullptr);
 	}
 	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
 }

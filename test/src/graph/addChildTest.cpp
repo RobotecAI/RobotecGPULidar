@@ -34,7 +34,7 @@ protected:
 
 		if (!correctInput) {
 			EXPECT_THROW(rgl_graph_node_add_child(parent, childYield), InvalidPipeline);
-			SUCCEED(); // Do not proceed when onInputChange() was supposed to fail
+			SUCCEED(); // Do not proceed when onInputChangeImpl() was supposed to fail
 		} else {
 			if (expectAddChildSuccess) {
 				EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(parent, childYield));
