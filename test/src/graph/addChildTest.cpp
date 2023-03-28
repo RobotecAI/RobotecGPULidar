@@ -30,18 +30,15 @@ protected:
 		if (!correctInput) {
 			// Modify child node to make it report invalid (incompatible) input
 			EXPECT_RGL_SUCCESS(rgl_node_points_yield(&childYield, wrongFields, 1));
-		}
-
-		if (!correctInput) {
 			EXPECT_THROW(rgl_graph_node_add_child(parent, childYield), InvalidPipeline);
 			SUCCEED(); // Do not proceed when onInputChangeImpl() was supposed to fail
+		}
+
+		if (expectAddChildSuccess) {
+			EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(parent, childYield));
 		} else {
-			if (expectAddChildSuccess) {
-				EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(parent, childYield));
-			} else {
-				// Joining graphs with different contexts should fail
-				EXPECT_THROW(rgl_graph_node_add_child(parent, childYield), InvalidPipeline);
-			}
+			// Joining graphs with different contexts should fail
+			EXPECT_THROW(rgl_graph_node_add_child(parent, childYield), InvalidPipeline);
 		}
 	}
 
