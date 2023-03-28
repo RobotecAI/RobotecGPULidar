@@ -12,7 +12,7 @@ set(RGL_TEST_FILES
     #    src/features/pcdOutput.cpp
     src/testMat3x4f.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
-    src/graph/addChildTest.cpp)
+    src/graph/addChildTest.cpp
     src/ArrayTest.cpp
     src/synchronization/syncTest.cpp
     src/synchronization/testKernel.cu)
