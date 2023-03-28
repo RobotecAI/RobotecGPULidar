@@ -22,6 +22,7 @@
 
 void RaytraceNode::validate()
 {
+	// It should be viewed as a temporary solution. Will change in v14.
 	setFields(findFieldsToCompute());
 
 	raysNode = getValidInput<IRaysNode>();
@@ -118,7 +119,7 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 		}
 	};
 
-	dfsRet(shared_from_this(), true);  // Search in inputs
+	dfsRet(shared_from_this(), true);  // Search in inputs. Needed for SetRingIds only.
 	dfsRet(shared_from_this(), false);  // Search in outputs
 
 	return outFields;
