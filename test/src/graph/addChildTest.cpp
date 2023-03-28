@@ -24,22 +24,24 @@ protected:
 		EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldB, fields, 1));
 	}
 
-	void addChild(rgl_node_t parent, rgl_node_t childYield, bool expectAddChildSuccess = true)
+	// Returns true if the test should succeed immediately
+	bool addChild(rgl_node_t parent, rgl_node_t childYield, bool expectAddChildSuccess = true)
 	{
 		bool correctInput = GetParam();
 		if (!correctInput) {
 			// Modify child node to make it report invalid (incompatible) input
 			EXPECT_RGL_SUCCESS(rgl_node_points_yield(&childYield, wrongFields, 1));
-			EXPECT_THROW(rgl_graph_node_add_child(parent, childYield), InvalidPipeline);
-			SUCCEED(); // Do not proceed when onInputChangeImpl() was supposed to fail
+			EXPECT_RGL_STATUS(rgl_graph_node_add_child(parent, childYield), RGL_INVALID_PIPELINE);
+			return true; // Do not proceed when onInputChangeImpl() was supposed to fail
 		}
 
 		if (expectAddChildSuccess) {
 			EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(parent, childYield));
 		} else {
 			// Joining graphs with different contexts should fail
-			EXPECT_THROW(rgl_graph_node_add_child(parent, childYield), InvalidPipeline);
+			EXPECT_RGL_STATUS(rgl_graph_node_add_child(parent, childYield), RGL_INVALID_PIPELINE);
 		}
+		return false;
 	}
 
 	void randomizeFromArray(rgl_node_t fromArray)
@@ -78,6 +80,7 @@ protected:
 INSTANTIATE_TEST_SUITE_P(CorrectInput, GraphAddChild, testing::Values(true));
 INSTANTIATE_TEST_SUITE_P(WrongInput, GraphAddChild, testing::Values(false));
 
+#define SUCCEED_IF_TRUE(statement) if (statement) { return; }
 TEST_P(GraphAddChild, ColdChildColdParent)
 {
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(fromArrayA, yieldA));
@@ -94,7 +97,7 @@ TEST_P(GraphAddChild, HotParentColdChild)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(fromArrayA));
 
 	// Connect hot parent and cold child
-	addChild(fromArrayA, yieldA);
+	SUCCEED_IF_TRUE(addChild(fromArrayA, yieldA));
 
 	// Check data propagates when running child
 	randomizeFromArray(fromArrayA);
@@ -110,7 +113,7 @@ TEST_P(GraphAddChild, ColdParentHotChild)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(fromArrayB, yieldB));
 
 	// Connect cold parent and hot child
-	addChild(fromArrayA, yieldB);
+	SUCCEED_IF_TRUE(addChild(fromArrayA, yieldB));
 
 	// Check data propagates when running child
 	randomizeFromArray(fromArrayA);
@@ -126,7 +129,7 @@ TEST_P(GraphAddChild, HotParentHotChildSameContext)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(fromArrayA, yieldA));
 
 	// Connect hot parent and hot child
-	addChild(fromArrayA, yieldA);
+	SUCCEED_IF_TRUE(addChild(fromArrayA, yieldA));
 
 	// Check data propagates when running child
 	randomizeFromArray(fromArrayA);
@@ -146,5 +149,5 @@ TEST_P(GraphAddChild, HotParentHotChildDifferentContext)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(fromArrayB, yieldB));
 
 	// Try connecting yieldB to graph A, expect fail due to different contexts
-	addChild(yieldA, yieldB, false);
+	SUCCEED_IF_TRUE(addChild(yieldA, yieldB, false));
 }
