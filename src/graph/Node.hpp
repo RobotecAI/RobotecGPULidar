@@ -42,6 +42,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	/**
 	 * Prepare node computation and insert it into the given stream.
 	 * Note: This method may cause stream synchronization!
+	 * This function will throw if canExecute() returns false.
 	 * @param stream Stream to perform computations in.
 	 */
 	void execute();
@@ -49,7 +50,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	std::shared_ptr<Graph> getGraph();
 
 	bool hasGraph() { return graph.lock() != nullptr; }
-
+	bool canExecute() { return inputOK; }
+	bool isLastExecOk() { return lastExecOK; }
 	std::string getName() const { return name(typeid(*this)); }
 
 	/* Nodes may optionally override this function to provide debug info about their arguments */
@@ -118,7 +120,8 @@ protected:
 	std::vector<Node::Ptr> outputs {};
 
 	std::weak_ptr<Graph> graph;
-	bool inputOK {false };
+	bool inputOK { false };
+	bool lastExecOK { false };
 
 	friend struct Graph;
 	friend struct fmt::formatter<Node>;

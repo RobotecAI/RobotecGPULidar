@@ -45,9 +45,10 @@ protected:
 		}
 	}
 
-	void randomizeParent(rgl_node_t parentFromArray)
+	void randomizeFromArray(rgl_node_t fromArray)
 	{
 		points[0] = {f32(random), f32(random), f32(random)};
+		EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&fromArray, points, 1, fields, 1));
 	}
 
 	void checkChild(rgl_node_t childYield)
@@ -80,14 +81,14 @@ protected:
 INSTANTIATE_TEST_SUITE_P(CorrectInput, GraphAddChild, testing::Values(true));
 INSTANTIATE_TEST_SUITE_P(WrongInput, GraphAddChild, testing::Values(false));
 
-TEST_P(GraphAddChild, TwoCold)
+TEST_P(GraphAddChild, ColdChildColdParent)
 {
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(fromArrayA, yieldA));
 
 	// Check data propagates when running child
-	randomizeParent(fromArrayA);
-	EXPECT_RGL_SUCCESS(rgl_graph_run(yieldB));
-	checkChild(yieldB);
+	randomizeFromArray(fromArrayA);
+	EXPECT_RGL_SUCCESS(rgl_graph_run(yieldA));
+	checkChild(yieldA);
 }
 
 TEST_P(GraphAddChild, HotParentColdChild)
@@ -99,7 +100,7 @@ TEST_P(GraphAddChild, HotParentColdChild)
 	addChild(fromArrayA, yieldA);
 
 	// Check data propagates when running child
-	randomizeParent(fromArrayA);
+	randomizeFromArray(fromArrayA);
 	EXPECT_RGL_SUCCESS(rgl_graph_run(yieldA));
 	checkChild(yieldA);
 }
@@ -115,7 +116,7 @@ TEST_P(GraphAddChild, ColdParentHotChild)
 	addChild(fromArrayA, yieldB);
 
 	// Check data propagates when running child
-	randomizeParent(fromArrayA);
+	randomizeFromArray(fromArrayA);
 	EXPECT_RGL_SUCCESS(rgl_graph_run(yieldB));
 	checkChild(yieldB);
 }
@@ -125,13 +126,13 @@ TEST_P(GraphAddChild, HotParentHotChildSameContext)
 	// Turn fromArrayA, yieldA into hot, disconnected nodes sharing context
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(fromArrayA, yieldA));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(fromArrayA));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(fromArrayA, fromArrayB));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(fromArrayA, yieldA));
 
 	// Connect hot parent and hot child
-	addChild(fromArrayA, fromArrayB);
+	addChild(fromArrayA, yieldA);
 
 	// Check data propagates when running child
-	randomizeParent(fromArrayA);
+	randomizeFromArray(fromArrayA);
 	EXPECT_RGL_SUCCESS(rgl_graph_run(yieldA));
 	checkChild(yieldA);
 }

@@ -29,11 +29,20 @@ void Node::addChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
+	try {
+		child->inputs.push_back(shared_from_this());
+		child->onInputChange();
+	}
+	catch (InvalidPipeline&)
+	{
+		child->inputs.pop_back();
+		throw;
+	}
+	this->outputs.push_back(child);
+
+	// TODO: fix GraphContext management
 	Graph::destroy(shared_from_this(), true);
 	Graph::destroy(child, true);
-
-	this->outputs.push_back(child);
-	child->inputs.push_back(shared_from_this());
 }
 
 void Node::removeChild(Node::Ptr child)
@@ -75,11 +84,21 @@ std::shared_ptr<Graph> Node::getGraph()
 
 void Node::execute()
 {
-	if (!inputOK) {
-		onInputChange();
+	// What if onInputChange was never called?
+	if (!canExecute()) {
+		// This means the caller did not check canExecute(), hence a non-recoverable logic_error.
+		auto msg = fmt::format("Node::execute() called when !Node::canExecute()!");
+		throw std::logic_error(msg);
 	}
-	executeImpl(nullptr);
-	// TODO: insert CUDA event to the stream
+	try {
+		executeImpl(nullptr);
+		// TODO: insert CUDA event to the stream
+		lastExecOK = true;
+	}
+	catch (...) {
+		lastExecOK = false;
+		throw;
+	}
 }
 
 void Node::onInputChange()

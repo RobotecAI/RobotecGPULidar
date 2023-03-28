@@ -70,15 +70,16 @@ void Graph::run()
 		rt->setFields(fieldsToCompute);
 	}
 
-	for (auto&& current : nodesInExecOrder) {
-		RGL_DEBUG("Validating node: {}", *current);
-		current->onInputChangeImpl();
+	for (auto&& node : nodesInExecOrder) {
+		if (!node->canExecute()) {
+			auto msg = fmt::format("cannot execute graph - Node {} is not ready to run (missing input?)", node->getName());
+			throw InvalidPipeline(msg);
+		}
 	}
-	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
 	for (auto&& node : nodesInExecOrder) {
-		RGL_DEBUG("Scheduling node: {}", *node);
-		node->executeImpl(nullptr);
+		RGL_DEBUG("Executing node: {}", *node);
+		node->execute();
 	}
 	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
 }

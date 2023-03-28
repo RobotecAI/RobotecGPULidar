@@ -119,6 +119,7 @@ protected:
 
 struct INoInputNode : virtual Node
 {
+	INoInputNode() { inputOK = true; }
 	virtual void onInputChangeImpl() override
 	{
 		if (!inputs.empty()) {
