@@ -73,7 +73,7 @@ protected:
 	rgl_node_t yieldB = nullptr;
 	rgl_node_t fromArrayA = nullptr;
 	rgl_node_t fromArrayB = nullptr;
-	std::default_random_engine random{42}; // Using random just to get some float sequence, may be repeatable.
+	std::default_random_engine random{42}; // Randomness is not needed, using it just to get some float sequence.
 	std::uniform_real_distribution<float> f32;
 };
 
