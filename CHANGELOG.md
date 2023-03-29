@@ -1,5 +1,39 @@
 # Change Log
 
+## [0.13.0] 29 March 2023
+
+### Added
+- Reimplemented Gaussian Noise from RGL v10
+  - Added API calls:
+    - `rgl_node_gaussian_noise_angular_ray`
+    - `rgl_node_gaussian_noise_angular_hitpoint`
+    - `rgl_node_gaussian_noise_distance`
+- Added nodes for spatial and temporal point clouds merge
+  - Added API calls:
+    - `rgl_node_points_spatial_merge`
+    - `rgl_node_points_temporal_merge`
+- Added node providing a user-defined point cloud to the RGL pipeline (for testing purposes)
+  - Added API call:
+    - `rgl_node_points_from_array`
+- Added parameterized tests for:
+  - `rgl_node_points_from_array`
+  - `rgl_node_points_transform`
+- Updated API surface tests
+- Added support for multi-raytrace graphs
+
+### Changed
+- Separated PCL nodes and created PCL extension
+- Converted node `WritePCDFilePointsNode` into single API call
+  - Removed API call `rgl_node_points_write_pcd_file`
+  - Added API call `rgl_graph_write_pcd_file`
+
+### Fixed
+- Fixed `--build-dir` flag in `setup.py` script
+
+### Removed
+- Removed `rgl_graph_node_set_active` API call
+
+
 ## [0.12.0] 8 March 2023
 
 ### Added
