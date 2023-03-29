@@ -31,9 +31,9 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 	}
 }
 
-void SpatialMergePointsNode::onInputChange()
+void SpatialMergePointsNode::validateImpl()
 {
-	pointInputs = Node::filter<IPointsNode>(this->inputs);
+	pointInputs = Node::getNodesOfType<IPointsNode>(this->inputs);
 
 	if (pointInputs.size() < 2) {
 		// Having just one input does not make sense, because it is equivalent to removing this Node.
@@ -58,7 +58,7 @@ void SpatialMergePointsNode::onInputChange()
 	}
 }
 
-void SpatialMergePointsNode::schedule(cudaStream_t stream)
+void SpatialMergePointsNode::enqueueExecImpl(cudaStream_t stream)
 {
 	width = 0;
 	for (const auto& input : pointInputs) {

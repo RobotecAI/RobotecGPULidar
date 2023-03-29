@@ -54,7 +54,7 @@ void Ros2PublishPointsNode::setParameters(
 	ros2Publisher = ros2Node->create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
-void Ros2PublishPointsNode::onInputChange()
+void Ros2PublishPointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::onInputChange();
 	if (input->getHeight() != 1) {
@@ -63,7 +63,7 @@ void Ros2PublishPointsNode::onInputChange()
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
-void Ros2PublishPointsNode::schedule(cudaStream_t stream)
+void Ros2PublishPointsNode::enqueueExecImpl(cudaStream_t stream)
 {
 	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT, stream);
 	int count = input->getPointCount();

@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,11 +43,12 @@ struct CudaStream
 				CHECK_CUDA(cudaStreamDestroy(stream));
 				stream = nullptr;
 			}
-			catch(std::exception& e) {
+			catch(std::runtime_error& e) {
 				RGL_ERROR("Error in ~CudaStream: {}", e.what());
 			}
 		}
 	}
+
 
 private:
 	// Wraps null stream

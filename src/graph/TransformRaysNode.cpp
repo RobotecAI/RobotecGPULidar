@@ -15,7 +15,7 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformRaysNode::schedule(cudaStream_t stream)
+void TransformRaysNode::enqueueExecImpl(cudaStream_t stream)
 {
 	rays->resize(getRayCount());
 	gpuTransformRays(stream, getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);

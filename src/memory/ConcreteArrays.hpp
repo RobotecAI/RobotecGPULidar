@@ -17,6 +17,7 @@
 #include <memory>
 #include <memory/MemoryKind.hpp>
 #include <memory/AbstractArrays.hpp>
+#include <IStreamBound.hpp>
 
 template <typename T>
 struct DeviceAsyncArray;
@@ -31,18 +32,31 @@ template <typename T>
 struct HostPinnedArray;
 
 template <typename T>
-struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>
+struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>, public IStreamBound
 {
 	using Ptr = std::shared_ptr<DeviceAsyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceAsyncArray<T>>;
 
-	static DeviceAsyncArray<T>::Ptr create()
+	void setStream(CudaStream::Ptr newStream) override
 	{
-		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray());
+		this->memOps = MemoryOperations::get<MemoryKind::DeviceAsync>(newStream);
 	}
 
 protected:
+	static DeviceAsyncArray<T>::Ptr create(CudaStream::Ptr streamArg)
+	{
+		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(MemoryOperations::get<MemoryKind::DeviceAsync>(streamArg)));
+	}
+
+	DeviceAsyncArray(CudaStream::Ptr streamArg)
+	  : DeviceArray<MemoryKind::DeviceAsync, T>(MemoryOperations::get<MemoryKind::DeviceAsync>(streamArg))
+	  , stream(streamArg) {}
+
+protected:
+	CudaStream::Ptr stream; // Needed to implement IStreamBound
 	using DeviceArray<MemoryKind::DeviceAsync, T>::DeviceArray;
+
+	friend struct DeviceAsyncArrayManager;
 };
 
 template <typename T>
@@ -51,7 +65,7 @@ struct DeviceSyncArray : public DeviceArray<MemoryKind::DeviceSync, T>
 	using Ptr = std::shared_ptr<DeviceSyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceSyncArray<T>>;
 
-	static DeviceSyncArray<T>::Ptr create(CudaStream::Ptr stream=CudaStream::getNullStream())
+	static DeviceSyncArray<T>::Ptr create()
 	{
 		return DeviceSyncArray<T>::Ptr(new DeviceSyncArray(MemoryOperations::get<MemoryKind::DeviceSync>()));
 	}
