@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <graph/Node.hpp>
+#include <graph/NodesCore.hpp>
 #include <CudaStream.hpp>
 
 struct Graph
@@ -37,13 +38,11 @@ private:
 	Graph() : stream(std::make_shared<CudaStream>()) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
-	static std::set<rgl_field_t> findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes);
 
 private:
 	std::shared_ptr<CudaStream> stream;
 	std::set<std::shared_ptr<Node>> nodes;
 	std::vector<std::shared_ptr<Node>> executionOrder;
-	std::set<rgl_field_t> fieldsToCompute;
 
 	static std::list<std::shared_ptr<Graph>> instances;
 };
