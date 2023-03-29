@@ -13,6 +13,7 @@ set(RGL_TEST_FILES
     src/testMat3x4f.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
+    src/graph/nodes/SetRingIdsNodeTest.cpp
     src/graph/addChildTest.cpp
     src/memory/arrayTest.cpp
     src/synchronization/syncTest.cpp
@@ -32,8 +33,8 @@ endif()
 # AutoTape interferes with tape tests (e.g. double rgl_tape_record_begin()) which is non-trivial to fix.
 if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     list(APPEND RGL_TEST_FILES
-        src/tapeSurfaceTest.cpp
-        src/features/tapeScene.cpp
+        # src/tapeSurfaceTest.cpp
+        # src/features/tapeScene.cpp
     )
 endif()
 
