@@ -88,6 +88,9 @@ struct CompactPointsNode : Node, IPointsNodeSingleInput
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
 
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
+
 	// Point cloud description
 	bool isDense() const override { return true; }
 	size_t getWidth() const override;
@@ -124,8 +127,6 @@ struct RaytraceNode : Node, IPointsNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
-
-	void setFields(const std::set<rgl_field_t>& fields);
 private:
 	float range;
 	std::shared_ptr<Scene> scene;
@@ -135,6 +136,9 @@ private:
 
 	template<rgl_field_t>
 	auto getPtrTo();
+
+	std::set<rgl_field_t> findFieldsToCompute();
+	void setFields(const std::set<rgl_field_t>& fields);
 };
 
 struct TransformPointsNode : Node, IPointsNodeSingleInput
