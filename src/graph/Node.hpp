@@ -49,7 +49,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	std::shared_ptr<Graph> getGraph();
 
 	bool hasGraph() { return graph.lock() != nullptr; }
-
+	bool isLastExecOk() { return lastExecOK; }
 	std::string getName() const { return name(typeid(*this)); }
 
 	/* Nodes may optionally override this function to provide debug info about their arguments */
@@ -115,6 +115,7 @@ protected:
 	std::vector<Node::Ptr> outputs {};
 
 	std::weak_ptr<Graph> graph;
+	bool lastExecOK { false };
 
 	friend struct Graph;
 	friend struct fmt::formatter<Node>;
