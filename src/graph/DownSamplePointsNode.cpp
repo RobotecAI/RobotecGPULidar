@@ -21,16 +21,16 @@
 
 using PCLPoint = pcl::PointXYZL;
 
-void DownSamplePointsNode::onInputChange()
+void DownSamplePointsNode::validateImpl()
 {
-	IPointsNodeSingleInput::onInputChange();
+	IPointsNodeSingleInput::validateImpl();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
 	}
 }
 
-void DownSamplePointsNode::schedule(cudaStream_t stream)
+void DownSamplePointsNode::enqueueExecImpl(cudaStream_t stream)
 {
 	cacheManager.trigger();
 

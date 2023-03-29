@@ -65,22 +65,22 @@ void Graph::run()
 	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
 
 	// If Graph has RaytraceNode set fields to compute
-	if (!Node::filter<RaytraceNode>(nodesInExecOrder).empty()) {
-		RaytraceNode::Ptr rt = Node::getExactlyOne<RaytraceNode>(nodesInExecOrder);
+	if (!Node::getNodesOfType<RaytraceNode>(nodesInExecOrder).empty()) {
+		RaytraceNode::Ptr rt = Node::getExactlyOneNodeOfType<RaytraceNode>(nodesInExecOrder);
 		rt->setFields(fieldsToCompute);
 	}
 
 	for (auto&& current : nodesInExecOrder) {
 		RGL_DEBUG("Validating node: {}", *current);
-		current->onInputChange();
+		current->validate();
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
 	for (auto&& node : nodesInExecOrder) {
-		RGL_DEBUG("Scheduling node: {}", *node);
-		node->schedule(nullptr);
+		RGL_DEBUG("Enqueueing node: {}", *node);
+		node->enqueueExec();
 	}
-	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
+	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 }
 
 void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
@@ -144,7 +144,7 @@ std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>>
 
 	outFields.insert(XYZ_F32);
 
-	if (!Node::filter<CompactPointsNode>(nodes).empty()) {
+	if (!Node::getNodesOfType<CompactPointsNode>(nodes).empty()) {
 		outFields.insert(IS_HIT_I32);
 	}
 

@@ -41,7 +41,7 @@ struct IRaysNodeSingleInput : virtual IRaysNode
 {
 	using Ptr = std::shared_ptr<IRaysNodeSingleInput>;
 
-	virtual void onInputChange() override { input = Node::getValidInput<IRaysNode>(); }
+	virtual void validateImpl() override { input = Node::getExactlyOneInputOfType<IRaysNode>(); }
 
 	// Rays description
 	virtual size_t getRayCount() const override { return input->getRayCount(); }
@@ -57,7 +57,7 @@ protected:
 };
 
 // TODO(prybicki): getFieldData* may act lazily, so they take stream as a parameter to do the lazy evaluation.
-// TODO(prybicki): This requires synchronizing with the potentially different stream provided by the schedule(...)
+// TODO(prybicki): This requires synchronizing with the potentially different stream provided by the enqueueExecImpl(...)
 // TODO(prybicki): This situation is bug-prone, requiring greater mental effort when implementing nodes.
 // TODO(prybicki): It might be better to remove stream as a parameter and assume that all pipeline nodes are using common stream.
 struct IPointsNode : virtual Node
@@ -90,9 +90,9 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 {
 	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;
 
-	virtual void onInputChange() override
+	virtual void validateImpl() override
 	{
-		input = getValidInput<IPointsNode>();
+		input = getExactlyOneInputOfType<IPointsNode>();
 		for (auto&& field : getRequiredFieldList()) {
 			if (!input->hasField(field) && !isDummy(field)) {
 				auto msg = fmt::format("{} requires {} to be present", getName(), toString(field));
@@ -119,7 +119,7 @@ protected:
 
 struct INoInputNode : virtual Node
 {
-	virtual void onInputChange() override
+	virtual void validateImpl() override
 	{
 		if (!inputs.empty()) {
 			auto msg = fmt::format("inputs for node {} are not allowed", getName());

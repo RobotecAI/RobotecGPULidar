@@ -15,7 +15,7 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformPointsNode::schedule(cudaStream_t stream)
+void TransformPointsNode::enqueueExecImpl(cudaStream_t stream)
 {
 	auto pointCount = input->getWidth() * input->getHeight();
 	output->resize(pointCount);

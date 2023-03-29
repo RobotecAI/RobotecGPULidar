@@ -28,6 +28,7 @@ struct Graph
 	static std::set<std::shared_ptr<Node>> findConnectedNodes(std::shared_ptr<Node> anyNode); // Public - tape uses it
 
 	void run();
+	CudaStream::Ptr getStream() const { return stream; }
 
 	virtual ~Graph();
 private:
@@ -39,7 +40,7 @@ private:
 	static std::set<rgl_field_t> findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes);
 
 private:
-	std::shared_ptr<CudaStream> stream;
+	CudaStream::Ptr stream;
 	std::set<std::shared_ptr<Node>> nodes;
 	std::vector<std::shared_ptr<Node>> executionOrder;
 	std::set<rgl_field_t> fieldsToCompute;

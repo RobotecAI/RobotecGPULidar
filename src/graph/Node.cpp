@@ -17,6 +17,11 @@
 
 API_OBJECT_INSTANCE(Node);
 
+Node::Node()
+{
+	CHECK_CUDA(cudaEventCreateWithFlags(&execCompleted, cudaEventDisableTiming));
+}
+
 void Node::addChild(Node::Ptr child)
 {
 	if (child == nullptr) {
@@ -72,3 +77,31 @@ std::shared_ptr<Graph> Node::getGraph()
 	}
 	return Graph::create(shared_from_this());
 }
+
+void Node::setGraph(std::shared_ptr<Graph> graph)
+{
+	// TODO
+}
+
+void Node::validate()
+{
+	if (!isValid()) {
+		return;
+	}
+	if (!hasGraph()) {
+		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraph()", getName());
+	}
+	this->validateImpl();
+	dirty = false;
+}
+
+void Node::enqueueExec()
+{
+	if (isValid()) {
+		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
+		throw std::logic_error(msg);
+	}
+	this->enqueueExecImpl(getGraph()->getStream()->get());
+	CHECK_CUDA(cudaEventRecord(execCompleted, getGraph()->getStream()->get()));
+}
+
