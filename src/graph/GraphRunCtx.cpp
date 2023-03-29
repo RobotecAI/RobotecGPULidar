@@ -36,6 +36,12 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 
 void GraphRunCtx::run()
 {
+	synchronize();
+	thread = std::thread(&GraphRunCtx::executeGraphAsync, this);
+}
+
+void GraphRunCtx::executeGraphAsync()
+{
 	const auto& nodesInExecOrder = executionOrder;
 
 	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
@@ -51,6 +57,8 @@ void GraphRunCtx::run()
 		node->enqueueExec();
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
+
+	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
 }
 
 std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
@@ -72,12 +80,25 @@ std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std:
 }
 
 GraphRunCtx::~GraphRunCtx()
-{ }
+{
+	// If GraphRunCtx is destroyed, we expect that thread was joined and stream was synced.
+	// TODO: check it!
+}
 
 void GraphRunCtx::detachAndDestroy()
 {
+	synchronize();
 	for (auto&& node : nodes) {
 		node->setGraphRunCtx(std::nullopt);
 	}
 	// After this loop, we should have removed all shared_ptrs to GraphRunCtx, so it will be destroyed.
+}
+
+void GraphRunCtx::synchronize()
+{
+	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
+	if (thread.has_value()) {
+		thread->join();
+		thread.reset();
+	}
 }

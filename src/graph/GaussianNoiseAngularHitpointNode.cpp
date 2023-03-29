@@ -61,15 +61,15 @@ void GaussianNoiseAngularHitpointNode::enqueueExecImpl(cudaStream_t stream)
 	gpuAddGaussianNoiseAngularHitpoint(stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
-VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
 	if (field == XYZ_F32) {
-		// TODO(msz-rai): check sync is necessary
+		// TODO(msz-rai): check synchronize is necessary
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return outXyz->untyped();
 	}
 	if (field == DISTANCE_F32 && outDistance != nullptr) {
-		// TODO(msz-rai): check sync is necessary
+		// TODO(msz-rai): check synchronize is necessary
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return outDistance->untyped();
 	}

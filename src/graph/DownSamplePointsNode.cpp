@@ -81,7 +81,7 @@ size_t DownSamplePointsNode::getWidth() const
 	return filteredIndices->getCount();
 }
 
-VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
 	if (!cacheManager.contains(field)) {
 		auto fieldData = VArray::create(field, filteredIndices->getCount());
