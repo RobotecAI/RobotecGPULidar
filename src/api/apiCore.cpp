@@ -111,7 +111,6 @@ RGL_API rgl_status_t
 rgl_cleanup(void)
 {
 	auto status = rglSafeCall([&]() {
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Entity::instances.clear();
 		Mesh::instances.clear();
 		Scene::defaultInstance()->clear();
@@ -374,6 +373,7 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
+		// TODO: add synchronization with Node
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		if (!pointCloudNode->isValid()) {
 			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
@@ -413,6 +413,8 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(data != nullptr);
 
+		// TODO: add synchronization with Node
+		// TODO: synchronize copyStream before return
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		if (!pointCloudNode->isValid()) {
 			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
@@ -534,8 +536,8 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
-		            CHECK_ARG(node != nullptr);
-		            CHECK_ARG(transform != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
 	});

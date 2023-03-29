@@ -31,7 +31,7 @@ void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
 {
 	throw std::runtime_error("AS compaction is disabled due to performance reasons");
 	// TODO(prybicki): Too many lines for getting a number from GPU :(
-	// TODO(prybicki): Some time later, it turns out that this communication (async cpy + sync) is killing perf
+	// TODO(prybicki): Some time later, it turns out that this communication (async cpy + synchronize) is killing perf
 	// TODO(prybicki): This should remain disabled, until a real-world memory management subsystem is implemented
 
 	// Commented out due to introduction of Array<M,T>

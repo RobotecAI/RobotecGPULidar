@@ -14,7 +14,6 @@
 
 #include <graph/Node.hpp>
 #include <graph/NodesCore.hpp>
-#include <graph/Node.hpp>
 #include <graph/GraphRunCtx.hpp>
 
 API_OBJECT_INSTANCE(Node);

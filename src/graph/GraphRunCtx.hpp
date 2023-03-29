@@ -17,10 +17,11 @@
 #include <list>
 #include <set>
 #include <vector>
+#include <thread>
 
+#include <CudaStream.hpp>
 #include <graph/Node.hpp>
 #include <graph/NodesCore.hpp>
-#include <CudaStream.hpp>
 
 /**
  * Structure storing context for running a graph.
@@ -36,24 +37,40 @@ struct GraphRunCtx
 	void run();
 
 	/**
-	 * Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
-	 */
+	* Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
+	*/
 	void detachAndDestroy();
+
+	/**
+	 * Waits until this GraphRunCtx
+	 * - finishes execution
+	 * - joins its thread
+	 * - synchronizes graph stream
+	 */
+	void synchronize();
+
 
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
 	virtual ~GraphRunCtx();
 private:
-	GraphRunCtx() : stream(CudaStream::create()) {}
+	GraphRunCtx() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
+    void executeGraphAsync();
+
 private:
 	CudaStream::Ptr stream;
-	std::set<std::shared_ptr<Node>> nodes;
-	std::vector<std::shared_ptr<Node>> executionOrder;
+	std::optional<std::thread> thread;
 
-	static std::list<std::shared_ptr<GraphRunCtx>> instances;
+	std::set<Node::Ptr> nodes;
+	std::vector<Node::Ptr> executionOrder;
+
+	// TODO: Safe-delete??
 	std::set<rgl_field_t> fieldsToCompute;
+
+	// TODO: Safe-delete
+	static std::list<std::shared_ptr<GraphRunCtx>> instances;
 };
