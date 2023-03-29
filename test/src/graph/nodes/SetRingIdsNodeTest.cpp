@@ -77,4 +77,7 @@ TEST_P(SetRingIdsNodeTest, valid_arguments)
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(rayNode, setRingIdsNode));
 
     EXPECT_RGL_SUCCESS(rgl_graph_run(setRingIdsNode));
+
+    // If (*rayNode) != nullptr
+    EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIdsNode, ringIds.data(), ringIds.size()));
 }
