@@ -13,6 +13,8 @@ set(RGL_TEST_FILES
     # src/testMat3x4f.cpp
     # src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/SetRingIdsNodeTest.cpp
+    src/graph/nodes/CompactPointsNodeTest.cpp
+    src/graph/nodes/FormatPointsNodeTest.cpp
     # src/ArrayTest.cpp
     # src/synchronization/syncTest.cpp
     # src/synchronization/testKernel.cu
