@@ -17,4 +17,7 @@ TEST_F(CompactPointsNodeTest, valid_arguments)
 
     ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
     EXPECT_THAT(compactNode, NotNull());
+
+    // If (*compactNode) != nullptr
+    EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
 }
