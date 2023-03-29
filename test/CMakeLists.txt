@@ -14,6 +14,8 @@ set(RGL_TEST_FILES
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/SetRingIdsNodeTest.cpp
+    src/graph/nodes/CompactPointsNodeTest.cpp
+    src/graph/nodes/FormatPointsNodeTest.cpp
     src/graph/addChildTest.cpp
     src/memory/arrayTest.cpp
     src/synchronization/syncTest.cpp
