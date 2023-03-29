@@ -31,7 +31,7 @@ protected:
 
 INSTANTIATE_TEST_SUITE_P(
     FromArrayPointsNodeTests, FromArrayPointsNodeTest,
-    testing::Values(1, 10, 100000),
+    Values(1, 10, 100000),
     [](const auto& info) {
         return "pointsCount_" + std::to_string(info.param);
     });

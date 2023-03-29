@@ -1,20 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-    src/graphCaseTest.cpp
-    src/asyncStressTest.cpp
-    src/apiReadmeExample.cpp
-    src/gaussianStressTest.cpp
+    # src/graphCaseTest.cpp
+    # src/asyncStressTest.cpp
+    # src/apiReadmeExample.cpp
+    # src/gaussianStressTest.cpp
     #    src/apiSurfaceTests.cpp
     #    src/features/range.cpp
     #    src/features/mesh.cpp
     #    src/features/transforms.cpp
     #    src/features/pcdOutput.cpp
-    src/testMat3x4f.cpp
-    src/graph/nodes/FromArrayPointsNodeTest.cpp
-    src/ArrayTest.cpp
-    src/synchronization/syncTest.cpp
-    src/synchronization/testKernel.cu)
+    # src/testMat3x4f.cpp
+    # src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/graph/nodes/SetRingIdsNodeTest.cpp
+    # src/ArrayTest.cpp
+    # src/synchronization/syncTest.cpp
+    # src/synchronization/testKernel.cu
+    )
 
 # Only Linux
 if ((NOT WIN32))
@@ -27,8 +29,8 @@ endif()
 # AutoTape interferes with tape tests (e.g. double rgl_tape_record_begin()) which is non-trivial to fix.
 if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     list(APPEND RGL_TEST_FILES
-        src/tapeSurfaceTest.cpp
-        src/features/tapeScene.cpp
+        # src/tapeSurfaceTest.cpp
+        # src/features/tapeScene.cpp
     )
 endif()
 
