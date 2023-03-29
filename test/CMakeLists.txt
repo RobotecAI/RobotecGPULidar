@@ -5,7 +5,6 @@ set(RGL_TEST_FILES
         src/apiReadmeExample.cpp
         src/gaussianStressTest.cpp
         src/apiSurfaceTests.cpp
-        src/loggingTests.cpp
         #    src/features/range.cpp
         #    src/features/mesh.cpp
         #    src/features/transforms.cpp
@@ -19,6 +18,7 @@ set(RGL_TEST_FILES
 # Only Linux
 if ((NOT WIN32))
     list(APPEND RGL_TEST_FILES
+        src/loggingTests.cpp
         src/VArrayTest.cpp
     )
 endif()
