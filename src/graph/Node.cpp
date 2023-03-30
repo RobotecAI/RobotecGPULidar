@@ -78,9 +78,10 @@ std::shared_ptr<Graph> Node::getGraph()
 	return Graph::create(shared_from_this());
 }
 
-void Node::setGraph(std::shared_ptr<Graph> graph)
+void Node::setGraph(std::shared_ptr<Graph> newGraph)
 {
-	// TODO
+	arrayMgr.setStream(newGraph->getStream());
+	this->graph = newGraph;
 }
 
 void Node::validate()

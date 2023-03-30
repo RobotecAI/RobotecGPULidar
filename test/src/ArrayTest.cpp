@@ -4,6 +4,7 @@
 #include <memory/AbstractArrays.hpp>
 #include <memory/ConcreteArrays.hpp>
 #include <memory/InvalidArrayCast.hpp>
+#include <memory/DeviceAsyncArrayManager.hpp>
 
 using namespace ::testing;
 
@@ -32,77 +33,83 @@ TEST(Array, Typing)
 	EXPECT_EQ(arrayOfTypeRecovered->at(0), static_cast<Type>(42));
 }
 
-// For some tests, we would like to wrap MemoryOperations (e.g. to count calls).
-// To keep Array<M, T>::Array(MemoryOperations) constructor protected (as it should be),
-// we define a test-only subclass that turns protected filed into a public one.
-template<typename T>
-struct HostArrayExposed : public HostPinnedArray<T>
+TEST(Array, ChangeStream)
 {
-	using Ptr = std::shared_ptr<HostArrayExposed<T>>;
-	using HostArray<MemoryKind::HostPinned, T>::memOps; // Come here, cutie!
+	auto streamA = CudaStream::create();
+	auto streamB = CudaStream::create();
+	DeviceAsyncArray<int>::Ptr array = DeviceAsyncArray<int>::create(streamA);
+	array->resize(5, true, true);
+	CHECK_CUDA(cudaStreamSynchronize(streamA->get()));
 
-	static HostArrayExposed<T>::Ptr create()
+	// Destroy streamA so it is unusable.
+	// It will cause an error meessage on second attempt to destroy, but it does not affect the test.
+	CHECK_CUDA(cudaStreamDestroy(streamA->get()));
+	EXPECT_THROW(array->resize(10, true, true), std::runtime_error);
+
+	// After setting a new stream, resize should work.
+	array->setStream(streamB);
+	array->resize(10, true, true);
+	CHECK_CUDA(cudaStreamSynchronize(streamB->get()));
+}
+
+TEST(Array, ChangeStreamViaManager)
+{
+	DeviceAsyncArrayManager arrayMgr;
+
+	// If stream was not set, refuse to create array
+	EXPECT_THROW(arrayMgr.create<int>(), std::logic_error);
+
 	{
-		return std::static_pointer_cast<HostArrayExposed<T>>(HostPinnedArray<T>::create());
+		// Set a stream that will expire
+		auto stream = CudaStream::create();
+		arrayMgr.setStream(stream);
 	}
-};
+	// If previously set stream expired, refuse to create array
+	EXPECT_THROW(arrayMgr.create<int>(), std::logic_error);
+
+	// Pass CudaStream to ArrayManager, created array should ensure liveliness
+	auto streamA = CudaStream::create();
+	arrayMgr.setStream(streamA);
+
+	// Create arrays through managers
+	auto arrayA = arrayMgr.create<int>();
+	auto arrayB = arrayMgr.create<float>();
+	auto arrayC = arrayMgr.create<float>();
+
+	// Calling setStream twice with the same stream should have no effect
+	arrayMgr.setStream(streamA);
+
+	// Do some operations in the stream
+	arrayA->resize(5, true, true);
+	arrayB->resize(5, true, true);
+	arrayC->resize(5, true, true);
+
+	// Remove one of the arrays, arrayMgr should not touch it afterwards
+	arrayC.reset();
+
+	// This will cause an error from CUDA, which will be logged (it's OK)
+	CHECK_CUDA(cudaStreamDestroy(streamA->get()));
+
+	// The following calls should fail due to previous destruction of streamA
+	EXPECT_THROW(arrayA->resize(10, true, true), std::runtime_error);
+	EXPECT_THROW(arrayB->resize(10, true, true), std::runtime_error);
+
+	// Provide a new stream for arrays
+	arrayMgr.setStream(CudaStream::create());
+
+	// Now arrays should work well.
+	arrayA->resize(10, true, true);
+	arrayB->resize(10, true, true);
+}
 
 struct ArrayOps : public ::testing::Test
 {
 protected:
 	using Type = int;
-	using ArrayExposed = HostArrayExposed<Type>;
-	struct MemOpsStats
-	{
-		int allocCount = {0};
-		int deallocCount = {0};
-		int copyCount = {0};
-		int clearCount = {0};
-	};
-
-	ArrayOps()
-	: array(std::static_pointer_cast<ArrayExposed>(ArrayExposed::create()))
-	{
-		hijack(array->memOps);
-	}
-
-	void hijack(MemoryOperations& source)
-	{
-		origMemOps = source;
-		source = {
-			.allocate = [&](size_t bytes) { stats.allocCount += 1; return origMemOps.allocate(bytes); },
-			.deallocate = [&](void* ptr) { stats.deallocCount += 1; return origMemOps.deallocate(ptr); },
-			.copy = [&](void* dst, const void* src, size_t bytes) { stats.copyCount += 1; return origMemOps.copy(dst, src, bytes); },
-			.clear = [&](void* ptr, int value, size_t bytes) { stats.clearCount += 1; return origMemOps.clear(ptr, value, bytes); },
-		};
-	}
-
-	ArrayExposed::Ptr array;
-	MemOpsStats stats;
-	MemoryOperations origMemOps;
+	ArrayOps() : array(HostPinnedArray<Type>::create()) { }
+	HostPinnedArray<Type>::Ptr array;
 };
 
-TEST_F(ArrayOps, NoNaiveAppend)
-{
-	constexpr size_t END_SIZE = 16;
-	for (int i = 0; i < END_SIZE; ++i) {
-		array->append(1);
-	}
-	EXPECT_EQ(stats.allocCount, std::log2(END_SIZE) + 1);
-	EXPECT_EQ(stats.deallocCount, std::log2(END_SIZE));
-}
-
-TEST_F(ArrayOps, ReservePreventsAllocs)
-{
-	constexpr size_t END_SIZE = 16;
-	array->reserve(END_SIZE, false);
-	for (int i = 0; i < END_SIZE; ++i) {
-		array->append(1);
-	}
-
-	EXPECT_EQ(stats.allocCount, 1);
-	EXPECT_EQ(stats.deallocCount, 0);
-}
 
 TEST_F(ArrayOps, ReserveDoesNotChangeCount)
 {

@@ -16,24 +16,33 @@
 
 #include <memory>
 #include <vector>
+#include <list>
 
 #include <VArray.hpp>
 #include <rgl/api/core.h>
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
+#include <memory/DeviceAsyncArrayManager.hpp>
 
 struct Graph;
 
 /**
  * Node represents a unit of computation in RGL.
- * Nodes are expected to enqueue its computation to a stream provided by GraphRunContext.
  *
  * Nodes can be joined (addChild) to form a graph.
+ *
  * When Node is created, it is not ready to use, because
  * - it has no GraphRunContext assigned;
  * - is in invalid state;
+ *
  * Before first run, GraphRunContext is be assigned to node by caller code.
+ *
+ * Nodes must create DeviceAsyncArray<T>-s only through the arrayMgr.
+ * It allows to change their stream when needed.
+ *
  * Before every run and result query, validate() must be called to ensure that the node isValid()
+ *
+ * When run (enqueueExec), Nodes are expected to enqueue its computation to a stream provided by GraphRunContext.
  *
  * Between runs, Node's connection can be changed (addChild, removeChild).
  * If Node's input changes, it becomes dirty (!isValid()).
@@ -93,8 +102,9 @@ public: // Debug methods
 	 */
 	virtual std::string getArgsString() const { return {}; }
 
-
 protected: // Member methods
+
+	Node();
 
 	/**
 	 * Placeholder to enqueue node-specific computations in derived classes.
@@ -152,16 +162,16 @@ protected: // Static methods
 		return typedNodes[0];
 	}
 
-protected:
-	Node();
 
 protected:
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 
-	cudaEvent_t execCompleted { nullptr };
-	std::weak_ptr<Graph> graph;
 	bool dirty { true };
+	cudaEvent_t execCompleted { nullptr };
+
+	std::weak_ptr<Graph> graph; // Pointee may be destroyed e.g. on addChild
+	DeviceAsyncArrayManager arrayMgr;
 
 	friend struct Graph;
 	friend struct fmt::formatter<Node>;
