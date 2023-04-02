@@ -18,7 +18,7 @@
 
 std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
-std::shared_ptr<GraphRunCtx> GraphRunCtx::create(std::shared_ptr<Node> node)
+std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndSet(std::shared_ptr<Node> node)
 {
 	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
 

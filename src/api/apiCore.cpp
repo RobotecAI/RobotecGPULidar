@@ -298,15 +298,18 @@ void TapePlayer::tape_scene_set_time(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_run(rgl_node_t node)
+rgl_graph_run(rgl_node_t raw_node)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
-		CHECK_ARG(node != nullptr);
-		auto shptr = Node::validatePtr(node)->getGraphRunCtx();
-		shptr->run();
+		RGL_API_LOG("rgl_graph_run(node={})", repr(raw_node));
+		CHECK_ARG(raw_node != nullptr);
+		auto node = Node::validatePtr(raw_node);
+		if (!node->hasGraphRunCtx()) {
+			GraphRunCtx::createAndSet(node);
+		}
+		node->getGraphRunCtx()->run();
 	});
-	TAPE_HOOK(node);
+	TAPE_HOOK(raw_node);
 	return status;
 }
 

@@ -23,7 +23,7 @@
 
 struct GraphRunCtx
 {
-	static std::shared_ptr<GraphRunCtx> create(std::shared_ptr<Node> node);
+	static std::shared_ptr<GraphRunCtx> createAndSet(std::shared_ptr<Node> node);
 	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
 	// Public - tape uses it
 

@@ -82,14 +82,6 @@ void Node::removeChild(Node::Ptr child)
 	child->dirty = true;
 }
 
-std::shared_ptr<GraphRunCtx> Node::getGraphRunCtx()
-{
-	if (auto outGraph = graphRunCtx.lock()) {
-		return outGraph;
-	}
-	return GraphRunCtx::create(shared_from_this());
-}
-
 void Node::setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph)
 {
 	arrayMgr.setStream(graph->getStream());

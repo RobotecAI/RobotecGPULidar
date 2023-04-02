@@ -70,10 +70,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * to the stream associated with given graph.
 	 */
 	void setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph);
-	bool hasGraphRunCtx() const { return graphRunCtx.lock() != nullptr; }
-
-	// TODO: remove
-	std::shared_ptr<GraphRunCtx> getGraphRunCtx();
+	bool hasGraphRunCtx() const { return graphRunCtx.has_value(); }
+	std::shared_ptr<GraphRunCtx> getGraphRunCtx() { return graphRunCtx.value(); }
 
 	/**
 	 * Certain operations, such as adding/removing child/parent links
@@ -177,7 +175,7 @@ protected:
 	bool dirty { true };
 	cudaEvent_t execCompleted { nullptr };
 
-	std::weak_ptr<GraphRunCtx> graphRunCtx; // Pointee may be destroyed e.g. on addChild
+	std::optional<std::shared_ptr<GraphRunCtx>> graphRunCtx; // Pointee may be destroyed e.g. on addChild
 	DeviceAsyncArrayManager arrayMgr;
 
 	friend struct GraphRunCtx;
