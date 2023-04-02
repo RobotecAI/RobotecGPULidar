@@ -95,7 +95,15 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
+	/**
+	 * @return Set of nodes reachable from this node.
+	 */
 	std::set<Node::Ptr> getConnectedNodes();
+
+	/**
+	 * Removes all connections between connected nodes.
+	 * @return Set of affected nodes.
+	 */
 	std::set<Node::Ptr> disconnectConnectedNodes();
 
 public: // Debug methods

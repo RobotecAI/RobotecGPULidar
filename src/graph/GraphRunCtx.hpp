@@ -21,12 +21,24 @@
 #include <graph/Node.hpp>
 #include <CudaStream.hpp>
 
+/**
+ * Structure storing context for running a graph.
+ * This is a 'volatile' struct - changing graph's structure destroys this context.
+ */
 struct GraphRunCtx
 {
 	static std::shared_ptr<GraphRunCtx> createAndAttach(std::shared_ptr<Node> node);
 
+	/**
+	 * Executes graph bound with this GraphRunCtx.
+	 */
 	void run();
+
+	/**
+	 * Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
+	 */
 	void detachAndDestroy();
+
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
