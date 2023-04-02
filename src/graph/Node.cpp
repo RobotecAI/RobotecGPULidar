@@ -34,11 +34,17 @@ void Node::addChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
+	// This might be a subject for future optimization.
+	// Invalidate graphCtx for all connected nodes of child and parent
 	Graph::destroy(shared_from_this(), true);
 	Graph::destroy(child, true);
 
+	// Remove links
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
+
+	this->dirty = true;
+	child->dirty = true;
 }
 
 void Node::removeChild(Node::Ptr child)
@@ -61,13 +67,17 @@ void Node::removeChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
+	// This might be a subject for future optimization.
+	// Invalidate graphCtx for all connected nodes of child and parent
+	// Destroy graph (by invariant, shared by child and parent)
 	Graph::destroy(shared_from_this(), true);
 
-	// Remove child from our children
+	// Remove links
 	this->outputs.erase(childIt);
-
-	// Remove us as a parent of that child
 	child->inputs.erase(thisIt);
+
+	this->dirty = true;
+	child->dirty = true;
 }
 
 std::shared_ptr<Graph> Node::getGraph()

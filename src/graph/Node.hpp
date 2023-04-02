@@ -75,6 +75,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * may cause some nodes to be in an invalid state (not ready).
 	 * Node must be made ready before it is executed or queried for results.
 	 * Node can assume that it has valid GraphRunContext.
+	 * Node must not change its output.
 	 */
 	void validate();
 
