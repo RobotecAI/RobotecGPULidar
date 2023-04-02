@@ -25,7 +25,7 @@ struct GraphRunCtx
 {
 	static std::shared_ptr<GraphRunCtx> create(std::shared_ptr<Node> node);
 	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
-	static std::set<std::shared_ptr<Node>> findConnectedNodes(Node::Ptr anyNode); // Public - tape uses it
+	// Public - tape uses it
 
 	void run();
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }

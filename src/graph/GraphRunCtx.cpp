@@ -14,48 +14,29 @@
 
 #include <graph/GraphRunCtx.hpp>
 #include <graph/NodesCore.hpp>
+#include <graph/Node.hpp>
 
 std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
-std::set<std::shared_ptr<Node>> GraphRunCtx::findConnectedNodes(Node::Ptr anyNode)
-{
-	std::set<Node::Ptr> visited = {};
-	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
-		visited.insert(current);
-		for (auto&& output : current->getOutputs()) {
-			if (!visited.contains(output)) {
-				dfsRec(output);
-			}
-		}
-		for (auto&& input : current->getInputs()) {
-			if (!visited.contains(input)) {
-				dfsRec(input);
-			}
-		}
-	};
-	dfsRec(anyNode);
-	return visited;
-}
-
 std::shared_ptr<GraphRunCtx> GraphRunCtx::create(std::shared_ptr<Node> node)
 {
-	auto graph = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
+	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
 
-	graph->nodes = GraphRunCtx::findConnectedNodes(node);
-	graph->executionOrder = GraphRunCtx::findExecutionOrder(graph->nodes);
-	graph->fieldsToCompute = GraphRunCtx::findFieldsToCompute(graph->nodes);
+	graphRunCtx->nodes = node->getConnectedNodes();
+	graphRunCtx->executionOrder = GraphRunCtx::findExecutionOrder(graphRunCtx->nodes);
+	graphRunCtx->fieldsToCompute = GraphRunCtx::findFieldsToCompute(graphRunCtx->nodes);
 
-	for (auto&& currentNode : graph->nodes) {
+	for (auto&& currentNode : graphRunCtx->nodes) {
 		if (currentNode->hasGraphRunCtx()) {
-			auto msg = fmt::format("attempted to replace existing graph in node {} when creating for {}", currentNode->getName(), node->getName());
+			auto msg = fmt::format("attempted to replace existing graphRunCtx in node {} when creating for {}", currentNode->getName(), node->getName());
 			throw std::logic_error(msg);
 		}
-		currentNode->graphRunCtx = graph;
+		currentNode->setGraphRunCtx(graphRunCtx);
 	}
 
-	instances.push_back(graph);
+	instances.push_back(graphRunCtx);
 
-	return graph;
+	return graphRunCtx;
 }
 
 void GraphRunCtx::run()
@@ -86,9 +67,7 @@ void GraphRunCtx::run()
 void GraphRunCtx::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 {
 	if (!preserveNodes) {
-		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraphRunCtx()
-		                                           ? anyNode->getGraphRunCtx()->getNodes()
-		                                           : GraphRunCtx::findConnectedNodes(anyNode);
+		std::set<std::shared_ptr<Node>> graphNodes = anyNode->getConnectedNodes();
 		while (!graphNodes.empty()) {
 			std::shared_ptr<Node> node = *graphNodes.begin();
 			RGL_DEBUG("Destroying node {}", (void*) node.get());

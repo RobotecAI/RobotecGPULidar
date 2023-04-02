@@ -23,6 +23,9 @@
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 #include <memory/DeviceAsyncArrayManager.hpp>
+#include <set>
+#include <graph/Node.hpp>
+#include <CudaStream.hpp>
 
 struct GraphRunCtx;
 
@@ -95,7 +98,6 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 	std::set<Node::Ptr> getConnectedNodes();
-
 
 public: // Debug methods
 

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <graph/Node.hpp>
+#include <graph/NodesCore.hpp>
+#include <graph/Node.hpp>
 #include <graph/GraphRunCtx.hpp>
 
 API_OBJECT_INSTANCE(Node);
@@ -122,5 +124,20 @@ std::set<Node::Ptr> Node::getConnectedNodes()
 	if (hasGraphRunCtx()) {
 		return getGraphRunCtx()->getNodes();
 	}
-	return GraphRunCtx::findConnectedNodes(shared_from_this());
+	std::set<Ptr> visited = {};
+	std::function<void(Ptr)> dfsRec = [&](Ptr current) {
+		visited.insert(current);
+		for (auto&& output : current->getOutputs()) {
+			if (!visited.contains(output)) {
+				dfsRec(output);
+			}
+		}
+		for (auto&& input : current->getInputs()) {
+			if (!visited.contains(input)) {
+				dfsRec(input);
+			}
+		}
+	};
+	dfsRec(shared_from_this());
+	return visited;
 }
