@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rgl/api/core.h"
+#include <rgl/api/core.h>
 
 #define CHECK_RGL(call)                                               \
 do                                                                    \

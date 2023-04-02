@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <graph/Node.hpp>
-#include <graph/Graph.hpp>
+#include <graph/NodesCore.hpp>
+#include <graph/Node.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 API_OBJECT_INSTANCE(Node);
 
@@ -28,6 +30,7 @@ void Node::addChild(Node::Ptr child)
 		auto msg = fmt::format("attempted to set an empty child for {}", getName());
 		throw InvalidPipeline(msg);
 	}
+
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt != this->outputs.end()) {
 		auto msg = fmt::format("attempted to add child {} to parent {} twice", child->getName(), getName());
@@ -36,8 +39,12 @@ void Node::addChild(Node::Ptr child)
 
 	// This might be a subject for future optimization.
 	// Invalidate graphCtx for all connected nodes of child and parent
-	Graph::destroy(shared_from_this(), true);
-	Graph::destroy(child, true);
+	if (this->hasGraphRunCtx()) {
+		this->getGraphRunCtx()->detachAndDestroy();
+	}
+	if (child->hasGraphRunCtx()) {
+		child->getGraphRunCtx()->detachAndDestroy();
+	}
 
 	// Remove links
 	this->outputs.push_back(child);
@@ -53,13 +60,14 @@ void Node::removeChild(Node::Ptr child)
 		auto msg = fmt::format("attempted to remove an empty child for {}", getName());
 		throw InvalidPipeline(msg);
 	}
+
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt == this->outputs.end()) {
 		auto msg = fmt::format("attempted to remove child {} from {},"
 		                       "but it was not found", child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
-	
+
 	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
 	if (thisIt == child->inputs.end()) {
 		auto msg = fmt::format("attempted to remove parent {} from {},"
@@ -68,9 +76,11 @@ void Node::removeChild(Node::Ptr child)
 	}
 
 	// This might be a subject for future optimization.
-	// Invalidate graphCtx for all connected nodes of child and parent
+	// Remove graphCtx for all connected nodes of child and parent
 	// Destroy graph (by invariant, shared by child and parent)
-	Graph::destroy(shared_from_this(), true);
+	if (this->hasGraphRunCtx()) {
+		this->getGraphRunCtx()->detachAndDestroy();
+	}
 
 	// Remove links
 	this->outputs.erase(childIt);
@@ -80,18 +90,13 @@ void Node::removeChild(Node::Ptr child)
 	child->dirty = true;
 }
 
-std::shared_ptr<Graph> Node::getGraph()
+void Node::setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph)
 {
-	if (auto outGraph = graph.lock()) {
-		return outGraph;
+	if (graph.has_value()) {
+		arrayMgr.setStream(graph.value()->getStream());
 	}
-	return Graph::create(shared_from_this());
-}
-
-void Node::setGraph(std::shared_ptr<Graph> newGraph)
-{
-	arrayMgr.setStream(newGraph->getStream());
-	this->graph = newGraph;
+	this->graphRunCtx = graph;
+	this->dirty = true;
 }
 
 void Node::validate()
@@ -99,8 +104,8 @@ void Node::validate()
 	if (isValid()) {
 		return;
 	}
-	if (!hasGraph()) {
-		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraph()", getName());
+	if (!hasGraphRunCtx()) {
+		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraphRunCtx()", getName());
 		throw std::logic_error(msg);
 	}
 	this->validateImpl();
@@ -113,8 +118,40 @@ void Node::enqueueExec()
 		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
 		throw std::logic_error(msg);
 	}
-	this->enqueueExecImpl(getGraph()->getStream()->get());
-
-	CHECK_CUDA(cudaEventRecord(execCompleted->get(), getGraph()->getStream()->get()));
+	this->enqueueExecImpl(getGraphRunCtx()->getStream()->get());
+	CHECK_CUDA(cudaEventRecord(execCompleted->get(), getGraphRunCtx()->getStream()->get()));
 }
 
+std::set<Node::Ptr> Node::getConnectedNodes()
+{
+	if (hasGraphRunCtx()) {
+		return getGraphRunCtx()->getNodes();
+	}
+	std::set<Ptr> visited = {};
+	std::function<void(Ptr)> dfsRec = [&](Ptr current) {
+		visited.insert(current);
+		for (auto&& output : current->getOutputs()) {
+			if (!visited.contains(output)) {
+				dfsRec(output);
+			}
+		}
+		for (auto&& input : current->getInputs()) {
+			if (!visited.contains(input)) {
+				dfsRec(input);
+			}
+		}
+	};
+	dfsRec(shared_from_this());
+	return visited;
+}
+
+std::set<Node::Ptr> Node::disconnectConnectedNodes()
+{
+	auto nodes = getConnectedNodes();
+	for (auto&& node : getConnectedNodes()) {
+		node->inputs.clear();
+		node->outputs.clear();
+		node->setGraphRunCtx(std::nullopt);
+	}
+	return nodes;
+}
