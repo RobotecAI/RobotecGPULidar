@@ -16,8 +16,6 @@
 #include <graph/NodesCore.hpp>
 #include <graph/Node.hpp>
 
-std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
-
 std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> node)
 {
 	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
@@ -33,8 +31,6 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 		}
 		currentNode->setGraphRunCtx(graphRunCtx);
 	}
-
-	instances.push_back(graphRunCtx);
 
 	return graphRunCtx;
 }
@@ -62,32 +58,6 @@ void GraphRunCtx::run()
 		node->enqueueExec();
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
-}
-
-void GraphRunCtx::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
-{
-	if (!preserveNodes) {
-		std::set<std::shared_ptr<Node>> graphNodes = anyNode->getConnectedNodes();
-		while (!graphNodes.empty()) {
-			std::shared_ptr<Node> node = *graphNodes.begin();
-			RGL_DEBUG("Destroying node {}", (void*) node.get());
-			graphNodes.erase(node);
-			node->inputs.clear();
-			node->outputs.clear();
-			Node::release(node.get());
-		}
-	}
-
-	if (!anyNode->hasGraphRunCtx()) {
-		return;
-	}
-
-	auto graphIt = std::find(instances.begin(), instances.end(), anyNode->getGraphRunCtx());
-	if (graphIt == instances.end()) {
-		auto msg = fmt::format("attempted to remove a graph not in Graph::instances");
-		throw std::logic_error(msg);
-	}
-	instances.erase(graphIt);
 }
 
 std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
@@ -135,9 +105,7 @@ GraphRunCtx::~GraphRunCtx()
 
 void GraphRunCtx::detachAndDestroy()
 {
-	while (!nodes.empty()) {
-		std::shared_ptr<Node> node = *nodes.begin();
-		nodes.erase(node);
+	for (auto&& node : nodes) {
 		node->setGraphRunCtx(std::nullopt);
 	}
 	// After this loop, we should have removed all shared_ptrs to GraphRunCtx, so it will be destroyed.

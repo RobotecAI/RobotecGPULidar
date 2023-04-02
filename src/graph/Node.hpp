@@ -96,6 +96,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
 
 	std::set<Node::Ptr> getConnectedNodes();
+	std::set<Node::Ptr> disconnectConnectedNodes();
 
 public: // Debug methods
 

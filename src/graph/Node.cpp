@@ -30,6 +30,7 @@ void Node::addChild(Node::Ptr child)
 		auto msg = fmt::format("attempted to set an empty child for {}", getName());
 		throw InvalidPipeline(msg);
 	}
+
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt != this->outputs.end()) {
 		auto msg = fmt::format("attempted to add child {} to parent {} twice", child->getName(), getName());
@@ -59,13 +60,14 @@ void Node::removeChild(Node::Ptr child)
 		auto msg = fmt::format("attempted to remove an empty child for {}", getName());
 		throw InvalidPipeline(msg);
 	}
+
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt == this->outputs.end()) {
 		auto msg = fmt::format("attempted to remove child {} from {},"
 		                       "but it was not found", child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
-	
+
 	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
 	if (thisIt == child->inputs.end()) {
 		auto msg = fmt::format("attempted to remove parent {} from {},"
@@ -141,4 +143,15 @@ std::set<Node::Ptr> Node::getConnectedNodes()
 	};
 	dfsRec(shared_from_this());
 	return visited;
+}
+
+std::set<Node::Ptr> Node::disconnectConnectedNodes()
+{
+	auto nodes = getConnectedNodes();
+	for (auto&& node : getConnectedNodes()) {
+		node->inputs.clear();
+		node->outputs.clear();
+		node->setGraphRunCtx(std::nullopt);
+	}
+	return nodes;
 }
