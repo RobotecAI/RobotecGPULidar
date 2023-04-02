@@ -18,7 +18,7 @@
 
 std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
-std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndSet(std::shared_ptr<Node> node)
+std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> node)
 {
 	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
 
@@ -131,6 +131,14 @@ std::set<rgl_field_t> GraphRunCtx::findFieldsToCompute(std::set<std::shared_ptr<
 }
 
 GraphRunCtx::~GraphRunCtx()
+{ }
+
+void GraphRunCtx::detachAndDestroy()
 {
-	stream.reset();
+	while (!nodes.empty()) {
+		std::shared_ptr<Node> node = *nodes.begin();
+		nodes.erase(node);
+		node->setGraphRunCtx(std::nullopt);
+	}
+	// After this loop, we should have removed all shared_ptrs to GraphRunCtx, so it will be destroyed.
 }

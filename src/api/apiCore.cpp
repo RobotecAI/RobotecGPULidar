@@ -305,7 +305,7 @@ rgl_graph_run(rgl_node_t raw_node)
 		CHECK_ARG(raw_node != nullptr);
 		auto node = Node::validatePtr(raw_node);
 		if (!node->hasGraphRunCtx()) {
-			GraphRunCtx::createAndSet(node);
+			GraphRunCtx::createAndAttach(node);
 		}
 		node->getGraphRunCtx()->run();
 	});

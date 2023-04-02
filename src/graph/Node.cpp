@@ -38,8 +38,12 @@ void Node::addChild(Node::Ptr child)
 
 	// This might be a subject for future optimization.
 	// Invalidate graphCtx for all connected nodes of child and parent
-	GraphRunCtx::destroy(shared_from_this(), true);
-	GraphRunCtx::destroy(child, true);
+	if (this->hasGraphRunCtx()) {
+		this->getGraphRunCtx()->detachAndDestroy();
+	}
+	if (child->hasGraphRunCtx()) {
+		child->getGraphRunCtx()->detachAndDestroy();
+	}
 
 	// Remove links
 	this->outputs.push_back(child);
@@ -70,9 +74,11 @@ void Node::removeChild(Node::Ptr child)
 	}
 
 	// This might be a subject for future optimization.
-	// Invalidate graphCtx for all connected nodes of child and parent
+	// Remove graphCtx for all connected nodes of child and parent
 	// Destroy graph (by invariant, shared by child and parent)
-	GraphRunCtx::destroy(shared_from_this(), true);
+	if (this->hasGraphRunCtx()) {
+		this->getGraphRunCtx()->detachAndDestroy();
+	}
 
 	// Remove links
 	this->outputs.erase(childIt);
@@ -82,10 +88,13 @@ void Node::removeChild(Node::Ptr child)
 	child->dirty = true;
 }
 
-void Node::setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph)
+void Node::setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph)
 {
-	arrayMgr.setStream(graph->getStream());
+	if (graph.has_value()) {
+		arrayMgr.setStream(graph.value()->getStream());
+	}
 	this->graphRunCtx = graph;
+	this->dirty = true;
 }
 
 void Node::validate()

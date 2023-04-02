@@ -65,11 +65,11 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	void removeChild(Node::Ptr child);
 
 	/**
-	 * Called to set/change current GraphRunCtx.
+	 * Called to set/change/clear current GraphRunCtx.
 	 * Node must ensure that its future operations will be enqueued
 	 * to the stream associated with given graph.
 	 */
-	void setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph);
+	void setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph);
 	bool hasGraphRunCtx() const { return graphRunCtx.has_value(); }
 	std::shared_ptr<GraphRunCtx> getGraphRunCtx() { return graphRunCtx.value(); }
 
