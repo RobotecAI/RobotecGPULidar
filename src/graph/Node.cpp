@@ -86,11 +86,12 @@ void Node::setGraph(std::shared_ptr<Graph> newGraph)
 
 void Node::validate()
 {
-	if (!isValid()) {
+	if (isValid()) {
 		return;
 	}
 	if (!hasGraph()) {
 		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraph()", getName());
+		throw std::logic_error(msg);
 	}
 	this->validateImpl();
 	dirty = false;
@@ -98,7 +99,7 @@ void Node::validate()
 
 void Node::enqueueExec()
 {
-	if (isValid()) {
+	if (!isValid()) {
 		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
 		throw std::logic_error(msg);
 	}
