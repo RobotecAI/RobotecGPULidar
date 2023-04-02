@@ -24,7 +24,7 @@
 #include <RGLFields.hpp>
 #include <memory/DeviceAsyncArrayManager.hpp>
 
-struct Graph;
+struct GraphRunCtx;
 
 /**
  * Node represents a unit of computation in RGL.
@@ -32,23 +32,23 @@ struct Graph;
  * Nodes can be joined (addChild) to form a graph.
  *
  * When Node is created, it is not ready to use, because
- * - it has no GraphRunContext assigned;
+ * - it has no GraphRunCtx assigned;
  * - is in invalid state;
  *
- * Before first run, GraphRunContext is be assigned to node by caller code.
+ * Before first run, GraphRunCtx is be assigned to node by caller code.
  *
  * Nodes must create DeviceAsyncArray<T>-s only through the arrayMgr.
  * It allows to change their stream when needed.
  *
  * Before every run and result query, validate() must be called to ensure that the node isValid()
  *
- * When run (enqueueExec), Nodes are expected to enqueue its computation to a stream provided by GraphRunContext.
+ * When run (enqueueExec), Nodes are expected to enqueue its computation to a stream provided by GraphRunCtx.
  *
  * Between runs, Node's connection can be changed (addChild, removeChild).
  * If Node's input changes, it becomes dirty (!isValid()).
  *
- * Between runs, Node's GraphRunContext may be also changed.
- * In such scenario, Node must adjust its internal resources to work in the new GraphRunContext (new stream).
+ * Between runs, Node's GraphRunCtx may be also changed.
+ * In such scenario, Node must adjust its internal resources to work in the new GraphRunCtx (new stream).
  */
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
@@ -61,20 +61,19 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	void removeChild(Node::Ptr child);
 
 	/**
-	 * Called to set/change current GraphRunContext.
+	 * Called to set/change current GraphRunCtx.
 	 * Node must ensure that its future operations will be enqueued
 	 * to the stream associated with given graph.
 	 */
-	void setGraph(std::shared_ptr<Graph> graph);
-
-	bool hasGraph() { return graph.lock() != nullptr; }
-	std::shared_ptr<Graph> getGraph();
+	void setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph);
+	bool hasGraphRunCtx() { return graphRunCtx.lock() != nullptr; }
+	std::shared_ptr<GraphRunCtx> getGraphRunCtx();
 
 	/**
 	 * Certain operations, such as adding/removing child/parent links
 	 * may cause some nodes to be in an invalid state (not ready).
 	 * Node must be made ready before it is executed or queried for results.
-	 * Node can assume that it has valid GraphRunContext.
+	 * Node can assume that it has valid GraphRunCtx.
 	 * Node must not change its output.
 	 */
 	void validate();
@@ -85,7 +84,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	bool isValid() { return !dirty; }
 
 	/**
-	 * Enqueues node-specific operations to the stream pointed by GraphRunContext.
+	 * Enqueues node-specific operations to the stream pointed by GraphRunCtx.
 	 */
 	void enqueueExec();
 
@@ -171,7 +170,7 @@ protected:
 	bool dirty { true };
 	cudaEvent_t execCompleted { nullptr };
 
-	std::weak_ptr<Graph> graph; // Pointee may be destroyed e.g. on addChild
+	std::weak_ptr<GraphRunCtx> graphRunCtx; // Pointee may be destroyed e.g. on addChild
 	DeviceAsyncArrayManager arrayMgr;
 
 	friend struct Graph;

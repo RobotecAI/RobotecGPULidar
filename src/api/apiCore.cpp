@@ -22,7 +22,7 @@
 #include <scene/Mesh.hpp>
 
 #include <graph/NodesCore.hpp>
-#include <graph/Graph.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 extern "C" {
 
@@ -118,7 +118,7 @@ rgl_cleanup(void)
 		while (!Node::instances.empty()) {
 			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
 			Node::Ptr node = Node::instances.begin()->second;
-			Graph::destroy(node, false);
+			GraphRunCtx::destroy(node, false);
 		}
 	});
 	TAPE_HOOK();
@@ -303,7 +303,7 @@ rgl_graph_run(rgl_node_t node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
-		auto shptr = Node::validatePtr(node)->getGraph();
+		auto shptr = Node::validatePtr(node)->getGraphRunCtx();
 		shptr->run();
 	});
 	TAPE_HOOK(node);
@@ -322,7 +322,7 @@ rgl_graph_destroy(rgl_node_t node)
 		RGL_API_LOG("rgl_graph_destroy(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		Graph::destroy(Node::validatePtr(node), false);
+		GraphRunCtx::destroy(Node::validatePtr(node), false);
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -331,7 +331,7 @@ rgl_graph_destroy(rgl_node_t node)
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = Graph::findConnectedNodes(Node::validatePtr(userNode));
+	std::set<Node::Ptr> graph = GraphRunCtx::findConnectedNodes(Node::validatePtr(userNode));
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {

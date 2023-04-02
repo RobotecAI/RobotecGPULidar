@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/Graph.hpp>
+#include <graph/GraphRunCtx.hpp>
 #include <graph/NodesCore.hpp>
 
-std::list<std::shared_ptr<Graph>> Graph::instances;
+std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
-std::set<std::shared_ptr<Node>> Graph::findConnectedNodes(std::shared_ptr<Node> anyNode)
+std::set<std::shared_ptr<Node>> GraphRunCtx::findConnectedNodes(std::shared_ptr<Node> anyNode)
 {
 	std::set<std::shared_ptr<Node>> visited = {};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
@@ -37,20 +37,20 @@ std::set<std::shared_ptr<Node>> Graph::findConnectedNodes(std::shared_ptr<Node> 
 	return visited;
 }
 
-std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
+std::shared_ptr<GraphRunCtx> GraphRunCtx::create(std::shared_ptr<Node> node)
 {
-	auto graph = std::shared_ptr<Graph>(new Graph());
+	auto graph = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
 
-	graph->nodes = Graph::findConnectedNodes(node);
-	graph->executionOrder = Graph::findExecutionOrder(graph->nodes);
-	graph->fieldsToCompute = Graph::findFieldsToCompute(graph->nodes);
+	graph->nodes = GraphRunCtx::findConnectedNodes(node);
+	graph->executionOrder = GraphRunCtx::findExecutionOrder(graph->nodes);
+	graph->fieldsToCompute = GraphRunCtx::findFieldsToCompute(graph->nodes);
 
 	for (auto&& currentNode : graph->nodes) {
-		if (currentNode->hasGraph()) {
+		if (currentNode->hasGraphRunCtx()) {
 			auto msg = fmt::format("attempted to replace existing graph in node {} when creating for {}", currentNode->getName(), node->getName());
 			throw std::logic_error(msg);
 		}
-		currentNode->graph = graph;
+		currentNode->graphRunCtx = graph;
 	}
 
 	instances.push_back(graph);
@@ -58,7 +58,7 @@ std::shared_ptr<Graph> Graph::create(std::shared_ptr<Node> node)
 	return graph;
 }
 
-void Graph::run()
+void GraphRunCtx::run()
 {
 	const auto& nodesInExecOrder = executionOrder;
 
@@ -83,12 +83,12 @@ void Graph::run()
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 }
 
-void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
+void GraphRunCtx::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 {
 	if (!preserveNodes) {
-		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraph()
-		                                           ? anyNode->getGraph()->getNodes()
-		                                           : Graph::findConnectedNodes(anyNode);
+		std::set<std::shared_ptr<Node>> graphNodes = anyNode->hasGraphRunCtx()
+		                                           ? anyNode->getGraphRunCtx()->getNodes()
+		                                           : GraphRunCtx::findConnectedNodes(anyNode);
 		while (!graphNodes.empty()) {
 			std::shared_ptr<Node> node = *graphNodes.begin();
 			RGL_DEBUG("Destroying node {}", (void*) node.get());
@@ -99,11 +99,11 @@ void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 		}
 	}
 
-	if (!anyNode->hasGraph()) {
+	if (!anyNode->hasGraphRunCtx()) {
 		return;
 	}
 
-	auto graphIt = std::find(instances.begin(), instances.end(), anyNode->getGraph());
+	auto graphIt = std::find(instances.begin(), instances.end(), anyNode->getGraphRunCtx());
 	if (graphIt == instances.end()) {
 		auto msg = fmt::format("attempted to remove a graph not in Graph::instances");
 		throw std::logic_error(msg);
@@ -111,7 +111,7 @@ void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)
 	instances.erase(graphIt);
 }
 
-std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
+std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
 {
 	std::vector<std::shared_ptr<Node>> reverseOrder {};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
@@ -129,7 +129,7 @@ std::vector<std::shared_ptr<Node>> Graph::findExecutionOrder(std::set<std::share
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }
 
-std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes)
+std::set<rgl_field_t> GraphRunCtx::findFieldsToCompute(std::set<std::shared_ptr<Node>> nodes)
 {
 	std::set<rgl_field_t> outFields;
 	for (auto&& node : nodes) {
@@ -151,7 +151,7 @@ std::set<rgl_field_t> Graph::findFieldsToCompute(std::set<std::shared_ptr<Node>>
 	return outFields;
 }
 
-Graph::~Graph()
+GraphRunCtx::~GraphRunCtx()
 {
 	stream.reset();
 }

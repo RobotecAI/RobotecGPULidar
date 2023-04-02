@@ -44,7 +44,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 
 		// Get formatted data
 		VArray::Ptr rglCloud = VArray::create<char>();
-		// TODO(msz-rai): CudaStream for formatAsync: nullptr or pointCloudNode->getGraph()->getStream()?
+		// TODO(msz-rai): CudaStream for formatAsync: nullptr or pointCloudNode->getGraphRunCtx()->getStream()?
 		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, {XYZ_F32, PADDING_32}, nullptr);
 
 		// Convert to PCL cloud

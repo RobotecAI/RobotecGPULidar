@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <graph/Node.hpp>
-#include <graph/Graph.hpp>
+#include "GraphRunContext.hpp"
 
 API_OBJECT_INSTANCE(Node);
 
@@ -36,8 +36,8 @@ void Node::addChild(Node::Ptr child)
 
 	// This might be a subject for future optimization.
 	// Invalidate graphCtx for all connected nodes of child and parent
-	Graph::destroy(shared_from_this(), true);
-	Graph::destroy(child, true);
+	GraphRunCtx::destroy(shared_from_this(), true);
+	GraphRunCtx::destroy(child, true);
 
 	// Remove links
 	this->outputs.push_back(child);
@@ -70,7 +70,7 @@ void Node::removeChild(Node::Ptr child)
 	// This might be a subject for future optimization.
 	// Invalidate graphCtx for all connected nodes of child and parent
 	// Destroy graph (by invariant, shared by child and parent)
-	Graph::destroy(shared_from_this(), true);
+	GraphRunCtx::destroy(shared_from_this(), true);
 
 	// Remove links
 	this->outputs.erase(childIt);
@@ -80,18 +80,18 @@ void Node::removeChild(Node::Ptr child)
 	child->dirty = true;
 }
 
-std::shared_ptr<Graph> Node::getGraph()
+std::shared_ptr<GraphRunCtx> Node::getGraphRunCtx()
 {
-	if (auto outGraph = graph.lock()) {
+	if (auto outGraph = graphRunCtx.lock()) {
 		return outGraph;
 	}
-	return Graph::create(shared_from_this());
+	return GraphRunCtx::create(shared_from_this());
 }
 
-void Node::setGraph(std::shared_ptr<Graph> newGraph)
+void Node::setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph)
 {
-	arrayMgr.setStream(newGraph->getStream());
-	this->graph = newGraph;
+	arrayMgr.setStream(graph->getStream());
+	this->graphRunCtx = graph;
 }
 
 void Node::validate()
@@ -99,8 +99,8 @@ void Node::validate()
 	if (isValid()) {
 		return;
 	}
-	if (!hasGraph()) {
-		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraph()", getName());
+	if (!hasGraphRunCtx()) {
+		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraphRunCtx()", getName());
 		throw std::logic_error(msg);
 	}
 	this->validateImpl();
@@ -113,7 +113,7 @@ void Node::enqueueExec()
 		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
 		throw std::logic_error(msg);
 	}
-	this->enqueueExecImpl(getGraph()->getStream()->get());
-	CHECK_CUDA(cudaEventRecord(execCompleted, getGraph()->getStream()->get()));
+	this->enqueueExecImpl(getGraphRunCtx()->getStream()->get());
+	CHECK_CUDA(cudaEventRecord(execCompleted, getGraphRunCtx()->getStream()->get()));
 }
 

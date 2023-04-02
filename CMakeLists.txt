@@ -79,7 +79,7 @@ add_library(RobotecGPULidar SHARED
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/ASBuildScratchpad.cpp
-    src/graph/Graph.cpp
+    src/graph/GraphRunCtx.cpp
     src/graph/Node.cpp
     src/graph/GaussianNoiseAngularHitpointNode.cpp
     src/graph/GaussianNoiseAngularRayNode.cpp

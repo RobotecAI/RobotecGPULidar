@@ -21,18 +21,18 @@
 #include <graph/Node.hpp>
 #include <CudaStream.hpp>
 
-struct Graph
+struct GraphRunCtx
 {
-	static std::shared_ptr<Graph> create(std::shared_ptr<Node> node);
+	static std::shared_ptr<GraphRunCtx> create(std::shared_ptr<Node> node);
 	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
 	static std::set<std::shared_ptr<Node>> findConnectedNodes(std::shared_ptr<Node> anyNode); // Public - tape uses it
 
 	void run();
 	CudaStream::Ptr getStream() const { return stream; }
 
-	virtual ~Graph();
+	virtual ~GraphRunCtx();
 private:
-	Graph() : stream(CudaStream::create()) {}
+	GraphRunCtx() : stream(CudaStream::create()) {}
 
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
@@ -45,5 +45,5 @@ private:
 	std::vector<std::shared_ptr<Node>> executionOrder;
 	std::set<rgl_field_t> fieldsToCompute;
 
-	static std::list<std::shared_ptr<Graph>> instances;
+	static std::list<std::shared_ptr<GraphRunCtx>> instances;
 };
