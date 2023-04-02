@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <graph/Node.hpp>
-#include "GraphRunContext.hpp"
+#include <graph/GraphRunCtx.hpp>
 
 API_OBJECT_INSTANCE(Node);
 
@@ -117,3 +117,10 @@ void Node::enqueueExec()
 	CHECK_CUDA(cudaEventRecord(execCompleted, getGraphRunCtx()->getStream()->get()));
 }
 
+std::set<Node::Ptr> Node::getConnectedNodes()
+{
+	if (hasGraphRunCtx()) {
+		return getGraphRunCtx()->getNodes();
+	}
+	return GraphRunCtx::findConnectedNodes(shared_from_this());
+}

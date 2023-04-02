@@ -17,10 +17,10 @@
 
 std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
-std::set<std::shared_ptr<Node>> GraphRunCtx::findConnectedNodes(std::shared_ptr<Node> anyNode)
+std::set<std::shared_ptr<Node>> GraphRunCtx::findConnectedNodes(Node::Ptr anyNode)
 {
-	std::set<std::shared_ptr<Node>> visited = {};
-	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
+	std::set<Node::Ptr> visited = {};
+	std::function<void(Node::Ptr)> dfsRec = [&](Node::Ptr current) {
 		visited.insert(current);
 		for (auto&& output : current->getOutputs()) {
 			if (!visited.contains(output)) {

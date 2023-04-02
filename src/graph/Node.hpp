@@ -53,6 +53,7 @@ struct GraphRunCtx;
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
 	using Ptr = std::shared_ptr<Node>;
+	using ConstPtr = std::shared_ptr<const Node>;
 
 	virtual ~Node() override = default;
 
@@ -66,7 +67,9 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	 * to the stream associated with given graph.
 	 */
 	void setGraphRunCtx(std::shared_ptr<GraphRunCtx> graph);
-	bool hasGraphRunCtx() { return graphRunCtx.lock() != nullptr; }
+	bool hasGraphRunCtx() const { return graphRunCtx.lock() != nullptr; }
+
+	// TODO: remove
 	std::shared_ptr<GraphRunCtx> getGraphRunCtx();
 
 	/**
@@ -81,7 +84,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	/**
 	 * @return True, if node can be executed or queried for results.
 	 */
-	bool isValid() { return !dirty; }
+	bool isValid() const { return !dirty; }
 
 	/**
 	 * Enqueues node-specific operations to the stream pointed by GraphRunCtx.
@@ -90,6 +93,8 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
+
+	std::set<Node::Ptr> getConnectedNodes();
 
 
 public: // Debug methods
@@ -173,7 +178,7 @@ protected:
 	std::weak_ptr<GraphRunCtx> graphRunCtx; // Pointee may be destroyed e.g. on addChild
 	DeviceAsyncArrayManager arrayMgr;
 
-	friend struct Graph;
+	friend struct GraphRunCtx;
 	friend struct fmt::formatter<Node>;
 };
 
