@@ -126,7 +126,7 @@ protected: // Member methods
 	typename T::Ptr getExactlyOneInputOfType()
 	{ return getExactlyOneNodeOfType<T>(inputs); }
 
-protected: // Static methods
+public: // Static methods
 
 	template<template<typename, typename...> typename Container, typename...CArgs>
 	static std::string getNamesOfNodes(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator= ", ")
@@ -179,7 +179,6 @@ protected:
 	std::optional<std::shared_ptr<GraphRunCtx>> graphRunCtx; // Pointee may be destroyed e.g. on addChild
 	DeviceAsyncArrayManager arrayMgr;
 
-	friend struct GraphRunCtx;
 	friend struct fmt::formatter<Node>;
 };
 
