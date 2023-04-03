@@ -19,8 +19,7 @@
 #include <optix_stubs.h>
 
 #include <Optix.hpp>
-#include <memory/DeviceSyncArray.hpp>
-#include <memory/HostPinnedArray.hpp>
+#include <memory/ConcreteArrays.hpp>
 
 /**
  * Helper class to manage buffers used for building acceleration (GAS, IAS) structures and perform their compaction.

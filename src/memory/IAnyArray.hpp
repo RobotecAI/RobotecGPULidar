@@ -21,6 +21,7 @@
 #include <memory/InvalidArrayCast.hpp>
 #include <typingUtils.hpp>
 
+
 /**
  * Dynamically typed handle for Array<M, T> and its subclasses.
  * @tparam M Kind of memory. @see MemoryKind

@@ -14,22 +14,13 @@
 
 #pragma once
 
-#include <memory/HostArray.hpp>
-#include <memory/MemoryKind.hpp>
+#include <CudaStream.hpp>
 
-template <typename T>
-struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
+/**
+ * Interface for objects that hold a stream and allow changing it in runtime.
+ * It is a caller responsibility to make sure that stream can be changed.
+ */
+struct IStreamBound
 {
-	using Ptr = std::shared_ptr<HostPinnedArray<T>>;
-	using ConstPtr = std::shared_ptr<const HostPinnedArray<T>>;
-
-	static HostPinnedArray<T>::Ptr create()
-	{
-		return HostPinnedArray<T>::Ptr {
-			new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())
-		};
-	}
-
-protected:
-	using HostArray<MemoryKind::HostPinned, T>::HostArray;
+	virtual void setStream(CudaStream::Ptr) = 0;
 };
