@@ -14,6 +14,8 @@
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
+#include <memory/DeviceSyncArray.hpp>
+#include <memory/HostPinnedArray.hpp>
 
 API_OBJECT_INSTANCE(Scene);
 

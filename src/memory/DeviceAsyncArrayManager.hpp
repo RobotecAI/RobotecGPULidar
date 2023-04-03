@@ -18,8 +18,8 @@
 #include <list>
 #include <memory>
 
-#include <IStreamBound.hpp>
-#include <memory/ConcreteArrays.hpp>
+#include <memory/IStreamBound.hpp>
+#include <memory/DeviceAsyncArray.hpp>
 
 struct DeviceAsyncArrayManager : public IStreamBound
 {
