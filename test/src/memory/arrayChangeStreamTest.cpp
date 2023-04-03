@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock-matchers.h>
 
-#include <memory/ConcreteArrays.hpp>
-#include <memory/StreamBoundObjectsManager.hpp>
+#include <memory/HostPinnedArray.hpp>
+#include <StreamBoundObjectsManager.hpp>
 #include <CudaEvent.hpp>
 
 

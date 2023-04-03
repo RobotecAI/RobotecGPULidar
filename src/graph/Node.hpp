@@ -26,7 +26,7 @@
 #include <VArray.hpp>
 #include <rgl/api/core.h>
 #include <graph/Node.hpp>
-#include <memory/StreamBoundObjectsManager.hpp>
+#include "StreamBoundObjectsManager.hpp"
 
 struct GraphRunCtx;
 
