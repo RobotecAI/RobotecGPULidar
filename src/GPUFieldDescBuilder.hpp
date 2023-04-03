@@ -21,33 +21,49 @@
 #include <gpu/GPUFieldDesc.hpp>
 #include <graph/Interfaces.hpp>
 #include <graph/NodesCore.hpp>
+#include <memory/HostPinnedArray.hpp>
+#include <memory/DeviceSyncArray.hpp>
 
 // Builder for GPUFieldDesc. Separated struct to avoid polluting gpu-visible header (gpu/GPUFieldDesc.hpp).
 struct GPUFieldDescBuilder
 {
-	static VArrayProxy<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
+	static HostPinnedArray<GPUFieldDesc>::Ptr getHostBuffer()
 	{
-		auto gpuFields = GPUFieldDescBuilder::initialize(GPUFieldDescBuilder::getFields(fieldsData));
-		GPUFieldDescBuilder::fillWithData(gpuFields, fieldsData);
-		return gpuFields;
+		static auto hostBuffer = HostPinnedArray<GPUFieldDesc>::create();
+		return hostBuffer;
+	}
+	static DeviceSyncArray<GPUFieldDesc>::Ptr getDeviceBuffer()
+	{
+		static auto deviceBuffer = DeviceSyncArray<GPUFieldDesc>::create();
+		return deviceBuffer;
 	}
 
-	static VArrayProxy<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
+	static DeviceSyncArray<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
 	{
-		auto gpuFields = GPUFieldDescBuilder::initialize(GPUFieldDescBuilder::getFields(fieldsData));
-		GPUFieldDescBuilder::fillWithData(gpuFields, fieldsData);
-		return gpuFields;
+		getHostBuffer()->resize(fieldsData.size(), false, false);
+		fillSizeAndOffset(getFields(fieldsData));
+		fillPointers(fieldsData);
+		getDeviceBuffer()->copyFrom(getHostBuffer());
+		return getDeviceBuffer();
+	}
+
+	static DeviceSyncArray<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
+	{
+		getHostBuffer()->resize(fieldsData.size(), false, false);
+		fillSizeAndOffset(getFields(fieldsData));
+		fillPointers(fieldsData);
+		getDeviceBuffer()->copyFrom(getHostBuffer());
+		return getDeviceBuffer();
 	}
 
 private:
-	static VArrayProxy<GPUFieldDesc>::Ptr initialize(const std::vector<rgl_field_t>& fields)
+	static void fillSizeAndOffset(const std::vector<rgl_field_t>& fields)
 	{
-		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
 		std::size_t offset = 0;
 		std::size_t gpuFieldIdx = 0;
 		for (auto field : fields) {
 			if (!isDummy(field)) {
-				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
+				(*getHostBuffer())[gpuFieldIdx] = GPUFieldDesc {
 					.readDataPtr = nullptr,
 					.writeDataPtr = nullptr,
 					.size = getFieldSize(field),
@@ -57,7 +73,6 @@ private:
 			++gpuFieldIdx;
 			offset += getFieldSize(field);
 		}
-		return gpuFields;
 	}
 
 	template <typename T>
@@ -70,19 +85,19 @@ private:
 	}
 
 	template <typename T>
-	static void fillWithData(VArrayProxy<GPUFieldDesc>::Ptr& gpuFields, const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
+	static void fillPointers(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		static_assert(std::is_same_v<T, void*> || std::is_same_v<T, const void*>);
-		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
+		for (size_t i = 0; i < getHostBuffer()->getCount(); ++i) {
 			if (fieldsData[i].second == nullptr) {  // dummy field
 				continue;
 			}
 			if constexpr (std::is_same_v<T, const void*>) {
-				(*gpuFields)[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
+				(*getHostBuffer())[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
 				continue;
 			}
 			if constexpr (std::is_same_v<T, void*>) {
-				(*gpuFields)[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
+				(*getHostBuffer())[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
 				continue;
 			}
 		}
