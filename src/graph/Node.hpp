@@ -22,7 +22,7 @@
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 #include <VArray.hpp>
-#include <memory/DeviceAsyncArrayManager.hpp>
+#include <memory/StreamBoundObjectsManager.hpp>
 #include <rgl/api/core.h>
 
 struct Graph;
@@ -173,7 +173,7 @@ protected:
 	CudaEvent::Ptr execCompleted { nullptr };
 
 	std::weak_ptr<Graph> graph; // Pointer may be destroyed e.g. on addChild
-	DeviceAsyncArrayManager arrayMgr;
+	StreamBoundObjectsManager arrayMgr;
 
 	friend struct Graph;
 	friend struct fmt::formatter<Node>;

@@ -17,27 +17,35 @@
 
 #include <list>
 #include <memory>
+#include <stdexcept>
 
 #include <IStreamBound.hpp>
-#include <memory/ConcreteArrays.hpp>
 
-struct DeviceAsyncArrayManager
+struct StreamBoundObjectsManager
 {
-	template<typename T>
-	DeviceAsyncArray<T>::Ptr create()
+	void registerObject(IStreamBound::Ptr object)
 	{
-		if (lastStream.expired()) {
-			auto msg = fmt::format("DeviceAsyncArrayManager: called create() without prior call to setStream()");
+		if (!currentStream.has_value()) {
+			currentStream = object->getStream();
+		}
+		if (currentStream.value().expired()) {
+			auto msg = fmt::format("StreamBoundObjectsManager: called registerObject(), but current stream has expired");
 			throw std::logic_error(msg);
 		}
-		auto ptr = DeviceAsyncArray<T>::create(lastStream.lock());
-		streamBoundObjects.emplace_back(ptr);
-		return ptr;
+		if (object->getStream().get() != currentStream.value().lock().get()) {
+			auto msg = fmt::format("StreamBoundObjectsManager: attempted to registerObject() using a different stream");
+			throw std::logic_error(msg);
+		}
+		streamBoundObjects.emplace_back(object);
 	}
 
 	void setStream(CudaStream::Ptr newStream)
 	{
-		if (auto lastStreamShPtr = lastStream.lock()) {
+		if (!currentStream.has_value()) {
+			auto msg = fmt::format("StreamBoundObjectsManager: attempted to setStream() before call to registerObject()");
+			throw std::logic_error(msg);
+		}
+		if (auto lastStreamShPtr = currentStream.value().lock()) {
 			if (lastStreamShPtr.get() == newStream.get()) {
 				return;
 			}
@@ -53,10 +61,10 @@ struct DeviceAsyncArrayManager
 			}
 			objectWeakPtr.lock()->setStream(newStream);
 		}
-		lastStream = newStream;
+		currentStream = newStream;
 	}
 
 private:
-	std::weak_ptr<CudaStream> lastStream;
-	std::list<std::weak_ptr<IStreamBound>> streamBoundObjects; // List of objects that are bound to lastStream
+	std::optional<std::weak_ptr<CudaStream>> currentStream;
+	std::list<std::weak_ptr<IStreamBound>> streamBoundObjects; // List of objects that are bound to currentStream
 };

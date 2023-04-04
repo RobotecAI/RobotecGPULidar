@@ -18,6 +18,7 @@
 #include <memory/MemoryKind.hpp>
 #include <memory/AbstractArrays.hpp>
 #include <IStreamBound.hpp>
+#include <memory/StreamBoundObjectsManager.hpp>
 
 template <typename T>
 struct DeviceAsyncArray;
@@ -31,30 +32,50 @@ struct HostPageableArray;
 template <typename T>
 struct HostPinnedArray;
 
+struct StreamBoundObjectsManager;
+
 template <typename T>
 struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>, public IStreamBound
 {
 	using Ptr = std::shared_ptr<DeviceAsyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceAsyncArray<T>>;
 
+	CudaStream::Ptr getStream() const override { return stream; }
+
 	void setStream(CudaStream::Ptr newStream) override
 	{
 		this->memOps = MemoryOperations::get<MemoryKind::DeviceAsync>(newStream);
+		this->stream = newStream;
+	}
+
+	/**
+	 * Safe and synchronous copy implementation.
+	 * If needed, an unsafe async version could be implemented;
+	 * however, it may be risky since the source memory could be invalidated before the copy is completed.
+	 */
+	void copyFrom(HostPinnedArray<T>::Ptr src)
+	{
+		this->resize(src->getCount(), false, false);
+		CHECK_CUDA(cudaMemcpyAsync(this->data, src->data, this->getSizeOf() * this->getCount(), cudaMemcpyHostToDevice, this->getStream()->get()));
+		CHECK_CUDA(cudaStreamSynchronize(this->getStream()->get()));
+	}
+
+	static DeviceAsyncArray<T>::Ptr create(CudaStream::Ptr streamArg, std::optional<std::reference_wrapper<StreamBoundObjectsManager>> manager)
+	{
+		auto array = DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(streamArg));
+		if (manager.has_value()) {
+			manager.value().get().registerObject(array);
+		}
+		return array;
 	}
 
 protected:
-	static DeviceAsyncArray<T>::Ptr create(CudaStream::Ptr streamArg)
-	{
-		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(MemoryOperations::get<MemoryKind::DeviceAsync>(streamArg)));
-	}
-
 	DeviceAsyncArray(CudaStream::Ptr streamArg)
 	  : DeviceArray<MemoryKind::DeviceAsync, T>(MemoryOperations::get<MemoryKind::DeviceAsync>(streamArg))
 	  , stream(streamArg) {}
 
 protected:
 	CudaStream::Ptr stream; // Needed to implement IStreamBound
-	using DeviceArray<MemoryKind::DeviceAsync, T>::DeviceArray;
 
 	friend struct DeviceAsyncArrayManager;
 };
@@ -114,6 +135,13 @@ struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
 		return HostPinnedArray<T>::Ptr {
 			new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())
 		};
+	}
+
+	void copyFrom(DeviceAsyncArray<T>::Ptr source)
+	{
+		this->resize(source->getCount(), false, false);
+		CHECK_CUDA(cudaMemcpyAsync(this->data, source->data, this->getSizeOf() * this->getCount(), cudaMemcpyDeviceToHost, source->getStream()->get()));
+		CHECK_CUDA(cudaStreamSynchronize(source->getStream()->get()));
 	}
 
 protected:

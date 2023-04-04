@@ -14,9 +14,9 @@ set(RGL_TEST_FILES
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/addChildTest.cpp
-    src/ArrayTest.cpp
+    src/memory/arrayTest.cpp
     src/synchronization/syncTest.cpp
-    src/synchronization/testKernel.cu)
+    src/synchronization/testKernel.cu src/memory/arrayChangeStreamTest.cpp)
 
 # Only Linux
 if ((NOT WIN32))

@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <CudaStream.hpp>
 
 /**
@@ -22,5 +24,7 @@
  */
 struct IStreamBound
 {
+	using Ptr = std::shared_ptr<IStreamBound>;
 	virtual void setStream(CudaStream::Ptr) = 0;
+	virtual CudaStream::Ptr getStream() const = 0;
 };
