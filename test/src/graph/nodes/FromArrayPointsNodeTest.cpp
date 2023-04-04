@@ -3,9 +3,7 @@
 #include <gtest/gtest.h>
 #include <utils.hpp>
 
-class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointTestHelper {
-protected:
-};
+class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointTestHelper {};
 
 INSTANTIATE_TEST_SUITE_P(
     FromArrayPointsNodeTests, FromArrayPointsNodeTest,

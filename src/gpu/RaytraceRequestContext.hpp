@@ -32,13 +32,14 @@ struct RaytraceRequestContext
 	OptixTraversableHandle scene;
 	double sceneTime;
 
-	// Output
-	Field<XYZ_F32>::type* xyz;
-	Field<IS_HIT_I32>::type* isHit;
-	Field<RAY_IDX_U32>::type* rayIdx;
-	Field<RING_ID_U16>::type* ringIdx;
-	Field<DISTANCE_F32>::type* distance;
-	Field<INTENSITY_F32>::type* intensity;
-	Field<TIME_STAMP_F64>::type* timestamp;
+        // Output
+        Field<XYZ_F32>::type* xyz;
+        Field<IS_HIT_I32>::type* isHit;
+        Field<RAY_IDX_U32>::type* rayIdx;
+        Field<RING_ID_U16>::type* ringIdx;
+        Field<DISTANCE_F32>::type* distance;
+        Field<INTENSITY_F32>::type* intensity;
+        Field<TIME_STAMP_F64>::type* timestamp;
+        Field<ENTITY_IDX_U32>::type* entityIdx;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);
