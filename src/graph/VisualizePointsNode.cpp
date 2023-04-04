@@ -76,7 +76,7 @@ void VisualizePointsNode::enqueueExecImpl(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
+	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream, gpuFieldDescBuilder);
 
 	// Convert to PCL cloud
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));

@@ -16,7 +16,9 @@ set(RGL_TEST_FILES
     src/graph/addChildTest.cpp
     src/memory/arrayTest.cpp
     src/synchronization/syncTest.cpp
-    src/synchronization/testKernel.cu src/memory/arrayChangeStreamTest.cpp)
+    src/synchronization/testKernel.cu
+    src/memory/arrayChangeStreamTest.cpp
+)
 
 # Only Linux
 if ((NOT WIN32))

@@ -34,7 +34,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	inputData->setData(static_cast<const char*>(points), pointCount * getPointSize(fields));
 
 	std::size_t pointSize = getPointSize(fields);
-	auto gpuFields = GPUFieldDescBuilder::buildWritable(getFieldToPointerMappings(fields));
+	auto gpuFields = gpuFieldDescBuilder.buildWritable(getFieldToPointerMappings(fields));
 	const char* inputPtr = static_cast<const char*>(inputData->getReadPtr(MemLoc::Device));
 	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getWritePtr());
 	// TODO(msz-rai): check sync is necessary

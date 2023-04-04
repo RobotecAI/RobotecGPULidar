@@ -31,6 +31,7 @@ extern "C" {
 RGL_API rgl_status_t
 rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 {
+	static GPUFieldDescBuilder gpuFieldDescBuilder;
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_write_pcd_file(node={}, file={})", repr(node), file_path);
 		CHECK_ARG(file_path != nullptr);
@@ -45,7 +46,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 		// Get formatted data
 		VArray::Ptr rglCloud = VArray::create<char>();
 		// TODO(msz-rai): CudaStream for formatAsync: nullptr or pointCloudNode->getGraphRunCtx()->getStream()?
-		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, {XYZ_F32, PADDING_32}, nullptr);
+		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, {XYZ_F32, PADDING_32}, nullptr, gpuFieldDescBuilder);
 
 		// Convert to PCL cloud
 		pcl::PointCloud<pcl::PointXYZ> pclCloud;
