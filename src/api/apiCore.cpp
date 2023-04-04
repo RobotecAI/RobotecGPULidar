@@ -278,6 +278,25 @@ void TapePlayer::tape_entity_set_pose(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_entity_set_id(rgl_entity_t entity, int id)
+{
+        auto status = rglSafeCall([&]() {
+                RGL_API_LOG("rgl_entity_set_id(entity={}, id={})", (void*) entity, id);
+                CHECK_ARG(entity != nullptr);
+                Entity::validatePtr(entity)->setId(id);
+        });
+        TAPE_HOOK(entity, id);
+        return status;
+}
+
+void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
+{
+        //TODO mrozikp
+        // rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
+        //    reinterpret_cast<int>(fileMmap + yamlNode[1].as<size_t>()));
+}
+
+RGL_API rgl_status_t
 rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
 	auto status = rglSafeCall([&]() {

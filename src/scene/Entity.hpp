@@ -27,12 +27,14 @@ struct Entity : APIObject<Entity>
 
 	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
 	void setTransform(Mat3x4f newTransform);
+        void setId(int newId);
 	OptixInstance getIAS(int idx);
 
 	std::shared_ptr<Mesh> mesh;
 	std::weak_ptr<Scene> scene;
 private:
 	Mat3x4f transform;
+        int id;
 	std::optional<std::string> humanReadableName;
 	friend struct APIObject<Entity>;
 	friend struct Scene;
