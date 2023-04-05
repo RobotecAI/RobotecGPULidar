@@ -20,12 +20,12 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
-void RaytraceNode::onInputChange()
+void RaytraceNode::validateImpl()
 {
 	// It should be viewed as a temporary solution. Will change in v14.
 	setFields(findFieldsToCompute());
 
-	raysNode = getValidInput<IRaysNode>();
+	raysNode = getExactlyOneInputOfType<IRaysNode>();
 
 	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
@@ -44,7 +44,7 @@ auto RaytraceNode::getPtrTo()
 	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
-void RaytraceNode::schedule(cudaStream_t stream)
+void RaytraceNode::enqueueExecImpl(cudaStream_t stream)
 {
 	for (auto const& [_, data] : fieldData) {
 		data->resize(raysNode->getRayCount(), false, false);

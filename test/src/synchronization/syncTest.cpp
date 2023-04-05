@@ -2,6 +2,7 @@
 #include <cuda.h>
 #include <gtest/gtest.h>
 #include <utils.hpp>
+#include "CudaEvent.hpp"
 
 using namespace testing;
 
@@ -35,15 +36,12 @@ TEST_F(SyncTests, GraphAndCopyStream)
         hostArray[i] = i;
         dummyHostArray[i] = i;
     }
-    // Create event for sensitive job (kernel) end.
-    cudaEvent_t jobDoneEvent;
-
     // Create event without timer (used for profiling).
     // According to CUDA documentation:
     // Events created with this flag specified and the cudaEventBlockingSync flag not specified
     // will provide the best performance when used with cudaStreamWaitEvent() and cudaEventQuery().
     // https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html#group__CUDART__EVENT_1g7b317e07ff385d85aa656204b971a042
-    CHECK_CUDA(cudaEventCreateWithFlags(&jobDoneEvent, cudaEventDisableTiming));
+    auto jobDoneEvent = CudaEvent::create();
 
     // Copy vector from host memory to device memory
     float* deviceArray;
@@ -54,7 +52,7 @@ TEST_F(SyncTests, GraphAndCopyStream)
     testKernelWrapper(maxGPUCoresTestCount, deviceArray, graphStream);
 
     // Record synchronization event to the stream after sensitive job.
-    CHECK_CUDA(cudaEventRecord(jobDoneEvent, graphStream));
+    CHECK_CUDA(cudaEventRecord(jobDoneEvent->get(), graphStream));
 
     // Perform copy operation on the copyStream parallel to graphStream kernel.
     float* dummyDeviceArray;
@@ -64,7 +62,7 @@ TEST_F(SyncTests, GraphAndCopyStream)
 
     // Synchronize streams. This is pass or not for the test.
     //  All API Calls in given stream, will wait for the event  to be completed.
-    CHECK_CUDA(cudaStreamWaitEvent(copyStream, jobDoneEvent));
+    CHECK_CUDA(cudaStreamWaitEvent(copyStream, jobDoneEvent->get()));
 
     // Copy result from device memory to host memory by substream
     // cudaMemcpy(hostArray, deviceArray, size, cudaMemcpyDeviceToHost);
@@ -78,8 +76,6 @@ TEST_F(SyncTests, GraphAndCopyStream)
 
     CHECK_CUDA(cudaStreamDestroy(graphStream));
     CHECK_CUDA(cudaStreamDestroy(copyStream));
-
-    CHECK_CUDA(cudaEventDestroy(jobDoneEvent));
 
     CHECK_CUDA(cudaFreeHost(hostArray));
     CHECK_CUDA(cudaFreeHost(dummyHostArray));

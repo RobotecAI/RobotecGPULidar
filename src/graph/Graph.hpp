@@ -24,23 +24,23 @@
 
 struct Graph
 {
-	// Public - tape uses it
-	static std::set<std::shared_ptr<Node>> findConnectedNodes(std::shared_ptr<Node> anyNode);
-
 	static std::shared_ptr<Graph> create(std::shared_ptr<Node> node);
 	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
+	static std::set<std::shared_ptr<Node>> findConnectedNodes(std::shared_ptr<Node> anyNode); // Public - tape uses it
 
 	void run();
-	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
+	CudaStream::Ptr getStream() const { return stream; }
 
 	virtual ~Graph();
 private:
 	Graph() : stream(CudaStream::create()) {}
 
+	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
+
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
 private:
-	std::shared_ptr<CudaStream> stream;
+	CudaStream::Ptr stream;
 	std::set<std::shared_ptr<Node>> nodes;
 	std::vector<std::shared_ptr<Node>> executionOrder;
 

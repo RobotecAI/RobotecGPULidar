@@ -43,11 +43,12 @@ struct CudaStream
 				CHECK_CUDA(cudaStreamDestroy(stream));
 				stream = nullptr;
 			}
-			catch(std::exception& e) {
+			catch(std::runtime_error& e) {
 				RGL_ERROR("Error in ~CudaStream: {}", e.what());
 			}
 		}
 	}
+
 
 private:
 	// Wraps null stream

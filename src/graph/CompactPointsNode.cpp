@@ -20,7 +20,7 @@
 // TODO: WritePCD triggers cudaSynchronizeStream in its indirect input CompactNode
 // TODO: This can be alleviated with a stream-aware VArray :)
 
-void CompactPointsNode::schedule(cudaStream_t stream)
+void CompactPointsNode::enqueueExecImpl(cudaStream_t stream)
 {
 	cacheManager.trigger();
 	inclusivePrefixSum->resize(input->getHeight() * input->getWidth(), false, false);

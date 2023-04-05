@@ -64,15 +64,15 @@ void Graph::run()
 
 	for (auto&& current : nodesInExecOrder) {
 		RGL_DEBUG("Validating node: {}", *current);
-		current->onInputChange();
+		current->validate();
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
 	for (auto&& node : nodesInExecOrder) {
-		RGL_DEBUG("Scheduling node: {}", *node);
-		node->schedule(nullptr);
+		RGL_DEBUG("Enqueueing node: {}", *node);
+		node->enqueueExec();
 	}
-	RGL_DEBUG("Node scheduling done");  // This also logs the time diff for the last one
+	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 }
 
 void Graph::destroy(std::shared_ptr<Node> anyNode, bool preserveNodes)

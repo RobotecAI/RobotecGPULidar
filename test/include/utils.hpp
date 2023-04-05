@@ -25,7 +25,8 @@
         EXPECT_EQ(actual, expected);                               \
         const char* error_string;                                  \
         rgl_get_last_error_string(&error_string);                  \
-        for (auto&& substr : { __VA_ARGS__ }) {                    \
+        std::vector<std::string> errMsgBits = { __VA_ARGS__ };     \
+        for (auto&& substr : errMsgBits) {                         \
             EXPECT_THAT(error_string, testing::HasSubstr(substr)); \
         }                                                          \
     } while (false)
