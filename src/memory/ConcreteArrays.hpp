@@ -60,13 +60,16 @@ struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>, public
 		CHECK_CUDA(cudaStreamSynchronize(this->getStream()->get()));
 	}
 
-	static DeviceAsyncArray<T>::Ptr create(CudaStream::Ptr streamArg, std::optional<std::reference_wrapper<StreamBoundObjectsManager>> manager)
+	static DeviceAsyncArray<T>::Ptr createWithManager(StreamBoundObjectsManager& manager)
 	{
-		auto array = DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(streamArg));
-		if (manager.has_value()) {
-			manager.value().get().registerObject(array);
-		}
+		auto array = createStandalone(manager.getStream());
+		manager.registerObject(array);
 		return array;
+	}
+
+	static DeviceAsyncArray<T>::Ptr createStandalone(CudaStream::Ptr stream)
+	{
+		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(stream));
 	}
 
 protected:
