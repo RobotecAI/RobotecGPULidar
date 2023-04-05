@@ -5,20 +5,21 @@ set(RGL_TEST_FILES
     src/asyncStressTest.cpp
     src/apiReadmeExample.cpp
     src/gaussianStressTest.cpp
-        src/apiSurfaceTests.cpp
-        #    src/features/range.cpp
-        #    src/features/mesh.cpp
-        #    src/features/transforms.cpp
-        #    src/features/pcdOutput.cpp
-        src/testMat3x4f.cpp
-        src/scene/textureTest.cpp
-        src/graph/nodes/FromArrayPointsNodeTest.cpp
-        src/graph/nodes/TransformPointsNodeTest.cpp
-        src/scene/entityIdTest.cpp
-        src/DistanceFieldTest.cpp
-    src/ArrayTest.cpp
+    src/apiSurfaceTests.cpp
+    #    src/features/range.cpp
+    #    src/features/mesh.cpp
+    #    src/features/transforms.cpp
+    #    src/features/pcdOutput.cpp
+    src/testMat3x4f.cpp
+    src/DistanceFieldTest.cpp
+    src/scene/textureTest.cpp
+    src/scene/entityIdTest.cpp
+    src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/graph/nodes/TransformPointsNodeTest.cpp
+    src/graph/addChildTest.cpp
+    src/memory/arrayTest.cpp
     src/synchronization/syncTest.cpp
-    src/synchronization/testKernel.cu)
+    src/synchronization/testKernel.cu src/memory/arrayChangeStreamTest.cpp)
 
 # Only Linux
 if ((NOT WIN32))

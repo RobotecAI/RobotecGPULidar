@@ -45,7 +45,7 @@
  */
 
 // TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
-// TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
+// TODO(prybicki): This would implement automatic getExactlyOneInputOfType() and method forwarding.
 
 struct FormatPointsNode : IPointsNodeSingleInput
 {
@@ -53,7 +53,7 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
@@ -87,7 +87,7 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
 
 	// Node
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
@@ -113,8 +113,8 @@ struct RaytraceNode : IPointsNode
 	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Point cloud description
 	bool isDense() const override { return false; }
@@ -149,7 +149,7 @@ struct TransformPointsNode : IPointsNodeSingleInput
 	Mat3x4f getTransform() const { return transform; }
 
 	// Node
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 	std::string getArgsString() const override;
 
 	// Node requirements
@@ -171,7 +171,7 @@ struct TransformRaysNode : IRaysNodeSingleInput
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
 	// Node
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
@@ -188,7 +188,7 @@ struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	// Node
-	void schedule(cudaStream_t stream) override {}
+	void enqueueExecImpl(cudaStream_t stream) override {}
 
 	// Rays description
 	size_t getRayCount() const override { return rays->getCount(); }
@@ -208,8 +208,8 @@ struct SetRingIdsRaysNode : IRaysNodeSingleInput
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override {}
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override {}
 
 	// Rays description
 	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
@@ -227,7 +227,7 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
@@ -247,8 +247,8 @@ struct SpatialMergePointsNode : IPointsNode
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
@@ -276,8 +276,8 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
@@ -302,7 +302,7 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void schedule(cudaStream_t stream) override {}
+	void enqueueExecImpl(cudaStream_t stream) override {}
 
 	// Point cloud description
 	bool isDense() const override { return false; }
@@ -328,8 +328,8 @@ struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
@@ -352,8 +352,8 @@ struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 	void setParameters(float mean, float stDev, rgl_axis_t rotationAxis);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
@@ -380,8 +380,8 @@ struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
 
 	// Node
-	void onInputChange() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl(cudaStream_t stream) override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };

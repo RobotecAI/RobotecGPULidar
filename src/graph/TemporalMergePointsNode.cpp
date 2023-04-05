@@ -34,9 +34,9 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 	}
 }
 
-void TemporalMergePointsNode::onInputChange()
+void TemporalMergePointsNode::validateImpl()
 {
-	IPointsNodeSingleInput::onInputChange();
+	IPointsNodeSingleInput::validateImpl();
 
 	// Check input pointcloud is unorganized
 	if (input->getHeight() != 1) {
@@ -45,7 +45,7 @@ void TemporalMergePointsNode::onInputChange()
 	}
 }
 
-void TemporalMergePointsNode::schedule(cudaStream_t stream)
+void TemporalMergePointsNode::enqueueExecImpl(cudaStream_t stream)
 {
 	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {

@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/NodesCore.hpp>
+#pragma once
 
-void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCount)
+#include <memory>
+
+#include <CudaStream.hpp>
+
+/**
+ * Interface for objects that hold a stream and allow changing it in runtime.
+ * It is a caller responsibility to make sure that stream can be changed.
+ */
+struct IStreamBound
 {
-	ringIds->setData(ringIdsRaw, ringIdsCount);
-}
-
-void SetRingIdsRaysNode::validateImpl()
-{
-	IRaysNodeSingleInput::validateImpl();
-
-	if (input->getRayCount() % ringIds->getCount() != 0) {
-		auto msg = fmt::format("ring ids doesn't match number of rays. "
-		    "RayCount({}) mod RingIdsCount({}) should be zero", input->getRayCount(), ringIds->getCount());
-		throw InvalidPipeline(msg);
-	}
-}
+	using Ptr = std::shared_ptr<IStreamBound>;
+	virtual void setStream(CudaStream::Ptr) = 0;
+	virtual CudaStream::Ptr getStream() const = 0;
+};

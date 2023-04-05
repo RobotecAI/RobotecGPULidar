@@ -17,6 +17,11 @@
 
 API_OBJECT_INSTANCE(Node);
 
+Node::Node()
+{
+    execCompleted = CudaEvent::create();
+}
+
 void Node::addChild(Node::Ptr child)
 {
 	if (child == nullptr) {
@@ -29,11 +34,17 @@ void Node::addChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
+	// This might be a subject for future optimization.
+	// Invalidate graphCtx for all connected nodes of child and parent
 	Graph::destroy(shared_from_this(), true);
 	Graph::destroy(child, true);
 
+	// Remove links
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
+
+	this->dirty = true;
+	child->dirty = true;
 }
 
 void Node::removeChild(Node::Ptr child)
@@ -56,13 +67,17 @@ void Node::removeChild(Node::Ptr child)
 		throw InvalidPipeline(msg);
 	}
 
+	// This might be a subject for future optimization.
+	// Invalidate graphCtx for all connected nodes of child and parent
+	// Destroy graph (by invariant, shared by child and parent)
 	Graph::destroy(shared_from_this(), true);
 
-	// Remove child from our children
+	// Remove links
 	this->outputs.erase(childIt);
-
-	// Remove us as a parent of that child
 	child->inputs.erase(thisIt);
+
+	this->dirty = true;
+	child->dirty = true;
 }
 
 std::shared_ptr<Graph> Node::getGraph()
@@ -72,3 +87,34 @@ std::shared_ptr<Graph> Node::getGraph()
 	}
 	return Graph::create(shared_from_this());
 }
+
+void Node::setGraph(std::shared_ptr<Graph> newGraph)
+{
+	arrayMgr.setStream(newGraph->getStream());
+	this->graph = newGraph;
+}
+
+void Node::validate()
+{
+	if (isValid()) {
+		return;
+	}
+	if (!hasGraph()) {
+		auto msg = fmt::format("{}: attempted to call validate() despite !hasGraph()", getName());
+		throw std::logic_error(msg);
+	}
+	this->validateImpl();
+	dirty = false;
+}
+
+void Node::enqueueExec()
+{
+	if (!isValid()) {
+		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
+		throw std::logic_error(msg);
+	}
+	this->enqueueExecImpl(getGraph()->getStream()->get());
+
+	CHECK_CUDA(cudaEventRecord(execCompleted->get(), getGraph()->getStream()->get()));
+}
+

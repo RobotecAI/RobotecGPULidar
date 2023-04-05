@@ -499,6 +499,14 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		CHECK_ARG(node != nullptr);
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		if (!pointCloudNode->isValid()) {
+			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
+			// This particular check could be done in IPointsNode/IRaysNode, however, due to tight deadlines,
+			// and possibility of the future refactor (merging IPointsNode/IRaysNode), I'm OK with checking it here
+			// TODO: fix in better times
+			auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", pointCloudNode->getName());
+			throw InvalidPipeline(msg);
+		}
 		auto elemCount = (int32_t) pointCloudNode->getPointCount();
 		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
 
@@ -530,6 +538,14 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(data != nullptr);
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		if (!pointCloudNode->isValid()) {
+			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
+			// This particular check could be done in IPointsNode/IRaysNode, however, due to tight deadlines,
+			// and possibility of the future refactor (merging IPointsNode/IRaysNode), I'm OK with checking it here
+			// TODO: fix in better times
+			auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", pointCloudNode->getName());
+			throw InvalidPipeline(msg);
+		}
 		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
@@ -557,6 +573,7 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child)
 		RGL_API_LOG("rgl_graph_node_add_child(parent={}, child={})", repr(parent), repr(child));
 		CHECK_ARG(parent != nullptr);
 		CHECK_ARG(child != nullptr);
+		CHECK_ARG(parent != child);
 
 		Node::validatePtr(parent)->addChild(Node::validatePtr(child));
 	});
@@ -641,8 +658,8 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(transform != nullptr);
+		            CHECK_ARG(node != nullptr);
+		            CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
 	});
