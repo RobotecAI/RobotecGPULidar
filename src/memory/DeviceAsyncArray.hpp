@@ -28,7 +28,6 @@ struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>, public
 {
 	using Ptr = std::shared_ptr<DeviceAsyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceAsyncArray<T>>;
-	using DeviceArray<MemoryKind::DeviceAsync, T>::copyFrom;
 
 	CudaStream::Ptr getStream() const override { return stream; }
 

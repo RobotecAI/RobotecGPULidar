@@ -67,15 +67,17 @@ struct FormatPointsNode : IPointsNodeSingleInput
 
 	// Actual implementation of formatting made public for other nodes
 	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
-	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
+	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream,
+	                        GPUFieldDescBuilder& gpuFieldDescBuilder);
 
 private:
-	static std::vector<std::pair<rgl_field_t, const void*>> collectFieldConstRawData(const IPointsNode::Ptr& input,
-	                                                                                 const std::vector<rgl_field_t>& fields,
-	                                                                                 cudaStream_t stream);
+	static std::vector<std::pair<rgl_field_t, const void*>> getFieldToPointerMappings(const IPointsNode::Ptr& input,
+	                                                                                  const std::vector<rgl_field_t>& fields,
+	                                                                                  cudaStream_t stream);
 
 	std::vector<rgl_field_t> fields;
 	VArray::Ptr output = VArray::create<char>();
+	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
 struct CompactPointsNode : IPointsNodeSingleInput
@@ -315,7 +317,8 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 private:
-	std::vector<std::pair<rgl_field_t, void*>> collectFieldRawData(const std::vector<rgl_field_t>& fields);
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+	std::vector<std::pair<rgl_field_t, void*>> getFieldToPointerMappings(const std::vector<rgl_field_t>& fields);
 
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 	size_t width = 0;

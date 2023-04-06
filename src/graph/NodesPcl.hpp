@@ -56,6 +56,7 @@ private:
 	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
 	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
 	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
 struct VisualizePointsNode : IPointsNodeSingleInput
@@ -88,4 +89,5 @@ private:
 	int windowHeight;
 	bool fullscreen;
 	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+	GPUFieldDescBuilder gpuFieldDescBuilder;
 };

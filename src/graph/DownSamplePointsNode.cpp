@@ -40,7 +40,7 @@ void DownSamplePointsNode::enqueueExecImpl(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
+	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream, gpuFieldDescBuilder);
 
 	// Downsample
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();

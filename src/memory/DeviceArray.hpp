@@ -22,6 +22,7 @@
 #include <memory/Array.hpp>
 #include <memory/MemoryKind.hpp>
 #include <memory/InvalidArrayCast.hpp>
+#include <memory/HostPageableArray.hpp>
 
 /**
  * DeviceArray extends Array with some convenience methods useful for dealing with device memory.
@@ -40,12 +41,6 @@ struct DeviceArray : public Array<M, T>
 	using Array<M, T>::data;
 	using Array<M, T>::count;
 	using Array<M, T>::capacity;
-
-	void copyFrom(Array<MemoryKind::HostPageable, T>::ConstPtr src)
-	{
-		this->resize(src->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpy(this->data, src->getReadPtr(), sizeof(T) * this->getCount(), cudaMemcpyHostToDevice));
-	}
 
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }

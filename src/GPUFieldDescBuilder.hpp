@@ -21,33 +21,45 @@
 #include <gpu/GPUFieldDesc.hpp>
 #include <graph/Interfaces.hpp>
 #include <graph/NodesCore.hpp>
+#include <memory/HostPageableArray.hpp>
+#include <memory/DeviceSyncArray.hpp>
 
 // Builder for GPUFieldDesc. Separated struct to avoid polluting gpu-visible header (gpu/GPUFieldDesc.hpp).
 struct GPUFieldDescBuilder
 {
-	static VArrayProxy<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
+	// TODO: This class has a hidden bug. If hostBuffer was not zeroed on each build,
+	// TODO: fillSizeAndOffset would leave trash in some GPUFieldDesc causing cudaIllegalMemoryAccess
+	// TODO: Also, this class is over-engineered; likely due to using GPUFieldDesc for both directions of formatting
+	// TODO: This should be fixed by splitting GPUFieldDesc into two separate structs and merging fill* methods.
+
+	DeviceSyncArray<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
 	{
-		auto gpuFields = GPUFieldDescBuilder::initialize(GPUFieldDescBuilder::getFields(fieldsData));
-		GPUFieldDescBuilder::fillWithData(gpuFields, fieldsData);
-		return gpuFields;
+		hostBuffer->clear(false);
+		hostBuffer->resize(fieldsData.size(), true, false);
+		fillSizeAndOffset(getFields(fieldsData));
+		fillPointers(fieldsData);
+		deviceBuffer->copyFrom(hostBuffer);
+		return deviceBuffer;
 	}
 
-	static VArrayProxy<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
+	DeviceSyncArray<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
 	{
-		auto gpuFields = GPUFieldDescBuilder::initialize(GPUFieldDescBuilder::getFields(fieldsData));
-		GPUFieldDescBuilder::fillWithData(gpuFields, fieldsData);
-		return gpuFields;
+		hostBuffer->clear(false);
+		hostBuffer->resize(fieldsData.size(), true, false);
+		fillSizeAndOffset(getFields(fieldsData));
+		fillPointers(fieldsData);
+		deviceBuffer->copyFrom(hostBuffer);
+		return deviceBuffer;
 	}
 
 private:
-	static VArrayProxy<GPUFieldDesc>::Ptr initialize(const std::vector<rgl_field_t>& fields)
+	void fillSizeAndOffset(const std::vector<rgl_field_t>& fields)
 	{
-		auto gpuFields = VArrayProxy<GPUFieldDesc>::create(fields.size());
 		std::size_t offset = 0;
 		std::size_t gpuFieldIdx = 0;
 		for (auto field : fields) {
 			if (!isDummy(field)) {
-				(*gpuFields)[gpuFieldIdx] = GPUFieldDesc {
+				(*hostBuffer)[gpuFieldIdx] = GPUFieldDesc {
 					.readDataPtr = nullptr,
 					.writeDataPtr = nullptr,
 					.size = getFieldSize(field),
@@ -57,11 +69,10 @@ private:
 			++gpuFieldIdx;
 			offset += getFieldSize(field);
 		}
-		return gpuFields;
 	}
 
 	template <typename T>
-	static std::vector<rgl_field_t> getFields(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
+	std::vector<rgl_field_t> getFields(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		std::vector<rgl_field_t> fields;
 		std::transform(fieldsData.begin(), fieldsData.end(), std::back_inserter(fields),
@@ -70,21 +81,25 @@ private:
 	}
 
 	template <typename T>
-	static void fillWithData(VArrayProxy<GPUFieldDesc>::Ptr& gpuFields, const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
+	void fillPointers(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		static_assert(std::is_same_v<T, void*> || std::is_same_v<T, const void*>);
-		for (size_t i = 0; i < gpuFields->getCount(); ++i) {
+		for (size_t i = 0; i < hostBuffer->getCount(); ++i) {
 			if (fieldsData[i].second == nullptr) {  // dummy field
 				continue;
 			}
 			if constexpr (std::is_same_v<T, const void*>) {
-				(*gpuFields)[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
+				(*hostBuffer)[i].readDataPtr = static_cast<const char*>(fieldsData[i].second);
 				continue;
 			}
 			if constexpr (std::is_same_v<T, void*>) {
-				(*gpuFields)[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
+				(*hostBuffer)[i].writeDataPtr = static_cast<char*>(fieldsData[i].second);
 				continue;
 			}
 		}
 	}
+
+private:
+	HostPageableArray<GPUFieldDesc>::Ptr hostBuffer = HostPageableArray<GPUFieldDesc>::create();
+	DeviceSyncArray<GPUFieldDesc>::Ptr deviceBuffer = DeviceSyncArray<GPUFieldDesc>::create();
 };

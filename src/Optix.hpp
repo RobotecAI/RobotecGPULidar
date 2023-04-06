@@ -16,7 +16,7 @@
 
 #include <optix_types.h>
 
-// RAII object to (de)initialize OptiX and CUDA
+// RAII object to (de)fillSizeAndOffset OptiX and CUDA
 struct Optix
 {
 	static Optix& getOrCreate();
