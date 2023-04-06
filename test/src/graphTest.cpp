@@ -4,7 +4,6 @@
 #include <lidars.hpp>
 #include <RGLFields.hpp>
 #include <Time.hpp>
-#include <UdpClient.hpp>
 
 #include <math/Mat3x4f.hpp>
 
@@ -372,13 +371,4 @@ TEST_F(GraphCase, TemporalMergeUsesHostMemory)
 	if (allocatedBytes > allowedAllocatedBytes) {
 		FAIL() << fmt::format("TemporalMergeNode seems to allocate GPU memory (allocated {} b)", allocatedBytes);
 	}
-}
-
-
-TEST_F(GraphCase, udpSmokeTest)
-{
-	UdpClient udp = UdpClient::createBroadcaster("192.168.111.11", 10110);
-	std::vector<char> buffer = {0x11, 0x12, 10, 11, 12};
-	for (int i = 0; i < 10; ++i)
-		udp.send(buffer);
 }
