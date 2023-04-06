@@ -28,6 +28,7 @@ struct Entity : APIObject<Entity>
 	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
 	void setTransform(Mat3x4f newTransform);
         void setId(int newId);
+        const int getId(){return id;}
 	OptixInstance getIAS(int idx);
 
 	std::shared_ptr<Mesh> mesh;
