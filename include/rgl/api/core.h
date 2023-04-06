@@ -558,7 +558,7 @@ rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base
 /**
  * Starts execution of the RGL graph containing provided node.
  * This function is asynchronous.
- * @param node Any node from the graph to execute
+ * @param node Any node from the graph to executeAsync
  */
 RGL_API rgl_status_t
 rgl_graph_run(rgl_node_t node);

@@ -311,7 +311,7 @@ rgl_graph_run(rgl_node_t raw_node)
 		if (!node->hasGraphRunCtx()) {
 			GraphRunCtx::createAndAttach(node);
 		}
-		node->getGraphRunCtx()->run();
+		node->getGraphRunCtx()->executeAsync();
 	});
 	TAPE_HOOK(raw_node);
 	return status;
