@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock-matchers.h>
 
-#include "memory/AbstractArrays.hpp"
-#include "memory/ConcreteArrays.hpp"
-#include "memory/InvalidArrayCast.hpp"
+#include <memory/InvalidArrayCast.hpp>
+#include <memory/HostPinnedArray.hpp>
 
 using namespace ::testing;
 
