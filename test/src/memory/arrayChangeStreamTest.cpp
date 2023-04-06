@@ -60,7 +60,7 @@ static void waitCb(cudaStream_t _1,  cudaError_t _2, void*  userData)
 
 TEST_F(ArrayChangeStream, Standalone)
 {
-	DeviceAsyncArray<int>::Ptr array = DeviceAsyncArray<int>::create(streamA, std::nullopt);
+	DeviceAsyncArray<int>::Ptr array = DeviceAsyncArray<int>::createStandalone(streamA);
 	array->copyFrom(nonZeroIntPattern); // Synchronizes array's stream.
 
 	// Block streamA. This way, scheduled operations will be not executed.
@@ -76,10 +76,12 @@ TEST_F(ArrayChangeStream, WithManager)
 {
 	StreamBoundObjectsManager arrayMgr;
 
+	arrayMgr.setStream(streamA);
+
 	// Create arrays through managers
-	auto arrayA = DeviceAsyncArray<int>::create(streamA, std::ref(arrayMgr));
-	auto arrayB = DeviceAsyncArray<float>::create(streamA, std::ref(arrayMgr));
-	auto arrayC = DeviceAsyncArray<float>::create(streamA, std::ref(arrayMgr));
+	auto arrayA = DeviceAsyncArray<int>::createWithManager(arrayMgr);
+	auto arrayB = DeviceAsyncArray<float>::createWithManager(arrayMgr);
+	auto arrayC = DeviceAsyncArray<float>::createWithManager(arrayMgr);
 
 	// Calling setStream twice with the same stream should have no effect
 	arrayMgr.setStream(streamA);

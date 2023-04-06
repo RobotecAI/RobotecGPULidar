@@ -22,7 +22,7 @@
 #include <scene/Mesh.hpp>
 
 #include <graph/NodesCore.hpp>
-#include <graph/Graph.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 extern "C" {
 
@@ -116,9 +116,14 @@ rgl_cleanup(void)
 		Mesh::instances.clear();
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
-			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
-			Node::Ptr node = Node::instances.begin()->second;
-			Graph::destroy(node, false);
+			auto node = Node::instances.begin()->second;
+			if (node->hasGraphRunCtx()) {
+				node->getGraphRunCtx()->detachAndDestroy();
+			}
+			auto connectedNodes = node->disconnectConnectedNodes();
+			for (auto&& nodeToRelease : connectedNodes) {
+				Node::release(nodeToRelease.get());
+			}
 		}
 	});
 	TAPE_HOOK();
@@ -298,15 +303,18 @@ void TapePlayer::tape_scene_set_time(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_run(rgl_node_t node)
+rgl_graph_run(rgl_node_t raw_node)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_run(node={})", repr(node));
-		CHECK_ARG(node != nullptr);
-		auto shptr = Node::validatePtr(node)->getGraph();
-		shptr->run();
+		RGL_API_LOG("rgl_graph_run(node={})", repr(raw_node));
+		CHECK_ARG(raw_node != nullptr);
+		auto node = Node::validatePtr(raw_node);
+		if (!node->hasGraphRunCtx()) {
+			GraphRunCtx::createAndAttach(node);
+		}
+		node->getGraphRunCtx()->run();
 	});
-	TAPE_HOOK(node);
+	TAPE_HOOK(raw_node);
 	return status;
 }
 
@@ -316,22 +324,28 @@ void TapePlayer::tape_graph_run(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_destroy(rgl_node_t node)
+rgl_graph_destroy(rgl_node_t raw_node)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_destroy(node={})", repr(node));
-		CHECK_ARG(node != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		Graph::destroy(Node::validatePtr(node), false);
+		RGL_API_LOG("rgl_graph_destroy(node={})", repr(raw_node));
+		CHECK_ARG(raw_node != nullptr);
+		auto node = Node::validatePtr(raw_node);
+		if (node->hasGraphRunCtx()) {
+			node->getGraphRunCtx()->detachAndDestroy();
+		}
+		auto allNodes = node->disconnectConnectedNodes();
+		for (auto&& nodeToRelease : allNodes) {
+			Node::release(nodeToRelease.get());
+		}
 	});
-	TAPE_HOOK(node);
+	TAPE_HOOK(raw_node);
 	return status;
 }
 
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = Graph::findConnectedNodes(Node::validatePtr(userNode));
+	std::set<Node::Ptr> graph = Node::validatePtr(userNode)->getConnectedNodes();
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
