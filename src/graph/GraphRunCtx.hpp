@@ -59,7 +59,7 @@ private:
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
-	void execute();
+	void executeThreadMain();
 
 private:
 	CudaStream::Ptr stream;
