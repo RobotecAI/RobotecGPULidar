@@ -34,7 +34,7 @@ struct GraphRunCtx
 	/**
 	 * Executes graph bound with this GraphRunCtx.
 	 */
-	void run();
+	void executeAsync();
 
 	/**
 	* Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
@@ -59,7 +59,7 @@ private:
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
-    void executeGraphAsync();
+	void execute();
 
 private:
 	CudaStream::Ptr stream;

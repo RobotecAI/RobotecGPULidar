@@ -38,7 +38,7 @@
  *
  * Some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
  * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
- * while buffers sizes are not reliable, since they can be resized in execute().
+ * while buffers sizes are not reliable, since they can be resized in executeAsync().
  *
  * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
  * operations prior to the return are finished.

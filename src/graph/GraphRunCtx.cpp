@@ -34,13 +34,13 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 	return graphRunCtx;
 }
 
-void GraphRunCtx::run()
+void GraphRunCtx::executeAsync()
 {
 	synchronize();
-	thread = std::thread(&GraphRunCtx::executeGraphAsync, this);
+	thread = std::thread(&GraphRunCtx::execute, this);
 }
 
-void GraphRunCtx::executeGraphAsync()
+void GraphRunCtx::execute()
 {
 	const auto& nodesInExecOrder = executionOrder;
 
