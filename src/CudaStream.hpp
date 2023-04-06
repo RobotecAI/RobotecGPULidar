@@ -17,7 +17,7 @@
 #include <macros/cuda.hpp>
 #include <Logger.hpp>
 
-// RAII object to (de)initialize cudaStream_t
+// RAII object to (de)fillSizeAndOffset cudaStream_t
 struct CudaStream
 {
 	using Ptr = std::shared_ptr<CudaStream>;

@@ -34,14 +34,14 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	inputData->setData(static_cast<const char*>(points), pointCount * getPointSize(fields));
 
 	std::size_t pointSize = getPointSize(fields);
-	auto gpuFields = GPUFieldDescBuilder::buildWritable(collectFieldRawData(fields));
+	auto gpuFields = gpuFieldDescBuilder.buildWritable(getFieldToPointerMappings(fields));
 	const char* inputPtr = static_cast<const char*>(inputData->getReadPtr(MemLoc::Device));
-	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getDevicePtr());
+	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getWritePtr());
 	// TODO(msz-rai): check sync is necessary
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
-std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::collectFieldRawData(const std::vector<rgl_field_t>& fields)
+std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointerMappings(const std::vector<rgl_field_t>& fields)
 {
 	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;
 	for (auto&& field : fields) {

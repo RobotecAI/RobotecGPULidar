@@ -23,11 +23,16 @@ struct DeviceSyncArray : public DeviceArray<MemoryKind::DeviceSync, T>
 {
 	using Ptr = std::shared_ptr<DeviceSyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceSyncArray<T>>;
-	using DeviceArray<MemoryKind::DeviceSync, T>::copyFrom;
 
 	static DeviceSyncArray<T>::Ptr create()
 	{
 		return DeviceSyncArray<T>::Ptr(new DeviceSyncArray(MemoryOperations::get<MemoryKind::DeviceSync>()));
+	}
+
+	void copyFrom(HostPageableArray<T>::ConstPtr src)
+	{
+		this->resize(src->getCount(), false, false);
+		CHECK_CUDA(cudaMemcpy(this->data, src->getReadPtr(), sizeof(T) * this->getCount(), cudaMemcpyHostToDevice));
 	}
 
 	void copyFrom(HostPinnedArray<T>::ConstPtr src)
