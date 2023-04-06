@@ -377,7 +377,7 @@ TEST_F(GraphCase, TemporalMergeUsesHostMemory)
 
 TEST_F(GraphCase, udpSmokeTest)
 {
-	UdpClient udp = UdpClient::create("0.0.0.0", 10110);
+	UdpClient udp = UdpClient::createBroadcaster("192.168.111.11", 10110);
 	std::vector<char> buffer = {0x11, 0x12, 10, 11, 12};
 	for (int i = 0; i < 10; ++i)
 		udp.send(buffer);

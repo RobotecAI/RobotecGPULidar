@@ -22,6 +22,7 @@
 	#include <Ws2tcpip.h>
 	#pragma comment(lib, "ws2_32.lib")
 #else
+	#include <cerrno>
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
 	#include <netinet/in.h>
@@ -40,16 +41,25 @@
 struct UdpClient
 {
 	// Ctor cannot throw, because we want Dtor call if instance creation failed
-	static UdpClient create(const std::string& destAddr, int destPort, bool enableBroadcast=false);
+	static UdpClient create(const std::string& srcAddr, int srcPort,
+	                        const std::string& dstAddr, int dstPort);
+
+	static UdpClient createBroadcaster(const std::string& srcAddr, int srcPort);
 
 	~UdpClient();
 
 	void send(const std::vector<char>& buffer);
 
 private:
-	UdpClient(const std::string& destAddr, int destPort, bool enableBroadcast=false);
+	UdpClient(const std::string& srcAddr, int srcPort,
+	          const std::string& dstAddr, int dstPort);
+
+	bool addressTextToBinary(const std::string& textAddr, int port, sockaddr_in& outAddr);
 
 	bool initialized = false;
+	std::string initErrorMsg;
+
 	sockaddr_in sockAddr;
+	sockaddr_in sendToAddr;
 	SOCKET_TYPE sockfd = INVALID_SOCKET;
 };
