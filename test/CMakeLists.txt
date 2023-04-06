@@ -16,7 +16,7 @@ set(RGL_TEST_FILES
     src/graph/addChildTest.cpp
     src/memory/arrayTest.cpp
     src/memory/arrayChangeStreamTest.cpp
-    src/synchronization/syncTest.cpp
+    src/synchronization/graphAndCopyStream.cpp
     src/synchronization/testKernel.cu
     src/synchronization/graphThreadSynchronization.cpp
 )
