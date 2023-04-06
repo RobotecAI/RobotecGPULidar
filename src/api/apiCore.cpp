@@ -111,9 +111,7 @@ RGL_API rgl_status_t
 rgl_cleanup(void)
 {
 	auto status = rglSafeCall([&]() {
-		Entity::instances.clear();
-		Mesh::instances.clear();
-		Scene::defaultInstance()->clear();
+		// First, delete nodes, because there might be a thread accessing other structures.
 		while (!Node::instances.empty()) {
 			auto node = Node::instances.begin()->second;
 			if (node->hasGraphRunCtx()) {
@@ -124,6 +122,9 @@ rgl_cleanup(void)
 				Node::release(nodeToRelease.get());
 			}
 		}
+		Entity::instances.clear();
+		Mesh::instances.clear();
+		Scene::defaultInstance()->clear();
 	});
 	TAPE_HOOK();
 	return status;
