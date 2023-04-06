@@ -36,23 +36,21 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 
 void GraphRunCtx::executeAsync()
 {
-	synchronize();
-	thread = std::thread(&GraphRunCtx::execute, this);
-}
+	synchronize(); // Wait until previous execution is completed
 
-void GraphRunCtx::execute()
-{
-	const auto& nodesInExecOrder = executionOrder;
-
-	RGL_DEBUG("Running graph with {} nodes", nodesInExecOrder.size());
-
-	for (auto&& current : nodesInExecOrder) {
+	// Perform validation in client's thread, this makes error reporting easier.
+	for (auto&& current : executionOrder) {
 		RGL_DEBUG("Validating node: {}", *current);
 		current->validate();
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
-	for (auto&& node : nodesInExecOrder) {
+	thread = std::thread(&GraphRunCtx::execute, this);
+}
+
+void GraphRunCtx::execute()
+{
+	for (auto&& node : executionOrder) {
 		RGL_DEBUG("Enqueueing node: {}", *node);
 		node->enqueueExec();
 	}
