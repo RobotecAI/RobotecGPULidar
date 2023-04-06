@@ -72,7 +72,7 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		.distance = getPtrTo<DISTANCE_F32>(),
 		.intensity = getPtrTo<INTENSITY_F32>(),
 		.timestamp = getPtrTo<TIME_STAMP_F64>(),
-                .entityIdx = getPtrTo<ENTITY_IDX_U32>(),
+                .entityIdx = getPtrTo<ENTITY_IDX_I32>(),
 	};
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();

@@ -54,7 +54,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const int objectID = -1)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -84,6 +84,11 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
 	if (ctx.timestamp != nullptr) {
 		ctx.timestamp[rayIdx] = ctx.sceneTime;
 	}
+        if (ctx.entityIdx != nullptr) {
+                ctx.entityIdx[rayIdx] = objectID;
+        }
+
+
 }
 
 extern "C" __global__ void __raygen__()
@@ -124,12 +129,14 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
+        int objectID = sbtData.entity_id;
+
 	Vec3f origin = decodePayloadVec3f({
 		optixGetPayload_0(),
 		optixGetPayload_1(),
 		optixGetPayload_2()
 	});
-	saveRayResult<true>(&hitWorld, &origin);
+	saveRayResult<true>(&hitWorld, &origin, objectID);
 }
 
 extern "C" __global__ void __miss__()

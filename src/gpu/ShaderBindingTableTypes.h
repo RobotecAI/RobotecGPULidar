@@ -8,6 +8,7 @@ struct TriangleMeshSBTData {
 	const Vec3i *index;
 	size_t vertex_count;
 	size_t index_count;
+        int entity_id;
 };
 
 
