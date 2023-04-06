@@ -45,10 +45,10 @@ void GraphRunCtx::executeAsync()
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
-	thread = std::thread(&GraphRunCtx::execute, this);
+	thread = std::thread(&GraphRunCtx::executeThreadMain, this);
 }
 
-void GraphRunCtx::execute()
+void GraphRunCtx::executeThreadMain()
 {
 	for (auto&& node : executionOrder) {
 		RGL_DEBUG("Enqueueing node: {}", *node);
