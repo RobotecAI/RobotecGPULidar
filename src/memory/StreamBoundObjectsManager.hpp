@@ -21,15 +21,25 @@
 
 #include <IStreamBound.hpp>
 
+/**
+ * Convenience class that allows changing bound stream of registered objects.
+ */
 struct StreamBoundObjectsManager
 {
+	/**
+	 * Registers IStreamBound object.
+	 * Registering any object requires prior call to setStream().
+	 * The object must be bound with the stream provided to setStream.
+	 * @param object Object to register.
+	 */
 	void registerObject(IStreamBound::Ptr object)
 	{
 		if (!currentStream.has_value()) {
-			currentStream = object->getStream();
+			auto msg = fmt::format("StreamBoundObjectsManager: attempted to setStream() before call to registerObject()");
+			throw std::logic_error(msg);
 		}
 		if (currentStream.value().expired()) {
-			auto msg = fmt::format("StreamBoundObjectsManager: called registerObject(), but current stream has expired");
+			auto msg = fmt::format("StreamBoundObjectsManager: called registerObject(), but the current stream has expired");
 			throw std::logic_error(msg);
 		}
 		if (object->getStream().get() != currentStream.value().lock().get()) {
@@ -39,11 +49,14 @@ struct StreamBoundObjectsManager
 		streamBoundObjects.emplace_back(object);
 	}
 
+	/**
+	 * Ensures that all current and future registered objects will be bound to the given stream.
+	 */
 	void setStream(CudaStream::Ptr newStream)
 	{
 		if (!currentStream.has_value()) {
-			auto msg = fmt::format("StreamBoundObjectsManager: attempted to setStream() before call to registerObject()");
-			throw std::logic_error(msg);
+			currentStream = newStream;
+			return;
 		}
 		if (auto lastStreamShPtr = currentStream.value().lock()) {
 			if (lastStreamShPtr.get() == newStream.get()) {
@@ -62,6 +75,18 @@ struct StreamBoundObjectsManager
 			objectWeakPtr.lock()->setStream(newStream);
 		}
 		currentStream = newStream;
+	}
+
+	CudaStream::Ptr getStream()
+	{
+		if (!currentStream.has_value()) {
+			auto msg = fmt::format("StreamBoundObjectsManager: getStream() called before setStream()");
+			throw std::logic_error(msg);
+		}
+		if (auto ptr = currentStream.value().lock()) {
+			return ptr;
+		}
+		auto msg = fmt::format("StreamBoundObjectsManager: getStream() called, but the currentStream has expired");
 	}
 
 private:

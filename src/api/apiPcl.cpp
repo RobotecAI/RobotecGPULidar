@@ -44,7 +44,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 
 		// We are not using format node to avoid transferring huge point cloud to GPU (risk of cuda out of memory error)
 		// We are formatting manually on the CPU instead.
-		// TODO(msz-rai): CudaStream for getFieldDataTyped: nullptr or pointCloudNode->getGraph()->getStream()?
+		// TODO(msz-rai): CudaStream for getFieldDataTyped: nullptr or pointCloudNode->getGraphRunCtx()->getStream()?
 		auto xyzTypedArray = pointCloudNode->getFieldDataTyped<XYZ_F32>(nullptr);
 		auto xyzData = xyzTypedArray->getReadPtr(MemLoc::Host);
 

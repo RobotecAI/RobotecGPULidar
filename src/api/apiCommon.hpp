@@ -23,6 +23,7 @@
 
 #include <Optix.hpp>
 #include <graph/Node.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 #include <Tape.hpp>
 #include <RGLExceptions.hpp>
@@ -103,6 +104,14 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	}
 	else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
+	}
+	// TODO: The magic below detects calls changing rgl_field_t* (e.g. FormatPointsNode)
+	// TODO: Such changes may require recomputing required fields in RaytraceNode.
+	// TODO: However, taking care of this manually is very bug prone.
+	// TODO: There are other ways to automate this, however, for now this should be enough.
+	bool fieldsModified = ((std::is_same_v<Args, std::vector<rgl_field_t>> || ... ));
+	if (fieldsModified && node->hasGraphRunCtx()) {
+		node->getGraphRunCtx()->detachAndDestroy();
 	}
 	node->setParameters(args...);
 	*nodeRawPtr = node.get();

@@ -22,20 +22,30 @@
 #include <graph/NodesCore.hpp>
 #include <CudaStream.hpp>
 
-struct Graph
+/**
+ * Structure storing context for running a graph.
+ * This is a 'volatile' struct - changing graph's structure destroys this context.
+ */
+struct GraphRunCtx
 {
-	static std::shared_ptr<Graph> create(std::shared_ptr<Node> node);
-	static void destroy(std::shared_ptr<Node> anyNode, bool preserveNodes);
-	static std::set<std::shared_ptr<Node>> findConnectedNodes(std::shared_ptr<Node> anyNode); // Public - tape uses it
+	static std::shared_ptr<GraphRunCtx> createAndAttach(std::shared_ptr<Node> node);
 
+	/**
+	 * Executes graph bound with this GraphRunCtx.
+	 */
 	void run();
+
+	/**
+	 * Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
+	 */
+	void detachAndDestroy();
+
 	CudaStream::Ptr getStream() const { return stream; }
-
-	virtual ~Graph();
-private:
-	Graph() : stream(CudaStream::create()) {}
-
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
+
+	virtual ~GraphRunCtx();
+private:
+	GraphRunCtx() : stream(CudaStream::create()) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
@@ -44,5 +54,6 @@ private:
 	std::set<std::shared_ptr<Node>> nodes;
 	std::vector<std::shared_ptr<Node>> executionOrder;
 
-	static std::list<std::shared_ptr<Graph>> instances;
+	static std::list<std::shared_ptr<GraphRunCtx>> instances;
+	std::set<rgl_field_t> fieldsToCompute;
 };
