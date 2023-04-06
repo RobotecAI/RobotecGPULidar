@@ -14,17 +14,22 @@
 
 #pragma once
 
-#include <memory>
+#include <memory/HostArray.hpp>
+#include <memory/MemoryKind.hpp>
 
-#include "CudaStream.hpp"
-
-/**
- * Interface for objects that hold a stream and allow changing it in runtime.
- * It is a caller responsibility to make sure that stream can be changed.
- */
-struct IStreamBound
+template <typename T>
+struct HostPageableArray : public HostArray<MemoryKind::HostPageable, T>
 {
-	using Ptr = std::shared_ptr<IStreamBound>;
-	virtual void setStream(CudaStream::Ptr) = 0;
-	virtual CudaStream::Ptr getStream() const = 0;
+	using Ptr = std::shared_ptr<HostPageableArray<T>>;
+	using ConstPtr = std::shared_ptr<const HostPageableArray<T>>;
+
+	static HostPageableArray<T>::Ptr create()
+	{
+		return HostPageableArray<T>::Ptr {
+			new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>())
+		};
+	}
+
+protected:
+	using HostArray<MemoryKind::HostPageable, T>::HostArray;
 };

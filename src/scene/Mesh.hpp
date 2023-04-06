@@ -26,6 +26,7 @@
 #include <scene/ASBuildScratchpad.hpp>
 
 #include <filesystem>
+#include <memory/DeviceSyncArray.hpp>
 
 
 struct Mesh : APIObject<Mesh>

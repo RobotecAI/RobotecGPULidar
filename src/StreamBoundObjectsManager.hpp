@@ -19,7 +19,7 @@
 #include <memory>
 #include <stdexcept>
 
-#include <IStreamBound.hpp>
+#include "IStreamBound.hpp"
 
 /**
  * Convenience class that allows changing bound stream of registered objects.
@@ -87,6 +87,7 @@ struct StreamBoundObjectsManager
 			return ptr;
 		}
 		auto msg = fmt::format("StreamBoundObjectsManager: getStream() called, but the currentStream has expired");
+		throw std::logic_error(msg);
 	}
 
 private:
