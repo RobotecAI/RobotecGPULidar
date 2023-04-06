@@ -6,9 +6,7 @@
 
 using namespace testing;
 
-struct SyncTests : public RGLTest {};
-
-TEST_F(SyncTests, GraphAndCopyStream)
+TEST(Synchronization, GraphAndCopyStream)
 {
     // Prepare two non-default streams.
     cudaStream_t graphStream;
