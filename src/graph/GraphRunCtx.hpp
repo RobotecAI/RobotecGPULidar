@@ -68,10 +68,4 @@ private:
 	std::vector<Node::Ptr> executionOrder;
 
 	std::atomic<bool> execThreadCanStart;
-
-	// TODO: Safe-delete??
-	std::set<rgl_field_t> fieldsToCompute;
-
-	// TODO: Safe-delete
-	static std::list<std::shared_ptr<GraphRunCtx>> instances;
 };
