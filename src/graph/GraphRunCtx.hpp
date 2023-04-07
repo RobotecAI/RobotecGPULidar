@@ -49,7 +49,6 @@ struct GraphRunCtx
 	 */
 	void synchronize();
 
-
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
@@ -63,10 +62,12 @@ private:
 
 private:
 	CudaStream::Ptr stream;
-	std::optional<std::thread> thread;
+	std::optional<std::thread> maybeThread;
 
 	std::set<Node::Ptr> nodes;
 	std::vector<Node::Ptr> executionOrder;
+
+	std::atomic<bool> execThreadCanStart;
 
 	// TODO: Safe-delete??
 	std::set<rgl_field_t> fieldsToCompute;

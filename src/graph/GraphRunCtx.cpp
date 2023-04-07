@@ -45,11 +45,22 @@ void GraphRunCtx::executeAsync()
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
-	thread = std::thread(&GraphRunCtx::executeThreadMain, this);
+	// In other parts of the code we rely on the following logic
+	// IF thread is executing THEN this->thread.has_value()
+	// However, there is a very tight gap, where this is not true,
+	// because the thread could start before maybeThread is assigned.
+	// Therefore, the thread wait for execThreadCanStart
+	// which is set to true after client maybeThread has been assigned.
+	execThreadCanStart = false;
+	maybeThread = std::thread(&GraphRunCtx::executeThreadMain, this);
+	execThreadCanStart = true;
 }
+
 
 void GraphRunCtx::executeThreadMain()
 {
+	while (!execThreadCanStart)
+		;
 	for (auto&& node : executionOrder) {
 		RGL_DEBUG("Enqueueing node: {}", *node);
 		node->enqueueExec();
@@ -94,9 +105,10 @@ void GraphRunCtx::detachAndDestroy()
 
 void GraphRunCtx::synchronize()
 {
+	// This order must be preserved.
 	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
-	if (thread.has_value()) {
-		thread->join();
-		thread.reset();
+	if (maybeThread.has_value()) {
+		maybeThread->join();
+		maybeThread.reset();
 	}
 }
