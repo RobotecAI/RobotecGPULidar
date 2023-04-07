@@ -23,27 +23,28 @@ static inline void onCUDAError() {}
 #define CHECK_CUDA(call)                                                                            \
 do                                                                                                  \
 {                                                                                                   \
-    cudaError_t status = call;                                                                      \
-    if (status == cudaErrorCudartUnloading) {                                                       \
+    cudaError_t errCode = call;                                                                     \
+    if (errCode == cudaErrorCudartUnloading) {                                                      \
         break;                                                                                      \
     }                                                                                               \
-    if (status != cudaSuccess) {                                                                    \
+    if (errCode != cudaSuccess) {                                                                   \
         auto message = fmt::format("cuda error: {} (code={}) @ {}:{}",                              \
-        cudaGetErrorString(status), status, __FILE__, __LINE__);                                    \
+        cudaGetErrorString(errCode), errCode, __FILE__, __LINE__);                                  \
         onCUDAError();                                                                              \
         throw std::runtime_error(message);                                                          \
     }                                                                                               \
 }                                                                                                   \
 while(false)
 
-#define CHECK_CUDA_NO_THROW(call) \
-do {                              \
-    try {                         \
-        CHECK_CUDA(call);         \
-    }                             \
-    catch(...)                    \
-    { }                           \
-}                                 \
+#define CHECK_CUDA_NO_THROW(call)                                                   \
+do {                                                                                \
+    try {                                                                           \
+        CHECK_CUDA(call);                                                           \
+    }                                                                               \
+    catch(std::runtime_error& cudaError) {                                          \
+        RGL_ERROR("Detected CUDA error in no-throw context: {}", cudaError.what()); \
+    }                                                                               \
+}                                                                                   \
 while(false)
 
 #define HostDevFn __host__ __device__

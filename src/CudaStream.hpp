@@ -37,8 +37,8 @@ struct CudaStream
 
 	static CudaStream::Ptr getCopyStream()
 	{
-	    static CudaStream::Ptr copyStream { new CudaStream(cudaStreamNonBlocking ) };
-	    return copyStream;
+		static CudaStream::Ptr copyStream { new CudaStream(cudaStreamNonBlocking ) };
+		return copyStream;
 	}
 
 	cudaStream_t get() { return stream; }
