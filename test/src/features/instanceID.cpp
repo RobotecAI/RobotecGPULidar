@@ -3,10 +3,7 @@
 #include <scene/Scene.hpp>
 #include "utils.hpp"
 
-class InstanceIDTest : public RGLTest
-{
-
-};
+class InstanceIDTest : public RGLTest{};
 
 TEST_F(InstanceIDTest, BaseTest)
 {
@@ -45,10 +42,12 @@ TEST_F(InstanceIDTest, BaseTest)
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(formatNode, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
 
+    // This test is super naive, but it's a start.
+    //TODO Make this test object sensitive: check that the xyz values are within the expected range for each object, and that compare its IDs.
     for (int i = 0; i < formatData.size(); ++i)
     {
-
-        printf(" Point: %f, %f, %f, has ID: %d \n",formatData[i].xyz[0], formatData[i].xyz[1], formatData[i].xyz[2], formatData[i].entityId);
+        EXPECT_GE(formatData[i].entityId, 1);
+        EXPECT_LE(formatData[i].entityId, 3);
     }
 
 }
