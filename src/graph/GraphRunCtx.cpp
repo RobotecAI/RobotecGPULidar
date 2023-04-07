@@ -45,29 +45,53 @@ void GraphRunCtx::executeAsync()
 	}
 	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
 
-	// In other parts of the code we rely on the following logic
-	// IF thread is executing THEN this->thread.has_value()
-	// However, there is a very tight gap, where this is not true,
-	// because the thread could start before maybeThread is assigned.
-	// Therefore, the thread wait for execThreadCanStart
-	// which is set to true after client maybeThread has been assigned.
+	// Clear execution states
+	executionStatus.clear();
+	for (auto&& node : executionOrder) {
+		executionStatus.try_emplace(node);
+	}
+	currentNode = nullptr;
 	execThreadCanStart = false;
+
+	// In other parts of the code we rely on the following logic
+	// IF graph thread is working THEN this->thread.has_value()
+	// However, there is a very tight gap, where this is not true,
+	// because the graph thread could start before maybeThread is assigned.
+	// Therefore, the graph thread waits for execThreadCanStart
+	// which is set to true after client maybeThread has been assigned.
 	maybeThread = std::thread(&GraphRunCtx::executeThreadMain, this);
-	execThreadCanStart = true;
+	execThreadCanStart.store(true, std::memory_order::release);
 }
 
 
-void GraphRunCtx::executeThreadMain()
+void GraphRunCtx::executeThreadMain() try
 {
-	while (!execThreadCanStart)
+	// Wait for trigger from the client's thread
+	while (!execThreadCanStart.load(std::memory_order::acquire))
 		;
+
 	for (auto&& node : executionOrder) {
+		// TODO(PiotrMrozik): ensure spdlog is thread-safe
 		RGL_DEBUG("Enqueueing node: {}", *node);
 		node->enqueueExec();
+		executionStatus.at(node).executed.store(true, std::memory_order::release);
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 
 	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
+}
+catch (...)
+{
+	// Exception most likely happened in a Node, but might have happened around executionOrder loop.
+	// We still need to communicate that nodes 'executed' (even though some may not have a chance to start).
+	// If we didn't, we could hang client's thread in synchronizeNodeCPU() waiting for a Node that will never run.
+	for (auto&& [node, state] : executionStatus) {
+		if (state.executed.load(std::memory_order::relaxed)) {
+			continue;
+		}
+		state.exceptionPtr = std::current_exception();
+		state.executed.store(true, std::memory_order::release);
+	}
 }
 
 std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
@@ -107,7 +131,7 @@ GraphRunCtx::~GraphRunCtx()
 
 void GraphRunCtx::detachAndDestroy()
 {
-	synchronize();
+	this->synchronize();
 	for (auto&& node : nodes) {
 		node->setGraphRunCtx(std::nullopt);
 	}
@@ -116,10 +140,29 @@ void GraphRunCtx::detachAndDestroy()
 
 void GraphRunCtx::synchronize()
 {
+	if (!maybeThread.has_value()) {
+		return; // Already synchronized or never run.
+	}
 	// This order must be preserved.
+	for (auto&& node : executionOrder) {
+		synchronizeNodeCPU(node);
+	}
 	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
-	if (maybeThread.has_value()) {
-		maybeThread->join();
-		maybeThread.reset();
+	maybeThread->join();
+	maybeThread.reset();
+}
+
+void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
+{
+	if (!maybeThread.has_value()) {
+		return; // Already synchronized or never run.
+	}
+	// Wait until node is executed
+	while (executionStatus.at(nodeToSynchronize).executed.load(std::memory_order_acquire))
+		;
+	// Rethrow exception, if any
+	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
+		// Do not clear exception ptr yet, it could give false image that the Node is OK.
+		std::rethrow_exception(ex);
 	}
 }
