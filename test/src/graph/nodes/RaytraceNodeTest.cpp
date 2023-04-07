@@ -8,6 +8,7 @@ class RaytraceNodeTest : public RGLTest { };
 
 TEST_F(RaytraceNodeTest, invalid_arguments)
 {
+    // TODO(nebraszka): Parameterize the test to take a permutation of the set of all invalid arguments.
     rgl_node_t raytraceNode = nullptr;
     EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace(nullptr, nullptr, 0.0f), "node != nullptr");
     EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace(&raytraceNode, nullptr, 0.0f), "range > 0.0f");
