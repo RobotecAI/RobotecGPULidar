@@ -1,5 +1,6 @@
 #include "lidars.hpp"
 #include "scenes.hpp"
+#include <scene/Scene.hpp>
 #include "utils.hpp"
 
 class InstanceIDTest : public RGLTest
@@ -16,17 +17,15 @@ TEST_F(InstanceIDTest, BaseTest)
 
     std::vector<rgl_field_t> formatFields = {
         XYZ_F32,
-        ENTITY_IDX_I32,
-        TIME_STAMP_F64
+        ENTITY_IDX_I32
     };
     struct FormatStruct
     {
         Field<XYZ_F32>::type xyz;
         Field<ENTITY_IDX_I32>::type entityId;
-        Field<TIME_STAMP_F64>::type timestamp;
     } formatStruct;
 
-
+    rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true);
     EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
     EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
     EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
@@ -38,12 +37,18 @@ TEST_F(InstanceIDTest, BaseTest)
 
     EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 
+    int32_t outCount, outSizeOf;
+    EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(formatNode, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
+    EXPECT_EQ(outSizeOf, sizeof(formatStruct));
+
+    std::vector<FormatStruct> formatData(outCount);
+    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(formatNode, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
 
 
+    for (int i = 0; i < formatData.size(); ++i)
+    {
 
-   // int32_t outCount, outSizeOf;
-  //  EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(compactNode, XYZ_F32, &outCount, &outSizeOf));
-
-
+        printf(" Point: %f, %f, %f, has ID: %d \n",formatData[i].xyz[0], formatData[i].xyz[1], formatData[i].xyz[2], formatData[i].entityId);
+    }
 
 }

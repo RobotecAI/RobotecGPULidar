@@ -85,10 +85,8 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const 
 		ctx.timestamp[rayIdx] = ctx.sceneTime;
 	}
         if (ctx.entityIdx != nullptr) {
-                ctx.entityIdx[rayIdx] = objectID;
+                ctx.entityIdx[rayIdx] = isFinite ? objectID : -1;
         }
-
-
 }
 
 extern "C" __global__ void __raygen__()
