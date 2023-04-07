@@ -12,7 +12,8 @@ set(RGL_TEST_FILES
         src/testMat3x4f.cpp
         src/graph/nodes/FromArrayPointsNodeTest.cpp
         src/graph/nodes/TransformPointsNodeTest.cpp
-        src/features/instanceID.cpp)
+        src/features/instanceID.cpp
+        )
 
 
 # Only Linux
