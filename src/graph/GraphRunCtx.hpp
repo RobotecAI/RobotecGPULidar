@@ -41,14 +41,6 @@ struct GraphRunCtx
 	*/
 	void detachAndDestroy();
 
-	/**
-	 * Waits until this GraphRunCtx
-	 * - finishes execution
-	 * - joins its thread
-	 * - synchronizes graph stream
-	 */
-	void synchronize();
-
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
@@ -60,6 +52,22 @@ private:
 
 	void executeThreadMain();
 
+private: // Synchronization methods are private and accessed only through friend Node (to reduce chaos).
+
+	/**
+	 * Waits until this GraphRunCtx
+	 * - finishes execution
+	 * - joins its thread
+	 * - synchronizes graph stream (all pending GPU operations)
+	 */
+	void synchronize();
+
+	/**
+	 * Waits until given node finishes its CPU execution.
+	 * The node may still have pending GPU operations.
+	 */
+	void synchronizeNodeCPU(Node::Ptr nodeToSynchronize);
+
 private:
 	CudaStream::Ptr stream;
 	std::optional<std::thread> maybeThread;
@@ -67,5 +75,19 @@ private:
 	std::set<Node::Ptr> nodes;
 	std::vector<Node::Ptr> executionOrder;
 
+private: // Data shared between client's thread and graph thread
+	struct NodeExecStatus
+	{
+		// If true, then execution has succeeded or an exception has been thrown.
+		std::atomic<bool> executed {false};
+
+		// exceptionPtr may be read by client's thread only after it acquire-read true `completed`
+		// exceptionPtr may be written by graph thread only before it release-stores true `completed`
+		std::exception_ptr exceptionPtr {nullptr};
+	};
+
+	std::unordered_map<Node::Ptr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
+
+	friend struct Node;
 };

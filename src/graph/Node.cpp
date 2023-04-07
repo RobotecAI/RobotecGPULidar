@@ -154,3 +154,21 @@ std::set<Node::Ptr> Node::disconnectConnectedNodes()
 	}
 	return nodes;
 }
+
+void Node::synchronizeThis()
+{
+	if (!hasGraphRunCtx()) {
+		return; // Nothing to synchronize ¯\_(ツ)_/¯
+	}
+	// Ensure CPU execution is finished;
+	graphRunCtx.value()->synchronizeNodeCPU(shared_from_this());
+	CHECK_CUDA(cudaEventSynchronize(execCompleted->get()));
+}
+
+void Node::synchronizeAll()
+{
+	if (!hasGraphRunCtx()) {
+		return;
+	}
+	graphRunCtx.value()->synchronize();
+}

@@ -75,6 +75,16 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	std::shared_ptr<GraphRunCtx> getGraphRunCtx() { return graphRunCtx.value(); }
 
 	/**
+	 * Waits until execution of this node is completed.
+	 */
+	void synchronizeThis();
+
+	/**
+	 * Waits until execution of all connected nodes is completed.
+	 */
+	void synchronizeAll();
+
+	/**
 	 * Certain operations, such as adding/removing child/parent links
 	 * may cause some nodes to be in an invalid state (not ready).
 	 * Node must be made ready before it is executed or queried for results.
