@@ -91,7 +91,18 @@ std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std:
 GraphRunCtx::~GraphRunCtx()
 {
 	// If GraphRunCtx is destroyed, we expect that thread was joined and stream was synced.
-	// TODO: check it!
+
+	// Log error if stream has pending work.
+	cudaError_t status = cudaStreamQuery(stream->get());
+	if (status == cudaErrorNotReady) {
+		RGL_WARN("~GraphRunCtx(): stream has pending work!");
+		status = cudaSuccess; // Ignore further checks.
+	}
+	CHECK_CUDA_NO_THROW(status);
+
+	if (maybeThread.has_value()) {
+		RGL_WARN("~GraphRunCtx(): maybeThread has value!");
+	}
 }
 
 void GraphRunCtx::detachAndDestroy()
