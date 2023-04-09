@@ -291,9 +291,8 @@ rgl_entity_set_id(rgl_entity_t entity, int id)
 
 void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
 {
-        //TODO mrozikp
-        // rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
-        //    reinterpret_cast<int>(fileMmap + yamlNode[1].as<size_t>()));
+	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
+					  yamlNode[1].as<int>());
 }
 
 RGL_API rgl_status_t

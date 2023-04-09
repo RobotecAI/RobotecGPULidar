@@ -32,10 +32,10 @@ void Entity::setTransform(Mat3x4f newTransform)
 
 void Entity::setId(int newId)
 {
-        id = newId;
-        if (auto activeScene = scene.lock()) {
-                activeScene->requestASRebuild();
-        }
+		id = newId;
+		if (auto activeScene = scene.lock()) {
+				activeScene->requestASRebuild();
+		}
 }
 
 OptixInstance Entity::getIAS(int idx)
