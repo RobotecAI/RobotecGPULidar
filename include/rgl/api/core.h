@@ -346,7 +346,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
  * @param int ID to set. If not set, value of entity id will be automatically generated.
  */
 RGL_API rgl_status_t
-rgl_entity_set_id(rgl_entity_t entity, const int id);
+rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 
 /******************************** SCENE ********************************/
 
