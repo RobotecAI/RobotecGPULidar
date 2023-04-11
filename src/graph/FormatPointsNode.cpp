@@ -44,13 +44,10 @@ void FormatPointsNode::formatAsync(const VArray::Ptr& output, const IPointsNode:
 
 VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
-	throw std::runtime_error("implement me, OK?");
-	// if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-	// 	this->getGraphRunCtx()->synchronize();
-	// 	CHECK_CUDA(cudaStreamSynchronize(this->getGraphRunCtx()->getStream()->get()));
-	// 	return output;
-	// }
-	// return input->getFieldData(field, CudaStream::getCopyStream()->get());
+	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
+		return output;
+	}
+	return input->getFieldData(field, CudaStream::getCopyStream()->get());
 }
 
 std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
