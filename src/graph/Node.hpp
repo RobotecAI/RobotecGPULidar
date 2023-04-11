@@ -145,6 +145,8 @@ protected: // Member methods
 	 */
 	void synchronizeThis();
 
+	cudaStream_t getStreamHandle();
+
 	template<typename T>
 	typename T::Ptr getExactlyOneInputOfType()
 	{ return getExactlyOneNodeOfType<T>(inputs); }

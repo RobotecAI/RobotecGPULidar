@@ -175,3 +175,8 @@ void Node::waitForResults()
 	}
 	synchronizeThis();
 }
+
+cudaStream_t Node::getStreamHandle()
+{
+	return getGraphRunCtx()->getStream()->getHandle();
+}
