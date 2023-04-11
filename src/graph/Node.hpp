@@ -76,6 +76,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	/**
 	 * Waits until execution of this node is completed.
+	 * This is required to query node for results.
 	 */
 	void synchronizeThis();
 

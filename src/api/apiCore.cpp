@@ -380,7 +380,6 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
-		// TODO: add synchronization with Node
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		if (!pointCloudNode->isValid()) {
 			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
@@ -390,6 +389,7 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 			auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", pointCloudNode->getName());
 			throw InvalidPipeline(msg);
 		}
+		pointCloudNode->synchronizeThis();
 		auto elemCount = (int32_t) pointCloudNode->getPointCount();
 		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
 
@@ -420,8 +420,6 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(data != nullptr);
 
-		// TODO: add synchronization with Node
-		// TODO: synchronize copyStream before return
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		if (!pointCloudNode->isValid()) {
 			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
@@ -431,6 +429,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 			auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", pointCloudNode->getName());
 			throw InvalidPipeline(msg);
 		}
+		pointCloudNode->synchronizeThis();
 		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
