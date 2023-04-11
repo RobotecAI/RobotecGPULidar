@@ -153,6 +153,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 		                       sensor_msgs::msg::PointField::FLOAT32 };
 		case IS_HIT_I32: return { sensor_msgs::msg::PointField::INT32 };
 		case RAY_IDX_U32: return { sensor_msgs::msg::PointField::UINT32 };
+		case ENTITY_IDX_I32: return { sensor_msgs::msg::PointField::UINT32 };
 		case INTENSITY_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
 		case RING_ID_U16: return { sensor_msgs::msg::PointField::UINT16 };
 		case AZIMUTH_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
@@ -171,6 +172,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 	switch (type) {
 		case XYZ_F32: return { "x", "y", "z" };
 		case IS_HIT_I32: return { "is_hit" };
+		case ENTITY_IDX_I32: return { "entity_idx" };
 		case RAY_IDX_U32: return { "ray_idx" };
 		case INTENSITY_F32: return { "intensity" };
 		case RING_ID_U16: return { "ring" };
@@ -191,6 +193,7 @@ inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 		case XYZ_F32: return { sizeof(float), sizeof(float), sizeof(float) };
 		case IS_HIT_I32: return { getFieldSize(type) };
 		case RAY_IDX_U32: return { getFieldSize(type) };
+		case ENTITY_IDX_I32: return { getFieldSize(type) };
 		case INTENSITY_F32: return { getFieldSize(type) };
 		case RING_ID_U16: return { getFieldSize(type) };
 		case AZIMUTH_F32: return { getFieldSize(type) };
