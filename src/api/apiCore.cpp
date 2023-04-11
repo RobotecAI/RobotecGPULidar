@@ -283,7 +283,7 @@ rgl_entity_set_id(rgl_entity_t entity, int id)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_entity_set_id(entity={}, id={})", (void *) entity, id);
 		CHECK_ARG(entity != nullptr);
-		CHECK_ARG(id >= 0);
+		CHECK_ARG(id != 0);
 		Entity::validatePtr(entity)->setId(id);
 	});
 	TAPE_HOOK(entity, id);

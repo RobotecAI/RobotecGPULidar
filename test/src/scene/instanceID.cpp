@@ -13,35 +13,36 @@ class InstanceIDTest : public RGLTest {
 TEST_F(InstanceIDTest, BaseTest) {
 	setupThreeBoxScene(nullptr);
 
-	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, formatNode = nullptr;
+	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);
 
-	std::vector<rgl_field_t> formatFields = {
+	std::vector<rgl_field_t> yieldFields = {
 			XYZ_F32,
-			ENTITY_ID_I32
+			ENTITY_ID_I32,
+			IS_HIT_I32
 	};
-	struct FormatStruct {
-		Field<XYZ_F32>::type xyz;
-		Field<ENTITY_ID_I32>::type entityId;
-	} formatStruct;
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, formatFields.data(), formatFields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
+
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, compactNode));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactNode, formatNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 
-	int32_t outCount, outSizeOf;
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(formatNode, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
-	EXPECT_EQ(outSizeOf, sizeof(formatStruct));
+	std::vector<::Field<XYZ_F32>::type> outPoints;
+	std::vector<::Field<ENTITY_ID_I32>::type> outID;
+	std::vector<::Field<IS_HIT_I32>::type> outIsHit;
 
-	std::vector<FormatStruct> formatData(outCount);
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(formatNode, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
+	outPoints.resize(rays.size());
+	outID.resize(rays.size());
+	outIsHit.resize(rays.size());
+
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, XYZ_F32, outPoints.data()));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, ENTITY_ID_I32, outID.data()));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, IS_HIT_I32, outIsHit.data()));
 
 
 	// Infinite loop to publish pointcloud to ROS2 topic for visualization purposes. Uncomment to use. Use wisely.
@@ -54,12 +55,25 @@ TEST_F(InstanceIDTest, BaseTest) {
 //        EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 //#endif
 
+	for (int i = 0; i < rays.size(); ++i) {
 
-	// This test is super naive, but it's a start.
-	//TODO Make this test object sensitive: check that the xyz values are within the expected range for each object, and that compare its IDs.
-	for (int i = 0; i < formatData.size(); ++i) {
-		EXPECT_GE(formatData[i].entityId, 1);
-		EXPECT_LE(formatData[i].entityId, 3);
+		if (outIsHit[i]) {
+			// Check that the points are within the expected range for each object.
+			if (outPoints[i][1] < -2.0f) {
+				EXPECT_EQ(outID[i], 1);
+			}
+			if (outPoints[i][1] > -2.0f && outPoints[i][1] < 2.0f) {
+				EXPECT_EQ(outID[i], 2);
+			}
+			if (outPoints[i][1] > 2.0f) {
+				EXPECT_EQ(outID[i], 3);
+			}
+		}
+		else {
+			EXPECT_EQ(outID[i], 0);
+		}
+
+
 	}
 
 }
