@@ -50,7 +50,6 @@ void GraphRunCtx::executeAsync()
 	for (auto&& node : executionOrder) {
 		executionStatus.try_emplace(node);
 	}
-	currentNode = nullptr;
 	execThreadCanStart = false;
 
 	// In other parts of the code we rely on the following logic

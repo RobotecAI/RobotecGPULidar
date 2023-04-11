@@ -169,13 +169,13 @@ def run_subprocess_command(command: str, shell=True, stderr=sys.stderr, stdout=s
     process = subprocess.Popen(command, shell=shell, stderr=stderr, stdout=stdout)
     process.wait()
     if process.returncode != 0:
-        raise RuntimeError(f"Failed to executeAsync command: '{command}'")
+        raise RuntimeError(f"Failed to execute command: '{command}'")
 
 
 def run_system_command(command: str):
     print(f"Executing command: '{command}'")
     if os.system(command) != 0:
-        raise RuntimeError(f"Failed to executeAsync command: '{command}'")
+        raise RuntimeError(f"Failed to execute command: '{command}'")
 
 
 if __name__ == "__main__":
