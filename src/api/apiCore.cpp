@@ -99,11 +99,10 @@ void TapePlayer::tape_configure_logging(const YAML::Node& yamlNode)
 RGL_API void
 rgl_get_last_error_string(const char** out_error_string)
 {
-        if (out_error_string == nullptr) {
-                RGL_WARN("Invalid Argument: rgl_get_last_error_string(nullptr).");
-                return;
-        }
-	// No logging here for now, since it may throw.
+	if (out_error_string == nullptr) {
+		return;
+	}
+	// NO LOGGING HERE SINCE IT MAY THROW!
 	*out_error_string = getLastErrorString();
 }
 

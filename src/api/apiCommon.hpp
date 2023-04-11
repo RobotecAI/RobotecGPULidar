@@ -42,7 +42,7 @@ extern rgl_status_t lastStatusCode;
 extern std::optional<std::string> lastStatusString;
 
 void rglLazyInit();
-const char* getLastErrorString();
+const char* getLastErrorString() noexcept;
 bool canContinueAfterStatus(rgl_status_t status);
 rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt);
 
