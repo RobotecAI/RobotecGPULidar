@@ -413,7 +413,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
-		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
+		VArray::ConstPtr output = pointCloudNode->getFieldData(field);
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
 		CHECK_CUDA(cudaMemcpy(data, output->getReadPtr(MemLoc::Device), output->getElemCount() * output->getElemSize(), cudaMemcpyDefault));

@@ -36,9 +36,9 @@ void GaussianNoiseAngularRaysNode::validateImpl()
 	}
 }
 
-void GaussianNoiseAngularRaysNode::enqueueExecImpl(cudaStream_t stream)
+void GaussianNoiseAngularRaysNode::enqueueExecImpl()
 {
 	const auto* inRaysPtr = input->getRays()->getDevicePtr();
 	auto* outRaysPtr = rays->getDevicePtr();
-	gpuAddGaussianNoiseAngularRay(stream, getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
+	gpuAddGaussianNoiseAngularRay(getStreamHandle(), getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
 }

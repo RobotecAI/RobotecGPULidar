@@ -56,10 +56,6 @@ protected:
 	IRaysNode::Ptr input {0};
 };
 
-// TODO(prybicki): getFieldData* may act lazily, so they take stream as a parameter to do the lazy evaluation.
-// TODO(prybicki): This requires synchronizing with the potentially different stream provided by the enqueueExecImpl(...)
-// TODO(prybicki): This situation is bug-prone, requiring greater mental effort when implementing nodes.
-// TODO(prybicki): It might be better to remove stream as a parameter and assume that all pipeline nodes are using common stream.
 struct IPointsNode : virtual Node
 {
 	using Ptr = std::shared_ptr<IPointsNode>;
@@ -77,13 +73,13 @@ struct IPointsNode : virtual Node
 	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
 
 	// Data getters
-	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) = 0;
+	virtual VArray::ConstPtr getFieldData(rgl_field_t field) = 0;
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 
 	template<rgl_field_t field>
 	typename VArrayProxy<typename Field<field>::type>::ConstPtr
-	getFieldDataTyped(cudaStream_t stream)
-	{ return getFieldData(field, stream)->template getTypedProxy<typename Field<field>::type>(); }
+	getFieldDataTyped()
+	{ return getFieldData(field)->template getTypedProxy<typename Field<field>::type>(); }
 };
 
 struct IPointsNodeSingleInput : virtual IPointsNode
@@ -110,8 +106,8 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
-	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
-	{ return input->getFieldData(field, stream); }
+	virtual VArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return input->getFieldData(field); }
 
 protected:
 	IPointsNode::Ptr input {0};

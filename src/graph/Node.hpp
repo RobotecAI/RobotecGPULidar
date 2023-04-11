@@ -126,7 +126,7 @@ protected: // Member methods
 	/**
 	 * Placeholder to enqueue node-specific computations in derived classes.
 	 */
-	virtual void enqueueExecImpl(cudaStream_t toBeRemoved=nullptr) = 0;
+	virtual void enqueueExecImpl() = 0;
 
 	/**
 	 * Placeholder to perform node-specific part of validation.

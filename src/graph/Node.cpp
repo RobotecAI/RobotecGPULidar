@@ -117,7 +117,7 @@ void Node::enqueueExec()
 		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
 		throw std::logic_error(msg);
 	}
-	this->enqueueExecImpl(getGraphRunCtx()->getStream()->getHandle());
+	this->enqueueExecImpl();
 	CHECK_CUDA(cudaEventRecord(execCompleted->getHandle(), getGraphRunCtx()->getStream()->getHandle()));
 }
 

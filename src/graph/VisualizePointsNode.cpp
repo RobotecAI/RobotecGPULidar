@@ -69,14 +69,14 @@ void VisualizePointsNode::runVisualize()
 	}
 }
 
-void VisualizePointsNode::enqueueExecImpl(cudaStream_t stream)
+void VisualizePointsNode::enqueueExecImpl()
 {
 	if (input->getPointCount() == 0) {
 		return;
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream, gpuFieldDescBuilder);
+	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), getStreamHandle(), gpuFieldDescBuilder);
 
 	// Convert to PCL cloud
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
