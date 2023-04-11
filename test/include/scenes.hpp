@@ -58,9 +58,9 @@ static inline void setupThreeBoxScene(rgl_scene_t scene)
         boxB = makeEntity(makeCubeMesh(), scene);
         boxC = makeEntity(makeCubeMesh(), scene);
 
-        rgl_mat3x4f boxATf = Mat3x4f::TRS({ 10, -5, 0 }, { 0, 0, 0 }, { 1, 1, 1 }).toRGL();
-        rgl_mat3x4f boxBTf = Mat3x4f::TRS({ 10, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }).toRGL();
-        rgl_mat3x4f boxCTf = Mat3x4f::TRS({ 10, 5, 0 }, { 0, 0, 0 }, { 1, 1, 1 }).toRGL();
+        rgl_mat3x4f boxATf = Mat3x4f::TRS({ 6, -2, -2 }, { 30, 15, 0 }, { 1, 1, 1 }).toRGL();
+        rgl_mat3x4f boxBTf = Mat3x4f::TRS({ 6,  1,  0 }, { 45, 45, 0 }, { 1, 1, 1 }).toRGL();
+        rgl_mat3x4f boxCTf = Mat3x4f::TRS({ 6,  4,  2 }, { 0, 20, 60 }, { 1, 1, 1 }).toRGL();
 
         EXPECT_RGL_SUCCESS(rgl_entity_set_pose(boxA, &boxATf));
         EXPECT_RGL_SUCCESS(rgl_entity_set_pose(boxB, &boxBTf));
