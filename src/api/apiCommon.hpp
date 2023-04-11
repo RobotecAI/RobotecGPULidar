@@ -113,6 +113,11 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	if (fieldsModified && node->hasGraphRunCtx()) {
 		node->getGraphRunCtx()->detachAndDestroy();
 	}
+
+	// As of now, there's no guarantee that changing node parameter won't influence other nodes
+	// Therefore, before changing them, we need to ensure all nodes are idle (not running in GraphRunCtx).
+	node->synchronizeAll();
 	node->setParameters(args...);
+
 	*nodeRawPtr = node.get();
 }
