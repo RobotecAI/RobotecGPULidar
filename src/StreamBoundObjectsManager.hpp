@@ -68,11 +68,12 @@ struct StreamBoundObjectsManager
 		auto it = streamBoundObjects.begin();
 		for (; it != streamBoundObjects.end(); ++it) {
 			auto&& objectWeakPtr = *it;
-			if (objectWeakPtr.expired()) {
+			auto objectSharedPtr = objectWeakPtr.lock();
+			if (objectSharedPtr == nullptr) {
 				it = streamBoundObjects.erase(it);
 				continue;
 			}
-			objectWeakPtr.lock()->setStream(newStream);
+			objectSharedPtr->setStream(newStream);
 		}
 		currentStream = newStream;
 	}

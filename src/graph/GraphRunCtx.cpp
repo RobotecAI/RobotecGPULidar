@@ -16,6 +16,8 @@
 #include <graph/NodesCore.hpp>
 #include <graph/Node.hpp>
 
+std::list<std::weak_ptr<GraphRunCtx>> GraphRunCtx::instances;
+
 std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> node)
 {
 	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
@@ -163,5 +165,20 @@ void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
 		// Do not clear exception ptr yet, it could give false image that the Node is OK.
 		std::rethrow_exception(ex);
+	}
+}
+
+void GraphRunCtx::synchronizeAll()
+{
+	auto it = instances.begin();
+	for (; it != instances.end(); ++it)
+	{
+		auto&& ctxWeakPtr = *it;
+		auto ctxSharedPtr = ctxWeakPtr.lock();
+		if (ctxSharedPtr == nullptr) {
+			it = instances.erase(it);
+			continue;
+		}
+		ctxSharedPtr->synchronize();
 	}
 }

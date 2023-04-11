@@ -49,6 +49,8 @@ void RaytraceNode::enqueueExecImpl(cudaStream_t stream)
 	for (auto const& [_, data] : fieldData) {
 		data->resize(raysNode->getRayCount(), false, false);
 	}
+
+	// Even though we are in graph thread here, we can access Scene class (see comment there)
 	auto rays = raysNode->getRays();
 	auto sceneAS = scene->getAS();
 	auto sceneSBT = scene->getSBT();

@@ -148,6 +148,7 @@ rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_
 		CHECK_ARG(vertex_count > 0);
 		CHECK_ARG(indices != nullptr);
 		CHECK_ARG(index_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
@@ -174,7 +175,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::release(mesh);
 	});
 	TAPE_HOOK(mesh);
@@ -196,6 +197,7 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t ver
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
 	});
 	TAPE_HOOK(mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count);
@@ -216,10 +218,12 @@ rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		RGL_API_LOG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
 	});
 	TAPE_HOOK(out_entity, scene, mesh);
@@ -242,6 +246,7 @@ rgl_entity_destroy(rgl_entity_t entity)
 		RGL_API_LOG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
 		if (auto sceneShared = entitySafe->scene.lock()) {
 			sceneShared->removeEntity(entitySafe);
@@ -268,6 +273,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
 		RGL_API_LOG("rgl_entity_set_pose(entity={}, transform={})", (void*) entity, repr(transform, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(transform != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&transform->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
 	});
@@ -286,6 +292,7 @@ rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_scene_set_time(scene={}, nanoseconds={})", (void*) scene, nanoseconds);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
