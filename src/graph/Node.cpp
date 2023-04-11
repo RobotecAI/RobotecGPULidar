@@ -160,15 +160,18 @@ void Node::synchronizeThis()
 	if (!hasGraphRunCtx()) {
 		return; // Nothing to synchronize ¯\_(ツ)_/¯
 	}
-	// Ensure CPU execution is finished;
+	// Ensure CPU execution is finished; this guarantees that execCompleted event has been recorded
 	graphRunCtx.value()->synchronizeNodeCPU(shared_from_this());
+	// Wait for all GPU operations requested by this node.
 	CHECK_CUDA(cudaEventSynchronize(execCompleted->get()));
 }
 
-void Node::synchronizeAll()
+void Node::waitForResults()
 {
-	if (!hasGraphRunCtx()) {
-		return;
+	// ...
+	if (!isValid()) {
+		auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", getName());
+		throw InvalidPipeline(msg);
 	}
-	graphRunCtx.value()->synchronize();
+	synchronizeThis();
 }

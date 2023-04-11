@@ -116,7 +116,9 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 
 	// As of now, there's no guarantee that changing node parameter won't influence other nodes
 	// Therefore, before changing them, we need to ensure all nodes are idle (not running in GraphRunCtx).
-	node->synchronizeAll();
+	if (node->hasGraphRunCtx()) {
+		node->getGraphRunCtx()->synchronize();
+	}
 	node->setParameters(args...);
 
 	*nodeRawPtr = node.get();

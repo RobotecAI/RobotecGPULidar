@@ -72,7 +72,7 @@ void GraphRunCtx::executeThreadMain() try
 		;
 
 	for (auto&& node : executionOrder) {
-		// TODO(PiotrMrozik): ensure spdlog is thread-safe
+		// SPDLOG is thread safe, so we can log here.
 		RGL_DEBUG("Enqueueing node: {}", *node);
 		node->enqueueExec();
 		executionStatus.at(node).executed.store(true, std::memory_order::release);
@@ -159,7 +159,7 @@ void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
 		return; // Already synchronized or never run.
 	}
 	// Wait until node is executed
-	while (executionStatus.at(nodeToSynchronize).executed.load(std::memory_order_acquire))
+	while (!executionStatus.at(nodeToSynchronize).executed.load(std::memory_order_acquire))
 		;
 	// Rethrow exception, if any
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
