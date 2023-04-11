@@ -280,20 +280,20 @@ void TapePlayer::tape_entity_set_pose(const YAML::Node& yamlNode)
 RGL_API rgl_status_t
 rgl_entity_set_id(rgl_entity_t entity, int id)
 {
-		auto status = rglSafeCall([&]() {
-				RGL_API_LOG("rgl_entity_set_id(entity={}, id={})", (void*) entity, id);
-				CHECK_ARG(entity != nullptr);
-				CHECK_ARG(id >= 0);
-				Entity::validatePtr(entity)->setId(id);
-		});
-		TAPE_HOOK(entity, id);
-		return status;
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_set_id(entity={}, id={})", (void *) entity, id);
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(id >= 0);
+		Entity::validatePtr(entity)->setId(id);
+	});
+	TAPE_HOOK(entity, id);
+	return status;
 }
 
 void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
 {
 	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
-					  yamlNode[1].as<int>());
+					  yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
 }
 
 RGL_API rgl_status_t

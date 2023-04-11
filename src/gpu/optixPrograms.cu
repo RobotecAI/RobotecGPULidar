@@ -54,7 +54,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const int objectID = -1)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const int objectID = 0)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -85,7 +85,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const 
 		ctx.timestamp[rayIdx] = ctx.sceneTime;
 	}
         if (ctx.entityIdx != nullptr) {
-                ctx.entityIdx[rayIdx] = isFinite ? objectID : -1;
+                ctx.entityIdx[rayIdx] = isFinite ? objectID : 0;
         }
 }
 

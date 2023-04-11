@@ -199,14 +199,13 @@ typedef enum : int
 /**
  * Available point attributes, used to specify layout of the binary data.
  */
-typedef enum
-{
+typedef enum {
 	RGL_FIELD_XYZ_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_RAY_IDX_U32,
 	RGL_FIELD_POINT_IDX_U32,
-        RGL_FIELD_ENTITY_IDX_I32,
+	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
 	RGL_FIELD_AZIMUTH_F32,
 	RGL_FIELD_RING_ID_U16,

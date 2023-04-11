@@ -27,7 +27,7 @@
 #define XYZ_F32 RGL_FIELD_XYZ_F32
 #define IS_HIT_I32 RGL_FIELD_IS_HIT_I32
 #define RAY_IDX_U32 RGL_FIELD_RAY_IDX_U32
-#define ENTITY_IDX_I32 RGL_FIELD_ENTITY_IDX_I32
+#define ENTITY_ID_I32 RGL_FIELD_ENTITY_ID_I32
 #define INTENSITY_F32 RGL_FIELD_INTENSITY_F32
 #define RING_ID_U16 RGL_FIELD_RING_ID_U16
 #define AZIMUTH_F32 RGL_FIELD_AZIMUTH_F32
@@ -51,7 +51,7 @@ struct Field<NAME>                                    \
 
 FIELD(XYZ_F32, Vec3f);
 FIELD(RAY_IDX_U32, uint32_t);  // PCL uses uint32_t
-FIELD(ENTITY_IDX_I32, int32_t);
+FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
 FIELD(IS_HIT_I32, int32_t);  // Signed may be faster
 FIELD(DISTANCE_F32, float);
@@ -68,7 +68,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 	switch (type) {
 		case XYZ_F32: return Field<XYZ_F32>::size;
 		case RAY_IDX_U32: return Field<RAY_IDX_U32>::size;
-		case ENTITY_IDX_I32: return Field<ENTITY_IDX_I32>::size;
+		case ENTITY_ID_I32: return Field<ENTITY_ID_I32>::size;
 		case IS_HIT_I32: return Field<IS_HIT_I32>::size;
 		case INTENSITY_F32: return Field<INTENSITY_F32>::size;
 		case RING_ID_U16: return Field<RING_ID_U16>::size;
@@ -110,7 +110,7 @@ inline VArray::Ptr createVArray(rgl_field_t type, std::size_t initialSize)
 	switch (type) {
 		case XYZ_F32: return VArray::create<Field<XYZ_F32>::type>(initialSize);
 		case RAY_IDX_U32: return VArray::create<Field<RAY_IDX_U32>::type>(initialSize);
-		case ENTITY_IDX_I32: return VArray::create<Field<ENTITY_IDX_I32>::type>(initialSize);
+		case ENTITY_ID_I32: return VArray::create<Field<ENTITY_ID_I32>::type>(initialSize);
 		case INTENSITY_F32: return VArray::create<Field<INTENSITY_F32>::type>(initialSize);
 		case RING_ID_U16: return VArray::create<Field<RING_ID_U16>::type>(initialSize);
 		case AZIMUTH_F32: return VArray::create<Field<AZIMUTH_F32>::type>(initialSize);
@@ -128,7 +128,7 @@ inline std::string toString(rgl_field_t type)
 		case XYZ_F32: return "XYZ_F32";
 		case IS_HIT_I32: return "IS_HIT_I32";
 		case RAY_IDX_U32: return "RAY_IDX_U32";
-		case ENTITY_IDX_I32: return "ENTITY_IDX_U32";
+		case ENTITY_ID_I32: return "ENTITY_IDX_U32";
 		case INTENSITY_F32: return "INTENSITY_F32";
 		case RING_ID_U16: return "RING_ID_U16";
 		case AZIMUTH_F32: return "AZIMUTH_F32";
@@ -153,7 +153,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 		                       sensor_msgs::msg::PointField::FLOAT32 };
 		case IS_HIT_I32: return { sensor_msgs::msg::PointField::INT32 };
 		case RAY_IDX_U32: return { sensor_msgs::msg::PointField::UINT32 };
-		case ENTITY_IDX_I32: return { sensor_msgs::msg::PointField::UINT32 };
+		case ENTITY_ID_I32: return { sensor_msgs::msg::PointField::INT32 };
 		case INTENSITY_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
 		case RING_ID_U16: return { sensor_msgs::msg::PointField::UINT16 };
 		case AZIMUTH_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
@@ -172,7 +172,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 	switch (type) {
 		case XYZ_F32: return { "x", "y", "z" };
 		case IS_HIT_I32: return { "is_hit" };
-		case ENTITY_IDX_I32: return { "entity_idx" };
+		case ENTITY_ID_I32: return { "entity_id" };
 		case RAY_IDX_U32: return { "ray_idx" };
 		case INTENSITY_F32: return { "intensity" };
 		case RING_ID_U16: return { "ring" };
@@ -193,7 +193,7 @@ inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 		case XYZ_F32: return { sizeof(float), sizeof(float), sizeof(float) };
 		case IS_HIT_I32: return { getFieldSize(type) };
 		case RAY_IDX_U32: return { getFieldSize(type) };
-		case ENTITY_IDX_I32: return { getFieldSize(type) };
+		case ENTITY_ID_I32: return { getFieldSize(type) };
 		case INTENSITY_F32: return { getFieldSize(type) };
 		case RING_ID_U16: return { getFieldSize(type) };
 		case AZIMUTH_F32: return { getFieldSize(type) };
