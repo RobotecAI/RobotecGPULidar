@@ -139,7 +139,7 @@ protected: // Member methods
 	bool isValid() const { return !dirty; }
 
 	/**
-	 * Waits until execution of this node is completed.
+	 * Waits until execution of this node is completed (CPU & GPU).
 	 * This is required to query node for results.
 	 * If error happened in the graph thread, this function will re-throw it.
 	 */

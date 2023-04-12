@@ -54,6 +54,7 @@ void GraphRunCtx::executeAsync()
 	}
 	execThreadCanStart = false;
 
+	// TODO: this also applies to validation and executionStatus clearing
 	// In other parts of the code we rely on the following logic
 	// IF graph thread is working THEN this->thread.has_value()
 	// However, there is a very tight gap, where this is not true,
