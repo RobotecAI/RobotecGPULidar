@@ -20,6 +20,9 @@
 #include <utility>
 #include <math/Mat3x4f.hpp>
 
+constexpr int INVALID_ENTITY_ID = 0;
+constexpr int DEFAULT_ENTITY_ID = std::numeric_limits<int>::max();
+
 
 struct Entity : APIObject<Entity>
 {

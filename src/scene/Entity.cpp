@@ -20,7 +20,7 @@ Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
 : mesh(std::move(mesh))
 , transform(Mat3x4f::identity())
 , humanReadableName(std::move(name))
-, id(reinterpret_cast<std::uintptr_t>(this)){ }
+, id(DEFAULT_ENTITY_ID){ }
 
 void Entity::setTransform(Mat3x4f newTransform)
 {
