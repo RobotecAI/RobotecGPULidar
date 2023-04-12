@@ -72,8 +72,5 @@ TEST_F(InstanceIDTest, BaseTest) {
 		else {
 			EXPECT_EQ(outID[i], 0);
 		}
-
-
 	}
-
 }
