@@ -55,8 +55,8 @@ TEST_F(InstanceIDTest, BaseTest) {
 //        EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 //#endif
 
-	for (int i = 0; i < rays.size(); ++i) {
-
+	for (int i = 0; i < rays.size(); ++i)
+	{
 		if (outIsHit[i]) {
 			// Check that the points are within the expected range for each object.
 			if (outPoints[i][1] < -2.0f) {
