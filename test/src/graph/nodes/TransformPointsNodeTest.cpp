@@ -26,13 +26,13 @@ TEST_P(TransformPointsNodeTest, invalid_arguments)
     };
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(nullptr, nullptr), "node != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(nullptr, nullptr), "node != nullptr");
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(nullptr, &transform), "node != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(nullptr, &transform), "node != nullptr");
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_transform(&transformPointsNode, nullptr), "transform != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_transform(&transformPointsNode, nullptr), "transform != nullptr");
 }
 
 TEST_P(TransformPointsNodeTest, valid_arguments)
@@ -40,11 +40,11 @@ TEST_P(TransformPointsNodeTest, valid_arguments)
     auto [_, transform] = GetParam();
     rgl_node_t transformPointsNode = nullptr;
 
-    EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformPointsNode, &transform));
+    EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPointsNode, &transform));
     ASSERT_THAT(transformPointsNode, testing::NotNull());
 
     // If (*node) != nullptr
-    EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformPointsNode, &transform));
+    EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPointsNode, &transform));
 }
 
 TEST_P(TransformPointsNodeTest, use_case)
