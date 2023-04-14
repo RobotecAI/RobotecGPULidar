@@ -10,7 +10,8 @@
 class InstanceIDTest : public RGLTest {
 };
 
-TEST_F(InstanceIDTest, BaseTest) {
+TEST_F(InstanceIDTest, BaseTest)
+{
 	setupThreeBoxScene(nullptr);
 
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
@@ -66,7 +67,7 @@ TEST_F(InstanceIDTest, BaseTest) {
 				EXPECT_EQ(outID[i], 2);
 			}
 			if (outPoints[i][1] > 2.0f) {
-				EXPECT_EQ(outID[i], 3);
+				EXPECT_EQ(outID[i], DEFAULT_ENTITY_ID);
 			}
 		}
 		else {
