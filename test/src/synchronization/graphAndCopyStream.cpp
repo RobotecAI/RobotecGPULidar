@@ -50,7 +50,7 @@ TEST(Synchronization, GraphAndCopyStream)
     testKernelWrapper(maxGPUCoresTestCount, deviceArray, graphStream);
 
     // Record synchronization event to the stream after sensitive job.
-    CHECK_CUDA(cudaEventRecord(jobDoneEvent->get(), graphStream));
+    CHECK_CUDA(cudaEventRecord(jobDoneEvent->getHandle(), graphStream));
 
     // Perform copy operation on the copyStream parallel to graphStream kernel.
     float* dummyDeviceArray;
@@ -60,7 +60,7 @@ TEST(Synchronization, GraphAndCopyStream)
 
     // Synchronize streams. This is pass or not for the test.
     //  All API Calls in given stream, will wait for the event  to be completed.
-    CHECK_CUDA(cudaStreamWaitEvent(copyStream, jobDoneEvent->get()));
+    CHECK_CUDA(cudaStreamWaitEvent(copyStream, jobDoneEvent->getHandle()));
 
     // Copy result from device memory to host memory by substream
     // cudaMemcpy(hostArray, deviceArray, size, cudaMemcpyDeviceToHost);

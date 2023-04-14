@@ -80,7 +80,7 @@ void GraphRunCtx::executeThreadMain() try
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 
-	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 }
 catch (...)
 {
@@ -119,7 +119,7 @@ GraphRunCtx::~GraphRunCtx()
 	// If GraphRunCtx is destroyed, we expect that thread was joined and stream was synced.
 
 	// Log error if stream has pending work.
-	cudaError_t status = cudaStreamQuery(stream->get());
+	cudaError_t status = cudaStreamQuery(stream->getHandle());
 	if (status == cudaErrorNotReady) {
 		RGL_WARN("~GraphRunCtx(): stream has pending work!");
 		status = cudaSuccess; // Ignore further checks.
@@ -149,7 +149,7 @@ void GraphRunCtx::synchronize()
 	for (auto&& node : executionOrder) {
 		synchronizeNodeCPU(node);
 	}
-	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 	maybeThread->join();
 	maybeThread.reset();
 }

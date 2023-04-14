@@ -34,8 +34,9 @@ struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
 	void copyFrom(DeviceAsyncArray<T>::Ptr source)
 	{
 		this->resize(source->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpyAsync(this->data, source->data, this->getSizeOf() * this->getCount(), cudaMemcpyDeviceToHost, source->getStream()->get()));
-		CHECK_CUDA(cudaStreamSynchronize(source->getStream()->get()));
+		CHECK_CUDA(cudaMemcpyAsync(this->data, source->data, this->getSizeOf() * this->getCount(), cudaMemcpyDeviceToHost,
+		                           source->getStream()->getHandle()));
+		CHECK_CUDA(cudaStreamSynchronize(source->getStream()->getHandle()));
 	}
 
 protected:
