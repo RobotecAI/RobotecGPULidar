@@ -120,6 +120,6 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 		node->getGraphRunCtx()->synchronize();
 	}
 	node->setParameters(args...);
-
+	node->dirty = true;
 	*nodeRawPtr = node.get();
 }

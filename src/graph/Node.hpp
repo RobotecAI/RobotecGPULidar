@@ -203,6 +203,10 @@ protected:
 	StreamBoundObjectsManager arrayMgr;
 
 	friend struct fmt::formatter<Node>;
+
+	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
+	template<typename NodeType, typename... Args>
+	friend void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args);
 };
 
 #ifndef __CUDACC__
