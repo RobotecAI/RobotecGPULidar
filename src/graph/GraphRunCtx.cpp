@@ -160,6 +160,8 @@ void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
 		return; // Already synchronized or never run.
 	}
 	// Wait until node is executed
+	// This is call executed in client's thread, which is often engine's main thread.
+	// Therefore, we choose busy wait, since putting it to sleep & waking up would add additional latency.
 	while (!executionStatus.at(nodeToSynchronize).executed.load(std::memory_order_acquire))
 		;
 	// Rethrow exception, if any

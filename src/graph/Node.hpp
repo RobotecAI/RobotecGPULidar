@@ -78,7 +78,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	/**
 	 * Certain operations, such as adding/removing child/parent links
-	 * may cause some nodes to be in an invalid state (not ready).
+	 * may cause some nodes to be in an invalid state (not ready to run).
 	 * Node must be made ready before it is executed or queried for results.
 	 * Node can assume that it has valid GraphRunCtx.
 	 * Node must not change its output.
@@ -134,7 +134,7 @@ protected: // Member methods
 	virtual void validateImpl() = 0;
 
 	/**
-	 * @return True, if node can be executed or queried for results.
+	 * @return True, if node can be executed.
 	 */
 	bool isValid() const { return !dirty; }
 
