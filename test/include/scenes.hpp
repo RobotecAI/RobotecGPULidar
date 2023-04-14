@@ -53,11 +53,3 @@ static inline void setupBoxesAlongAxes(rgl_scene_t scene) {
 		spawnCubeOnScene(scene, {0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ});
 	}
 }
-
-static inline void setupThreeBoxScene(rgl_scene_t scene) {
-	spawnCubeOnScene(scene, {6, -5, 0}, {0, 0, 0}, {1, 1, 1}, 1);
-	spawnCubeOnScene(scene, {6, 0, 0}, {0, 0, 0}, {1, 1, 1}, 2);
-	spawnCubeOnScene(scene, {6, 5, 0}, {0, 0, 0}, {1, 1, 1});
-}
-
-

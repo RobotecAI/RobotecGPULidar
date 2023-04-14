@@ -12,7 +12,10 @@ class InstanceIDTest : public RGLTest {
 
 TEST_F(InstanceIDTest, BaseTest)
 {
-	setupThreeBoxScene(nullptr);
+	// Spawn three cubes with different IDs in line, ne with default ID.
+	spawnCubeOnScene(nullptr, {6, -5, 0}, {0, 0, 0}, {1, 1, 1}, 1);
+	spawnCubeOnScene(nullptr, {6, 0, 0}, {0, 0, 0}, {1, 1, 1}, 2);
+	spawnCubeOnScene(nullptr, {6, 5, 0}, {0, 0, 0}, {1, 1, 1});
 
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);
