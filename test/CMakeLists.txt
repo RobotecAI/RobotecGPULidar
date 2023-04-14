@@ -9,7 +9,7 @@ set(RGL_TEST_FILES
         src/testMat3x4f.cpp
         src/graph/nodes/FromArrayPointsNodeTest.cpp
         src/graph/nodes/TransformPointsNodeTest.cpp
-        src/graph/nodes/SetRingIdsNodeTest.cpp
+        src/graph/nodes/SetRingIdsRaysNodeTest.cpp
         src/graph/nodes/CompactPointsNodeTest.cpp
         src/graph/nodes/FormatPointsNodeTest.cpp
         src/graph/nodes/YieldPointsNodeTest.cpp
@@ -18,6 +18,7 @@ set(RGL_TEST_FILES
         src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
         src/graph/nodes/RaytraceNodeTest.cpp
         src/graph/addChildTest.cpp
+        src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
         src/memory/arrayTest.cpp
         src/synchronization/syncTest.cpp
         src/synchronization/testKernel.cu
