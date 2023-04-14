@@ -3,8 +3,9 @@
 #include <gtest/gtest.h>
 #include <repr.hpp>
 #include <utils.hpp>
+#include <PointsTestHelper.hpp>
 
-class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointTestHelper {
+class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointsTestHelper {
 protected:
     static constexpr int TEST_PARAM_TRANSFORM_ID=1;
 };
