@@ -10,7 +10,7 @@ Robotec GPU Lidar (RGL) is a cross-platform (Windows and Linux) C/C++ library de
 for simulating [LiDARs](https://en.wikipedia.org/wiki/Lidar) on CUDA-enabled GPUs, accelerated by RTX cores if available.
 
 One of the use cases of RGL is implementing Lidar sensors in simulation engines.
-We are working on integrations with popular game / simulation engines:
+We are working on integrations with popular game/simulation engines:
 - [Unity](https://unity.com/)
 - [O3DE](https://www.o3de.org/)
 - [Gazebo](https://gazebosim.org/home)
@@ -55,7 +55,7 @@ And more:
 
 ## Usage
 
-An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
+An introduction to the RGL API and an example can be found [here](docs/Usage.md).
 
 ## Extensions
 

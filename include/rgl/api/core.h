@@ -145,27 +145,27 @@ typedef enum : int32_t
 	RGL_SUCCESS = 0,
 
 	/**
-	 * One of the arguments is invalid (e.g. null pointer) or a number in invalid range.
+	 * One of the arguments is invalid (e.g., null pointer) or a number in an invalid range.
 	 * Get the error string for more details.
 	 * This is a recoverable error.
 	 */
 	RGL_INVALID_ARGUMENT,
 
 	/**
-	 * RGL internal state has been corrupted by a previous unrecoverable error.
+	 * RGL's internal state has been corrupted by a previous unrecoverable error.
 	 * Application must be restarted.
 	 */
 	RGL_INVALID_STATE,
 
 	/**
-	 * Indicates that a logging operation (e.g. configuration) was not successful.
+	 * Indicates that a logging operation (e.g., configuration) was unsuccessful.
 	 * This is an unrecoverable error.
 	 */
 	RGL_LOGGING_ERROR,
 
 	/**
 	 * Indicates that provided API object handle is not known by RGL.
-	 * This can be caused by using previously destroyed API object, e.g.
+	 * This can be caused by using previously destroyed API objects, e.g.
 	 * by previous call to rgl_*_destroy(...) or rgl_cleanup()
 	 * This is a recoverable error.
 	 */
@@ -184,7 +184,7 @@ typedef enum : int32_t
 	RGL_TAPE_ERROR,
 
 	/**
-	* Indicates that a ROS2 native library throws exception.
+	* Indicates that a ROS2 native library throws an exception.
 	* This is a recoverable error.
 	*/
 	RGL_ROS2_ERROR,
@@ -202,7 +202,7 @@ typedef enum : int32_t
 	RGL_INITIALIZATION_ERROR,
 
 	/**
-	 * Requested functionality has been not yet implemented.
+	 * Requested functionality still needs to be implemented.
 	 * This is a recoverable error.
 	 */
 	RGL_NOT_IMPLEMENTED = 404,
@@ -232,7 +232,7 @@ typedef enum : int32_t
 } rgl_log_level_t;
 
 /**
- * Available point attributes, used to specify layout of the binary data.
+ * Available point attributes used to specify the layout of the binary data.
  */
 typedef enum : int32_t
 {
@@ -270,7 +270,7 @@ typedef enum : int32_t
 /**
  * Returns data describing semantic version as described in https://semver.org/
  * Version string can be obtained by formatting "{out_major}.{out_minor}.{out_patch}".
- * Hash is provided mostly for debugging and issue reporting.
+ * Hash is provided mainly for debugging and issue reporting.
  * @param out_major Address to store major version number
  * @param out_minor Address to store minor version number
  * @param out_patch Address to store patch version number
@@ -301,16 +301,16 @@ RGL_API rgl_status_t
 rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout);
 
 /**
- * Returns a pointer to a string explaining last error. This function always succeeds.
- * Returned pointer is valid only until next RGL API call.
- * @param out_error Address to store pointer to string explaining the cause of the given error.
+ * Returns a pointer to a string explaining the last error. This function always succeeds.
+ * Returned pointer is valid only until the next RGL API call.
+ * @param out_error Address to store a pointer to the string explaining the error's cause.
  */
 RGL_API void
 rgl_get_last_error_string(const char **out_error_string);
 
 /**
  * Removes all user-created API objects: meshes, entities, scenes, lidars, etc.
- * Effectively brings the library to the state as-if it was not yet used.
+ * Effectively brings the library to the state as if it was not yet used.
  * All API handles are invalidated.
  */
 RGL_API rgl_status_t
@@ -319,7 +319,7 @@ rgl_cleanup(void);
 /******************************** MESH ********************************/
 
 /**
- * Creates mesh from vertex and index arrays. CW/CCW order does not matter.
+ * Creates mesh from a vertex and index arrays. CW/CCW order does not matter.
  * Provided arrays are copied to the GPU before this function returns.
  * @param out_mesh Address to store the resulting mesh handle
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
@@ -359,7 +359,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh);
  * This function is intended to update animated meshes.
  * @param mesh Mesh to modify
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
- * @param vertex_count Number of elements in the vertices array. Must be equal to the original vertex count!
+ * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
  */
 RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh,
@@ -370,17 +370,17 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh,
 
 /**
  * Creates an entity and adds it to the given scene.
- * Entity is a lightweight object which pairs a reference to a mesh with a 3D affine transform.
+ * Entity is a lightweight object that pairs a mesh reference with a 3D affine transform.
  * @param out_entity Handle to the created entity.
- * @param scene Scene where entity will be added. Pass NULL to use the default scene.
- * @param mesh Handle to the mesh which will represent the entity on the scene.
+ * @param scene Scene where the entity will be added. Pass NULL to use the default scene.
+ * @param mesh Handle to the mesh, which will represent the entity on the scene.
  */
 RGL_API rgl_status_t
 rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
 
 /**
  * Removes an entity from the scene and releases its resources (memory).
- * This operation does not affect the mesh used by the entity, since it can be shared among other entities.
+ * This operation does not affect the entity's mesh since it can be shared among other entities.
  * @param entity Entity to remove
  */
 RGL_API rgl_status_t
@@ -434,8 +434,8 @@ rgl_texture_destroy(rgl_texture_t texture);
 /******************************** SCENE ********************************/
 
 /**
- * Sets time to the given scene.
- * Time indicates a specific point in the simulation timeline when raytrace is performed.
+ * Sets time for the given scene.
+ * Time indicates a specific point when the ray trace is performed in the simulation timeline.
  * Timestamp is used to fill field RGL_FIELD_TIME_STAMP_F64 or for ROS2 publishing.
  * @param scene Scene where time will be set. Pass NULL to use the default scene.
  * @param nanoseconds Timestamp in nanoseconds.
@@ -448,7 +448,7 @@ rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds);
 /**
  * Creates or modifies FromMat3x4fRaysNode.
  * The node provides initial rays for its children nodes.
- * Initial rays are usually provided in device-local coordinate frame, i.e. close to (0, 0, 0).
+ * Initial rays are usually provided in the device-local coordinate frame, i.e., close to (0, 0, 0).
  * Input: none
  * Output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
@@ -482,11 +482,11 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
 RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
-// Applies affine transformation, e.g. to change the coordinate frame.
+// Applies affine transformation, e.g., to change the coordinate frame.
 /**
  * Creates or modifies TransformPointsNode.
- * The node applies affine transformation to all points.
- * It can be used to e.g. change coordinate frame after raytracing.
+ * The node applies the affine transformation to all points.
+ * It can be used to e.g., change coordinate frame after raytracing.
  * Note: affects only RGL_FIELD_XYZ_F32. Other fields are not modified.
  * Graph input: point cloud
  * Graph output: point cloud (transformed)
@@ -511,8 +511,8 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
 
 /**
  * Creates or modifies FormatPointsNode.
- * The node converts internal representation into a binary format defined by `fields` array.
- * Note: It is a user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
+ * The node converts internal representation into a binary format defined by the `fields` array.
+ * Note: It is the user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
@@ -524,7 +524,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t fiel
 
 /**
  * Creates or modifies YieldPointsNode.
- * The node is a marker what fields are expected by the user.
+ * The node is a marker of what fields are expected by the user.
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
@@ -580,7 +580,7 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
  * Input: none
  * Output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param points Pointer to the array of points. Point is represented as a structure composed of fields.
+ * @param points Pointer to the array of points. A point is represented as a structure composed of fields.
  * See RGLFields.hpp (https://github.com/RobotecAI/RobotecGPULidar/blob/main/src/RGLFields.hpp).
  * Example of that structure:
  * struct ExamplePoint
@@ -606,7 +606,7 @@ rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param mean Angular noise mean in radians.
  * @param st_dev Angular noise standard deviation in radians.
- * @param axis Axis on which angular noise will be perform.
+ * @param axis Axis on which angular noise will be performed.
  */
 RGL_API rgl_status_t
 rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
@@ -615,7 +615,7 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
  * Creates or modifies GaussianNoiseAngularHitpointNode.
  * Adds angular noise to already computed hitpoints.
  * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
- * Should be used after raytrace node.
+ * Should be used after the raytrace node.
  * Using this noise after nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#hitpoint-based-angular-noise
  * Graph input: point cloud
@@ -623,16 +623,16 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param mean Angular noise mean in radians.
  * @param st_dev Angular noise standard deviation in radians.
- * @param axis Axis on which angular noise will be perform.
+ * @param axis Axis on which angular noise will be performed.
  */
 RGL_API rgl_status_t
 rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
 
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
- * Changes the distance between hitpoint and lidar's origin.
+ * Changes the distance between the hitpoint and the lidar's origin.
  * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
- * Should be used after raytrace node.
+ * Should be used after the raytrace node.
  * Using this noise after nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#distance-noise
  * Graph input: point cloud
@@ -665,11 +665,11 @@ rgl_graph_destroy(rgl_node_t node);
 /**
  * Obtains the result information of any node in the graph.
  * The function will fill output parameters that are not null.
- * I.e. The count of the output elements can be queried using a nullptr out_size_of.
+ * I.e., The count of the output elements can be queried using a nullptr out_size_of.
  * @param node Node to get output from
  * @param field Field to get output from. Formatted output with FormatNode should be marked as RGL_FIELD_DYNAMIC_FORMAT.
- * @param out_count Returns the number of available elements (e.g. points). May be null.
- * @param out_size_of Returns byte size of a single element (e.g. point). May be null.
+ * @param out_count Returns the number of available elements (e.g., points). It may be null.
+ * @param out_size_of Returns byte size of a single element (e.g., point). It may be null.
  */
 RGL_API rgl_status_t
 rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of);
@@ -694,8 +694,8 @@ rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child);
 
 /**
  * Removes child from the parent node
- * @param parent Node that will be removed as parent from (child)
- * @param child Node that will be removed as child from (parent)
+ * @param parent Node that will be removed as a parent from (child)
+ * @param child Node that will be removed as a child from (parent)
  */
 RGL_API rgl_status_t
 rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
