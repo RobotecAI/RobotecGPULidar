@@ -25,8 +25,12 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 	return entity;
 }
 
-static inline void spawnCubeOnScene(rgl_scene_t scene, const Vec3f &position, const Vec3f &rotation, const Vec3f &scale,
-									int id = DEFAULT_ENTITY_ID) {
+static inline void spawnCubeOnScene(rgl_scene_t scene,
+									const Vec3f &position={0,0,0},
+									const Vec3f &rotation={0,0,0},
+									const Vec3f &scale={1,1,1},
+									int id = DEFAULT_ENTITY_ID)
+{
 	rgl_entity_t boxEntity = makeEntity(makeCubeMesh(), scene);
 
 	rgl_mat3x4f boxTransform = Mat3x4f::TRS(position, rotation, scale).toRGL();
