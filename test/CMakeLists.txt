@@ -17,8 +17,9 @@ set(RGL_TEST_FILES
         src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
         src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
         src/graph/nodes/RaytraceNodeTest.cpp
-        src/graph/addChildTest.cpp
+        src/graph/nodes/TransformRaysNodeTest.cpp
         src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
+        src/graph/addChildTest.cpp
         src/memory/arrayTest.cpp
         src/synchronization/syncTest.cpp
         src/synchronization/testKernel.cu
