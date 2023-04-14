@@ -47,7 +47,7 @@ VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field)
 	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
 		return output;
 	}
-	return input->getFieldData(field, CudaStream::getCopyStream()->get());
+	return input->getFieldData(field);
 }
 
 std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
