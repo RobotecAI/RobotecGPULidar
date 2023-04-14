@@ -51,6 +51,10 @@ public:
 
 		TestPointCloud pointCloud = TestPointCloud(fields, outCount);
 
+		if (outCount == 0) {
+			return pointCloud;
+		}
+
 		for (auto& field : fields) {
 			int32_t currentCount, currentSize;
 			EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(outputNode, field, &currentCount, &currentSize));
@@ -93,6 +97,8 @@ public:
 	{
 		rgl_node_t node = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&node, data.data(), getPointCount(), fields.data(), fields.size()));
+		EXPECT_THAT(node, testing::NotNull());
+
 		return node;
 	}
 
@@ -171,7 +177,7 @@ private:
 * @return A vector of generated values.
  */
 template<typename FieldType>
-static std::vector<FieldType> generate(std::size_t count, std::function<FieldType(int)> generator)
+static std::vector<FieldType> generateFieldValues(std::size_t count, std::function<FieldType(int)> generator)
 {
 	std::vector<FieldType> values;
 	values.reserve(count);
@@ -224,4 +230,26 @@ static void checkIfNearEqual(const std::vector<Field<XYZ_VEC3_F32>::type>& expec
 		EXPECT_NEAR(expected[i][1], actual[i][1], epsilon);
 		EXPECT_NEAR(expected[i][2], actual[i][2], epsilon);
 	}
+}
+
+/**
+* Other helper functions.
+*/
+
+static rgl_node_t simulateEmptyPointCloudOutputNode()
+{
+	// Create TestPointCloud with one non hit point
+	int pointsCount = 1;
+	TestPointCloud pointCloud({XYZ_F32, IS_HIT_I32}, pointsCount);
+	pointCloud.setFieldValues<XYZ_F32>(generateFieldValues(pointsCount, genCoord));
+	pointCloud.setFieldValues<IS_HIT_I32>(generateFieldValues(pointsCount, genAllNonHit));
+
+	// Prepare graph
+	rgl_node_t usePointsNode = pointCloud.createUsePointsNode();
+	rgl_node_t compactNode = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
+	EXPECT_THAT(compactNode, testing::NotNull());
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNode));
+
+	return compactNode;
 }
