@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-    #include <graph/NodesCore.hpp>
+#include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
 void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float stDevRisePerMeter)

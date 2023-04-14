@@ -50,12 +50,6 @@ struct LinearGraph {
 
 INSTANTIATE_TEST_SUITE_P(graphThreadSynchronization, graphThreadSynchronization, testing::Values(1, 10, 1000));
 
-TEST_F(graphThreadSynchronization, LinearSingleRun)
-{
-    LinearGraph graph {};
-    graph.RunGraph();
-}
-
 TEST_P(graphThreadSynchronization, LinearMultipleRuns)
 {
     int numberOfGraphIterations = GetParam();
@@ -75,3 +69,4 @@ TEST_F(graphThreadSynchronization, AddNodeAfterRun)
 
     graph.RunGraph();
 }
+// TODO(nebraszka): Write more unit test: trying to remove, add nodes when running is queued, accesing data, created, or not, etc.
