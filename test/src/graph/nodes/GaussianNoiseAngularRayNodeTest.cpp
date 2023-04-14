@@ -20,6 +20,6 @@ TEST_F(GaussianNoiseAngularRayNodeTest, valid_arguments)
     rgl_node_t gaussianNoiseNode = nullptr;
     EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&gaussianNoiseNode, 0.0f, 0.0f, RGL_AXIS_X));
 
-	// If (*gaussianNoiseNode) != nullptr
-	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&gaussianNoiseNode, 2.0f, 2.0f, RGL_AXIS_X));
+    // If (*gaussianNoiseNode) != nullptr
+    EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&gaussianNoiseNode, 2.0f, 2.0f, RGL_AXIS_X));
 }
