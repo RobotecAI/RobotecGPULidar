@@ -26,10 +26,10 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 }
 
 static inline void spawnCubeOnScene(rgl_scene_t scene,
-									const Vec3f &position={0,0,0},
-									const Vec3f &rotation={0,0,0},
-									const Vec3f &scale={1,1,1},
-									int id = DEFAULT_ENTITY_ID)
+                                    const Vec3f &position = {0, 0, 0},
+                                    const Vec3f &rotation = {0, 0, 0},
+                                    const Vec3f &scale = {1, 1, 1},
+                                    int id = DEFAULT_ENTITY_ID)
 {
 	rgl_entity_t boxEntity = makeEntity(makeCubeMesh(), scene);
 
