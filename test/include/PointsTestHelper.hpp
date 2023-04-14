@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock-matchers.h>
 #include "utils.hpp"
+#include <stdlib.h>
 
 struct RGLPointsTestHelper {
 
@@ -31,53 +32,64 @@ protected:
 
     rgl_node_t usePointsNode = nullptr;
     std::vector<TestPointStruct> inPoints;
+    int32_t randomNonHitCount = 0;
 
-    // TODO: What if we want a less regular density of hit points? To consider, change the function below.
-    // TODO2: Make a function that creates random number of non-hit points
     std::vector<TestPointStruct> GenerateTestPointsArray(
-        int count, std::optional<rgl_mat3x4f> transform = std::nullopt, std::optional<int> isHit = std::nullopt)
+            int count,
+            rgl_mat3x4f transform = identityTestTransform,
+            HitPointDensity hitPointDensity = HitPointDensity::HALF_HIT
+            )
     {
         std::vector<TestPointStruct> points;
+        randomNonHitCount = 0;
+
         for (int i = 0; i < count; ++i) {
             auto currentPoint = TestPointStruct {
                 .xyz = { i, i + 1, i + 2 },
-                .isHit = isHit.value_or(i % 2), // TODO Instead of passing isHit argument, pass HitPointDensinity
+                .isHit = [&](){
+                    switch(hitPointDensity){
+                        case HitPointDensity::HALF_HIT:
+                            return i % 2;
+                        case HitPointDensity::ALL_NON_HIT:
+                            return 0;
+                        case HitPointDensity::ALL_HIT:
+                            return 1;
+                        case HitPointDensity::RANDOM:
+                        {
+                            int isHit = 0;
+                            if(!isHit)
+                                randomNonHitCount++;
+                            return isHit;
+                        }
+                        default:
+                            return i % 2;
+                    }
+                }(),
                 .intensity = 100 };
-
-            currentPoint.xyz = Mat3x4f::fromRGL(transform.value_or(identityTestTransform)) * currentPoint.xyz;
+            currentPoint.xyz = Mat3x4f::fromRGL(transform) * currentPoint.xyz;
             points.emplace_back(currentPoint);
         }
         return points;
     }
 
-    std::vector<TestPointStruct> GenerateTestNonHitPointsArray(int count, std::optional<rgl_mat3x4f> transform = std::nullopt)
+    void CreateTestUsePointsNode(
+            int pointsCount,
+            rgl_mat3x4f transform = identityTestTransform,
+            HitPointDensity hitPointDensity = HitPointDensity::HALF_HIT)
     {
-        return GenerateTestPointsArray(count, transform.value_or(identityTestTransform), 0);
-    }
-
-    std::vector<TestPointStruct> GenerateTestHitPointsArray(int count, std::optional<rgl_mat3x4f> transform = std::nullopt)
-    {
-        return GenerateTestPointsArray(count, transform.value_or(identityTestTransform), 1);
-    }
-
-    void CreateTestUsePointsNode(int pointsCount, HitPointDensity type = HitPointDensity::HALF_HIT)
-    {
-        switch (type) {
-        case HitPointDensity::HALF_HIT:
-            inPoints = GenerateTestPointsArray(pointsCount);
-            break;
-        case HitPointDensity::ALL_HIT:
-            inPoints = GenerateTestHitPointsArray(pointsCount);
-            break;
-        case HitPointDensity::ALL_NON_HIT:
-            inPoints = GenerateTestNonHitPointsArray(pointsCount);
-            break;
-        default:
-            inPoints = GenerateTestPointsArray(pointsCount);
-            break;
-        }
+        inPoints = GenerateTestPointsArray(pointsCount, transform, hitPointDensity);
 
         EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
         ASSERT_THAT(usePointsNode, testing::NotNull());
+    }
+
+    std::vector<TestPointStruct> removeNonHit() { //TODO change name
+        std::vector<TestPointStruct> hitPoints;
+        for(auto point: inPoints) {
+            if(point.isHit == 1) {
+                hitPoints.push_back(point);
+            }
+        }
+        return hitPoints;
     }
 };
