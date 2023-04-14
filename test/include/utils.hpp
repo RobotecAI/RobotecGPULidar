@@ -60,44 +60,6 @@ protected:
 template <typename T>
 struct RGLTestWithParam : public RGLTest, public ::testing::WithParamInterface<T> { };
 
-struct RGLPointTestHelper {
-
-protected:
-    std::vector<rgl_field_t> pointFields = {
-        XYZ_F32,
-        IS_HIT_I32,
-        INTENSITY_F32
-    };
-
-    struct TestPointStruct {
-        Field<XYZ_F32>::type xyz;
-        Field<IS_HIT_I32>::type isHit;
-        Field<INTENSITY_F32>::type intensity;
-    };
-
-    rgl_node_t usePointsNode = nullptr;
-    std::vector<TestPointStruct> inPoints;
-
-    std::vector<TestPointStruct> GenerateTestPointsArray(int count, rgl_mat3x4f transform = identityTestTransform)
-    {
-        std::vector<TestPointStruct> points;
-        for (int i = 0; i < count; ++i) {
-            auto currentPoint = TestPointStruct { .xyz = { i, i + 1, i + 2 }, .isHit = i % 2, .intensity = 100 };
-            currentPoint.xyz = Mat3x4f::fromRGL(transform) * currentPoint.xyz;
-            points.emplace_back(currentPoint);
-        }
-        return points;
-    }
-
-    void CreateTestUsePointsNode(int pointsCount)
-    {
-        inPoints = GenerateTestPointsArray(pointsCount);
-
-        EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
-        ASSERT_THAT(usePointsNode, testing::NotNull());
-    }
-};
-
 template <typename T>
 std::vector<float> computeAngles(const T* data, int size)
 {
@@ -148,25 +110,6 @@ static std::string readFileStr(std::filesystem::path path)
 	std::vector<char> logFileChars = loadVec<char>(path);
 	return {logFileChars.begin(), logFileChars.end()};
 }
-
-// static rgl_lidar_t makeTrivialLidar()
-// {
-// 	rgl_lidar_t lidar = nullptr;
-// 	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, &identity, 1));
-// 	EXPECT_THAT(lidar, NotNull());
-// 	return lidar;
-// }
-
-// static rgl_lidar_t loadLidar(std::filesystem::path path)
-// {
-// 	rgl_lidar_t lidar = nullptr;
-// 	std::vector<rgl_mat3x4f> rays = loadVec<rgl_mat3x4f>(path);
-// 	EXPECT_RGL_SUCCESS(rgl_lidar_create(&lidar, rays.data(), rays.size()));
-// 	EXPECT_THAT(lidar, NotNull());
-// 	return lidar;
-// }
-
-
 
 static rgl_mesh_t loadMesh(std::filesystem::path path)
 {
