@@ -82,6 +82,7 @@ struct VArray : std::enable_shared_from_this<VArray>
 	void insertData(const void *src, std::size_t elements, std::size_t offset);
 	void resize(std::size_t newCount, bool zeroInit=true, bool preserveData=true);
 	void reserve(std::size_t newCapacity, bool preserveData=true);
+	void doubleCapacityIfRunningOut(float runningOutThreshold=0.9);
 	std::size_t getElemSize() const { return sizeOfType; }
 	std::size_t getElemCount() const { return current().elemCount; }
 	std::size_t getElemCapacity() const { return current().elemCapacity; }

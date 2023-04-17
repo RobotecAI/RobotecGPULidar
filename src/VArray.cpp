@@ -100,6 +100,13 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 	current().elemCapacity = newCapacity;
 }
 
+void VArray::doubleCapacityIfRunningOut(float runningOutThreshold)
+{
+	if (getElemCapacity() * runningOutThreshold < getElemCount()) {
+		reserve(getElemCapacity() * 2, true);
+	}
+}
+
 VArray::~VArray()
 {
 	for (auto&& [location, state] : instance) {
