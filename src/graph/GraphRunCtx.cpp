@@ -33,6 +33,8 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 		currentNode->setGraphRunCtx(graphRunCtx);
 	}
 
+	GraphRunCtx::instances.push_back(graphRunCtx);
+
 	return graphRunCtx;
 }
 
