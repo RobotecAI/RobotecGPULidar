@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.13.1] 18 April 2023
+
+### Fixed
+- Improved performance of temporal merge node.
+  - The node doubles the array capacity if it's running out (instead of reallocating every iteration).
+
+### Changed
+- Point cloud formatting for `rgl_graph_write_pcd_file` is performed on the CPU now.
+  - We prefer to avoid transferring huge point cloud to GPU (risk of cuda out of memory error).
+
 ## [0.13.0] 29 March 2023
 
 ### Added
