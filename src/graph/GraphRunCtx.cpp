@@ -52,7 +52,7 @@ void GraphRunCtx::executeAsync()
 	for (auto&& node : executionOrder) {
 		executionStatus.try_emplace(node);
 	}
-	execThreadCanStart = false;
+	execThreadCanStart.store(false, std::memory_order_relaxed);
 
 	// TODO: this also applies to validation and executionStatus clearing
 	// In other parts of the code we rely on the following logic
