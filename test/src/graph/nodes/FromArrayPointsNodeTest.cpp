@@ -56,9 +56,6 @@ TEST_P(FromArrayPointsNodeTest, use_case)
 
     std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(pointsCount);
 
-    std::vector<::Field<XYZ_F32>::type> expectedXYZ;
-    expectedXYZ.resize(pointsCount);
-
     for (auto field : pointFields) {
         int32_t outCount, outSizeOf;
         EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(usePointsNode, field, &outCount, &outSizeOf));
