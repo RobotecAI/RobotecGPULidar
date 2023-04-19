@@ -42,16 +42,18 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 			throw InvalidAPIObject(fmt::format("Saving PCD file {} failed - requested node does not have field XYZ.", file_path));
 		}
 
-		// Get formatted data
-		VArray::Ptr rglCloud = VArray::create<char>();
-		// TODO(msz-rai): CudaStream for formatAsync: nullptr or pointCloudNode->getGraph()->getStream()?
-		FormatPointsNode::formatAsync(rglCloud, pointCloudNode, {XYZ_F32, PADDING_32}, nullptr);
+		// We are not using format node to avoid transferring huge point cloud to GPU (risk of cuda out of memory error)
+		// We are formatting manually on the CPU instead.
+		// TODO(msz-rai): CudaStream for getFieldDataTyped: nullptr or pointCloudNode->getGraph()->getStream()?
+		auto xyzTypedArray = pointCloudNode->getFieldDataTyped<XYZ_F32>(nullptr);
+		auto xyzData = xyzTypedArray->getReadPtr(MemLoc::Host);
 
 		// Convert to PCL cloud
 		pcl::PointCloud<pcl::PointXYZ> pclCloud;
-		const pcl::PointXYZ* data = reinterpret_cast<const pcl::PointXYZ*>(rglCloud->getReadPtr(MemLoc::Host));
 		pclCloud.resize(pointCloudNode->getWidth(), pointCloudNode->getHeight());
-		pclCloud.assign(data, data + pclCloud.size(), pointCloudNode->getWidth());
+		for (int i = 0; i < xyzTypedArray->getCount(); ++i) {
+			pclCloud[i] = pcl::PointXYZ(xyzData[i].x(), xyzData[i].y(), xyzData[i].z());
+		}
 		pclCloud.is_dense = pointCloudNode->isDense();
 
 		// Save to PCD file

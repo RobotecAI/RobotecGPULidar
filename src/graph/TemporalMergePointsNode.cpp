@@ -61,6 +61,8 @@ void TemporalMergePointsNode::schedule(cudaStream_t stream)
 		size_t pointCount = input->getPointCount();
 		const auto toMergeData = input->getFieldData(field, stream);
 		data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, width);
+		// Double capacity of VArray if is close to run out. It prevents reallocating memory every insertion.
+		data->doubleCapacityIfRunningOut();
 	}
 	width += input->getWidth();
 }
