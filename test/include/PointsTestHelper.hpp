@@ -5,11 +5,11 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock-matchers.h>
-#include "utils.hpp"
+
+#include <utils.hpp>
 #include <stdlib.h>
 
 struct RGLPointsTestHelper {
-
 protected:
     std::vector<rgl_field_t> pointFields = {
         XYZ_F32,
@@ -32,6 +32,7 @@ protected:
 
     rgl_node_t usePointsNode = nullptr;
     std::vector<TestPointStruct> inPoints;
+
     int32_t randomNonHitCount = 0;
 
     std::vector<TestPointStruct> GenerateTestPointsArray(
@@ -46,25 +47,7 @@ protected:
         for (int i = 0; i < count; ++i) {
             auto currentPoint = TestPointStruct {
                 .xyz = { i, i + 1, i + 2 },
-                .isHit = [&](){
-                    switch(hitPointDensity){
-                        case HitPointDensity::HALF_HIT:
-                            return i % 2;
-                        case HitPointDensity::ALL_NON_HIT:
-                            return 0;
-                        case HitPointDensity::ALL_HIT:
-                            return 1;
-                        case HitPointDensity::RANDOM:
-                        {
-                            int isHit = 0;
-                            if(!isHit)
-                                randomNonHitCount++;
-                            return isHit;
-                        }
-                        default:
-                            return i % 2;
-                    }
-                }(),
+                .isHit = determineIsHit(i, hitPointDensity),
                 .intensity = 100 };
             currentPoint.xyz = Mat3x4f::fromRGL(transform) * currentPoint.xyz;
             points.emplace_back(currentPoint);
@@ -83,7 +66,7 @@ protected:
         ASSERT_THAT(usePointsNode, testing::NotNull());
     }
 
-    std::vector<TestPointStruct> removeNonHit() { //TODO change name
+    std::vector<TestPointStruct> separateHitPoints() {
         std::vector<TestPointStruct> hitPoints;
         for(auto point: inPoints) {
             if(point.isHit == 1) {
@@ -91,5 +74,25 @@ protected:
             }
         }
         return hitPoints;
+    }
+
+private:
+    int32_t determineIsHit(int index, HitPointDensity hitPointDensity){
+        switch(hitPointDensity){
+            case HitPointDensity::HALF_HIT:
+                return index % 2;
+            case HitPointDensity::ALL_NON_HIT:
+                return 0;
+            case HitPointDensity::ALL_HIT:
+                return 1;
+            case HitPointDensity::RANDOM:
+            {
+                int isHit = rand() % 2;
+                if(!isHit) {
+                    randomNonHitCount++;
+                }
+                return isHit;
+            }
+        }
     }
 };
