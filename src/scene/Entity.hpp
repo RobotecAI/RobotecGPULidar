@@ -20,6 +20,9 @@
 #include <utility>
 #include <math/Mat3x4f.hpp>
 
+constexpr int INVALID_ENTITY_ID = 0;
+constexpr int DEFAULT_ENTITY_ID = 2147483647;
+
 
 struct Entity : APIObject<Entity>
 {
@@ -27,12 +30,15 @@ struct Entity : APIObject<Entity>
 
 	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
 	void setTransform(Mat3x4f newTransform);
+	void setId(int newId);
+	const int getId() { return id; }
 	OptixInstance getIAS(int idx);
 
 	std::shared_ptr<Mesh> mesh;
 	std::weak_ptr<Scene> scene;
 private:
 	Mat3x4f transform;
+	int id;
 	std::optional<std::string> humanReadableName;
 	friend struct APIObject<Entity>;
 	friend struct Scene;

@@ -199,13 +199,13 @@ typedef enum : int
 /**
  * Available point attributes, used to specify layout of the binary data.
  */
-typedef enum
-{
+typedef enum {
 	RGL_FIELD_XYZ_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_RAY_IDX_U32,
 	RGL_FIELD_POINT_IDX_U32,
+	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
 	RGL_FIELD_AZIMUTH_F32,
 	RGL_FIELD_RING_ID_U16,
@@ -338,6 +338,14 @@ rgl_entity_destroy(rgl_entity_t entity);
  */
 RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
+
+/**
+ * Set instance ID of the given entity.
+ * @param entity Entity to modify
+ * @param int ID to set. If not set, value of entity id will be automatically generated.
+ */
+RGL_API rgl_status_t
+rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 
 /******************************** SCENE ********************************/
 
