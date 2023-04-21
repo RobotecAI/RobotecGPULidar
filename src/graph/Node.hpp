@@ -194,7 +194,7 @@ public: // Static methods
 	}
 
 
-protected:
+public:
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 

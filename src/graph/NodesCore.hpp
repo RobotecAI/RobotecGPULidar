@@ -125,6 +125,10 @@ struct RaytraceNode : IPointsNode
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
+	int getHitCount();
+
+	void* getFieldDataHost(rgl_field_t);
+
 	// Data getters
 	VArray::ConstPtr getFieldData(rgl_field_t field) override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }

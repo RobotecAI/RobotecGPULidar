@@ -52,7 +52,7 @@ void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 
 	if (randomizationStates->getCount() < pointCount) {
 		randomizationStates->resize(pointCount, false, false);
-		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+		gpuSetupGaussianNoiseGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getDevicePtr());
 	}
 
 	const auto inXyz = input->getFieldDataTyped<XYZ_F32>();

@@ -23,13 +23,25 @@ void TransformPointsNode::enqueueExecImpl()
 	const auto* inputPtr = inputField->getDevicePtr();
 	auto* outputPtr = output->getDevicePtr();
 	gpuTransformPoints(getStreamHandle(), pointCount, inputPtr, outputPtr, transform);
+
+	// TODO: what the hell is happening here? output is wrong when EXPECT_ is executed; must be somewhere in the computation
+	// BAD INPUT?
+
+	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+	const Vec3f* ptr = output->getReadPtr(MemLoc::Host);
+	std::vector asdf(ptr, ptr + output->getCount());
+	for (int i = 1; i < asdf.size(); ++i) {
+		auto&& a = asdf[i];
+		if (a.x() == 0 || a.y() == 0 || a.z() == 0) {
+			return;
+		}
+	}
 }
 
 VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == XYZ_F32) {
 		// TODO(prybicki): check synchronize is necessary
-		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		return output->untyped();
 	}
 	return input->getFieldData(field);
@@ -39,4 +51,12 @@ VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 std::string TransformPointsNode::getArgsString() const
 {
 	return fmt::format("TR={}", transform.translation());
+}
+
+void magic(Vec3f* ptr, size_t count)
+{
+	std::vector<Vec3f> vec;
+	vec.resize(count);
+	CHECK_CUDA(cudaMemcpy(vec.data(), ptr, count * sizeof(Vec3f), cudaMemcpyDeviceToHost));
+	return;
 }

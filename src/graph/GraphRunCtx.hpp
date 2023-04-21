@@ -60,7 +60,6 @@ struct GraphRunCtx
 	 */
 	void synchronizeNodeCPU(Node::Ptr nodeToSynchronize);
 
-
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 

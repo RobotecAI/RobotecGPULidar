@@ -14,7 +14,7 @@ const Vec3f cubePosition = {0, 0, 5};
 const Vec3f cubeDims = {2, 2, 2};
 
 static std::random_device randomDevice;
-static auto randomSeed = randomDevice();
+static auto randomSeed = 3161367471; //randomDevice();
 static std::mt19937 randomGenerator {randomSeed};
 
 // randomizeIndices(10,3): 9, 0, 5
@@ -195,8 +195,7 @@ TEST_F(GraphStress, Async)
 		// Iterate over graphs and check a single node at a time.
 		// Repeat until all graphs are checked (each node from run.nodeCheckOrder is checked)
 		bool allGraphsChecked = false;
-		while (!allGraphsChecked)
-		{
+		while (!allGraphsChecked) {
 			allGraphsChecked = true; // This will be and-ed with is-checked for all graphs
 
 			// Check a single node from each graph

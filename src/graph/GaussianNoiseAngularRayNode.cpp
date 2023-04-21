@@ -32,7 +32,7 @@ void GaussianNoiseAngularRaysNode::validateImpl()
 
 	if (randomizationStates->getCount() < rayCount) {
 		randomizationStates->resize(rayCount, false, false);
-		gpuSetupGaussianNoiseGenerator(nullptr, rayCount, randomDevice(), randomizationStates->getDevicePtr());
+		gpuSetupGaussianNoiseGenerator(getStreamHandle(), rayCount, randomDevice(), randomizationStates->getDevicePtr());
 	}
 }
 

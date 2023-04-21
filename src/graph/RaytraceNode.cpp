@@ -82,6 +82,22 @@ void RaytraceNode::enqueueExecImpl()
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 }
 
+int RaytraceNode::getHitCount()
+{
+	int hitCount = 0;
+	const int* isHit = fieldData.at(RGL_FIELD_IS_HIT_I32)->getTypedProxy<int32_t>()->getReadPtr(MemLoc::Host);
+	for (int i = 0; i < raysNode->getRayCount(); ++i) {
+		hitCount += isHit[i];
+	}
+	return hitCount;
+}
+
+void *RaytraceNode::getFieldDataHost(rgl_field_t field)
+{
+	return fieldData.at(field)->getWritePtr(MemLoc::Host);
+}
+
+
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
@@ -126,3 +142,4 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 
 	return outFields;
 }
+
