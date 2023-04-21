@@ -1,5 +1,3 @@
-#include <graph/Node.hpp>
-#include <gtest/gtest.h>
 #include <utils.hpp>
 
 class TemporalMergePointsNodeTest : public RGLTest{

@@ -1,42 +1,23 @@
-#include <graph/Node.hpp>
-#include <gtest/gtest.h>
 #include <utils.hpp>
-#include <math/Mat3x4f.hpp>
+#include <RingIdsTestHelper.hpp>
+#include <RaysTestHelper.hpp>
 
 class SetRingIdsNodeTest : public RGLTestWithParam<int> {
 protected:
-    rgl_node_t setRingIdsNode, rayNode;
+    rgl_node_t setRingIdsNode{}, rayNode{};
     std::vector<int> ringIds;
     std::vector<rgl_mat3x4f> rays;
 
-    static std::vector<int> GenerateRingIds(int numRingIds)
-    {
-        std::vector<int> points(numRingIds);
-        std::iota(points.begin(), points.end(), 0);
-        return points;
-    }
-
-    static std::vector<rgl_mat3x4f> GenerateRays(int numRays)
-    {
-        std::vector<rgl_mat3x4f> rays;
-        struct Mat3x4f ray = Mat3x4f::identity();
-
-        for (int i = 0; i < numRays; i++) {
-            rays.emplace_back(ray.scale(i, i+1, i+2).toRGL());
-        }
-        return rays;
-    }
-
-    void initializeRingNodeAndIds(int idsCount=1)
+    void initializeRingNodeAndIds(int idsCount)
     {
         setRingIdsNode = nullptr;
-        ringIds = GenerateRingIds(idsCount);
+        ringIds = RGLRingIdsTestHelper::GenerateRingIds(idsCount);
     }
 
     void initializeRaysAndRaysNode(int rayCount)
     {
         rayNode = nullptr;
-        rays = GenerateRays(rayCount);
+        rays = RGLRaysTestHelper::GenerateRays(rayCount);
     }
 };
 
@@ -47,26 +28,31 @@ protected:
          return "idsCount_" + std::to_string(info.param);
      });
 
- TEST_F(SetRingIdsNodeTest, invalid_arguments)
+ TEST_F(SetRingIdsNodeTest, invalid_argument_node)
  {
-    initializeRingNodeAndIds();
+    initializeRingNodeAndIds(1);
     EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(nullptr, ringIds.data(), ringIds.size()), "node != nullptr");
+ }
 
-    initializeRingNodeAndIds();
+ TEST_F(SetRingIdsNodeTest, invalid_argument_ring_ids)
+ {
+    initializeRingNodeAndIds(1);
     EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(&setRingIdsNode, nullptr, ringIds.size()), "ring_ids != nullptr");
+ }
 
-    initializeRingNodeAndIds();
+ TEST_F(SetRingIdsNodeTest, invalid_argument_ring_ids_count)
+ {
+    initializeRingNodeAndIds(1);
     EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_ring_ids(&setRingIdsNode, ringIds.data(), 0), "ring_ids_count > 0");
  }
 
  TEST_F(SetRingIdsNodeTest, valid_arguments)
  {
-    initializeRingNodeAndIds();
+    initializeRingNodeAndIds(1);
     ASSERT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIdsNode, ringIds.data(), ringIds.size()));
     EXPECT_THAT(setRingIdsNode, testing::NotNull());
 
     // If (*setRingIdsNode) != nullptr
-    initializeRingNodeAndIds();
     EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIdsNode, ringIds.data(), ringIds.size()));
  }
 
