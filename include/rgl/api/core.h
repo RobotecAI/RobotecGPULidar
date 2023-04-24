@@ -46,12 +46,21 @@
 #define RGL_VERSION_PATCH 1
 
 /**
+ * Two consecutive 32-bit floats.
+ */
+typedef struct
+{
+	float value[2];
+} rgl_vec2f;
+
+/**
  * Three consecutive 32-bit floats.
  */
 typedef struct
 {
 	float value[3];
 } rgl_vec3f;
+
 
 #ifndef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
@@ -289,6 +298,24 @@ rgl_mesh_create(rgl_mesh_t *out_mesh,
                 int32_t vertex_count,
                 const rgl_vec3i *indices,
                 int32_t index_count);
+
+/**
+ * Creates mesh from vertex, index and UVs arrays. CW/CCW order does not matter.
+ * Provided arrays are copied to the GPU before this function returns.
+ * @param out_mesh Address to store the resulting mesh handle
+ * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
+ * @param vertex_count Number of elements in the vertices array
+ * @param indices An array of rgl_vec3i or binary-compatible data representing mesh indices
+ * @param index_count Number of elements in the indices array
+ * @param uvs An array of rgl_vec2f or binary-compatible data representing mesh uv coordinates
+ */
+RGL_API rgl_status_t
+rgl_mesh_with_uv_create(rgl_mesh_t *out_mesh,
+                        const rgl_vec3f *vertices,
+                        int32_t vertex_count,
+                        const rgl_vec3i *indices,
+                        int32_t index_count,
+                        const rgl_vec2f *uvs);
 
 /**
  * Informs that the given mesh will be no longer used.

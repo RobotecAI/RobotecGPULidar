@@ -165,6 +165,42 @@ void TapePlayer::tape_mesh_create(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_mesh_with_uv_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_count, const rgl_vec3i* indices, int32_t index_count, const rgl_vec2f *uvs)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_mesh_create(out_mesh={}, vertices={}, indices={}, uvs={})",
+		            (void*) out_mesh, repr(vertices, vertex_count), repr(indices, index_count, 1), repr(uvs, vertex_count));
+		CHECK_ARG(out_mesh != nullptr);
+		CHECK_ARG(vertices != nullptr);
+		CHECK_ARG(vertex_count > 0);
+		CHECK_ARG(indices != nullptr);
+		CHECK_ARG(index_count > 0);
+		CHECK_ARG(uvs != nullptr);
+
+		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
+		                         vertex_count,
+		                         reinterpret_cast<const Vec3i*>(indices),
+		                         index_count,
+								 reinterpret_cast<const Vec2f*>(uvs)).get();
+	});
+	TAPE_HOOK(out_mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);
+	return status;
+}
+
+void TapePlayer::tape_mesh_with_uv_create(const YAML::Node& yamlNode)
+{
+	rgl_mesh_t mesh = nullptr;
+	rgl_mesh_with_uv_create(&mesh,
+	                reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[1].as<size_t>()),
+	                yamlNode[2].as<int32_t>(),
+	                reinterpret_cast<const rgl_vec3i*>(fileMmap + yamlNode[3].as<size_t>()),
+	                yamlNode[4].as<int32_t>(),
+					reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[4].as<size_t>()));
+	tapeMeshes.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), mesh));
+}
+
+
+RGL_API rgl_status_t
 rgl_mesh_destroy(rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {

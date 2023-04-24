@@ -38,6 +38,10 @@ private:
 	Mesh(const Vec3f *vertices, std::size_t vertexCount,
 		 const Vec3i *indices, std::size_t indexCount);
 
+	Mesh(const Vec3f *vertices, std::size_t vertexCount,
+	     const Vec3i *indices, std::size_t indexCount, const Vec2f *uvs);
+
+
 	OptixTraversableHandle buildGAS();
 	void updateGAS();
 
@@ -49,6 +53,7 @@ private:
 	std::optional<OptixTraversableHandle> cachedGAS;
 	DeviceBuffer<Vec3f> dVertices;
 	DeviceBuffer<Vec3i> dIndices;
+	std::optional<DeviceBuffer<Vec2f>> dUVs;
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;

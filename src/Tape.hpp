@@ -191,6 +191,7 @@ private:
 	void tape_configure_logging(const YAML::Node& yamlNode);
 	void tape_cleanup(const YAML::Node& yamlNode);
 	void tape_mesh_create(const YAML::Node& yamlNode);
+	void tape_mesh_with_uv_create(const YAML::Node& yamlNode);
 	void tape_mesh_destroy(const YAML::Node& yamlNode);
 	void tape_mesh_update_vertices(const YAML::Node& yamlNode);
 	void tape_entity_create(const YAML::Node& yamlNode);
