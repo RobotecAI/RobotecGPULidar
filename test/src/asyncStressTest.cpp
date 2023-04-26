@@ -14,7 +14,7 @@ const Vec3f cubePosition = {0, 0, 5};
 const Vec3f cubeDims = {2, 2, 2};
 
 static std::random_device randomDevice;
-static auto randomSeed = 3161367471; //randomDevice();
+static auto randomSeed = randomDevice();
 static std::mt19937 randomGenerator {randomSeed};
 
 // randomizeIndices(10,3): 9, 0, 5
