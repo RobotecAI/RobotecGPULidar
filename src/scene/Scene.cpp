@@ -188,4 +188,9 @@ void Scene::requestSBTRebuild()
 	cachedSBT.reset();
 }
 
+CudaStream::Ptr Scene::getStream()
+{
+	return stream;
+}
+
 

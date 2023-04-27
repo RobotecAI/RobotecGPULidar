@@ -56,6 +56,7 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 
 	std::size_t getObjectCount();
 
+	CudaStream::Ptr getStream();
 	OptixTraversableHandle getAS();
 	OptixShaderBindingTable getSBT();
 
