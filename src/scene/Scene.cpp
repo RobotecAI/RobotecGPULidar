@@ -38,7 +38,7 @@ void Scene::clear()
 
 void Scene::addEntity(std::shared_ptr<Entity> entity)
 {
-	entity->scene = weak_from_this();
+	entity->scene = shared_from_this();
 	entities.insert(entity);
 	requestFullRebuild();
 }

@@ -24,9 +24,7 @@ Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
 void Entity::setTransform(Mat3x4f newTransform)
 {
 	transform = newTransform;
-	if (auto activeScene = scene.lock()) {
-		activeScene->requestASRebuild();
-	}
+	scene->requestASRebuild();
 }
 
 OptixInstance Entity::getIAS(int idx)
@@ -37,7 +35,7 @@ OptixInstance Entity::getIAS(int idx)
 		.sbtOffset = static_cast<unsigned int>(idx),
 		.visibilityMask = 255,
 		.flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
-		.traversableHandle = mesh->getGAS(scene.lock()->getStream()),
+		.traversableHandle = mesh->getGAS(scene->getStream()),
 	};
 	transform.toRaw(instance.transform);
 	return instance;

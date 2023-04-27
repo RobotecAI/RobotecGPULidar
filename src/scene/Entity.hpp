@@ -30,7 +30,7 @@ struct Entity : APIObject<Entity>
 	OptixInstance getIAS(int idx);
 
 	std::shared_ptr<Mesh> mesh;
-	std::weak_ptr<Scene> scene;
+	std::shared_ptr<Scene> scene;
 private:
 	Mat3x4f transform;
 	std::optional<std::string> humanReadableName;
