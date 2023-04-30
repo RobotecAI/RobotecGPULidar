@@ -1,6 +1,6 @@
 # Gaussian noise
 
-Robotec GPU Lidar (RGL) allows the introduction of Gaussian noise, which models the naturally present noise of the physical devices.
+Robotec GPU Lidar (RGL) allows introducing Gaussian noise, which models the naturally present noise of the physical devices.
 
 The following formula describes Gaussian noise:
 
@@ -13,7 +13,7 @@ It is parametrized by these two values:
 ## Supported noise types
     
 The following table presents all kinds of Gaussian noise available in RGL concisely.
-The subsequent chapters describe them in greater detail.
+The next chapters describe them in greater detail.
 
 | Noise type | Visualization |
 |------------|---------------|

@@ -55,7 +55,7 @@ And more:
 
 ## Usage
 
-An introduction to the RGL API and an example can be found [here](docs/Usage.md).
+An introduction to the RGL API along with an example can be found [here](docs/Usage.md).
 
 ## Extensions
 
@@ -83,7 +83,7 @@ An introduction to the RGL API and an example can be found [here](docs/Usage.md)
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
 4. Use `setup.py` script to build.
-   - It will use CMake to generate files for the build system (make) and build.
+   - It will use CMake to generate files for the build system (make) and the build.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
    - You can build with extensions, e.g.
@@ -106,7 +106,7 @@ An introduction to the RGL API and an example can be found [here](docs/Usage.md)
       - `./setup.py --with-pcl --with-ros2`
    - See `python setup.py --help` for usage information.
 
-## Acknowledgments
+## Acknowledgements
 
 The development of this project was made possible thanks to cooperation with Tier IV - challenging needs
 in terms of features and performance of Tier IV's project allowed to significantly enrich Robotec GPU Lidar
