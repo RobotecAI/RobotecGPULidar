@@ -9,8 +9,10 @@
 #include <utils.hpp>
 #include <stdlib.h>
 
-struct RGLPointsTestHelper {
+struct RGLPointsNodeTestHelper {
 protected:
+    rgl_node_t usePointsNode = nullptr;
+
     std::vector<rgl_field_t> pointFields = {
         XYZ_F32,
         IS_HIT_I32,
@@ -23,6 +25,8 @@ protected:
         Field<INTENSITY_F32>::type intensity;
     };
 
+    std::vector<TestPointStruct> inPoints;
+
     enum class HitPointDensity {
         HALF_HIT = 0,
         ALL_NON_HIT,
@@ -30,12 +34,9 @@ protected:
         RANDOM
     };
 
-    rgl_node_t usePointsNode = nullptr;
-    std::vector<TestPointStruct> inPoints;
-
     int32_t randomNonHitCount = 0;
 
-    std::vector<TestPointStruct> GenerateTestPointsArray(
+    std::vector<TestPointStruct> generateTestPointsArray(
             int count,
             rgl_mat3x4f transform = identityTestTransform,
             HitPointDensity hitPointDensity = HitPointDensity::HALF_HIT
@@ -55,12 +56,12 @@ protected:
         return points;
     }
 
-    void CreateTestUsePointsNode(
+    void createTestUsePointsNode(
             int pointsCount,
             rgl_mat3x4f transform = identityTestTransform,
             HitPointDensity hitPointDensity = HitPointDensity::HALF_HIT)
     {
-        inPoints = GenerateTestPointsArray(pointsCount, transform, hitPointDensity);
+        inPoints = generateTestPointsArray(pointsCount, transform, hitPointDensity);
 
         EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
         ASSERT_THAT(usePointsNode, testing::NotNull());
@@ -95,4 +96,5 @@ private:
             }
         }
     }
+
 };

@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <PointsTestHelper.hpp>
 
-class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointsTestHelper {
+class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointsNodeTestHelper {
 protected:
 };
 
@@ -18,7 +18,7 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 {
     auto initializeArgumentsLambda = [this]() {
         int pointsCount = GetParam();
-        inPoints = GenerateTestPointsArray(pointsCount);
+        inPoints = generateTestPointsArray(pointsCount);
         usePointsNode = nullptr;
     };
 
@@ -40,7 +40,7 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 TEST_P(FromArrayPointsNodeTest, valid_arguments)
 {
     int pointsCount = GetParam();
-    auto inPoints = GenerateTestPointsArray(pointsCount);
+    auto inPoints = generateTestPointsArray(pointsCount);
     rgl_node_t usePointsNode = nullptr;
 
     EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
@@ -51,10 +51,10 @@ TEST_P(FromArrayPointsNodeTest, use_case)
 {
     int pointsCount = GetParam();
 
-    CreateTestUsePointsNode(pointsCount);
+    createTestUsePointsNode(pointsCount);
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
-    std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(pointsCount);
+    std::vector<TestPointStruct> expectedPoints = inPoints;
 
     for (auto field : pointFields) {
         int32_t outCount, outSizeOf;
