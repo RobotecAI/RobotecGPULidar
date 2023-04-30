@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <PointsTestHelper.hpp>
 
-class CompactPointsNodeTest : public RGLTestWithParam<int>, public RGLPointsTestHelper{
+class CompactPointsNodeTest : public RGLTestWithParam<int>, public RGLPointsNodeTestHelper{
 protected:
     rgl_node_t compactNode;
 
@@ -19,7 +19,7 @@ INSTANTIATE_TEST_SUITE_P(
         return "pointsCount_" + std::to_string(info.param);
     });
 
-TEST_F(CompactPointsNodeTest, invalid_arguments)
+TEST_F(CompactPointsNodeTest, invalid_argument_node)
 {
     EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_compact(nullptr), "node != nullptr");
 }
@@ -43,7 +43,7 @@ TEST_P(CompactPointsNodeTest, should_remove_all_points_when_all_non_hit)
 {
     int pointsCount = GetParam();
 
-    CreateTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::ALL_NON_HIT);
+    createTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::ALL_NON_HIT);
     ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNode));
     ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
@@ -57,7 +57,7 @@ TEST_P(CompactPointsNodeTest, should_not_remove_any_point_when_all_hit)
 {
     int pointsCount = GetParam();
 
-    CreateTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::ALL_HIT);
+    createTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::ALL_HIT);
     ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNode));
     ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
@@ -71,7 +71,7 @@ TEST_P(CompactPointsNodeTest, should_remove_as_many_points_as_non_hit)
 {
     int pointsCount = GetParam();
 
-    CreateTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::RANDOM);
+    createTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::RANDOM);
     ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNode));
     ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
@@ -81,11 +81,11 @@ TEST_P(CompactPointsNodeTest, should_remove_as_many_points_as_non_hit)
     EXPECT_EQ(hitpointCount, pointsCount - randomNonHitCount);
 }
 
-TEST_P(CompactPointsNodeTest, should_not_remove_hit_points)
+TEST_P(CompactPointsNodeTest, should_not_change_hit_points)
 {
     int pointsCount = GetParam();
 
-    CreateTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::RANDOM);
+    createTestUsePointsNode(pointsCount, identityTestTransform, HitPointDensity::RANDOM);
     std::vector<TestPointStruct> expectedHitPoints = separateHitPoints();
     if(expectedHitPoints.empty())
         return;

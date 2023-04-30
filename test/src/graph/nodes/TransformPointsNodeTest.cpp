@@ -5,7 +5,7 @@
 #include <utils.hpp>
 #include <PointsTestHelper.hpp>
 
-class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointsTestHelper {
+class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointsNodeTestHelper {
 protected:
     static constexpr int TEST_PARAM_TRANSFORM_ID=1;
 };
@@ -54,7 +54,7 @@ TEST_P(TransformPointsNodeTest, use_case)
 
     rgl_node_t transformNode = nullptr;
 
-    CreateTestUsePointsNode(pointsCount);
+    createTestUsePointsNode(pointsCount);
 
     EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformNode, &transform));
     ASSERT_THAT(transformNode, testing::NotNull());
@@ -73,7 +73,7 @@ TEST_P(TransformPointsNodeTest, use_case)
     outData.resize(outCount);
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(transformNode, XYZ_F32, outData.data()));
 
-    std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(outCount, transform);
+    std::vector<TestPointStruct> expectedPoints = generateTestPointsArray(outCount, transform);
 
     // TODO When we are testing big values of point translation, numerical errors appears.
     //  For example for 100000 unit of translation, error after rotation can extend 0.001 unit.
