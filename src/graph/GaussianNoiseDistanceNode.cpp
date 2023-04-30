@@ -61,15 +61,15 @@ void GaussianNoiseDistanceNode::enqueueExecImpl(cudaStream_t stream)
 	gpuAddGaussianNoiseDistance(stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
-VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
 	if (field == XYZ_F32) {
-		// TODO(msz-rai): check sync is necessary
+		// TODO(msz-rai): check synchronize is necessary
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return outXyz->untyped();
 	}
 	if (field == DISTANCE_F32 && outDistance != nullptr) {
-		// TODO(msz-rai): check sync is necessary
+		// TODO(msz-rai): check synchronize is necessary
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return outDistance->untyped();
 	}

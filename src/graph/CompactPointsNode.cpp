@@ -30,7 +30,7 @@ void CompactPointsNode::enqueueExecImpl(cudaStream_t stream)
 	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
 }
 
-VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
 	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	if (!cacheManager.contains(field)) {

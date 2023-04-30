@@ -33,6 +33,13 @@ struct Entity;
  * Because of that, when some objects share a mesh, SBT records will be duplicated.
  * This will still work, but it causes pointless CPU -> GPU copies.
  * TODO(prybicki): fix it
+ *
+ * This class may be accessed from different threads:
+ * - client's thread doing API calls, modifying scene
+ * - graph execution threads, requesting AS and SBT from RaytraceNode
+ * To avoid the overhead of locking a mutex in every method,
+ * we decide to move synchronization to scene-related API calls,
+ * which will synchronize all running Graphs before accessing Scene.
  */
 struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 {

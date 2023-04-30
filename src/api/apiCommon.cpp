@@ -19,7 +19,7 @@ std::optional<std::string> lastStatusString = std::nullopt;
 
 static bool isCompiledWithAutoTape() { return !std::string(RGL_AUTO_TAPE_PATH).empty(); }
 
-const char* getLastErrorString()
+const char* getLastErrorString() noexcept
 {
 	// By default, use lastStatusString value, which is usually a message from the caught exception
 	if (lastStatusString.has_value()) {

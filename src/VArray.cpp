@@ -51,17 +51,20 @@ void VArray::setData(const void *src, std::size_t elements)
 {
 	resize(elements, false, false);
 	CHECK_CUDA(cudaMemcpy(current().data, src, sizeOfType * elements, cudaMemcpyDefault));
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
 void VArray::getData(void* dst, std::size_t elements) const
 {
 	CHECK_CUDA(cudaMemcpy(dst, current().data, sizeOfType * elements, cudaMemcpyDefault));
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
 void VArray::insertData(const void *src, std::size_t elements, std::size_t offset)
 {
 	reserve(offset + elements, true);
 	CHECK_CUDA(cudaMemcpy((void *)((size_t)current().data + sizeOfType * offset), src, sizeOfType * elements, cudaMemcpyDefault));
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	current().elemCount = std::max(current().elemCount, int64_t(offset + elements));
 }
 
@@ -72,6 +75,7 @@ void VArray::resize(std::size_t newCount, bool zeroInit, bool preserveData)
 		char* start = (char*) current().data + sizeOfType * current().elemCount;
 		std::size_t bytesToClear = sizeOfType * (newCount - current().elemCount);
 		CHECK_CUDA(cudaMemset(start, 0, bytesToClear));
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	}
 	current().elemCount = newCount;
 }
@@ -90,6 +94,7 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 
 	if (preserveData && current().data != nullptr) {
 		CHECK_CUDA(cudaMemcpy(newMem, current().data, sizeOfType * current().elemCount, cudaMemcpyDefault));
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	}
 
 	if (current().data != nullptr) {
@@ -126,6 +131,7 @@ void* VArray::memAlloc(std::size_t bytes, std::optional<MemLoc> locationHint) co
 	}
 	if (location == MemLoc::Device) {
 		CHECK_CUDA(cudaMalloc(&ptr, bytes));
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	}
 	return ptr;
 }
@@ -138,6 +144,7 @@ void VArray::memFree(void* ptr, std::optional<MemLoc> locationHint) const
 	}
 	if (location == MemLoc::Device) {
 		CHECK_CUDA(cudaFree(ptr));
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	}
 }
 

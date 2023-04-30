@@ -14,7 +14,6 @@
 
 #include <graph/Node.hpp>
 #include <graph/NodesCore.hpp>
-#include <graph/Node.hpp>
 #include <graph/GraphRunCtx.hpp>
 
 API_OBJECT_INSTANCE(Node);
@@ -154,4 +153,25 @@ std::set<Node::Ptr> Node::disconnectConnectedNodes()
 		node->setGraphRunCtx(std::nullopt);
 	}
 	return nodes;
+}
+
+void Node::synchronizeThis()
+{
+	if (!hasGraphRunCtx()) {
+		return; // Nothing to synchronize ¯\_(ツ)_/¯
+	}
+	// Ensure CPU execution is finished; this guarantees that execCompleted event has been recorded
+	graphRunCtx.value()->synchronizeNodeCPU(shared_from_this());
+	// Wait for all GPU operations requested by this node.
+	CHECK_CUDA(cudaEventSynchronize(execCompleted->get()));
+}
+
+void Node::waitForResults()
+{
+	// ...
+	if (!isValid()) {
+		auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", getName());
+		throw InvalidPipeline(msg);
+	}
+	synchronizeThis();
 }

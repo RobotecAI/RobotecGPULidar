@@ -17,20 +17,28 @@
 #include <macros/cuda.hpp>
 #include <Logger.hpp>
 
-// RAII object to (de)fillSizeAndOffset cudaStream_t
+// RAII object to (de)initialize cudaStream_t
 struct CudaStream
 {
 	using Ptr = std::shared_ptr<CudaStream>;
 
-	static CudaStream::Ptr create()
+	static CudaStream::Ptr create(unsigned flags = 0U)
 	{
-		return CudaStream::Ptr(new CudaStream(0U));
+		return CudaStream::Ptr(new CudaStream(flags));
 	}
 
 	static CudaStream::Ptr getNullStream()
 	{
+		// Copy Stream does not synchronize with the NULL stream
+		// Copy Stream is always synchronized before client thread finished API call
 		static CudaStream::Ptr nullStream { new CudaStream() };
 		return nullStream;
+	}
+
+	static CudaStream::Ptr getCopyStream()
+	{
+		static CudaStream::Ptr copyStream { new CudaStream(cudaStreamNonBlocking ) };
+		return copyStream;
 	}
 
 	cudaStream_t get() { return stream; }
@@ -48,7 +56,6 @@ struct CudaStream
 			}
 		}
 	}
-
 
 private:
 	// Wraps null stream

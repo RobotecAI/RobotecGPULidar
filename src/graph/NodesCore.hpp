@@ -38,7 +38,7 @@
  *
  * Some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
  * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
- * while buffers sizes are not reliable, since they can be resized in execute().
+ * while buffers sizes are not reliable, since they can be resized in enqueueExecImpl().
  *
  * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
  * operations prior to the return are finished.
@@ -62,7 +62,7 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
 	std::size_t getFieldPointSize(rgl_field_t field) const override;
 
 	// Actual implementation of formatting made public for other nodes
@@ -100,13 +100,13 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
 
 private:
 	size_t width = {0};
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
-	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
 struct RaytraceNode : IPointsNode
@@ -127,7 +127,7 @@ struct RaytraceNode : IPointsNode
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 private:
@@ -160,7 +160,7 @@ struct TransformPointsNode : IPointsNodeSingleInput
 	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
 
 private:
 	Mat3x4f transform;
@@ -235,7 +235,7 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
 	{ return results.at(field); }
 
 private:
@@ -263,7 +263,7 @@ struct SpatialMergePointsNode : IPointsNode
 	std::size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
 	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
 
 private:
@@ -290,7 +290,7 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 	std::size_t getWidth() const override { return width; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
 	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
 
 private:
@@ -313,7 +313,7 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 private:
@@ -362,7 +362,7 @@ struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
 
 private:
 	float mean;
@@ -390,7 +390,7 @@ struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
 
 private:
 	float mean;

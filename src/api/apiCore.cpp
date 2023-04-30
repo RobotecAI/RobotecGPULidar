@@ -127,11 +127,10 @@ void TapePlayer::tape_configure_logging(const YAML::Node& yamlNode)
 RGL_API void
 rgl_get_last_error_string(const char** out_error_string)
 {
-        if (out_error_string == nullptr) {
-                RGL_WARN("Invalid Argument: rgl_get_last_error_string(nullptr).");
-                return;
-        }
-	// No logging here for now, since it may throw.
+	if (out_error_string == nullptr) {
+		return;
+	}
+	// NO LOGGING HERE SINCE IT MAY THROW!
 	*out_error_string = getLastErrorString();
 }
 
@@ -139,11 +138,7 @@ RGL_API rgl_status_t
 rgl_cleanup(void)
 {
 	auto status = rglSafeCall([&]() {
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		Entity::instances.clear();
-		Mesh::instances.clear();
-		Texture::instances.clear();
-		Scene::defaultInstance()->clear();
+		// First, delete nodes, because there might be a thread accessing other structures.
 		while (!Node::instances.empty()) {
 			auto node = Node::instances.begin()->second;
 			if (node->hasGraphRunCtx()) {
@@ -154,6 +149,10 @@ rgl_cleanup(void)
 				Node::release(nodeToRelease.get());
 			}
 		}
+		Entity::instances.clear();
+		Mesh::instances.clear();
+		Texture::instances.clear();
+		Scene::defaultInstance()->clear();
 	});
 	TAPE_HOOK();
 	return status;
@@ -178,6 +177,7 @@ rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_
 		CHECK_ARG(vertex_count > 0);
 		CHECK_ARG(indices != nullptr);
 		CHECK_ARG(index_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
 		                         vertex_count,
 		                         reinterpret_cast<const Vec3i*>(indices),
@@ -206,6 +206,7 @@ rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_co
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(uvs != nullptr);
 		CHECK_ARG(uv_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::validatePtr(mesh)->setTexCoords(reinterpret_cast<const Vec2f*>(uvs), uv_count);
 
 	});
@@ -226,7 +227,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_mesh_destroy(mesh={})", (void*) mesh);
 		CHECK_ARG(mesh != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::release(mesh);
 	});
 	TAPE_HOOK(mesh);
@@ -248,6 +249,7 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t ver
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(vertices != nullptr);
 		CHECK_ARG(vertex_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
 	});
 	TAPE_HOOK(mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count);
@@ -268,6 +270,7 @@ rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 		RGL_API_LOG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
@@ -293,7 +296,7 @@ rgl_entity_destroy(rgl_entity_t entity)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_entity_destroy(entity={})", (void*) entity);
 		CHECK_ARG(entity != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
 		if (auto sceneShared = entitySafe->scene.lock()) {
 			sceneShared->removeEntity(entitySafe);
@@ -320,6 +323,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
 		RGL_API_LOG("rgl_entity_set_pose(entity={}, transform={})", (void*) entity, repr(transform, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(transform != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto tf = Mat3x4f::fromRaw(reinterpret_cast<const float*>(&transform->value[0][0]));
 		Entity::validatePtr(entity)->setTransform(tf);
 	});
@@ -340,6 +344,7 @@ rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 		RGL_API_LOG("rgl_entity_set_id(entity={}, id={})", (void *) entity, id);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(id != RGL_ENTITY_INVALID_ID);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Entity::validatePtr(entity)->setId(id);
 	});
 	TAPE_HOOK(entity, id);
@@ -359,6 +364,7 @@ rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture )
 		RGL_API_LOG("rgl_entity_set_intensity_texture(entity={}, texture={})", (void*) entity, (void*) texture);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(texture != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Entity::validatePtr(entity)->setIntensityTexture(Texture::validatePtr(texture));
 	});
 
@@ -381,7 +387,7 @@ rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width
 		CHECK_ARG(texels != nullptr);
 		CHECK_ARG(width > 0);
 		CHECK_ARG(height > 0);
-
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		*out_texture = Texture::create(texels, width, height).get();
 	});
 	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * sizeof(TextureTexelFormat))), width, height);
@@ -406,7 +412,7 @@ rgl_texture_destroy(rgl_texture_t texture)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_texture_destroy(texture={})", (void*) texture);
 		CHECK_ARG(texture != nullptr);
-		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Texture::release(texture);
 	});
 	TAPE_HOOK(texture);
@@ -425,6 +431,7 @@ rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_scene_set_time(scene={}, nanoseconds={})", (void*) scene, nanoseconds);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
@@ -450,7 +457,7 @@ rgl_graph_run(rgl_node_t raw_node)
 		if (!node->hasGraphRunCtx()) {
 			GraphRunCtx::createAndAttach(node);
 		}
-		node->getGraphRunCtx()->run();
+		node->getGraphRunCtx()->executeAsync();
 	});
 	TAPE_HOOK(raw_node);
 	return status;
@@ -513,14 +520,7 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		CHECK_ARG(node != nullptr);
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		if (!pointCloudNode->isValid()) {
-			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
-			// This particular check could be done in IPointsNode/IRaysNode, however, due to tight deadlines,
-			// and possibility of the future refactor (merging IPointsNode/IRaysNode), I'm OK with checking it here
-			// TODO: fix in better times
-			auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", pointCloudNode->getName());
-			throw InvalidPipeline(msg);
-		}
+		pointCloudNode->waitForResults();
 		auto elemCount = (int32_t) pointCloudNode->getPointCount();
 		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
 
@@ -552,14 +552,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(data != nullptr);
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		if (!pointCloudNode->isValid()) {
-			// Ideally, API layer should just forward the calls to Node/Graph classes and let them handle error states;
-			// This particular check could be done in IPointsNode/IRaysNode, however, due to tight deadlines,
-			// and possibility of the future refactor (merging IPointsNode/IRaysNode), I'm OK with checking it here
-			// TODO: fix in better times
-			auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", pointCloudNode->getName());
-			throw InvalidPipeline(msg);
-		}
+		pointCloudNode->waitForResults();
 		VArray::ConstPtr output = pointCloudNode->getFieldData(field, nullptr);
 
 		// TODO: cudaMemcpyAsync + explicit sync can be used here (better behavior for multiple graphs)
@@ -672,8 +665,8 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_transform(node={}, transform={})", repr(node), repr(transform));
-		            CHECK_ARG(node != nullptr);
-		            CHECK_ARG(transform != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(transform != nullptr);
 
 		createOrUpdateNode<TransformRaysNode>(node, Mat3x4f::fromRGL(*transform));
 	});

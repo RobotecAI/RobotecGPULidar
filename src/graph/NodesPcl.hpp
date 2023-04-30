@@ -45,7 +45,7 @@ struct DownSamplePointsNode : IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
 
 
 

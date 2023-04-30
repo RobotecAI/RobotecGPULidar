@@ -42,7 +42,7 @@ extern rgl_status_t lastStatusCode;
 extern std::optional<std::string> lastStatusString;
 
 void rglLazyInit();
-const char* getLastErrorString();
+const char* getLastErrorString() noexcept;
 bool canContinueAfterStatus(rgl_status_t status);
 rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxErrStr = std::nullopt);
 
@@ -113,6 +113,13 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	if (fieldsModified && node->hasGraphRunCtx()) {
 		node->getGraphRunCtx()->detachAndDestroy();
 	}
+
+	// As of now, there's no guarantee that changing node parameter won't influence other nodes
+	// Therefore, before changing them, we need to ensure all nodes are idle (not running in GraphRunCtx).
+	if (node->hasGraphRunCtx()) {
+		node->getGraphRunCtx()->synchronize();
+	}
 	node->setParameters(args...);
+	node->dirty = true;
 	*nodeRawPtr = node.get();
 }
