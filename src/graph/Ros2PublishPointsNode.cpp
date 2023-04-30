@@ -56,7 +56,7 @@ void Ros2PublishPointsNode::setParameters(
 
 void Ros2PublishPointsNode::validateImpl()
 {
-	IPointsNodeSingleInput::onInputChange();
+	IPointsNodeSingleInput::validateImpl();
 	if (input->getHeight() != 1) {
 		throw InvalidPipeline("ROS2 publish support unorganized pointclouds only");
 	}
