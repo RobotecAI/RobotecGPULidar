@@ -53,6 +53,8 @@ struct GraphRunCtx;
  *
  * Between runs, Node's GraphRunCtx may be also changed.
  * In such scenario, Node must adjust its internal resources to work in the new GraphRunCtx (new stream).
+ *
+ * It is caller responsibility to synchronize node before getting results through derived interfaces.
  */
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
@@ -76,7 +78,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	/**
 	 * Certain operations, such as adding/removing child/parent links
-	 * may cause some nodes to be in an invalid state (not ready).
+	 * may cause some nodes to be in an invalid state (not ready to run).
 	 * Node must be made ready before it is executed or queried for results.
 	 * Node can assume that it has valid GraphRunCtx.
 	 * Node must not change its output.
@@ -84,14 +86,14 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	void validate();
 
 	/**
-	 * @return True, if node can be executed or queried for results.
-	 */
-	bool isValid() const { return !dirty; }
-
-	/**
 	 * Enqueues node-specific operations to the stream pointed by GraphRunCtx.
 	 */
 	void enqueueExec();
+
+	/**
+	 * Ensures the results can be queried by the current thread.
+	 */
+	void waitForResults();
 
 	const std::vector<Node::Ptr>& getInputs() const { return inputs; }
 	const std::vector<Node::Ptr>& getOutputs() const { return outputs; }
@@ -130,6 +132,18 @@ protected: // Member methods
 	 * Placeholder to perform node-specific part of validation.
 	 */
 	virtual void validateImpl() = 0;
+
+	/**
+	 * @return True, if node can be executed.
+	 */
+	bool isValid() const { return !dirty; }
+
+	/**
+	 * Waits until execution of this node is completed (CPU & GPU).
+	 * This is required to query node for results.
+	 * If error happened in the graph thread, this function will re-throw it.
+	 */
+	void synchronizeThis();
 
 	template<typename T>
 	typename T::Ptr getExactlyOneInputOfType()
@@ -189,6 +203,10 @@ protected:
 	StreamBoundObjectsManager arrayMgr;
 
 	friend struct fmt::formatter<Node>;
+
+	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
+	template<typename NodeType, typename... Args>
+	friend void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args);
 };
 
 #ifndef __CUDACC__

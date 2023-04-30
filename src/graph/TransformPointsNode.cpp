@@ -25,10 +25,10 @@ void TransformPointsNode::enqueueExecImpl(cudaStream_t stream)
 	gpuTransformPoints(stream, pointCount, inputPtr, outputPtr, transform);
 }
 
-VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
 	if (field == XYZ_F32) {
-		// TODO(prybicki): check sync is necessary
+		// TODO(prybicki): check synchronize is necessary
 		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return output->untyped();
 	}

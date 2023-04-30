@@ -51,6 +51,7 @@ struct APIObject
 	{
 		// Cannot use std::make_shared due to private constructor
 		auto ptr = std::shared_ptr<SubClass>(new SubClass(std::forward<Args>(args)...));
+		// Implicit static cast converts ptr to std::shared_ptr<Base> (this changes value returned by .get())
 		instances.insert({ptr.get(), ptr});
 		return ptr;
 	}

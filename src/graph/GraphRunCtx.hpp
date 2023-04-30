@@ -17,10 +17,11 @@
 #include <list>
 #include <set>
 #include <vector>
+#include <thread>
 
+#include <CudaStream.hpp>
 #include <graph/Node.hpp>
 #include <graph/NodesCore.hpp>
-#include <CudaStream.hpp>
 
 /**
  * Structure storing context for running a graph.
@@ -33,27 +34,64 @@ struct GraphRunCtx
 	/**
 	 * Executes graph bound with this GraphRunCtx.
 	 */
-	void run();
+	void executeAsync();
 
 	/**
-	 * Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
-	 */
+	* Resets graphRunCtx for all nodes currently bound with this GraphRunCtx, consequently destroying this GraphRunCtx.
+	*/
 	void detachAndDestroy();
+
+	/**
+	 * Waits until this GraphRunCtx
+	 * - finishes execution
+	 * - joins its thread
+	 * - synchronizes graph stream (all pending GPU operations)
+	 */
+	void synchronize();
+
+	/**
+	 * Ensures that no GraphRunCtx is running.
+	 */
+	static void synchronizeAll();
+
+	/**
+	 * Waits until given node finishes its CPU execution.
+	 * The node may still have pending GPU operations.
+	 */
+	void synchronizeNodeCPU(Node::Ptr nodeToSynchronize);
+
 
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
 	virtual ~GraphRunCtx();
 private:
-	GraphRunCtx() : stream(CudaStream::create()) {}
+	GraphRunCtx() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
+	void executeThreadMain();
+
 private:
 	CudaStream::Ptr stream;
-	std::set<std::shared_ptr<Node>> nodes;
-	std::vector<std::shared_ptr<Node>> executionOrder;
+	std::optional<std::thread> maybeThread;
+	std::set<Node::Ptr> nodes;
+	std::vector<Node::Ptr> executionOrder;
 
-	static std::list<std::shared_ptr<GraphRunCtx>> instances;
-	std::set<rgl_field_t> fieldsToCompute;
+	// Used to synchronize all existing instances (e.g. to safely access Scene).
+	static std::list<std::weak_ptr<GraphRunCtx>> instances;
+
+private: // Communication between client's thread and graph thread
+	struct NodeExecStatus
+	{
+		// If true, then execution has succeeded or an exception has been thrown.
+		std::atomic<bool> executed {false};
+
+		// exceptionPtr may be read by client's thread only after it acquire-read true `completed`
+		// exceptionPtr may be written by graph thread only before it release-stores true `completed`
+		std::exception_ptr exceptionPtr {nullptr};
+	};
+
+	std::unordered_map<Node::Ptr, NodeExecStatus> executionStatus;
+	std::atomic<bool> execThreadCanStart;
 };

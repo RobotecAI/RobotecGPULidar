@@ -77,7 +77,7 @@ struct IPointsNode : virtual Node
 	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
 
 	// Data getters
-	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const = 0;
+	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) = 0;
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 
 	template<rgl_field_t field>
@@ -110,7 +110,7 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
-	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
+	virtual VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override
 	{ return input->getFieldData(field, stream); }
 
 protected:

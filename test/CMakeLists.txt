@@ -1,31 +1,32 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-        src/graphCaseTest.cpp
-        src/asyncStressTest.cpp
-        src/apiReadmeExample.cpp
-        src/gaussianStressTest.cpp
-        src/apiSurfaceTests.cpp
-        src/testMat3x4f.cpp
-        src/graph/nodes/FromArrayPointsNodeTest.cpp
-        src/graph/nodes/TransformPointsNodeTest.cpp
-        src/graph/nodes/SetRingIdsRaysNodeTest.cpp
-        src/graph/nodes/CompactPointsNodeTest.cpp
-        src/graph/nodes/FormatPointsNodeTest.cpp
-        src/graph/nodes/YieldPointsNodeTest.cpp
-        src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
-        src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
-        src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
-        src/graph/nodes/RaytraceNodeTest.cpp
-        src/graph/nodes/TransformRaysNodeTest.cpp
-        src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
-        src/graph/nodes/SpatialMergePointsNodeTest.cpp
-        src/graph/nodes/TemporalMergePointsNodeTest.cpp
-        src/graph/addChildTest.cpp
-        src/memory/arrayTest.cpp
-        src/synchronization/syncTest.cpp
-        src/synchronization/testKernel.cu
-        src/memory/arrayChangeStreamTest.cpp
+    src/graphCaseTest.cpp
+    src/asyncStressTest.cpp
+    src/apiReadmeExample.cpp
+    src/gaussianStressTest.cpp
+    src/apiSurfaceTests.cpp
+    src/testMat3x4f.cpp
+    src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/graph/nodes/TransformPointsNodeTest.cpp
+    src/graph/nodes/SetRingIdsRaysNodeTest.cpp
+    src/graph/nodes/CompactPointsNodeTest.cpp
+    src/graph/nodes/FormatPointsNodeTest.cpp
+    src/graph/nodes/YieldPointsNodeTest.cpp
+    src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
+    src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
+    src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
+    src/graph/nodes/RaytraceNodeTest.cpp
+    src/graph/nodes/TransformRaysNodeTest.cpp
+    src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
+    src/graph/nodes/SpatialMergePointsNodeTest.cpp
+    src/graph/nodes/TemporalMergePointsNodeTest.cpp
+    src/graph/addChildTest.cpp
+    src/memory/arrayTest.cpp
+    src/memory/arrayChangeStreamTest.cpp
+    src/synchronization/graphAndCopyStream.cpp
+    src/synchronization/testKernel.cu
+    src/synchronization/graphThreadSynchronization.cpp
 )
 
 # Only Linux

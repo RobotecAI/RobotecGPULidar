@@ -15,6 +15,7 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 #include <RGLFields.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
@@ -41,13 +42,12 @@ void FormatPointsNode::formatAsync(const VArray::Ptr& output, const IPointsNode:
 	gpuFormatSoaToAos(stream, pointCount, pointSize, fields.size(), gpuFields->getReadPtr(), outputPtr);
 }
 
-VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
 {
 	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-		CHECK_CUDA(cudaStreamSynchronize(stream));
 		return output;
 	}
-	return input->getFieldData(field, stream);
+	return input->getFieldData(field, CudaStream::getCopyStream()->get());
 }
 
 std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
