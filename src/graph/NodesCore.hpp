@@ -106,7 +106,7 @@ private:
 	size_t width = {0};
 	cudaEvent_t finishedEvent = nullptr;
 	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
-	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 };
 
 struct RaytraceNode : IPointsNode

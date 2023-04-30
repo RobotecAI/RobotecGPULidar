@@ -223,7 +223,6 @@ rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 			scene = Scene::defaultInstance().get();
 		}
 		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
-		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
 	});
 	TAPE_HOOK(out_entity, scene, mesh);
