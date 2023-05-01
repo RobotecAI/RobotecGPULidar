@@ -15,24 +15,23 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformPointsNode::enqueueExecImpl(cudaStream_t stream)
+void TransformPointsNode::enqueueExecImpl()
 {
 	auto pointCount = input->getWidth() * input->getHeight();
 	output->resize(pointCount);
-	const auto inputField = input->getFieldDataTyped<XYZ_F32>(stream);
+	const auto inputField = input->getFieldDataTyped<XYZ_F32>();
 	const auto* inputPtr = inputField->getDevicePtr();
 	auto* outputPtr = output->getDevicePtr();
-	gpuTransformPoints(stream, pointCount, inputPtr, outputPtr, transform);
+	gpuTransformPoints(getStreamHandle(), pointCount, inputPtr, outputPtr, transform);
 }
 
-VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
+VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == XYZ_F32) {
-		// TODO(prybicki): check synchronize is necessary
-		CHECK_CUDA(cudaStreamSynchronize(stream));
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		return output->untyped();
 	}
-	return input->getFieldData(field, stream);
+	return input->getFieldData(field);
 }
 
 

@@ -82,17 +82,17 @@ struct MemoryOperations
 				// Note: capture-by-value to ensure CudaStream lifetime.
 				.allocate = [=](size_t bytes) {
 					void* ptr = nullptr;
-					CHECK_CUDA(cudaMallocAsync(&ptr, bytes, stream->get()));
+					CHECK_CUDA(cudaMallocAsync(&ptr, bytes, stream->getHandle()));
 					return ptr;
 				},
 				.deallocate = [=](void* ptr) {
-					CHECK_CUDA(cudaFreeAsync(ptr, stream->get()));
+					CHECK_CUDA(cudaFreeAsync(ptr, stream->getHandle()));
 				},
 				.copy = [=](void* dst, const void* src, size_t bytes) {
-					CHECK_CUDA(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream->get()));
+					CHECK_CUDA(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream->getHandle()));
 				},
 				.clear = [=](void* dst, int value, size_t bytes) {
-					CHECK_CUDA(cudaMemsetAsync(dst, value, bytes, stream->get()));
+					CHECK_CUDA(cudaMemsetAsync(dst, value, bytes, stream->getHandle()));
 				}
 			};
 		}

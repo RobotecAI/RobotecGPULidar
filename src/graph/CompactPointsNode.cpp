@@ -20,17 +20,17 @@
 // TODO: WritePCD triggers cudaSynchronizeStream in its indirect input CompactNode
 // TODO: This can be alleviated with a stream-aware VArray :)
 
-void CompactPointsNode::enqueueExecImpl(cudaStream_t stream)
+void CompactPointsNode::enqueueExecImpl()
 {
 	cacheManager.trigger();
 	inclusivePrefixSum->resize(input->getHeight() * input->getWidth(), false, false);
 	size_t pointCount = input->getWidth() * input->getHeight();
-	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
-	gpuFindCompaction(stream, pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
-	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
+	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>()->getDevicePtr();
+	gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
+	CHECK_CUDA(cudaEventRecord(finishedEvent, getStreamHandle()));
 }
 
-VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
+VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 {
 	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	if (!cacheManager.contains(field)) {
@@ -42,11 +42,11 @@ VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field, cudaStream_t
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(width, false, false);
 		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::Device));
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
-		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>(stream)->getDevicePtr();
+		const char* inputPtr = static_cast<const char *>(input->getFieldData(field)->getReadPtr(MemLoc::Device));
+		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->getDevicePtr();
 		const CompactionIndexType * indices = inclusivePrefixSum->getDevicePtr();
-		gpuApplyCompaction(stream, input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
-		CHECK_CUDA(cudaStreamSynchronize(stream));
+		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
+		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}
 

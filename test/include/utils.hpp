@@ -48,7 +48,7 @@ struct RGLTest : public ::testing::Test {
 protected:
 	RGLTest()
 	{
-		rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false);
+		rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, true);
 	}
 
     virtual ~RGLTest() override

@@ -58,7 +58,7 @@ void SpatialMergePointsNode::validateImpl()
 	}
 }
 
-void SpatialMergePointsNode::enqueueExecImpl(cudaStream_t stream)
+void SpatialMergePointsNode::enqueueExecImpl()
 {
 	width = 0;
 	for (const auto& input : pointInputs) {
@@ -71,7 +71,7 @@ void SpatialMergePointsNode::enqueueExecImpl(cudaStream_t stream)
 		size_t offset = 0;
 		for (const auto& input : pointInputs) {
 			size_t pointCount = input->getPointCount();
-			const auto toMergeData = input->getFieldData(field, stream);
+			const auto toMergeData = input->getFieldData(field);
 			data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, offset);
 			offset += pointCount;
 		}

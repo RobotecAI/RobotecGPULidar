@@ -33,6 +33,8 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 		currentNode->setGraphRunCtx(graphRunCtx);
 	}
 
+	GraphRunCtx::instances.push_back(graphRunCtx);
+
 	return graphRunCtx;
 }
 
@@ -52,7 +54,7 @@ void GraphRunCtx::executeAsync()
 	for (auto&& node : executionOrder) {
 		executionStatus.try_emplace(node);
 	}
-	execThreadCanStart = false;
+	execThreadCanStart.store(false, std::memory_order_relaxed);
 
 	// TODO: this also applies to validation and executionStatus clearing
 	// In other parts of the code we rely on the following logic
@@ -80,7 +82,7 @@ void GraphRunCtx::executeThreadMain() try
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 
-	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 }
 catch (...)
 {
@@ -119,7 +121,7 @@ GraphRunCtx::~GraphRunCtx()
 	// If GraphRunCtx is destroyed, we expect that thread was joined and stream was synced.
 
 	// Log error if stream has pending work.
-	cudaError_t status = cudaStreamQuery(stream->get());
+	cudaError_t status = cudaStreamQuery(stream->getHandle());
 	if (status == cudaErrorNotReady) {
 		RGL_WARN("~GraphRunCtx(): stream has pending work!");
 		status = cudaSuccess; // Ignore further checks.
@@ -149,7 +151,7 @@ void GraphRunCtx::synchronize()
 	for (auto&& node : executionOrder) {
 		synchronizeNodeCPU(node);
 	}
-	CHECK_CUDA(cudaStreamSynchronize(stream->get()));
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 	maybeThread->join();
 	maybeThread.reset();
 }

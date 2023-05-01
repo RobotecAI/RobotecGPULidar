@@ -37,18 +37,18 @@ void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
 	gasNeedsUpdate = true;
 }
 
-OptixTraversableHandle Mesh::getGAS()
+OptixTraversableHandle Mesh::getGAS(CudaStream::Ptr stream)
 {
 	if (!cachedGAS.has_value()) {
-		cachedGAS = buildGAS();
+		cachedGAS = buildGAS(stream);
 	}
 	if (gasNeedsUpdate) {
-		updateGAS();
+		updateGAS(stream);
 	}
 	return *cachedGAS;
 }
 
-void Mesh::updateGAS()
+void Mesh::updateGAS(CudaStream::Ptr stream)
 {
 	OptixAccelBuildOptions updateOptions = buildOptions;
 	updateOptions.operation = OPTIX_BUILD_OPERATION_UPDATE;
@@ -64,7 +64,7 @@ void Mesh::updateGAS()
 	// Fun fact: calling optixAccelBuild does not change anything visually, but introduces a significant slowdown
 	// Investigation is needed whether it needs to be called at all (OptiX documentation says yes, but it works without)
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            nullptr, // TODO: stream
+	                            stream->getHandle(),
 	                            &updateOptions,
 	                            &updateInput,
 	                            1,
@@ -76,10 +76,12 @@ void Mesh::updateGAS()
 	                            nullptr, // &emitDesc,
 	                            0));
 
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
+
 	gasNeedsUpdate = false;
 }
 
-OptixTraversableHandle Mesh::buildGAS()
+OptixTraversableHandle Mesh::buildGAS(CudaStream::Ptr stream)
 {
 	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 	vertexBuffers[0] = dVertices->getDeviceReadPtr();
@@ -119,7 +121,7 @@ OptixTraversableHandle Mesh::buildGAS()
 
 	OptixTraversableHandle gasHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            nullptr, // TODO: stream
+	                            stream->getHandle(),
 	                            &buildOptions,
 	                            &buildInput,
 	                            1,
@@ -132,7 +134,7 @@ OptixTraversableHandle Mesh::buildGAS()
 	                            0
 	));
 
-	// Compaction yields around 10% of memory and slows down a lot (e.g. 500us per model)
+	// Compaction yields around 10% of memory save-up and slows down a lot (e.g. 500us per model)
 	// scratchpad.doCompaction(gasHandle);
 
 	gasNeedsUpdate = false;

@@ -25,6 +25,8 @@ std::shared_ptr<Scene> Scene::defaultInstance()
 	return scene;
 }
 
+Scene::Scene() : stream(CudaStream::create(cudaStreamNonBlocking)) { }
+
 std::size_t Scene::getObjectCount()
 { return entities.size(); }
 
@@ -156,7 +158,7 @@ OptixTraversableHandle Scene::buildAS()
 
 	OptixTraversableHandle sceneHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            nullptr, // TODO(prybicki): run in stream
+	                            stream->getHandle(),
 	                            &accelBuildOptions,
 	                            &instanceInput,
 	                            1,
@@ -168,6 +170,8 @@ OptixTraversableHandle Scene::buildAS()
 	                            &emitDesc,
 	                            1
 	));
+
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 
 	// scratchpad.doCompaction(sceneHandle);
 
@@ -183,3 +187,10 @@ void Scene::requestSBTRebuild()
 {
 	cachedSBT.reset();
 }
+
+CudaStream::Ptr Scene::getStream()
+{
+	return stream;
+}
+
+

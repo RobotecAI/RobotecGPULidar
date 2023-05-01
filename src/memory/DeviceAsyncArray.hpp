@@ -45,8 +45,8 @@ struct DeviceAsyncArray : public DeviceArray<MemoryKind::DeviceAsync, T>, public
 	void copyFrom(HostPinnedArray<T>::Ptr src)
 	{
 		this->resize(src->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpyAsync(this->data, src->data, this->getSizeOf() * this->getCount(), cudaMemcpyHostToDevice, this->getStream()->get()));
-		CHECK_CUDA(cudaStreamSynchronize(this->getStream()->get()));
+		CHECK_CUDA(cudaMemcpyAsync(this->data, src->data, this->getSizeOf() * this->getCount(), cudaMemcpyHostToDevice, this->getStream()->getHandle()));
+		CHECK_CUDA(cudaStreamSynchronize(this->getStream()->getHandle()));
 	}
 
 	static DeviceAsyncArray<T>::Ptr createWithManager(StreamBoundObjectsManager& manager)

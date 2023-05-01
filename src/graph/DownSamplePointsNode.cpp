@@ -30,7 +30,7 @@ void DownSamplePointsNode::validateImpl()
 	}
 }
 
-void DownSamplePointsNode::enqueueExecImpl(cudaStream_t stream)
+void DownSamplePointsNode::enqueueExecImpl()
 {
 	cacheManager.trigger();
 
@@ -40,7 +40,7 @@ void DownSamplePointsNode::enqueueExecImpl(cudaStream_t stream)
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream, gpuFieldDescBuilder);
+	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), getStreamHandle(), gpuFieldDescBuilder);
 
 	// Downsample
 	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
@@ -71,8 +71,8 @@ void DownSamplePointsNode::enqueueExecImpl(cudaStream_t stream)
 	size_t size = sizeof(PCLPoint::label);
 	auto&& dst = (char*) filteredIndices->getDevicePtr();
 	auto&& src = (const char*) filteredPoints->getReadPtr(MemLoc::Device);
-	gpuCutField(stream, filtered->size(), dst, src, offset, stride, size);
-	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
+	gpuCutField(getStreamHandle(), filtered->size(), dst, src, offset, stride, size);
+	CHECK_CUDA(cudaEventRecord(finishedEvent, getStreamHandle()));
 }
 
 size_t DownSamplePointsNode::getWidth() const
@@ -81,7 +81,7 @@ size_t DownSamplePointsNode::getWidth() const
 	return filteredIndices->getCount();
 }
 
-VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStream_t stream)
+VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 {
 	if (!cacheManager.contains(field)) {
 		auto fieldData = VArray::create(field, filteredIndices->getCount());
@@ -92,9 +92,9 @@ VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStrea
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(filteredIndices->getCount(), false, false);
 		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::Device));
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
-		gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), outPtr, inputPtr, getFieldSize(field));
-		CHECK_CUDA(cudaStreamSynchronize(stream));
+		const char* inputPtr = static_cast<const char *>(input->getFieldData(field)->getReadPtr(MemLoc::Device));
+		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getDevicePtr(), outPtr, inputPtr, getFieldSize(field));
+		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}
 

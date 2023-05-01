@@ -37,7 +37,7 @@ OptixInstance Entity::getIAS(int idx)
 		.sbtOffset = static_cast<unsigned int>(idx),
 		.visibilityMask = 255,
 		.flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
-		.traversableHandle = mesh->getGAS(),
+		.traversableHandle = mesh->getGAS(scene.lock()->getStream()),
 	};
 	transform.toRaw(instance.transform);
 	return instance;

@@ -34,7 +34,7 @@ struct DownSamplePointsNode : IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	void enqueueExecImpl(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
@@ -45,7 +45,7 @@ struct DownSamplePointsNode : IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) override;
+	VArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 
 
@@ -68,7 +68,7 @@ struct VisualizePointsNode : IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	void enqueueExecImpl(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;

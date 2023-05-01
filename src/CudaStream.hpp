@@ -41,7 +41,7 @@ struct CudaStream
 		return copyStream;
 	}
 
-	cudaStream_t get() { return stream; }
+	cudaStream_t getHandle() { return stream; }
 
 	~CudaStream()
 	{
