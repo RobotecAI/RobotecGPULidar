@@ -25,7 +25,7 @@ struct CudaEvent {
         return CudaEvent::Ptr(new CudaEvent(flag));
     }
 
-    cudaEvent_t get() { return event; }
+    cudaEvent_t getHandle() { return event; }
 
     ~CudaEvent()
     {

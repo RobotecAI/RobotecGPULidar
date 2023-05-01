@@ -45,6 +45,8 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 {
 	static std::shared_ptr<Scene> defaultInstance();
 
+	Scene();
+
 	void addEntity(std::shared_ptr<Entity> entity);
 	void removeEntity(std::shared_ptr<Entity> entity);
 	void clear();
@@ -54,6 +56,7 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 
 	std::size_t getObjectCount();
 
+	CudaStream::Ptr getStream();
 	OptixTraversableHandle getAS();
 	OptixShaderBindingTable getSBT();
 
@@ -66,6 +69,7 @@ private:
 	OptixTraversableHandle buildAS();
 
 private:
+	CudaStream::Ptr stream;
 	std::set<std::shared_ptr<Entity>> entities;
 	ASBuildScratchpad scratchpad;
 

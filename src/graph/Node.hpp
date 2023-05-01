@@ -126,7 +126,7 @@ protected: // Member methods
 	/**
 	 * Placeholder to enqueue node-specific computations in derived classes.
 	 */
-	virtual void enqueueExecImpl(cudaStream_t toBeRemoved=nullptr) = 0;
+	virtual void enqueueExecImpl() = 0;
 
 	/**
 	 * Placeholder to perform node-specific part of validation.
@@ -144,6 +144,8 @@ protected: // Member methods
 	 * If error happened in the graph thread, this function will re-throw it.
 	 */
 	void synchronizeThis();
+
+	cudaStream_t getStreamHandle();
 
 	template<typename T>
 	typename T::Ptr getExactlyOneInputOfType()
@@ -192,7 +194,7 @@ public: // Static methods
 	}
 
 
-protected:
+public:
 	std::vector<Node::Ptr> inputs {};
 	std::vector<Node::Ptr> outputs {};
 

@@ -117,8 +117,8 @@ void Node::enqueueExec()
 		auto msg = fmt::format("{}: attempted to call enqueueExec() despite !isValid()", getName());
 		throw std::logic_error(msg);
 	}
-	this->enqueueExecImpl(getGraphRunCtx()->getStream()->get());
-	CHECK_CUDA(cudaEventRecord(execCompleted->get(), getGraphRunCtx()->getStream()->get()));
+	this->enqueueExecImpl();
+	CHECK_CUDA(cudaEventRecord(execCompleted->getHandle(), getGraphRunCtx()->getStream()->getHandle()));
 }
 
 std::set<Node::Ptr> Node::getConnectedNodes()
@@ -163,7 +163,7 @@ void Node::synchronizeThis()
 	// Ensure CPU execution is finished; this guarantees that execCompleted event has been recorded
 	graphRunCtx.value()->synchronizeNodeCPU(shared_from_this());
 	// Wait for all GPU operations requested by this node.
-	CHECK_CUDA(cudaEventSynchronize(execCompleted->get()));
+	CHECK_CUDA(cudaEventSynchronize(execCompleted->getHandle()));
 }
 
 void Node::waitForResults()
@@ -174,4 +174,9 @@ void Node::waitForResults()
 		throw InvalidPipeline(msg);
 	}
 	synchronizeThis();
+}
+
+cudaStream_t Node::getStreamHandle()
+{
+	return getGraphRunCtx()->getStream()->getHandle();
 }

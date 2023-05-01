@@ -44,7 +44,7 @@ auto RaytraceNode::getPtrTo()
 	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
 }
 
-void RaytraceNode::enqueueExecImpl(cudaStream_t stream)
+void RaytraceNode::enqueueExecImpl()
 {
 	for (auto const& [_, data] : fieldData) {
 		data->resize(raysNode->getRayCount(), false, false);
@@ -79,8 +79,8 @@ void RaytraceNode::enqueueExecImpl(cudaStream_t stream)
 
 	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
 	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
-	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
-	CHECK_CUDA(cudaStreamSynchronize(stream));
+	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
+	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
@@ -127,3 +127,4 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 
 	return outFields;
 }
+

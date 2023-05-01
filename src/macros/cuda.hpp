@@ -18,19 +18,19 @@
 
 #include <spdlog/fmt/fmt.h>
 
-static inline void onCUDAError() {}
+static void onCUDAError() {}
 
 #define CHECK_CUDA(call)                                                                            \
 do                                                                                                  \
 {                                                                                                   \
     cudaError_t errCode = call;                                                                     \
-    if (errCode == cudaErrorCudartUnloading) {                                                      \
-        break;                                                                                      \
-    }                                                                                               \
     if (errCode != cudaSuccess) {                                                                   \
-        auto message = fmt::format("cuda error: {} (code={}) @ {}:{}",                              \
-        cudaGetErrorString(errCode), errCode, __FILE__, __LINE__);                                  \
         onCUDAError();                                                                              \
+        if (errCode == cudaErrorCudartUnloading) {                                                  \
+            break;                                                                                  \
+        }                                                                                           \
+        auto message = fmt::format("cuda error: {} (code={}) @ {}:{}",                              \
+                                   cudaGetErrorString(errCode), errCode, __FILE__, __LINE__);       \
         throw std::runtime_error(message);                                                          \
     }                                                                                               \
 }                                                                                                   \

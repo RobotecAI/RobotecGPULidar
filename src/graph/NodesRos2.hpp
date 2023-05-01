@@ -37,7 +37,7 @@ struct Ros2PublishPointsNode : IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	void enqueueExecImpl(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	~Ros2PublishPointsNode();
 

@@ -45,12 +45,12 @@ void TemporalMergePointsNode::validateImpl()
 	}
 }
 
-void TemporalMergePointsNode::enqueueExecImpl(cudaStream_t stream)
+void TemporalMergePointsNode::enqueueExecImpl()
 {
 	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {
 		size_t pointCount = input->getPointCount();
-		const auto toMergeData = input->getFieldData(field, stream);
+		const auto toMergeData = input->getFieldData(field);
 		data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, width);
 		// Double capacity of VArray if is close to run out. It prevents reallocating memory every insertion.
 		data->doubleCapacityIfRunningOut();

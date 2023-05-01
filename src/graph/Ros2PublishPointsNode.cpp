@@ -63,9 +63,9 @@ void Ros2PublishPointsNode::validateImpl()
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
-void Ros2PublishPointsNode::enqueueExecImpl(cudaStream_t stream)
+void Ros2PublishPointsNode::enqueueExecImpl()
 {
-	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT, stream);
+	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT);
 	int count = input->getPointCount();
 	ros2Message.data.resize(ros2Message.point_step * count);
 	fieldData->getData(ros2Message.data.data(), ros2Message.point_step * count);

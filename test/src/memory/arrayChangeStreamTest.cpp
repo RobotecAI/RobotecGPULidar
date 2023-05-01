@@ -64,7 +64,7 @@ TEST_F(ArrayChangeStream, Standalone)
 	array->copyFrom(nonZeroIntPattern); // Synchronizes array's stream.
 
 	// Block streamA. This way, scheduled operations will be not executed.
-	CHECK_CUDA(cudaStreamAddCallback(streamA->get(), waitCb, &shouldSleep, 0));
+	CHECK_CUDA(cudaStreamAddCallback(streamA->getHandle(), waitCb, &shouldSleep, 0));
 
 	// Change array's stream.
 	array->setStream(streamB);
@@ -95,7 +95,7 @@ TEST_F(ArrayChangeStream, WithManager)
 	arrayC.reset();
 
 	// Block streamA. This way, scheduled operations will be not executed.
-	CHECK_CUDA(cudaStreamAddCallback(streamA->get(), waitCb, &shouldSleep, 0));
+	CHECK_CUDA(cudaStreamAddCallback(streamA->getHandle(), waitCb, &shouldSleep, 0));
 
 	// Provide a new stream for arrays.
 	arrayMgr.setStream(streamB);

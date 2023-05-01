@@ -22,10 +22,10 @@ void YieldPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 	this->fields = fields;
 }
 
-void YieldPointsNode::enqueueExecImpl(cudaStream_t stream)
+void YieldPointsNode::enqueueExecImpl()
 {
 	for (auto&& field : fields) {
-		results[field] = input->getFieldData(field, stream);
+		results[field] = input->getFieldData(field);
 	}
 }
 

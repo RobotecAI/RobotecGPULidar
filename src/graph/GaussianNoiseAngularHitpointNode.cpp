@@ -39,7 +39,7 @@ void GaussianNoiseAngularHitpointNode::validateImpl()
 	}
 }
 
-void GaussianNoiseAngularHitpointNode::enqueueExecImpl(cudaStream_t stream)
+void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 {
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);
@@ -52,26 +52,26 @@ void GaussianNoiseAngularHitpointNode::enqueueExecImpl(cudaStream_t stream)
 
 	if (randomizationStates->getCount() < pointCount) {
 		randomizationStates->resize(pointCount, false, false);
-		gpuSetupGaussianNoiseGenerator(nullptr, pointCount, randomDevice(), randomizationStates->getDevicePtr());
+		gpuSetupGaussianNoiseGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getDevicePtr());
 	}
 
-	const auto inXyz = input->getFieldDataTyped<XYZ_F32>(stream);
+	const auto inXyz = input->getFieldDataTyped<XYZ_F32>();
 	const auto* inXyzPtr = inXyz->getDevicePtr();
 	auto* outXyzPtr = outXyz->getDevicePtr();
-	gpuAddGaussianNoiseAngularHitpoint(stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
-VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field, cudaStream_t stream)
+VArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field)
 {
 	if (field == XYZ_F32) {
 		// TODO(msz-rai): check synchronize is necessary
-		CHECK_CUDA(cudaStreamSynchronize(stream));
+		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		return outXyz->untyped();
 	}
 	if (field == DISTANCE_F32 && outDistance != nullptr) {
 		// TODO(msz-rai): check synchronize is necessary
-		CHECK_CUDA(cudaStreamSynchronize(stream));
+		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		return outDistance->untyped();
 	}
-	return input->getFieldData(field, stream);
+	return input->getFieldData(field);
 }

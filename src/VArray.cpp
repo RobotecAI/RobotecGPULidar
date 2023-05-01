@@ -42,6 +42,7 @@ void* VArray::getWritePtr(MemLoc location)
 }
 
 
+
 VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize)
 {
 	return createVArray(type, initialSize);
@@ -103,6 +104,7 @@ void VArray::reserve(std::size_t newCapacity, bool preserveData)
 
 	current().data = newMem;
 	current().elemCapacity = newCapacity;
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
 void VArray::doubleCapacityIfRunningOut(float runningOutThreshold)
@@ -133,6 +135,7 @@ void* VArray::memAlloc(std::size_t bytes, std::optional<MemLoc> locationHint) co
 		CHECK_CUDA(cudaMalloc(&ptr, bytes));
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	}
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	return ptr;
 }
 
@@ -146,6 +149,7 @@ void VArray::memFree(void* ptr, std::optional<MemLoc> locationHint) const
 		CHECK_CUDA(cudaFree(ptr));
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 	}
+	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
 void VArray::migrateToLocation(MemLoc newLoc)

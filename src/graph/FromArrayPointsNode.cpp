@@ -36,8 +36,9 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	std::size_t pointSize = getPointSize(fields);
 	auto gpuFields = gpuFieldDescBuilder.buildWritable(getFieldToPointerMappings(fields));
 	const char* inputPtr = static_cast<const char*>(inputData->getReadPtr(MemLoc::Device));
+
+	// Immediately copy data to the GPU. We may not have stream yet, so use NULL stream and synchronize it.
 	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getWritePtr());
-	// TODO(msz-rai): check synchronize is necessary
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
