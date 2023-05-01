@@ -37,7 +37,12 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 		CHECK_ARG(file_path[0] != '\0');
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		pointCloudNode->waitForResults();
+		// TODO(prybicki): as of now, before full migration to DeviceAsyncArray,
+		// TODO(prybicki): there is a bug which makes synchronizing node not enough.
+		// TODO(prybicki): Most likely it is caused by some node reaching its parent for input,
+		// TODO(prybicki): which triggers VArray migration (Device->Host) in graph thread,
+		// TODO(prybicki): which happens in the same time as this function (client thread).
+		pointCloudNode->getGraphRunCtx()->synchronize(); // Should be just pointCloudNode->waitForResults();
 
 		if (!pointCloudNode->hasField(XYZ_F32)) {
 			throw InvalidAPIObject(fmt::format("Saving PCD file {} failed - requested node does not have field XYZ.", file_path));
@@ -45,8 +50,7 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 
 		// We are not using format node to avoid transferring huge point cloud to GPU (risk of cuda out of memory error)
 		// We are formatting manually on the CPU instead.
-		// TODO(msz-rai): CudaStream for getFieldDataTyped: nullptr or pointCloudNode->getGraphRunCtx()->getStream()?
-		auto xyzTypedArray = pointCloudNode->getFieldDataTyped<XYZ_F32>(nullptr);
+		auto xyzTypedArray = pointCloudNode->getFieldDataTyped<XYZ_F32>();
 		auto xyzData = xyzTypedArray->getReadPtr(MemLoc::Host);
 
 		// Convert to PCL cloud
@@ -56,6 +60,8 @@ rgl_graph_write_pcd_file(rgl_node_t node, const char* file_path)
 			pclCloud[i] = pcl::PointXYZ(xyzData[i].x(), xyzData[i].y(), xyzData[i].z());
 		}
 		pclCloud.is_dense = pointCloudNode->isDense();
+
+
 
 		// Save to PCD file
 		pcl::io::savePCDFileBinary(std::string(file_path), pclCloud);
