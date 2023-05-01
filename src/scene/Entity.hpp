@@ -40,8 +40,8 @@ struct Entity : APIObject<Entity>
 
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<Texture> intensityTexture = nullptr;
-	std::weak_ptr<Scene> scene;
 
+	std::shared_ptr<Scene> scene;
 private:
 	Mat3x4f transform;
 	int id;

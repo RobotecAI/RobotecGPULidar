@@ -298,12 +298,8 @@ rgl_entity_destroy(rgl_entity_t entity)
 		CHECK_ARG(entity != nullptr);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
-		if (auto sceneShared = entitySafe->scene.lock()) {
-			sceneShared->removeEntity(entitySafe);
-			Entity::release(entity);
-		} else {
-			throw std::logic_error("Entity's scene does not exist");
-		}
+		entitySafe->scene->removeEntity(entitySafe);
+		Entity::release(entity);
 	});
 	TAPE_HOOK(entity);
 	return status;
