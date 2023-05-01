@@ -15,6 +15,8 @@
 #pragma once
 
 #include <set>
+#include <cfloat>
+
 #include <rgl/api/core.h>
 #include <VArray.hpp>
 
@@ -22,6 +24,8 @@
  * Definition of RGL PointCloud Fields is in the API header.
  * This file defines some internal properties, such as byte sizes and C++ types.
  */
+
+#define NON_HIT_VALUE FLT_MAX
 
 // Shorter versions to avoid long type names
 #define XYZ_F32 RGL_FIELD_XYZ_F32

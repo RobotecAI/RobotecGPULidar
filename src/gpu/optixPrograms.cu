@@ -59,7 +59,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float 
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
 		// Return actual XYZ of the hit point or infinity vector.
-		ctx.xyz[rayIdx] = isFinite ? *xyz : Vec3f{CUDART_INF_F, CUDART_INF_F, CUDART_INF_F};
+		ctx.xyz[rayIdx] = isFinite ? *xyz : Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE};
 	}
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = isFinite;
@@ -76,7 +76,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float 
 		                            pow((*xyz)[0] - (*origin)[0], 2) +
 		                            pow((*xyz)[1] - (*origin)[1], 2) +
 		                            pow((*xyz)[2] - (*origin)[2], 2))
-		                        : CUDART_INF_F;
+		                        : NON_HIT_VALUE;
 	}
 	if (ctx.intensity != nullptr) {
 		ctx.intensity[rayIdx] = intensity;
