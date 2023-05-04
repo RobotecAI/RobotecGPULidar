@@ -29,7 +29,6 @@ Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size
 {
 	dVertices.copyFromHost(vertices, vertexCount);
 	dIndices.copyFromHost(indices, indexCount);
-
 	dUVs->copyFromHost(uvs, vertexCount);
 }
 
