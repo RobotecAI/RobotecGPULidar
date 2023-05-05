@@ -96,6 +96,12 @@ typedef struct Mesh *rgl_mesh_t;
 typedef struct Entity *rgl_entity_t;
 
 /**
+ * Represents on-GPU texture that can be referenced by meshes on the scene.
+ * Each texture can be referenced by any number of meshes on different scenes.
+ */
+typedef struct Texture *rgl_texture_t;
+
+/**
  * TODO(prybicki)
  */
 typedef struct Node *rgl_node_t;

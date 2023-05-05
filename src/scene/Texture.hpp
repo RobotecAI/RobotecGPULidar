@@ -16,18 +16,27 @@
 #include <APIObject.hpp>
 #include <math/Vector.hpp>
 
+#define INVALID_TEXTURE_ID -1
+
 struct Texture : APIObject<Texture> {
 
 public:
-	Texture(int textureID): ID(textureID) {};
+	Texture(int textureID) : ID(textureID) {};
 
-	~Texture() { if (pixel) { delete[] pixel; }}
+	Texture(unsigned int *pixels, int resolution, int id) :
+			pixels(pixels),
+			resolution(resolution, resolution),
+			ID(id) {
+
+	}
+
+	~Texture() { if (pixels) { delete[] pixels; }}
 
 	int GetID() const { return ID; }
 
 	Vec2i GetResolution() const { return resolution; }
 
-	uint32_t *GetPixel() const { return pixel; }
+	uint32_t *GetPixels() const { return pixels; }
 
 	Texture(const Texture &) = delete; // non construction-copyable
 	Texture &operator=(const Texture &) = delete; // non copyable
@@ -35,6 +44,6 @@ public:
 private:
 	friend APIObject<Texture>;
 	int ID;
-	uint32_t *pixel{nullptr};
+	uint32_t *pixels{nullptr};
 	Vec2i resolution{-1};
 };

@@ -20,31 +20,29 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
-{
+Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount) {
 	dVertices.copyFromHost(vertices, vertexCount);
 	dIndices.copyFromHost(indices, indexCount);
 }
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount, const Vec2f *uvs)
-{
+
+Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount, const Vec2f *uvs) {
 	dVertices.copyFromHost(vertices, vertexCount);
 	dIndices.copyFromHost(indices, indexCount);
 	dUVs->copyFromHost(uvs, vertexCount);
 }
 
-void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
-{
+void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount) {
 	if (dVertices.getElemCount() != vertexCount) {
-		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
-		                        dVertices.getElemCount(), vertexCount);
+		auto msg = fmt::format(
+				"Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
+				dVertices.getElemCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
 	dVertices.copyFromHost(vertices, vertexCount);
 	gasNeedsUpdate = true;
 }
 
-OptixTraversableHandle Mesh::getGAS()
-{
+OptixTraversableHandle Mesh::getGAS() {
 	if (!cachedGAS.has_value()) {
 		cachedGAS = buildGAS();
 	}
@@ -54,8 +52,7 @@ OptixTraversableHandle Mesh::getGAS()
 	return *cachedGAS;
 }
 
-void Mesh::updateGAS()
-{
+void Mesh::updateGAS() {
 	OptixAccelBuildOptions updateOptions = buildOptions;
 	updateOptions.operation = OPTIX_BUILD_OPERATION_UPDATE;
 
@@ -85,42 +82,41 @@ void Mesh::updateGAS()
 	gasNeedsUpdate = false;
 }
 
-OptixTraversableHandle Mesh::buildGAS()
-{
+OptixTraversableHandle Mesh::buildGAS() {
 	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 	vertexBuffers[0] = dVertices.readDeviceRaw();
 
 	buildInput = {
-		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-		.triangleArray = {
-			.vertexBuffers = vertexBuffers,
-			.numVertices = static_cast<unsigned int>(dVertices.getElemCount()),
-			.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-			.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType),
-			.indexBuffer = dIndices.readDeviceRaw(),
-			.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount()),
-			.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-			.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType),
-			.flags = &triangleInputFlags,
-			.numSbtRecords = 1,
-			.sbtIndexOffsetBuffer = 0,
-			.sbtIndexOffsetSizeInBytes = 0,
-			.sbtIndexOffsetStrideInBytes = 0,
-		}
+			.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
+			.triangleArray = {
+					.vertexBuffers = vertexBuffers,
+					.numVertices = static_cast<unsigned int>(dVertices.getElemCount()),
+					.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
+					.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType),
+					.indexBuffer = dIndices.readDeviceRaw(),
+					.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount()),
+					.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
+					.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType),
+					.flags = &triangleInputFlags,
+					.numSbtRecords = 1,
+					.sbtIndexOffsetBuffer = 0,
+					.sbtIndexOffsetSizeInBytes = 0,
+					.sbtIndexOffsetStrideInBytes = 0,
+			}
 	};
 
 	buildOptions = {
-		.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-		              // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-		.operation = OPTIX_BUILD_OPERATION_BUILD
+			.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
+			              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+			// | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
+			.operation = OPTIX_BUILD_OPERATION_BUILD
 	};
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 
 	// OptixAccelEmitDesc emitDesc = {
-		// .result = scratchpad.dCompactedSize.readDeviceRaw(),
-		// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
+	// .result = scratchpad.dCompactedSize.readDeviceRaw(),
+	// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
 	// };
 
 	OptixTraversableHandle gasHandle;
@@ -143,4 +139,8 @@ OptixTraversableHandle Mesh::buildGAS()
 
 	gasNeedsUpdate = false;
 	return gasHandle;
+}
+
+void Mesh::addTexture(std::shared_ptr<Texture> texture) {
+	texture = texture;
 }

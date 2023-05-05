@@ -197,6 +197,8 @@ private:
 	void tape_entity_create(const YAML::Node& yamlNode);
 	void tape_entity_destroy(const YAML::Node& yamlNode);
 	void tape_entity_set_pose(const YAML::Node& yamlNode);
+	void tape_texture_create(const YAML::Node &yamlNode);
+	void tape_mesh_add_texture(const YAML::Node &yamlNode);
 	void tape_scene_set_time(const YAML::Node& yamlNode);
 	void tape_graph_run(const YAML::Node& yamlNode);
 	void tape_graph_destroy(const YAML::Node& yamlNode);
@@ -229,6 +231,7 @@ private:
 	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
 	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
 	#endif
+
 };
 
 extern std::optional<TapeRecorder> tapeRecorder;

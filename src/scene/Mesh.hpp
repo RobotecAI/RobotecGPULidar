@@ -32,6 +32,7 @@
 struct Mesh : APIObject<Mesh>
 {
 	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
+	void addTexture(std::shared_ptr<Texture> texture);
 	OptixTraversableHandle getGAS();
 
 private:
@@ -60,5 +61,7 @@ private:
 	CUdeviceptr vertexBuffers[1];
 	unsigned triangleInputFlags;
 	OptixAccelBuildOptions buildOptions;
+
+	std::shared_ptr<Texture> texture = nullptr;
 
 };
