@@ -144,3 +144,7 @@ OptixTraversableHandle Mesh::buildGAS() {
 void Mesh::addTexture(std::shared_ptr<Texture> texture) {
 	texture = texture;
 }
+
+std::shared_ptr<Texture> Mesh::getTexture() const {
+	return texture;
+}

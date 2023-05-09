@@ -29,6 +29,8 @@ public:
 
 	int GetID() const { return ID; }
 
+	cudaTextureObject_t* GetTextureObject() const { return textureObject; }
+
 	Vec2i GetResolution() const { return resolution; }
 
 	uint32_t *GetPixels() const { return pixels; }
@@ -42,6 +44,6 @@ private:
 	uint32_t *pixels{nullptr};
 	Vec2i resolution{-1};
 
-	cudaTextureObject_t textureObject;
+	cudaTextureObject_t* textureObject;
 	cudaArray_t dPixelArray;
 };

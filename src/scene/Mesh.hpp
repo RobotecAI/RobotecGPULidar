@@ -34,6 +34,7 @@ struct Mesh : APIObject<Mesh>
 	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
 	void addTexture(std::shared_ptr<Texture> texture);
 	OptixTraversableHandle getGAS();
+	std::shared_ptr<Texture> getTexture() const;
 
 private:
 	Mesh(const Vec3f *vertices, std::size_t vertexCount,
@@ -54,7 +55,7 @@ private:
 	std::optional<OptixTraversableHandle> cachedGAS;
 	DeviceBuffer<Vec3f> dVertices;
 	DeviceBuffer<Vec3i> dIndices;
-	std::optional<DeviceBuffer<Vec2f>> dUVs;
+	std::optional<DeviceBuffer<Vec2f>> dTexcoords;
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;

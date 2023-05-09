@@ -50,6 +50,6 @@ Texture::Texture( uint32_t *pixels, int resolution, int id) :
 	tex_desc.borderColor[0] = 1.0f;
 	// TO check tex_desc.sRGB = 0;
 
-	CHECK_CUDA(cudaCreateTextureObject(&textureObject, &res_desc, &tex_desc, nullptr));
+	CHECK_CUDA(cudaCreateTextureObject(textureObject, &res_desc, &tex_desc, nullptr));
 }
 
