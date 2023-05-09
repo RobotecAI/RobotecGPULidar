@@ -23,12 +23,7 @@ struct Texture : APIObject<Texture> {
 public:
 	Texture(int textureID) : ID(textureID) {};
 
-	Texture(unsigned int *pixels, int resolution, int id) :
-			pixels(pixels),
-			resolution(resolution, resolution),
-			ID(id) {
-
-	}
+	Texture( uint32_t *pixels, int resolution, int id);
 
 	~Texture() { if (pixels) { delete[] pixels; }}
 
@@ -46,4 +41,7 @@ private:
 	int ID;
 	uint32_t *pixels{nullptr};
 	Vec2i resolution{-1};
+
+	cudaTextureObject_t textureObject;
+	cudaArray_t dPixelArray;
 };
