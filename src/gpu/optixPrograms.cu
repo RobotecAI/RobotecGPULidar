@@ -54,7 +54,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float intensity=0)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -79,7 +79,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr)
 		                        : CUDART_INF_F;
 	}
 	if (ctx.intensity != nullptr) {
-		ctx.intensity[rayIdx] = 100;
+		ctx.intensity[rayIdx] = intensity;
 	}
 	if (ctx.timestamp != nullptr) {
 		ctx.timestamp[rayIdx] = ctx.sceneTime;
@@ -129,7 +129,18 @@ extern "C" __global__ void __closesthit__()
 		optixGetPayload_1(),
 		optixGetPayload_2()
 	});
-	saveRayResult<true>(&hitWorld, &origin);
+
+	float intensity = 0;
+	if (sbtData.tex_coord != nullptr && sbtData.texture != nullptr) {
+		const Vec2f &uvA = sbtData.tex_coord[index.x()];
+		const Vec2f &uvB = sbtData.tex_coord[index.y()];
+		const Vec2f &uvC = sbtData.tex_coord[index.z()];
+		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
+
+		intensity = tex2D<float>(*sbtData.texture, uv[0], uv[1]);
+	}
+
+	saveRayResult<true>(&hitWorld, &origin, intensity);
 }
 
 extern "C" __global__ void __miss__()
