@@ -198,7 +198,7 @@ private:
 	void tape_entity_create(const YAML::Node& yamlNode);
 	void tape_entity_destroy(const YAML::Node& yamlNode);
 	void tape_entity_set_pose(const YAML::Node& yamlNode);
-	void tape_entity_set_texture(const YAML::Node &yamlNode);
+	void tape_entity_set_intensity_texture(const YAML::Node &yamlNode);
 	void tape_scene_set_time(const YAML::Node& yamlNode);
 	void tape_graph_run(const YAML::Node& yamlNode);
 	void tape_graph_destroy(const YAML::Node& yamlNode);

@@ -369,12 +369,12 @@ RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
 
 /**
- * Assign texture to the given entity. The assumption is that the entity can hold only one texture.
+ * Assign intensity texture to the given entity. The assumption is that the entity can hold only one intensity texture.
  * @param entity Entity to modify.
  * @apram texture Texture to assign.
  */
 RGL_API rgl_status_t
-tape_entity_set_texture(rgl_entity_t entity, rgl_texture_t texture);
+tape_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
 
 /******************************* TEXTURE *******************************/
 

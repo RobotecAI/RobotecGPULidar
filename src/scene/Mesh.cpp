@@ -25,12 +25,6 @@ Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size
 	dIndices.copyFromHost(indices, indexCount);
 }
 
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount, const Vec2f *uvs) {
-	dVertices.copyFromHost(vertices, vertexCount);
-	dIndices.copyFromHost(indices, indexCount);
-	dTexCoords->copyFromHost(uvs, vertexCount);
-}
-
 void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount) {
 	if (dVertices.getElemCount() != vertexCount) {
 		auto msg = fmt::format(
@@ -141,10 +135,6 @@ OptixTraversableHandle Mesh::buildGAS() {
 	return gasHandle;
 }
 
-void Mesh::addTexture(std::shared_ptr<Texture> texture) {
-	texture = texture;
-}
+void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount) {
 
-std::shared_ptr<Texture> Mesh::getTexture() const {
-	return texture;
 }

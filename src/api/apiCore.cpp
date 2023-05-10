@@ -311,14 +311,14 @@ void TapePlayer::tape_entity_set_pose(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-tape_entity_set_texture(rgl_entity_t entity, rgl_texture_t texture )
+tape_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture )
 {
 	auto status = rglSafeCall([&](){
 		RGL_API_LOG("rgl_entity_add_texture(entity={}, texture={})", (void *) entity, (void *) texture);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(texture != nullptr);
 		CHECK_ARG(texture->GetID() != INVALID_TEXTURE_ID);
-		Entity::validatePtr(entity)->setTexture(Texture::validatePtr(texture));
+		Entity::validatePtr(entity)->setIntensityTexture(Texture::validatePtr(texture));
 	});
 
 	//TODO mrozikp fixit
@@ -326,7 +326,7 @@ tape_entity_set_texture(rgl_entity_t entity, rgl_texture_t texture )
 	return status;
 }
 
-void TapePlayer::tape_entity_set_texture(const YAML::Node &yamlNode) {
+void TapePlayer::tape_entity_set_intensity_texture(const YAML::Node &yamlNode) {
 	//TODO mrozikp
 	// rgl_mesh_add_texture(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
 	//	tapeTextures.at(yamlNode[1].as<TapeAPIObjectID>()));
