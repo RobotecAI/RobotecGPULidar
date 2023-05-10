@@ -22,13 +22,11 @@ struct Texture : APIObject<Texture> {
 
 public:
 
-
-
-	~Texture() { if (pixels) { delete[] pixels; }}
+	~Texture();
 
 	int GetID() const { return ID; }
 
-	cudaTextureObject_t* GetTextureObject() const { return textureObject; }
+	cudaTextureObject_t* GetTextureObject()  { return &textureObject; }
 
 	Vec2i GetResolution() const { return resolution; }
 
@@ -46,6 +44,6 @@ private:
 	uint32_t *pixels{nullptr};
 	Vec2i resolution{-1};
 
-	cudaTextureObject_t* textureObject;
+	cudaTextureObject_t textureObject;
 	cudaArray_t dPixelArray;
 };

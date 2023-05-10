@@ -191,14 +191,14 @@ private:
 	void tape_configure_logging(const YAML::Node& yamlNode);
 	void tape_cleanup(const YAML::Node& yamlNode);
 	void tape_mesh_create(const YAML::Node& yamlNode);
-	void tape_mesh_with_uv_create(const YAML::Node& yamlNode);
 	void tape_mesh_destroy(const YAML::Node& yamlNode);
 	void tape_mesh_update_vertices(const YAML::Node& yamlNode);
+	void tape_mesh_set_tex_coord(const YAML::Node& yamlNode);
+	void tape_texture_create(const YAML::Node &yamlNode);
 	void tape_entity_create(const YAML::Node& yamlNode);
 	void tape_entity_destroy(const YAML::Node& yamlNode);
 	void tape_entity_set_pose(const YAML::Node& yamlNode);
-	void tape_texture_create(const YAML::Node &yamlNode);
-	void tape_mesh_add_texture(const YAML::Node &yamlNode);
+	void tape_entity_set_texture(const YAML::Node &yamlNode);
 	void tape_scene_set_time(const YAML::Node& yamlNode);
 	void tape_graph_run(const YAML::Node& yamlNode);
 	void tape_graph_destroy(const YAML::Node& yamlNode);

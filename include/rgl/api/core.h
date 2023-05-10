@@ -306,8 +306,8 @@ rgl_mesh_create(rgl_mesh_t *out_mesh,
                 int32_t index_count);
 
 /**
- * Creates mesh from vertex, index and UVs arrays. CW/CCW order does not matter.
- * Provided arrays are copied to the GPU before this function returns.
+ * Assign texture coordinates to given mesh. Pair of texture coordinates is assigned to each index.
+ *
  * @param out_mesh Address to store the resulting mesh handle
  * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
  * @param vertex_count Number of elements in the vertices array
@@ -316,12 +316,9 @@ rgl_mesh_create(rgl_mesh_t *out_mesh,
  * @param uvs An array of rgl_vec2f or binary-compatible data representing mesh uv coordinates
  */
 RGL_API rgl_status_t
-rgl_mesh_with_uv_create(rgl_mesh_t *out_mesh,
-                        const rgl_vec3f *vertices,
-                        int32_t vertex_count,
-                        const rgl_vec3i *indices,
-                        int32_t index_count,
-                        const rgl_vec2f *uvs);
+rgl_mesh_set_tex_coord(rgl_mesh_t mesh,
+                const rgl_vec2f *uvs,
+				int32_t uv_count);
 
 /**
  * Informs that the given mesh will be no longer used.
@@ -342,7 +339,6 @@ RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh,
                          const rgl_vec3f *vertices,
                          int32_t vertex_count);
-
 
 /******************************** ENTITY ********************************/
 
@@ -371,6 +367,30 @@ rgl_entity_destroy(rgl_entity_t entity);
  */
 RGL_API rgl_status_t
 rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
+
+/**
+ * Assign texture to the given entity. The assumption is that the entity can hold only one texture.
+ * @param entity Entity to modify.
+ * @apram texture Texture to assign.
+ */
+RGL_API rgl_status_t
+tape_entity_set_texture(rgl_entity_t entity, rgl_texture_t texture);
+
+/******************************* TEXTURE *******************************/
+
+/**
+ * Creates a Texture.
+ * Texture is a container object which holds device pointer to texture resource..
+ * @param out_entity Handle to the created Texture.
+ * @param pixels Pointer to the texture data.
+ * @param width Width of the texture.
+ * @param height Height of the texture. It is demanded that width == height.
+ * @param ID ID of the texture.
+ */
+RGL_API rgl_status_t
+rgl_texture_create(rgl_texture_t* out_texture, uint32_t* pixels, int width, int height, int ID);
+
+
 
 /******************************** SCENE ********************************/
 

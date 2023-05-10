@@ -168,38 +168,31 @@ void TapePlayer::tape_mesh_create(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_mesh_with_uv_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_count, const rgl_vec3i* indices, int32_t index_count, const rgl_vec2f *uvs)
-{
+rgl_mesh_set_tex_coord(rgl_mesh_t mesh, const rgl_vec2f *uvs, int32_t uv_count) {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_mesh_create(out_mesh={}, vertices={}, indices={}, uvs={})",
-		            (void*) out_mesh, repr(vertices, vertex_count), repr(indices, index_count, 1), repr(uvs, vertex_count));
-		CHECK_ARG(out_mesh != nullptr);
-		CHECK_ARG(vertices != nullptr);
-		CHECK_ARG(vertex_count > 0);
-		CHECK_ARG(indices != nullptr);
-		CHECK_ARG(index_count > 0);
-		CHECK_ARG(uvs != nullptr);
+		RGL_API_LOG("rgl_mesh_set_tex_coord(out_mesh={}, uvs={}, uv_count={})",
+		            (void *) mesh, repr(uvs, uv_count), uv_count);
 
-		*out_mesh = Mesh::create(reinterpret_cast<const Vec3f*>(vertices),
-		                         vertex_count,
-		                         reinterpret_cast<const Vec3i*>(indices),
-		                         index_count,
-								 reinterpret_cast<const Vec2f*>(uvs)).get();
+		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(uvs != nullptr);
+		CHECK_ARG(uv_count != mesh->GetIndexCount());
+
+		mesh->setTexCoords(reinterpret_cast<const Vec2f *>(uvs), uv_count);
+
 	});
-	//TODO mrozikp fixit
-	//TAPE_HOOK(out_mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);
+//TODO mrozikp fixit
+//TAPE_HOOK(out_mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);
 	return status;
 }
 
-void TapePlayer::tape_mesh_with_uv_create(const YAML::Node& yamlNode)
+void TapePlayer::tape_mesh_set_tex_coord(const YAML::Node& yamlNode)
 {
 	rgl_mesh_t mesh = nullptr;
-	rgl_mesh_with_uv_create(&mesh,
-	                reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[1].as<size_t>()),
-	                yamlNode[2].as<int32_t>(),
-	                reinterpret_cast<const rgl_vec3i*>(fileMmap + yamlNode[3].as<size_t>()),
-	                yamlNode[4].as<int32_t>(),
-					reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[4].as<size_t>()));
+	//TODO check this call calmly:
+	rgl_mesh_set_tex_coord(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+		reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
+
 	tapeMeshes.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), mesh));
 }
 
@@ -318,6 +311,28 @@ void TapePlayer::tape_entity_set_pose(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+tape_entity_set_texture(rgl_entity_t entity, rgl_texture_t texture )
+{
+	auto status = rglSafeCall([&](){
+		RGL_API_LOG("rgl_entity_add_texture(entity={}, texture={})", (void *) entity, (void *) texture);
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(texture != nullptr);
+		CHECK_ARG(texture->GetID() != INVALID_TEXTURE_ID);
+		Entity::validatePtr(entity)->setTexture(Texture::validatePtr(texture));
+	});
+
+	//TODO mrozikp fixit
+	// TAPE_HOOK(mesh, texture);
+	return status;
+}
+
+void TapePlayer::tape_entity_set_texture(const YAML::Node &yamlNode) {
+	//TODO mrozikp
+	// rgl_mesh_add_texture(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	//	tapeTextures.at(yamlNode[1].as<TapeAPIObjectID>()));
+}
+
+RGL_API rgl_status_t
 rgl_texture_create(rgl_texture_t* out_texture, uint32_t* pixels, int width, int height, int ID)
 {
 	auto status = rglSafeCall([&]() {
@@ -337,29 +352,6 @@ rgl_texture_create(rgl_texture_t* out_texture, uint32_t* pixels, int width, int 
 void TapePlayer::tape_texture_create(const YAML::Node& yamlNode)
 {
 	//TODO mrozikp
-}
-
-
-RGL_API rgl_status_t
-rgl_mesh_add_texture(rgl_mesh_t mesh, rgl_texture_t texture)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_mesh_add_texture(mesh={}, texture={})", (void *) mesh, (void *) texture);
-		CHECK_ARG(mesh != nullptr);
-		CHECK_ARG(texture != nullptr);
-		CHECK_ARG(texture->GetID() != INVALID_TEXTURE_ID);
-		Mesh::validatePtr(mesh)->addTexture(Texture::validatePtr(texture));
-	});
-	//TODO mrozikp fixit
-	// TAPE_HOOK(mesh, texture);
-	return status;
-}
-
-void TapePlayer::tape_mesh_add_texture(const YAML::Node& yamlNode)
-{
-	//TODO mrozikp
-	// rgl_mesh_add_texture(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
-	//	tapeTextures.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
 RGL_API rgl_status_t

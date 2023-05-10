@@ -32,17 +32,14 @@
 struct Mesh : APIObject<Mesh>
 {
 	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
-	void addTexture(std::shared_ptr<Texture> texture);
 	OptixTraversableHandle getGAS();
-	std::shared_ptr<Texture> getTexture() const;
+	int32_t GetIndexCount() const { return dIndices.getElemCount(); }
+
+	void setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount);
 
 private:
 	Mesh(const Vec3f *vertices, std::size_t vertexCount,
 		 const Vec3i *indices, std::size_t indexCount);
-
-	Mesh(const Vec3f *vertices, std::size_t vertexCount,
-	     const Vec3i *indices, std::size_t indexCount, const Vec2f *uvs);
-
 
 	OptixTraversableHandle buildGAS();
 	void updateGAS();
@@ -62,7 +59,4 @@ private:
 	CUdeviceptr vertexBuffers[1];
 	unsigned triangleInputFlags;
 	OptixAccelBuildOptions buildOptions;
-
-	std::shared_ptr<Texture> texture = nullptr;
-
 };
