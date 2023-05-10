@@ -84,7 +84,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		hr->data = TriangleMeshSBTData{
 			.vertex = mesh->dVertices.readDevice(),
 			.index = mesh->dIndices.readDevice(),
-			.texcoord = mesh->dTexcoords.has_value() ? mesh->dTexcoords.value().readDevice() : nullptr,
+			.tex_coord = mesh->dTexCoords.has_value() ? mesh->dTexCoords.value().readDevice() : nullptr,
 			.vertex_count = mesh->dVertices.getElemCount(),
 			.index_count = mesh->dIndices.getElemCount(),
 			.texture = (mesh->getTexture() != nullptr) ? (mesh->getTexture()->GetTextureObject()) : nullptr

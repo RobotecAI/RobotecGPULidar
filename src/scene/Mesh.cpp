@@ -28,7 +28,7 @@ Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size
 Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount, const Vec2f *uvs) {
 	dVertices.copyFromHost(vertices, vertexCount);
 	dIndices.copyFromHost(indices, indexCount);
-	dUVs->copyFromHost(uvs, vertexCount);
+	dTexCoords->copyFromHost(uvs, vertexCount);
 }
 
 void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount) {

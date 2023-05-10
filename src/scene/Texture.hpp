@@ -21,9 +21,8 @@
 struct Texture : APIObject<Texture> {
 
 public:
-	Texture(int textureID) : ID(textureID) {};
 
-	Texture( uint32_t *pixels, int resolution, int id);
+
 
 	~Texture() { if (pixels) { delete[] pixels; }}
 
@@ -34,6 +33,9 @@ public:
 	Vec2i GetResolution() const { return resolution; }
 
 	uint32_t *GetPixels() const { return pixels; }
+
+private:
+	Texture( uint32_t *pixels, int resolution, int id);
 
 	Texture(const Texture &) = delete; // non construction-copyable
 	Texture &operator=(const Texture &) = delete; // non copyable

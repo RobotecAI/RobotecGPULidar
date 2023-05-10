@@ -133,6 +133,7 @@ void TapePlayer::tape_cleanup(const YAML::Node& yamlNode)
 	tapeMeshes.clear();
 	tapeEntities.clear();
 	tapeNodes.clear();
+	//TODO textures
 }
 
 RGL_API rgl_status_t
@@ -186,7 +187,7 @@ rgl_mesh_with_uv_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t
 								 reinterpret_cast<const Vec2f*>(uvs)).get();
 	});
 	//TODO mrozikp fixit
-	TAPE_HOOK(out_mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);
+	//TAPE_HOOK(out_mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);
 	return status;
 }
 
