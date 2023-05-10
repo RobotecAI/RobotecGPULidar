@@ -137,4 +137,13 @@ OptixTraversableHandle Mesh::buildGAS() {
 
 void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount) {
 
+	if (texCoordCount != dIndices.getElemCount()) {
+		auto msg = fmt::format(
+				"Invalid argument: cannot set texture coordinates because indices counts do not match: old={}, new={}",
+				dIndices.getElemCount(), texCoordCount);
+		throw std::invalid_argument(msg);
+	}
+
+	dTexCoords->copyFromHost(texCoords, texCoordCount);
+	gasNeedsUpdate = true;
 }
