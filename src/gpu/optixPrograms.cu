@@ -132,7 +132,7 @@ extern "C" __global__ void __closesthit__()
 	});
 
 	float intensity = 0;
-	if (sbtData.tex_coord != nullptr && sbtData.texture!=0)
+	if (sbtData.tex_coord != nullptr && sbtData.texture !=0 )
 	{
 
 		assert(index.x() < sbtData.tex_coord_count);
