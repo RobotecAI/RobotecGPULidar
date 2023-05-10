@@ -317,8 +317,8 @@ rgl_mesh_create(rgl_mesh_t *out_mesh,
  */
 RGL_API rgl_status_t
 rgl_mesh_set_tex_coord(rgl_mesh_t mesh,
-                const rgl_vec2f *uvs,
-				int32_t uv_count);
+                       const rgl_vec2f *uvs,
+                       int32_t uv_count);
 
 /**
  * Informs that the given mesh will be no longer used.

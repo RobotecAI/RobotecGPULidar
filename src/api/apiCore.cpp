@@ -116,6 +116,7 @@ rgl_cleanup(void)
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Entity::instances.clear();
 		Mesh::instances.clear();
+		Texture::instances.clear();
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
 			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
@@ -133,7 +134,6 @@ void TapePlayer::tape_cleanup(const YAML::Node& yamlNode)
 	tapeMeshes.clear();
 	tapeEntities.clear();
 	tapeNodes.clear();
-	//TODO textures
 }
 
 RGL_API rgl_status_t
@@ -175,7 +175,7 @@ rgl_mesh_set_tex_coord(rgl_mesh_t mesh, const rgl_vec2f *uvs, int32_t uv_count) 
 
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(uvs != nullptr);
-		CHECK_ARG(uv_count != mesh->GetIndexCount());
+		CHECK_ARG(uv_count != mesh->getIndexCount());
 
 		mesh->setTexCoords(reinterpret_cast<const Vec2f *>(uvs), uv_count);
 

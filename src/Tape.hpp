@@ -120,6 +120,9 @@ class TapeRecorder
 	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
 
+	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
+
 	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
 
@@ -179,6 +182,7 @@ private:
 
 	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> tapeMeshes;
 	std::unordered_map<TapeAPIObjectID, rgl_entity_t> tapeEntities;
+	std::unordered_map<TapeAPIObjectID, rgl_texture_t> tapeTextures;
 	std::unordered_map<TapeAPIObjectID, rgl_node_t> tapeNodes;
 
 	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions;
