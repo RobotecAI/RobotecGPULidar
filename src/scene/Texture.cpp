@@ -5,6 +5,8 @@
 #include "Texture.hpp"
 #include "../macros/cuda.hpp"
 
+API_OBJECT_INSTANCE(Texture);
+
 Texture::Texture( uint32_t *pixels, int resolution, int id) :
 		pixels(pixels),
 		resolution(resolution, resolution),
