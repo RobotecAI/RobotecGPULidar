@@ -20,7 +20,7 @@
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
-#include <scene/Texture.hpp>
+#include "scene/Texture/Texture.hpp"
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
@@ -333,16 +333,16 @@ void TapePlayer::tape_entity_set_intensity_texture(const YAML::Node &yamlNode) {
 }
 
 RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, uint32_t* pixels, int width, int height, int ID)
+rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_type type, int width, int height, int ID)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_texture_create(out_texture={}, size={})", (void*) out_texture, width);
 		CHECK_ARG(out_texture != nullptr);
-		CHECK_ARG(pixels != nullptr);
+		CHECK_ARG(texels != nullptr);
 		CHECK_ARG(width != height);
 		CHECK_ARG(ID != INVALID_TEXTURE_ID);
 
-		*out_texture = Texture::create(pixels, width, ID).get();
+		*out_texture = Texture::create(texels, type, width, ID).get();
 	});
 	//TODO create proper tape hook mrozikp
 	//TAPE_HOOK(out_texture, TAPE_ARRAY(vertices, vertex_count), vertex_count, TAPE_ARRAY(indices, index_count), index_count);

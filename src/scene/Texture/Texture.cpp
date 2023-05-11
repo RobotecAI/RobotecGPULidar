@@ -3,14 +3,14 @@
 #include <cuda_runtime.h>
 #include <cstdint>
 #include "Texture.hpp"
-#include "../macros/cuda.hpp"
+#include "macros/cuda.hpp"
 
 API_OBJECT_INSTANCE(Texture);
 
-Texture::Texture( uint32_t *pixels, int resolution, int id) :
-		pixels(pixels),
+Texture::Texture(void *texels, rgl_texture_format type, int resolution, int id) :
 		resolution(resolution, resolution),
-		ID(id) {
+		ID(id)
+		{
 
 	cudaResourceDesc res_desc = {};
 	cudaChannelFormatDesc channel_desc;
@@ -18,7 +18,7 @@ Texture::Texture( uint32_t *pixels, int resolution, int id) :
 	int32_t width = resolution;
 	int32_t height = resolution;
 	int32_t numComponents = 1;
-	int32_t pitch = width*numComponents*sizeof(uint8_t);
+	int32_t pitch = width * numComponents * sizeof(uint8_t);
 
 	channel_desc = cudaCreateChannelDesc<uchar1>();
 
@@ -30,10 +30,10 @@ Texture::Texture( uint32_t *pixels, int resolution, int id) :
 
 	CHECK_CUDA(cudaMemcpy2DToArray(
 			dPixelArray,
-			   0,0,
-			   pixels,
-			   pitch,pitch,height,
-			   cudaMemcpyHostToDevice));
+			0, 0,
+			texels,
+			pitch, pitch, height,
+			cudaMemcpyHostToDevice));
 
 	res_desc.resType = cudaResourceTypeArray;
 	res_desc.res.array.array = dPixelArray;
@@ -55,10 +55,11 @@ Texture::Texture( uint32_t *pixels, int resolution, int id) :
 	CHECK_CUDA(cudaCreateTextureObject(&textureObject, &res_desc, &tex_desc, nullptr));
 }
 
-Texture::~Texture()
-{
+Texture::~Texture() {
 	CHECK_CUDA(cudaDestroyTextureObject(textureObject));
 	CHECK_CUDA(cudaFreeArray(dPixelArray));
 
 }
+
+
 

@@ -244,6 +244,12 @@ typedef enum
 	RGL_AXIS_Z = 3,
 } rgl_axis_t;
 
+typedef enum
+{
+	RGL_TEXTURE_TYPE_INT,
+	RGL_TEXTURE_TYPE_FLOAT
+} rgl_texture_format;
+
 /******************************** GENERAL ********************************/
 
 /**
@@ -382,15 +388,14 @@ tape_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
  * Creates a Texture.
  * Texture is a container object which holds device pointer to texture resource..
  * @param out_entity Handle to the created Texture.
- * @param pixels Pointer to the texture data.
+ * @param texels Pointer to the texture data.
+ * @param type Type of the texture. Defines size of the texel.
  * @param width Width of the texture.
  * @param height Height of the texture. It is demanded that width == height.
  * @param ID ID of the texture.
  */
 RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, uint32_t* pixels, int width, int height, int ID);
-
-
+rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format type, int width, int height, int ID);
 
 /******************************** SCENE ********************************/
 

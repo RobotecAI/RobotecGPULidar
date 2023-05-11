@@ -13,8 +13,10 @@
 // limitations under the License.
 #pragma once
 
-#include <APIObject.hpp>
-#include <math/Vector.hpp>
+#include "APIObject.hpp"
+#include "math/Vector.hpp"
+#include "rgl/api/core.h"
+#include "TextureData.hpp"
 
 #define INVALID_TEXTURE_ID -1
 
@@ -26,14 +28,14 @@ public:
 
 	int GetID() const { return ID; }
 
-	cudaTextureObject_t* GetTextureObject()  { return &textureObject; }
+
 
 	Vec2i GetResolution() const { return resolution; }
 
-	uint32_t *GetPixels() const { return pixels; }
 
 private:
-	Texture( uint32_t *pixels, int resolution, int id);
+	// TODO (prybicki) Should I pollute internal class with api enum?
+	Texture( void* texels, rgl_texture_format type,  int resolution, int id);
 
 	Texture(const Texture &) = delete; // non construction-copyable
 	Texture &operator=(const Texture &) = delete; // non copyable
@@ -41,9 +43,9 @@ private:
 private:
 	friend APIObject<Texture>;
 	int ID;
-	uint32_t *pixels{nullptr};
 	Vec2i resolution{-1};
 
-	cudaTextureObject_t textureObject;
-	cudaArray_t dPixelArray;
+	std::shared_ptr<TextureData> data;
+
+
 };

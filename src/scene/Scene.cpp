@@ -14,7 +14,7 @@
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
-#include <scene/Texture.hpp>
+#include "scene/Texture/Texture.hpp"
 
 API_OBJECT_INSTANCE(Scene);
 
