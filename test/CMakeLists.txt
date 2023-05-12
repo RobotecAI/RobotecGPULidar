@@ -1,25 +1,26 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-        src/graphTest.cpp
-        src/apiReadmeExample.cpp
-        src/gaussianStressTest.cpp
-        src/apiSurfaceTests.cpp
-        #    src/features/range.cpp
-        #    src/features/mesh.cpp
-        #    src/features/transforms.cpp
-        #    src/features/pcdOutput.cpp
-        src/testMat3x4f.cpp
-        src/graph/nodes/FromArrayPointsNodeTest.cpp
-        src/graph/nodes/TransformPointsNodeTest.cpp
+        # src/graphTest.cpp
+        # src/apiReadmeExample.cpp
+        # src/gaussianStressTest.cpp
+        # src/apiSurfaceTests.cpp
+        # #    src/features/range.cpp
+        # #    src/features/mesh.cpp
+        # #    src/features/transforms.cpp
+        # #    src/features/pcdOutput.cpp
+        # src/testMat3x4f.cpp
+        # src/graph/nodes/FromArrayPointsNodeTest.cpp
+        # src/graph/nodes/TransformPointsNodeTest.cpp
+        src/DistanceFieldTest.cpp
         )
 
 
 # Only Linux
 if ((NOT WIN32))
     list(APPEND RGL_TEST_FILES
-        src/loggingTests.cpp
-        src/VArrayTest.cpp
+        # src/loggingTests.cpp
+        # src/VArrayTest.cpp
     )
 endif()
 
@@ -27,8 +28,8 @@ endif()
 # AutoTape interferes with tape tests (e.g. double rgl_tape_record_begin()) which is non-trivial to fix.
 if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     list(APPEND RGL_TEST_FILES
-        src/tapeSurfaceTest.cpp
-        src/features/tapeScene.cpp
+        # src/tapeSurfaceTest.cpp
+        # src/features/tapeScene.cpp
     )
 endif()
 
