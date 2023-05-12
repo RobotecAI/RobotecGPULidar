@@ -28,6 +28,7 @@ public:
 
 	int GetID() const { return ID; }
 
+	std::shared_ptr<TextureData> GetData() const { return data; }
 
 
 	Vec2i GetResolution() const { return resolution; }
@@ -35,7 +36,7 @@ public:
 
 private:
 	// TODO (prybicki) Should I pollute internal class with api enum?
-	Texture( void* texels, rgl_texture_format type,  int resolution, int id);
+	Texture( void* texels, rgl_texture_format format,  int resolution, int id);
 
 	Texture(const Texture &) = delete; // non construction-copyable
 	Texture &operator=(const Texture &) = delete; // non copyable
@@ -44,6 +45,7 @@ private:
 	friend APIObject<Texture>;
 	int ID;
 	Vec2i resolution{-1};
+	rgl_texture_format format;
 
 	std::shared_ptr<TextureData> data;
 

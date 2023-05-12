@@ -1,19 +1,20 @@
 
-
-
 #include <texture_types.h>
+#include "../../RGLTextureFormats"
+
 
 struct TextureData {
 public:
 
 
-	TextureData();
+	TextureData(void *data, rgl_texture_format format, int resolution);
 
-	cudaTextureObject_t* GetTextureObject()  { return &textureObject; }
+	~TextureData();
+
+	cudaTextureObject_t *GetTextureObject() { return &textureObject; }
 
 
 private:
-	void* data{nullptr};
 	cudaTextureObject_t textureObject;
 	cudaArray_t dPixelArray;
 

@@ -333,7 +333,7 @@ void TapePlayer::tape_entity_set_intensity_texture(const YAML::Node &yamlNode) {
 }
 
 RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_type type, int width, int height, int ID)
+rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format type, int width, int height, int ID)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_texture_create(out_texture={}, size={})", (void*) out_texture, width);
