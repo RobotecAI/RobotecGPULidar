@@ -5,20 +5,23 @@
 class TextureTest : public RGLTest {
 
 protected:
-	uint32_t* generateTexture(int size)
+	template <typename T>
+		static T* generateTexture(int size)
 		{
-			uint32_t* pixels = new uint32_t[size * size];
+			T* texels = new T[size * size];
 			for (int i = 0; i < size * size; i++) {
-				pixels[i] = 0xffffffff;
+				texels[i] = 0.1f;
 			}
-			return pixels;
+			return texels;
 		}
 };
 
 TEST_F(TextureTest, rgl_texture_create)
 {
-	auto textureData = generateTexture(256);
-	//rgl_texture_create(&textureData, 256, 256);
+	rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true);
+	auto textureRawData = generateTexture<float>(256);
+	rgl_texture_t texture;
 
-
+	auto temp = textureRawData[0];
+	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture,textureRawData, RGL_TEXTURE_TYPE_FLOAT,  256, 256, 1));
 }

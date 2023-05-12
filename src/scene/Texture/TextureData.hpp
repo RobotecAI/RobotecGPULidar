@@ -15,6 +15,9 @@ public:
 
 
 private:
+
+	cudaChannelFormatDesc CreateChannelDescriptor(rgl_texture_format format);
+
 	cudaTextureObject_t textureObject;
 	cudaArray_t dPixelArray;
 

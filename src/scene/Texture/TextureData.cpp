@@ -4,23 +4,21 @@
 #include "macros/cuda.hpp"
 #include <cuda_runtime.h>
 
-TextureData::TextureData(void *data, rgl_texture_format format, int resolution)
-{
+TextureData::TextureData(void *data, rgl_texture_format format, int resolution) {
 	cudaResourceDesc res_desc = {};
-	cudaChannelFormatDesc channel_desc;
 
 	int32_t width = resolution;
 	int32_t height = resolution;
 	int32_t numComponents = 1;
-	int32_t pitch = width * numComponents * getFormatSize(format);
 
-	channel_desc = cudaCreateChannelDesc<uchar1>();
+	cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);
+
+	int32_t pitch = width * numComponents * getFormatSize(format);
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?
 	// Current copyFromHost and ensureDeviceCanFit are not working with cudaArray_t
 	CHECK_CUDA(cudaMallocArray(&dPixelArray, &channel_desc, width, height));
-
 
 	CHECK_CUDA(cudaMemcpy2DToArray(
 			dPixelArray,
@@ -50,8 +48,20 @@ TextureData::TextureData(void *data, rgl_texture_format format, int resolution)
 
 }
 
-TextureData::~TextureData()
-{
+TextureData::~TextureData() {
 	CHECK_CUDA(cudaDestroyTextureObject(textureObject));
 	CHECK_CUDA(cudaFreeArray(dPixelArray));
+}
+
+cudaChannelFormatDesc TextureData::CreateChannelDescriptor(rgl_texture_format format) {
+	cudaChannelFormatDesc channel_desc;
+
+	switch (format) {
+
+		case RGL_TEXTURE_TYPE_INT:
+			return cudaCreateChannelDesc<int1>();
+		case RGL_TEXTURE_TYPE_FLOAT:
+			return cudaCreateChannelDesc<float1>();
+	}
+
 }

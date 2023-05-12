@@ -339,7 +339,7 @@ rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format 
 		RGL_API_LOG("rgl_texture_create(out_texture={}, size={})", (void*) out_texture, width);
 		CHECK_ARG(out_texture != nullptr);
 		CHECK_ARG(texels != nullptr);
-		CHECK_ARG(width != height);
+		CHECK_ARG(width == height);
 		CHECK_ARG(ID != INVALID_TEXTURE_ID);
 
 		*out_texture = Texture::create(texels, type, width, ID).get();

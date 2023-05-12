@@ -1,6 +1,3 @@
-
-
-
 #include <stdexcept>
 #include "rgl/api/core.h"
 #include "spdlog/fmt/bundled/format.h"
