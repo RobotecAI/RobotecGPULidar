@@ -117,6 +117,7 @@ extern "C" __global__ void __closesthit__()
 	assert(index.x() < sbtData.vertex_count);
 	assert(index.y() < sbtData.vertex_count);
 	assert(index.z() < sbtData.vertex_count);
+
 	const Vec3f& A = sbtData.vertex[index.x()];
 	const Vec3f& B = sbtData.vertex[index.y()];
 	const Vec3f& C = sbtData.vertex[index.z()];
@@ -131,13 +132,21 @@ extern "C" __global__ void __closesthit__()
 	});
 
 	float intensity = 0;
-	if (sbtData.tex_coord != nullptr && sbtData.texture != nullptr) {
+	if (sbtData.tex_coord != nullptr && sbtData.texture != nullptr)
+	{
+		assert(index.x() < sbtData.tex_coord_count);
+		assert(index.y() < sbtData.tex_coord_count);
+		assert(index.z() < sbtData.tex_coord_count);
+
 		const Vec2f &uvA = sbtData.tex_coord[index.x()];
 		const Vec2f &uvB = sbtData.tex_coord[index.y()];
 		const Vec2f &uvC = sbtData.tex_coord[index.z()];
-		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		intensity = tex2D<float>(*sbtData.texture, uv[0], uv[1]);
+		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
+		int iu = (int)(uv[0] * sbtData.texture_width) % sbtData.texture_width;
+		int iv = (int)(uv[1] * sbtData.texture_height) % sbtData.texture_height;
+
+		intensity = tex2D<float>(*sbtData.texture, iu, iv);
 	}
 
 	saveRayResult<true>(&hitWorld, &origin, intensity);
