@@ -11,7 +11,8 @@ TextureData::TextureData(void *data, rgl_texture_format format, int resolution) 
 	int32_t height = resolution;
 	int32_t numComponents = 1;
 
-	cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);
+	//cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);
+	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float1>();
 
 	int32_t pitch = width * numComponents * getFormatSize(format);
 
@@ -35,7 +36,7 @@ TextureData::TextureData(void *data, rgl_texture_format format, int resolution) 
 	tex_desc.addressMode[0] = cudaAddressModeWrap;
 	tex_desc.addressMode[1] = cudaAddressModeWrap;
 	tex_desc.filterMode = cudaFilterModeLinear;
-	tex_desc.readMode = cudaReadModeNormalizedFloat;
+	tex_desc.readMode = cudaReadModeElementType;
 	tex_desc.normalizedCoords = 1;
 	tex_desc.maxAnisotropy = 1;
 	tex_desc.maxMipmapLevelClamp = 99;
