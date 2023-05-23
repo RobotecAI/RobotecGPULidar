@@ -7,8 +7,8 @@
 
 API_OBJECT_INSTANCE(Texture);
 
-Texture::Texture(void *texels, rgl_texture_format format, int resolution, int id) :
-		resolution(resolution, resolution),
+Texture::Texture(void *texels, rgl_texture_format format, int width, int height, int id) :
+		resolution(width, height),
 		ID(id),
 		format(format) {
 

@@ -46,6 +46,8 @@ OptixInstance Entity::getIAS(int idx)
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 {
 	intensityTexture = std::move(texture);
+	auto scenePtr = scene.lock();
+	scenePtr->requestSBTRebuild();
 }
 
 std::shared_ptr<Texture> Entity::getIntensityTexture() const {

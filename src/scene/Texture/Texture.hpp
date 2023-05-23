@@ -32,11 +32,13 @@ public:
 
 
 	Vec2i GetResolution() const { return resolution; }
+	int GetWidth() const { return resolution.x(); }
+	int GetHeight() const { return resolution.y(); }
 
 
 private:
 	// TODO (prybicki) Should I pollute internal class with api enum?
-	Texture( void* texels, rgl_texture_format format,  int resolution, int id);
+	Texture( void* texels, rgl_texture_format format,  int width, int height, int id);
 
 	Texture(const Texture &) = delete; // non construction-copyable
 	Texture &operator=(const Texture &) = delete; // non copyable

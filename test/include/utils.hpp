@@ -38,7 +38,7 @@ constexpr float EPSILON_F = 1e-6f;
 constexpr int maxGPUCoresTestCount = 20000;
 
 static rgl_mat3x4f identityTestTransform = Mat3x4f::identity().toRGL();
-static rgl_mat3x4f translationTestTransform = Mat3x4f::translation(1, 2, 3).toRGL();
+static rgl_mat3x4f translationTestTransform = Mat3x4f::translation(2, 3, 4).toRGL();
 static rgl_mat3x4f rotationTestTransform = Mat3x4f::rotation(10, 30, 45).toRGL();
 static rgl_mat3x4f scalingTestTransform = Mat3x4f::scale(1, 2, 3).toRGL();
 static rgl_mat3x4f complexTestTransform = Mat3x4f::TRS(Vec3f(1, 2, 3), Vec3f(10, 30, 45)).toRGL();

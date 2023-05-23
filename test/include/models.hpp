@@ -22,6 +22,19 @@ static rgl_vec3f cubeVerticesX2[] = {
 	{-2, 2, 2}
 };
 
+static rgl_vec2f cubeUVs[] = {
+
+		//Front
+		{0.0f, 0.0f},
+		{1.0f, 0.0f},
+		{1.0f, 1.0f},
+		{0.0f, 1.0f},
+		{0.0f, 0.0f},
+		{1.0f, 0.0f},
+		{1.0f, 1.0f},
+		{0.0f, 1.0f},
+};
+
 static rgl_vec3i cubeIndices[] = {
 	{0, 1, 3},
 	{3, 1, 2},
@@ -34,7 +47,7 @@ static rgl_vec3i cubeIndices[] = {
 	{3, 2, 7},
 	{7, 2, 6},
 	{4, 5, 0},
-	{0, 5, 1},
+	{0, 5, 1}
 };
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(*array))

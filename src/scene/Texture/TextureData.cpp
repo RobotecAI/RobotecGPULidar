@@ -4,11 +4,11 @@
 #include "macros/cuda.hpp"
 #include <cuda_runtime.h>
 
-TextureData::TextureData(void *data, rgl_texture_format format, int resolution) {
+TextureData::TextureData(void *data, rgl_texture_format format, Vec2i  resolution) {
 	cudaResourceDesc res_desc = {};
 
-	int32_t width = resolution;
-	int32_t height = resolution;
+	int32_t width = resolution.x();
+	int32_t height = resolution.y();
 	int32_t numComponents = 1;
 
 	//cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);

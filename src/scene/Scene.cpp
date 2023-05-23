@@ -87,8 +87,24 @@ OptixShaderBindingTable Scene::buildSBT()
 			.tex_coord = mesh->dTexCoords.has_value() ? mesh->dTexCoords.value().readDevice() : nullptr,
 			.vertex_count = mesh->dVertices.getElemCount(),
 			.index_count = mesh->dIndices.getElemCount(),
-			.texture = (entity->getIntensityTexture() != nullptr) ? (entity->getIntensityTexture()->GetData()->GetTextureObject()) : nullptr
+			.tex_coord_count = (mesh->dTexCoords.has_value()) ? (mesh->dTexCoords.value().getElemCount()) : 0,
+			.texture_width = static_cast<size_t>((entity->getIntensityTexture() != nullptr) ? (entity->getIntensityTexture()->GetWidth()) : 0),
+			.texture_height = static_cast<size_t>((entity->getIntensityTexture() != nullptr) ? (entity->getIntensityTexture()->GetHeight()) : 0),
+
 		};
+		if(entity->getIntensityTexture() != nullptr)
+		{
+			hr->data.texture = entity->getIntensityTexture()->GetData()->GetTextureObject();
+			hr->data.texture_width = entity->getIntensityTexture()->GetWidth();
+			hr->data.texture_height = entity->getIntensityTexture()->GetHeight();
+		}
+		else
+		{
+			hr->data.texture = 0;
+			hr->data.texture_width = -1;
+			hr->data.texture_height = -1;
+		}
+
 	}
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);
 

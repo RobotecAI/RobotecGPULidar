@@ -11,7 +11,7 @@ struct TriangleMeshSBTData {
 	size_t index_count;
 	size_t tex_coord_count;
 
-	cudaTextureObject_t* texture;
+	cudaTextureObject_t texture;
 
 	size_t texture_width;
 	size_t texture_height;
