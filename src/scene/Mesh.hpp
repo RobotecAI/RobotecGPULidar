@@ -33,7 +33,7 @@ struct Mesh : APIObject<Mesh>
 {
 	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
 	OptixTraversableHandle getGAS();
-	int32_t getVertexCount() const { return dVertices.getElemCount(); }
+	int getVertexCount() const { return dVertices.getElemCount(); }
 
 	void setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount);
 

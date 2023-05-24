@@ -20,12 +20,14 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount) {
+Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
+{
 	dVertices.copyFromHost(vertices, vertexCount);
 	dIndices.copyFromHost(indices, indexCount);
 }
 
-void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount) {
+void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
+{
 	if (dVertices.getElemCount() != vertexCount) {
 		auto msg = fmt::format(
 				"Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
@@ -36,7 +38,8 @@ void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount) {
 	gasNeedsUpdate = true;
 }
 
-OptixTraversableHandle Mesh::getGAS() {
+OptixTraversableHandle Mesh::getGAS()
+{
 	if (!cachedGAS.has_value()) {
 		cachedGAS = buildGAS();
 	}
@@ -46,7 +49,8 @@ OptixTraversableHandle Mesh::getGAS() {
 	return *cachedGAS;
 }
 
-void Mesh::updateGAS() {
+void Mesh::updateGAS()
+{
 	OptixAccelBuildOptions updateOptions = buildOptions;
 	updateOptions.operation = OPTIX_BUILD_OPERATION_UPDATE;
 
@@ -76,7 +80,8 @@ void Mesh::updateGAS() {
 	gasNeedsUpdate = false;
 }
 
-OptixTraversableHandle Mesh::buildGAS() {
+OptixTraversableHandle Mesh::buildGAS()
+{
 	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 	vertexBuffers[0] = dVertices.readDeviceRaw();
 
@@ -135,11 +140,11 @@ OptixTraversableHandle Mesh::buildGAS() {
 	return gasHandle;
 }
 
-void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount) {
-
+void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
+{
 	if (texCoordCount != dVertices.getElemCount()) {
 		auto msg = fmt::format(
-				"Invalid argument: cannot set texture coordinates because vertex counts do not match: old={}, new={}",
+				"Invalid argument: cannot set texture coordinates because vertex count do not match with UVs count: vertices={}, UVs={}",
 				dVertices.getElemCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}

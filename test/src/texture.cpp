@@ -14,19 +14,19 @@ protected:
 	template<typename T>
 	static T *generateTexture(int width, int height)
 	{
-		auto size = width * height;
+		// Generate a sample texture with a grid pattern 16x16.
 		int xGridSize=width/16;
 		int yGridSize=height/16;
 		int xStep=0;
 		int yStep=0;
 
-		T *texels = new T[size];
+		T *texels = new T[width * height];
 
 		for (int i = 0; i < width; ++i)
 		{
 			for (int j = 0; j < height; ++j)
 			{
-				texels[i*width + j] = yStep/2 + xStep/2;
+				texels[i*width + j] = yStep * 0.5f + xStep * 0.5f;
 				if(j % yGridSize == 0)
 					yStep += yGridSize;
 			}

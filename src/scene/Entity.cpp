@@ -50,6 +50,7 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	scenePtr->requestSBTRebuild();
 }
 
-std::shared_ptr<Texture> Entity::getIntensityTexture() const {
+std::shared_ptr<Texture> Entity::getIntensityTexture() const
+{
 	return intensityTexture;
 }

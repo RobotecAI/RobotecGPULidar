@@ -61,7 +61,6 @@ typedef struct
 	float value[3];
 } rgl_vec3f;
 
-
 #ifndef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
 #endif
@@ -96,8 +95,8 @@ typedef struct Mesh *rgl_mesh_t;
 typedef struct Entity *rgl_entity_t;
 
 /**
- * Represents on-GPU texture that can be referenced by meshes on the scene.
- * Each texture can be referenced by any number of meshes on different scenes.
+ * Represents on-GPU texture that can be referenced by Entities on the scene.
+ * Each texture can be referenced by any number of Entities on different scenes.
  */
 typedef struct Texture *rgl_texture_t;
 
@@ -244,10 +243,10 @@ typedef enum
 	RGL_AXIS_Z = 3,
 } rgl_axis_t;
 
-typedef enum
+typedef enum : int
 {
-	RGL_TEXTURE_TYPE_INT,
-	RGL_TEXTURE_TYPE_FLOAT
+	RGL_TEXTURE_TYPE_INT = 1,
+	RGL_TEXTURE_TYPE_FLOAT = 2
 } rgl_texture_format;
 
 /******************************** GENERAL ********************************/
@@ -312,14 +311,11 @@ rgl_mesh_create(rgl_mesh_t *out_mesh,
                 int32_t index_count);
 
 /**
- * Assign texture coordinates to given mesh. Pair of texture coordinates is assigned to each index.
+ * Assign texture coordinates to given mesh. Pair of texture coordinates is assigned to each vertex.
  *
  * @param out_mesh Address to store the resulting mesh handle
- * @param vertices An array of rgl_vec3f or binary-compatible data representing mesh vertices
- * @param vertex_count Number of elements in the vertices array
- * @param indices An array of rgl_vec3i or binary-compatible data representing mesh indices
- * @param index_count Number of elements in the indices array
  * @param uvs An array of rgl_vec2f or binary-compatible data representing mesh uv coordinates
+ * @param vertex_count Number of elements in the vertices array. Has to be equal to vertex buffer size.
  */
 RGL_API rgl_status_t
 rgl_mesh_set_tex_coord(rgl_mesh_t mesh,
@@ -386,16 +382,16 @@ tape_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
 
 /**
  * Creates a Texture.
- * Texture is a container object which holds device pointer to texture resource..
+ * Texture is a container object which holds device pointer to texture resource.
  * @param out_entity Handle to the created Texture.
  * @param texels Pointer to the texture data.
- * @param type Type of the texture. Defines size of the texel.
- * @param width Width of the texture.
- * @param height Height of the texture. It is demanded that width == height.
+ * @param format Type of the texture. Defines size of the texel.
+ * @param width Width of the texture. Has to be positive.
+ * @param height Height of the texture. It is not demanded that width == height. Has to be positive.
  * @param ID ID of the texture.
  */
 RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format type, int width, int height, int ID);
+rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format format, int width, int height, int ID);
 
 /******************************** SCENE ********************************/
 

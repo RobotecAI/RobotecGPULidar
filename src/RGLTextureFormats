@@ -6,11 +6,11 @@ template<rgl_texture_format>
 struct Format {};
 
 #define FORMAT(NAME, TYPE)                             \
-template<>                                            \
+template<>                                             \
 struct Format<NAME>                                    \
-{                                                     \
-	using type = TYPE;                                \
-	static constexpr std::size_t size = sizeof(TYPE); \
+{                                                      \
+	using type = TYPE;                                 \
+	static constexpr std::size_t size = sizeof(TYPE);  \
 }
 
 FORMAT(RGL_TEXTURE_TYPE_INT, int);

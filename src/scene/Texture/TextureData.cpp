@@ -11,8 +11,7 @@ TextureData::TextureData(void *data, rgl_texture_format format, Vec2i  resolutio
 	int32_t height = resolution.y();
 	int32_t numComponents = 1;
 
-	//cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);
-	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float1>();
+	cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);
 
 	int32_t pitch = width * numComponents * getFormatSize(format);
 
@@ -43,26 +42,23 @@ TextureData::TextureData(void *data, rgl_texture_format format, Vec2i  resolutio
 	tex_desc.minMipmapLevelClamp = 0;
 	tex_desc.mipmapFilterMode = cudaFilterModePoint;
 	tex_desc.borderColor[0] = 1.0f;
-	// TO check tex_desc.sRGB = 0;
 
 	CHECK_CUDA(cudaCreateTextureObject(&textureObject, &res_desc, &tex_desc, nullptr));
-
 }
 
-TextureData::~TextureData() {
+TextureData::~TextureData()
+{
 	CHECK_CUDA(cudaDestroyTextureObject(textureObject));
 	CHECK_CUDA(cudaFreeArray(dPixelArray));
 }
 
-cudaChannelFormatDesc TextureData::CreateChannelDescriptor(rgl_texture_format format) {
-	cudaChannelFormatDesc channel_desc;
-
-	switch (format) {
-
+cudaChannelFormatDesc TextureData::CreateChannelDescriptor(rgl_texture_format format)
+{
+	switch (format)
+	{
 		case RGL_TEXTURE_TYPE_INT:
 			return cudaCreateChannelDesc<int1>();
 		case RGL_TEXTURE_TYPE_FLOAT:
 			return cudaCreateChannelDesc<float1>();
 	}
-
 }

@@ -54,7 +54,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float intensity=0)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float intensity = 0)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -132,7 +132,7 @@ extern "C" __global__ void __closesthit__()
 	});
 
 	float intensity = 0;
-	if (sbtData.tex_coord != nullptr && sbtData.texture !=0 )
+	if (sbtData.tex_coord != nullptr && sbtData.texture != 0)
 	{
 
 		assert(index.x() < sbtData.tex_coord_count);

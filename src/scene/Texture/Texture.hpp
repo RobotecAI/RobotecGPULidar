@@ -24,7 +24,7 @@ struct Texture : APIObject<Texture> {
 
 public:
 
-	~Texture();
+	~Texture()= default;
 
 	int GetID() const { return ID; }
 
@@ -32,8 +32,8 @@ public:
 
 
 	Vec2i GetResolution() const { return resolution; }
-	int GetWidth() const { return resolution.x(); }
-	int GetHeight() const { return resolution.y(); }
+	size_t GetWidth() const { return resolution.x(); }
+	size_t GetHeight() const { return resolution.y(); }
 
 
 private:
@@ -50,6 +50,4 @@ private:
 	rgl_texture_format format;
 
 	std::shared_ptr<TextureData> data;
-
-
 };

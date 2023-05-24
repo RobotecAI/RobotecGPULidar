@@ -1,4 +1,3 @@
-
 #include <texture_types.h>
 #include "../../RGLTextureFormats"
 #include "math/Vector.hpp"
@@ -6,7 +5,6 @@
 
 struct TextureData {
 public:
-
 
 	TextureData(void *data, rgl_texture_format format, Vec2i  resolution);
 
