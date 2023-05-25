@@ -340,8 +340,7 @@ rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format 
 
 		*out_texture = Texture::create(texels, type, width, height, ID).get();
 	});
-	//TODO how to fix that void in tape call?
-	//TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height)), type, width, height, ID);
+	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * getFormatSize(type))), type, width, height, ID);
 	return status;
 }
 

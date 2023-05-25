@@ -130,6 +130,7 @@ class TapeRecorder
 
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int) value; }
+	int valueToYaml(rgl_texture_format value) { return (int) value; }
 	int valueToYaml(rgl_log_level_t value) { return (int) value; }
 	int valueToYaml(rgl_axis_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }
@@ -141,6 +142,9 @@ class TapeRecorder
 	// TAPE_ARRAY
 	template<typename T, typename N>
 	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
+
+	template<typename N>
+	size_t valueToYaml(std::pair<void*, N> value) { return writeToBin(static_cast<char*>(value.first), value.second); }
 
 public:
 	explicit TapeRecorder(const std::filesystem::path& path);
