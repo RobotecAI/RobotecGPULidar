@@ -150,7 +150,10 @@ void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
 	}
 
 	// TODO is dat valid approach?
-	dTexCoords.emplace();
+	if(!dTexCoords.has_value())
+	{
+		dTexCoords.emplace();
+	}
 
 	dTexCoords->copyFromHost(texCoords, texCoordCount);
 	gasNeedsUpdate = true;

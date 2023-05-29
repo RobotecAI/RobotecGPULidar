@@ -247,7 +247,7 @@ typedef enum : int
 {
 	RGL_TEXTURE_TYPE_INT = 1,
 	RGL_TEXTURE_TYPE_FLOAT = 2
-} rgl_texture_format;
+} rgl_texture_format_t;
 
 /******************************** GENERAL ********************************/
 
@@ -313,12 +313,12 @@ rgl_mesh_create(rgl_mesh_t *out_mesh,
 /**
  * Assign texture coordinates to given mesh. Pair of texture coordinates is assigned to each vertex.
  *
- * @param out_mesh Address to store the resulting mesh handle
+ * @param mesh Address to store the resulting mesh handle
  * @param uvs An array of rgl_vec2f or binary-compatible data representing mesh uv coordinates
- * @param vertex_count Number of elements in the vertices array. Has to be equal to vertex buffer size.
+ * @param vertex_count Number of elements in the vertices array. It has to be equal to vertex buffer size.
  */
 RGL_API rgl_status_t
-rgl_mesh_set_tex_coord(rgl_mesh_t mesh,
+rgl_mesh_set_texture_coords(rgl_mesh_t mesh,
                        const rgl_vec2f *uvs,
                        int32_t uv_count);
 
@@ -376,22 +376,21 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
  * @apram texture Texture to assign.
  */
 RGL_API rgl_status_t
-tape_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
 
 /******************************* TEXTURE *******************************/
 
 /**
  * Creates a Texture.
  * Texture is a container object which holds device pointer to texture resource.
- * @param out_entity Handle to the created Texture.
+ * @param out_texture Handle to the created Texture.
  * @param texels Pointer to the texture data.
  * @param format Type of the texture. Defines size of the texel.
  * @param width Width of the texture. Has to be positive.
  * @param height Height of the texture. It is not demanded that width == height. Has to be positive.
- * @param ID ID of the texture.
  */
 RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format format, int width, int height, int ID);
+rgl_texture_create(rgl_texture_t* out_texture, const void* texels, rgl_texture_format_t format, int32_t width, int32_t height);
 
 /******************************** SCENE ********************************/
 

@@ -20,7 +20,7 @@
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
-#include "scene/Texture/Texture.hpp"
+#include "scene/Texture.hpp"
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
@@ -167,7 +167,7 @@ void TapePlayer::tape_mesh_create(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_mesh_set_tex_coord(rgl_mesh_t mesh, const rgl_vec2f *uvs, int32_t uv_count) {
+rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f *uvs, int32_t uv_count) {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_mesh_set_tex_coord(out_mesh={}, uvs={}, uv_count={})",
 		            (void *) mesh, repr(uvs, uv_count), uv_count);
@@ -184,12 +184,9 @@ rgl_mesh_set_tex_coord(rgl_mesh_t mesh, const rgl_vec2f *uvs, int32_t uv_count) 
 
 void TapePlayer::tape_mesh_set_tex_coord(const YAML::Node& yamlNode)
 {
-	rgl_mesh_t mesh = nullptr;
-	rgl_mesh_set_tex_coord(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	rgl_mesh_set_texture_coords(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
 		reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[1].as<size_t>()),
 		yamlNode[2].as<int32_t>());
-
-	tapeMeshes.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), mesh));
 }
 
 
@@ -313,7 +310,6 @@ rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture )
 		RGL_API_LOG("rgl_entity_add_texture(entity={}, texture={})", (void *) entity, (void *) texture);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(texture != nullptr);
-		CHECK_ARG(texture->GetID() != INVALID_TEXTURE_ID);
 		Entity::validatePtr(entity)->setIntensityTexture(Texture::validatePtr(texture));
 	});
 
@@ -328,17 +324,16 @@ void TapePlayer::tape_entity_set_intensity_texture(const YAML::Node &yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format type, int width, int height, int ID)
+rgl_texture_create(rgl_texture_t* out_texture, const void* texels, rgl_texture_format_t format, int32_t width, int32_t height)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_texture_create(out_texture={}, size=({}, {}))", (void*) out_texture, width, height);
+		RGL_API_LOG("rgl_texture_create(out_texture={}, size=({}, {}), format={})", (void*) out_texture, width, height, format);
 		CHECK_ARG(out_texture != nullptr);
 		CHECK_ARG(texels != nullptr);
-		CHECK_ARG(ID != INVALID_TEXTURE_ID);
 		CHECK_ARG(width > 0);
 		CHECK_ARG(height > 0);
 
-		*out_texture = Texture::create(texels, type, width, height, ID).get();
+		*out_texture = Texture::create(texels, format, width, height).get();
 	});
 	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * getFormatSize(type))), type, width, height, ID);
 	return status;
@@ -346,15 +341,13 @@ rgl_texture_create(rgl_texture_t* out_texture, void* texels, rgl_texture_format 
 
 void TapePlayer::tape_texture_create(const YAML::Node& yamlNode)
 {
-
 	rgl_texture_t texture = nullptr;
 
 	rgl_texture_create(&texture,
-		reinterpret_cast<void*>(fileMmap + yamlNode[1].as<size_t>()),
-		(rgl_texture_format)yamlNode[2].as<int>(),
+		reinterpret_cast<const void*>(fileMmap + yamlNode[1].as<size_t>()),
+		(rgl_texture_format_t)yamlNode[2].as<int>(),
 		yamlNode[3].as<int>(),
-		yamlNode[4].as<int>(),
-		yamlNode[5].as<int>());
+		yamlNode[4].as<int>());
 
 	tapeTextures.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), texture));
 }

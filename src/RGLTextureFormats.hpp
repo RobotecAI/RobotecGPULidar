@@ -1,13 +1,13 @@
 #include <stdexcept>
-#include "rgl/api/core.h"
-#include "spdlog/fmt/bundled/format.h"
+#include <rgl/api/core.h>
+#include <spdlog/fmt/bundled/format.h>
 
-template<rgl_texture_format>
-struct Format {};
+template<rgl_texture_format_t>
+struct TextureFormat {};
 
 #define FORMAT(NAME, TYPE)                             \
 template<>                                             \
-struct Format<NAME>                                    \
+struct TextureFormat<NAME>                                    \
 {                                                      \
 	using type = TYPE;                                 \
 	static constexpr std::size_t size = sizeof(TYPE);  \
@@ -16,17 +16,17 @@ struct Format<NAME>                                    \
 FORMAT(RGL_TEXTURE_TYPE_INT, int);
 FORMAT(RGL_TEXTURE_TYPE_FLOAT, float);
 
-inline std::size_t getFormatSize(rgl_texture_format type)
+inline std::size_t getFormatSize(rgl_texture_format_t type)
 {
 	switch (type) {
-		case RGL_TEXTURE_TYPE_INT: return Format<RGL_TEXTURE_TYPE_INT>::size;
-		case RGL_TEXTURE_TYPE_FLOAT: return Format<RGL_TEXTURE_TYPE_FLOAT>::size;
+		case RGL_TEXTURE_TYPE_INT: return TextureFormat<RGL_TEXTURE_TYPE_INT>::size;
+		case RGL_TEXTURE_TYPE_FLOAT: return TextureFormat<RGL_TEXTURE_TYPE_FLOAT>::size;
 	}
 	throw std::invalid_argument(fmt::format("getFormatSize: unknown RGL texture format {}", type));
 }
 
 
-inline std::string toString(rgl_texture_format type)
+inline std::string toString(rgl_texture_format_t type)
 {
 	switch (type) {
 		case RGL_TEXTURE_TYPE_INT: return "RGL_TEXTURE_TYPE_INT";

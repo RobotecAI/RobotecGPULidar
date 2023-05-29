@@ -14,7 +14,7 @@
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
-#include "scene/Texture/Texture.hpp"
+#include <scene/Texture.hpp>
 
 API_OBJECT_INSTANCE(Scene);
 
@@ -88,9 +88,9 @@ OptixShaderBindingTable Scene::buildSBT()
 			.vertex_count = mesh->dVertices.getElemCount(),
 			.index_count = mesh->dIndices.getElemCount(),
 			.tex_coord_count = (mesh->dTexCoords.has_value()) ? (mesh->dTexCoords.value().getElemCount()) : 0,
-			.texture = entity->getIntensityTexture() != nullptr ? entity->getIntensityTexture()->GetData()->GetTextureObject() : 0,
-			.texture_width = entity->getIntensityTexture() != nullptr ? entity->getIntensityTexture()->GetWidth() : 0,
-			.texture_height = entity->getIntensityTexture() != nullptr ? entity->getIntensityTexture()->GetHeight() : 0,
+			.texture = entity->intensityTexture != nullptr ? entity->intensityTexture->GetTextureObject() : 0,
+			.texture_width = entity->intensityTexture != nullptr ? entity->intensityTexture->getWidth() : 0,
+			.texture_height = entity->intensityTexture != nullptr ? entity->intensityTexture->getHeight() : 0,
 
 		};
 	}

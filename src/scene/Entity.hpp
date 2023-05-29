@@ -29,7 +29,6 @@ struct Entity : APIObject<Entity>
 	void setTransform(Mat3x4f newTransform);
 	void setIntensityTexture(std::shared_ptr<Texture> texture);
 	OptixInstance getIAS(int idx);
-	std::shared_ptr<Texture> getIntensityTexture() const;
 
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<Texture> intensityTexture = nullptr;

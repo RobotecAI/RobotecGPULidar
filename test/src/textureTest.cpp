@@ -48,14 +48,14 @@ TEST_F(TextureTest, rgl_texture_create)
 	auto textureRawData = generateTexture<float>(256, 256);
 	mesh = makeCubeMesh();
 
-	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, RGL_TEXTURE_TYPE_FLOAT, 256, 128, 1));
-	EXPECT_RGL_SUCCESS(rgl_mesh_set_tex_coord(mesh, cubeUVs, 8));
+	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, RGL_TEXTURE_TYPE_FLOAT, 256, 128));
+	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
 
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-	EXPECT_RGL_SUCCESS(tape_entity_set_intensity_texture(entity, texture));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 
 	//Create RGL graph pipeline.
-	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
+	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
 
@@ -67,7 +67,6 @@ TEST_F(TextureTest, rgl_texture_create)
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
-	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
 
@@ -92,4 +91,5 @@ TEST_F(TextureTest, rgl_texture_create)
 
 #endif
 
+	delete[] textureRawData;
 }

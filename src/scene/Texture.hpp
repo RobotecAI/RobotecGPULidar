@@ -16,38 +16,34 @@
 #include "APIObject.hpp"
 #include "math/Vector.hpp"
 #include "rgl/api/core.h"
-#include "TextureData.hpp"
-
-#define INVALID_TEXTURE_ID -1
 
 struct Texture : APIObject<Texture> {
 
 public:
 
-	~Texture()= default;
+	~Texture();
 
-	int GetID() const { return ID; }
-
-	std::shared_ptr<TextureData> GetData() const { return data; }
-
-
-	Vec2i GetResolution() const { return resolution; }
-	size_t GetWidth() const { return resolution.x(); }
-	size_t GetHeight() const { return resolution.y(); }
+	Vec2i getResolution() const { return resolution; }
+	size_t getWidth() const { return resolution.x(); }
+	size_t getHeight() const { return resolution.y(); }
+	cudaTextureObject_t GetTextureObject() const { return dTextureObject; }
 
 
 private:
 	// TODO (prybicki) Should I pollute internal class with api enum?
-	Texture( void* texels, rgl_texture_format format,  int width, int height, int id);
+	Texture(const void* texels, rgl_texture_format_t format,  int width, int height);
 
 	Texture(const Texture &) = delete; // non construction-copyable
 	Texture &operator=(const Texture &) = delete; // non copyable
 
-private:
-	friend APIObject<Texture>;
-	int ID;
-	Vec2i resolution{-1};
-	rgl_texture_format format;
+	void createTextureObject(const void* texels, rgl_texture_format_t format, int width, int height);
+	cudaChannelFormatDesc CreateChannelDescriptor(rgl_texture_format_t format);
 
-	std::shared_ptr<TextureData> data;
+	friend APIObject<Texture>;
+	Vec2i resolution{-1};
+	rgl_texture_format_t format;
+
+	cudaTextureObject_t dTextureObject;
+	cudaArray_t dPixelArray;
+
 };
