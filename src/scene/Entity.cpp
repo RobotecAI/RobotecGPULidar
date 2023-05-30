@@ -34,7 +34,7 @@ void Entity::setId(int newId)
 {
 	id = newId;
 	if (auto activeScene = scene.lock()) {
-		activeScene->requestASRebuild();
+		activeScene->requestSBTRebuild();
 	}
 }
 
