@@ -130,7 +130,7 @@ class TapeRecorder
 
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int) value; }
-	int valueToYaml(rgl_texture_format value) { return (int) value; }
+	int valueToYaml(rgl_texture_format_t value) { return (int) value; }
 	int valueToYaml(rgl_log_level_t value) { return (int) value; }
 	int valueToYaml(rgl_axis_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }
@@ -201,7 +201,7 @@ private:
 	void tape_mesh_create(const YAML::Node& yamlNode);
 	void tape_mesh_destroy(const YAML::Node& yamlNode);
 	void tape_mesh_update_vertices(const YAML::Node& yamlNode);
-	void tape_mesh_set_tex_coord(const YAML::Node& yamlNode);
+	void tape_mesh_set_texture_coords(const YAML::Node& yamlNode);
 	void tape_texture_create(const YAML::Node &yamlNode);
 	void tape_entity_create(const YAML::Node& yamlNode);
 	void tape_entity_destroy(const YAML::Node& yamlNode);

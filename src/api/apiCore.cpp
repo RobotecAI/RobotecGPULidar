@@ -20,7 +20,8 @@
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
-#include "scene/Texture.hpp"
+#include <scene/Texture.hpp>
+#include <RGLTextureFormats.hpp>
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
@@ -182,7 +183,7 @@ rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f *uvs, int32_t uv_co
 	return status;
 }
 
-void TapePlayer::tape_mesh_set_tex_coord(const YAML::Node& yamlNode)
+void TapePlayer::tape_mesh_set_texture_coords(const YAML::Node& yamlNode)
 {
 	rgl_mesh_set_texture_coords(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
 		reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[1].as<size_t>()),
@@ -335,7 +336,7 @@ rgl_texture_create(rgl_texture_t* out_texture, const void* texels, rgl_texture_f
 
 		*out_texture = Texture::create(texels, format, width, height).get();
 	});
-	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * getFormatSize(type))), type, width, height, ID);
+	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * getFormatSize(format))), format, width, height);
 	return status;
 }
 
