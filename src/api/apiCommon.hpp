@@ -15,7 +15,7 @@
 #include <cmath>
 #include <spdlog/common.h>
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 #include <rclcpp/exceptions.hpp>
 #endif
 
@@ -62,7 +62,7 @@ rgl_status_t rglSafeCall(Fn fn)
 	try {
 		std::invoke(fn);
 	}
-	#ifdef RGL_BUILD_ROS2_EXTENSION
+	#if RGL_BUILD_ROS2_EXTENSION
 	catch (rclcpp::exceptions::RCLErrorBase& e) {
 		return updateAPIState(RGL_ROS2_ERROR, e.message.c_str());
 	}

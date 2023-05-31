@@ -9,7 +9,7 @@
 
 class GraphCase : public RGLTest {};
 
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
 #endif
 
@@ -29,7 +29,7 @@ TEST_F(GraphCase, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&shear, &shearTf));
 
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 0.1f, 0.1f, 0.1f));
 #endif
 
@@ -38,12 +38,12 @@ TEST_F(GraphCase, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, shear));
 
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(shear, downsample));
 #endif
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(downsample, "minimal.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
@@ -94,7 +94,7 @@ TEST_F(GraphCase, NodeRemoval)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	// Output pointcloud should contain two boxes
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(temporalMerge, "two_boxes_removal.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
@@ -137,7 +137,7 @@ TEST_F(GraphCase, SpatialMergeFromTransforms)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPtsY, spatialMerge));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(spatialMerge, "two_boxes_spatial_merge.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
@@ -182,7 +182,7 @@ TEST_F(GraphCase, SpatialMergeFromRaytraces)
 	}
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(spatialMerge));
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(spatialMerge, "cube_spatial_merge.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
@@ -225,7 +225,7 @@ TEST_F(GraphCase, TemporalMerge)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &translateYTf));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(temporalMerge, "two_boxes_temporal_merge.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");

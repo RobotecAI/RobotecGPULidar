@@ -141,7 +141,7 @@ inline std::string toString(rgl_field_t type)
 	}
 }
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)

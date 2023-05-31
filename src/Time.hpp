@@ -14,7 +14,7 @@
 
 #pragma once
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 #include <builtin_interfaces/msg/time.hpp>
 #endif
 
@@ -27,7 +27,7 @@ struct Time
 	double asSeconds() { return static_cast<double>(timeNs) * 1.0e-9; };
 	uint64_t asNanoseconds() { return timeNs; }
 
-	#ifdef RGL_BUILD_ROS2_EXTENSION
+	#if RGL_BUILD_ROS2_EXTENSION
 	builtin_interfaces::msg::Time asRos2Msg()
 	{
 		auto msg = builtin_interfaces::msg::Time();

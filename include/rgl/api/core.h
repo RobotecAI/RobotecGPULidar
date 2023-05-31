@@ -98,6 +98,18 @@ typedef struct Node *rgl_node_t;
 typedef struct Scene *rgl_scene_t;
 
 /**
+ * Enumerates available extensions in RGL which can be queried using `rgl_get_extension_info`.
+ * For more details, see the chapter on extensions in the README.
+ */
+typedef enum : int32_t
+{
+	RGL_EXTENSION_PCL,
+	RGL_EXTENSION_ROS2,
+	RGL_EXTENSION_UDP,
+	RGL_EXTENSION_COUNT
+} rgl_extension_t;
+
+/**
  * Status (error) codes returned by all RGL API functions.
  * Unrecoverable errors require reloading the library (restarting the application).
  */
@@ -243,6 +255,15 @@ RGL_API rgl_status_t
 rgl_get_version_info(int32_t *out_major, int32_t *out_minor, int32_t *out_patch);
 
 /**
+ * As stated in README, some RGL features (extensions) are opt-in in compile-time.
+ * This call can be used to query in runtime if specific extensions were compiled in the binary.
+ * @param extension Extension to query.
+ * @param out_available Pointer to the result. Pointee is set to non-zero value if the extension is available.
+ */
+RGL_API rgl_status_t
+rgl_get_extension_info(rgl_extension_t extension, int32_t* out_available);
+
+/**
  * Optionally (re)configures internal logging. This feature may be useful for debugging / issue reporting.
  * By default (i.e. not calling `rgl_configure_logging`) is equivalent to the following call:
  * `rgl_configure_logging(RGL_LOG_LEVEL_INFO, nullptr, true)`
@@ -270,7 +291,6 @@ rgl_get_last_error_string(const char **out_error_string);
  */
 RGL_API rgl_status_t
 rgl_cleanup(void);
-
 
 /******************************** MESH ********************************/
 

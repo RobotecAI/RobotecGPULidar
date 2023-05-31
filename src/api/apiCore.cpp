@@ -77,6 +77,33 @@ void TapePlayer::tape_get_version_info(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_get_extension_info(rgl_extension_t extension, int32_t* out_available)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(0 <= extension && extension < RGL_EXTENSION_COUNT);
+		CHECK_ARG(out_available != nullptr);
+		switch (extension) {
+			case RGL_EXTENSION_PCL: *out_available = RGL_BUILD_PCL_EXTENSION; break;
+			case RGL_EXTENSION_ROS2: *out_available = RGL_BUILD_ROS2_EXTENSION; break;
+			case RGL_EXTENSION_UDP: *out_available = RGL_BUILD_UDP_EXTENSION; break;
+			default: throw std::invalid_argument(fmt::format("queried unknown RGL extension: {}", extension));
+		}
+	});
+	TAPE_HOOK(extension, out_available);
+	return status;
+}
+
+void TapePlayer::tape_query_extension(const YAML::Node &yamlNode)
+{
+	int32_t out_available;
+	int32_t recorded_available = yamlNode[1].as<int32_t>();
+	rgl_get_extension_info(static_cast<rgl_extension_t>(yamlNode[0].as<int32_t>()), &out_available);
+	if (out_available != recorded_available) {
+		RGL_WARN(fmt::format("tape_query_extension: result mismatch, recorded={}, actual={}", recorded_available, out_available));
+	}
+}
+
+RGL_API rgl_status_t
 rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout)
 {
 	auto status = rglSafeCall([&]() {
