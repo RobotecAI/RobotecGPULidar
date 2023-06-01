@@ -33,6 +33,10 @@ set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
 set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
     "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
 
+if (RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+    set(RGL_BUILD_ROS2_EXTENSION ON)
+endif()
+
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
@@ -115,7 +119,7 @@ if (RGL_BUILD_PCL_EXTENSION)
     target_link_libraries(RobotecGPULidar PRIVATE ${PCL_LIBRARIES})
 endif()
 
-if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+if (RGL_BUILD_ROS2_EXTENSION)
     if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
       message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Only humble is available.")
     endif()
