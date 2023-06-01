@@ -11,7 +11,7 @@
 struct TextureTest : public RGLTestWithParam<std::tuple<int, int, float>>, public RGLPointTestHelper{};
 
 INSTANTIATE_TEST_SUITE_P(
-		validParameters, TextureTest,
+		Parametrized, TextureTest,
 		testing::Combine(
 				testing::Values(1, 100, 4000),
 				testing::Values(2, 200, 2000),
@@ -26,7 +26,7 @@ TEST_F(TextureTest, rgl_texture_invalid_argument)
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(nullptr, textureRawData, 100, 100), "texture != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, nullptr, 100, 100), "texels != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, -1, 100), "width > 0");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, 100, -1), "height > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, 100, 0), "height > 0");
 
 	delete[] textureRawData;
 }
