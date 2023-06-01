@@ -8,37 +8,27 @@
 #endif
 
 
-struct TextureTest : public RGLTestWithParam<std::tuple<int, int, float>>, public RGLPointTestHelper
-		{
-
-};
+struct TextureTest : public RGLTestWithParam<std::tuple<int, int, float>>, public RGLPointTestHelper{};
 
 INSTANTIATE_TEST_SUITE_P(
-		TextureTests, TextureTest,
+		validParameters, TextureTest,
 		testing::Combine(
 				testing::Values(1, 100, 4000),
 				testing::Values(2, 200, 2000),
-				testing::Values(0.0f, 1.2f, 21.37f)
+				testing::Values(-4.2f, 0.0f, 21.37f)
 		));
 
-
-TEST_P(TextureTest, rgl_texture_invalid_argument)
+TEST_F(TextureTest, rgl_texture_invalid_argument)
 {
-	rgl_texture_t texture;
-	float *textureRawData;
-	auto [width, height, value] = GetParam();
+	rgl_texture_t texture= nullptr;
+	float* textureRawData = generateStaticColorTexture(100, 100, 100.0f);
 
-	auto initializeArgumentsLambda = [&texture, &textureRawData, &width, &height, &value]() {
-		texture = nullptr;
-		textureRawData = generateStaticColorTexture(width, height, value);
-	};
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(nullptr, textureRawData, 100, 100), "texture != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, nullptr, 100, 100), "texels != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, -1, 100), "width > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, 100, -1), "height > 0");
 
-	initializeArgumentsLambda();
-	//EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, width, height), "Invalid argument");
-
-	// Destroy texture.
 	delete[] textureRawData;
-
 }
 
 TEST_P(TextureTest, rgl_texture_reading)
@@ -91,7 +81,6 @@ TEST_P(TextureTest, rgl_texture_reading)
 		EXPECT_NEAR(value, outIntensity.at(i), EPSILON_F);
 	}
 
-	// Destroy texture.
 	delete[] textureRawData;
 }
 
@@ -149,7 +138,7 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	//		}
 
 #endif
-	// Destroy texture.
+
 	delete[] textureRawData;
 
 }
