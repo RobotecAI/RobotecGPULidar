@@ -39,9 +39,7 @@ private:
 	Texture(const Texture&) = delete; // non construction-copyable
 	Texture &operator=(const Texture&) = delete; // non copyable
 
-	void createTextureObject(const void *texels, int width, int height);
-
-	//cudaChannelFormatDesc CreateChannelDescriptor(rgl_texture_format_t format);
+	void createTextureObject(const void* texels, int width, int height);
 
 	friend APIObject<Texture>;
 	Vec2i resolution{-1};

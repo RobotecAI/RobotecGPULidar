@@ -17,13 +17,13 @@
 
 API_OBJECT_INSTANCE(Texture);
 
-Texture::Texture(const void *texels, int width, int height) :
+Texture::Texture(const void* texels, int width, int height) :
 		resolution(width, height)
 		{
 			createTextureObject(texels, width, height);
 		}
 
-void Texture::createTextureObject(const void *texels, int width, int height)
+void Texture::createTextureObject(const void* texels, int width, int height)
 {
 	cudaResourceDesc res_desc = {};
 

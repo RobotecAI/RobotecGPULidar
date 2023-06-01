@@ -86,30 +86,30 @@ typedef struct
  * Represents on-GPU mesh that can be referenced by entities on the scene.
  * Each mesh can be referenced by any number of entities on different scenes.
  */
-typedef struct Mesh *rgl_mesh_t;
+typedef struct Mesh* rgl_mesh_t;
 
 /**
  * Opaque handle representing an object visible to lidars.
  * An entity is always bound to exactly one scene.
  */
-typedef struct Entity *rgl_entity_t;
+typedef struct Entity* rgl_entity_t;
 
 /**
  * Represents on-GPU texture that can be referenced by Entities on the scene.
  * Each texture can be referenced by any number of Entities on different scenes.
  */
-typedef struct Texture *rgl_texture_t;
+typedef struct Texture* rgl_texture_t;
 
 /**
  * TODO(prybicki)
  */
-typedef struct Node *rgl_node_t;
+typedef struct Node* rgl_node_t;
 
 /**
  * Opaque handle representing a scene - a collection of entities.
  * Using scene is optional. NULL can be passed to use an implicit default scene.
  */
-typedef struct Scene *rgl_scene_t;
+typedef struct Scene* rgl_scene_t;
 
 /**
  * Status (error) codes returned by all RGL API functions.
@@ -298,10 +298,10 @@ rgl_cleanup(void);
  * @param index_count Number of elements in the indices array
  */
 RGL_API rgl_status_t
-rgl_mesh_create(rgl_mesh_t *out_mesh,
-                const rgl_vec3f *vertices,
+rgl_mesh_create(rgl_mesh_t* out_mesh,
+                const rgl_vec3f* vertices,
                 int32_t vertex_count,
-                const rgl_vec3i *indices,
+                const rgl_vec3i* indices,
                 int32_t index_count);
 
 /**
@@ -333,7 +333,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh);
  */
 RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh,
-                         const rgl_vec3f *vertices,
+                         const rgl_vec3f* vertices,
                          int32_t vertex_count);
 
 /******************************** ENTITY ********************************/
@@ -346,7 +346,7 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh,
  * @param mesh Handle to the mesh which will represent the entity on the scene.
  */
 RGL_API rgl_status_t
-rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
+rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
 
 /**
  * Removes an entity from the scene and releases its resources (memory).

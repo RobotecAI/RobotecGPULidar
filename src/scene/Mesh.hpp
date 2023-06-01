@@ -31,15 +31,15 @@
 
 struct Mesh : APIObject<Mesh>
 {
-	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
+	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
 	OptixTraversableHandle getGAS();
 	int getVertexCount() const { return dVertices.getElemCount(); }
 
 	void setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount);
 
 private:
-	Mesh(const Vec3f *vertices, std::size_t vertexCount,
-		 const Vec3i *indices, std::size_t indexCount);
+	Mesh(const Vec3f* vertices, std::size_t vertexCount,
+		 const Vec3i* indices, std::size_t indexCount);
 
 	OptixTraversableHandle buildGAS();
 	void updateGAS();
