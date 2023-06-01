@@ -19,7 +19,11 @@ struct MicroRGL
     {
         handle = LoadLibraryA(path);
         if (handle == NULL) {
-            auto msg = fmt::format("LoadLibrary error: {}\n", GetLastError());
+			std::string hint;
+			if (GetLastError() == 126) {
+				hint = "Make sure that all dependencies of the library can be found.";
+			}
+            auto msg = fmt::format("LoadLibrary error: {} {}\n", GetLastError(), hint);
             throw std::runtime_error(msg);
         }
     }
