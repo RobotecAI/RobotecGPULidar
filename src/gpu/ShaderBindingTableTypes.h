@@ -4,17 +4,14 @@
 #include <optix.h>
 
 struct TriangleMeshSBTData {
-	const Vec3f *vertex;
-	const Vec3i *index;
-	const Vec2f *tex_coord;
+	const Vec3f* vertex;
+	const Vec3i* index;
+	const Vec2f* tex_coord;
 	size_t vertex_count;
 	size_t index_count;
 	size_t tex_coord_count;
 
 	cudaTextureObject_t texture;
-
-	size_t texture_width;
-	size_t texture_height;
 };
 
 

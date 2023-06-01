@@ -43,7 +43,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	int height = 2048;
 	auto textureRawData = generateCheckerboardTexture<float>(width, height);
 
-	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, RGL_TEXTURE_TYPE_FLOAT, width, height));
+	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, width, height));
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 

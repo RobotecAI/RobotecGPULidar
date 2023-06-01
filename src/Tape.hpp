@@ -130,7 +130,7 @@ class TapeRecorder
 
 	int valueToYaml(int32_t* value) { return *value; }
 	int valueToYaml(rgl_field_t value) { return (int) value; }
-	int valueToYaml(rgl_texture_format_t value) { return (int) value; }
+	//int valueToYaml(rgl_texture_format_t value) { return (int) value; }
 	int valueToYaml(rgl_log_level_t value) { return (int) value; }
 	int valueToYaml(rgl_axis_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }

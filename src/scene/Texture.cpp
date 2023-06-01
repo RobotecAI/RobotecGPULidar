@@ -13,27 +13,25 @@
 // limitations under the License.
 
 #include <scene/Texture.hpp>
-#include <RGLTextureFormats.hpp>
 #include <cuda_runtime.h>
 
 API_OBJECT_INSTANCE(Texture);
 
-Texture::Texture(const void *texels, rgl_texture_format_t format, int width, int height) :
-		resolution(width, height),
-		format(format)
+Texture::Texture(const void *texels, int width, int height) :
+		resolution(width, height)
 		{
-			createTextureObject(texels, format, width, height);
+			createTextureObject(texels, width, height);
 		}
 
-void Texture::createTextureObject(const void *texels, rgl_texture_format_t format, int width, int height)
+void Texture::createTextureObject(const void *texels, int width, int height)
 {
 	cudaResourceDesc res_desc = {};
 
 	int32_t numComponents = 1;
 
-	cudaChannelFormatDesc channel_desc = CreateChannelDescriptor(format);
+	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float1>();
 
-	int32_t pitch = width * numComponents * getFormatSize(format);
+	int32_t pitch = width * numComponents * sizeof(float);
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?
@@ -72,15 +70,4 @@ Texture::~Texture()
 	cudaFreeArray(dPixelArray);
 
 	dPixelArray = nullptr;
-}
-
-cudaChannelFormatDesc Texture::CreateChannelDescriptor(rgl_texture_format_t format) \
-{
-	switch (format)
-	{
-		case RGL_TEXTURE_TYPE_INT:
-			return cudaCreateChannelDesc<int1>();
-		case RGL_TEXTURE_TYPE_FLOAT:
-			return cudaCreateChannelDesc<float1>();
-	}
 }

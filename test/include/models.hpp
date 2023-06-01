@@ -23,8 +23,6 @@ static rgl_vec3f cubeVerticesX2[] = {
 };
 
 static rgl_vec2f cubeUVs[] = {
-
-		//Front
 		{0.0f, 0.0f},
 		{1.0f, 0.0f},
 		{1.0f, 1.0f},

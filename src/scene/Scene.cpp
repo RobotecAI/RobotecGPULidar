@@ -89,9 +89,6 @@ OptixShaderBindingTable Scene::buildSBT()
 			.index_count = mesh->dIndices.getElemCount(),
 			.tex_coord_count = (mesh->dTexCoords.has_value()) ? (mesh->dTexCoords.value().getElemCount()) : 0,
 			.texture = entity->intensityTexture != nullptr ? entity->intensityTexture->GetTextureObject() : 0,
-			.texture_width = entity->intensityTexture != nullptr ? entity->intensityTexture->getWidth() : 0,
-			.texture_height = entity->intensityTexture != nullptr ? entity->intensityTexture->getHeight() : 0,
-
 		};
 	}
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);

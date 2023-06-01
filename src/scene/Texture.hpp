@@ -13,9 +13,9 @@
 // limitations under the License.
 #pragma once
 
-#include "APIObject.hpp"
-#include "math/Vector.hpp"
-#include "rgl/api/core.h"
+#include <APIObject.hpp>
+#include <math/Vector.hpp>
+#include <rgl/api/core.h>
 
 struct Texture : APIObject<Texture> {
 
@@ -24,26 +24,28 @@ public:
 	~Texture();
 
 	Vec2i getResolution() const { return resolution; }
+
 	size_t getWidth() const { return resolution.x(); }
+
 	size_t getHeight() const { return resolution.y(); }
+
 	cudaTextureObject_t GetTextureObject() const { return dTextureObject; }
 
 
 private:
 	// TODO (prybicki) Should I pollute internal class with api enum?
-	Texture(const void* texels, rgl_texture_format_t format,  int width, int height);
+	Texture(const void* texels, int width, int height);
 
-	Texture(const Texture &) = delete; // non construction-copyable
-	Texture &operator=(const Texture &) = delete; // non copyable
+	Texture(const Texture&) = delete; // non construction-copyable
+	Texture &operator=(const Texture&) = delete; // non copyable
 
-	void createTextureObject(const void* texels, rgl_texture_format_t format, int width, int height);
-	cudaChannelFormatDesc CreateChannelDescriptor(rgl_texture_format_t format);
+	void createTextureObject(const void *texels, int width, int height);
+
+	//cudaChannelFormatDesc CreateChannelDescriptor(rgl_texture_format_t format);
 
 	friend APIObject<Texture>;
 	Vec2i resolution{-1};
-	rgl_texture_format_t format;
 
 	cudaTextureObject_t dTextureObject;
 	cudaArray_t dPixelArray;
-
 };
