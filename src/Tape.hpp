@@ -129,6 +129,7 @@ class TapeRecorder
 	int valueToYaml(rgl_field_t value) { return (int) value; }
 	int valueToYaml(rgl_log_level_t value) { return (int) value; }
 	int valueToYaml(rgl_axis_t value) { return (int) value; }
+	int32_t valueToYaml(rgl_extension_t value) { return static_cast<int32_t>(value); }
 	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_durability_t value) { return (int) value; }
 	int valueToYaml(rgl_qos_policy_history_t value) { return (int) value; }
@@ -188,6 +189,7 @@ private:
 	void playUnchecked(YAML::iterator);
 
 	void tape_get_version_info(const YAML::Node& yamlNode);
+	void tape_get_extension_info(const YAML::Node& yamlNode);
 	void tape_configure_logging(const YAML::Node& yamlNode);
 	void tape_cleanup(const YAML::Node& yamlNode);
 	void tape_mesh_create(const YAML::Node& yamlNode);
@@ -218,13 +220,13 @@ private:
 	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
 	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
 
-	#ifdef RGL_BUILD_PCL_EXTENSION
+	#if RGL_BUILD_PCL_EXTENSION
 	void tape_graph_write_pcd_file(const YAML::Node& yamlNode);
 	void tape_node_points_downsample(const YAML::Node& yamlNode);
 	void tape_node_points_visualize(const YAML::Node& yamlNode);
 	#endif
 
-	#ifdef RGL_BUILD_ROS2_EXTENSION
+	#if RGL_BUILD_ROS2_EXTENSION
 	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
 	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
 	#endif

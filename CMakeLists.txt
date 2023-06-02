@@ -33,6 +33,10 @@ set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
 set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
     "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
 
+if (RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+    set(RGL_BUILD_ROS2_EXTENSION ON)
+endif()
+
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
@@ -99,6 +103,10 @@ add_library(RobotecGPULidar SHARED
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=0)
+
 if (RGL_BUILD_PCL_EXTENSION)
     find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
     target_sources(RobotecGPULidar PRIVATE
@@ -109,10 +117,9 @@ if (RGL_BUILD_PCL_EXTENSION)
     target_include_directories(RobotecGPULidar PUBLIC ${PCL_INCLUDE_DIRS})
     target_link_directories(RobotecGPULidar PRIVATE ${PCL_LIBRARY_DIRS})
     target_link_libraries(RobotecGPULidar PRIVATE ${PCL_LIBRARIES})
-    target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}> ${PCL_DEFINITIONS})
 endif()
 
-if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
+if (RGL_BUILD_ROS2_EXTENSION)
     if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
       message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Only humble is available.")
     endif()
@@ -121,7 +128,6 @@ if (RGL_BUILD_ROS2_EXTENSION OR RGL_BUILD_ROS2_EXTENSION_STANDALONE)
     target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp src/graph/Ros2PublishPointsNode.cpp)
     target_include_directories(RobotecGPULidar PUBLIC ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
     target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
-    target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 endif()
 
 target_include_directories(RobotecGPULidar

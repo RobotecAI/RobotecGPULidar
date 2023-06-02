@@ -3,11 +3,11 @@
 #include <models.hpp>
 #include <rgl/api/extensions/tape.h>
 
-#ifdef RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
 #endif
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
 #endif
 
@@ -80,7 +80,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	std::vector<::Field<XYZ_F32>::type> usePointsData = {{1, 2, 3}, {4, 5, 6}};
 	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(), usePointsFields.data(), usePointsFields.size()));
 
-	#ifdef RGL_BUILD_ROS2_EXTENSION
+	#if RGL_BUILD_ROS2_EXTENSION
 		rgl_node_t ros2pub = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
 
@@ -108,7 +108,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	#ifdef RGL_BUILD_PCL_EXTENSION
+	#if RGL_BUILD_PCL_EXTENSION
 		rgl_node_t downsample = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
 

@@ -59,6 +59,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 `RobotecGPULidar` library can be built with extensions enhancing RGL with additional functions:
 - `PCL` - adds nodes and functions for point cloud processing that uses [Point Cloud Library](https://pointclouds.org/). See [documentation](docs/PclExtension.md).
 - `ROS2` - adds a node to publish point cloud messages to [ROS2](https://www.ros.org/). Check [ROS2 extension doc](docs/Ros2Extension.md) for more information, build instructions, and usage.
+- `UDP` - adds a node to publish raw lidar packets, as emitted by physical lidar. Only available in the closed-source version.
 
 ## Building in Docker (Linux)
 

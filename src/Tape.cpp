@@ -65,6 +65,7 @@ TapePlayer::TapePlayer(const char* path)
 {
 	tapeFunctions = {
 		{ "rgl_get_version_info", std::bind(&TapePlayer::tape_get_version_info, this, _1) },
+		{ "rgl_get_extension_info", std::bind(&TapePlayer::tape_get_extension_info, this, _1) },
 		{ "rgl_configure_logging", std::bind(&TapePlayer::tape_configure_logging, this, _1) },
 		{ "rgl_cleanup", std::bind(&TapePlayer::tape_cleanup, this, _1) },
 		{ "rgl_mesh_create", std::bind(&TapePlayer::tape_mesh_create, this, _1) },
@@ -95,13 +96,13 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_node_gaussian_noise_angular_hitpoint", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1) },
 		{ "rgl_node_gaussian_noise_distance", std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1) },
 
-		#ifdef RGL_BUILD_PCL_EXTENSION
+		#if RGL_BUILD_PCL_EXTENSION
 		{ "rgl_graph_write_pcd_file", std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1) },
 		{ "rgl_node_points_downsample", std::bind(&TapePlayer::tape_node_points_downsample, this, _1) },
 		{ "rgl_node_points_visualize", std::bind(&TapePlayer::tape_node_points_visualize, this, _1) },
 		#endif
 
-		#ifdef RGL_BUILD_ROS2_EXTENSION
+		#if RGL_BUILD_ROS2_EXTENSION
 		{ "rgl_node_points_ros2_publish", std::bind(&TapePlayer::tape_node_points_ros2_publish, this, _1) },
 		{ "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlayer::tape_node_points_ros2_publish_with_qos, this, _1) },
 		#endif

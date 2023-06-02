@@ -132,9 +132,6 @@ def main():
                 linker_rpath_flags.append(f"-Wl,-rpath={rpath}")
         cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
 
-    if on_windows():
-        cmake_args.append("-DRGL_BUILD_TOOLS=OFF")  # Tools are not available on Windows
-
     cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}")
 
     # Append user args, possibly overwriting
