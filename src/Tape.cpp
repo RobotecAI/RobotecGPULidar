@@ -65,7 +65,7 @@ TapePlayer::TapePlayer(const char* path)
 {
 	tapeFunctions = {
 		{ "rgl_get_version_info", std::bind(&TapePlayer::tape_get_version_info, this, _1) },
-		{ "rgl_get_extension_info", std::bind(&TapePlayer::tape_query_extension, this, _1) },
+		{ "rgl_get_extension_info", std::bind(&TapePlayer::tape_get_extension_info, this, _1) },
 		{ "rgl_configure_logging", std::bind(&TapePlayer::tape_configure_logging, this, _1) },
 		{ "rgl_cleanup", std::bind(&TapePlayer::tape_cleanup, this, _1) },
 		{ "rgl_mesh_create", std::bind(&TapePlayer::tape_mesh_create, this, _1) },

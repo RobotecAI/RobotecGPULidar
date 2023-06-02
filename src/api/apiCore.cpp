@@ -93,13 +93,13 @@ rgl_get_extension_info(rgl_extension_t extension, int32_t* out_available)
 	return status;
 }
 
-void TapePlayer::tape_query_extension(const YAML::Node &yamlNode)
+void TapePlayer::tape_get_extension_info(const YAML::Node &yamlNode)
 {
 	int32_t out_available;
 	int32_t recorded_available = yamlNode[1].as<int32_t>();
 	rgl_get_extension_info(static_cast<rgl_extension_t>(yamlNode[0].as<int32_t>()), &out_available);
 	if (out_available != recorded_available) {
-		RGL_WARN(fmt::format("tape_query_extension: result mismatch, recorded={}, actual={}", recorded_available, out_available));
+		RGL_WARN(fmt::format("tape_get_extension_info: result mismatch, recorded={}, actual={}", recorded_available, out_available));
 	}
 }
 

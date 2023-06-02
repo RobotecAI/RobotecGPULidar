@@ -189,7 +189,7 @@ private:
 	void playUnchecked(YAML::iterator);
 
 	void tape_get_version_info(const YAML::Node& yamlNode);
-	void tape_query_extension(const YAML::Node& yamlNode);
+	void tape_get_extension_info(const YAML::Node& yamlNode);
 	void tape_configure_logging(const YAML::Node& yamlNode);
 	void tape_cleanup(const YAML::Node& yamlNode);
 	void tape_mesh_create(const YAML::Node& yamlNode);

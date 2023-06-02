@@ -100,12 +100,13 @@ typedef struct Scene *rgl_scene_t;
 /**
  * Enumerates available extensions in RGL which can be queried using `rgl_get_extension_info`.
  * For more details, see the chapter on extensions in the README.
+ * The order of constants must not be changed.
  */
 typedef enum : int32_t
 {
-	RGL_EXTENSION_PCL,
-	RGL_EXTENSION_ROS2,
-	RGL_EXTENSION_UDP,
+	RGL_EXTENSION_PCL = 0,
+	RGL_EXTENSION_ROS2 = 1,
+	RGL_EXTENSION_UDP = 2,
 	RGL_EXTENSION_COUNT
 } rgl_extension_t;
 

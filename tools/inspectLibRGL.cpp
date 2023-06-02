@@ -15,48 +15,48 @@ typedef rgl_status_t (*rgl_get_extension_info_t)(rgl_extension_t extension, int3
 #ifdef _WIN32
 struct MicroRGL
 {
-    MicroRGL(const char* path)
-    {
-        handle = LoadLibraryA(path);
-        if (handle == NULL) {
+	MicroRGL(const char* path)
+	{
+		handle = LoadLibraryA(path);
+		if (handle == NULL) {
 			std::string hint;
 			if (GetLastError() == 126) {
 				hint = "Make sure that all dependencies of the library can be found.";
 			}
-            auto msg = fmt::format("LoadLibrary error: {} {}\n", GetLastError(), hint);
-            throw std::runtime_error(msg);
-        }
-    }
+			auto msg = fmt::format("LoadLibrary error: {} {}\n", GetLastError(), hint);
+			throw std::runtime_error(msg);
+		}
+	}
 
-    ~MicroRGL()
-    {
-        if (handle != NULL) {
-            FreeLibrary(handle);
-        }
-    }
+	~MicroRGL()
+	{
+		if (handle != NULL) {
+			FreeLibrary(handle);
+		}
+	}
 
-    rgl_get_version_t get_rgl_get_version()
-    {
-        auto dyn_rgl_get_version = reinterpret_cast<rgl_get_version_t>(GetProcAddress(handle, "rgl_get_version_info"));
-        if (dyn_rgl_get_version == NULL) {
-            auto msg = fmt::format("GetProcAddress error: {}\n", GetLastError());
-            throw std::runtime_error(msg);
-        }
-        return dyn_rgl_get_version;
-    }
+	rgl_get_version_t get_rgl_get_version()
+	{
+		auto dyn_rgl_get_version = reinterpret_cast<rgl_get_version_t>(GetProcAddress(handle, "rgl_get_version_info"));
+		if (dyn_rgl_get_version == NULL) {
+			auto msg = fmt::format("GetProcAddress error: {}\n", GetLastError());
+			throw std::runtime_error(msg);
+		}
+		return dyn_rgl_get_version;
+	}
 
-    rgl_get_extension_info_t get_rgl_get_extension_infos()
-    {
-        auto dyn_rgl_get_extension_info = reinterpret_cast<rgl_get_extension_info_t>(GetProcAddress(handle, "rgl_get_extension_info"));
-        if (dyn_rgl_get_extension_info == NULL) {
-            auto msg = fmt::format("GetProcAddress error: {}\n", GetLastError());
-            throw std::runtime_error(msg);
-        }
-        return dyn_rgl_get_extension_info;
-    }
+	rgl_get_extension_info_t get_rgl_get_extension_infos()
+	{
+		auto dyn_rgl_get_extension_info = reinterpret_cast<rgl_get_extension_info_t>(GetProcAddress(handle, "rgl_get_extension_info"));
+		if (dyn_rgl_get_extension_info == NULL) {
+			auto msg = fmt::format("GetProcAddress error: {}\n", GetLastError());
+			throw std::runtime_error(msg);
+		}
+		return dyn_rgl_get_extension_info;
+	}
 
 private:
-    HMODULE handle = NULL;
+	HMODULE handle = NULL;
 };
 #else
 struct MicroRGL
