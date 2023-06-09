@@ -143,7 +143,7 @@ class TapeRecorder
 	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
 
 	template<typename N>
-	size_t valueToYaml(std::pair<void*, N> value) { return writeToBin(static_cast<char*>(value.first), value.second); }
+	size_t valueToYaml(std::pair<const void*, N> value) { return writeToBin(static_cast<const char*>(value.first), value.second); }
 
 public:
 	explicit TapeRecorder(const std::filesystem::path& path);
