@@ -306,7 +306,7 @@ RGL_API rgl_status_t
 rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture )
 {
 	auto status = rglSafeCall([&](){
-		RGL_API_LOG("rgl_entity_add_texture(entity={}, texture={})", (void*) entity, (void*) texture);
+		RGL_API_LOG("rgl_entity_set_intensity_texture(entity={}, texture={})", (void*) entity, (void*) texture);
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(texture != nullptr);
 		Entity::validatePtr(entity)->setIntensityTexture(Texture::validatePtr(texture));
