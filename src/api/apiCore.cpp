@@ -169,7 +169,7 @@ void TapePlayer::tape_mesh_create(const YAML::Node& yamlNode)
 RGL_API rgl_status_t
 rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_count) {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_mesh_set_tex_coord(out_mesh={}, uvs={}, uv_count={})",
+		RGL_API_LOG("rgl_mesh_set_texture_coords(out_mesh={}, uvs={}, uv_count={})",
 		            (void*) mesh, repr(uvs, uv_count), uv_count);
 		CHECK_ARG(mesh != nullptr);
 		CHECK_ARG(uvs != nullptr);
