@@ -41,7 +41,7 @@ TEST_P(TextureTest, rgl_texture_reading)
 	auto* textureRawData = generateStaticColorTexture(width, height, value);
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, width, height));
-	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
+	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, ARRAY_SIZE(cubeUVs)));
 
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
