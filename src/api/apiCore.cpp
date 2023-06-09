@@ -326,7 +326,7 @@ RGL_API rgl_status_t
 rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_texture_create(out_texture={}, size=({}, {}))", (void*) out_texture, width, height);
+		RGL_API_LOG("rgl_texture_create(out_texture={}, width={}, height={})", (void*) out_texture, width, height);
 		CHECK_ARG(out_texture != nullptr);
 		CHECK_ARG(texels != nullptr);
 		CHECK_ARG(width > 0);
