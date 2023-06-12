@@ -132,16 +132,16 @@ extern "C" __global__ void __closesthit__()
 	});
 
 	float intensity = 0;
-	if (sbtData.tex_coord != nullptr && sbtData.texture != 0)
+	if (sbtData.texture_coords != nullptr && sbtData.texture != 0)
 	{
 
-		assert(index.x() < sbtData.tex_coord_count);
-		assert(index.y() < sbtData.tex_coord_count);
-		assert(index.z() < sbtData.tex_coord_count);
+		assert(index.x() < sbtData.texture_coords_count);
+		assert(index.y() < sbtData.texture_coords_count);
+		assert(index.z() < sbtData.texture_coords_count);
 
-		const Vec2f &uvA = sbtData.tex_coord[index.x()];
-		const Vec2f &uvB = sbtData.tex_coord[index.y()];
-		const Vec2f &uvC = sbtData.tex_coord[index.z()];
+		const Vec2f &uvA = sbtData.texture_coords[index.x()];
+		const Vec2f &uvB = sbtData.texture_coords[index.y()];
+		const Vec2f &uvC = sbtData.texture_coords[index.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 

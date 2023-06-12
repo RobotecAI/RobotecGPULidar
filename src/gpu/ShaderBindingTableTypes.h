@@ -6,10 +6,10 @@
 struct TriangleMeshSBTData {
 	const Vec3f* vertex;
 	const Vec3i* index;
-	const Vec2f* tex_coord;
+	const Vec2f* texture_coords;
 	size_t vertex_count;
 	size_t index_count;
-	size_t tex_coord_count;
+	size_t texture_coords_count;
 
 	cudaTextureObject_t texture;
 };

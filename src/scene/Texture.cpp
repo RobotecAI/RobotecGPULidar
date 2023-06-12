@@ -17,10 +17,14 @@
 
 API_OBJECT_INSTANCE(Texture);
 
-Texture::Texture(const void* texels, int width, int height) :
+Texture::Texture(const void* texels, int width, int height) try :
 		resolution(width, height)
 		{
 			createTextureObject(texels, width, height);
+		}
+		catch (const std::exception& e)
+		{
+			cleanup();
 		}
 
 void Texture::createTextureObject(const void* texels, int width, int height)
@@ -65,6 +69,11 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 }
 
 Texture::~Texture()
+{
+	cleanup();
+}
+
+void Texture::cleanup()
 {
 	cudaDestroyTextureObject(dTextureObject);
 	cudaFreeArray(dPixelArray);

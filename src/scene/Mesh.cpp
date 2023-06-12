@@ -144,17 +144,17 @@ void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
 {
 	if (texCoordCount != dVertices.getElemCount()) {
 		auto msg = fmt::format(
-				"Invalid argument: cannot set texture coordinates because vertex count do not match with UVs count: vertices={}, UVs={}",
+				"Invalid argument: cannot set texture coordinates because vertex count do not match with texture coordinates count: vertices={}, texture_coords={}",
 				dVertices.getElemCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}
 
 	// TODO is dat valid approach?
-	if(!dTexCoords.has_value())
+	if(!dTextureCoords.has_value())
 	{
-		dTexCoords.emplace();
+		dTextureCoords.emplace();
 	}
 
-	dTexCoords->copyFromHost(texCoords, texCoordCount);
+	dTextureCoords->copyFromHost(texCoords, texCoordCount);
 	gasNeedsUpdate = true;
 }

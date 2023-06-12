@@ -84,11 +84,11 @@ OptixShaderBindingTable Scene::buildSBT()
 		hr->data = TriangleMeshSBTData{
 			.vertex = mesh->dVertices.readDevice(),
 			.index = mesh->dIndices.readDevice(),
-			.tex_coord = mesh->dTexCoords.has_value() ? mesh->dTexCoords.value().readDevice() : nullptr,
+			.texture_coords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value().readDevice() : nullptr,
 			.vertex_count = mesh->dVertices.getElemCount(),
 			.index_count = mesh->dIndices.getElemCount(),
-			.tex_coord_count = (mesh->dTexCoords.has_value()) ? (mesh->dTexCoords.value().getElemCount()) : 0,
-			.texture = entity->intensityTexture != nullptr ? entity->intensityTexture->GetTextureObject() : 0,
+			.texture_coords_count = (mesh->dTextureCoords.has_value()) ? (mesh->dTextureCoords.value().getElemCount()) : 0,
+			.texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
 		};
 	}
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);

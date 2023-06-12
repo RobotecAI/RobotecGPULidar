@@ -52,7 +52,7 @@ private:
 	std::optional<OptixTraversableHandle> cachedGAS;
 	DeviceBuffer<Vec3f> dVertices;
 	DeviceBuffer<Vec3i> dIndices;
-	std::optional<DeviceBuffer<Vec2f>> dTexCoords;
+	std::optional<DeviceBuffer<Vec2f>> dTextureCoords;
 
 	// Shared between buildGAS() and updateGAS()
 	OptixBuildInput buildInput;

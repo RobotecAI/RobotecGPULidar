@@ -29,17 +29,19 @@ public:
 
 	size_t getHeight() const { return resolution.y(); }
 
-	cudaTextureObject_t GetTextureObject() const { return dTextureObject; }
+	cudaTextureObject_t getTextureObject() const { return dTextureObject; }
 
 
 private:
-	// TODO (prybicki) Should I pollute internal class with api enum?
+
 	Texture(const void* texels, int width, int height);
 
 	Texture(const Texture&) = delete; // non construction-copyable
 	Texture &operator=(const Texture&) = delete; // non copyable
 
 	void createTextureObject(const void* texels, int width, int height);
+
+	void cleanup();
 
 	friend APIObject<Texture>;
 	Vec2i resolution{-1};
