@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include <utils.hpp>
-#include <scenes.hpp>
-#include <lidars.hpp>
+#include "utils.hpp"
+#include "scenes.hpp"
+#include "lidars.hpp"
 
 #ifdef RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
@@ -90,7 +90,8 @@ TEST_P(TextureTest, rgl_texture_reading)
 
 }
 
-
+// Use-case test. Create texture, mesh and entity. Set texture to entity and run graph pipeline.
+// As a result, we should get the cube with assigned gradient-checkerboard texture.
 TEST_P(TextureTest, rgl_texture_use_case)
 {
 	auto [width, height, value] = GetParam();

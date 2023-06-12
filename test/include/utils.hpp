@@ -176,9 +176,9 @@ static rgl_mesh_t loadMesh(std::filesystem::path path)
 }
 
 template<typename T>
-static T* generateStaticColorTexture(int width, int height, T value)
+static std::shared_ptr<T[]>  generateStaticColorTexture(int width, int height, T value)
 {
-	T* texels = new T[abs(width * height)];
+	auto texels = std::shared_ptr<T[]>(new T[abs(width * height)], std::default_delete<T[]>());
 
 	for (int i = 0; i < width * height; ++i)
 	{
@@ -188,7 +188,7 @@ static T* generateStaticColorTexture(int width, int height, T value)
 }
 
 template<typename T>
-static T* generateCheckerboardTexture(int width, int height)
+static std::shared_ptr<T[]> generateCheckerboardTexture(int width, int height)
 {
 	// Generate a sample texture with a grid pattern 16x16.
 	int xGridSize = ceil(width / 16.0f);
@@ -196,7 +196,7 @@ static T* generateCheckerboardTexture(int width, int height)
 	int xStep = 0;
 	int yStep = 0;
 
-	T* texels = new T[width * height];
+	auto texels = std::shared_ptr<T[]>(new T[width * height], std::default_delete<T[]>());
 
 	for (int i = 0; i < width; ++i)
 	{
