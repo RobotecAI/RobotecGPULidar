@@ -63,17 +63,14 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 
 ## Building in Docker (Linux)
 
-Two dockerfiles are prepared:
-- `DockerfileMinimal` - image designed to meet RGL minimal requirements
-- `DockerfileLatest` - image with latest Ubuntu and CUDA Toolkit version
-
-Build instructions:
 1. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
 3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
-4. `docker build . -f DockerfileMinimal --tag rgl:minimal`
-5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:minimal /bin/bash`
-6. `./setup.py --make="-j"`
+4. `docker build . --tag rgl:latest`
+5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:latest /bin/bash`
+6. `./setup.py --clean-build --with-pcl`
+
+*Note: Currently dockerfile doesn't contain ROS2 installation to support ROS2 extension.*
 
 ## Building on Ubuntu 22
 
