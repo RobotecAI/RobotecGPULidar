@@ -385,6 +385,14 @@ rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
 RGL_API rgl_status_t
 rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height);
 
+/**
+ * Informs that the given texture will be no longer used.
+ * The texture will be destroyed with next SBT rebuild.
+ * @param mesh Texture to be marked as no longer needed
+ */
+RGL_API rgl_status_t
+rgl_texture_destroy(rgl_texture_t texture);
+
 /******************************** SCENE ********************************/
 
 /**

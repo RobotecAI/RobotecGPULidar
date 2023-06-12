@@ -72,6 +72,7 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_mesh_update_vertices", std::bind(&TapePlayer::tape_mesh_update_vertices, this, _1) },
 		{ "rgl_mesh_set_texture_coords", std::bind(&TapePlayer::tape_mesh_set_texture_coords, this, _1) },
 		{ "rgl_texture_create", std::bind(&TapePlayer::tape_texture_create, this, _1) },
+		{ "rgl_texture_destroy", std::bind(&TapePlayer::tape_texture_destroy, this, _1) },
 		{ "rgl_entity_create", std::bind(&TapePlayer::tape_entity_create, this, _1) },
 		{ "rgl_entity_destroy", std::bind(&TapePlayer::tape_entity_destroy, this, _1) },
 		{ "rgl_entity_set_pose", std::bind(&TapePlayer::tape_entity_set_pose, this, _1) },

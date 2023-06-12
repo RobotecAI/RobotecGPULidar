@@ -351,6 +351,26 @@ void TapePlayer::tape_texture_create(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_texture_destroy(rgl_texture_t texture)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_texture_destroy(texture={})", (void*) texture);
+		CHECK_ARG(texture != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		Texture::release(texture);
+	});
+	TAPE_HOOK(texture);
+	return status;
+}
+
+void TapePlayer::tape_texture_destroy(const YAML::Node &yamlNode)
+{
+	auto textureId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_texture_destroy(tapeTextures.at(textureId));
+	tapeTextures.erase(textureId);
+}
+
+RGL_API rgl_status_t
 rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
 	auto status = rglSafeCall([&]() {

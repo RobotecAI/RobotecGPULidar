@@ -20,15 +20,22 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_F(TextureTest, rgl_texture_invalid_argument)
 {
-	rgl_texture_t texture= nullptr;
-	float* textureRawData = generateStaticColorTexture(100, 100, 100.0f);
+	rgl_texture_t texture;
+	std::shared_ptr<float[]> textureRawData;
 
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(nullptr, textureRawData, 100, 100), "texture != nullptr");
+	auto initializeArgumentsLambda = [&texture, &textureRawData]() {
+		texture= nullptr;
+		textureRawData = generateStaticColorTexture(100, 100, 100.0f);
+	};
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(nullptr, textureRawData.get(), 100, 100), "texture != nullptr");
+	initializeArgumentsLambda();
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, nullptr, 100, 100), "texels != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, -1, 100), "width > 0");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData, 100, 0), "height > 0");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData.get(), -1, 100), "width > 0");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData.get(), 100, 0), "height > 0");
 
-	delete[] textureRawData;
 }
 
 TEST_P(TextureTest, rgl_texture_reading)
@@ -38,9 +45,9 @@ TEST_P(TextureTest, rgl_texture_reading)
 	rgl_texture_t texture= nullptr;
 	rgl_entity_t entity = nullptr;
 	rgl_mesh_t mesh = makeCubeMesh();
-	auto* textureRawData = generateStaticColorTexture(width, height, value);
+	auto textureRawData = generateStaticColorTexture(width, height, value);
 
-	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, width, height));
+	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.get(), width, height));
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, ARRAY_SIZE(cubeUVs)));
 
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
@@ -81,7 +88,6 @@ TEST_P(TextureTest, rgl_texture_reading)
 		EXPECT_NEAR(value, outIntensity.at(i), EPSILON_F);
 	}
 
-	delete[] textureRawData;
 }
 
 
@@ -93,10 +99,10 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	rgl_entity_t entity;
 
 	// Create mesh with assigned texture.
-	auto* textureRawData = generateCheckerboardTexture<float>(width, height);
+	auto textureRawData = generateCheckerboardTexture<float>(width, height);
 	mesh = makeCubeMesh();
 
-	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData, 256, 128));
+	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.get(), 256, 128));
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
 
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
@@ -139,7 +145,6 @@ TEST_P(TextureTest, rgl_texture_use_case)
 
 #endif
 
-	delete[] textureRawData;
 
 }
 

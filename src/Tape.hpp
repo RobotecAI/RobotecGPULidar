@@ -202,6 +202,7 @@ private:
 	void tape_mesh_update_vertices(const YAML::Node& yamlNode);
 	void tape_mesh_set_texture_coords(const YAML::Node& yamlNode);
 	void tape_texture_create(const YAML::Node &yamlNode);
+	void tape_texture_destroy(const YAML::Node &yamlNode);
 	void tape_entity_create(const YAML::Node& yamlNode);
 	void tape_entity_destroy(const YAML::Node& yamlNode);
 	void tape_entity_set_pose(const YAML::Node& yamlNode);
