@@ -33,9 +33,12 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	int32_t numComponents = 1;
 
-	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<char>();
+	// According to the CUDA documentation, cudaCreateChannelDescHalf1 is the only
+	// way to create a channel descriptor for a 16-bit floating point texture.
+	//https://cs.colby.edu/courses/S14/cs336/online_materials/CUDA_C_Programming_Guide.pdf
+	cudaChannelFormatDesc channel_desc = cudaCreateChannelDescHalf1();
 
-	int32_t pitch = width * numComponents * sizeof(char);
+	int32_t pitch = width * numComponents * sizeof(unsigned short);
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?

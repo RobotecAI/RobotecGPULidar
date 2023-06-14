@@ -15,6 +15,8 @@
 #include <cuda_runtime.h>
 #include <math_constants.h>
 #include <optix_device.h>
+#include <device_functions.h>
+#include <cuda_fp16.h>
 
 #include <math/Vector.hpp>
 #include <math/Mat3x4f.hpp>
@@ -145,7 +147,7 @@ extern "C" __global__ void __closesthit__()
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		intensity = tex2D<float>(sbtData.texture, uv[0], uv[1]);
+		intensity =  __half2float(tex2D<unsigned short>(sbtData.texture, uv[0], uv[1]));
 	}
 
 	saveRayResult<true>(&hitWorld, &origin, intensity);
