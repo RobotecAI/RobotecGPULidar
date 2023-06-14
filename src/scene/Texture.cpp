@@ -33,9 +33,9 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	int32_t numComponents = 1;
 
-	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float1>();
+	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<char>();
 
-	int32_t pitch = width * numComponents * sizeof(float);
+	int32_t pitch = width * numComponents * sizeof(char);
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?
@@ -56,7 +56,7 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	tex_desc.addressMode[0] = cudaAddressModeWrap;
 	tex_desc.addressMode[1] = cudaAddressModeWrap;
-	tex_desc.filterMode = cudaFilterModeLinear;
+	tex_desc.filterMode = cudaFilterModePoint;
 	tex_desc.readMode = cudaReadModeElementType;
 	tex_desc.normalizedCoords = 1;
 	tex_desc.maxAnisotropy = 1;

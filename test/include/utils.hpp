@@ -182,7 +182,7 @@ static std::shared_ptr<T[]>  generateStaticColorTexture(int width, int height, T
 
 	for (int i = 0; i < width * height; ++i)
 	{
-		texels[i] = value;
+		texels[i] = (T)value;
 	}
 	return texels;
 }
@@ -202,7 +202,7 @@ static std::shared_ptr<T[]> generateCheckerboardTexture(int width, int height)
 	{
 		for (int j = 0; j < height; ++j)
 		{
-			texels[i * height + j] = yStep * 0.5f + xStep * 0.5f;
+			texels[i * height + j] = (T)yStep * 0.5f + (T)xStep * 0.5f;
 			if (j % yGridSize == 0)
 			{
 				yStep += yGridSize;

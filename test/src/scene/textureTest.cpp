@@ -8,14 +8,14 @@
 #endif
 
 
-struct TextureTest : public RGLTestWithParam<std::tuple<int, int, float>>, public RGLPointTestHelper{};
+struct TextureTest : public RGLTestWithParam<std::tuple<int, int, char>>, public RGLPointTestHelper{};
 
 INSTANTIATE_TEST_SUITE_P(
 		Parametrized, TextureTest,
 		testing::Combine(
 				testing::Values(1, 100, 4000),
 				testing::Values(2, 200, 2000),
-				testing::Values(-4.2f, 0.0f, 21.37f)
+				testing::Values(0, 1, 100)
 		));
 
 TEST_F(TextureTest, rgl_texture_invalid_argument)
@@ -100,7 +100,7 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	rgl_entity_t entity;
 
 	// Create mesh with assigned texture.
-	auto textureRawData = generateCheckerboardTexture<float>(width, height);
+	auto textureRawData = generateCheckerboardTexture<char>(width, height);
 	mesh = makeCubeMesh();
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.get(), 256, 128));
