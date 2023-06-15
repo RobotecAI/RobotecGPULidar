@@ -14,9 +14,9 @@ struct TextureTest : public RGLTestWithParam<std::tuple<int, int, unsigned short
 INSTANTIATE_TEST_SUITE_P(
 		Parametrized, TextureTest,
 		testing::Combine(
-				testing::Values(10),
-				testing::Values(10),
-				testing::Values(0, 1, UsMaxValue/2, UsMaxValue)
+				testing::Values(1, 400),
+				testing::Values(3, 16, 2000),
+				testing::Values(0, UsMaxValue/2, UsMaxValue)
 		));
 
 TEST_F(TextureTest, rgl_texture_invalid_argument)
@@ -42,24 +42,11 @@ TEST_F(TextureTest, rgl_texture_invalid_argument)
 TEST_P(TextureTest, rgl_texture_reading)
 {
 	auto [width, height, value] = GetParam();
-	std::printf("%d",value);
-
+	
 	rgl_texture_t texture= nullptr;
 	rgl_entity_t entity = nullptr;
 	rgl_mesh_t mesh = makeCubeMesh();
-	auto textureRawData = generateCheckerboardTexture<unsigned char>(width, height);
-
-	printf("Host:\n");
-	for(int i = 0; i < 10; i++)
-	{
-		for(int j = 0; j < 10; j++)
-		{
-			auto pixel = textureRawData[i * 10 + j];
-			printf("%d ", pixel);
-		}
-		printf("\n");
-	}
-	printf("\n");
+	auto textureRawData = generateStaticColorTexture<unsigned char>(width, height, value);
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), width, height));
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, ARRAY_SIZE(cubeUVs)));
@@ -99,7 +86,7 @@ TEST_P(TextureTest, rgl_texture_reading)
 
 	for (int i = 0; i < outCount; ++i)
 	{
-		//EXPECT_NEAR(((float)value) / UsMaxValue, outIntensity.at(i), EPSILON_F);
+		EXPECT_NEAR(((float)value), outIntensity.at(i), EPSILON_F);
 	}
 
 }

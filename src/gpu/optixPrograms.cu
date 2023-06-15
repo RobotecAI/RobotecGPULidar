@@ -147,23 +147,7 @@ extern "C" __global__ void __closesthit__()
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		//intensity =  (__half2float(tex2D<unsigned short>(sbtData.texture, uv[0], uv[1]))) / UsMaxValue;
 		intensity =  tex2D<unsigned char>(sbtData.texture, uv[0], uv[1]);
-
-		if (optixGetLaunchIndex().x == 0 &&
-		    optixGetLaunchIndex().y == 0)
-		{
-			printf("CUDA:\n");
-			for(int i = 0; i < 10; i++)
-			{
-				for(int j = 0; j < 10; j++)
-				{
-					auto pixel = tex2D<unsigned char>(sbtData.texture, i, j);
-					printf("%d ", pixel);
-				}
-				printf("\n");
-			}
-		}
 	}
 
 	saveRayResult<true>(&hitWorld, &origin, intensity);

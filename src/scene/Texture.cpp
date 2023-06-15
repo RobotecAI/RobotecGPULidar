@@ -56,8 +56,8 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	tex_desc.addressMode[0] = cudaAddressModeWrap;
 	tex_desc.addressMode[1] = cudaAddressModeWrap;
-	tex_desc.filterMode = cudaFilterModeLinear;
-	tex_desc.readMode = cudaReadModeNormalizedFloat;
+	tex_desc.filterMode = cudaFilterModePoint;
+	tex_desc.readMode = cudaReadModeElementType;
 	tex_desc.normalizedCoords = 1;
 	tex_desc.maxAnisotropy = 1;
 	tex_desc.maxMipmapLevelClamp = 99;
