@@ -176,9 +176,9 @@ static rgl_mesh_t loadMesh(std::filesystem::path path)
 }
 
 template<typename T>
-static std::shared_ptr<T[]>  generateStaticColorTexture(int width, int height, T value)
+static std::vector<T> generateStaticColorTexture(int width, int height, T value)
 {
-	auto texels = std::shared_ptr<T[]>(new T[abs(width * height)], std::default_delete<T[]>());
+	auto texels = std::vector<T>(width * height);
 
 	for (int i = 0; i < width * height; ++i)
 	{
@@ -188,32 +188,17 @@ static std::shared_ptr<T[]>  generateStaticColorTexture(int width, int height, T
 }
 
 template<typename T>
-static std::shared_ptr<T[]> generateCheckerboardTexture(int width, int height)
+static std::vector<T> generateCheckerboardTexture(int width, int height)
 {
-	// Generate a sample texture with a grid pattern 16x16.
-	int xGridSize = ceil(width / 16.0f);
-	int yGridSize = ceil(height / 16.0f);
-	int xStep = 0;
-	int yStep = 0;
-
-	auto texels = std::shared_ptr<T[]>(new T[width * height], std::default_delete<T[]>());
+	int value = 0;
+	auto texels = std::vector<T>(width * height);
 
 	for (int i = 0; i < width; ++i)
 	{
 		for (int j = 0; j < height; ++j)
 		{
-			texels[i * height + j] = (T)yStep * 0.5f + (T)xStep * 0.5f;
-			if (j % yGridSize == 0)
-			{
-				yStep += yGridSize;
-			}
-		}
-		yStep = 0;
-		if (i % xGridSize == 0)
-		{
-			xStep += xGridSize;
+			texels[i * width + j] = (T)j%2==0 ? 0 : 127;
 		}
 	}
-
 	return texels;
 }
