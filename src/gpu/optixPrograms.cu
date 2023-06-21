@@ -15,7 +15,6 @@
 #include <cuda_runtime.h>
 #include <math_constants.h>
 #include <optix_device.h>
-#include <device_functions.h>
 #include <cuda_fp16.h>
 
 #include <math/Vector.hpp>
