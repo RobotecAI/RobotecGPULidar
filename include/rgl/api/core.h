@@ -350,7 +350,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
 /**
  * Set instance ID of the given entity.
  * @param entity Entity to modify
- * @param int ID to set. If not set, value of entity id will be automatically generated a DEFAULT_ENTITY_ID = 2147483647.
+ * @param int ID to set. If not set, value of the entity id will be automatically generated as a DEFAULT_ENTITY_ID.
  */
 RGL_API rgl_status_t
 rgl_entity_set_id(rgl_entity_t entity, int32_t id);
