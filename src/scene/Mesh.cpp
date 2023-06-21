@@ -29,8 +29,9 @@ Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size
 void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
 {
 	if (dVertices.getElemCount() != vertexCount) {
-		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
-		                        dVertices.getElemCount(), vertexCount);
+		auto msg = fmt::format(
+				"Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
+				dVertices.getElemCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
 	dVertices.copyFromHost(vertices, vertexCount);
@@ -85,36 +86,36 @@ OptixTraversableHandle Mesh::buildGAS()
 	vertexBuffers[0] = dVertices.readDeviceRaw();
 
 	buildInput = {
-		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-		.triangleArray = {
-			.vertexBuffers = vertexBuffers,
-			.numVertices = static_cast<unsigned int>(dVertices.getElemCount()),
-			.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-			.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType),
-			.indexBuffer = dIndices.readDeviceRaw(),
-			.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount()),
-			.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-			.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType),
-			.flags = &triangleInputFlags,
-			.numSbtRecords = 1,
-			.sbtIndexOffsetBuffer = 0,
-			.sbtIndexOffsetSizeInBytes = 0,
-			.sbtIndexOffsetStrideInBytes = 0,
-		}
+			.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
+			.triangleArray = {
+					.vertexBuffers = vertexBuffers,
+					.numVertices = static_cast<unsigned int>(dVertices.getElemCount()),
+					.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
+					.vertexStrideInBytes = sizeof(decltype(dVertices)::ValueType),
+					.indexBuffer = dIndices.readDeviceRaw(),
+					.numIndexTriplets = static_cast<unsigned int>(dIndices.getElemCount()),
+					.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
+					.indexStrideInBytes = sizeof(decltype(dIndices)::ValueType),
+					.flags = &triangleInputFlags,
+					.numSbtRecords = 1,
+					.sbtIndexOffsetBuffer = 0,
+					.sbtIndexOffsetSizeInBytes = 0,
+					.sbtIndexOffsetStrideInBytes = 0,
+			}
 	};
 
 	buildOptions = {
-		.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-		              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-		              // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-		.operation = OPTIX_BUILD_OPERATION_BUILD
+			.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
+			              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+			// | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
+			.operation = OPTIX_BUILD_OPERATION_BUILD
 	};
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 
 	// OptixAccelEmitDesc emitDesc = {
-		// .result = scratchpad.dCompactedSize.readDeviceRaw(),
-		// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
+	// .result = scratchpad.dCompactedSize.readDeviceRaw(),
+	// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
 	// };
 
 	OptixTraversableHandle gasHandle;
@@ -137,4 +138,23 @@ OptixTraversableHandle Mesh::buildGAS()
 
 	gasNeedsUpdate = false;
 	return gasHandle;
+}
+
+void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
+{
+	if (texCoordCount != dVertices.getElemCount()) {
+		auto msg = fmt::format(
+				"Invalid argument: cannot set texture coordinates because vertex count do not match with texture coordinates count: vertices={}, texture_coords={}",
+				dVertices.getElemCount(), texCoordCount);
+		throw std::invalid_argument(msg);
+	}
+
+	// TODO is dat valid approach?
+	if(!dTextureCoords.has_value())
+	{
+		dTextureCoords.emplace();
+	}
+
+	dTextureCoords->copyFromHost(texCoords, texCoordCount);
+	gasNeedsUpdate = true;
 }

@@ -54,6 +54,14 @@
 #define RGL_DEFAULT_ENTITY_ID 2147483647
 
 /**
+ * Two consecutive 32-bit floats.
+ */
+typedef struct
+{
+	float value[2];
+} rgl_vec2f;
+
+/**
  * Three consecutive 32-bit floats.
  */
 typedef struct
@@ -86,24 +94,30 @@ typedef struct
  * Represents on-GPU mesh that can be referenced by entities on the scene.
  * Each mesh can be referenced by any number of entities on different scenes.
  */
-typedef struct Mesh *rgl_mesh_t;
+typedef struct Mesh* rgl_mesh_t;
 
 /**
  * Opaque handle representing an object visible to lidars.
  * An entity is always bound to exactly one scene.
  */
-typedef struct Entity *rgl_entity_t;
+typedef struct Entity* rgl_entity_t;
+
+/**
+ * Represents on-GPU texture that can be referenced by Entities on the scene.
+ * Each texture can be referenced by any number of Entities on different scenes.
+ */
+typedef struct Texture* rgl_texture_t;
 
 /**
  * TODO(prybicki)
  */
-typedef struct Node *rgl_node_t;
+typedef struct Node* rgl_node_t;
 
 /**
  * Opaque handle representing a scene - a collection of entities.
  * Using scene is optional. NULL can be passed to use an implicit default scene.
  */
-typedef struct Scene *rgl_scene_t;
+typedef struct Scene* rgl_scene_t;
 
 /**
  * Enumerates available extensions in RGL which can be queried using `rgl_get_extension_info`.
@@ -313,11 +327,23 @@ rgl_cleanup(void);
  * @param index_count Number of elements in the indices array
  */
 RGL_API rgl_status_t
-rgl_mesh_create(rgl_mesh_t *out_mesh,
-                const rgl_vec3f *vertices,
+rgl_mesh_create(rgl_mesh_t* out_mesh,
+                const rgl_vec3f* vertices,
                 int32_t vertex_count,
-                const rgl_vec3i *indices,
+                const rgl_vec3i* indices,
                 int32_t index_count);
+
+/**
+ * Assign texture coordinates to given mesh. Pair of texture coordinates is assigned to each vertex.
+ *
+ * @param mesh Address to store the resulting mesh handle
+ * @param uvs An array of rgl_vec2f or binary-compatible data representing mesh uv coordinates
+ * @param vertex_count Number of elements in the vertices array. It has to be equal to vertex buffer size.
+ */
+RGL_API rgl_status_t
+rgl_mesh_set_texture_coords(rgl_mesh_t mesh,
+                       const rgl_vec2f* uvs,
+                       int32_t uv_count);
 
 /**
  * Informs that the given mesh will be no longer used.
@@ -336,9 +362,8 @@ rgl_mesh_destroy(rgl_mesh_t mesh);
  */
 RGL_API rgl_status_t
 rgl_mesh_update_vertices(rgl_mesh_t mesh,
-                         const rgl_vec3f *vertices,
+                         const rgl_vec3f* vertices,
                          int32_t vertex_count);
-
 
 /******************************** ENTITY ********************************/
 
@@ -350,7 +375,7 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh,
  * @param mesh Handle to the mesh which will represent the entity on the scene.
  */
 RGL_API rgl_status_t
-rgl_entity_create(rgl_entity_t *out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
+rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
 
 /**
  * Removes an entity from the scene and releases its resources (memory).
@@ -375,6 +400,35 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
  */
 RGL_API rgl_status_t
 rgl_entity_set_id(rgl_entity_t entity, int32_t id);
+
+/**
+ * Assign intensity texture to the given entity. The assumption is that the entity can hold only one intensity texture.
+ * @param entity Entity to modify.
+ * @apram texture Texture to assign.
+ */
+RGL_API rgl_status_t
+rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+
+/******************************* TEXTURE *******************************/
+
+/**
+ * Creates a Texture.
+ * Texture is a container object which holds device pointer to texture resource.
+ * @param out_texture Handle to the created Texture.
+ * @param texels Pointer to the texture data. Should be pass as raw byte data of unsigned char array .
+ * @param width Width of the texture. Has to be positive.
+ * @param height Height of the texture. It is not demanded that width == height. Has to be positive.
+ */
+RGL_API rgl_status_t
+rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height);
+
+/**
+ * Informs that the given texture will be no longer used.
+ * The texture will be destroyed after all referring entities are destroyed.
+ * @param mesh Texture to be marked as no longer needed
+ */
+RGL_API rgl_status_t
+rgl_texture_destroy(rgl_texture_t texture);
 
 /******************************** SCENE ********************************/
 

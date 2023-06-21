@@ -18,6 +18,18 @@
 #include <spdlog/fmt/fmt.h>
 
 template<>
+struct fmt::formatter<rgl_vec2f>
+{
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+	template<typename FormatContext>
+	auto format(const rgl_vec2f& v, FormatContext& ctx) {
+		return fmt::format_to(ctx.out(), "({}, {})", v.value[0], v.value[1]);
+	}
+};
+
+template<>
 struct fmt::formatter<rgl_vec3f>
 {
 	template<typename ParseContext>

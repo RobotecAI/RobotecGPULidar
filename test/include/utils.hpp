@@ -38,7 +38,7 @@ constexpr float EPSILON_F = 1e-6f;
 constexpr int maxGPUCoresTestCount = 20000;
 
 static rgl_mat3x4f identityTestTransform = Mat3x4f::identity().toRGL();
-static rgl_mat3x4f translationTestTransform = Mat3x4f::translation(1, 2, 3).toRGL();
+static rgl_mat3x4f translationTestTransform = Mat3x4f::translation(2, 3, 4).toRGL();
 static rgl_mat3x4f rotationTestTransform = Mat3x4f::rotation(10, 30, 45).toRGL();
 static rgl_mat3x4f scalingTestTransform = Mat3x4f::scale(1, 2, 3).toRGL();
 static rgl_mat3x4f complexTestTransform = Mat3x4f::TRS(Vec3f(1, 2, 3), Vec3f(10, 30, 45)).toRGL();
@@ -165,6 +165,7 @@ static std::string readFileStr(std::filesystem::path path)
 // }
 
 
+
 static rgl_mesh_t loadMesh(std::filesystem::path path)
 {
 	rgl_mesh_t mesh = nullptr;
@@ -172,4 +173,47 @@ static rgl_mesh_t loadMesh(std::filesystem::path path)
 	std::vector<rgl_vec3i> is = loadVec<rgl_vec3i>(path.string() + std::string(".indices"));
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vs.data(), vs.size(), is.data(), is.size()));
 	return mesh;
+}
+
+template<typename T>
+static std::vector<T>  generateStaticColorTexture(int width, int height, T value)
+{
+	auto texels = std::vector<T>(width * height);
+
+	for (int i = 0; i < width * height; ++i)
+	{
+		texels[i] = (T)value;
+	}
+	return texels;
+}
+
+template<typename T>
+static std::vector<T> generateCheckerboardTexture(int width, int height)
+{
+	// Generate a sample texture with a grid pattern 16x16.
+	int xGridSize = ceil(width / 16.0f);
+	int yGridSize = ceil(height / 16.0f);
+	int xStep = 0;
+	int yStep = 0;
+
+	auto texels =  std::vector<T>(width * height);
+
+	for (int i = 0; i < width; ++i)
+	{
+		for (int j = 0; j < height; ++j)
+		{
+			texels[i * height + j] = (T)yStep * 0.5f + (T)xStep * 0.5f;
+			if (j % yGridSize == 0)
+			{
+				yStep += yGridSize;
+			}
+		}
+		yStep = 0;
+		if (i % xGridSize == 0)
+		{
+			xStep += xGridSize;
+		}
+	}
+
+	return texels;
 }
