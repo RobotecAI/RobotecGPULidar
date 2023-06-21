@@ -35,9 +35,9 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	int32_t numComponents = 1;
 
-	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<RGL_TEXTURE_TEXEL_FORMAT>();
+	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<TextureTexelFormat>();
 
-	int32_t pitch = width * numComponents * sizeof(RGL_TEXTURE_TEXEL_FORMAT);
+	int32_t pitch = width * numComponents * sizeof(TextureTexelFormat);
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?

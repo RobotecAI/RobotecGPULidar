@@ -9,7 +9,7 @@
 
 constexpr unsigned short UsMaxValue = 255;
 
-struct TextureTest : public RGLTestWithParam<std::tuple<int, int, RGL_TEXTURE_TEXEL_FORMAT>>, public RGLPointTestHelper{};
+struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>>, public RGLPointTestHelper{};
 
 INSTANTIATE_TEST_SUITE_P(
 		Parametrized, TextureTest,
@@ -26,7 +26,7 @@ TEST_F(TextureTest, rgl_texture_invalid_argument)
 
 	auto initializeArgumentsLambda = [&texture, &textureRawData]() {
 		texture= nullptr;
-		textureRawData = generateStaticColorTexture<RGL_TEXTURE_TEXEL_FORMAT>(100, 100, 100);
+		textureRawData = generateStaticColorTexture<TextureTexelFormat>(100, 100, 100);
 	};
 	initializeArgumentsLambda();
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(nullptr, textureRawData.data(), 100, 100), "texture != nullptr");
@@ -46,7 +46,7 @@ TEST_P(TextureTest, rgl_texture_reading)
 	rgl_texture_t texture= nullptr;
 	rgl_entity_t entity = nullptr;
 	rgl_mesh_t mesh = makeCubeMesh();
-	auto textureRawData = generateStaticColorTexture<RGL_TEXTURE_TEXEL_FORMAT>(width, height, value);
+	auto textureRawData = generateStaticColorTexture<TextureTexelFormat>(width, height, value);
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), width, height));
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, ARRAY_SIZE(cubeUVs)));
@@ -101,7 +101,7 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	rgl_entity_t entity;
 
 	// Create mesh with assigned texture.
-	auto textureRawData = generateCheckerboardTexture<RGL_TEXTURE_TEXEL_FORMAT>(width, height);
+	auto textureRawData = generateCheckerboardTexture<TextureTexelFormat>(width, height);
 	mesh = makeCubeMesh();
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), 256, 128));

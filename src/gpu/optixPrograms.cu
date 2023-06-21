@@ -147,7 +147,7 @@ extern "C" __global__ void __closesthit__()
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		intensity =  tex2D<RGL_TEXTURE_TEXEL_FORMAT>(sbtData.texture, uv[0], uv[1]);
+		intensity =  tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
 	}
 
 	saveRayResult<true>(&hitWorld, &origin, intensity);

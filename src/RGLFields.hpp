@@ -27,7 +27,7 @@
 
 #define NON_HIT_VALUE FLT_MAX
 
-typedef unsigned char RGL_TEXTURE_TEXEL_FORMAT;
+typedef unsigned char TextureTexelFormat;
 
 // Shorter versions to avoid long type names
 #define XYZ_F32 RGL_FIELD_XYZ_F32

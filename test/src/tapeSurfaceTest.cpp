@@ -41,7 +41,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	rgl_texture_t texture = nullptr;
 	int width = 1024;
 	int height = 2048;
-	auto textureRawData = generateCheckerboardTexture<RGL_TEXTURE_TEXEL_FORMAT>(width, height);
+	auto textureRawData = generateCheckerboardTexture<TextureTexelFormat>(width, height);
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), width, height));
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
