@@ -30,12 +30,18 @@ struct Entity : APIObject<Entity>
 
 	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
 	void setTransform(Mat3x4f newTransform);
+
 	void setId(int newId);
 	int getId() const { return id; }
+
+	void setIntensityTexture(std::shared_ptr<Texture> texture);
+
 	OptixInstance getIAS(int idx);
 
 	std::shared_ptr<Mesh> mesh;
+	std::shared_ptr<Texture> intensityTexture = nullptr;
 	std::weak_ptr<Scene> scene;
+
 private:
 	Mat3x4f transform;
 	int id;

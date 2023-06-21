@@ -82,6 +82,7 @@ add_library(RobotecGPULidar SHARED
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
+    src/scene/Texture.cpp
     src/scene/ASBuildScratchpad.cpp
     src/graph/Graph.cpp
     src/graph/Node.cpp

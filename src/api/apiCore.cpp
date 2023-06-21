@@ -20,6 +20,7 @@
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
+#include <scene/Texture.hpp>
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
@@ -141,6 +142,7 @@ rgl_cleanup(void)
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		Entity::instances.clear();
 		Mesh::instances.clear();
+		Texture::instances.clear();
 		Scene::defaultInstance()->clear();
 		while (!Node::instances.empty()) {
 			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
@@ -189,6 +191,30 @@ void TapePlayer::tape_mesh_create(const YAML::Node& yamlNode)
 		reinterpret_cast<const rgl_vec3i*>(fileMmap + yamlNode[3].as<size_t>()),
 		yamlNode[4].as<int32_t>());
 	tapeMeshes.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), mesh));
+}
+
+RGL_API rgl_status_t
+rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_count) {
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_mesh_set_texture_coords(mesh={}, uvs={}, uv_count={})",
+		            (void*) mesh, repr(uvs, uv_count), uv_count);
+		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(uvs != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		CHECK_ARG(uv_count == Mesh::validatePtr(mesh)->getVertexCount());
+
+		Mesh::validatePtr(mesh)->setTexCoords(reinterpret_cast<const Vec2f*>(uvs), uv_count);
+
+	});
+	TAPE_HOOK(mesh, TAPE_ARRAY(uvs, uv_count), uv_count);
+	return status;
+}
+
+void TapePlayer::tape_mesh_set_texture_coords(const YAML::Node& yamlNode)
+{
+	rgl_mesh_set_texture_coords(tapeMeshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+		reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
 }
 
 RGL_API rgl_status_t
@@ -321,6 +347,74 @@ void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
 {
 	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
 					  yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
+}
+
+RGL_API rgl_status_t
+rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture )
+{
+	auto status = rglSafeCall([&](){
+		RGL_API_LOG("rgl_entity_set_intensity_texture(entity={}, texture={})", (void*) entity, (void*) texture);
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(texture != nullptr);
+		Entity::validatePtr(entity)->setIntensityTexture(Texture::validatePtr(texture));
+	});
+
+	TAPE_HOOK(entity, texture);
+	return status;
+}
+
+void TapePlayer::tape_entity_set_intensity_texture(const YAML::Node &yamlNode)
+{
+	rgl_entity_set_intensity_texture(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
+		tapeTextures.at(yamlNode[1].as<TapeAPIObjectID>()));
+}
+
+RGL_API rgl_status_t
+rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_texture_create(out_texture={}, width={}, height={})", (void*) out_texture, width, height);
+		CHECK_ARG(out_texture != nullptr);
+		CHECK_ARG(texels != nullptr);
+		CHECK_ARG(width > 0);
+		CHECK_ARG(height > 0);
+
+		*out_texture = Texture::create(texels, width, height).get();
+	});
+	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * sizeof(TextureTexelFormat))), width, height);
+	return status;
+}
+
+void TapePlayer::tape_texture_create(const YAML::Node& yamlNode)
+{
+	rgl_texture_t texture = nullptr;
+
+	rgl_texture_create(&texture,
+		reinterpret_cast<const void*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>(),
+		yamlNode[3].as<int32_t>());
+
+	tapeTextures.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), texture));
+}
+
+RGL_API rgl_status_t
+rgl_texture_destroy(rgl_texture_t texture)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_texture_destroy(texture={})", (void*) texture);
+		CHECK_ARG(texture != nullptr);
+		CHECK_CUDA(cudaStreamSynchronize(nullptr));
+		Texture::release(texture);
+	});
+	TAPE_HOOK(texture);
+	return status;
+}
+
+void TapePlayer::tape_texture_destroy(const YAML::Node &yamlNode)
+{
+	auto textureId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_texture_destroy(tapeTextures.at(textureId));
+	tapeTextures.erase(textureId);
 }
 
 RGL_API rgl_status_t

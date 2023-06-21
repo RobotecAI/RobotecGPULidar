@@ -38,6 +38,15 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
 
+	rgl_texture_t texture = nullptr;
+	int width = 1024;
+	int height = 2048;
+	auto textureRawData = generateCheckerboardTexture<TextureTexelFormat>(width, height);
+
+	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), width, height));
+	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
+
 	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, 1.5 * 1e9));
 
 	rgl_node_t useRays = nullptr;
@@ -128,6 +137,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_graph_destroy(setRingIds));
 	EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
 	EXPECT_RGL_SUCCESS(rgl_mesh_destroy(mesh));
+	EXPECT_RGL_SUCCESS(rgl_texture_destroy(texture));
 
 	EXPECT_RGL_SUCCESS(rgl_cleanup());
 
