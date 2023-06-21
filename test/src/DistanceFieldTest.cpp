@@ -1,10 +1,11 @@
 #include <DistanceFieldTestHelper.hpp>
+#include <RGLFields.hpp>
 
-class DistanceFieldTest : public RGLTestWithParam<float>, public DistanceFieldTestHelper {};
+class DistanceFieldTest : public RGLTestWithParam<float>, public DistanceFieldTestHelper { };
 
 INSTANTIATE_TEST_CASE_P(DistanceFieldTests,
-                        DistanceFieldTest,
-                        ::testing::Values(23.1753849f, 119.9884538f, 333.3394629f));
+    DistanceFieldTest,
+    ::testing::Values(23.1753849f, 119.9884538f, 333.3394629f));
 
 TEST_P(DistanceFieldTest, should_compute_correct_distance_for_single_object_on_ray_path)
 {
@@ -18,7 +19,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distance_for_single_object_on_r
     connectNodes(false);
 
     getResults();
-    
+
     ASSERT_EQ(outDistancesCount, rayTf.size());
     ASSERT_EQ(outPointsCount, rayTf.size());
     EXPECT_EQ(outDistances.at(0), outPoints.at(0).length());
@@ -31,17 +32,17 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_on_cub
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    rayTf.push_back(identityTestTransform);
+    rayTf.push_back(Mat3x4f::identity().toRGL());
 
     prepareNodes();
     connectNodes(false);
-    
+
     getResults();
-    
+
     ASSERT_EQ(outDistancesCount, rayTf.size());
     ASSERT_EQ(outPointsCount, rayTf.size());
     EXPECT_EQ(outDistances.at(0), outPoints.at(0).length());
-    EXPECT_EQ(outDistances.at(0), 2 * CUBE_HALF_EDGE); 
+    EXPECT_EQ(outDistances.at(0), 2 * CUBE_HALF_EDGE);
 }
 
 TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside_cube)
@@ -50,7 +51,7 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    rayTf.push_back(identityTestTransform);
+    rayTf.push_back(Mat3x4f::identity().toRGL());
 
     prepareNodes();
     connectNodes(false);
@@ -63,30 +64,34 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside
     EXPECT_EQ(outDistances.at(0), CUBE_HALF_EDGE + cubeZDistance);
 }
 
-TEST_F(DistanceFieldTest, should_not_compute_distance_for_object_off_ray_path)
+TEST_F(DistanceFieldTest, should_compute_infinite_distance_for_object_off_ray_path)
 {
     float cubeYAxisTranslation = 55.5f;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, cubeYAxisTranslation, 0).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    rayTf.push_back(identityTestTransform);
+    rayTf.push_back(Mat3x4f::identity().toRGL());
+    // After sending a ray in the direction of negative infinity, the distance should still be positive.
+    rayTf.push_back(Mat3x4f::rotationRad(RGL_AXIS_X, M_PI).toRGL());
 
     prepareNodes();
-    connectNodes(false);
 
-    ASSERT_RGL_SUCCESS(rgl_graph_run(useRaysNode));
-    ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(yieldPointsNode, DISTANCE_F32, &outDistancesCount, &outDistancesSize));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldPointsNode));
 
-    EXPECT_EQ(outDistancesCount, 0);
+    getResults();
+
+    EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
+    EXPECT_EQ(outDistances.at(1), NON_HIT_VALUE);
 }
 
 TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angles)
-{    
+{
     float cubeZDistance = GetParam();
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    float maxAngle = atan(CUBE_HALF_EDGE/(cubeZDistance - CUBE_HALF_EDGE));
+    float maxAngle = atan(CUBE_HALF_EDGE / (cubeZDistance - CUBE_HALF_EDGE));
 
     // Generate angle and print the seed
     std::random_device rd;
@@ -96,8 +101,8 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angle
     std::cerr << "DistanceFieldTest various_angle seed: " << seed << std::endl;
 
     std::vector<float> expectedDistances;
-    
-    for(int i = 0 ; i < ANGLE_ITERATIONS ; ++i) {
+
+    for (int i = 0; i < ANGLE_ITERATIONS; ++i) {
         float randomAngle = dis(gen);
         rayTf.push_back(Mat3x4f::rotationRad(RGL_AXIS_X, randomAngle).toRGL());
 
@@ -114,9 +119,9 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angle
     ASSERT_EQ(outPointsCount, rayTf.size());
 
     for (int i = 0; i < outPointsCount; ++i) {
-			EXPECT_NEAR(outPoints.at(i).length(), outDistances.at(i), EPSILON_MUL);
-            EXPECT_NEAR(expectedDistances.at(i), outDistances.at(i), EPSILON_MUL);
-	}
+        EXPECT_NEAR(outPoints.at(i).length(), outDistances.at(i), EPSILON_MUL);
+        EXPECT_NEAR(expectedDistances.at(i), outDistances.at(i), EPSILON_MUL);
+    }
 }
 
 TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
@@ -125,7 +130,7 @@ TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    rayTf.push_back(identityTestTransform);
+    rayTf.push_back(Mat3x4f::identity().toRGL());
 
     prepareNodes();
     connectNodes(false);
@@ -145,15 +150,15 @@ TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
     // Translate ray position and compute the distance again
     float rayZAxisTranslation = 5.0f;
     rayTf.push_back(Mat3x4f::translation(0.0f, 0.0f, rayZAxisTranslation).toRGL());
-    
+
     prepareNodes();
     connectNodes(false);
 
     getResults();
 
     ASSERT_EQ(outDistancesCount, rayTf.size());
-    
-    // The distance should change if it is computed from the beginning of the ray 
+
+    // The distance should change if it is computed from the beginning of the ray
     // and not from the beginning of its coordinate system
     EXPECT_EQ(outDistances.at(0), outPoints.at(0).length() - rayZAxisTranslation);
     EXPECT_EQ(distance - outDistances.at(0), rayZAxisTranslation);
@@ -165,7 +170,7 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    rayTf.push_back(identityTestTransform);
+    rayTf.push_back(Mat3x4f::identity().toRGL());
 
     prepareNodes();
     connectNodes(false);
@@ -178,7 +183,7 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
     float distance = outDistances.at(0);
     ASSERT_EQ(distance, outPoints.at(0).length());
     ASSERT_EQ(distance, cubeZDistance - CUBE_HALF_EDGE);
-	
+
     disconnectNodes(false);
 
     // Add gaussian noise to the distance
@@ -197,15 +202,15 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    rayTf.assign(LIDAR_RAYS_COUNT, identityTestTransform);
-    
+    rayTf.assign(LIDAR_RAYS_COUNT, Mat3x4f::identity().toRGL());
+
     ASSERT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&gaussianNoiseNode, MEAN, STD_DEV, STD_DEV_PER_METER));
     prepareNodes();
     connectNodes(true);
 
     getResults();
 
-    ASSERT_EQ(outDistancesCount,rayTf.size());
+    ASSERT_EQ(outDistancesCount, rayTf.size());
     ASSERT_EQ(outPointsCount, rayTf.size());
 
     auto [realMean, realStdev] = calcMeanAndStdev(outDistances);
@@ -222,7 +227,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_when_points_transform
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
     prepareSceneWithCube(cubePoseTf);
 
-    float rayZDistance = cubeZDistance/2;
+    float rayZDistance = cubeZDistance / 2;
     rgl_mat3x4f transform = Mat3x4f::translation(0, 0, rayZDistance).toRGL();
     rayTf.push_back(transform);
 
@@ -231,7 +236,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_when_points_transform
     connectNodes(false);
 
     getResults();
-    ASSERT_EQ(outDistancesCount,rayTf.size());
+    ASSERT_EQ(outDistancesCount, rayTf.size());
     ASSERT_EQ(outPointsCount, rayTf.size());
 
     float distanceBeforePointsTransform = outDistances.at(0);
@@ -248,7 +253,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_when_points_transform
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(yieldPointsNode, transformPointsNode));
 
     getResults(&transformPointsNode);
-    
+
     ASSERT_EQ(outDistancesCount, rayTf.size());
     ASSERT_EQ(outPointsCount, rayTf.size());
     EXPECT_EQ(outDistances.at(0), outPoints.at(0).length());
