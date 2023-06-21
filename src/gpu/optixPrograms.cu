@@ -15,6 +15,7 @@
 #include <cuda_runtime.h>
 #include <math_constants.h>
 #include <optix_device.h>
+#include <cuda_fp16.h>
 
 #include <math/Vector.hpp>
 #include <math/Mat3x4f.hpp>
@@ -56,7 +57,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const int objectID = RGL_ENTITY_INVALID_ID)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float intensity=0, const int objectID=RGL_ENTITY_INVALID_ID)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -81,14 +82,14 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const 
 		                        : NON_HIT_VALUE;
 	}
 	if (ctx.intensity != nullptr) {
-		ctx.intensity[rayIdx] = 100;
+		ctx.intensity[rayIdx] = intensity;
 	}
 	if (ctx.timestamp != nullptr) {
 		ctx.timestamp[rayIdx] = ctx.sceneTime;
 	}
-        if (ctx.entityId != nullptr) {
-                ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
-        }
+	if (ctx.entityId != nullptr) {
+		ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
+	}
 }
 
 extern "C" __global__ void __raygen__()
@@ -122,6 +123,7 @@ extern "C" __global__ void __closesthit__()
 	assert(index.x() < sbtData.vertex_count);
 	assert(index.y() < sbtData.vertex_count);
 	assert(index.z() < sbtData.vertex_count);
+
 	const Vec3f& A = sbtData.vertex[index.x()];
 	const Vec3f& B = sbtData.vertex[index.y()];
 	const Vec3f& C = sbtData.vertex[index.z()];
@@ -129,14 +131,32 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
-        int objectID = sbtData.entity_id;
+	int objectID = sbtData.entity_id;
 
 	Vec3f origin = decodePayloadVec3f({
 		optixGetPayload_0(),
 		optixGetPayload_1(),
 		optixGetPayload_2()
 	});
-	saveRayResult<true>(&hitWorld, &origin, objectID);
+
+	float intensity = 0;
+	if (sbtData.texture_coords != nullptr && sbtData.texture != 0)
+	{
+
+		assert(index.x() < sbtData.texture_coords_count);
+		assert(index.y() < sbtData.texture_coords_count);
+		assert(index.z() < sbtData.texture_coords_count);
+
+		const Vec2f &uvA = sbtData.texture_coords[index.x()];
+		const Vec2f &uvB = sbtData.texture_coords[index.y()];
+		const Vec2f &uvC = sbtData.texture_coords[index.z()];
+
+		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
+
+		intensity =  tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
+	}
+
+	saveRayResult<true>(&hitWorld, &origin, intensity, objectID);
 }
 
 extern "C" __global__ void __miss__()
