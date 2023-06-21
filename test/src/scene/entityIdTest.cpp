@@ -1,6 +1,5 @@
 #include "lidars.hpp"
 #include "scenes.hpp"
-#include "scene/Scene.hpp"
 #include "utils.hpp"
 
 #ifdef RGL_BUILD_ROS2_EXTENSION
@@ -75,7 +74,7 @@ TEST_F(EntityIdTest, BaseTest)
 	{
 		// Non-hit should have id equals INVALID_ENTITY_ID
 		if (!outIsHit[i]) {
-			EXPECT_EQ(outID[i], INVALID_ENTITY_ID);
+			EXPECT_EQ(outID[i], RGL_ENTITY_INVALID_ID);
 			continue;
 		}
 
@@ -93,7 +92,7 @@ TEST_F(EntityIdTest, BaseTest)
 
 		// box3 - it hasn't had ID assigned manually. RGL should set DEFAULT_ENTITY_ID
 		if (outPoints[i].y() > BOX2_BOX3_BORDER) {
-			EXPECT_EQ(outID[i], DEFAULT_ENTITY_ID);
+			EXPECT_EQ(outID[i], RGL_DEFAULT_ENTITY_ID);
 			continue;
 		}
 	}

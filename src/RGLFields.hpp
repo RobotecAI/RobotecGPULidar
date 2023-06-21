@@ -128,7 +128,7 @@ inline std::string toString(rgl_field_t type)
 		case XYZ_F32: return "XYZ_F32";
 		case IS_HIT_I32: return "IS_HIT_I32";
 		case RAY_IDX_U32: return "RAY_IDX_U32";
-		case ENTITY_ID_I32: return "ENTITY_IDX_U32";
+		case ENTITY_ID_I32: return "ENTITY_ID_I32";
 		case INTENSITY_F32: return "INTENSITY_F32";
 		case RING_ID_U16: return "RING_ID_U16";
 		case AZIMUTH_F32: return "AZIMUTH_F32";

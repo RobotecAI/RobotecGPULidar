@@ -23,7 +23,7 @@
 #include <gpu/RaytraceRequestContext.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
 
-#define ENTITY_INVALID_ID  0
+#include <rgl/api/core.h>
 
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
@@ -56,7 +56,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const int objectID = ENTITY_INVALID_ID)
+void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const int objectID = RGL_ENTITY_INVALID_ID)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -87,7 +87,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, const 
 		ctx.timestamp[rayIdx] = ctx.sceneTime;
 	}
         if (ctx.entityId != nullptr) {
-                ctx.entityId[rayIdx] = isFinite ? objectID : ENTITY_INVALID_ID;
+                ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
         }
 }
 

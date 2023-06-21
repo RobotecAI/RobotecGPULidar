@@ -4,7 +4,6 @@
 #include <models.hpp>
 #include <gtest/gtest.h>
 #include <utils.hpp>
-#include <scene/Entity.hpp>
 
 static rgl_mesh_t makeCubeMesh()
 {

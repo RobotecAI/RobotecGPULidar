@@ -45,6 +45,14 @@
 #define RGL_VERSION_MINOR 13
 #define RGL_VERSION_PATCH 1
 
+// Invalid entity ID is assign to rays that does not hit any entity.
+// Cannot be assigned to mesh manually. It is reserved for internal raytracing use.
+#define RGL_ENTITY_INVALID_ID  0
+
+// Default entity ID is the largest positive 32-bit integer.
+// It is assigned by defolut if the user does not specify it.
+#define RGL_DEFAULT_ENTITY_ID 2147483647
+
 /**
  * Three consecutive 32-bit floats.
  */
@@ -342,7 +350,7 @@ rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
 /**
  * Set instance ID of the given entity.
  * @param entity Entity to modify
- * @param int ID to set. If not set, value of entity id will be automatically generated.
+ * @param int ID to set. If not set, value of entity id will be automatically generated a DEFAULT_ENTITY_ID = 2147483647.
  */
 RGL_API rgl_status_t
 rgl_entity_set_id(rgl_entity_t entity, int32_t id);
