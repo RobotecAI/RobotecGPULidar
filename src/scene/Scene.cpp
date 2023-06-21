@@ -85,6 +85,7 @@ OptixShaderBindingTable Scene::buildSBT()
 			.index = mesh->dIndices.readDevice(),
 			.vertex_count = mesh->dVertices.getElemCount(),
 			.index_count = mesh->dIndices.getElemCount(),
+			.entity_id = entity->getId(),
 		};
 	}
 	dHitgroupRecords.copyFromHost(hHitgroupRecords);

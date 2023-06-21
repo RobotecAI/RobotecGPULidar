@@ -19,13 +19,22 @@ API_OBJECT_INSTANCE(Entity);
 Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
 : mesh(std::move(mesh))
 , transform(Mat3x4f::identity())
-, humanReadableName(std::move(name)) { }
+, humanReadableName(std::move(name))
+, id(RGL_DEFAULT_ENTITY_ID){ }
 
 void Entity::setTransform(Mat3x4f newTransform)
 {
 	transform = newTransform;
 	if (auto activeScene = scene.lock()) {
 		activeScene->requestASRebuild();
+	}
+}
+
+void Entity::setId(int newId)
+{
+	id = newId;
+	if (auto activeScene = scene.lock()) {
+		activeScene->requestSBTRebuild();
 	}
 }
 
