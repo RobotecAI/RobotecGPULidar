@@ -25,16 +25,13 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 }
 
 static inline void spawnCubeOnScene(rgl_scene_t scene,
-                                    const Vec3f &position = {0, 0, 0},
-                                    const Vec3f &rotation = {0, 0, 0},
-                                    const Vec3f &scale = {1, 1, 1},
+                                    Mat3x4f transform,
                                     std::optional<int> id = std::nullopt)
 {
 	rgl_entity_t boxEntity = makeEntity(makeCubeMesh(), scene);
 
-	rgl_mat3x4f boxTransform = Mat3x4f::TRS(position, rotation, scale).toRGL();
-
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(boxEntity, &boxTransform));
+	auto rglTransform = transform.toRGL();
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(boxEntity, &rglTransform));
 
 	if (id.has_value()) {
 		EXPECT_RGL_SUCCESS(rgl_entity_set_id(boxEntity, id.value()));
@@ -50,8 +47,9 @@ static inline void setupBoxesAlongAxes(rgl_scene_t scene) {
 
 	for (int i = 0; i < BOX_COUNT; ++i) {
 
-		spawnCubeOnScene(scene, {(2 * scaleX + 2) * i, 0, 0}, {45, 0, 0}, {scaleX, 1, 1});
-		spawnCubeOnScene(scene, {0, (2 * scaleY + 2) * i, 0}, {0, 45, 0}, {1, scaleY, 1});
-		spawnCubeOnScene(scene, {0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ});
+
+		spawnCubeOnScene(scene, Mat3x4f::TRS({(2 * scaleX + 2) * i, 0, 0}, {45, 0, 0}, {scaleX, 1, 1}));
+		spawnCubeOnScene(scene, Mat3x4f::TRS({0, (2 * scaleY + 2) * i, 0}, {0, 45, 0}, {1, scaleY, 1}));
+		spawnCubeOnScene(scene, Mat3x4f::TRS({0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ}));
 	}
 }
