@@ -50,7 +50,7 @@
 #define RGL_ENTITY_INVALID_ID  0
 
 // Default entity ID is the largest positive 32-bit integer.
-// It is assigned by defolut if the user does not specify it.
+// It is assigned by default if the user does not specify it.
 #define RGL_DEFAULT_ENTITY_ID 2147483647
 
 /**
