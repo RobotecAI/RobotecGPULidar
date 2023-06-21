@@ -335,7 +335,7 @@ rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width
 
 		*out_texture = Texture::create(texels, width, height).get();
 	});
-	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * sizeof(float))), width, height);
+	TAPE_HOOK(out_texture, TAPE_ARRAY(texels, (width * height * sizeof(RGL_TEXTURE_TEXEL_FORMAT))), width, height);
 	return status;
 }
 

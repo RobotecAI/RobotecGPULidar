@@ -14,6 +14,7 @@
 
 #include <scene/Texture.hpp>
 #include <cuda_runtime.h>
+#include "RGLFields.hpp"
 
 API_OBJECT_INSTANCE(Texture);
 
@@ -22,9 +23,10 @@ Texture::Texture(const void* texels, int width, int height) try :
 		{
 			createTextureObject(texels, width, height);
 		}
-		catch (const std::exception& e)
+		catch (...)
 		{
 			cleanup();
+			throw;
 		}
 
 void Texture::createTextureObject(const void* texels, int width, int height)
@@ -33,9 +35,9 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 
 	int32_t numComponents = 1;
 
-	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<uchar1>();
+	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<RGL_TEXTURE_TEXEL_FORMAT>();
 
-	int32_t pitch = width * numComponents * sizeof(unsigned char);
+	int32_t pitch = width * numComponents * sizeof(RGL_TEXTURE_TEXEL_FORMAT);
 
 	// TODO prybicki
 	// Should we leave it like this, or add new copiers in DeivceBuffer.hpp?
@@ -76,8 +78,10 @@ Texture::~Texture()
 void Texture::cleanup()
 {
 	cudaDestroyTextureObject(dTextureObject);
-	cudaFreeArray(dPixelArray);
-
 	dTextureObject = 0;
-	dPixelArray = nullptr;
+	if(dPixelArray != nullptr)
+	{
+		cudaFreeArray(dPixelArray);
+		dPixelArray = nullptr;
+	}
 }
