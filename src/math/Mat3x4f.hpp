@@ -127,7 +127,7 @@ struct Mat3x4f
 		return matrix;
 	}
 
-	inline void toRaw(float* dst)
+	inline void toRaw(float* dst) const
 	{
 		memcpy(dst, rc, 12 * sizeof(float));
 	}
@@ -141,7 +141,7 @@ struct Mat3x4f
 		};
 	}
 
-	inline rgl_mat3x4f toRGL()
+	inline rgl_mat3x4f toRGL() const
 	{
 		return {
 			rc[0][0], rc[0][1], rc[0][2], rc[0][3],
