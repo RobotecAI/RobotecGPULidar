@@ -14,6 +14,7 @@ set(RGL_TEST_FILES
         src/graph/nodes/FromArrayPointsNodeTest.cpp
         src/graph/nodes/TransformPointsNodeTest.cpp
         src/scene/entityIdTest.cpp
+        src/DistanceFieldTest.cpp
         )
 
 
