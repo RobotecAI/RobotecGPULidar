@@ -25,7 +25,7 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh= nullptr, rgl_scene_t scene=nullp
 }
 
 static inline void spawnCubeOnScene(rgl_scene_t scene,
-                                    Mat3x4f transform,
+                                    const Mat3x4f &transform,
                                     std::optional<int> id = std::nullopt)
 {
 	rgl_entity_t boxEntity = makeEntity(makeCubeMesh(), scene);
