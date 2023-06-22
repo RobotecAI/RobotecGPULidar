@@ -27,6 +27,8 @@ The texture coordinates are calculated by interpolating the texture coordinates 
 
 The texture is optional and can be omitted. If the texture is omitted, the intensity is set to 0.0. 
 
+The texture is assigned to the Entity. Entities can share the same texture.
+
 ### Scene
 
 Scene represents 'a place' where the raytracing occurs.
