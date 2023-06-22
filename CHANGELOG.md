@@ -1,5 +1,34 @@
 # Change Log
 
+## [0.14.0] 22 June 2023
+
+### Added
+
+- Added feature to query in runtime if specific extensions were compiled in the binary
+  - Added API call:
+    - `rgl_get_extension_info`
+  - Created a tool that prints all the extensions in the given RGL binary:
+    - `inspectLibRGL`
+- Added instance/semantic segmentation feature
+  - Added API call to set the ID of the entity:
+    - `rgl_entity_set_id`
+  - Added a new field that can be returned:
+    - `RGL_FIELD_ENTITY_ID_I32`
+- Added material information reading and converting to intensity based on intensity texture assigned to the entity:
+  - Added API calls:
+    - `rgl_mesh_set_texture_coords`
+    - `rgl_entity_set_intensity_texture`
+    - `rgl_texture_create`
+    - `rgl_texture_destroy`
+- Added publishing raw lidar packets via UDP
+  - In the closed-source version only
+- Added unity tests to field `RGL_FIELD_DISTANCE_F32`
+
+### Changed
+
+- Changed value of non-hits points from `CUDART_INF_F` to `FLT_MAX`
+- Updated docker README information
+
 ## [0.13.1] 19 April 2023
 
 ### Fixed
