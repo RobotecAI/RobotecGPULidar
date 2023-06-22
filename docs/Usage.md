@@ -8,7 +8,7 @@ The C API is built around several concepts that are introduced in the following 
 
 ### Mesh
 
-Mesh is a handle to the on-GPU data of a 3D model provided by user.
+Mesh is a handle for the on-GPU data of a 3D model provided by user. Texture coordinates are optional and can be omitted. However, they are necessary for intensity calculation.
 
 ### Entity
 
@@ -19,6 +19,15 @@ The coordinate system in RGL is right-handed: the positive x and y axes point ri
 When created, entity is bound to a scene. Entity cannot be unbound from a scene or bound to multiple scenes.
 To create an Entity it is required to provide a Mesh, which must be created first.
 Entities can share the same mesh.
+
+### Texture
+The texture is a handle for the on-GPU data of a 2D image provided by the user. It is used to calculate the intensity of a hit point. It is expected to be a grayscale image in 8-bit red channel data. The intensity is calculated by sampling the texture at the mesh's texture coordinates. If the texture coordinates are not present, the texture will not be sampled.
+ 
+The texture coordinates are calculated by interpolating the texture coordinates of the hitpoint's triangle vertices. The texture coordinates of the triangle vertices are provided by the user when creating the mesh and should be assigned via API call. The texture coordinates are expected to be in the range [0, 1]. If the range is exceeded, then the texture will be tiled. 
+
+The texture is optional and can be omitted. If the texture is omitted, the intensity is set to 0.0. 
+
+The texture is assigned to the Entity. Entities can share the same texture.
 
 ### Scene
 
