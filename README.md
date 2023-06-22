@@ -35,7 +35,10 @@ And more:
 - Writing to PCD file *
 - Visualization *
 - ROS2 publishing *
+- Raw lidar packets publishing via UDP *
 - Gaussian noise (see [documentation](docs/GaussianNoise.md))
+- Instance/semantic segmentation
+- Intensity based on provided textures
 
 \* [extension](README.md#extensions) required.
 
