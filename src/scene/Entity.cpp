@@ -31,9 +31,7 @@ void Entity::setTransform(Mat3x4f newTransform)
 void Entity::setId(int newId)
 {
 	id = newId;
-	if (auto activeScene = scene.lock()) {
-		activeScene->requestSBTRebuild();
-	}
+	scene->requestSBTRebuild();
 }
 
 OptixInstance Entity::getIAS(int idx)
@@ -53,7 +51,5 @@ OptixInstance Entity::getIAS(int idx)
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 {
 	intensityTexture = texture;
-	if (auto activeScene = scene.lock()) {
-		activeScene->requestSBTRebuild();
-	}
+	scene->requestSBTRebuild();
 }
