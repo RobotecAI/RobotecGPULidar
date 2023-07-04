@@ -102,6 +102,10 @@ def main():
     if os.environ["OptiX_INSTALL_DIR"] == "":
         raise RuntimeError("OptiX not found! Make sure you have exported environment variable OptiX_INSTALL_DIR")
 
+    # Check extension requirements
+    if args.with_pcl and not os.path.isdir(cfg.VCPKG_INSTALL_DIR):
+        raise RuntimeError("PCL extension requires dependencies to be installed: run this script with --install-pcl-deps flag")
+
     # Go to script directory
     os.chdir(sys.path[0])
 
