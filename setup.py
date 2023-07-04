@@ -15,7 +15,7 @@ class Config:
     CUDA_MIN_VER_PATCH = 0
     CMAKE_GENERATOR = "'Unix Makefiles'"
     VCPKG_INSTALL_DIR = os.path.join("external", "vcpkg")
-    VCPKG_TAG = "2022.08.15"
+    VCPKG_TAG = "2023.06.20"
     VCPKG_EXEC = "vcpkg"
     VCPKG_BOOTSTRAP = "bootstrap-vcpkg.sh"
     VCPKG_PLATFORM_SPEC = ""
