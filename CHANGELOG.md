@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.14.1] 5 July 2023
+
+### Fixed
+- Fixed building `PCL` on Windows
+  - `vcpkg` tag has been updated
+  - `PCL` version has been upgraded (1.12.0 -> 1.13.0)
+- Fixed `rclcpp` (`ROS2` package) initialization
+  - `RGL` checks whether `rclcpp` is already initialized
+  - Resolved `spdlog` conflict between `RGL` and `rclcpp` by downgrading its version on the `RGL` site (1.10.0 -> 1.9.2)
+
 ## [0.14.0] 22 June 2023
 
 ### Added
@@ -29,6 +39,10 @@
 - Changed value of non-hits points from `CUDART_INF_F` to `FLT_MAX`
 - Updated docker README information
 
+### Known Issues
+- `rclcpp` (`ROS2` package) is always initialized by `RGL`. It could cause a double initialization if the client's code also did it before `RGL`.
+  - Fixed in v0.14.1
+
 ## [0.13.1] 19 April 2023
 
 ### Fixed
@@ -42,6 +56,8 @@
 ### Known Issues
 - `rgl_graph_write_pcd_file` causes SEH exception on Windows when trying to save point cloud with ~375 000 000 or more points.
   - The issue has been reported to PCL ([link](https://github.com/PointCloudLibrary/pcl/issues/5674)).
+- `rclcpp` (`ROS2` package) is always initialized by `RGL`. It could cause a double initialization if the client's code also did it before `RGL`.
+  - Fixed in v0.14.1
 
 ## [0.13.0] 29 March 2023
 
@@ -76,6 +92,9 @@
 ### Removed
 - Removed `rgl_graph_node_set_active` API call
 
+### Known Issues
+- `rclcpp` (`ROS2` package) is always initialized by `RGL`. It could cause a double initialization if the client's code also did it before `RGL`.
+  - Fixed in v0.14.1
 
 ## [0.12.0] 8 March 2023
 
@@ -96,6 +115,10 @@
 - Minor fixes and refactor in the Tape code
   - Use safer .at() instead of operator[]
   - Using alias type APIObjectID instead of size_t
+
+### Known Issues
+- `rclcpp` (`ROS2` package) is always initialized by `RGL`. It could cause a double initialization if the client's code also did it before `RGL`.
+  - Fixed in v0.14.1
 
 ## [0.11.3] 11 January 2023
 
