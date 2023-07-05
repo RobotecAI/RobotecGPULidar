@@ -1,4 +1,4 @@
-#include <PointsTestHelper.hpp>
+#include <UsePointsNodeHelper.hpp>
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>

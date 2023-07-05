@@ -1,6 +1,6 @@
 #include <utils.hpp>
-#include <RingIdsTestHelper.hpp>
-#include <RaysTestHelper.hpp>
+#include <RingIdsHelper.hpp>
+#include <RaysNodeHelper.hpp>
 
 class SetRingIdsNodeTest : public RGLTestWithParam<int> {
 protected:
@@ -11,13 +11,13 @@ protected:
     void initializeRingNodeAndIds(int idsCount)
     {
         setRingIdsNode = nullptr;
-        ringIds = RGLRingIdsTestHelper::GenerateRingIds(idsCount);
+        ringIds = RGLTestRingIdsHelper::generateRingIds(idsCount);
     }
 
     void initializeRaysAndRaysNode(int rayCount)
     {
         rayNode = nullptr;
-        rays = RGLRaysTestHelper::GenerateRays(rayCount);
+        rays = RGLTestRaysNodeHelper::generateRays(rayCount);
     }
 };
 
