@@ -6,11 +6,11 @@
 
 ## About the project
 
-Robotec GPU Lidar (RGL) is a cross-platform (Windows and Linux), C/C++ library developed by [Robotec.AI](https://robotec.ai/)
+Robotec GPU Lidar (RGL) is a cross-platform (Windows and Linux) C/C++ library developed by [Robotec.AI](https://robotec.ai/)
 for simulating [LiDARs](https://en.wikipedia.org/wiki/Lidar) on CUDA-enabled GPUs, accelerated by RTX cores if available.
 
-One of the use-cases of RGL is implementing Lidar sensors in simulation engines.
-We are working on integrations with popular game / simulation engines:
+One of the use cases of RGL is implementing Lidar sensors in simulation engines.
+We are working on integrations with popular game/simulation engines:
 - [Unity](https://unity.com/)
 - [O3DE](https://www.o3de.org/)
 - [Gazebo](https://gazebosim.org/home)
@@ -24,7 +24,7 @@ If you would like to have a custom integration, feel free to [contact us](https:
 |---|---|
 | **Configurable LiDAR pattern and range** | **High performance** |
 | ![](docs/gif/flexible_pattern.gif) | ![](docs/gif/high_performance.gif) |
-| **GPU-accelerated pointcloud processing** | **Flexible pipeline creation** |
+| **GPU-accelerated point cloud processing** | **Flexible pipeline creation** |
 | ![](docs/gif/pointcloud_processing.gif) | ![](docs/image/flexible_pipeline.png) |
 
 And more:
@@ -79,13 +79,15 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.7+**.
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
-    1. You may be asked to create Nvidia account to download
+    1. You may be asked to create a Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
 4. Use `setup.py` script to build.
-   - It will use CMake to generate files for build system (make) and build.
+   - It will use CMake to generate files for the build system (make) and the build.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
+   - You can build with extensions, e.g.
+      - `./setup.py --with-pcl --with-ros2`
    - See `./setup.py --help` for usage information.
 
 ## Building on Windows
@@ -93,13 +95,15 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 1. Install [Microsoft Visual Studio](https://visualstudio.microsoft.com/pl/downloads/) (Visual Studio 2019 when using ROS2 extension) with **C++ CMake tools for Windows** component.
 2. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.4.4+**.
 3. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
-   - install the framework and set environment variable `OptiX_INSTALL_DIR`
+   - install the framework and set the environment variable `OptiX_INSTALL_DIR`
 4. Install [Python3](https://www.python.org/downloads/).
-5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to RGL repository.
+5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to the RGL repository.
 6. Run `python setup.py` command to build the project.
-   - It will use CMake to generate files for build system (ninja) and build.
+   - It will use CMake to generate files for the build system (ninja) and build.
    - You can pass optional CMake and ninja parameters, e.g.
      - `python setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
+   - You can build with extensions, e.g.
+      - `./setup.py --with-pcl --with-ros2`
    - See `python setup.py --help` for usage information.
 
 ## Acknowledgements
