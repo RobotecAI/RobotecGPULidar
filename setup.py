@@ -15,7 +15,7 @@ class Config:
     CUDA_MIN_VER_PATCH = 0
     CMAKE_GENERATOR = "'Unix Makefiles'"
     VCPKG_INSTALL_DIR = os.path.join("external", "vcpkg")
-    VCPKG_TAG = "2022.08.15"
+    VCPKG_TAG = "2023.06.20"
     VCPKG_EXEC = "vcpkg"
     VCPKG_BOOTSTRAP = "bootstrap-vcpkg.sh"
     VCPKG_PLATFORM_SPEC = ""
@@ -101,6 +101,10 @@ def main():
     # Check OptiX_INSTALL_DIR
     if os.environ["OptiX_INSTALL_DIR"] == "":
         raise RuntimeError("OptiX not found! Make sure you have exported environment variable OptiX_INSTALL_DIR")
+
+    # Check extension requirements
+    if args.with_pcl and not os.path.isdir(cfg.VCPKG_INSTALL_DIR):
+        raise RuntimeError("PCL extension requires dependencies to be installed: run this script with --install-pcl-deps flag")
 
     # Go to script directory
     os.chdir(sys.path[0])
