@@ -1,4 +1,4 @@
-#include <DistanceFieldTestHelper.hpp>
+#include <DistanceFieldHelper.hpp>
 #include <RGLFields.hpp>
 
 class DistanceFieldTest : public RGLTestWithParam<float>, public DistanceFieldTestHelper { };

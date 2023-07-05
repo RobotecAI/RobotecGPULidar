@@ -1,19 +1,10 @@
-#include <PointsTestHelper.hpp>
-#include <RaysTestHelper.hpp>
+#include <UsePointsNodeHelper.hpp>
+#include <RaysNodeHelper.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
 
-class CompactPointsNodeTest : public RGLTestWithParam<int>, public RGLRaysNodeTestHelper, public RGLTestUsePointsNodeHelper<TestPointIsHit>{
+class CompactPointsNodeTest : public RGLTestWithParam<int>, public RGLTestRaysNodeHelper, public RGLTestUsePointsNodeHelper<TestPointIsHit>{
 protected:
-<<<<<<< HEAD
-    rgl_node_t compactNode = nullptr;
-
-    void preparePointsWithCompactGraph(int pointsCount, HitPointDensity hitPointDensity)
-    {
-        createTestUsePointsNode(pointsCount, identityTestTransform, hitPointDensity);
-        // TODO(nebraszka): Test cases when the input struct has padding inside
-        ASSERT_EQ(sizeof(TestPoint), sizeof(float) * 5);
-=======
     std::vector<rgl_node_t> compactNodes;
     std::vector<rgl_node_t> pointsTransformNodes;
 
@@ -23,7 +14,6 @@ protected:
     void prepareAndRunGraph(int pointsCount, HitPointDensity hitPointDensity)
     {
         prepareUsePointsNode(pointsCount, hitPointDensity);
->>>>>>> a7569a1 (Finished version with points generator)
 
         ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
         ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNodes.at(0)));
@@ -122,68 +112,6 @@ TEST_P(CompactPointsNodeTest, should_remove_as_many_points_as_non_hits)
 TEST_P(CompactPointsNodeTest, should_not_change_hit_points)
 {
     int pointsCount = GetParam();
-<<<<<<< HEAD
-    preparePointsWithCompactGraph(pointsCount, HitPointDensity::RANDOM);
-
-    // Print random seed for reproducibility
-    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
-
-    std::vector<TestPoint> expectedHitPoints = separateHitPoints();
-
-    for (auto field : pointFields) {
-        int32_t outCount, outSizeOf;
-        EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(compactNode, field, &outCount, &outSizeOf));
-        EXPECT_EQ(outCount, expectedHitPoints.size());
-        EXPECT_EQ(outSizeOf, getFieldSize(field));
-
-        switch (field) {
-        case XYZ_F32: {
-            std::vector<::Field<XYZ_F32>::type> outData;
-            outData.resize(outCount);
-            if(outCount == 0) {
-                EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(compactNode, field, outData.data()), "data != nullptr");
-            }
-            else {
-                EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compactNode, field, outData.data()));
-                for (int i = 0; i < outCount; ++i) {
-                    EXPECT_NEAR(expectedHitPoints.at(i).xyz[0], outData.at(i)[0], EPSILON_F);
-                    EXPECT_NEAR(expectedHitPoints.at(i).xyz[1], outData.at(i)[1], EPSILON_F);
-                    EXPECT_NEAR(expectedHitPoints.at(i).xyz[2], outData.at(i)[2], EPSILON_F);
-                }
-            }
-            break;
-        }
-        case IS_HIT_I32: {
-            std::vector<::Field<IS_HIT_I32>::type> outData;
-            outData.resize(outCount);
-            if(outCount == 0) {
-                EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(compactNode, field, outData.data()), "data != nullptr");
-            }
-            else {
-                EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compactNode, field, outData.data()));
-                for (int i = 0; i < outCount; ++i) {
-                    EXPECT_EQ(1, outData.at(i));
-                }
-            }
-            break;
-        }
-        case INTENSITY_F32: {
-            std::vector<::Field<INTENSITY_F32>::type> outData;
-            outData.resize(outCount);
-            if(outCount == 0) {
-                EXPECT_RGL_INVALID_ARGUMENT(rgl_graph_get_result_data(compactNode, field, outData.data()), "data != nullptr");
-            }
-            else {
-                EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compactNode, field, outData.data()));
-                for (int i = 0; i < outCount; ++i) {
-                    EXPECT_EQ(expectedHitPoints.at(i).intensity, outData.at(i));
-                }
-            }
-            break;
-        }
-        }
-    }
-=======
 
     prepareAndRunGraph(pointsCount, HitPointDensity::RANDOM);
     
@@ -259,7 +187,6 @@ TEST_F(CompactPointsNodeTest, should_not_change_result_when_multiple_compactions
         }
         verifyResults(returnedPoints, hitPoints);
     }
->>>>>>> a7569a1 (Finished version with points generator)
 }
 
 TEST_F(CompactPointsNodeTest, should_warn_when_empty_point_cloud)
@@ -274,17 +201,6 @@ TEST_F(CompactPointsNodeTest, should_warn_when_empty_point_cloud)
 
     FAIL();
 }
-
-TEST_F(CompactPointsNodeTest, same_data)
-{
-    //TODO(nebraszka) Still needs to be implemented
-}
-
-TEST_F(CompactPointsNodeTest, changing_data)
-{
-    //TODO(nebraszka) Still needs to be implemented
-}
-
 
 TEST_F(CompactPointsNodeTest, without_IS_HIT_field)
 {

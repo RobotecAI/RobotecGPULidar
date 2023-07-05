@@ -1,4 +1,4 @@
-#include <PointsTestHelper.hpp>
+#include <UsePointsNodeHelper.hpp>
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
@@ -21,11 +21,7 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 
     auto initializeArgumentsLambda = [this, &pointsGenerator]() {
         int pointsCount = GetParam();
-<<<<<<< HEAD
-        inPoints = generateTestPointsArray(pointsCount);
-=======
         pointsGenerator.generateTestPoints(pointsCount);
->>>>>>> a7569a1 (Finished version with points generator)
         usePointsNode = nullptr;
     };
 
@@ -48,13 +44,9 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 TEST_P(FromArrayPointsNodeTest, valid_arguments)
 {
     int pointsCount = GetParam();
-<<<<<<< HEAD
-    auto inPoints = generateTestPointsArray(pointsCount);
-=======
     RGLTestPointsGenerator pointsGenerator;
     std::vector<rgl_field_t> fields = pointsGenerator.getPointFields();
     pointsGenerator.generateTestPoints(pointsCount);
->>>>>>> a7569a1 (Finished version with points generator)
     rgl_node_t usePointsNode = nullptr;
 
     EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, pointsGenerator.getPointsData(), pointsGenerator.getPointsSize(), fields.data(), fields.size()));
@@ -68,12 +60,8 @@ TEST_P(FromArrayPointsNodeTest, use_case)
     prepareUsePointsNode(pointsCount, HitPointDensity::HALF_HIT);
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
-<<<<<<< HEAD
-    std::vector<TestPointStruct> expectedPoints = inPoints;
-=======
     auto expectedPoints = generator->getPointsData();
     auto expectedSize = generator->getPointsSize();
->>>>>>> a7569a1 (Finished version with points generator)
 
     for (auto field : generator->getPointFields()) {
         int32_t outCount, outSizeOf;
