@@ -1,11 +1,11 @@
+#include <PointsTestHelper.hpp>
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
 #include <repr.hpp>
 #include <utils.hpp>
-#include <PointsTestHelper.hpp>
 
-class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLPointsNodeTestHelper {
+class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3x4f>>, public RGLTestUsePointsNodeHelper<TestPoint> {
 protected:
     static constexpr int TEST_PARAM_TRANSFORM_ID=1;
 };
@@ -54,7 +54,7 @@ TEST_P(TransformPointsNodeTest, use_case)
 
     rgl_node_t transformNode = nullptr;
 
-    createTestUsePointsNode(pointsCount);
+    prepareUsePointsNode(pointsCount);
 
     EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformNode, &transform));
     ASSERT_THAT(transformNode, testing::NotNull());
@@ -66,14 +66,16 @@ TEST_P(TransformPointsNodeTest, use_case)
     int32_t outCount, outSizeOf;
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(transformNode, XYZ_F32, &outCount, &outSizeOf));
 
-    EXPECT_EQ(outCount, inPoints.size());
+    EXPECT_EQ(outCount, generator->getPointsSize());
     EXPECT_EQ(outSizeOf, getFieldSize(XYZ_F32));
 
     std::vector<::Field<XYZ_F32>::type> outData;
     outData.resize(outCount);
     EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(transformNode, XYZ_F32, outData.data()));
 
-    std::vector<TestPointStruct> expectedPoints = generateTestPointsArray(outCount, transform);
+    generator->generateTestPoints(outCount);
+    generator->transformPoints(Mat3x4f::fromRGL(transform));
+    auto expectedPoints = generator->getPointsData();
 
     // TODO When we are testing big values of point translation, numerical errors appears.
     //  For example for 100000 unit of translation, error after rotation can extend 0.001 unit.
@@ -82,8 +84,8 @@ TEST_P(TransformPointsNodeTest, use_case)
     // TODO 2 In the future, this and other tests, should check if every possible field has proper value, even if intact.
     for (int i = 0; i < pointsCount; ++i) {
         // For now use percent (0.1%) of value as error treshold.
-        EXPECT_NEAR(expectedPoints.at(i).xyz[0], outData.at(i)[0], (outData.at(i)[0] / 1000));
-        EXPECT_NEAR(expectedPoints.at(i).xyz[1], outData.at(i)[1], (outData.at(i)[1] / 1000));
-        EXPECT_NEAR(expectedPoints.at(i).xyz[2], outData.at(i)[2], (outData.at(i)[2] / 1000));
+        EXPECT_NEAR(expectedPoints[i].xyz[0], outData.at(i)[0], (outData.at(i)[0] / 1000));
+        EXPECT_NEAR(expectedPoints[i].xyz[1], outData.at(i)[1], (outData.at(i)[1] / 1000));
+        EXPECT_NEAR(expectedPoints[i].xyz[2], outData.at(i)[2], (outData.at(i)[2] / 1000));
     }
 }

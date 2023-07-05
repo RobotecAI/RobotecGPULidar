@@ -1,9 +1,9 @@
+#include <PointsTestHelper.hpp>
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
-#include <PointsTestHelper.hpp>
 
-class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointsNodeTestHelper {
+class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLTestUsePointsNodeHelper<TestPointIsHit> {
 protected:
 };
 
@@ -16,34 +16,48 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 {
-    auto initializeArgumentsLambda = [this]() {
+    RGLTestPointsGenerator pointsGenerator;
+    std::vector<rgl_field_t> fields = pointsGenerator.getPointFields();
+
+    auto initializeArgumentsLambda = [this, &pointsGenerator]() {
         int pointsCount = GetParam();
+<<<<<<< HEAD
         inPoints = generateTestPointsArray(pointsCount);
+=======
+        pointsGenerator.generateTestPoints(pointsCount);
+>>>>>>> a7569a1 (Finished version with points generator)
         usePointsNode = nullptr;
     };
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), 0), "field_count > 0");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, pointsGenerator.getPointsData(), pointsGenerator.getPointsSize(), fields.data(), 0), "field_count > 0");
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), nullptr, pointFields.size()), "fields != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, pointsGenerator.getPointsData(), pointsGenerator.getPointsSize(), nullptr, fields.size()), "fields != nullptr");
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, inPoints.data(), 0, pointFields.data(), pointFields.size()), "points_count > 0");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, pointsGenerator.getPointsData(), 0, fields.data(), fields.size()), "points_count > 0");
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, nullptr, inPoints.size(), pointFields.data(), pointFields.size()), "points != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, nullptr, pointsGenerator.getPointsSize(), fields.data(), fields.size()), "points != nullptr");
 
     initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(nullptr, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()), "node != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(nullptr, pointsGenerator.getPointsData(), pointsGenerator.getPointsSize(), fields.data(), fields.size()), "node != nullptr");
 }
+
 TEST_P(FromArrayPointsNodeTest, valid_arguments)
 {
     int pointsCount = GetParam();
+<<<<<<< HEAD
     auto inPoints = generateTestPointsArray(pointsCount);
+=======
+    RGLTestPointsGenerator pointsGenerator;
+    std::vector<rgl_field_t> fields = pointsGenerator.getPointFields();
+    pointsGenerator.generateTestPoints(pointsCount);
+>>>>>>> a7569a1 (Finished version with points generator)
     rgl_node_t usePointsNode = nullptr;
 
-    EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
+    EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, pointsGenerator.getPointsData(), pointsGenerator.getPointsSize(), fields.data(), fields.size()));
     ASSERT_THAT(usePointsNode, testing::NotNull());
 }
 
@@ -51,15 +65,20 @@ TEST_P(FromArrayPointsNodeTest, use_case)
 {
     int pointsCount = GetParam();
 
-    createTestUsePointsNode(pointsCount);
+    prepareUsePointsNode(pointsCount, HitPointDensity::HALF_HIT);
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
+<<<<<<< HEAD
     std::vector<TestPointStruct> expectedPoints = inPoints;
+=======
+    auto expectedPoints = generator->getPointsData();
+    auto expectedSize = generator->getPointsSize();
+>>>>>>> a7569a1 (Finished version with points generator)
 
-    for (auto field : pointFields) {
+    for (auto field : generator->getPointFields()) {
         int32_t outCount, outSizeOf;
         EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(usePointsNode, field, &outCount, &outSizeOf));
-        EXPECT_EQ(outCount, inPoints.size());
+        EXPECT_EQ(outCount, expectedSize);
         EXPECT_EQ(outSizeOf, getFieldSize(field));
 
         switch (field) {
@@ -68,9 +87,9 @@ TEST_P(FromArrayPointsNodeTest, use_case)
             outData.resize(outCount);
             EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
             for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints.at(i).xyz[0], outData.at(i)[0], EPSILON_F);
-                EXPECT_NEAR(expectedPoints.at(i).xyz[1], outData.at(i)[1], EPSILON_F);
-                EXPECT_NEAR(expectedPoints.at(i).xyz[2], outData.at(i)[2], EPSILON_F);
+                EXPECT_NEAR(expectedPoints[i].xyz[0], outData.at(i)[0], EPSILON_F);
+                EXPECT_NEAR(expectedPoints[i].xyz[1], outData.at(i)[1], EPSILON_F);
+                EXPECT_NEAR(expectedPoints[i].xyz[2], outData.at(i)[2], EPSILON_F);
             }
             break;
         }
@@ -79,7 +98,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
             outData.resize(outCount);
             EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
             for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints.at(i).isHit, outData.at(i), EPSILON_F);
+                EXPECT_NEAR(expectedPoints[i].isHit, outData.at(i), EPSILON_F);
             }
             break;
         }
@@ -88,7 +107,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
             outData.resize(outCount);
             EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
             for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints.at(i).intensity, outData.at(i), EPSILON_F);
+                EXPECT_NEAR(expectedPoints[i].intensity, outData.at(i), EPSILON_F);
             }
             break;
         }
