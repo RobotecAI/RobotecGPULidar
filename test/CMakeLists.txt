@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
+        src/externalLibraryTest.cpp
         src/graphTest.cpp
         src/apiReadmeExample.cpp
         src/gaussianStressTest.cpp

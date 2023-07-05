@@ -50,6 +50,7 @@ private:
 	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ros2Publisher;
 	sensor_msgs::msg::PointCloud2 ros2Message;
 
+	static bool isRclcppInitializedByRGL;
 	static rclcpp::Node::SharedPtr ros2Node;
 	static std::string ros2NodeName;
 	static std::set<std::string> ros2TopicNames;

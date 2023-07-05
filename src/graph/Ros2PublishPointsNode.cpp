@@ -16,6 +16,7 @@
 #include <scene/Scene.hpp>
 #include <RGLFields.hpp>
 
+bool Ros2PublishPointsNode::isRclcppInitializedByRGL = false;
 rclcpp::Node::SharedPtr Ros2PublishPointsNode::ros2Node = nullptr;
 std::string Ros2PublishPointsNode::ros2NodeName = "RobotecGPULidar";
 std::set<std::string> Ros2PublishPointsNode::ros2TopicNames = {};
@@ -26,10 +27,14 @@ void Ros2PublishPointsNode::setParameters(
 	rgl_qos_policy_durability_t qosDurability,
 	rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth)
 {
-	if (ros2Node.get() == nullptr) {
-		static const char *args[] = { "--ros-args", "--disable-external-lib-logs" };
-		rclcpp::init(2, args);
+	// Check if rclcpp initialized
+	if (!rclcpp::ok()) {
+		rclcpp::init(0, nullptr);
+		isRclcppInitializedByRGL = true;
+	}
 
+	// Create ROS2 node
+	if (ros2Node.get() == nullptr) {
 		ros2Node = std::make_shared<rclcpp::Node>(ros2NodeName);
 	}
 
@@ -76,6 +81,9 @@ void Ros2PublishPointsNode::schedule(cudaStream_t stream)
 	ros2Message.header.stamp = Scene::defaultInstance()->getTime().has_value() ?
 	                           Scene::defaultInstance()->getTime()->asRos2Msg() :
 	                           static_cast<builtin_interfaces::msg::Time>(ros2Node->get_clock()->now());
+	if (!rclcpp::ok()) {
+		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
+	}
 	ros2Publisher->publish(ros2Message);
 }
 
@@ -85,8 +93,12 @@ Ros2PublishPointsNode::~Ros2PublishPointsNode()
 	ros2Publisher.reset();
 
 	if (ros2TopicNames.empty()) {
-		rclcpp::shutdown();
 		ros2Node.reset();
+
+		if (isRclcppInitializedByRGL) {
+			rclcpp::shutdown();
+			isRclcppInitializedByRGL = false;
+		}
 	}
 }
 
