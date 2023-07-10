@@ -11,7 +11,7 @@ import argparse
 class Config:
     # Default values for Linux
     CUDA_MIN_VER_MAJOR = 11
-    CUDA_MIN_VER_MINOR = 2
+    CUDA_MIN_VER_MINOR = 7
     CUDA_MIN_VER_PATCH = 0
     CMAKE_GENERATOR = "'Unix Makefiles'"
     VCPKG_INSTALL_DIR = os.path.join("external", "vcpkg")
