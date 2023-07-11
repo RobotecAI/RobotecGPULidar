@@ -75,7 +75,7 @@ TEST_P(TransformPointsNodeTest, use_case)
 
     generator->generateTestPoints(outCount);
     generator->transformPoints(Mat3x4f::fromRGL(transform));
-    auto expectedPoints = generator->getPointsData();
+    auto expectedPoints = generator->getPointsVector();
 
     // TODO When we are testing big values of point translation, numerical errors appears.
     //  For example for 100000 unit of translation, error after rotation can extend 0.001 unit.
@@ -84,8 +84,8 @@ TEST_P(TransformPointsNodeTest, use_case)
     // TODO 2 In the future, this and other tests, should check if every possible field has proper value, even if intact.
     for (int i = 0; i < pointsCount; ++i) {
         // For now use percent (0.1%) of value as error treshold.
-        EXPECT_NEAR(expectedPoints[i].xyz[0], outData.at(i)[0], (outData.at(i)[0] / 1000));
-        EXPECT_NEAR(expectedPoints[i].xyz[1], outData.at(i)[1], (outData.at(i)[1] / 1000));
-        EXPECT_NEAR(expectedPoints[i].xyz[2], outData.at(i)[2], (outData.at(i)[2] / 1000));
+        EXPECT_NEAR(expectedPoints.at(i).xyz[0], outData.at(i)[0], (outData.at(i)[0] / 1000));
+        EXPECT_NEAR(expectedPoints.at(i).xyz[1], outData.at(i)[1], (outData.at(i)[1] / 1000));
+        EXPECT_NEAR(expectedPoints.at(i).xyz[2], outData.at(i)[2], (outData.at(i)[2] / 1000));
     }
 }

@@ -5,8 +5,13 @@ struct RGLTestUsePointsNodeHelper {
     rgl_node_t usePointsNode = nullptr;
     std::unique_ptr<RGLTestPointsGeneratorBase<PointType>> generator;
     int randomNonHitCount = 0;
+    std::optional<unsigned> seed = std::nullopt;
 
     void prepareUsePointsNode(int pointsCount, HitPointDensity hitPointDensity = HitPointDensity::NONE) { }
+
+    void setSeed(std::optional<unsigned> seedValue) {
+        seed = seedValue;
+    }
 
     rgl_node_t simulateEmptyPointCloudOutputNode()
     {
@@ -32,37 +37,37 @@ struct RGLTestUsePointsNodeHelper {
             EXPECT_EQ(outSizeOf, getFieldSize(field));
 
             switch (field) {
-            case XYZ_F32: {
-                std::vector<::Field<XYZ_F32>::type> outData(outCount);
-                if (outCount != 0) {
-                    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(dataNode, field, outData.data()));
-                    resultPoints.resize(outCount);
-                    for (int i = 0; i < outCount; ++i) {
-                        resultPoints[i].xyz = outData[i];
+                case XYZ_F32: {
+                    std::vector<::Field<XYZ_F32>::type> outData(outCount);
+                    if (outCount != 0) {
+                        EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(dataNode, field, outData.data()));
+                        resultPoints.resize(outCount);
+                        for (int i = 0; i < outCount; ++i) {
+                            resultPoints[i].xyz = outData[i];
+                        }
                     }
+                    break;
                 }
-                break;
-            }
-            case IS_HIT_I32: {
-                std::vector<::Field<IS_HIT_I32>::type> outData(outCount);
-                if (outCount != 0) {
-                    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(dataNode, field, outData.data()));
-                    for (int i = 0; i < outCount; ++i) {
-                        resultPoints[i].isHit = outData[i];
+                case IS_HIT_I32: {
+                    std::vector<::Field<IS_HIT_I32>::type> outData(outCount);
+                    if (outCount != 0) {
+                        EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(dataNode, field, outData.data()));
+                        for (int i = 0; i < outCount; ++i) {
+                            resultPoints[i].isHit = outData[i];
+                        }
                     }
+                    break;
                 }
-                break;
-            }
-            case INTENSITY_F32: {
-                std::vector<::Field<INTENSITY_F32>::type> outData(outCount);
-                if (outCount != 0) {
-                    EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(dataNode, field, outData.data()));
-                    for (int i = 0; i < outCount; ++i) {
-                        resultPoints[i].intensity = outData[i];
+                case INTENSITY_F32: {
+                    std::vector<::Field<INTENSITY_F32>::type> outData(outCount);
+                    if (outCount != 0) {
+                        EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(dataNode, field, outData.data()));
+                        for (int i = 0; i < outCount; ++i) {
+                            resultPoints[i].intensity = outData[i];
+                        }
                     }
+                    break;
                 }
-                break;
-            }
             }
         }
 
@@ -104,7 +109,12 @@ inline void RGLTestUsePointsNodeHelper<TestPoint>::prepareUsePointsNode(int poin
 template <>
 inline void RGLTestUsePointsNodeHelper<TestPointIsHit>::prepareUsePointsNode(int pointsCount, HitPointDensity hitPointDensity)
 {
-    auto pointGenerator = std::make_unique<RGLTestPointsIsHitGenerator>(hitPointDensity);
+    std::unique_ptr<RGLTestPointsIsHitGenerator> pointGenerator;
+    if(seed) {
+        pointGenerator = std::make_unique<RGLTestPointsIsHitGenerator>(hitPointDensity, *seed);
+    } else {
+        pointGenerator = std::make_unique<RGLTestPointsIsHitGenerator>(hitPointDensity);
+    }
     pointGenerator->generateTestPoints(pointsCount);
     randomNonHitCount = pointGenerator->getRandomNonHitCount();
     createUsePointsNode(pointGenerator.get());

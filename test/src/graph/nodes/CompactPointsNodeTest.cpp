@@ -3,13 +3,24 @@
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
 
+constexpr size_t MULTIPLE_COMPACTIONS_COUNT = 15;
+constexpr size_t RAYS_COUNT = 15;
+constexpr auto TEST_SEED_ENV_VAR = "RGL_COMPACT_TEST_SEED";
+
 class CompactPointsNodeTest : public RGLTestWithParam<int>, public RGLTestRaysNodeHelper, public RGLTestUsePointsNodeHelper<TestPointIsHit>{
 protected:
     std::vector<rgl_node_t> compactNodes;
     std::vector<rgl_node_t> pointsTransformNodes;
 
     CompactPointsNodeTest()
-        : compactNodes(15, nullptr), pointsTransformNodes(15, nullptr) {}
+        : compactNodes(MULTIPLE_COMPACTIONS_COUNT, nullptr), pointsTransformNodes(MULTIPLE_COMPACTIONS_COUNT, nullptr) 
+    {
+        char* envSeed = std::getenv(TEST_SEED_ENV_VAR);
+        if (envSeed != nullptr) {
+            unsigned seed = std::stoul(envSeed);
+            setSeed(seed);
+        }
+    }
 
     void prepareAndRunGraph(int pointsCount, HitPointDensity hitPointDensity)
     {
@@ -56,7 +67,7 @@ TEST_F(CompactPointsNodeTest, invalid_pipeline_when_no_input_node)
 
 TEST_F(CompactPointsNodeTest, invalid_pipeline_when_incorrect_input_node)
 {
-    createTestUseRaysNode(100);
+    createTestUseRaysNode(RAYS_COUNT);
 
     ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, compactNodes.at(0)));
@@ -102,7 +113,7 @@ TEST_P(CompactPointsNodeTest, should_remove_as_many_points_as_non_hits)
     prepareAndRunGraph(pointsCount, HitPointDensity::RANDOM);
 
     // Print random seed for reproducibility
-    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
+    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", generator->getRandomSeed());
 
     int32_t hitpointCount, pointSize;
     ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(compactNodes.at(0), RGL_FIELD_XYZ_F32, &hitpointCount, &pointSize));
@@ -116,7 +127,7 @@ TEST_P(CompactPointsNodeTest, should_not_change_hit_points)
     prepareAndRunGraph(pointsCount, HitPointDensity::RANDOM);
     
     // Print random seed for reproducibility
-    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
+    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", generator->getRandomSeed());
 
     RGLTestPointsIsHitGenerator* pointsGenerator = dynamic_cast<RGLTestPointsIsHitGenerator*>(generator.get());
     std::vector<TestPointIsHit> expectedHitPoints = pointsGenerator->separateHitPoints();
@@ -124,16 +135,18 @@ TEST_P(CompactPointsNodeTest, should_not_change_hit_points)
     verifyResults(returnedPoints, expectedHitPoints);
 }
 
-TEST_F(CompactPointsNodeTest, should_not_change_result_when_multiple_compactions_applied_to_same_data)
+TEST_P(CompactPointsNodeTest, should_not_change_result_when_multiple_compactions_applied_to_same_data)
 {
-    int pointsCount = 1000;
+    int pointsCount = GetParam();
 
-    prepareUsePointsNode(pointsCount, HitPointDensity::RANDOM);
+    // TODO: In the future it should be changed to HitPointDensity::RANDOM, 
+    // currently compact on empty point cloud causes segfault, hence the decision to set all points as hit,
+    // otherwise it would affect the result of this test
+    prepareUsePointsNode(pointsCount, HitPointDensity::ALL_HIT);
+
     ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
     auto results = getResults(usePointsNode);
-
-    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
 
     for (int i = 0; i < compactNodes.size(); ++i) {
         ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(i)));
@@ -152,13 +165,14 @@ TEST_F(CompactPointsNodeTest, should_not_change_result_when_multiple_compactions
     verifyResults(returnedPoints, expectedHitPoints);
 }
 
-TEST_F(CompactPointsNodeTest, should_not_change_result_when_multiple_compactions_applied_to_changing_data)
+TEST_P(CompactPointsNodeTest, should_not_change_result_when_multiple_compactions_applied_to_changing_data)
 {
-    int pointsCount = 1000;
+    int pointsCount = GetParam();
 
-    prepareUsePointsNode(pointsCount, HitPointDensity::RANDOM);
-    // Print random seed for reproducibility
-    fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
+    // TODO: In the future it should be changed to HitPointDensity::RANDOM, 
+    // currently compact on empty point cloud causes segfault, hence the decision to set all points as hit,
+    // otherwise it would affect the result of this test
+    prepareUsePointsNode(pointsCount, HitPointDensity::ALL_HIT);
 
     const rgl_mat3x4f trans = Mat3x4f::translation(1.5f, 0.5f, 0.8f).toRGL();
 

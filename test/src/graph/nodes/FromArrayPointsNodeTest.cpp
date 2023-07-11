@@ -60,7 +60,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
     prepareUsePointsNode(pointsCount, HitPointDensity::HALF_HIT);
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
-    auto expectedPoints = generator->getPointsData();
+    auto expectedPoints = generator->getPointsVector();
     auto expectedSize = generator->getPointsSize();
 
     for (auto field : generator->getPointFields()) {
@@ -75,9 +75,9 @@ TEST_P(FromArrayPointsNodeTest, use_case)
             outData.resize(outCount);
             EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
             for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints[i].xyz[0], outData.at(i)[0], EPSILON_F);
-                EXPECT_NEAR(expectedPoints[i].xyz[1], outData.at(i)[1], EPSILON_F);
-                EXPECT_NEAR(expectedPoints[i].xyz[2], outData.at(i)[2], EPSILON_F);
+                EXPECT_NEAR(expectedPoints.at(i).xyz[0], outData.at(i)[0], EPSILON_F);
+                EXPECT_NEAR(expectedPoints.at(i).xyz[1], outData.at(i)[1], EPSILON_F);
+                EXPECT_NEAR(expectedPoints.at(i).xyz[2], outData.at(i)[2], EPSILON_F);
             }
             break;
         }
@@ -86,7 +86,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
             outData.resize(outCount);
             EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
             for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints[i].isHit, outData.at(i), EPSILON_F);
+                EXPECT_NEAR(expectedPoints.at(i).isHit, outData.at(i), EPSILON_F);
             }
             break;
         }
@@ -95,7 +95,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
             outData.resize(outCount);
             EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
             for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints[i].intensity, outData.at(i), EPSILON_F);
+                EXPECT_NEAR(expectedPoints.at(i).intensity, outData.at(i), EPSILON_F);
             }
             break;
         }

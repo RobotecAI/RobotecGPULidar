@@ -1,10 +1,6 @@
 #include <random>
 #include <utils.hpp>
 
-static std::random_device randomDevice;
-static auto randomSeed = randomDevice();
-static std::mt19937 randomGenerator { randomSeed };
-
 struct TestPoint {
     Field<XYZ_F32>::type xyz;
     Field<INTENSITY_F32>::type intensity;
@@ -60,9 +56,20 @@ enum class HitPointDensity {
 template <typename PointType>
 class RGLTestPointsGeneratorBase {
 public:
+    RGLTestPointsGeneratorBase() {
+        randomSeed = randomDevice();
+        randomGenerator.seed(randomSeed);
+    }
+
+    RGLTestPointsGeneratorBase(unsigned seed) {
+        randomSeed = seed;
+        randomGenerator.seed(randomSeed);
+    }
+
     virtual void generateTestPoints(int pointsNumber)
     {
         inPoints.clear();
+        inPoints.reserve(pointsNumber);
         for (int i = 0; i < pointsNumber; ++i) {
             auto currentPoint = createPoint(i);
             inPoints.emplace_back(currentPoint);
@@ -74,9 +81,9 @@ public:
         return PointType().getFields();
     }
 
-    auto getPointsSize() const -> int { return inPoints.size(); }
-
-    auto getPointsData() const -> const auto* { return inPoints.data(); }
+    int getPointsSize() const { return inPoints.size(); }
+    const void* getPointsData() const { return static_cast<const void*>(inPoints.data()); }
+    const std::vector<PointType>& getPointsVector() const { return inPoints; }
 
     void transformPoints(const Mat3x4f& transform)
     {
@@ -85,8 +92,14 @@ public:
         }
     }
 
+    unsigned getRandomSeed() const { return randomSeed; }
+
 protected:
     std::vector<PointType> inPoints;
+
+    std::random_device randomDevice;
+    unsigned randomSeed;
+    std::mt19937 randomGenerator;
 
     virtual PointType createPoint(int i) = 0;
 };
@@ -106,6 +119,9 @@ class RGLTestPointsIsHitGenerator : public RGLTestPointsGeneratorBase<TestPointI
 public:
     RGLTestPointsIsHitGenerator(HitPointDensity hitPointDensity)
         : hitPointDensity(hitPointDensity) { }
+    
+    RGLTestPointsIsHitGenerator(HitPointDensity hitPointDensity, unsigned seed)
+        : RGLTestPointsGeneratorBase(seed), hitPointDensity(hitPointDensity) { }
 
     int getRandomNonHitCount() const { return randomNonHitCount; }
 
