@@ -138,6 +138,7 @@ class TapeRecorder
 	int valueToYaml(rgl_qos_policy_history_t value) { return (int) value; }
 
 	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
+	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
 
 	// TAPE_ARRAY
 	template<typename T, typename N>
@@ -220,7 +221,9 @@ private:
 	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode);
 	void tape_node_rays_set_range(const YAML::Node& yamlNode);
 	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode);
+	void tape_node_rays_set_time_offsets(const YAML::Node& yamlNode);
 	void tape_node_rays_transform(const YAML::Node& yamlNode);
+	void tape_node_rays_velocity_distort(const YAML::Node& yamlNode);
 	void tape_node_points_transform(const YAML::Node& yamlNode);
 	void tape_node_raytrace(const YAML::Node& yamlNode);
 	void tape_node_points_format(const YAML::Node& yamlNode);

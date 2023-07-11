@@ -485,6 +485,18 @@ RGL_API rgl_status_t
 rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t ranges_count);
 
 /**
+ * Creates or modifies SetTimeOffsetsRaysNode.
+ * The node assigns time offsets for existing rays.
+ * Input: rays
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param offsets Pointer to time offsets.
+ * @param ray_count Size of the `offsets` array.
+ */
+RGL_API rgl_status_t
+rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, float ray_count);
+
+/**
  * Creates or modifies TransformRaysNode.
  * Effectively, the node performs the following operation for all rays: `outputRay[i] = (*transform) * inputRay[i]`
  * This function can be used to account for the pose of the device.
@@ -495,6 +507,17 @@ rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t range
  */
 RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
+
+/**
+ * Creates or modifies VelocityDistortNode.
+ * The node distorts rays according to the velocity of the Lidar. The distortion is performed in the Lidar-local coordinate frame.
+ * This features requires that the Lidar velocity is set, and rays time offsets are set.
+ * Graph input: rays
+ * Graph output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ */
+RGL_API rgl_status_t
+rgl_node_rays_velocity_distort(rgl_node_t* node);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 /**

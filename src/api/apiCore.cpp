@@ -663,6 +663,30 @@ void TapePlayer::tape_node_rays_set_range(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, float ray_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_rays_set_time_offsets(node={}, offsets={})", repr(node), repr(offsets, ray_count));
+				CHECK_ARG(node != nullptr);
+				CHECK_ARG(offsets != nullptr);
+		CHECK_ARG(ray_count > 0);
+		createOrUpdateNode<SetTimeOffsetsRaysNode>(node, offsets, (size_t) ray_count);
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(offsets, ray_count), ray_count);
+	return status;
+}
+
+void TapePlayer::tape_node_rays_set_time_offsets(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_rays_set_time_offsets(&node,
+		reinterpret_cast<const float*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
@@ -681,6 +705,26 @@ void TapePlayer::tape_node_rays_transform(const YAML::Node& yamlNode)
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
 	rgl_node_rays_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()));
+	tapeNodes.insert({nodeId, node});
+}
+RGL_API rgl_status_t
+rgl_node_rays_velocity_distort(rgl_node_t* node)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_rays_velocity_distort(node={})", repr(node));
+				CHECK_ARG(node != nullptr);
+
+		createOrUpdateNode<VelocityDistortRaysNode>(node);
+	});
+	TAPE_HOOK(node);
+	return status;
+}
+
+void TapePlayer::tape_node_rays_velocity_distort(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_rays_velocity_distort(&node);
 	tapeNodes.insert({nodeId, node});
 }
 
