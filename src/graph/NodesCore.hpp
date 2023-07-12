@@ -223,6 +223,18 @@ private:
 	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
 };
 
+struct SetRangeRaysNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<SetRangeRaysNode>;
+	void setParameters(const Vec2f* rangesRaw, size_t rangesCount) {}
+
+	// Node
+	void validate() override {}
+	void schedule(cudaStream_t stream) override {}
+
+private:
+};
+
 struct YieldPointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;

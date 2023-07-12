@@ -78,6 +78,10 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	std::vector<int> rings = {0, 1};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIds, rings.data(), rings.size()));
 
+	rgl_node_t setRange = nullptr;
+	rgl_vec2f range = {0.0f, 1.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRange, &range, 1));
+
 	rgl_node_t transformRays = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformRays, &identityTf));
 

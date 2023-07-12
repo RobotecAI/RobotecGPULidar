@@ -470,6 +470,21 @@ RGL_API rgl_status_t
 rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count);
 
 /**
+ * Creates or modifies SetRangeRaysNode.
+ * The node defines min and max range for existing rays.
+ * It could be passed:
+ * - one range value and it will be applied to all of the rays
+ * - number of ranges equals to the number of rays (range for each ray will be specified individually)
+ * Input: rays
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param ranges Pointer to ranges.
+ * @param ranges_count Size of the `ranges` array.
+ */
+RGL_API rgl_status_t
+rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t ranges_count);
+
+/**
  * Creates or modifies TransformRaysNode.
  * Effectively, the node performs the following operation for all rays: `outputRay[i] = (*transform) * inputRay[i]`
  * This function can be used to account for the pose of the device.

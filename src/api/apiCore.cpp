@@ -639,6 +639,30 @@ void TapePlayer::tape_node_rays_set_ring_ids(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t ranges_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_rays_set_range(node={}, ranges={})", repr(node), repr(ranges, ranges_count));
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(ranges != nullptr);
+		CHECK_ARG(ranges_count > 0);
+		createOrUpdateNode<SetRangeRaysNode>(node, reinterpret_cast<const Vec2f*>(ranges), (size_t) ranges_count);
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(ranges, ranges_count), ranges_count);
+	return status;
+}
+
+void TapePlayer::tape_node_rays_set_range(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_rays_set_range(&node,
+							reinterpret_cast<const rgl_vec2f*>(fileMmap + yamlNode[1].as<size_t>()),
+							yamlNode[2].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
