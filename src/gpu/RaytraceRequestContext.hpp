@@ -24,7 +24,8 @@ struct RaytraceRequestContext
 	size_t rayCount;
 
 	Mat3x4f rayOriginToWorld;
-	float rayRange;
+	const Vec2f* rayRanges;
+	size_t rayRangesCount;
 
 	const int* ringIds;
 	size_t ringIdsCount;

@@ -109,7 +109,7 @@ private:
 struct RaytraceNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
-	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
+	void setParameters(std::shared_ptr<Scene> scene) { this->scene = scene; }
 
 	// Node
 	void validate() override;
@@ -128,7 +128,6 @@ struct RaytraceNode : Node, IPointsNode
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 private:
-	float range;
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
@@ -194,10 +193,12 @@ struct FromMat3x4fRaysNode : Node, IRaysNode
 
 	// Rays description
 	size_t getRayCount() const override { return rays->getCount(); }
+	size_t getRangesCount() const override { return 0; }  // To be set in SetRangeRaysNode
 	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	VArrayProxy<Vec2f>::ConstPtr getRanges() const override { return nullptr; }  // To be set in SetRangeRaysNode
 	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
@@ -226,13 +227,20 @@ private:
 struct SetRangeRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetRangeRaysNode>;
-	void setParameters(const Vec2f* rangesRaw, size_t rangesCount) {}
+	void setParameters(const Vec2f* rangesRaw, size_t rangesCount);
 
 	// Node
-	void validate() override {}
+	void validate() override;
 	void schedule(cudaStream_t stream) override {}
 
+	// Rays description
+	std::size_t getRangesCount() const override { return ranges->getCount(); }
+
+	// Data getters
+	VArrayProxy<Vec2f>::ConstPtr getRanges() const override { return ranges; }
+
 private:
+	VArrayProxy<Vec2f>::Ptr ranges = VArrayProxy<Vec2f>::create();
 };
 
 struct YieldPointsNode : Node, IPointsNodeSingleInput

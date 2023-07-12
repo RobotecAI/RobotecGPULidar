@@ -518,10 +518,9 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
  * Graph output: point cloud (sparse)
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
- * @param range Maximum distance to travel for every ray
  */
 RGL_API rgl_status_t
-rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
+rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
 
 /**
  * Creates or modifies FormatPointsNode.

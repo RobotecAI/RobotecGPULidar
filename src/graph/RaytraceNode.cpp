@@ -27,6 +27,11 @@ void RaytraceNode::validate()
 
 	raysNode = getValidInput<IRaysNode>();
 
+	if (raysNode->getRanges() == nullptr || raysNode->getRangesCount() == 0) {
+		auto msg = fmt::format("no range for rays specified - add SetRangeRaysNode to the pipeline");
+		throw InvalidPipeline(msg);
+	}
+
 	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
 		throw InvalidPipeline(msg);
@@ -50,6 +55,7 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		data->resize(raysNode->getRayCount(), false, false);
 	}
 	auto rays = raysNode->getRays();
+	auto rayRanges = raysNode->getRanges();
 	auto sceneAS = scene->getAS();
 	auto sceneSBT = scene->getSBT();
 	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
@@ -60,7 +66,8 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	(*requestCtx)[0] = RaytraceRequestContext{
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
-		.rayRange = range,
+		.rayRanges = rayRanges->getDevicePtr(),
+		.rayRangesCount = rayRanges->getCount(),
 		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
 		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 		.scene = sceneAS,

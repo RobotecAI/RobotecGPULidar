@@ -103,10 +103,11 @@ extern "C" __global__ void __raygen__()
 
 	Vec3f origin = ray * Vec3f{0, 0, 0};
 	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	Vec2f range = ctx.rayRangesCount == 1 ? ctx.rayRanges[0] : ctx.rayRanges[optixGetLaunchIndex().x];
 
 	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
 	Vec3fPayload originPayload = encodePayloadVec3f(origin);
-	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0,
+	optixTrace(ctx.scene, origin, dir, range.x(), range.y(), 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0,
 	           originPayload.p0, originPayload.p1, originPayload.p2);
 }
 
