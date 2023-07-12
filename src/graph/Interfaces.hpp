@@ -29,7 +29,9 @@ struct IRaysNode
 	virtual std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const = 0;
 	virtual std::optional<std::size_t> getRangesCount() const = 0;
 	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
+	virtual std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const = 0;
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
+	virtual std::optional<std::size_t> getTimeOffsetsCount() const = 0;
 	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
 };
 
@@ -41,11 +43,13 @@ struct IRaysNodeSingleInput : IRaysNode
 	size_t getRayCount() const override { return input->getRayCount(); }
 	std::optional<size_t> getRangesCount() const override { return input->getRangesCount(); }
 	std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
+	std::optional<size_t> getRingTimeOffsetsCount() const override { return input->getTimeOffsetsCount(); }
 
 	// Data getters
 	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
 	virtual std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return input->getRanges(); }
 	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	virtual std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return input->getTimeOffsets(); }
 	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:

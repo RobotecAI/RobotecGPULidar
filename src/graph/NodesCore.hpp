@@ -244,6 +244,25 @@ private:
 	VArrayProxy<Vec2f>::Ptr ranges = VArrayProxy<Vec2f>::create();
 };
 
+struct SetTimeOffsetsRaysNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<SetTimeOffsetsRaysNode>;
+	void setParameters(const float* raysTimeOffests, size_t timeOffsetsCount);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override {}
+
+	// Rays description
+	std::optional<size_t> getTimeOffsetsCount() const override { return timeOffsets->getCount(); }
+
+	// Data getters
+	std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return timeOffsets; }
+
+private:
+	VArrayProxy<float>::Ptr timeOffsets = VArrayProxy<float>::create();
+};
+
 struct YieldPointsNode : Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
