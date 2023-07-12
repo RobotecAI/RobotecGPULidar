@@ -22,6 +22,7 @@ const rgl_mat3x4f lidarPoseTf = Mat3x4f::translation(0, 0, 1).toRGL();
 const rgl_mat3x4f lidarPoseInvTf = Mat3x4f::fromRGL(lidarPoseTf).inverse().toRGL();
 const rgl_mat3x4f lidarRayTf = Mat3x4f::identity().toRGL();
 const std::vector<rgl_mat3x4f> lidarRays(LIDAR_RAYS_COUNT, lidarRayTf);
+const rgl_vec2f lidarRange = {0.0f, 1000.0f};
 const Vec3f noiselessHitpointInLidarFrame = {0.0f, 0.0f, 3.0f};
 
 struct GaussianStressTest : public RGLTest {
@@ -33,8 +34,9 @@ struct GaussianStressTest : public RGLTest {
 
 		// Create nodes
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, lidarRays.data(), lidarRays.size()));
+		EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRange, &lidarRange, 1));
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 		EXPECT_RGL_SUCCESS(rgl_node_points_transform(&toLidarFrame, &lidarPoseInvTf));
 		EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yield, yieldFields.data(), yieldFields.size()));
 
@@ -58,6 +60,7 @@ struct GaussianStressTest : public RGLTest {
 	}
 
 	rgl_node_t useRays = nullptr;
+	rgl_node_t setRange = nullptr;
 	rgl_node_t lidarPose = nullptr;
 	rgl_node_t raytrace = nullptr;
 	rgl_node_t toLidarFrame = nullptr;
@@ -75,7 +78,8 @@ TEST_F(GaussianStressTest, GaussianNoiseDistance)
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noise, MEAN, STD_DEV, STD_DEV_PER_METER));
 
 	// Connect nodes into graph
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, noise));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(noise, toLidarFrame));
@@ -99,7 +103,8 @@ TEST_F(GaussianStressTest, GaussianNoiseAngularRay)
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noise, MEAN, STD_DEV, ANGULAR_AXIS));
 
 	// Connect nodes into graph
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, noise));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(noise, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, toLidarFrame));
@@ -124,7 +129,8 @@ TEST_F(GaussianStressTest, GaussianNoiseAngularHitpoint)
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_hitpoint(&noise, MEAN, STD_DEV, ANGULAR_AXIS));
 
 	// Connect nodes into graph
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, noise));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(noise, toLidarFrame));

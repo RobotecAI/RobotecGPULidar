@@ -32,21 +32,27 @@ TEST(EndToEnd, ReadmeExample)
 			{ 0, 0, 1, 0 },
 		}
 	};
+	rgl_vec2f range = {0.0f, 1000.0f};
 
-	rgl_node_t useRays = nullptr, raytrace = nullptr;
+	rgl_node_t useRays = nullptr, setRange = nullptr, raytrace = nullptr;
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRange, &range, 1));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, raytrace));
 
 	// you can run the graph using any one of its nodes
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	// Wait for the Graph to run (if needed) and collect results
-	int32_t hitpoint_count;
+	int32_t hitpoint_count = -1;
 	int32_t point_size;
 	rgl_vec3f results[1];
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &point_size));
+	ASSERT_EQ(hitpoint_count, 1);
+
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results));
 
 	printf("Got %d hitpoint(s)\n", hitpoint_count);
@@ -54,7 +60,6 @@ TEST(EndToEnd, ReadmeExample)
 		printf("- (%.2f, %.2f, %.2f)\n", results[i].value[0], results[i].value[1], results[i].value[2]);
 	}
 
-	ASSERT_EQ(hitpoint_count, 1);
 	ASSERT_FLOAT_EQ(results[0].value[2], 4.0f);
 
 	EXPECT_RGL_SUCCESS(rgl_cleanup());

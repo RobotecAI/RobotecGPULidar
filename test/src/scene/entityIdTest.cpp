@@ -40,8 +40,9 @@ TEST_F(EntityIdTest, BaseTest)
 	spawnCubeOnScene(nullptr, Mat3x4f::TRS({6, BOX2_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX2_ID);
 	spawnCubeOnScene(nullptr, Mat3x4f::TRS({6, BOX3_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}));
 
-	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, yieldNode = nullptr;
+	rgl_node_t useRaysNode = nullptr, setRangeNode = nullptr, raytraceNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);
+	rgl_vec2f range = {0.0f, 1000.0f};
 
 	std::vector<rgl_field_t> yieldFields = {
 			XYZ_F32,
@@ -50,10 +51,12 @@ TEST_F(EntityIdTest, BaseTest)
 	};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &range, 1));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, setRangeNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRangeNode, raytraceNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));

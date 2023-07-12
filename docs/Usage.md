@@ -105,12 +105,16 @@ rgl_mat3x4f ray_tf = {
     { 0, 1, 0, 0 },
     { 0, 0, 1, 0 }}
 };
+rgl_vec2f range = {0.0f, 1000.0f};
 
-rgl_node_t useRays = nullptr, raytrace = nullptr;
+rgl_node_t useRays = nullptr, setRange = nullptr, raytrace = nullptr;
 
 rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1);
+rgl_node_rays_set_range(&setRange, &range, 1)
 rgl_node_raytrace(&raytrace, nullptr, 1000);
-rgl_graph_node_add_child(useRays, raytrace);
+
+rgl_graph_node_add_child(useRays, setRange)
+rgl_graph_node_add_child(setRange, raytrace);
 
 // you can run the graph using any one of its nodes
 rgl_graph_run(raytrace);

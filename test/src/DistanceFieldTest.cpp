@@ -76,7 +76,8 @@ TEST_F(DistanceFieldTest, should_compute_infinite_distance_for_object_off_ray_pa
 
     prepareNodes();
 
-    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, setRangeNode));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(setRangeNode, raytraceNode));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldPointsNode));
 
     getResults();

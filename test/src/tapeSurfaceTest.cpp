@@ -89,7 +89,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &identityTf));
 
 	rgl_node_t raytrace = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 100));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 
 	rgl_node_t format = nullptr;
 	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
@@ -134,7 +134,8 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	rgl_node_t noiseDistance = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noiseDistance, 0.1f, 0.1f, 0.01f));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 

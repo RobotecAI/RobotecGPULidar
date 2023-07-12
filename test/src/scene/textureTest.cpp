@@ -55,20 +55,23 @@ TEST_P(TextureTest, rgl_texture_reading)
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 
 	// Create RGL graph pipeline.
-	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
+	rgl_node_t useRaysNode = nullptr, setRangeNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
+	rgl_vec2f range = {0.0f, 1000.0f};
 
 	std::vector<rgl_field_t> yieldFields = {
 			INTENSITY_F32
 	};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &range, 1));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, setRangeNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRangeNode, raytraceNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, compactNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactNode, yieldNode));
 
@@ -111,9 +114,10 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 
 	//Create RGL graph pipeline.
-	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr;
+	rgl_node_t useRaysNode = nullptr, setRangeNode = nullptr, raytraceNode = nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
+	rgl_vec2f range = {0.0f, 1000.0f};
 
 	std::vector<rgl_field_t> yieldFields = {
 			XYZ_F32,
@@ -122,9 +126,11 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &range, 1));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, setRangeNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRangeNode, raytraceNode));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 
