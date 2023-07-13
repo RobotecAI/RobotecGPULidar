@@ -2,6 +2,8 @@
 #include <UsePointsNodeHelper.hpp>
 #include <FormatPointsNodeHelper.hpp>
 
+// TODO -> seed
+
 class FormatPointsNodeTests : public RGLTest, public FormatPointsNodeHelper {};
 
 TEST_F(FormatPointsNodeTests, invalid_argument_node)
@@ -82,13 +84,13 @@ TEST_F(FormatPointsNodeTests, should_properly_align_output_size)
 
     ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
     ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, RAYTRACE_DEPTH));
-    ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(2), formats.at(2).data(), formats.at(2).size()));
+    ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(0), formats.at(2).data(), formats.at(2).size()));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
-    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, formatNodes.at(2)));
-    ASSERT_RGL_SUCCESS(rgl_graph_run(formatNodes.at(2)));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, formatNodes.at(0)));
+    ASSERT_RGL_SUCCESS(rgl_graph_run(formatNodes.at(0)));
 
     int32_t outCount, outSizeOf;
-	ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(formatNodes.at(2), RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
+	ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(formatNodes.at(0), RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 	EXPECT_EQ(outCount, rayTf.size());
 
     size_t expectedOutSize = getPointSize(formats.at(2));
@@ -114,9 +116,8 @@ TEST_F(FormatPointsNodeTests, format_node_results_data_should_be_the_same_as_fro
         rayTf.push_back(Mat3x4f::rotationRad(RGL_AXIS_X, randomAngle).toRGL());
     }
 
+    // Using yield points node
     rgl_node_t yieldPointsNode = nullptr;
-    // fields = { XYZ_F32, IS_HIT_I32, DISTANCE_F32 };
-
     ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
     ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, RAYTRACE_DEPTH));
     ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldPointsNode, formats.at(0).data(), formats.at(0).size()));
@@ -142,24 +143,25 @@ TEST_F(FormatPointsNodeTests, format_node_results_data_should_be_the_same_as_fro
     ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(yieldPointsNode, IS_HIT_I32, outIsHits.data()));
     ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(yieldPointsNode, DISTANCE_F32, outDistances.data()));
 
-    ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(4), formats.at(4).data(), formats.at(4).size()));
+    // Using format points node
+    ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(0), formats.at(4).data(), formats.at(4).size()));
     ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, yieldPointsNode));
-    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, formatNodes.at(4)));
-    ASSERT_RGL_SUCCESS(rgl_graph_run(formatNodes.at(4)));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, formatNodes.at(0)));
+    ASSERT_RGL_SUCCESS(rgl_graph_run(formatNodes.at(0)));
 
     int32_t outCount, outSizeOf;
-    ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(formatNodes.at(4), RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
+    ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(formatNodes.at(0), RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
     std::vector<Point4> outFormatPoints(outCount);
-    ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(formatNodes.at(4), RGL_FIELD_DYNAMIC_FORMAT, outFormatPoints.data()));
+    ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(formatNodes.at(0), RGL_FIELD_DYNAMIC_FORMAT, outFormatPoints.data()));
     ASSERT_EQ(outPointsCount, outCount);
 
     // Compare yield points output and format points output
-    for(size_t i = 0; i < outCount ; ++i) {
-        EXPECT_EQ(outPoints[i][0], outFormatPoints[i].xyz[0]);
-        EXPECT_EQ(outPoints[i][1], outFormatPoints[i].xyz[1]);
-        EXPECT_EQ(outPoints[i][2], outFormatPoints[i].xyz[2]);
-        EXPECT_EQ(outIsHits[i], outFormatPoints[i].isHit);
-        EXPECT_EQ(outDistances[i], outFormatPoints[i].distance);
+    for(int i = 0; i < outCount ; ++i) {
+        EXPECT_EQ(outPoints.at(i)[0], outFormatPoints.at(i).xyz[0]);
+        EXPECT_EQ(outPoints.at(i)[1], outFormatPoints.at(i).xyz[1]);
+        EXPECT_EQ(outPoints.at(i)[2], outFormatPoints.at(i).xyz[2]);
+        EXPECT_EQ(outIsHits.at(i), outFormatPoints.at(i).isHit);
+        EXPECT_EQ(outDistances.at(i), outFormatPoints.at(i).distance);
     }
 }
 
@@ -189,10 +191,9 @@ TEST_F(FormatPointsNodeTests, multiple_format_should_not_change_data)
     }
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, formatNodes.at(0)));
-    for(size_t i = 1; i < formatNodes.size(); ++i) {
+    for(int i = 1; i < formatNodes.size(); ++i) {
         ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(formatNodes.at(i - 1), formatNodes.at(i)));
     }
-
     ASSERT_RGL_SUCCESS(rgl_graph_run(useRaysNode));
 
     //Compare results from first and last format node
@@ -206,12 +207,12 @@ TEST_F(FormatPointsNodeTests, multiple_format_should_not_change_data)
     ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(formatNodes.at(formatNodes.size() - 1), RGL_FIELD_DYNAMIC_FORMAT, outFormatPointsLast.data()));
 
     ASSERT_EQ(outFormatPoints.size(), outFormatPointsLast.size());
-    for(size_t i = 0; i < outFormatPoints.size(); ++i) {
-        EXPECT_EQ(outFormatPoints[i].xyz[0], outFormatPointsLast[i].xyz[0]);
-        EXPECT_EQ(outFormatPoints[i].xyz[1], outFormatPointsLast[i].xyz[1]);
-        EXPECT_EQ(outFormatPoints[i].xyz[2], outFormatPointsLast[i].xyz[2]);
-        EXPECT_EQ(outFormatPoints[i].isHit, outFormatPointsLast[i].isHit);
-        EXPECT_EQ(outFormatPoints[i].distance, outFormatPointsLast[i].distance);
+    for(int i = 0; i < outFormatPoints.size(); ++i) {
+        EXPECT_EQ(outFormatPointsat(i).xyz[0], outFormatPointsLastat(i).xyz[0]);
+        EXPECT_EQ(outFormatPointsat(i).xyz[1], outFormatPointsLastat(i).xyz[1]);
+        EXPECT_EQ(outFormatPointsat(i).xyz[2], outFormatPointsLastat(i).xyz[2]);
+        EXPECT_EQ(outFormatPointsat(i).isHit, outFormatPointsLastat(i).isHit);
+        EXPECT_EQ(outFormatPointsat(i).distance, outFormatPointsLastat(i).distance);
     }
 }
 
@@ -234,18 +235,16 @@ TEST_F(FormatPointsNodeTests, multiple_changing_format_should_not_change_data)
         rayTf.push_back(Mat3x4f::rotationRad(RGL_AXIS_X, randomAngle).toRGL());
     }
 
-    for (size_t i = 0 ; i < formats.size(); ++i) {
-        ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(i), formats.at(i).data(), formats.at(i).size()));
-    }
-
     ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
-    ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, RAYTRACE_DEPTH));  
+    ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, RAYTRACE_DEPTH)); 
+        for (int i = 0 ; i < formats.size(); ++i) {
+        ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(i), formats.at(i).data(), formats.at(i).size()));
+    } 
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
     ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, formatNodes.at(0)));
-    for(size_t i = 1; i < formatNodes.size(); ++i) {
+    for(int i = 1; i < formatNodes.size(); ++i) {
         ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(formatNodes.at(i - 1), formatNodes.at(i)));
     }
-
     ASSERT_RGL_SUCCESS(rgl_graph_run(useRaysNode));
 
     int32_t outCount, outSizeOf;
@@ -269,35 +268,34 @@ TEST_F(FormatPointsNodeTests, multiple_changing_format_should_not_change_data)
     std::vector<Point4> outFormatPoints5(outCount);
     ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(formatNodes.at(4), RGL_FIELD_DYNAMIC_FORMAT, outFormatPoints5.data()));
 
-
     ASSERT_EQ(outFormatPoints.size(), outFormatPoints2.size());
     ASSERT_EQ(outFormatPoints.size(), outFormatPoints3.size());
     ASSERT_EQ(outFormatPoints.size(), outFormatPoints4.size());
     ASSERT_EQ(outFormatPoints.size(), outFormatPoints5.size());
 
-    for(size_t i = 0; i < 5 ; ++i) {
-        EXPECT_EQ(outFormatPoints[i].xyz[0], outFormatPoints2[i].xyz[0]);
-        EXPECT_EQ(outFormatPoints[i].xyz[1], outFormatPoints2[i].xyz[1]);
-        EXPECT_EQ(outFormatPoints[i].xyz[2], outFormatPoints2[i].xyz[2]);
-        EXPECT_EQ(outFormatPoints[i].isHit, outFormatPoints2[i].isHit);
-        EXPECT_EQ(outFormatPoints[i].distance, outFormatPoints2[i].distance);
+    for(int i = 0; i < outFormatPoints.size() ; ++i) {
+        EXPECT_EQ(outFormatPoints.at(i).xyz[0], outFormatPoints2.at(i).xyz[0]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[1], outFormatPoints2.at(i).xyz[1]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[2], outFormatPoints2.at(i).xyz[2]);
+        EXPECT_EQ(outFormatPoints.at(i).isHit, outFormatPoints2.at(i).isHit);
+        EXPECT_EQ(outFormatPoints.at(i).distance, outFormatPoints2.at(i).distance);
         
-        EXPECT_EQ(outFormatPoints[i].xyz[0], outFormatPoints3[i].xyz[0]);
-        EXPECT_EQ(outFormatPoints[i].xyz[1], outFormatPoints3[i].xyz[1]);
-        EXPECT_EQ(outFormatPoints[i].xyz[2], outFormatPoints3[i].xyz[2]);
-        EXPECT_EQ(outFormatPoints[i].isHit, outFormatPoints3[i].isHit);
-        EXPECT_EQ(outFormatPoints[i].distance, outFormatPoints3[i].distance);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[0], outFormatPoints3.at(i).xyz[0]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[1], outFormatPoints3.at(i).xyz[1]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[2], outFormatPoints3.at(i).xyz[2]);
+        EXPECT_EQ(outFormatPoints.at(i).isHit, outFormatPoints3.at(i).isHit);
+        EXPECT_EQ(outFormatPoints.at(i).distance, outFormatPoints3.at(i).distance);
 
-        EXPECT_EQ(outFormatPoints[i].xyz[0], outFormatPoints4[i].xyz[0]);
-        EXPECT_EQ(outFormatPoints[i].xyz[1], outFormatPoints4[i].xyz[1]);
-        EXPECT_EQ(outFormatPoints[i].xyz[2], outFormatPoints4[i].xyz[2]);
-        EXPECT_EQ(outFormatPoints[i].isHit, outFormatPoints4[i].isHit);
-        EXPECT_EQ(outFormatPoints[i].distance, outFormatPoints4[i].distance);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[0], outFormatPoints4.at(i).xyz[0]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[1], outFormatPoints4.at(i).xyz[1]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[2], outFormatPoints4.at(i).xyz[2]);
+        EXPECT_EQ(outFormatPoints.at(i).isHit, outFormatPoints4.at(i).isHiat(i)
+        EXPECT_EQ(outFormatPoints.at(i).distance, outFormatPoints4.at(i).distance);
 
-        EXPECT_EQ(outFormatPoints[i].xyz[0], outFormatPoints5[i].xyz[0]);
-        EXPECT_EQ(outFormatPoints[i].xyz[1], outFormatPoints5[i].xyz[1]);
-        EXPECT_EQ(outFormatPoints[i].xyz[2], outFormatPoints5[i].xyz[2]);
-        EXPECT_EQ(outFormatPoints[i].isHit, outFormatPoints5[i].isHit);
-        EXPECT_EQ(outFormatPoints[i].distance, outFormatPoints5[i].distance);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[0], outFormatPoints5.at(i).xyz[0]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[1], outFormatPoints5.at(i).xyz[1]);
+        EXPECT_EQ(outFormatPoints.at(i).xyz[2], outFormatPoints5.at(i).xyz[2]);
+        EXPECT_EQ(outFormatPoints.at(i).isHit, outFormatPoints5.at(i).isHit);
+        EXPECT_EQ(outFormatPoints.at(i).distance, outFormatPoints5.at(i).distance);
     }
 }
