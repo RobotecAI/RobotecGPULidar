@@ -93,6 +93,9 @@ void gpuFormatAosToSoa(cudaStream_t stream, size_t pointCount, size_t pointSize,
 void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
 { run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
 
+void gpuVelocityDistortRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, const float* offsets, const Vec3f velocity, Mat3x4f* outRays)
+{}
+
 void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
 { run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }
 
