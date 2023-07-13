@@ -197,6 +197,7 @@ struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortRays; }
 
 private:
+	IRaysNode::Ptr offsetsNode;
 	VArrayProxy<Mat3x4f>::Ptr distortRays = VArrayProxy<Mat3x4f>::create();
 };
 

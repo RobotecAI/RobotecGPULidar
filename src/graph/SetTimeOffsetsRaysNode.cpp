@@ -14,9 +14,9 @@
 
 #include <graph/NodesCore.hpp>
 
-void SetTimeOffsetsRaysNode::setParameters(const float* raysTimeOffestsRaw, size_t raysTimeOffestsCount)
+void SetTimeOffsetsRaysNode::setParameters(const float* raysTimeOffsetsRaw, size_t raysTimeOffsetsCount)
 {
-	timeOffsets->setData(raysTimeOffestsRaw, raysTimeOffestsCount);
+	timeOffsets->setData(raysTimeOffsetsRaw, raysTimeOffsetsCount);
 }
 
 void SetTimeOffsetsRaysNode::validate()
