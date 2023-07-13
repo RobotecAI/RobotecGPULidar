@@ -17,11 +17,16 @@
 void VelocityDistortRaysNode::validate()
 {
 	input = getValidInput<IRaysNode>();
+
+	if (input->getTimeOffsets().has_value()) {
+		auto msg = fmt::format("VelocityDistortRaysNOde without SetRaysTimeOffsetNode");
+		throw InvalidPipeline(msg);
+	}
 }
 
 void VelocityDistortRaysNode::schedule(cudaStream_t stream)
 {
+	auto offsets = input->getTimeOffsets();
 	//TODO distort rays on kernel mrozikp
-	//rays->resize(getRayCount());
 	//gpuTransformRays(stream, getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
 }
