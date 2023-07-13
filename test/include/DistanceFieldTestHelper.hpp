@@ -4,7 +4,6 @@
 
 struct DistanceFieldTestHelper {
     static constexpr float CUBE_HALF_EDGE = 1.0;
-    static constexpr rgl_vec2f RAYTRACE_RANGE = {0.0f, 1000.0f};
 
     static constexpr int ANGLE_ITERATIONS = 100;
     static constexpr int LIDAR_RAYS_COUNT = 100000;
@@ -21,8 +20,6 @@ struct DistanceFieldTestHelper {
     rgl_node_t raytraceNode = nullptr;
     rgl_node_t gaussianNoiseNode = nullptr;
     rgl_node_t yieldPointsNode = nullptr;
-    rgl_node_t compactPointsNode = nullptr;
-    rgl_node_t transformRaysNode = nullptr;
     rgl_node_t transformPointsNode = nullptr;
 
     rgl_mesh_t cubeMesh;
@@ -46,12 +43,11 @@ struct DistanceFieldTestHelper {
     {
         ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, setRangeNode));
         ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(setRangeNode, raytraceNode));
-        ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, compactPointsNode));
         if (withGaussianNoiseNode) {
-            ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compactPointsNode, gaussianNoiseNode));
+            ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, gaussianNoiseNode));
             ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(gaussianNoiseNode, yieldPointsNode));
         } else {
-            ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compactPointsNode, yieldPointsNode));
+            ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldPointsNode));
         }
     }
 
@@ -59,22 +55,20 @@ struct DistanceFieldTestHelper {
     {
         ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(useRaysNode, setRangeNode));
         ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(setRangeNode, raytraceNode));
-        ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, compactPointsNode));
         if (withGaussianNoiseNode) {
-            ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(compactPointsNode, gaussianNoiseNode));
+            ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, gaussianNoiseNode));
             ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(gaussianNoiseNode, yieldPointsNode));
         } else {
-            ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(compactPointsNode, yieldPointsNode));
+            ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, yieldPointsNode));
         }
     }
 
-    void prepareNodes()
+    void prepareNodes(rgl_vec2f raytraceRange)
     {
         ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
-        ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &RAYTRACE_RANGE, 1));
+        ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &raytraceRange, 1));
         ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
         ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldPointsNode, fields.data(), fields.size()));
-        ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
     }
 
     void getResults(rgl_node_t* node = nullptr)
