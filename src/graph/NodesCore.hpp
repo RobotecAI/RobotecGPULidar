@@ -183,6 +183,23 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
+struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<VelocityDistortRaysNode>;
+	void setParameters() {  }
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override;
+	//TODO mrozikp
+
+	// Data getters
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortRays; }
+
+private:
+	VArrayProxy<Mat3x4f>::Ptr distortRays = VArrayProxy<Mat3x4f>::create();
+};
+
 struct FromMat3x4fRaysNode : Node, IRaysNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;

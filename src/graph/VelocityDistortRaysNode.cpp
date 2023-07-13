@@ -14,18 +14,14 @@
 
 #include <graph/NodesCore.hpp>
 
-void SetTimeOffsetsRaysNode::setParameters(const float* raysTimeOffestsRaw, size_t raysTimeOffestsCount)
-{
-	timeOffsets->setData(raysTimeOffestsRaw, raysTimeOffestsCount);
-}
-
-void SetTimeOffsetsRaysNode::validate()
+void VelocityDistortRaysNode::validate()
 {
 	input = getValidInput<IRaysNode>();
+}
 
-	if (input->getRayCount() != timeOffsets->getCount()) {
-		auto msg = fmt::format("offsets don't match number of rays. "
-		                       "RayCount({}) and TimeOffsetsCount({}) should be equal", input->getRayCount(), timeOffsets->getCount());
-		throw InvalidPipeline(msg);
-	}
+void VelocityDistortRaysNode::schedule(cudaStream_t stream)
+{
+	//TODO distort rays on kernel mrozikp
+	//rays->resize(getRayCount());
+	//gpuTransformRays(stream, getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
 }
