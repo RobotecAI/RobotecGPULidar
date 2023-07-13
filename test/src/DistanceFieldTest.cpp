@@ -118,6 +118,27 @@ TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_out_of_min
     EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
 }
 
+TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_in_range_behind_object_out_of_min_range)
+{
+	float nearCubeZDistance = GetParam();
+	float distanceBetweenCubes = 10.0f;
+	float farCubeZDistance = nearCubeZDistance + distanceBetweenCubes;
+	const rgl_mat3x4f nearCubePoseTf = Mat3x4f::translation(0, 0, nearCubeZDistance).toRGL();
+	const rgl_mat3x4f farCubePoseTf = Mat3x4f::translation(0, 0, farCubeZDistance).toRGL();
+	prepareSceneWithCube(nearCubePoseTf);
+	prepareSceneWithCube(farCubePoseTf);
+
+	rayTf.push_back(Mat3x4f::identity().toRGL());
+
+	prepareNodes({nearCubeZDistance + CUBE_HALF_EDGE + 1.0f, farCubeZDistance + CUBE_HALF_EDGE + 1.0f});
+	connectNodes(false);
+
+	getResults();
+
+	ASSERT_EQ(outDistancesCount, rayTf.size());
+	EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
+}
+
 TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angles)
 {
     float cubeZDistance = GetParam();
