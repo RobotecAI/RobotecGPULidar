@@ -15,6 +15,8 @@ set(RGL_TEST_FILES
         src/scene/textureTest.cpp
         src/graph/nodes/FromArrayPointsNodeTest.cpp
         src/graph/nodes/TransformPointsNodeTest.cpp
+        src/graph/nodes/SetTimeOffsetsRaysNodeTest.cpp
+        src/graph/nodes/VelocityDistortRaysNodeTest.cpp
         src/scene/entityIdTest.cpp
         src/DistanceFieldTest.cpp
         src/VArrayTest.cpp
