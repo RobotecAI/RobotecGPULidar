@@ -100,7 +100,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/FromMat3x4fRaysNode.cpp
     src/graph/SetRangeRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp
-    src/graph/SetRaysTimeOffsetsRaysNode.cpp
+    src/graph/SetTimeOffsetsRaysNode.cpp
     src/graph/SpatialMergePointsNode.cpp
     src/graph/TemporalMergePointsNode.cpp
     src/graph/YieldPointsNode.cpp

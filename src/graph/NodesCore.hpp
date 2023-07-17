@@ -186,18 +186,18 @@ private:
 struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<VelocityDistortRaysNode>;
-	void setParameters() {  }
+	void setParameters(const Vec3f* velocity) { this->lidarVelocity = *velocity;  }
 
 	// Node
 	void validate() override;
 	void schedule(cudaStream_t stream) override;
-	//TODO mrozikp
 
 	// Data getters
+
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortRays; }
 
 private:
-	IRaysNode::Ptr offsetsNode;
+	Vec3f lidarVelocity;
 	VArrayProxy<Mat3x4f>::Ptr distortRays = VArrayProxy<Mat3x4f>::create();
 };
 
@@ -214,11 +214,13 @@ struct FromMat3x4fRaysNode : Node, IRaysNode
 	size_t getRayCount() const override { return rays->getCount(); }
 	std::optional<size_t> getRangesCount() const override { return std::nullopt; }
 	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
+	std::optional<size_t> getTimeOffsetsCount() const override { return std::nullopt; }
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return std::nullopt; }
 	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+	std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return std::nullopt; }
 
 private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();

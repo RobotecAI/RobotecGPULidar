@@ -18,8 +18,12 @@ void VelocityDistortRaysNode::validate()
 {
 	input = getValidInput<IRaysNode>();
 
-	if (input->getTimeOffsets().has_value()) {
+	if (!input->getTimeOffsets().has_value()) {
 		auto msg = fmt::format("VelocityDistortRaysNOde without SetRaysTimeOffsetNode");
+		throw InvalidPipeline(msg);
+	}
+	if (input->getTimeOffsets().value()->getCount()!=input->getRayCount()) {
+		auto msg = fmt::format("Number of rays differs from number of offsets");
 		throw InvalidPipeline(msg);
 	}
 }
@@ -27,6 +31,7 @@ void VelocityDistortRaysNode::validate()
 void VelocityDistortRaysNode::schedule(cudaStream_t stream)
 {
 	auto offsets = input->getTimeOffsets();
-	//TODO distort rays on kernel mrozikp
-	//gpuTransformRays(stream, getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
+	distortRays->resize(getRayCount());
+	gpuVelocityDistortRays(stream, getRayCount(), input->getRays()->getDevicePtr(), offsets.value()->getDevicePtr(), lidarVelocity, distortRays->getDevicePtr());
+
 }

@@ -217,3 +217,13 @@ static std::vector<T> generateCheckerboardTexture(int width, int height)
 
 	return texels;
 }
+
+static std::vector<float> generateTimeOffsetsForRays(int rayCount)
+{
+	std::vector<float> timeOffsets(rayCount);
+	for (int i = 0; i < rayCount; ++i)
+	{
+		timeOffsets[i] = i * 0.001f;
+	}
+	return timeOffsets;
+}

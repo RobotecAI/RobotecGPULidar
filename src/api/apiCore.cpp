@@ -663,16 +663,16 @@ void TapePlayer::tape_node_rays_set_range(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, float ray_count)
+rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t offsets_count)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_rays_set_time_offsets(node={}, offsets={})", repr(node), repr(offsets, ray_count));
+		RGL_API_LOG("rgl_node_rays_set_time_offsets(node={}, offsets={})", repr(node), repr(offsets, offsets_count));
 				CHECK_ARG(node != nullptr);
 				CHECK_ARG(offsets != nullptr);
-		CHECK_ARG(ray_count > 0);
-		createOrUpdateNode<SetTimeOffsetsRaysNode>(node, offsets, (size_t) ray_count);
+		CHECK_ARG(offsets_count > 0);
+		createOrUpdateNode<SetTimeOffsetsRaysNode>(node, offsets, (size_t) offsets_count);
 	});
-	TAPE_HOOK(node, TAPE_ARRAY(offsets, ray_count), ray_count);
+	TAPE_HOOK(node, TAPE_ARRAY(offsets, offsets_count), offsets_count);
 	return status;
 }
 
@@ -708,13 +708,14 @@ void TapePlayer::tape_node_rays_transform(const YAML::Node& yamlNode)
 	tapeNodes.insert({nodeId, node});
 }
 RGL_API rgl_status_t
-rgl_node_rays_velocity_distort(rgl_node_t* node)
+rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* velocity)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_velocity_distort(node={})", repr(node));
 				CHECK_ARG(node != nullptr);
+				CHECK_ARG(velocity != nullptr);
 
-		createOrUpdateNode<VelocityDistortRaysNode>(node);
+		createOrUpdateNode<VelocityDistortRaysNode>(node, reinterpret_cast<const Vec3f*>(velocity));
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -724,7 +725,7 @@ void TapePlayer::tape_node_rays_velocity_distort(const YAML::Node& yamlNode)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-	rgl_node_rays_velocity_distort(&node);
+	rgl_node_rays_velocity_distort(&node, reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[1].as<size_t>()));
 	tapeNodes.insert({nodeId, node});
 }
 
