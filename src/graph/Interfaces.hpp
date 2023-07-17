@@ -43,7 +43,7 @@ struct IRaysNodeSingleInput : IRaysNode
 	size_t getRayCount() const override { return input->getRayCount(); }
 	std::optional<size_t> getRangesCount() const override { return input->getRangesCount(); }
 	std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
-	std::optional<size_t> getRingTimeOffsetsCount() const override { return input->getTimeOffsetsCount(); }
+	std::optional<size_t> getTimeOffsetsCount() const override { return input->getTimeOffsetsCount(); }
 
 	// Data getters
 	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };

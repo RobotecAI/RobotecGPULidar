@@ -491,10 +491,10 @@ rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t range
  * Output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param offsets Pointer to time offsets.
- * @param ray_count Size of the `offsets` array.
+ * @param offsets_count Size of the `offsets` array.
  */
 RGL_API rgl_status_t
-rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, float ray_count);
+rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t offsets_count);
 
 /**
  * Creates or modifies TransformRaysNode.
@@ -517,7 +517,7 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  */
 RGL_API rgl_status_t
-rgl_node_rays_velocity_distort(rgl_node_t* node);
+rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* velocity);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 /**
