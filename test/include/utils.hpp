@@ -32,7 +32,7 @@
     } while (false)
 
 #define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
-#define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
+#define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, error)
 #define EXPECT_RGL_INVALID_PIPELINE(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_PIPELINE, error)
 
 constexpr float EPSILON_F = 1e-6f;
@@ -48,7 +48,7 @@ struct RGLTest : public ::testing::Test {
 protected:
 	RGLTest()
 	{
-		rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true);
+		rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false);
 	}
 
     virtual ~RGLTest() override
