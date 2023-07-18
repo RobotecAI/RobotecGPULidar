@@ -1,0 +1,44 @@
+name: build-and-test-in-docker
+run-name: ${{ github.actor }} builds and tests RGL in docker
+on: workflow_dispatch
+jobs:
+  checkout-repository:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+  build-docker-if-no-image:
+    needs: checkout-repository
+    runs-on: self-hosted
+    steps:
+      - run: |
+          if [[ "$(docker images -q rgl:latest 2> /dev/null)" == "" ]]
+          then
+            docker build . --tag rgl:latest
+          fi
+
+  test-in-docker:
+    needs: build-docker-if-no-image
+    runs-on: self-hosted
+    steps:
+      - name: compile and test RGL in docker
+        run: |
+          docker run \
+          --name rgl \
+          --net=host \
+          --gpus all \
+          -v $(pwd):/code \
+          -v ${OptiX_INSTALL_DIR}:/optix \
+          -e OptiX_INSTALL_DIR=/optix \
+          -e NVIDIA_DRIVER_CAPABILITIES=all \
+          rgl:latest \
+          sh -c "./setup.py && ./build/test/RobotecGPULidar_test && rm -r build"
+
+  remove-created-docker-container:
+    needs: test-in-docker
+    runs-on: self-hosted
+    steps:
+      - name: remove created docker container
+        run: |
+          docker rm rgl
