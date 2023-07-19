@@ -186,7 +186,7 @@ private:
 struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<VelocityDistortRaysNode>;
-	void setParameters(const Vec3f* velocity) { this->lidarVelocity = *velocity;  }
+	void setParameters(const Vec3f* velocity, const Vec3f* angularVelocity);
 
 	// Node
 	void validate() override;
@@ -198,6 +198,7 @@ struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 
 private:
 	Vec3f lidarVelocity;
+	Vec3f lidarAngularVelocity;
 	VArrayProxy<Mat3x4f>::Ptr distortRays = VArrayProxy<Mat3x4f>::create();
 };
 

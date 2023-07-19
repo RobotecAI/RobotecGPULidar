@@ -510,14 +510,16 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
  * Creates or modifies VelocityDistortNode.
- * The node distorts rays according to the velocity of the Lidar. The distortion is performed in the Lidar-local coordinate frame.
- * This features requires that the Lidar velocity is set, and rays time offsets are set.
+ * The node distorts rays according to the velocity and rotation change of the Lidar. The distortion is performed in the Lidar-local coordinate frame.
+ * This features requires that the Lidar velocity and rotation change is set, and rays time offsets are set.
  * Graph input: rays
  * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param velocity Pointer to a single 3D vector describing the velocity to perform distortion.
+ * @param angularVelocity Pointer to a single 3D vector describing the delta angular velocity in radians to perform distortion in euler angles (roll, pitch, yaw).
  */
 RGL_API rgl_status_t
-rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* velocity);
+rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* velocity, const rgl_vec3f* angularVelocity);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 /**
