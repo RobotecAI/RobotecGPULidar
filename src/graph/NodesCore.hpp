@@ -193,7 +193,6 @@ struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
-
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortRays; }
 
 private:

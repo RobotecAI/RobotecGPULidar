@@ -669,7 +669,7 @@ rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t o
 		RGL_API_LOG("rgl_node_rays_set_time_offsets(node={}, offsets={})", repr(node), repr(offsets, offsets_count));
 				CHECK_ARG(node != nullptr);
 				CHECK_ARG(offsets != nullptr);
-		CHECK_ARG(offsets_count > 0);
+				CHECK_ARG(offsets_count > 0);
 		createOrUpdateNode<SetTimeOffsetsRaysNode>(node, offsets, (size_t) offsets_count);
 	});
 	TAPE_HOOK(node, TAPE_ARRAY(offsets, offsets_count), offsets_count);
