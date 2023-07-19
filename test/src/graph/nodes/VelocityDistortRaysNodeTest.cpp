@@ -3,14 +3,8 @@
 #include <gtest/gtest.h>
 #include "utils.hpp"
 #include "scenes.hpp"
-#include "lidars.hpp"
-
-#ifdef RGL_BUILD_ROS2_EXTENSION
-#include <rgl/api/extensions/ros2.h>
-#endif
 
 using namespace ::testing;
-
 
 class VelocityDistortRaysNodeTest : public RGLTest, public RGLPointTestHelper {};
 
@@ -18,22 +12,25 @@ TEST_F(VelocityDistortRaysNodeTest, invalid_arguments)
 {
 	rgl_node_t velocityDistortRaysNode;
 	rgl_vec3f velocity;
+	rgl_vec3f angularVelocity;
 
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, nullptr), "node != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, &velocity), "node != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, nullptr), "velocity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, nullptr, nullptr), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, &velocity, &angularVelocity), "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, nullptr, &angularVelocity), "velocity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity, nullptr), "angularVelocity != nullptr");
 }
 
 TEST_F(VelocityDistortRaysNodeTest, valid_arguments)
 {
 	rgl_node_t velocityDistortRaysNode = nullptr;
 	rgl_vec3f velocity = { 1.0f, 1.0f, 1.0f };
+	rgl_vec3f angularVelocity = { 0.0f, 0.0f, 1.0f };
 
-	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity, &angularVelocity));
 	ASSERT_THAT(velocityDistortRaysNode, testing::NotNull());
 
 	// If (*node) != nullptr
-	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity, &angularVelocity));
 }
 
 TEST_F(VelocityDistortRaysNodeTest, use_case)
@@ -46,53 +43,61 @@ TEST_F(VelocityDistortRaysNodeTest, use_case)
 
 	// Prepare scene
 	setupBoxesAlongAxes(nullptr);
-	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
-	const float rayCount = rays.size();
-	std::vector<float> timeOffsets = generateTimeOffsetsForRays(rayCount);
+
+	// Generate 10 rays in the same origin looking at the same x direction
+	// After that generate 10 offsets for the rays. each ray will have slightly bigger offset in y axis
+	const float rayCount = 10;
+	const float rayTimeOffset = 0.1f;
+	std::vector<rgl_mat3x4f> rays(rayCount);
+	std::vector<float> timeOffsets(rayCount);
+	for (int i = 0; i < rayCount; ++i)
+	{
+		rays[i] = Mat3x4f::translation(1, 0, 0).toRGL();
+		timeOffsets[i] = i * rayTimeOffset;
+	}
+
 	const rgl_vec3f lidarVelocity = { 0.0f, 1.0f, 0.0f };
+	const rgl_vec3f lidarangularVelocity = { 0.0f, 0.0f, 0.0f };
 
 	// Create nodes
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rayCount));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformRays, &translationTestTransform));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&offsetsNode, timeOffsets.data(), rayCount));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &lidarVelocity));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &lidarVelocity, &lidarangularVelocity));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
 
-	// Connect nodes into graph
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, transformRays));
-	//EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformRays, raytrace));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformRays, offsetsNode));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(offsetsNode, velocityDistortRaysNode));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(velocityDistortRaysNode, raytrace));
+	// Connect nodes into graph without velocity distortion.
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, offsetsNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(offsetsNode, raytrace));
 
-	//rgl_configure_logging(RGL_LOG_LEVEL_DEBUG,nullptr,true);
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 	std::vector<::Field<XYZ_F32>::type> outPoints;
 	outPoints.resize(rayCount);
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, XYZ_F32, outPoints.data()));
 
-	// Infinite loop to publish point cloud to ROS2 topic for visualization purposes. Uncomment to use. Use wisely.
-#ifdef RGL_BUILD_ROS2_EXTENSION
-//		rgl_node_t formatNode = nullptr, ros2publishNode = nullptr;
-//
-//		std::vector<rgl_field_t> yieldFields = {
-//				XYZ_F32,
-//				INTENSITY_F32,
-//				IS_HIT_I32
-//		};
-//
-//		EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, yieldFields.data(), yieldFields.size()));
-//		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2publishNode, "pointcloud", "rgl"));
-//
-//		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, formatNode));
-//		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(formatNode, ros2publishNode));
-//
-//		while(true)
-//		{
-//				EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
-//		}
-#endif
+	//Without velocity distortion all rays should hit the same point
+	std::for_each(outPoints.begin(), outPoints.end(), [&](auto& point) {
+		EXPECT_NEAR(point.x(), outPoints.begin()->x(), EPSILON_F);
+		EXPECT_NEAR(point.y(), outPoints.begin()->y(), EPSILON_F);
+		EXPECT_NEAR(point.z(), outPoints.begin()->z(), EPSILON_F);
+	});
 
+	// Rearrange graph in order to include velocity distortion node
+	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(offsetsNode, raytrace));
 
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(offsetsNode, velocityDistortRaysNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(velocityDistortRaysNode, raytrace));
+
+	// Run graph again with velocity distortion
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, XYZ_F32, outPoints.data()));
+
+	// After distortion rays should hit with 0.1 offset in y axis, without changes in x and z axis.(
+	for (int i = 0; i < rayCount; ++i)
+	{
+		EXPECT_NEAR(outPoints[i].x(), outPoints.begin()->x(), EPSILON_F);
+		EXPECT_NEAR(outPoints[i].y(), outPoints.begin()->y() + ( i * rayTimeOffset), EPSILON_F);
+		EXPECT_NEAR(outPoints[i].z(), outPoints.begin()->z(), EPSILON_F);
+	}
 }
