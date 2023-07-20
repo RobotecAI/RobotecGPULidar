@@ -20,7 +20,7 @@ protected:
 
     void prepareGraph()
     {
-        ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysFromMatNode, &identityTf, 1)); // TODO change hardcoded size
+        ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysFromMatNode, &rayTf, 1)); // TODO change hardcoded size
         ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, raytraceDepth));
         ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysFromMatNode, raytraceNode));
     }
@@ -36,8 +36,8 @@ protected:
         ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(raytraceNode, RGL_FIELD_XYZ_F32, &point));
     }
 
-    Vec3f cubePosition = Vec3f(0, 0, 55.5f);
-    rgl_mat3x4f identityTf = Mat3x4f::identity().toRGL();
+    Vec3f cubePosition = Vec3f(0, 0, 50.0f);
+    rgl_mat3x4f rayTf = Mat3x4f::identity().toRGL();
 
     rgl_node_t raytraceNode, raysFromMatNode;
     float raytraceDepth;
@@ -89,7 +89,8 @@ TEST_F(RaytraceNodeTest, empty_scene)
 
 TEST_F(RaytraceNodeTest, raytrace_misses_object_when_depth_is_shorter_than_distance)
 {
-    raytraceDepth = cubePosition.z() - CUBE_HALF_EDGE - 1.0f;
+    // TODO Magic number 0.01f
+    raytraceDepth = cubePosition.z() - CUBE_HALF_EDGE - 0.01f;
     prepareScene();
     prepareGraph();
     getResults();
@@ -113,7 +114,8 @@ TEST_F(RaytraceNodeTest, raytrace_hits_object_when_depth_equals_distance)
 
 TEST_F(RaytraceNodeTest, raytrace_hits_object_when_depth_is_longer_than_distance)
 {
-    raytraceDepth = cubePosition.z() - CUBE_HALF_EDGE + 1.0f;
+    // TODO Magic number 0.01f
+    raytraceDepth = cubePosition.z() - CUBE_HALF_EDGE + 0.01f;
     prepareScene();
     prepareGraph();
     getResults();
@@ -125,17 +127,69 @@ TEST_F(RaytraceNodeTest, raytrace_hits_object_when_depth_is_longer_than_distance
 
 TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_cube_wall)
 {
-    // To implement
+    raytraceDepth = 100.0f;
+    prepareScene();
+
+    rayTf = Mat3x4f::translation(0, 0, cubePosition.z() - CUBE_HALF_EDGE).toRGL();
+
+    prepareGraph();
+    getResults();
+
+    EXPECT_EQ(point.x(), cubePosition.x());
+    EXPECT_EQ(point.y(), cubePosition.y());
+    EXPECT_EQ(point.z(), cubePosition.z() + CUBE_HALF_EDGE);
 }
 
 TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_within_cube)
 {
-    // To implement
+    raytraceDepth = 100.0f;
+    prepareScene();
+
+    rayTf = Mat3x4f::translation(0, 0, cubePosition.z()).toRGL();
+    
+    prepareGraph();
+    getResults();
+
+    EXPECT_EQ(point.x(), cubePosition.x());
+    EXPECT_EQ(point.y(), cubePosition.y());
+    EXPECT_EQ(point.z(), cubePosition.z() + CUBE_HALF_EDGE);
 }
 
 TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_distance_directed_at_cube_corner)
 {
-    // To implement
+    raytraceDepth = 100.0f;
+    prepareScene();
+
+    // TODO Magic number 0.0001f
+    float maxAngleRad = atanf(CUBE_HALF_EDGE / (cubePosition.z() - CUBE_HALF_EDGE)) - 0.0001f;
+    
+    // TODO Add a direction to each corner
+    std::vector<rgl_mat3x4f> rays;
+    rays.push_back(Mat3x4f::rotationRad(maxAngleRad, maxAngleRad, 0).toRGL());
+
+    //TODO Put it into function (change parameters of function)
+    ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysFromMatNode, rays.data(), rays.size()));
+    ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, raytraceDepth));
+    ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysFromMatNode, raytraceNode));
+
+    ASSERT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
+
+    //TODO Put it into function (change parameters of function)
+    ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(raytraceNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
+    ASSERT_EQ(pointCount, 1);
+    ASSERT_EQ(pointSize, sizeof(Vec3f));
+
+    std::vector<Vec3f> points(pointCount);
+    ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(raytraceNode, RGL_FIELD_XYZ_F32, points.data()));
+
+    std::cerr << "------------DEBUG-----------" << std::endl;
+    std::cerr << "cubePosition.z() + CUBE_HALF_EDGE = " << cubePosition.z() + CUBE_HALF_EDGE << std::endl;
+    std::cerr << "cubePosition.z() - CUBE_HALF_EDGE = " << cubePosition.z() - CUBE_HALF_EDGE << std::endl;
+    std::cerr << "points[0].x() = " << points[0].x() << std::endl;
+    std::cerr << "points[0].y() = " << points[0].y() << std::endl;
+    std::cerr << "points[0].z() = " << points[0].z() << std::endl;
+
+    // TODO EXPECT_NEAR
 }
 
 TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_distance_directed_at_cube_edge)
