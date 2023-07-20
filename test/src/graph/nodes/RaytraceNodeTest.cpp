@@ -122,3 +122,38 @@ TEST_F(RaytraceNodeTest, raytrace_hits_object_when_depth_is_longer_than_distance
     EXPECT_EQ(point.y(), cubePosition.y());
     EXPECT_EQ(point.z(), cubePosition.z() - CUBE_HALF_EDGE);
 }
+
+TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_cube_wall)
+{
+    // To implement
+}
+
+TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_within_cube)
+{
+    // To implement
+}
+
+TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_distance_directed_at_cube_corner)
+{
+    // To implement
+}
+
+TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_distance_directed_at_cube_edge)
+{
+    // To implement
+}
+
+TEST_F(RaytraceNodeTest, raytrace_hits_when_ray_originates_at_distance_directed_at_cube_face)
+{
+    // To implement
+}
+
+TEST_F(RaytraceNodeTest, raytrace_misses_when_ray_is_parallel_to_cube_surface)
+{
+    // To implement
+}
+
+TEST_F(RaytraceNodeTest, raytrace_misses_when_ray_originates_behind_cube)
+{
+    // To implement
+}
