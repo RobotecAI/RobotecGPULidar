@@ -28,10 +28,6 @@ void VelocityDistortRaysNode::validate()
 		auto msg = fmt::format("VelocityDistortRaysNOde without SetRaysTimeOffsetNode");
 		throw InvalidPipeline(msg);
 	}
-	if (input->getTimeOffsets().value()->getCount()!=input->getRayCount()) {
-		auto msg = fmt::format("Number of rays differs from number of offsets");
-		throw InvalidPipeline(msg);
-	}
 }
 
 void VelocityDistortRaysNode::schedule(cudaStream_t stream)
