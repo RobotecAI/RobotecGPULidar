@@ -34,6 +34,11 @@ void VelocityDistortRaysNode::schedule(cudaStream_t stream)
 {
 	auto offsets = input->getTimeOffsets();
 	distortRays->resize(getRayCount());
-	gpuVelocityDistortRays(stream, getRayCount(), input->getRays()->getDevicePtr(), offsets.value()->getDevicePtr(), lidarVelocity, lidarAngularVelocity, distortRays->getDevicePtr());
+	gpuVelocityDistortRays(stream, getRayCount(),
+						   input->getRays()->getDevicePtr(),
+						   offsets.value()->getDevicePtr(),
+						   offsets.value()->getCount(),
+						   lidarVelocity, lidarAngularVelocity,
+						   distortRays->getDevicePtr());
 
 }
