@@ -22,7 +22,7 @@ TEST_F(VelocityDistortRaysNodeTest, invalid_arguments)
 
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, nullptr, nullptr), "node != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, &velocity, &angularVelocity), "node != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, nullptr, &angularVelocity), "velocity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, nullptr, &angularVelocity), "linearVelocity != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity, nullptr), "angularVelocity != nullptr");
 }
 
