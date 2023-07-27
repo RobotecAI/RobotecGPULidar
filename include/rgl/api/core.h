@@ -490,8 +490,8 @@ rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t range
  * Input: rays
  * Output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param offsets Pointer to time offsets.
- * @param offsets_count Size of the `offsets` array.
+ * @param offsets Pointer to time offsets. Time offsets are in milliseconds.
+ * @param offsets_count Size of the `offsets` array. It has to be equal to number of existing rays.
  */
 RGL_API rgl_status_t
 rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t offsets_count);
@@ -509,17 +509,20 @@ RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
- * Creates or modifies VelocityDistortNode.
- * The node distorts rays according to the velocity and rotation change of the Lidar. The distortion is performed in the Lidar-local coordinate frame.
- * This features requires that the Lidar velocity and rotation change is set, and rays time offsets are set.
+ * Creates or modifies VelocityDistortRaysNode.
+ * The node distorts rays according to the linear velocity and angular velocity of the sensor.
+ * The distortion is performed in the sensor-local coordinate frame.
+ * This node requires that rays time offsets are set.
+ * The distortion takes int account only sensor velocity.
+ * The velocity of the objects being scanned by the sensor is not taken into consideration.
  * Graph input: rays
  * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param velocity Pointer to a single 3D vector describing the velocity to perform distortion.
+ * @param velocity Pointer to a single 3D vector describing the velocity to perform distortion. The velocity is in meters per second.
  * @param angularVelocity Pointer to a single 3D vector describing the delta angular velocity in radians to perform distortion in euler angles (roll, pitch, yaw).
  */
 RGL_API rgl_status_t
-rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* velocity, const rgl_vec3f* angularVelocity);
+rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* linear_velocity, const rgl_vec3f* angular_velocity);
 
 // Applies affine transformation, e.g. to change the coordinate frame.
 /**

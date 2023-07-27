@@ -90,7 +90,7 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_node_rays_set_ring_ids", std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1) },
 		{ "rgl_node_rays_set_time_offsets", std::bind(&TapePlayer::tape_node_rays_set_time_offsets, this, _1) },
 		{ "rgl_node_rays_transform", std::bind(&TapePlayer::tape_node_rays_transform, this, _1) },
-		{ "tape_node_rays_velocity_distort", std::bind(&TapePlayer::tape_node_rays_velocity_distort, this, _1) },
+		{ "rgl_node_rays_velocity_distort", std::bind(&TapePlayer::tape_node_rays_velocity_distort, this, _1) },
 		{ "rgl_node_points_transform", std::bind(&TapePlayer::tape_node_points_transform, this, _1) },
 		{ "rgl_node_raytrace", std::bind(&TapePlayer::tape_node_raytrace, this, _1) },
 		{ "rgl_node_points_format", std::bind(&TapePlayer::tape_node_points_format, this, _1) },
