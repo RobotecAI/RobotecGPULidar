@@ -22,7 +22,7 @@ TEST_F(SetTimeOffsetsRaysNodeTest, valid_arguments)
 {
 	int numberOfOffsets = 10;
 	rgl_node_t setTimeOffsetsRaysNode = nullptr;
-	std::vector<float> timeOffsets = generateTimeOffsetsForRays(numberOfOffsets);
+	std::vector<float> timeOffsets = std::vector<float>(numberOfOffsets, 0.0f);
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&setTimeOffsetsRaysNode, timeOffsets.data(), numberOfOffsets));
 	ASSERT_THAT(setTimeOffsetsRaysNode, testing::NotNull());

@@ -110,3 +110,16 @@ TEST_F(APISurfaceTests, rgl_entity_set_pose)
 	// Correct set_pose
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTestTransform));
 }
+
+TEST_F(APISurfaceTests, rgl_entity_set_id)
+{
+	rgl_entity_t entity = makeEntity();
+	int validID = 1;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_id(nullptr, 1), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_id(entity, RGL_ENTITY_INVALID_ID), "id != RGL_ENTITY_INVALID_ID");
+
+	// Correct set_pose
+	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, validID));
+}
