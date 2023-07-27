@@ -8,6 +8,12 @@ using namespace ::testing;
 
 class VelocityDistortRaysNodeTest : public RGLTest, public RGLPointTestHelper {};
 
+// TEST TODOS:
+// -angular velocity
+// -linear and angular velocities combined
+// -pipeline with transform node (before / after distortion)
+// -distance field calculation
+
 TEST_F(VelocityDistortRaysNodeTest, invalid_arguments)
 {
 	rgl_node_t velocityDistortRaysNode;
