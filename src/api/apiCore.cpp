@@ -718,8 +718,8 @@ rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* linearVelocity
 				CHECK_ARG(angularVelocity != nullptr);
 
 		createOrUpdateNode<VelocityDistortRaysNode>(node,
-													reinterpret_cast<const Vec3f*>(linearVelocity),
-													reinterpret_cast<const Vec3f*>(angularVelocity));
+												reinterpret_cast<const Vec3f*>(linearVelocity),
+												reinterpret_cast<const Vec3f*>(angularVelocity));
 	});
 	TAPE_HOOK(node);
 	return status;
