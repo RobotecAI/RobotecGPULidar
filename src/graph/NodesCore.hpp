@@ -193,12 +193,12 @@ struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 	void schedule(cudaStream_t stream) override;
 
 	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortRays; }
+	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortedRays; }
 
 private:
-	Vec3f lidarVelocity;
-	Vec3f lidarAngularVelocity;
-	VArrayProxy<Mat3x4f>::Ptr distortRays = VArrayProxy<Mat3x4f>::create();
+	Vec3f sensorLinearVelocity;
+	Vec3f sensorAngularVelocity;
+	VArrayProxy<Mat3x4f>::Ptr distortedRays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct FromMat3x4fRaysNode : Node, IRaysNode

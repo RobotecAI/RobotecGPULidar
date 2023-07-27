@@ -16,8 +16,8 @@
 
 void VelocityDistortRaysNode::setParameters(const Vec3f* velocity, const Vec3f* angularVelocity)
 {
-	this->lidarVelocity = *velocity;
-	this->lidarAngularVelocity = *angularVelocity;
+	this->sensorLinearVelocity = *velocity;
+	this->sensorAngularVelocity = *angularVelocity;
 }
 
 void VelocityDistortRaysNode::validate()
@@ -33,12 +33,12 @@ void VelocityDistortRaysNode::validate()
 void VelocityDistortRaysNode::schedule(cudaStream_t stream)
 {
 	auto offsets = input->getTimeOffsets();
-	distortRays->resize(getRayCount());
+	distortedRays->resize(getRayCount());
 	gpuVelocityDistortRays(stream, getRayCount(),
 						   input->getRays()->getDevicePtr(),
 						   offsets.value()->getDevicePtr(),
 						   offsets.value()->getCount(),
-						   lidarVelocity, lidarAngularVelocity,
-						   distortRays->getDevicePtr());
+						   sensorLinearVelocity, sensorAngularVelocity,
+						   distortedRays->getDevicePtr());
 
 }
