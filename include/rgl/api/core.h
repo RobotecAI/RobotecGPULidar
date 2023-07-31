@@ -511,18 +511,18 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 /**
  * Creates or modifies VelocityDistortRaysNode.
  * The node distorts rays according to the sensor's linear velocity and angular velocity.
- * NOTE! 
- * The distortion is performed in the sensor-local coordinate frame. 
- * Considering that, This node has to be placed before TransformRaysNode. 
- * If not velocity and angular velocity must be provided in the global coordinates frame.
+ * NOTE!
+ * The velocities passed to that node must match the coordinate frame in which rays are described/transformed.
+ * If node is before TransformRaysNode, then the velocities must be in the sensor-local coordinate frame.
+ * Otherwise, user hase to transform the velocities to TransformRaysNode coordinate frame.
  * This node requires that rays time offsets are set.
  * The distortion takes into account only sensor velocity.
  * The velocity of the objects being scanned by the sensor is not considered.
  * Graph input: rays
  * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param velocity Pointer to a single 3D vector describing the velocity to perform distortion. The velocity is in meters per second.
- * @param angularVelocity Pointer to a single 3D vector describing the delta angular velocity in radians to perform distortion in euler angles (roll, pitch, yaw).
+ * @param velocity velocity Pointer to a single 3D vector describing the linear velocity of the sensor. The velocity is in meters per second.
+ * @param angularVelocity Pointer to a single 3D vector describing the delta angular velocity in radians per secondto perform distortion in euler angles (roll, pitch, yaw).
  */
 RGL_API rgl_status_t
 rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* linear_velocity, const rgl_vec3f* angular_velocity);

@@ -708,18 +708,18 @@ void TapePlayer::tape_node_rays_transform(const YAML::Node& yamlNode)
 	tapeNodes.insert({nodeId, node});
 }
 RGL_API rgl_status_t
-rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* linearVelocity, const rgl_vec3f* angularVelocity)
+rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* linear_velocity, const rgl_vec3f* angular_velocity)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_velocity_distort(node={}, linearVelocity={}, angularVelocity={})",
-					repr(node), repr(linearVelocity), repr(angularVelocity));
+					repr(node), repr(linear_velocity), repr(angular_velocity));
 				CHECK_ARG(node != nullptr);
-				CHECK_ARG(linearVelocity != nullptr);
-				CHECK_ARG(angularVelocity != nullptr);
+				CHECK_ARG(linear_velocity != nullptr);
+				CHECK_ARG(angular_velocity != nullptr);
 
 		createOrUpdateNode<VelocityDistortRaysNode>(node,
-				reinterpret_cast<const Vec3f*>(linearVelocity),
-				reinterpret_cast<const Vec3f*>(angularVelocity)
+				reinterpret_cast<const Vec3f*>(linear_velocity),
+				reinterpret_cast<const Vec3f*>(angular_velocity)
 				);
 	});
 	TAPE_HOOK(node);
