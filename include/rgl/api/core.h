@@ -510,11 +510,14 @@ rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
  * Creates or modifies VelocityDistortRaysNode.
- * The node distorts rays according to the linear velocity and angular velocity of the sensor.
- * The distortion is performed in the sensor-local coordinate frame.
+ * The node distorts rays according to the sensor's linear velocity and angular velocity.
+ * NOTE! 
+ * The distortion is performed in the sensor-local coordinate frame. 
+ * Considering that, This node has to be placed before TransformRaysNode. 
+ * If not velocity and angular velocity must be provided in the global coordinates frame.
  * This node requires that rays time offsets are set.
- * The distortion takes int account only sensor velocity.
- * The velocity of the objects being scanned by the sensor is not taken into consideration.
+ * The distortion takes into account only sensor velocity.
+ * The velocity of the objects being scanned by the sensor is not considered.
  * Graph input: rays
  * Graph output: rays
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
