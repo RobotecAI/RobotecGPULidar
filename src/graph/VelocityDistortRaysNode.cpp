@@ -14,9 +14,9 @@
 
 #include <graph/NodesCore.hpp>
 
-void VelocityDistortRaysNode::setParameters(const Vec3f* velocity, const Vec3f* angularVelocity)
+void VelocityDistortRaysNode::setParameters(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
 {
-	this->sensorLinearVelocity = *velocity;
+	this->sensorLinearVelocity = *linearVelocity;
 	this->sensorAngularVelocity = *angularVelocity;
 }
 

@@ -186,7 +186,7 @@ private:
 struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<VelocityDistortRaysNode>;
-	void setParameters(const Vec3f* velocity, const Vec3f* angularVelocity);
+	void setParameters(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
 
 	// Node
 	void validate() override;
@@ -267,7 +267,7 @@ private:
 struct SetTimeOffsetsRaysNode : Node, IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetTimeOffsetsRaysNode>;
-	void setParameters(const float* raysTimeOffests, size_t timeOffsetsCount);
+	void setParameters(const float* raysTimeOffsets, size_t timeOffsetsCount);
 
 	// Node
 	void validate() override;
