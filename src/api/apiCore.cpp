@@ -711,7 +711,7 @@ RGL_API rgl_status_t
 rgl_node_rays_velocity_distort(rgl_node_t* node, const rgl_vec3f* linear_velocity, const rgl_vec3f* angular_velocity)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_rays_velocity_distort(node={}, linearVelocity={}, angularVelocity={})",
+		RGL_API_LOG("rgl_node_rays_velocity_distort(node={}, linear_velocity={}, angular_velocity={})",
 					repr(node), repr(linear_velocity), repr(angular_velocity));
 				CHECK_ARG(node != nullptr);
 				CHECK_ARG(linear_velocity != nullptr);
