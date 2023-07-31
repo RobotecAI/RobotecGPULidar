@@ -46,7 +46,7 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 __global__ void kVelocityDistortRays(size_t rayCount, const Mat3x4f* inRays, const float* offsets, size_t offsetsCount, const Vec3f sensorLinearVelocity, const Vec3f sensorAngularVelocity, Mat3x4f* outRays)
 {
 	LIMIT(rayCount);
-	outRays[tid] = Mat3x4f::TRS(offsets[tid] * sensorLinearVelocity, offsets[tid] * sensorAngularVelocity, Vec3f(1.0f, 1.0f, 1.0f)) * inRays[tid];
+	outRays[tid] = Mat3x4f::TRS((offsets[tid] * (sensorLinearVelocity * 0.001f)) * 1000.0f, (offsets[tid] * (sensorAngularVelocity) * 0.001f) * 1000.0f, Vec3f(1.0f, 1.0f, 1.0f)) * inRays[tid];
 }
 
 __global__ void kTransformPoints(size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
