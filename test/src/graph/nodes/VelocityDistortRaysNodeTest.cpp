@@ -22,8 +22,8 @@ TEST_F(VelocityDistortRaysNodeTest, invalid_arguments)
 
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, nullptr, nullptr), "node != nullptr");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(nullptr, &velocity, &angularVelocity), "node != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, nullptr, &angularVelocity), "linearVelocity != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity, nullptr), "angularVelocity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, nullptr, &angularVelocity), "linear_velocity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &velocity, nullptr), "angular_velocity != nullptr");
 }
 
 TEST_F(VelocityDistortRaysNodeTest, valid_arguments)
@@ -62,7 +62,7 @@ TEST_F(VelocityDistortRaysNodeTest, use_case)
 		timeOffsets[i] = i * rayTimeOffset;
 	}
 
-	const rgl_vec3f lidarVelocity = { 0.0f, 1.0f, 0.0f };
+	const rgl_vec3f lidarVelocity = { 0.0f, 0.8f, 0.0f };
 	const rgl_vec3f lidarangularVelocity = { 0.0f, 0.0f, 0.0f };
 
 	// Create nodes
@@ -103,7 +103,7 @@ TEST_F(VelocityDistortRaysNodeTest, use_case)
 	for (int i = 0; i < rayCount; ++i)
 	{
 		EXPECT_NEAR(outPoints[i].x(), outPoints.begin()->x(), EPSILON_F);
-		EXPECT_NEAR(outPoints[i].y(), outPoints.begin()->y() + ( i * rayTimeOffset), EPSILON_F);
+		EXPECT_NEAR(outPoints[i].y(), outPoints.begin()->y() + ( i * rayTimeOffset * lidarVelocity.value[1]), EPSILON_F);
 		EXPECT_NEAR(outPoints[i].z(), outPoints.begin()->z(), EPSILON_F);
 	}
 }

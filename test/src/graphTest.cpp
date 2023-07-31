@@ -17,17 +17,13 @@ TEST_F(GraphCase, FullLinear)
 {
 	setupBoxesAlongAxes(nullptr);
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, setOffsets=nullptr, velocityDistort=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
+	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
-	std::vector<float> timeOffsets = std::vector<float>(rays.size(), 0.0f);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
 	rgl_mat3x4f shearTf = Mat3x4f::shear({0,0}, {-1, -1}, {0, 0}).toRGL();
-	rgl_vec3f testVelocity = {1, 2, 3};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&setOffsets, timeOffsets.data(), timeOffsets.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistort, &testVelocity, &testVelocity));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
