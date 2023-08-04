@@ -53,13 +53,13 @@ TEST_F(VelocityDistortRaysNodeTest, use_case)
 	// Generate 10 rays in the same origin looking at the same x direction
 	// After that generate 10 offsets for the rays. each ray will have slightly bigger offset in y axis
 	const float rayCount = 10;
-	const float rayTimeOffset = 0.1f;
+	const float rayTimeOffset = 0.2f; // One millisecond
 	std::vector<rgl_mat3x4f> rays(rayCount);
 	std::vector<float> timeOffsets(rayCount);
 	for (int i = 0; i < rayCount; ++i)
 	{
-		rays[i] = Mat3x4f::translation(1, 0, 0).toRGL();
-		timeOffsets[i] = i * rayTimeOffset;
+            rays[i] = Mat3x4f::translation(1, 0, 0).toRGL();
+            timeOffsets[i] = i * rayTimeOffset;
 	}
 
 	const rgl_vec3f lidarVelocity = { 0.0f, 0.8f, 0.0f };
@@ -103,7 +103,7 @@ TEST_F(VelocityDistortRaysNodeTest, use_case)
 	for (int i = 0; i < rayCount; ++i)
 	{
 		EXPECT_NEAR(outPoints[i].x(), outPoints.begin()->x(), EPSILON_F);
-		EXPECT_NEAR(outPoints[i].y(), outPoints.begin()->y() + ( i * rayTimeOffset * lidarVelocity.value[1]), EPSILON_F);
+		EXPECT_NEAR(outPoints[i].y(), outPoints.begin()->y() + ( i * rayTimeOffset * (lidarVelocity.value[1]* 0.001f)), EPSILON_F);
 		EXPECT_NEAR(outPoints[i].z(), outPoints.begin()->z(), EPSILON_F);
 	}
 }
