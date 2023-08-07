@@ -47,7 +47,9 @@ __global__ void kVelocityDistortRays(size_t rayCount, const Mat3x4f* inRays, con
 {
 	LIMIT(rayCount);
 	// In order to not loose numerical precision, we scale the velocity to meters/radians per millisecond.
-	outRays[tid] = Mat3x4f::TRS(offsets[tid] * (sensorLinearVelocity * 0.001f), offsets[tid] * (sensorAngularVelocity * 0.001f), Vec3f(1.0f, 1.0f, 1.0f)) * inRays[tid];
+        // Also we transform radians to degrees.
+        float toDeg = (180.0f / M_PI);
+	outRays[tid] = Mat3x4f::TRS(offsets[tid] * (sensorLinearVelocity * 0.001f), offsets[tid] * (sensorAngularVelocity * 0.001f * toDeg), Vec3f(1.0f, 1.0f, 1.0f)) * inRays[tid];
 }
 
 __global__ void kTransformPoints(size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
