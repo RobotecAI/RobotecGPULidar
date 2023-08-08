@@ -18,7 +18,7 @@ class Config:
     VCPKG_TAG = "2023.06.20"
     VCPKG_EXEC = "vcpkg"
     VCPKG_BOOTSTRAP = "bootstrap-vcpkg.sh"
-    VCPKG_PLATFORM_SPEC = ":x64-linux-generic-cpu"  # triplet is created in this script
+    VCPKG_TRIPLET = "x64-linux-generic-cpu"  # this triplet is created in this script
 
     def __init__(self):
         # Platform-dependent configuration
@@ -31,7 +31,7 @@ class Config:
             self.CMAKE_GENERATOR = "Ninja"
             self.VCPKG_EXEC = "vcpkg.exe"
             self.VCPKG_BOOTSTRAP = "bootstrap-vcpkg.bat"
-            self.VCPKG_PLATFORM_SPEC = ":x64-windows"
+            self.VCPKG_TRIPLET = "x64-windows"
 
 
 def main():
@@ -80,13 +80,13 @@ def main():
         # Here, a new triplet configuration file is created with a flag to build libraries for generic CPU with 64-bit extensions (compatible with all 64-bit CPUs).
         if on_linux() or inside_docker():
             template_triplet = os.path.join(cfg.VCPKG_INSTALL_DIR, "triplets", "x64-linux.cmake")
-            rgl_triplet = os.path.join(cfg.VCPKG_INSTALL_DIR, "triplets", f"{cfg.VCPKG_PLATFORM_SPEC[1:]}.cmake")
+            rgl_triplet = os.path.join(cfg.VCPKG_INSTALL_DIR, "triplets", f"{cfg.VCPKG_TRIPLET}.cmake")
             run_system_command(f"cp {template_triplet} {rgl_triplet}")
             run_system_command(f"echo 'set(VCPKG_CXX_FLAGS -march=x86-64)' | tee -a {rgl_triplet} > /dev/null")
             run_system_command(f"echo 'set(VCPKG_C_FLAGS -march=x86-64)' | tee -a {rgl_triplet} > /dev/null")
 
         # Install dependencies via vcpkg
-        run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]{cfg.VCPKG_PLATFORM_SPEC}")
+        run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]:{cfg.VCPKG_TRIPLET}")
         return 0
 
     # Check CUDA
@@ -133,6 +133,7 @@ def main():
     # Build
     cmake_args = [
         f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
+        f"-DVCPKG_TARGET_TRIPLET={cfg.VCPKG_TRIPLET}",
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION_STANDALONE={'ON' if args.with_ros2_standalone else 'OFF'}"
