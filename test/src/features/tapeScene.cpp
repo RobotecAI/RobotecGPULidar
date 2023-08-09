@@ -10,7 +10,7 @@ class Tape : public RGLTest {};
 
 void testCubeSceneOnGraph()
 {
-	rgl_node_t useRays = nullptr, setRange = nullptr, raytrace = nullptr, lidarPose = nullptr, format = nullptr;
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, format = nullptr;
 
 	std::vector<rgl_mat3x4f> rays = {
 		Mat3x4f::TRS({ 0, 0, 0 }).toRGL(),
@@ -19,7 +19,6 @@ void testCubeSceneOnGraph()
 		Mat3x4f::TRS({ 0.3, 0, 0 }).toRGL(),
 		Mat3x4f::TRS({ 0.4, 0, 0 }).toRGL()
 	};
-	rgl_vec2f range = {0.0f, 1000.0f};
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
 	std::vector<rgl_field_t> formatFields = {
 		XYZ_F32,
@@ -27,13 +26,11 @@ void testCubeSceneOnGraph()
 	};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRange, &range, 1));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 

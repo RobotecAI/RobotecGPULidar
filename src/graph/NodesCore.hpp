@@ -109,7 +109,7 @@ private:
 struct RaytraceNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
-	void setParameters(std::shared_ptr<Scene> scene) { this->scene = scene; }
+	void setParameters(std::shared_ptr<Scene> scene);
 
 	// Node
 	void validate() override;
@@ -130,6 +130,7 @@ struct RaytraceNode : Node, IPointsNode
 private:
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
+	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 
@@ -193,12 +194,12 @@ struct FromMat3x4fRaysNode : Node, IRaysNode
 
 	// Rays description
 	size_t getRayCount() const override { return rays->getCount(); }
-	size_t getRangesCount() const override { return 0; }  // To be set in SetRangeRaysNode
+	std::optional<size_t> getRangesCount() const override { return std::nullopt; }
 	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-	VArrayProxy<Vec2f>::ConstPtr getRanges() const override { return nullptr; }  // To be set in SetRangeRaysNode
+	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return std::nullopt; }
 	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
@@ -234,10 +235,10 @@ struct SetRangeRaysNode : Node, IRaysNodeSingleInput
 	void schedule(cudaStream_t stream) override {}
 
 	// Rays description
-	std::size_t getRangesCount() const override { return ranges->getCount(); }
+	std::optional<std::size_t> getRangesCount() const override { return ranges->getCount(); }
 
 	// Data getters
-	VArrayProxy<Vec2f>::ConstPtr getRanges() const override { return ranges; }
+	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return ranges; }
 
 private:
 	VArrayProxy<Vec2f>::Ptr ranges = VArrayProxy<Vec2f>::create();

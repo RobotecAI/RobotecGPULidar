@@ -136,6 +136,7 @@ extern "C" __global__ void __closesthit__()
 		optixGetPayload_2()
 	});
 
+	// TODO: Optimization - we can use inversesqrt here, which is one operation cheaper then sqrt.
 	float distance = sqrt(pow((hitWorld)[0] - (origin)[0], 2) +
 	                      pow((hitWorld)[1] - (origin)[1], 2) +
 	                      pow((hitWorld)[2] - (origin)[2], 2));

@@ -20,17 +20,19 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
+void RaytraceNode::setParameters(std::shared_ptr<Scene> scene)
+{
+	this->scene = scene;
+	const static Vec2f defaultRangeValue = Vec2f(0.0f, FLT_MAX);
+	defaultRange->setData(&defaultRangeValue, 1);
+}
+
 void RaytraceNode::validate()
 {
 	// It should be viewed as a temporary solution. Will change in v14.
 	setFields(findFieldsToCompute());
 
 	raysNode = getValidInput<IRaysNode>();
-
-	if (raysNode->getRanges() == nullptr || raysNode->getRangesCount() == 0) {
-		auto msg = fmt::format("no range for rays specified - add SetRangeRaysNode to the pipeline");
-		throw InvalidPipeline(msg);
-	}
 
 	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
@@ -55,19 +57,19 @@ void RaytraceNode::schedule(cudaStream_t stream)
 		data->resize(raysNode->getRayCount(), false, false);
 	}
 	auto rays = raysNode->getRays();
-	auto rayRanges = raysNode->getRanges();
 	auto sceneAS = scene->getAS();
 	auto sceneSBT = scene->getSBT();
 	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
 
 	// Optional
+	auto rayRanges = raysNode->getRanges();
 	auto ringIds = raysNode->getRingIds();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
-		.rayRanges = rayRanges->getDevicePtr(),
-		.rayRangesCount = rayRanges->getCount(),
+		.rayRanges = rayRanges.has_value() ? (*rayRanges)->getDevicePtr() : defaultRange->getDevicePtr(),
+		.rayRangesCount = rayRanges.has_value() ? (*rayRanges)->getCount() : defaultRange->getCount(),
 		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
 		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 		.scene = sceneAS,

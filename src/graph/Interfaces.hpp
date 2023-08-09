@@ -26,8 +26,8 @@ struct IRaysNode
 	using Ptr = std::shared_ptr<IRaysNode>;
 	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const = 0;
 	virtual std::size_t getRayCount() const = 0;
-	virtual VArrayProxy<Vec2f>::ConstPtr getRanges() const = 0;
-	virtual std::size_t getRangesCount() const = 0;
+	virtual std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const = 0;
+	virtual std::optional<std::size_t> getRangesCount() const = 0;
 	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
 	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
@@ -39,12 +39,12 @@ struct IRaysNodeSingleInput : IRaysNode
 
 	// Rays description
 	size_t getRayCount() const override { return input->getRayCount(); }
-	size_t getRangesCount() const override { return input->getRangesCount(); }
+	std::optional<size_t> getRangesCount() const override { return input->getRangesCount(); }
 	std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 
 	// Data getters
 	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
-	virtual VArrayProxy<Vec2f>::ConstPtr getRanges() const override { return input->getRanges(); }
+	virtual std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return input->getRanges(); }
 	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
 	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
