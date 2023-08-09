@@ -7,7 +7,7 @@ INSTANTIATE_TEST_CASE_P(DistanceFieldTests,
     DistanceFieldTest,
     ::testing::Values(23.1753849f, 119.9884538f, 333.3394629f));
 
-TEST_P(DistanceFieldTest, should_compute_correct_distance_for_single_object_on_ray_path)
+TEST_P(DistanceFieldTest, single_object_on_ray_path)
 {
     float cubeZDistance = GetParam();
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -26,7 +26,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distance_for_single_object_on_r
     EXPECT_EQ(outDistances.at(0), cubeZDistance - CUBE_HALF_EDGE);
 }
 
-TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_on_cube_face)
+TEST_F(DistanceFieldTest, ray_origin_on_cube_face)
 {
     float cubeZDistance = 1.0;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -45,7 +45,7 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_on_cub
     EXPECT_EQ(outDistances.at(0), 2 * CUBE_HALF_EDGE);
 }
 
-TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside_cube)
+TEST_F(DistanceFieldTest, ray_origin_inside_cube)
 {
     float cubeZDistance = -0.001f;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -64,7 +64,7 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside
     EXPECT_EQ(outDistances.at(0), CUBE_HALF_EDGE + cubeZDistance);
 }
 
-TEST_F(DistanceFieldTest, should_compute_infinite_distance_for_object_off_ray_path)
+TEST_F(DistanceFieldTest, object_off_ray_path)
 {
     float cubeYAxisTranslation = 55.5f;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, cubeYAxisTranslation, 0).toRGL();
@@ -84,7 +84,7 @@ TEST_F(DistanceFieldTest, should_compute_infinite_distance_for_object_off_ray_pa
     EXPECT_EQ(outDistances.at(1), NON_HIT_VALUE);
 }
 
-TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_out_of_max_range)
+TEST_P(DistanceFieldTest, object_out_of_max_range)
 {
     float cubeZDistance = GetParam();
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -101,7 +101,7 @@ TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_out_of_max
     EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
 }
 
-TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_out_of_min_range)
+TEST_P(DistanceFieldTest, object_out_of_min_range)
 {
     float cubeZDistance = GetParam();
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -118,7 +118,7 @@ TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_out_of_min
     EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
 }
 
-TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_in_range_behind_object_out_of_min_range)
+TEST_P(DistanceFieldTest, object_in_range_behind_object_out_of_min_range)
 {
 	float nearCubeZDistance = GetParam();
 	float distanceBetweenCubes = 10.0f;
@@ -139,7 +139,7 @@ TEST_P(DistanceFieldTest, should_compute_infinite_distance_for_object_in_range_b
 	EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
 }
 
-TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angles)
+TEST_P(DistanceFieldTest, various_ray_angles_hitting_single_object)
 {
     float cubeZDistance = GetParam();
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -178,7 +178,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angle
     }
 }
 
-TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
+TEST_F(DistanceFieldTest, ray_offsetted_from_beginning_of_coordinate_system)
 {
     float cubeZDistance = 10.0f;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -219,7 +219,7 @@ TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
     EXPECT_EQ(distance - outDistances.at(0), rayZAxisTranslation);
 }
 
-TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_considered_mean)
+TEST_F(DistanceFieldTest, with_gaussian_distance_noise_considered_mean)
 {
     float cubeZDistance = 10.0f;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -251,7 +251,7 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
     EXPECT_THAT(outDistances.at(0) - distance, testing::FloatNear(MEAN, EPSILON_NOISE));
 }
 
-TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_considered_mean_and_std_dev)
+TEST_F(DistanceFieldTest, with_gaussian_distance_noise_considered_mean_and_std_dev)
 {
     float cubeZDistance = 4.0f;
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
@@ -276,7 +276,7 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
     EXPECT_THAT(expectedStdev, testing::FloatNear(realStdev, EPSILON_NOISE));
 }
 
-TEST_P(DistanceFieldTest, should_compute_correct_distances_when_points_transformed)
+TEST_P(DistanceFieldTest, points_transformation)
 {
     float cubeZDistance = GetParam();
     const rgl_mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance).toRGL();
