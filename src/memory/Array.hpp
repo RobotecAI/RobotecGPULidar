@@ -23,22 +23,18 @@
 #include <memory/InvalidArrayCast.hpp>
 #include <memory/MemoryOperations.hpp>
 #include <memory/IAnyArray.hpp>
-#include <memory/MemoryKind.hpp>
-#include <memory/IAnyArray.hpp>
-#include <memory/MemoryOperations.hpp>
 
 /**
  * Base class implementing resizable Array.
  * Allows for dependency-injection to provide memory operations needed for resizing.
- * @tparam M Allows to statically distinguish Arrays using different memory kinds.
  * @tparam T Type of elements
  */
-template<MemoryKind M, typename T>
-struct Array : public IAnyArray<M>
+template<typename T>
+struct Array : public IAnyArray
 {
 	static_assert(std::is_trivially_copyable<T>::value);
-	using Ptr = std::shared_ptr<Array<M, T>>;
-	using ConstPtr = std::shared_ptr<const Array<M, T>>;
+	using Ptr = std::shared_ptr<Array<T>>;
+	using ConstPtr = std::shared_ptr<const Array<T>>;
 	using DataType = T;
 
 protected:
@@ -54,10 +50,10 @@ public:
 		}
 	}
 
-	Array(const Array<M, T>&) = delete;
-	Array(Array<M, T>&&) = delete;
-	Array<M,T>& operator=(const Array<M, T>&) = delete;
-	Array<M,T>& operator=(Array<M, T>&&) = delete;
+	Array(const Array<T>&) = delete;
+	Array(Array<T>&&) = delete;
+	Array<T>& operator=(const Array<T>&) = delete;
+	Array<T>& operator=(Array<T>&&) = delete;
 
 public:
 	T* getWritePtr() { return data; }

@@ -19,7 +19,7 @@
 #include <memory/MemoryKind.hpp>
 
 template <typename T>
-struct DeviceSyncArray : public DeviceArray<MemoryKind::DeviceSync, T>
+struct DeviceSyncArray : public DeviceArray<T>
 {
 	using Ptr = std::shared_ptr<DeviceSyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceSyncArray<T>>;
@@ -48,6 +48,6 @@ struct DeviceSyncArray : public DeviceArray<MemoryKind::DeviceSync, T>
 	}
 
 protected:
-	using DeviceArray<MemoryKind::DeviceSync, T>::DeviceArray;
+	using DeviceArray<T>::DeviceArray;
 };
 
