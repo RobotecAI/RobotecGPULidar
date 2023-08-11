@@ -39,7 +39,3 @@ DeviceArray-->DeviceAsyncArray;
   not?
     - Virtual destructor of Array needs to call deallocate, which may refer to already destroyed members of subclass (
       e.g. stream).
-
-
-- Why do all classes have non-typename template parameter MemoryKind?
-  - We really want to know the memory kind (and thus - location) of an array at compile time to write performance-aware code.

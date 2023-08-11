@@ -23,14 +23,10 @@
 #include <memory/InvalidArrayCast.hpp>
 #include <memory/MemoryOperations.hpp>
 #include <memory/IAnyArray.hpp>
-#include <memory/MemoryKind.hpp>
-#include <memory/IAnyArray.hpp>
-#include <memory/MemoryOperations.hpp>
 
 /**
  * Base class implementing resizable Array.
  * Allows for dependency-injection to provide memory operations needed for resizing.
- * @tparam M Allows to statically distinguish Arrays using different memory kinds.
  * @tparam T Type of elements
  */
 template<typename T>

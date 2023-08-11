@@ -17,7 +17,6 @@
 #include <memory>
 #include <typeindex>
 
-#include <memory/MemoryKind.hpp>
 #include <memory/InvalidArrayCast.hpp>
 #include <typingUtils.hpp>
 
