@@ -19,7 +19,7 @@
 #include <memory/DeviceAsyncArray.hpp>
 
 template <typename T>
-struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
+struct HostPinnedArray : public HostArray<T>
 {
 	using Ptr = std::shared_ptr<HostPinnedArray<T>>;
 	using ConstPtr = std::shared_ptr<const HostPinnedArray<T>>;
@@ -40,5 +40,5 @@ struct HostPinnedArray : public HostArray<MemoryKind::HostPinned, T>
 	}
 
 protected:
-	using HostArray<MemoryKind::HostPinned, T>::HostArray;
+	using HostArray<T>::HostArray;
 };

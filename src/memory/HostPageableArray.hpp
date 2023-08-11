@@ -18,7 +18,7 @@
 #include <memory/MemoryKind.hpp>
 
 template <typename T>
-struct HostPageableArray : public HostArray<MemoryKind::HostPageable, T>
+struct HostPageableArray : public HostArray<T>
 {
 	using Ptr = std::shared_ptr<HostPageableArray<T>>;
 	using ConstPtr = std::shared_ptr<const HostPageableArray<T>>;
@@ -31,5 +31,5 @@ struct HostPageableArray : public HostArray<MemoryKind::HostPageable, T>
 	}
 
 protected:
-	using HostArray<MemoryKind::HostPageable, T>::HostArray;
+	using HostArray<T>::HostArray;
 };

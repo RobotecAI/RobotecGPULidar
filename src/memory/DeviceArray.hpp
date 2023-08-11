@@ -26,24 +26,22 @@
 
 /**
  * DeviceArray extends Array with some convenience methods useful for dealing with device memory.
- * @tparam M See base class
  * @tparam T See base class
  */
-template <MemoryKind M, typename T>
-struct DeviceArray : public Array<M, T>
+template <typename T>
+struct DeviceArray : public Array<T>
 {
-	static_assert(M == MemoryKind::DeviceSync || M == MemoryKind::DeviceAsync);
-	using Ptr = std::shared_ptr<DeviceArray<M, T>>;
-	using ConstPtr = std::shared_ptr<const DeviceArray<M, T>>;
+	using Ptr = std::shared_ptr<DeviceArray<T>>;
+	using ConstPtr = std::shared_ptr<const DeviceArray<T>>;
 
 	// Explanation why: https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members
 	// Note: do not repeat this for methods, since it inhibits virtual dispatch mechanism
-	using Array<M, T>::data;
-	using Array<M, T>::count;
-	using Array<M, T>::capacity;
+	using Array<T>::data;
+	using Array<T>::count;
+	using Array<T>::capacity;
 
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
 protected:
-	using Array<M, T>::Array;
+	using Array<T>::Array;
 };

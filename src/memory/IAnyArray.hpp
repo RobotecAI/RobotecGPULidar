@@ -23,21 +23,19 @@
 
 /**
  * Dynamically typed handle for Array<M, T> and its subclasses.
- * @tparam M Kind of memory. @see MemoryKind
  */
-template<MemoryKind M>
-struct IAnyArray : public std::enable_shared_from_this<IAnyArray<M>>
+struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 {
-	using Ptr = std::shared_ptr<IAnyArray<M>>;
-	using ConstPtr = std::shared_ptr<const IAnyArray<M>>;
+	using Ptr = std::shared_ptr<IAnyArray>;
+	using ConstPtr = std::shared_ptr<const IAnyArray>;
 
 	/**
 	 * Method to convert from statically typed array to dynamically typed array.
 	 */
-	IAnyArray<M>::Ptr asAnyArray() { return IAnyArray<M>::shared_from_this(); }
+	IAnyArray::Ptr asAnyArray() { return IAnyArray::shared_from_this(); }
 
 	/** Const overload */
-	IAnyArray<M>::ConstPtr asAnyArray() const { return IAnyArray<M>::shared_from_this(); }
+	IAnyArray::ConstPtr asAnyArray() const { return IAnyArray::shared_from_this(); }
 
 	/**
 	 * Method to convert from dynamically typed array to statically typed array.
@@ -46,7 +44,7 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray<M>>
 	template<typename T, template<typename> typename Subclass>
 	Subclass<T>::Ptr asTypedArray()
 	{
-		static_assert(std::is_base_of<IAnyArray<M>, Subclass<T>>::value);
+		static_assert(std::is_base_of<IAnyArray, Subclass<T>>::value);
 		if (auto ptr = std::dynamic_pointer_cast<Subclass<T>>(this->shared_from_this())) {
 			return ptr;
 		}
@@ -58,7 +56,7 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray<M>>
 	template<typename T, template<typename> typename Subclass>
 	Subclass<T>::ConstPtr asTypedArray() const
 	{
-		static_assert(std::is_base_of<IAnyArray<M>, Subclass<T>>::value);
+		static_assert(std::is_base_of<IAnyArray, Subclass<T>>::value);
 		if (auto ptr = std::dynamic_pointer_cast<const Subclass<T>>(this->shared_from_this())) {
 			return ptr;
 		}

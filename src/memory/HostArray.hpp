@@ -26,21 +26,19 @@
 
 /**
  * HostArray extends Array with some convenience methods that are only possible for host memory.
- * @tparam M See base class
  * @tparam T See base class
  */
-template<MemoryKind M, typename T>
-struct HostArray : public Array<M, T>
+template<typename T>
+struct HostArray : public Array<T>
 {
-	static_assert(M == MemoryKind::HostPageable || M == MemoryKind::HostPinned);
-	using Ptr = std::shared_ptr<HostArray<M, T>>;
-	using ConstPtr = std::shared_ptr<const HostArray<M, T>>;
+	using Ptr = std::shared_ptr<HostArray<T>>;
+	using ConstPtr = std::shared_ptr<const HostArray<T>>;
 
 	// Explanation why: https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members
 	// Note: do not repeat this for methods, since it inhibits virtual dispatch mechanism
-	using Array<M, T>::data;
-	using Array<M, T>::count;
-	using Array<M, T>::capacity;
+	using Array<T>::data;
+	using Array<T>::count;
+	using Array<T>::capacity;
 
 	/** Appends given value at the end of Array, similar to std::vector<T>::push_back */
 	void append(T value)
@@ -69,7 +67,7 @@ struct HostArray : public Array<M, T>
 	}
 
 	/** Const overload */
-	virtual const T& at(size_t idx) const { return const_cast<HostArray<M, T>*>(this)->at(idx); }
+	virtual const T& at(size_t idx) const { return const_cast<HostArray<T>*>(this)->at(idx); }
 
 	/** Accesses data without checking index bounds */
 	T& operator[](size_t idx) { return data[idx]; }
@@ -77,5 +75,5 @@ struct HostArray : public Array<M, T>
 	/** Const overload */
 	const T& operator[](size_t idx) const {return data[idx]; }
 protected:
-	using Array<M, T>::Array;
+	using Array<T>::Array;
 };
