@@ -86,20 +86,21 @@ add_library(RobotecGPULidar SHARED
     src/scene/ASBuildScratchpad.cpp
     src/graph/GraphRunCtx.cpp
     src/graph/Node.cpp
-    src/graph/GaussianNoiseAngularHitpointNode.cpp
-    src/graph/GaussianNoiseAngularRayNode.cpp
-    src/graph/GaussianNoiseDistanceNode.cpp
-    src/graph/CompactPointsNode.cpp
-    src/graph/FormatPointsNode.cpp
-    src/graph/RaytraceNode.cpp
-    src/graph/TransformPointsNode.cpp
-    src/graph/TransformRaysNode.cpp
-    src/graph/FromArrayPointsNode.cpp
-    src/graph/FromMat3x4fRaysNode.cpp
-    src/graph/SetRaysRingIdsRaysNode.cpp
-    src/graph/SpatialMergePointsNode.cpp
-    src/graph/TemporalMergePointsNode.cpp
-    src/graph/YieldPointsNode.cpp)
+#    src/graph/GaussianNoiseAngularHitpointNode.cpp
+#    src/graph/GaussianNoiseAngularRayNode.cpp
+#    src/graph/GaussianNoiseDistanceNode.cpp
+#    src/graph/CompactPointsNode.cpp
+#    src/graph/FormatPointsNode.cpp
+#    src/graph/RaytraceNode.cpp
+#    src/graph/TransformPointsNode.cpp
+#    src/graph/TransformRaysNode.cpp
+#    src/graph/FromArrayPointsNode.cpp
+#    src/graph/FromMat3x4fRaysNode.cpp
+#    src/graph/SetRaysRingIdsRaysNode.cpp
+#    src/graph/SpatialMergePointsNode.cpp
+#    src/graph/TemporalMergePointsNode.cpp
+#    src/graph/YieldPointsNode.cpp
+)
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 

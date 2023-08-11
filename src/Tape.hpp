@@ -217,20 +217,20 @@ private:
 	void tape_graph_get_result_data(const YAML::Node& yamlNode);
 	void tape_graph_node_add_child(const YAML::Node& yamlNode);
 	void tape_graph_node_remove_child(const YAML::Node& yamlNode);
-	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode);
-	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode);
-	void tape_node_rays_transform(const YAML::Node& yamlNode);
-	void tape_node_points_transform(const YAML::Node& yamlNode);
-	void tape_node_raytrace(const YAML::Node& yamlNode);
-	void tape_node_points_format(const YAML::Node& yamlNode);
-	void tape_node_points_yield(const YAML::Node& yamlNode);
-	void tape_node_points_compact(const YAML::Node& yamlNode);
-	void tape_node_points_spatial_merge(const YAML::Node& yamlNode);
-	void tape_node_points_temporal_merge(const YAML::Node& yamlNode);
-	void tape_node_points_from_array(const YAML::Node& yamlNode);
-	void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode);
-	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
-	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
+//	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode);
+//	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode);
+//	void tape_node_rays_transform(const YAML::Node& yamlNode);
+//	void tape_node_points_transform(const YAML::Node& yamlNode);
+//	void tape_node_raytrace(const YAML::Node& yamlNode);
+//	void tape_node_points_format(const YAML::Node& yamlNode);
+//	void tape_node_points_yield(const YAML::Node& yamlNode);
+//	void tape_node_points_compact(const YAML::Node& yamlNode);
+//	void tape_node_points_spatial_merge(const YAML::Node& yamlNode);
+//	void tape_node_points_temporal_merge(const YAML::Node& yamlNode);
+//	void tape_node_points_from_array(const YAML::Node& yamlNode);
+//	void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode);
+//	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
+//	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
 
 	#if RGL_BUILD_PCL_EXTENSION
 	void tape_graph_write_pcd_file(const YAML::Node& yamlNode);
