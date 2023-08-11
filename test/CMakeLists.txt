@@ -25,7 +25,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/SpatialMergePointsNodeTest.cpp
     src/graph/nodes/TemporalMergePointsNodeTest.cpp
     src/graph/addChildTest.cpp
-    src/memory/arrayTest.cpp
+        src/memory/arrayTypingTest.cpp
     src/memory/arrayChangeStreamTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/testKernel.cu
