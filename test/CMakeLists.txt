@@ -49,7 +49,8 @@ if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     )
 endif()
 
-add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
+add_executable(RobotecGPULidar_test ${RGL_TEST_FILES}
+        src/memory/arrayOpsTest.cpp)
 
 target_link_libraries(RobotecGPULidar_test
     gtest_main
