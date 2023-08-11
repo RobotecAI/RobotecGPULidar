@@ -40,6 +40,13 @@ struct HostArray : public Array<T>
 	using Array<T>::count;
 	using Array<T>::capacity;
 
+	virtual void copyFromExternal(const T* src, size_t count) override
+	{
+		// Regular memcpy is the fastest option in Host-Host copies.
+		this->resize(count, false, false);
+		memcpy(data, src, sizeof(T) * count);
+	}
+
 	/** Appends given value at the end of Array, similar to std::vector<T>::push_back */
 	void append(T value)
 	{
@@ -67,7 +74,7 @@ struct HostArray : public Array<T>
 	}
 
 	/** Const overload */
-	virtual const T& at(size_t idx) const { return const_cast<HostArray<T>*>(this)->at(idx); }
+	const T& at(size_t idx) const { return const_cast<HostArray<T>*>(this)->at(idx); }
 
 	/** Accesses data without checking index bounds */
 	T& operator[](size_t idx) { return data[idx]; }

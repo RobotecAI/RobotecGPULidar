@@ -62,11 +62,24 @@ protected:
 };
 TYPED_TEST_SUITE(ArrayTyping, CastingCombinations);
 
+// Array creation helper, because DeviceAsyncArray does not have ::create() with no arguments like other kinds.
+template<typename T, template<typename> typename Subclass>
+Subclass<T>::Ptr createArray()
+{
+	if constexpr (std::is_same<Subclass<T>, DeviceAsyncArray<T>>::value) {
+		return DeviceAsyncArray<T>::createStandalone(CudaStream::getNullStream());
+	}
+	else {
+		return Subclass<T>::create();
+	}
+};
+
 TYPED_TEST(ArrayTyping, Typing) {
 	// Here, you can use Type, WrongType, RealSubclass, and WrongSubclass as if they were type aliases
 	// For example:
 	using SubclassType = typename TypeParam::template Subclass<typename TypeParam::Data>;
-	typename SubclassType::Ptr arrayOriginal = SubclassType::create();
+	typename SubclassType::Ptr arrayOriginal = createArray<typename TypeParam::Data, TypeParam::template Subclass>();
+
 	IAnyArray::Ptr arrayAny = arrayOriginal->asAnyArray();
 	arrayAny->resize(1, true, false);
 

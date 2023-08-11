@@ -515,13 +515,14 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
-		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		pointCloudNode->waitForResults();
-		auto elemCount = (int32_t) pointCloudNode->getPointCount();
-		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
+		throw 42;
+//		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+//		pointCloudNode->waitForResults();
+//		auto elemCount = (int32_t) pointCloudNode->getPointCount();
+//		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
 
-		if (out_count != nullptr) { *out_count = elemCount; }
-		if (out_size_of != nullptr) { *out_size_of = elemSize; }
+//		if (out_count != nullptr) { *out_count = elemCount; }
+//		if (out_size_of != nullptr) { *out_size_of = elemSize; }
 	});
 	TAPE_HOOK(node, field, out_count, out_size_of);
 	return status;
@@ -547,17 +548,18 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(data != nullptr);
 
-		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-		pointCloudNode->waitForResults();
-		VArray::ConstPtr output = pointCloudNode->getFieldData(field);
-
-		// TODO: Ensure that copying to pageable memory does not wait
-		CHECK_CUDA(cudaMemcpyAsync(data,
-		                           output->getReadPtr(MemLoc::Device),
-		                           output->getElemCount() * output->getElemSize(),
-		                           cudaMemcpyDefault,
-		                           CudaStream::getCopyStream()->getHandle()));
-		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
+		throw 42;
+//		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+//		pointCloudNode->waitForResults();
+//		VArray::ConstPtr output = pointCloudNode->getFieldData(field);
+//
+//		// TODO: Ensure that copying to pageable memory does not wait
+//		CHECK_CUDA(cudaMemcpyAsync(data,
+//		                           output->getReadPtr(MemLoc::Device),
+//		                           output->getElemCount() * output->getElemSize(),
+//		                           cudaMemcpyDefault,
+//		                           CudaStream::getCopyStream()->getHandle()));
+//		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
 	});
 	TAPE_HOOK(node, field, data);
 	return status;
@@ -613,29 +615,29 @@ void TapePlayer::tape_graph_node_remove_child(const YAML::Node& yamlNode)
 	rgl_graph_node_remove_child(tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>()), tapeNodes.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
-//RGL_API rgl_status_t
-//rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(rays != nullptr);
-//		CHECK_ARG(ray_count > 0);
-//		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
-//	});
-//	TAPE_HOOK(node, TAPE_ARRAY(rays, ray_count), ray_count);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_rays_from_mat3x4f(&node,
-//		reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()),
-//		yamlNode[2].as<int32_t>());
-//	tapeNodes.insert({nodeId, node});
-//}
+RGL_API rgl_status_t
+rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(rays != nullptr);
+		CHECK_ARG(ray_count > 0);
+		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(rays, ray_count), ray_count);
+	return status;
+}
+
+void TapePlayer::tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_rays_from_mat3x4f(&node,
+		reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
+}
 //
 //RGL_API rgl_status_t
 //rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count)

@@ -63,6 +63,8 @@ public:
 	unsigned long getCapacity() const override { return capacity; }
 	std::string getTypeName() const override { return name(typeid(T)); }
 
+	virtual void copyFromExternal(const T* hostRaw, size_t count) = 0;
+
 	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override
 	{
 		// Ensure capacity

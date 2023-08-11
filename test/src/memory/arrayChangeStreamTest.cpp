@@ -60,7 +60,7 @@ static void waitCb(cudaStream_t _1,  cudaError_t _2, void*  userData)
 
 TEST_F(ArrayChangeStream, Standalone)
 {
-	DeviceAsyncArray<int>::Ptr array = DeviceAsyncArray<int>::create(streamA);
+	DeviceAsyncArray<int>::Ptr array = DeviceAsyncArray<int>::createStandalone(streamA);
 	array->copyFrom(nonZeroIntPattern); // Synchronizes array's stream.
 
 	// Block streamA. This way, scheduled operations will be not executed.
@@ -91,7 +91,7 @@ TEST_F(ArrayChangeStream, WithManager)
 	arrayB->copyFrom(nonZeroFloatPattern);
 	arrayC->copyFrom(nonZeroFloatPattern);
 
-	// Remove one of the arrays, arrayMgr should not touch it afterwards
+	// Remove one of the arrays, arrayMgr should not touch it afterward
 	arrayC.reset();
 
 	// Block streamA. This way, scheduled operations will be not executed.

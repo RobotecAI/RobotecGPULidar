@@ -104,11 +104,11 @@ OptixShaderBindingTable Scene::buildSBT()
 
 	RaygenRecord hRaygenRecord = {};
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().raygenPG, &hRaygenRecord));
-	dRaygenRecords->copyFromHost(&hRaygenRecord, 1);
+	dRaygenRecords->copyFromExternal(&hRaygenRecord, 1);
 
 	MissRecord hMissRecord = {};
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().missPG, &hMissRecord));
-	dMissRecords->copyFromHost(&hMissRecord, 1);
+	dMissRecords->copyFromExternal(&hMissRecord, 1);
 
 	return OptixShaderBindingTable{
 		.raygenRecord = dRaygenRecords->getDeviceReadPtr(),

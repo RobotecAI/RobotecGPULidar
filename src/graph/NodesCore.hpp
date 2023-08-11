@@ -175,33 +175,33 @@
 //	void enqueueExecImpl() override;
 //
 //	// Data getters
-//	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+//	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 //	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
 //
 //private:
 //	Mat3x4f transform;
-//	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+//	Array<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
 //};
-//
-//struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
-//{
-//	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
-//	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
-//
-//	// Node
-//	void enqueueExecImpl() override {}
-//
-//	// Rays description
-//	size_t getRayCount() const override { return rays->getCount(); }
-//	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
-//
-//	// Data getters
-//	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-//	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
-//
-//private:
-//	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
-//};
+
+struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
+{
+	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
+	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
+
+	// Node
+	void enqueueExecImpl() override {}
+
+	// Rays description
+	size_t getRayCount() const override { return rays->getCount(); }
+	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
+
+	// Data getters
+	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	std::optional<Array<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+
+private:
+	Array<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
+};
 //
 //struct SetRingIdsRaysNode : IRaysNodeSingleInput
 //{

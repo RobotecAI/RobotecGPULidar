@@ -49,14 +49,15 @@ struct DeviceAsyncArray : public DeviceArray<T>, public IStreamBound
 		CHECK_CUDA(cudaStreamSynchronize(this->getStream()->getHandle()));
 	}
 
+
 	static DeviceAsyncArray<T>::Ptr createWithManager(StreamBoundObjectsManager& manager)
 	{
-		auto array = create(manager.getStream());
+		auto array = createStandalone(manager.getStream());
 		manager.registerObject(array);
 		return array;
 	}
 
-	static DeviceAsyncArray<T>::Ptr create(CudaStream::Ptr stream=CudaStream::getNullStream())
+	static DeviceAsyncArray<T>::Ptr createStandalone(CudaStream::Ptr stream)
 	{
 		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(stream));
 	}

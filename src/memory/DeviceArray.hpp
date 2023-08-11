@@ -42,6 +42,14 @@ struct DeviceArray : public Array<T>
 
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
+
+	virtual void copyFromExternal(const T* src, std::size_t count) override
+	{
+		// Copying from pageable memory is always synchronous, so the implementation is the same for sync and async.
+		this->resize(count, false, false);
+		CHECK_CUDA(cudaMemcpy(this->data, src, sizeof(T) * count, cudaMemcpyHostToDevice));
+	}
+
 protected:
 	using Array<T>::Array;
 };

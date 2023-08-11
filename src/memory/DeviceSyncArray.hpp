@@ -41,12 +41,6 @@ struct DeviceSyncArray : public DeviceArray<T>
 		CHECK_CUDA(cudaMemcpy(this->data, src->data, sizeof(T) * src->getCount(), cudaMemcpyHostToDevice));
 	}
 
-	void copyFromHost(const T* hostSrc, std::size_t count)
-	{
-		this->resize(count, false, false);
-		CHECK_CUDA(cudaMemcpy(this->data, hostSrc, sizeof(T) * count, cudaMemcpyHostToDevice));
-	}
-
 protected:
 	using DeviceArray<T>::DeviceArray;
 };

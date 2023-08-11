@@ -22,8 +22,8 @@ API_OBJECT_INSTANCE(Mesh);
 
 Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
 {
-	dVertices->copyFromHost(vertices, vertexCount);
-	dIndices->copyFromHost(indices, indexCount);
+	dVertices->copyFromExternal(vertices, vertexCount);
+	dIndices->copyFromExternal(indices, indexCount);
 }
 
 void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
@@ -33,7 +33,7 @@ void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
 		                        dVertices->getCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
-	dVertices->copyFromHost(vertices, vertexCount);
+	dVertices->copyFromExternal(vertices, vertexCount);
 	gasNeedsUpdate = true;
 }
 
@@ -155,6 +155,6 @@ void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
 		dTextureCoords = DeviceSyncArray<Vec2f>::create();
 	}
 
-	dTextureCoords.value()->copyFromHost(texCoords, texCoordCount);
+	dTextureCoords.value()->copyFromExternal(texCoords, texCoordCount);
 	gasNeedsUpdate = true;
 }
