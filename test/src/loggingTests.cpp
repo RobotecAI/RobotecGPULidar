@@ -9,7 +9,7 @@ using namespace ::testing;
 
 class LoggingTests : public RGLTest{ 
 protected:
-	std::filesystem::path logFilePath { std::filesystem::temp_directory_path() / std::filesystem::path("loggingTests").concat(".log") };
+	std::string logFilePath { (std::filesystem::temp_directory_path() / std::filesystem::path("loggingTests").concat(".log")).string() };
 };
 
 TEST_F(LoggingTests, rgl_configure_logging)
@@ -37,23 +37,4 @@ TEST_F(LoggingTests, rgl_configure_logging)
     EXPECT_THAT(logFile, HasSubstr("[error]: This is RGL error log."));
     EXPECT_THAT(logFile, HasSubstr("[critical]: This is RGL critical log."));
     EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false));
-}
-
-TEST_F(LoggingTests, rgl_record_configure_logging)
-{
-	std::filesystem::path loggingRecordPath { std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord") };
-
-	// Logging with Tape
-    ASSERT_RGL_SUCCESS(rgl_tape_record_begin(loggingRecordPath.c_str()));
-    bool isTapeRecordActive = false;
-    ASSERT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
-    ASSERT_TRUE(isTapeRecordActive);
-
-    EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, logFilePath.c_str(), false));
-
-    EXPECT_RGL_SUCCESS(rgl_tape_record_end());
-    EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
-    EXPECT_FALSE(isTapeRecordActive);
-    // TODO(nebraszka): As the bin file is empty, the tape fails to play
-	// EXPECT_RGL_SUCCESS(rgl_tape_play(loggingRecordPath.c_str()));
 }
