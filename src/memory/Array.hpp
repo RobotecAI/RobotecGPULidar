@@ -75,9 +75,6 @@ public:
 		THROW_INVALID_ARRAY_CAST(const Subclass<T>);
 	}
 
-
-	T* getWritePtr() { return data; }
-	const T* getReadPtr() const { return data; }
 	unsigned long getCount() const override { return count; }
 	unsigned long getSizeOf() const override { return sizeof(T); }
 	unsigned long getCapacity() const override { return capacity; }

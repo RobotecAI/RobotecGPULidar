@@ -17,6 +17,10 @@
 
 void TransformRaysNode::enqueueExecImpl()
 {
-	rays->resize(getRayCount());
-	gpuTransformRays(getStreamHandle(), getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
+	transformedRays->resize(getRayCount(), false, false);
+
+	// Kernel Call
+	const Mat3x4f *inRaysPtr = input->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	Mat3x4f* outRaysPtr = transformedRays->getWritePtr();
+	gpuTransformRays(getStreamHandle(), getRayCount(), inRaysPtr, outRaysPtr, transform);
 }

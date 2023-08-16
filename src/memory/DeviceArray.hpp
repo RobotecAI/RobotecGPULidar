@@ -40,6 +40,8 @@ struct DeviceArray : public Array<T>
 	using Array<T>::count;
 	using Array<T>::capacity;
 
+	T* getWritePtr() { return data; }
+	const T* getReadPtr() const { return data; }
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
 

@@ -165,23 +165,23 @@
 //	Mat3x4f transform;
 //	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
 //};
-//
-//struct TransformRaysNode : IRaysNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<TransformRaysNode>;
-//	void setParameters(Mat3x4f transform) { this->transform = transform; }
-//
-//	// Node
-//	void enqueueExecImpl() override;
-//
-//	// Data getters
-//	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-//	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
-//
-//private:
-//	Mat3x4f transform;
-//	Array<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
-//};
+
+struct TransformRaysNode : IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<TransformRaysNode>;
+	void setParameters(Mat3x4f transform) { this->transform = transform; }
+
+	// Node
+	void enqueueExecImpl() override;
+
+	// Data getters
+	Array<Mat3x4f>::ConstPtr getRays() const override { return transformedRays; }
+	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
+
+private:
+	Mat3x4f transform;
+	DeviceAsyncArray<Mat3x4f>::Ptr transformedRays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
+};
 
 struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 {
@@ -200,7 +200,7 @@ struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 	std::optional<Array<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
-	Array<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
 };
 //
 //struct SetRingIdsRaysNode : IRaysNodeSingleInput

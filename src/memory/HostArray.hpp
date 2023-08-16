@@ -40,6 +40,9 @@ struct HostArray : public Array<T>
 	using Array<T>::count;
 	using Array<T>::capacity;
 
+	T* getWritePtr() { return data; }
+	const T* getReadPtr() const { return data; }
+
 	virtual void copyFromExternal(const T* src, size_t count) override
 	{
 		// Regular memcpy is the fastest option in Host-Host copies.
