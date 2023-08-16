@@ -44,6 +44,7 @@ set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 if (WIN32)
     add_definitions(-DNOMINMAX)  # http://www.suodenjoki.dk/us/archive/2010/min-max.htm
     add_definitions(-D_USE_MATH_DEFINES)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
 # External dependencies
