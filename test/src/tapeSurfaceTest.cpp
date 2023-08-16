@@ -38,7 +38,8 @@ TEST_F(TapeCase, RecordPlayLoggingCall)
 
 TEST_F(TapeCase, RecordPlayAllCalls)
 {
-	EXPECT_RGL_SUCCESS(rgl_tape_record_begin("all_calls_recording"));
+	std::string allCallsRecordPath { (std::filesystem::temp_directory_path() / std::filesystem::path("allCallsRecord")).string() };
+	EXPECT_RGL_SUCCESS(rgl_tape_record_begin(allCallsRecordPath.c_str()));
 	bool isTapeRecordActive = false;
 	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
 	EXPECT_TRUE(isTapeRecordActive);
@@ -166,5 +167,5 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
 	EXPECT_FALSE(isTapeRecordActive);
 
-	EXPECT_RGL_SUCCESS(rgl_tape_play("all_calls_recording"));
+	EXPECT_RGL_SUCCESS(rgl_tape_play(allCallsRecordPath.c_str()));
 }

@@ -59,7 +59,8 @@ void testCubeSceneOnGraph()
 
 TEST_F(Tape, SceneReconstruction)
 {
-	rgl_tape_record_begin("cube_scene_recording");
+	std::string cubeSceneRecordPath { (std::filesystem::temp_directory_path() / std::filesystem::path("cubeSceneRecord")).string() };
+	rgl_tape_record_begin(cubeSceneRecordPath.c_str());
 	auto mesh = makeCubeMesh();
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
@@ -70,7 +71,7 @@ TEST_F(Tape, SceneReconstruction)
 
 	rgl_cleanup();
 
-	rgl_tape_play("cube_scene_recording");
+	rgl_tape_play(cubeSceneRecordPath.c_str());
 
 	testCubeSceneOnGraph();
 }
