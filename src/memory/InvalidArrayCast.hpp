@@ -20,3 +20,11 @@ struct InvalidArrayCast : public std::runtime_error
 {
 	using std::runtime_error::runtime_error;
 };
+
+#define THROW_INVALID_ARRAY_CAST(TargetType) do \
+{ \
+	auto msg = fmt::format("InvalidArrayCast: {} -> {}", \
+	name(typeid(this)), name(typeid(TargetType))); \
+	throw InvalidArrayCast(msg); \
+} \
+while (false)

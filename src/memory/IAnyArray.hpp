@@ -18,7 +18,11 @@
 #include <typeindex>
 
 #include <memory/InvalidArrayCast.hpp>
+#include <memory/Array.hpp>
 #include <typingUtils.hpp>
+
+template<typename T>
+struct Array;
 
 /**
  * Dynamically typed handle for Array<M, T> and its subclasses.
@@ -31,36 +35,32 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	/**
 	 * Method to convert from statically typed array to dynamically typed array.
 	 */
-	IAnyArray::Ptr asAnyArray() { return IAnyArray::shared_from_this(); }
+	IAnyArray::Ptr asAny() { return IAnyArray::shared_from_this(); }
 
 	/** Const overload */
-	IAnyArray::ConstPtr asAnyArray() const { return IAnyArray::shared_from_this(); }
+	IAnyArray::ConstPtr asAny() const { return IAnyArray::shared_from_this(); }
 
 	/**
 	 * Method to convert from dynamically typed array to statically typed array.
 	 * https://en.cppreference.com/w/cpp/language/template_parameters
 	 */
-	template<typename T, template<typename> typename Subclass>
-	Subclass<T>::Ptr asTypedArray()
+	template<typename T>
+	Array<T>::Ptr asTyped()
 	{
-		static_assert(std::is_base_of<IAnyArray, Subclass<T>>::value);
-		if (auto ptr = std::dynamic_pointer_cast<Subclass<T>>(this->shared_from_this())) {
+		if (auto ptr = std::dynamic_pointer_cast<Array<T>>(this->shared_from_this())) {
 			return ptr;
 		}
-		auto msg = fmt::format("InvalidArrayCast: {} -> {}", this->getTypeName(), name(typeid(T)));
-		throw InvalidArrayCast(msg);
+		THROW_INVALID_ARRAY_CAST(Array<T>);
 	}
 
-	// Const overload
-	template<typename T, template<typename> typename Subclass>
-	Subclass<T>::ConstPtr asTypedArray() const
+	/** Const overload */
+	template<typename T>
+	Array<T>::ConstPtr asTyped() const
 	{
-		static_assert(std::is_base_of<IAnyArray, Subclass<T>>::value);
-		if (auto ptr = std::dynamic_pointer_cast<const Subclass<T>>(this->shared_from_this())) {
+		if (auto ptr = std::dynamic_pointer_cast<const Array<T>>(this->shared_from_this())) {
 			return ptr;
 		}
-		auto msg = fmt::format("InvalidArrayCast: {} -> {}", this->getTypeName(), name(typeid(T)));
-		throw InvalidArrayCast(msg);
+		THROW_INVALID_ARRAY_CAST(Array<T>);
 	}
 
 	/**

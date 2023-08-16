@@ -56,6 +56,26 @@ public:
 	Array<T>& operator=(Array<T>&&) = delete;
 
 public:
+	template<template <typename> typename Subclass>
+	Subclass<T>::Ptr asSubclass()
+	{
+		if (auto ptr = std::dynamic_pointer_cast<Subclass<T>>(this->shared_from_this())) {
+			return ptr;
+		}
+		THROW_INVALID_ARRAY_CAST(Subclass<T>);
+	}
+
+	/** Const overload **/
+	template<template <typename> typename Subclass>
+	Subclass<T>::ConstPtr asSubclass() const
+	{
+		if (auto ptr = std::dynamic_pointer_cast<const Subclass<T>>(this->shared_from_this())) {
+			return ptr;
+		}
+		THROW_INVALID_ARRAY_CAST(const Subclass<T>);
+	}
+
+
 	T* getWritePtr() { return data; }
 	const T* getReadPtr() const { return data; }
 	unsigned long getCount() const override { return count; }
