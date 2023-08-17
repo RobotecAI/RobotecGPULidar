@@ -112,8 +112,8 @@ if (RGL_BUILD_PCL_EXTENSION)
     find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
     target_sources(RobotecGPULidar PRIVATE
         src/api/apiPcl.cpp
-        src/graph/DownSamplePointsNode.cpp
-        src/graph/VisualizePointsNode.cpp
+#        src/graph/DownSamplePointsNode.cpp
+#        src/graph/VisualizePointsNode.cpp
     )
     target_include_directories(RobotecGPULidar PUBLIC ${PCL_INCLUDE_DIRS})
     target_link_directories(RobotecGPULidar PRIVATE ${PCL_LIBRARY_DIRS})
