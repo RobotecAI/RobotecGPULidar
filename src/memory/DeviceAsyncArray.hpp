@@ -50,14 +50,14 @@ struct DeviceAsyncArray : public DeviceArray<T>, public IStreamBound
 	}
 
 
-	static DeviceAsyncArray<T>::Ptr createWithManager(StreamBoundObjectsManager& manager)
+	static DeviceAsyncArray<T>::Ptr create(StreamBoundObjectsManager& manager)
 	{
-		auto array = createStandalone(manager.getStream());
+		auto array = create(manager.getStream());
 		manager.registerObject(array);
 		return array;
 	}
 
-	static DeviceAsyncArray<T>::Ptr createStandalone(CudaStream::Ptr stream)
+	static DeviceAsyncArray<T>::Ptr create(CudaStream::Ptr stream)
 	{
 		return DeviceAsyncArray<T>::Ptr(new DeviceAsyncArray(stream));
 	}

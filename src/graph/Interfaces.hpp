@@ -57,33 +57,32 @@ struct IRaysNodeSingleInput : virtual IRaysNode
 protected:
 	IRaysNode::Ptr input {0};
 };
-//
-//struct IPointsNode : virtual Node
-//{
-//	using Ptr = std::shared_ptr<IPointsNode>;
-//
-//	// Node requirements
-//	virtual std::vector<rgl_field_t> getRequiredFieldList() const { return {}; };
-//
-//	// Point cloud description
-//	virtual bool isDense() const = 0;
-//	virtual bool hasField(rgl_field_t field) const = 0;
-//	virtual std::size_t getWidth() const = 0;
-//	virtual std::size_t getHeight() const = 0;
-//	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
-//
-//	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
-//
-//	// Data getters
-//	virtual VArray::ConstPtr getFieldData(rgl_field_t field) = 0;
-//	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
-//
-//	template<rgl_field_t field>
-//	typename VArrayProxy<typename Field<field>::type>::ConstPtr
-//	getFieldDataTyped()
-//	{ return getFieldData(field)->template getTypedProxy<typename Field<field>::type>(); }
-//};
-//
+
+struct IPointsNode : virtual Node
+{
+	using Ptr = std::shared_ptr<IPointsNode>;
+
+	// Node requirements
+	virtual std::vector<rgl_field_t> getRequiredFieldList() const { return {}; };
+
+	// Point cloud description
+	virtual bool isDense() const = 0;
+	virtual bool hasField(rgl_field_t field) const = 0;
+	virtual std::size_t getWidth() const = 0;
+	virtual std::size_t getHeight() const = 0;
+	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
+
+	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
+
+	// Data getters
+	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) = 0;
+	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
+
+	template<rgl_field_t field>
+	typename Array<typename Field<field>::type>::ConstPtr getFieldDataTyped()
+	{ return getFieldData(field)->template asTyped<typename Field<field>::type>(); }
+};
+
 //struct IPointsNodeSingleInput : virtual IPointsNode
 //{
 //	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;

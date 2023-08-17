@@ -706,36 +706,36 @@ void TapePlayer::tape_node_rays_transform(const YAML::Node& yamlNode)
 //	rgl_node_points_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()));
 //	tapeNodes.insert({nodeId, node});
 //}
-//
-//RGL_API rgl_status_t
-//rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_raytrace(node={}, scene={}, range={})", repr(node), (void*) scene, range);
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(!std::isnan(range));
-//		CHECK_ARG(range > 0.0f);
-//
-//		if (scene == nullptr) {
-//			scene = Scene::defaultInstance().get();
-//		}
-//
-//		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene), range);
-//	});
-//	TAPE_HOOK(node, scene, range);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_raytrace(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_raytrace(&node,
-//		nullptr,  // TODO(msz-rai) support multiple scenes
-//		yamlNode[2].as<float>());
-//	tapeNodes.insert({nodeId, node});
-//}
-//
+
+RGL_API rgl_status_t
+rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace(node={}, scene={}, range={})", repr(node), (void*) scene, range);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(!std::isnan(range));
+		CHECK_ARG(range > 0.0f);
+
+		if (scene == nullptr) {
+			scene = Scene::defaultInstance().get();
+		}
+
+		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene), range);
+	});
+	TAPE_HOOK(node, scene, range);
+	return status;
+}
+
+void TapePlayer::tape_node_raytrace(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_raytrace(&node,
+		nullptr,  // TODO(msz-rai) support multiple scenes
+		yamlNode[2].as<float>());
+	tapeNodes.insert({nodeId, node});
+}
+
 //RGL_API rgl_status_t
 //rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 //{

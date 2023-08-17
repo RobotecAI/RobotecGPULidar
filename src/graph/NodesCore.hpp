@@ -107,42 +107,44 @@
 //	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
 //	CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 //};
-//
-//struct RaytraceNode : IPointsNode
-//{
-//	using Ptr = std::shared_ptr<RaytraceNode>;
-//	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override;
-//
-//	// Point cloud description
-//	bool isDense() const override { return false; }
-//	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
-//	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
-//	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
-//
-//	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override
-//	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
-//
-//private:
-//	float range;
-//	std::shared_ptr<Scene> scene;
-//	IRaysNode::Ptr raysNode;
-//	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
-//	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
-//
-//	template<rgl_field_t>
-//	auto getPtrTo();
-//
-//	std::set<rgl_field_t> findFieldsToCompute();
-//	void setFields(const std::set<rgl_field_t>& fields);
-//};
-//
+
+struct RaytraceNode : IPointsNode
+{
+	using Ptr = std::shared_ptr<RaytraceNode>;
+	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Point cloud description
+	bool isDense() const override { return false; }
+	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
+	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
+	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
+
+	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(fieldData.at(field)); }
+
+private:
+	float range;
+	IRaysNode::Ptr raysNode;
+	std::shared_ptr<Scene> scene;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
+	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
+	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(
+			arrayMgr);
+
+	template<rgl_field_t>
+	auto getPtrTo();
+
+	std::set<rgl_field_t> findFieldsToCompute();
+	void setFields(const std::set<rgl_field_t>& fields);
+};
+
 //struct TransformPointsNode : IPointsNodeSingleInput
 //{
 //	using Ptr = std::shared_ptr<TransformPointsNode>;
@@ -180,7 +182,7 @@ struct TransformRaysNode : IRaysNodeSingleInput
 
 private:
 	Mat3x4f transform;
-	DeviceAsyncArray<Mat3x4f>::Ptr transformedRays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
+	DeviceAsyncArray<Mat3x4f>::Ptr transformedRays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
 struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
@@ -200,7 +202,7 @@ struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 	std::optional<Array<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
-	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::createWithManager(arrayMgr);
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 //
 //struct SetRingIdsRaysNode : IRaysNodeSingleInput

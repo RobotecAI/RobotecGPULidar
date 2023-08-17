@@ -26,7 +26,7 @@ TEST_F(GraphCase, FullLinear)
 	rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true);
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-//	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
 //	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 //	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&shear, &shearTf));
 //

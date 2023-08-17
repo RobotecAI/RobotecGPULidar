@@ -45,7 +45,8 @@ void* VArray::getWritePtr(MemLoc location)
 
 VArray::Ptr VArray::create(rgl_field_t type, std::size_t initialSize)
 {
-	return createVArray(type, initialSize);
+	throw 42;
+//	return createVArray(type, initialSize);
 }
 
 void VArray::setData(const void *src, std::size_t elements)

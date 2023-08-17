@@ -67,7 +67,7 @@ template<typename T, template<typename> typename Subclass>
 Subclass<T>::Ptr createArray()
 {
 	if constexpr (std::is_same<Subclass<T>, DeviceAsyncArray<T>>::value) {
-		return DeviceAsyncArray<T>::createStandalone(CudaStream::getNullStream());
+		return DeviceAsyncArray<T>::create(CudaStream::getNullStream());
 	}
 	else {
 		return Subclass<T>::create();
