@@ -24,6 +24,8 @@ struct DeviceSyncArray : public DeviceArray<T>
 	using Ptr = std::shared_ptr<DeviceSyncArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceSyncArray<T>>;
 
+	MemoryKind getMemoryKind() const override { return MemoryKind::DeviceSync; }
+
 	static DeviceSyncArray<T>::Ptr create()
 	{
 		return DeviceSyncArray<T>::Ptr(new DeviceSyncArray(MemoryOperations::get<MemoryKind::DeviceSync>()));

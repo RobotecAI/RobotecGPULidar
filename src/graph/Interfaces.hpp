@@ -83,37 +83,37 @@ struct IPointsNode : virtual Node
 	{ return getFieldData(field)->template asTyped<typename Field<field>::type>(); }
 };
 
-//struct IPointsNodeSingleInput : virtual IPointsNode
-//{
-//	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;
-//
-//	virtual void validateImpl() override
-//	{
-//		input = getExactlyOneInputOfType<IPointsNode>();
-//		for (auto&& field : getRequiredFieldList()) {
-//			if (!input->hasField(field) && !isDummy(field)) {
-//				auto msg = fmt::format("{} requires {} to be present", getName(), toString(field));
-//				throw InvalidPipeline(msg);
-//			}
-//		}
-//	}
-//
-//	// Point cloud description
-//	virtual bool isDense() const override { return input->isDense(); }
-//	virtual size_t getWidth() const override { return input->getWidth(); }
-//	virtual size_t getHeight() const override { return input->getHeight(); }
-//
-//	virtual Mat3x4f getLookAtOriginTransform() const override { return input->getLookAtOriginTransform(); }
-//
-//	// Data getters
-//	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
-//	virtual VArray::ConstPtr getFieldData(rgl_field_t field) override
-//	{ return input->getFieldData(field); }
-//
-//protected:
-//	IPointsNode::Ptr input {0};
-//};
-//
+struct IPointsNodeSingleInput : virtual IPointsNode
+{
+	using Ptr = std::shared_ptr<IPointsNodeSingleInput>;
+
+	virtual void validateImpl() override
+	{
+		input = getExactlyOneInputOfType<IPointsNode>();
+		for (auto&& field : getRequiredFieldList()) {
+			if (!input->hasField(field) && !isDummy(field)) {
+				auto msg = fmt::format("{} requires {} to be present", getName(), toString(field));
+				throw InvalidPipeline(msg);
+			}
+		}
+	}
+
+	// Point cloud description
+	virtual bool isDense() const override { return input->isDense(); }
+	virtual size_t getWidth() const override { return input->getWidth(); }
+	virtual size_t getHeight() const override { return input->getHeight(); }
+
+	virtual Mat3x4f getLookAtOriginTransform() const override { return input->getLookAtOriginTransform(); }
+
+	// Data getters
+	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
+	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return input->getFieldData(field); }
+
+protected:
+	IPointsNode::Ptr input {0};
+};
+
 struct INoInputNode : virtual Node
 {
 	virtual void validateImpl() override

@@ -50,6 +50,11 @@ struct HostArray : public Array<T>
 		memcpy(data, src, sizeof(T) * count);
 	}
 
+	virtual void copyToExternalRaw(void* dst) const override
+	{
+		memcpy(dst, data, this->getCount() * this->getSizeOf());
+	}
+
 	/** Appends given value at the end of Array, similar to std::vector<T>::push_back */
 	void append(T value)
 	{

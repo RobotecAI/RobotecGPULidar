@@ -64,6 +64,31 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	}
 
 	/**
+	 * @return Pointer to raw readable data. Use as a last resort and provide reasoning.
+	 */
+	virtual const void* getRawReadPtr() const = 0;
+
+	/**
+	 * @return Pointer to raw writable data. Use as a last resort and provide reasoning.
+	 */
+	virtual void* getRawWritePtr() = 0;
+
+	/**
+	 * Copies all elements to external (pageable) memory. Assumes the destination array is long enough (͡°͜ʖ͡°)
+	 */
+	virtual void copyToExternalRaw(void* dst) const = 0;
+
+	/**
+	 * Copies all elements from the given array, erasing current content.
+	 */
+	virtual void copyFrom(IAnyArray::ConstPtr src) = 0;
+
+	/**
+	 * @return MemoryKind determining actual subclass.
+	 */
+	virtual MemoryKind getMemoryKind() const = 0;
+
+	/**
 	 * @return Number of elements already in the array.
 	 */
 	virtual std::size_t getCount() const = 0;
@@ -72,11 +97,6 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	 * @return Number of elements that array can fit before reallocation.
 	 */
 	virtual std::size_t getCapacity() const = 0;
-
-	/**
-	 * @return Type name of the contained element.
-	 */
-	virtual std::string getTypeName() const = 0;
 
 	/**
 	 * @return Size in bytes of each array element.

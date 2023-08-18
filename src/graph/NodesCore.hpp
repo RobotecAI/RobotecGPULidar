@@ -33,52 +33,38 @@
 #include <VArray.hpp>
 #include <VArrayProxy.hpp>
 
-/**
- * Notes for maintainers:
- *
- * Some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
- * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
- * while buffers sizes are not reliable, since they can be resized in enqueueExecImpl().
- *
- * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
- * operations prior to the return are finished.
- */
 
-// TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
-// TODO(prybicki): This would implement automatic getExactlyOneInputOfType() and method forwarding.
+struct FormatPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<FormatPointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
 
-//struct FormatPointsNode : IPointsNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<FormatPointsNode>;
-//	void setParameters(const std::vector<rgl_field_t>& fields);
-//
-//	// Node
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
-//
-//	// Point cloud description
-//	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override;
-//	std::size_t getFieldPointSize(rgl_field_t field) const override;
-//
-//	// Actual implementation of formatting made public for other nodes
-//	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
-//	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream,
-//	                        GPUFieldDescBuilder& gpuFieldDescBuilder);
-//
-//private:
-//	static std::vector<std::pair<rgl_field_t, const void*>> getFieldToPointerMappings(const IPointsNode::Ptr& input,
-//	                                                                                  const std::vector<rgl_field_t>& fields);
-//
-//	std::vector<rgl_field_t> fields;
-//	VArray::Ptr output = VArray::create<char>();
-//	GPUFieldDescBuilder gpuFieldDescBuilder;
-//};
-//
+	// Node
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
+
+	// Point cloud description
+	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+	std::size_t getFieldPointSize(rgl_field_t field) const override;
+
+	// Actual implementation of formatting made public for other nodes
+	static void formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
+	                        const std::vector<rgl_field_t>& fields, GPUFieldDescBuilder& gpuFieldDescBuilder);
+
+private:
+	static std::vector<std::pair<rgl_field_t, const void*>> getFieldToPointerMappings(const IPointsNode::Ptr& input,
+	                                                                                  const std::vector<rgl_field_t>& fields);
+
+	std::vector<rgl_field_t> fields;
+	DeviceAsyncArray<char>::Ptr output = DeviceAsyncArray<char>::create(arrayMgr);
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+};
+
 //struct CompactPointsNode : IPointsNodeSingleInput
 //{
 //	using Ptr = std::shared_ptr<CompactPointsNode>;

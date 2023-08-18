@@ -515,14 +515,13 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
 
-		throw 42;
-//		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-//		pointCloudNode->waitForResults();
-//		auto elemCount = (int32_t) pointCloudNode->getPointCount();
-//		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
+		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		pointCloudNode->waitForResults();
+		auto elemCount = (int32_t) pointCloudNode->getPointCount();
+		auto elemSize = (int32_t) pointCloudNode->getFieldPointSize(field);
 
-//		if (out_count != nullptr) { *out_count = elemCount; }
-//		if (out_size_of != nullptr) { *out_size_of = elemSize; }
+		if (out_count != nullptr) { *out_count = elemCount; }
+		if (out_size_of != nullptr) { *out_size_of = elemSize; }
 	});
 	TAPE_HOOK(node, field, out_count, out_size_of);
 	return status;
@@ -548,18 +547,22 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(data != nullptr);
 
-		throw 42;
-//		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
-//		pointCloudNode->waitForResults();
-//		VArray::ConstPtr output = pointCloudNode->getFieldData(field);
-//
-//		// TODO: Ensure that copying to pageable memory does not wait
-//		CHECK_CUDA(cudaMemcpyAsync(data,
-//		                           output->getReadPtr(MemLoc::Device),
-//		                           output->getElemCount() * output->getElemSize(),
-//		                           cudaMemcpyDefault,
-//		                           CudaStream::getCopyStream()->getHandle()));
-//		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
+		// This part is a bit tricky:
+		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.
+		// All its DAAs are bound to that stream. The stream may be busy with processing other nodes.
+		// We want to copy data without waiting until the aforementioned stream is synchronized.
+		// Therefore, we want to invoke the copy from the source DAA in a separate stream - copy stream.
+		// Take note, that since the source DAA is bound to a stream,
+		// it could be unsafe to issue operations in a different stream.
+		// E.g. If DAA was resized (data pointer already changed its value), but the reallocation didn't yet happen.
+		// However, with the current architecture, we can reasonably expect that no DAA is modified by other Node than its owner.
+		// Therefore, it should be sufficient to wait only for the stream operations issued by the given node (and, obviously, all previous).
+		// After that, all pending operations on the source DAA are done, and it is safe to use it in the copy stream.
+
+		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
+		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		pointCloudNode->waitForResults();
+		pointCloudNode->getFieldData(field)->copyToExternalRaw(data);
 	});
 	TAPE_HOOK(node, field, data);
 	return status;
@@ -736,31 +739,31 @@ void TapePlayer::tape_node_raytrace(const YAML::Node& yamlNode)
 	tapeNodes.insert({nodeId, node});
 }
 
-//RGL_API rgl_status_t
-//rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(fields != nullptr);
-//		CHECK_ARG(field_count > 0);
-//
-//		createOrUpdateNode<FormatPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
-//	});
-//	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_points_format(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_points_format(&node,
-//		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
-//		yamlNode[2].as<int32_t>());
-//	tapeNodes.insert({nodeId, node});
-//}
-//
+RGL_API rgl_status_t
+rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_format(node={}, fields={})", repr(node), repr(fields, field_count));
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(fields != nullptr);
+		CHECK_ARG(field_count > 0);
+
+		createOrUpdateNode<FormatPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
+	return status;
+}
+
+void TapePlayer::tape_node_points_format(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_format(&node,
+		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
+}
+
 //RGL_API rgl_status_t
 //rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 //{

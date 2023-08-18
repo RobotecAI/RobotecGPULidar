@@ -24,6 +24,8 @@ struct HostPinnedArray : public HostArray<T>
 	using Ptr = std::shared_ptr<HostPinnedArray<T>>;
 	using ConstPtr = std::shared_ptr<const HostPinnedArray<T>>;
 
+	MemoryKind getMemoryKind() const override { return MemoryKind::HostPinned; }
+
 	static HostPinnedArray<T>::Ptr create()
 	{
 		return HostPinnedArray<T>::Ptr {

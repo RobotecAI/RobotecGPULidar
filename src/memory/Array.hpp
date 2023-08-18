@@ -75,12 +75,28 @@ public:
 		THROW_INVALID_ARRAY_CAST(const Subclass<T>);
 	}
 
+	const void* getRawReadPtr() const override { return data; }
+	void* getRawWritePtr() override { return data; }
 	unsigned long getCount() const override { return count; }
 	unsigned long getSizeOf() const override { return sizeof(T); }
 	unsigned long getCapacity() const override { return capacity; }
-	std::string getTypeName() const override { return name(typeid(T)); }
 
 	virtual void copyFromExternal(const T* hostRaw, size_t count) = 0;
+
+	virtual void copyFrom(IAnyArray::ConstPtr src) override
+	{
+		Array<T>::ConstPtr srcTyped = src->asTyped<T>();
+		this->resize(src->getCount(), false, false);
+		bool hostToHost = isHost(this->getMemoryKind()) && isHost(src->getMemoryKind());
+		size_t bytes = srcTyped->getSizeOf() * srcTyped->getCount();
+		if (hostToHost) {
+			memcpy(this->data, srcTyped->data, bytes);
+		}
+		else {
+			CHECK_CUDA(cudaMemcpy(this->data, srcTyped->data, bytes, cudaMemcpyDefault));
+		}
+	}
+
 
 	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override
 	{

@@ -37,6 +37,8 @@ struct DeviceAsyncArray : public DeviceArray<T>, public IStreamBound
 		this->stream = newStream;
 	}
 
+	MemoryKind getMemoryKind() const override { return MemoryKind::DeviceAsync; }
+
 	/**
 	 * Safe and synchronous copy implementation.
 	 * If needed, an unsafe async version could be implemented;

@@ -14,7 +14,7 @@ set(RGL_TEST_FILES
 #    src/graph/nodes/TransformPointsNodeTest.cpp
 #    src/graph/nodes/SetRingIdsRaysNodeTest.cpp
 #    src/graph/nodes/CompactPointsNodeTest.cpp
-#    src/graph/nodes/FormatPointsNodeTest.cpp
+    src/graph/nodes/FormatPointsNodeTest.cpp
 #    src/graph/nodes/YieldPointsNodeTest.cpp
 #    src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
 #    src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
