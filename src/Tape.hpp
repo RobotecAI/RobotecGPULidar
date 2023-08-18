@@ -235,7 +235,7 @@ private:
 	#if RGL_BUILD_PCL_EXTENSION
 //	void tape_graph_write_pcd_file(const YAML::Node& yamlNode);
 //	void tape_node_points_downsample(const YAML::Node& yamlNode);
-//	void tape_node_points_visualize(const YAML::Node& yamlNode);
+	void tape_node_points_visualize(const YAML::Node& yamlNode);
 	#endif
 
 	#if RGL_BUILD_ROS2_EXTENSION

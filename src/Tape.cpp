@@ -103,7 +103,7 @@ TapePlayer::TapePlayer(const char* path)
 		#if RGL_BUILD_PCL_EXTENSION
 //		{ "rgl_graph_write_pcd_file", std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1) },
 //		{ "rgl_node_points_downsample", std::bind(&TapePlayer::tape_node_points_downsample, this, _1) },
-//		{ "rgl_node_points_visualize", std::bind(&TapePlayer::tape_node_points_visualize, this, _1) },
+		{ "rgl_node_points_visualize", std::bind(&TapePlayer::tape_node_points_visualize, this, _1) },
 		#endif
 
 		#if RGL_BUILD_ROS2_EXTENSION

@@ -98,33 +98,33 @@ extern "C" {
 //		yamlNode[3].as<float>());
 //	tapeNodes.insert({nodeId, node});
 //}
-//
-//RGL_API rgl_status_t
-//rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width, int32_t window_height, bool fullscreen)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_points_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
-//		          repr(node), window_name, window_width, window_height, fullscreen);
-//		CHECK_ARG(window_name != nullptr);
-//		CHECK_ARG(window_name[0] != '\0');
-//		CHECK_ARG(window_width > 0);
-//		CHECK_ARG(window_height > 0);
-//
-//		createOrUpdateNode<VisualizePointsNode>(node, window_name, window_width, window_height, fullscreen);
-//	});
-//	TAPE_HOOK(node, window_name, window_width, window_height, fullscreen);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_points_visualize(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_points_visualize(&node,
-//		yamlNode[1].as<std::string>().c_str(),
-//		yamlNode[2].as<int32_t>(),
-//		yamlNode[3].as<int32_t>(),
-//		yamlNode[4].as<bool>());
-//	tapeNodes.insert({nodeId, node});
-//}
+
+RGL_API rgl_status_t
+rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width, int32_t window_height, bool fullscreen)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_visualize(node={}, window_name={}, window_width={}, window_height={}, fullscreen={})",
+		          repr(node), window_name, window_width, window_height, fullscreen);
+		CHECK_ARG(window_name != nullptr);
+		CHECK_ARG(window_name[0] != '\0');
+		CHECK_ARG(window_width > 0);
+		CHECK_ARG(window_height > 0);
+
+		createOrUpdateNode<VisualizePointsNode>(node, window_name, window_width, window_height, fullscreen);
+	});
+	TAPE_HOOK(node, window_name, window_width, window_height, fullscreen);
+	return status;
+}
+
+void TapePlayer::tape_node_points_visualize(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_visualize(&node,
+		yamlNode[1].as<std::string>().c_str(),
+		yamlNode[2].as<int32_t>(),
+		yamlNode[3].as<int32_t>(),
+		yamlNode[4].as<bool>());
+	tapeNodes.insert({nodeId, node});
+}
 }

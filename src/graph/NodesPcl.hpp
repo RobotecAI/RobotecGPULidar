@@ -58,36 +58,37 @@
 //	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
 //	GPUFieldDescBuilder gpuFieldDescBuilder;
 //};
-//
-//struct VisualizePointsNode : IPointsNodeSingleInput
-//{
-//	static const int FRAME_RATE = 60;
-//	using Ptr = std::shared_ptr<VisualizePointsNode>;
-//	using PCLPointType = pcl::PointXYZRGB;
-//	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override;
-//
-//	void runVisualize();
-//	virtual ~VisualizePointsNode();
-//
-//private:
-//	VArray::Ptr inputFmtData = VArray::create<char>();
-//
-//	PCLVisualizerFix::Ptr viewer;
-//	std::thread visThread;
-//	std::mutex updateCloudMutex;
-//	bool isNewCloud{false};
-//
-//	std::string windowName{};
-//	int windowWidth;
-//	int windowHeight;
-//	bool fullscreen;
-//	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
-//	GPUFieldDescBuilder gpuFieldDescBuilder;
-//};
+
+struct VisualizePointsNode : IPointsNodeSingleInput
+{
+	static const int FRAME_RATE = 60;
+	using Ptr = std::shared_ptr<VisualizePointsNode>;
+	using PCLPointType = pcl::PointXYZRGB;
+	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	void runVisualize();
+	virtual ~VisualizePointsNode();
+
+private:
+	DeviceAsyncArray<char>::Ptr formattedInputDev = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
+
+	PCLVisualizerFix::Ptr viewer;
+	std::thread visThread;
+	std::mutex updateCloudMutex;
+	bool isNewCloud{false};
+
+	std::string windowName{};
+	int windowWidth;
+	int windowHeight;
+	bool fullscreen;
+	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+};
