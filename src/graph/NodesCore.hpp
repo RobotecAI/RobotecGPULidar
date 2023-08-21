@@ -210,26 +210,26 @@ private:
 	DeviceAsyncArray<int>::Ptr ringIds = DeviceAsyncArray<int>::create(arrayMgr);
 };
 
-//struct YieldPointsNode : IPointsNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<YieldPointsNode>;
-//	void setParameters(const std::vector<rgl_field_t>& fields);
-//
-//	// Node
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override
-//	{ return results.at(field); }
-//
-//private:
-//	std::vector<rgl_field_t> fields;
-//	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
-//};
-//
+struct YieldPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<YieldPointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return results.at(field); }
+
+private:
+	std::vector<rgl_field_t> fields;
+	std::unordered_map<rgl_field_t, IAnyArray::ConstPtr> results;
+};
+
 //struct SpatialMergePointsNode : IPointsNode
 //{
 //	using Ptr = std::shared_ptr<SpatialMergePointsNode>;

@@ -764,30 +764,30 @@ void TapePlayer::tape_node_points_format(const YAML::Node& yamlNode)
 	tapeNodes.insert({nodeId, node});
 }
 
-//RGL_API rgl_status_t
-//rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(fields != nullptr);
-//		CHECK_ARG(field_count > 0);
-//
-//		createOrUpdateNode<YieldPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
-//	});
-//	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_points_yield(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_points_yield(&node,
-//		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
-//		yamlNode[2].as<int32_t>());
-//	tapeNodes.insert({nodeId, node});
-//}
+RGL_API rgl_status_t
+rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_pipeline_yield(node={}, fields={})", repr(node), repr(fields, field_count));
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(fields != nullptr);
+		CHECK_ARG(field_count > 0);
+
+		createOrUpdateNode<YieldPointsNode>(node, std::vector<rgl_field_t>{fields, fields + field_count});
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(fields, field_count), field_count);
+	return status;
+}
+
+void TapePlayer::tape_node_points_yield(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_yield(&node,
+		reinterpret_cast<const rgl_field_t*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
+}
 
 RGL_API rgl_status_t
 rgl_node_points_compact(rgl_node_t* node)

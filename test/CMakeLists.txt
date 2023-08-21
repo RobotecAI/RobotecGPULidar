@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.16)
 set(RGL_TEST_FILES
     src/graphCaseTest.cpp
 #    src/asyncStressTest.cpp
-#    src/apiReadmeExample.cpp
+    src/apiReadmeExample.cpp
 #    src/gaussianStressTest.cpp
-#    src/apiSurfaceTests.cpp
+    src/apiSurfaceTests.cpp
     src/testMat3x4f.cpp
 #    src/DistanceFieldTest.cpp
 #    src/scene/textureTest.cpp
@@ -15,7 +15,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/SetRingIdsRaysNodeTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
-#    src/graph/nodes/YieldPointsNodeTest.cpp
+    src/graph/nodes/YieldPointsNodeTest.cpp
 #    src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
 #    src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
 #    src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
