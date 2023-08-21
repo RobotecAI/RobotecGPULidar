@@ -224,7 +224,7 @@ private:
 	void tape_node_raytrace(const YAML::Node& yamlNode);
 	void tape_node_points_format(const YAML::Node& yamlNode);
 //	void tape_node_points_yield(const YAML::Node& yamlNode);
-//	void tape_node_points_compact(const YAML::Node& yamlNode);
+	void tape_node_points_compact(const YAML::Node& yamlNode);
 //	void tape_node_points_spatial_merge(const YAML::Node& yamlNode);
 //	void tape_node_points_temporal_merge(const YAML::Node& yamlNode);
 //	void tape_node_points_from_array(const YAML::Node& yamlNode);

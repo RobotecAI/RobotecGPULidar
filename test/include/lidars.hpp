@@ -38,8 +38,8 @@ static std::vector<rgl_mat3x4f> makeGridOfParallelRays(Vec2f minCoord, Vec2f max
 	EXPECT_TRUE(count.x() > 0);
 	EXPECT_TRUE(count.y() > 0);
 
-	float dx = (maxCoord.x() - minCoord.x()) / count.x();
-	float dy = (maxCoord.y() - minCoord.y()) / count.y();
+	float dy = (maxCoord.y() - minCoord.y()) / (count.y() -1);
+	float dx = (maxCoord.x() - minCoord.x()) / (count.x() -1);
 	for (int y = 0; y < count.y(); ++y) {
 		for (int x = 0; x < count.x(); ++x) {
 			Vec3f origin {

@@ -788,28 +788,28 @@ void TapePlayer::tape_node_points_format(const YAML::Node& yamlNode)
 //		yamlNode[2].as<int32_t>());
 //	tapeNodes.insert({nodeId, node});
 //}
-//
-//RGL_API rgl_status_t
-//rgl_node_points_compact(rgl_node_t* node)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_points_compact(node={})", repr(node));
-//                CHECK_ARG(node != nullptr);
-//
-//		createOrUpdateNode<CompactPointsNode>(node);
-//	});
-//	TAPE_HOOK(node);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_points_compact(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_points_compact(&node);
-//	tapeNodes.insert({nodeId, node});
-//}
-//
+
+RGL_API rgl_status_t
+rgl_node_points_compact(rgl_node_t* node)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_compact(node={})", repr(node));
+                CHECK_ARG(node != nullptr);
+
+		createOrUpdateNode<CompactPointsNode>(node);
+	});
+	TAPE_HOOK(node);
+	return status;
+}
+
+void TapePlayer::tape_node_points_compact(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_compact(&node);
+	tapeNodes.insert({nodeId, node});
+}
+
 //RGL_API rgl_status_t
 //rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 //{

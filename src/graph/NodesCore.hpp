@@ -65,34 +65,34 @@ private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
-//struct CompactPointsNode : IPointsNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<CompactPointsNode>;
-//	void setParameters() {}
-//
-//	CompactPointsNode()	{ CHECK_CUDA(cudaEventCreate(&finishedEvent, cudaEventDisableTiming)); }
-//	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
-//
-//	// Node
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
-//
-//	// Point cloud description
-//	bool isDense() const override { return true; }
-//	size_t getWidth() const override;
-//	size_t getHeight() const override { return 1; }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override;
-//
-//private:
-//	size_t width = {0};
-//	cudaEvent_t finishedEvent = nullptr;
-//	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
-//	CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
-//};
+struct CompactPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<CompactPointsNode>;
+	void setParameters() {}
+
+	CompactPointsNode()	{ CHECK_CUDA(cudaEventCreate(&finishedEvent, cudaEventDisableTiming)); }
+	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
+
+	// Node
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
+
+	// Point cloud description
+	bool isDense() const override { return true; }
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	size_t width = {0};
+	cudaEvent_t finishedEvent = nullptr;
+	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
+	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+};
 
 struct RaytraceNode : IPointsNode
 {
