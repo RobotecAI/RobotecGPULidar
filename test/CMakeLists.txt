@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
+        src/loggingTests.cpp
         src/externalLibraryTest.cpp
         src/graphTest.cpp
         src/apiReadmeExample.cpp
@@ -16,16 +17,8 @@ set(RGL_TEST_FILES
         src/graph/nodes/TransformPointsNodeTest.cpp
         src/scene/entityIdTest.cpp
         src/DistanceFieldTest.cpp
-        )
-
-
-# Only Linux
-if ((NOT WIN32))
-    list(APPEND RGL_TEST_FILES
-        src/loggingTests.cpp
         src/VArrayTest.cpp
-    )
-endif()
+        )
 
 # On Windows, tape is not available since it uses Linux sys-calls (mmap)
 # AutoTape interferes with tape tests (e.g. double rgl_tape_record_begin()) which is non-trivial to fix.
