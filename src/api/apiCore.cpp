@@ -641,30 +641,30 @@ void TapePlayer::tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode)
 		yamlNode[2].as<int32_t>());
 	tapeNodes.insert({nodeId, node});
 }
-//
-//RGL_API rgl_status_t
-//rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(ring_ids != nullptr);
-//		CHECK_ARG(ring_ids_count > 0);
-//		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t) ring_ids_count);
-//	});
-//	TAPE_HOOK(node, TAPE_ARRAY(ring_ids, ring_ids_count), ring_ids_count);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_rays_set_ring_ids(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_rays_set_ring_ids(&node,
-//		reinterpret_cast<const int32_t*>(fileMmap + yamlNode[1].as<size_t>()),
-//		yamlNode[2].as<int32_t>());
-//	tapeNodes.insert({nodeId, node});
-//}
+
+RGL_API rgl_status_t
+rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_rays_set_ring_ids(node={}, ring_ids={})", repr(node), repr(ring_ids, ring_ids_count));
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(ring_ids != nullptr);
+		CHECK_ARG(ring_ids_count > 0);
+		createOrUpdateNode<SetRingIdsRaysNode>(node, ring_ids, (size_t) ring_ids_count);
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(ring_ids, ring_ids_count), ring_ids_count);
+	return status;
+}
+
+void TapePlayer::tape_node_rays_set_ring_ids(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_rays_set_ring_ids(&node,
+		reinterpret_cast<const int32_t*>(fileMmap + yamlNode[1].as<size_t>()),
+		yamlNode[2].as<int32_t>());
+	tapeNodes.insert({nodeId, node});
+}
 
 RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)

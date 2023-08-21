@@ -190,26 +190,26 @@ struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 private:
 	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
-//
-//struct SetRingIdsRaysNode : IRaysNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
-//	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override {}
-//
-//	// Rays description
-//	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
-//
-//	// Data getters
-//	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
-//
-//private:
-//	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
-//};
-//
+
+struct SetRingIdsRaysNode : IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
+	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override {}
+
+	// Rays description
+	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
+
+	// Data getters
+	std::optional<Array<int>::ConstPtr> getRingIds() const override { return ringIds; }
+
+private:
+	DeviceAsyncArray<int>::Ptr ringIds = DeviceAsyncArray<int>::create(arrayMgr);
+};
+
 //struct YieldPointsNode : IPointsNodeSingleInput
 //{
 //	using Ptr = std::shared_ptr<YieldPointsNode>;
