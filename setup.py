@@ -15,10 +15,10 @@ class Config:
     CUDA_MIN_VER_PATCH = 0
     CMAKE_GENERATOR = "'Unix Makefiles'"
     VCPKG_INSTALL_DIR = os.path.join("external", "vcpkg")
-    VCPKG_TAG = "2023.06.20"
+    VCPKG_TAG = "2023.08.09"
     VCPKG_EXEC = "vcpkg"
     VCPKG_BOOTSTRAP = "bootstrap-vcpkg.sh"
-    VCPKG_TRIPLET = "x64-linux-generic-cpu"  # this triplet is created in this script
+    VCPKG_TRIPLET = "x64-linux"
 
     def __init__(self):
         # Platform-dependent configuration
@@ -74,16 +74,6 @@ def main():
         # Bootstrap vcpkg
         if not os.path.isfile(os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)):
             run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_BOOTSTRAP)}")
-
-        # As RGL is to be published on GitHub releases and run on various CPU families it is required to build it as compatible as possible.
-        # Some libraries installed via vcpkg set compiler option to generate code for specified cpu-type (see: https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options-1).
-        # Here, a new triplet configuration file is created with a flag to build libraries for generic CPU with 64-bit extensions (compatible with all 64-bit CPUs).
-        if on_linux() or inside_docker():
-            template_triplet = os.path.join(cfg.VCPKG_INSTALL_DIR, "triplets", "x64-linux.cmake")
-            rgl_triplet = os.path.join(cfg.VCPKG_INSTALL_DIR, "triplets", f"{cfg.VCPKG_TRIPLET}.cmake")
-            run_system_command(f"cp {template_triplet} {rgl_triplet}")
-            run_system_command(f"echo 'set(VCPKG_CXX_FLAGS -march=x86-64)' | tee -a {rgl_triplet} > /dev/null")
-            run_system_command(f"echo 'set(VCPKG_C_FLAGS -march=x86-64)' | tee -a {rgl_triplet} > /dev/null")
 
         # Install dependencies via vcpkg
         run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]:{cfg.VCPKG_TRIPLET}")
