@@ -29,7 +29,7 @@ __global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fiel
 	}
 }
 
-__global__ void kFormatAosToSoa(size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, GPUFieldDesc* soaOutData)
+__global__ void kFormatAosToSoa(size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, const GPUFieldDesc* soaOutData)
 {
 	LIMIT(pointCount);
 	for (size_t i = 0; i < fieldCount; ++i) {
@@ -87,7 +87,7 @@ void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HI
 void gpuFormatSoaToAos(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc *soaInData, char *aosOutData)
 { run(kFormatSoaToAos, stream, pointCount, pointSize, fieldCount, soaInData, aosOutData); }
 
-void gpuFormatAosToSoa(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, GPUFieldDesc* soaOutData)
+void gpuFormatAosToSoa(cudaStream_t stream, size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData, const GPUFieldDesc* soaOutData)
 { run(kFormatAosToSoa, stream, pointCount, pointSize, fieldCount, aosInData, soaOutData); }
 
 void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)

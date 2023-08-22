@@ -10,7 +10,7 @@ set(RGL_TEST_FILES
 #    src/DistanceFieldTest.cpp
 #    src/scene/textureTest.cpp
 #    src/scene/entityIdTest.cpp
-#    src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/graph/nodes/FromArrayPointsNodeTest.cpp
 #    src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/SetRingIdsRaysNodeTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp

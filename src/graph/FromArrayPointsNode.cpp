@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <graph/GraphRunCtx.hpp>
 #include <graph/NodesCore.hpp>
 
 void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields)
@@ -26,7 +27,9 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field) && !isDummy(field)) {
-			fieldData.insert({field, VArray::create(field, pointCount)});
+			auto array = createArray<DeviceAsyncArray>(field, arrayMgr);
+			array->resize(pointCount, false, false);
+			fieldData.insert({field, array});
 		}
 	}
 
@@ -34,11 +37,11 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	inputData->setData(static_cast<const char*>(points), pointCount * getPointSize(fields));
 
 	std::size_t pointSize = getPointSize(fields);
-	auto gpuFields = gpuFieldDescBuilder.buildWritable(getFieldToPointerMappings(fields));
+	auto& gpuFields = gpuFieldDescBuilder.buildWritableAsync(CudaStream::getNullStream(), getFieldToPointerMappings(fields));
 	const char* inputPtr = static_cast<const char*>(inputData->getReadPtr(MemLoc::Device));
 
 	// Immediately copy data to the GPU. We may not have stream yet, so use NULL stream and synchronize it.
-	gpuFormatAosToSoa(nullptr, pointCount, pointSize, fields.size(), inputPtr, gpuFields->getWritePtr());
+	gpuFormatAosToSoa(CudaStream::getNullStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr, gpuFields.getReadPtr());
 	CHECK_CUDA(cudaStreamSynchronize(nullptr));
 }
 
@@ -46,7 +49,7 @@ std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointe
 {
 	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;
 	for (auto&& field : fields) {
-		outFieldsData.push_back({field, isDummy(field) ? nullptr : fieldData[field]->getWritePtr(MemLoc::Device)});
+		outFieldsData.push_back({field, isDummy(field) ? nullptr : fieldData[field]->getRawWritePtr()});
 	}
 	return outFieldsData;
 }

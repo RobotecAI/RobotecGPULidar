@@ -284,33 +284,33 @@ private:
 //	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
 //	std::size_t width = 0;
 //};
-//
-//struct FromArrayPointsNode : IPointsNode, INoInputNode
-//{
-//	using Ptr = std::shared_ptr<FromArrayPointsNode>;
-//	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
-//
-//	// Node
-//	void enqueueExecImpl() override {}
-//
-//	// Point cloud description
-//	bool isDense() const override { return false; }
-//	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
-//	size_t getWidth() const override { return width; }
-//	size_t getHeight() const override { return 1; }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override
-//	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
-//
-//private:
-//	GPUFieldDescBuilder gpuFieldDescBuilder;
-//	std::vector<std::pair<rgl_field_t, void*>> getFieldToPointerMappings(const std::vector<rgl_field_t>& fields);
-//
-//	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
-//	size_t width = 0;
-//};
-//
+
+struct FromArrayPointsNode : IPointsNode, INoInputNode
+{
+	using Ptr = std::shared_ptr<FromArrayPointsNode>;
+	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void enqueueExecImpl() override {}
+
+	// Point cloud description
+	bool isDense() const override { return false; }
+	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
+	size_t getWidth() const override { return width; }
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(fieldData.at(field)); }
+
+private:
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+	std::vector<std::pair<rgl_field_t, void*>> getFieldToPointerMappings(const std::vector<rgl_field_t>& fields);
+
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+	size_t width = 0;
+};
+
 //struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 //{
 //	using Ptr = std::shared_ptr<GaussianNoiseAngularRaysNode>;
