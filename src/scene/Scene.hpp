@@ -40,6 +40,8 @@ struct Entity;
  * To avoid the overhead of locking a mutex in every method,
  * we decide to move synchronization to scene-related API calls,
  * which will synchronize all running Graphs before accessing Scene.
+ *
+ * TODO: The text above may be a bullshit. Rethinking synchronization/stream usage is required.
  */
 struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 {

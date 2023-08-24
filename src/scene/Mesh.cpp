@@ -76,7 +76,7 @@ void Mesh::updateGAS(CudaStream::Ptr stream)
 	                            nullptr, // &emitDesc,
 	                            0));
 
-	CHECK_CUDA(cudaStreamSynchronize(nullptr));
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 
 	gasNeedsUpdate = false;
 }
@@ -133,6 +133,8 @@ OptixTraversableHandle Mesh::buildGAS(CudaStream::Ptr stream)
 	                            nullptr, // &emitDesc,
 	                            0
 	));
+
+	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 
 	// Compaction yields around 10% of memory save-up and slows down a lot (e.g. 500us per model)
 	// scratchpad.doCompaction(gasHandle);

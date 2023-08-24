@@ -168,7 +168,8 @@ void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
 		;
 	// Rethrow exception, if any
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
-		// Do not clear exception ptr yet, it could give false image that the Node is OK.
+		// Avoid double throw
+		executionStatus.at(nodeToSynchronize).exceptionPtr = nullptr;
 		std::rethrow_exception(ex);
 	}
 }

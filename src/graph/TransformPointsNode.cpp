@@ -28,6 +28,7 @@ void TransformPointsNode::enqueueExecImpl()
 VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == XYZ_F32) {
+		// AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
 		return output->untyped();
 	}

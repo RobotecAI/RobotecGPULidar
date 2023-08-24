@@ -42,7 +42,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 
 	// Immediately copy data to the GPU. We may not have stream yet, so use NULL stream and synchronize it.
 	gpuFormatAosToSoa(CudaStream::getNullStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr, gpuFields.getReadPtr());
-	CHECK_CUDA(cudaStreamSynchronize(nullptr));
+	CHECK_CUDA(cudaStreamSynchronize(CudaStream::getNullStream()->getHandle()));
 }
 
 std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointerMappings(const std::vector<rgl_field_t>& fields)

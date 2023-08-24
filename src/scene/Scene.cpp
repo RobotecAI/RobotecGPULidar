@@ -163,7 +163,7 @@ OptixTraversableHandle Scene::buildAS()
 
 	OptixTraversableHandle sceneHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            stream->getHandle(),
+	                            getStream()->getHandle(),
 	                            &accelBuildOptions,
 	                            &instanceInput,
 	                            1,
@@ -176,7 +176,7 @@ OptixTraversableHandle Scene::buildAS()
 	                            1
 	));
 
-	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
+	CHECK_CUDA(cudaStreamSynchronize(getStream()->getHandle()));
 
 	// scratchpad.doCompaction(sceneHandle);
 
