@@ -74,14 +74,14 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	virtual void* getRawWritePtr() = 0;
 
 	/**
-	 * Copies all elements to external (pageable) memory. Assumes the destination array is long enough (͡°͜ʖ͡°)
+	 * Copies all elements to external (pageable) memory.
 	 */
-	virtual void copyToExternalRaw(void* dst) const = 0;
+	virtual void copyToExternalRaw(void* dst, size_t length) const = 0;
 
 	/**
-	 * Copies all elements from the given array, erasing current content.
+	 * Copies all elements from external (pageable) memory.
 	 */
-	virtual void copyFrom(IAnyArray::ConstPtr src) = 0;
+	virtual void copyFromExternalRaw(void* src, size_t length) = 0;
 
 	/**
 	 * @return MemoryKind determining actual subclass.
@@ -126,4 +126,12 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	virtual void clear(bool zero) = 0;
 
 	virtual ~IAnyArray() = default;
+
+protected:
+
+	/**
+	 * Return stream bound in which the array operates, if any.
+	 * Used for implementing copying.
+	 */
+	virtual std::optional<CudaStream::Ptr> getCudaStream() const = 0;
 };

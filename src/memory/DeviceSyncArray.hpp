@@ -31,19 +31,9 @@ struct DeviceSyncArray : public DeviceArray<T>
 		return DeviceSyncArray<T>::Ptr(new DeviceSyncArray(MemoryOperations::get<MemoryKind::DeviceSync>()));
 	}
 
-	void copyFrom(HostPageableArray<T>::ConstPtr src)
-	{
-		this->resize(src->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpy(this->data, src->getReadPtr(), sizeof(T) * this->getCount(), cudaMemcpyHostToDevice));
-	}
-
-	void copyFrom(HostPinnedArray<T>::ConstPtr src)
-	{
-		this->resize(src->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpy(this->data, src->data, sizeof(T) * src->getCount(), cudaMemcpyHostToDevice));
-	}
-
 protected:
 	using DeviceArray<T>::DeviceArray;
+
+	virtual std::optional<CudaStream::Ptr> getCudaStream() const override { return CudaStream::getNullStream(); }
 };
 

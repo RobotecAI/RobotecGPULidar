@@ -39,19 +39,6 @@ struct DeviceAsyncArray : public DeviceArray<T>, public IStreamBound
 
 	MemoryKind getMemoryKind() const override { return MemoryKind::DeviceAsync; }
 
-	/**
-	 * Safe and synchronous copy implementation.
-	 * If needed, an unsafe async version could be implemented;
-	 * however, it may be risky since the source memory could be invalidated before the copy is completed.
-	 */
-	void copyFrom(HostPinnedArray<T>::Ptr src)
-	{
-		this->resize(src->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpyAsync(this->data, src->data, this->getSizeOf() * this->getCount(), cudaMemcpyHostToDevice, this->getStream()->getHandle()));
-		CHECK_CUDA(cudaStreamSynchronize(this->getStream()->getHandle()));
-	}
-
-
 	static DeviceAsyncArray<T>::Ptr create(StreamBoundObjectsManager& manager)
 	{
 		auto array = create(manager.getStream());
@@ -65,13 +52,13 @@ struct DeviceAsyncArray : public DeviceArray<T>, public IStreamBound
 	}
 
 protected:
+	using DeviceArray<T>::DeviceArray;
 	DeviceAsyncArray(CudaStream::Ptr streamArg)
 	  : DeviceArray<T>(MemoryOperations::get<MemoryKind::DeviceAsync>(streamArg))
 	  , stream(streamArg) {}
 
+	virtual std::optional<CudaStream::Ptr> getCudaStream() const override { return stream; }
+
 protected:
 	CudaStream::Ptr stream; // Needed to implement IStreamBound
-	using DeviceArray<T>::DeviceArray;
-
-	friend struct DeviceAsyncArrayManager;
 };

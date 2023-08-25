@@ -23,6 +23,7 @@
 #include <memory/InvalidArrayCast.hpp>
 #include <memory/MemoryOperations.hpp>
 #include <memory/IAnyArray.hpp>
+#include <memory/copy.hpp>
 
 /**
  * Base class implementing resizable Array.
@@ -81,23 +82,6 @@ public:
 	unsigned long getSizeOf() const override { return sizeof(T); }
 	unsigned long getCapacity() const override { return capacity; }
 
-	virtual void copyFromExternal(const T* hostRaw, size_t count) = 0;
-
-	virtual void copyFrom(IAnyArray::ConstPtr src) override
-	{
-		Array<T>::ConstPtr srcTyped = src->asTyped<T>();
-		this->resize(src->getCount(), false, false);
-		bool hostToHost = isHost(this->getMemoryKind()) && isHost(src->getMemoryKind());
-		size_t bytes = srcTyped->getSizeOf() * srcTyped->getCount();
-		if (hostToHost) {
-			memcpy(this->data, srcTyped->data, bytes);
-		}
-		else {
-			CHECK_CUDA(cudaMemcpy(this->data, srcTyped->data, bytes, cudaMemcpyDefault));
-		}
-	}
-
-
 	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override
 	{
 		// Ensure capacity
@@ -150,6 +134,70 @@ public:
 		}
 
 		count = 0;
+	}
+
+	void copyFrom(Array<T>::ConstPtr src)
+	{
+		if (shared_from_this() == src) {
+			throw std::runtime_error("attempted to copy Array from itself");
+		}
+		this->resize(src->getCount(), false, false);
+		copy(CopyOp {
+			.src = {
+				.ptr=src->data,
+				.kind=src->getMemoryKind(),
+				.stream=src->getCudaStream(),
+			},
+			.dst = {
+				.ptr=this->data,
+				.kind=this->getMemoryKind(),
+				.stream=this->getCudaStream()
+			}
+		});
+	}
+
+	void copyToExternalRaw(void *dst, size_t dstLength) const override
+	{
+		size_t srcLength = getSizeOf() * getCount();
+		if (dstLength < srcLength) {
+			auto msg = fmt::format("copyToExternalRaw: dst buffer size ({}) is smaller than src buffer size ({})", dstLength, srcLength);
+			throw std::runtime_error(msg);
+		}
+		copy(CopyOp {
+			.src = {
+				.ptr=data,
+				.kind=getMemoryKind(),
+				.stream=getCudaStream()
+			},
+			.dst = {
+				.ptr=dst,
+				.kind=MemoryKind::HostPageable,
+				.stream=std::nullopt
+			},
+			.bytes=srcLength,
+		});
+	}
+
+	void copyFromExternalRaw(void *src, size_t srcLength) override
+	{
+		if (srcLength % getSizeOf() != 0) {
+			auto msg = fmt::format("copyFromExternalRaw: buffer size ({}) is not a multiply of element size ({})", srcLength, getSizeOf());
+			throw std::runtime_error(msg);
+		}
+		this->resize(srcLength / getSizeOf(), false, false);
+		copy(CopyOp {
+			.src = {
+				.ptr=src,
+				.kind=MemoryKind::HostPageable,
+				.stream=std::nullopt
+			},
+			.dst = {
+				.ptr=data,
+				.kind=getMemoryKind(),
+				.stream=getCudaStream()
+			},
+			.bytes=srcLength,
+		});
 	}
 
 protected:

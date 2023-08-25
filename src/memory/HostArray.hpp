@@ -43,18 +43,6 @@ struct HostArray : public Array<T>
 	T* getWritePtr() { return data; }
 	const T* getReadPtr() const { return data; }
 
-	virtual void copyFromExternal(const T* src, size_t count) override
-	{
-		// Regular memcpy is the fastest option in Host-Host copies.
-		this->resize(count, false, false);
-		memcpy(data, src, sizeof(T) * count);
-	}
-
-	virtual void copyToExternalRaw(void* dst) const override
-	{
-		memcpy(dst, data, this->getCount() * this->getSizeOf());
-	}
-
 	/** Appends given value at the end of Array, similar to std::vector<T>::push_back */
 	void append(T value)
 	{
@@ -91,4 +79,6 @@ struct HostArray : public Array<T>
 	const T& operator[](size_t idx) const {return data[idx]; }
 protected:
 	using Array<T>::Array;
+
+	virtual std::optional<CudaStream::Ptr> getCudaStream() const override { return std::nullopt; }
 };
