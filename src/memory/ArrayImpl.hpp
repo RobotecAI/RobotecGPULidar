@@ -12,52 +12,6 @@ Array<T>::~Array() {
 }
 
 template<typename T>
-void Array<T>::copyFromExternalRaw(const void *src, size_t srcLength) {
-	if (srcLength % getSizeOf() != 0) {
-		auto msg = fmt::format("copyFromExternalRaw: buffer size ({}) is not a multiply of element size ({})", srcLength, getSizeOf());
-		throw std::runtime_error(msg);
-	}
-	this->resize(srcLength / getSizeOf(), false, false);
-
-	bool isDstAsync = this->getMemoryKind() == MemoryKind::DeviceAsync;
-	CudaStream::Ptr copyStream = isDstAsync
-	                             ? this->asSubclass<DeviceAsyncArray>()->getStream()
-	                             : CudaStream::getNullStream();
-	CHECK_CUDA(cudaMemcpyAsync(data, src, srcLength, cudaMemcpyDefault, copyStream->getHandle()));
-	CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
-}
-
-template<typename T>
-void Array<T>::copyToExternalRaw(void *dst, size_t dstLength, std::optional<CudaStream::Ptr> alternativeStream) const {
-	size_t srcLength = getSizeOf() * getCount();
-	if (dstLength < srcLength) {
-		auto msg = fmt::format("copyToExternalRaw: dst buffer size ({}) is smaller than src buffer size ({})", dstLength, srcLength);
-		throw std::runtime_error(msg);
-	}
-
-	if (isHost(this->getMemoryKind())) {
-		memcpy(dst, this->data, srcLength);
-		return;
-	}
-
-	if (!alternativeStream.has_value() && this->getMemoryKind() == MemoryKind::DeviceAsync) {
-		auto asyncSrc = this->template asSubclass<DeviceAsyncArray>();
-		CHECK_CUDA(cudaStreamSynchronize(asyncSrc->getStream()->getHandle()));
-	}
-
-	// For * with alternative stream: alternative stream
-	// For DAA without alternative stream: DAA's stream
-	// For non-DAA without alternative stream: null stream
-	bool isDstAsync = this->getMemoryKind() == MemoryKind::DeviceAsync;
-	CudaStream::Ptr copyStream = alternativeStream.has_value()
-	                             ? alternativeStream.value()
-	                             : (isDstAsync ? this->asSubclass<DeviceAsyncArray>()->getStream() : CudaStream::getNullStream());
-	CHECK_CUDA(cudaMemcpyAsync(dst, data, srcLength, cudaMemcpyDefault, copyStream->getHandle()));
-	CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
-
-}
-
-template<typename T>
 void Array<T>::copyFrom(Array::ConstPtr src) {
 	if (shared_from_this() == src) {
 		throw std::runtime_error("attempted to copy Array from itself");
@@ -87,6 +41,18 @@ void Array<T>::copyFrom(Array::ConstPtr src) {
 	                           : isSrcAsync ? src->template asSubclass<DeviceAsyncArray>()->getStream()
 	                                        : CudaStream::getNullStream();
 	CHECK_CUDA(cudaMemcpyAsync(data, src->data, byteCount, cudaMemcpyDefault, copyStream->getHandle()));
+	CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
+}
+
+template<typename T>
+void Array<T>::copyFromExternal(const T *src, size_t srcCount) {
+	this->resize(srcCount, false, false);
+
+	bool isDstAsync = this->getMemoryKind() == MemoryKind::DeviceAsync;
+	CudaStream::Ptr copyStream = isDstAsync
+	                             ? this->asSubclass<DeviceAsyncArray>()->getStream()
+	                             : CudaStream::getNullStream();
+	CHECK_CUDA(cudaMemcpyAsync(data, src, srcCount * sizeof(T), cudaMemcpyDefault, copyStream->getHandle()));
 	CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
 }
 

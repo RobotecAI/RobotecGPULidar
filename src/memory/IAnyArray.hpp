@@ -74,22 +74,6 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	virtual void* getRawWritePtr() = 0;
 
 	/**
-	 * Copies all data to the given external pageable memory.
-	 * If alternativeStream has value, then copy will be scheduled in that stream.
-	 * In such case, if Array<T> is DeviceAsyncArray<T>, its bound stream will be not synchronized.
-	 * This kind of usage is reserved for situations when callee ensures proper synchronization.
-	 * Callee is responsible for ensuring that the bound stream has no pending operations that involves this DAA.
-	 * (E.g. if there's a pending resize, pointer values already changed, but memory is not yet allocated, so the copy will fail)
-	 */
-	virtual void copyToExternalRaw(void* dst, size_t length, std::optional<CudaStream::Ptr> alternativeStream) const = 0;
-
-	/**
-	 * Copies all elements from external (pageable) memory.
-	 * After the function returns, data has been fully copied (no asynchronicity).
-	 */
-	virtual void copyFromExternalRaw(const void* src, size_t length) = 0;
-
-	/**
 	 * @return MemoryKind determining actual subclass.
 	 */
 	virtual MemoryKind getMemoryKind() const = 0;

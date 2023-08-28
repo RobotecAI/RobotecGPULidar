@@ -540,12 +540,12 @@ void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
+rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
+		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*) dst);
 		CHECK_ARG(node != nullptr);
-		CHECK_ARG(data != nullptr);
+		CHECK_ARG(dst != nullptr);
 
 		// This part is a bit tricky:
 		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.
@@ -562,11 +562,14 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
+
 		auto fieldArray = pointCloudNode->getFieldData(field);
+		const void* src = fieldArray->getRawReadPtr();
 		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
-		fieldArray->copyToExternalRaw(data, size, CudaStream::getCopyStream());
+		CHECK_CUDA(cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
+		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
 	});
-	TAPE_HOOK(node, field, data);
+	TAPE_HOOK(node, field, dst);
 	return status;
 }
 
