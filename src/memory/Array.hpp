@@ -64,9 +64,7 @@ struct Array : public IAnyArray
 	void clear(bool zero) override;
 
 	void copyFrom(Array<T>::ConstPtr src);
-
 	void copyFromExternal(const T *src, size_t srcCount) { copyFromExternalRaw(src, srcCount * sizeof(T)); }
-	void copyToExternal(T* dst, size_t dstCount) { throw std::runtime_error("unimplemented"); }
 
 	void copyToExternalRaw(void *dst, size_t dstLength, std::optional<CudaStream::Ptr> alternativeStream) const override;
 	void copyFromExternalRaw(const void *src, size_t srcLength) override;

@@ -27,7 +27,8 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field) && !isDummy(field)) {
-			auto array = createArray<DeviceAsyncArray>(field, arrayMgr);
+			// We may not have stream yet
+			auto array = createArray<DeviceAsyncArray>(field, CudaStream::getNullStream());
 			array->resize(pointCount, false, false);
 			fieldData.insert({field, array});
 		}

@@ -24,7 +24,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
 #    src/graph/nodes/SpatialMergePointsNodeTest.cpp
 #    src/graph/nodes/TemporalMergePointsNodeTest.cpp
-#    src/graph/addChildTest.cpp
+    src/graph/addChildTest.cpp
     src/memory/arrayTypingTest.cpp
     src/memory/arrayChangeStreamTest.cpp
     src/synchronization/graphAndCopyStream.cpp
