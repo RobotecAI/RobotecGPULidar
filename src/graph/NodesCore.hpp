@@ -131,28 +131,28 @@ private:
 	void setFields(const std::set<rgl_field_t>& fields);
 };
 
-//struct TransformPointsNode : IPointsNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<TransformPointsNode>;
-//	void setParameters(Mat3x4f transform) { this->transform = transform; }
-//	Mat3x4f getTransform() const { return transform; }
-//
-//	// Node
-//	void enqueueExecImpl() override;
-//	std::string getArgsString() const override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
-//
-//	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override;
-//
-//private:
-//	Mat3x4f transform;
-//	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
-//};
+struct TransformPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<TransformPointsNode>;
+	void setParameters(Mat3x4f transform) { this->transform = transform; }
+	Mat3x4f getTransform() const { return transform; }
+
+	// Node
+	void enqueueExecImpl() override;
+	std::string getArgsString() const override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
+
+	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	Mat3x4f transform;
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr output = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+};
 
 struct TransformRaysNode : IRaysNodeSingleInput
 {

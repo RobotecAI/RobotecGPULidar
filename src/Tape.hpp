@@ -220,7 +220,7 @@ private:
 	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode);
 	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode);
 	void tape_node_rays_transform(const YAML::Node& yamlNode);
-//	void tape_node_points_transform(const YAML::Node& yamlNode);
+	void tape_node_points_transform(const YAML::Node& yamlNode);
 	void tape_node_raytrace(const YAML::Node& yamlNode);
 	void tape_node_points_format(const YAML::Node& yamlNode);
 	void tape_node_points_yield(const YAML::Node& yamlNode);

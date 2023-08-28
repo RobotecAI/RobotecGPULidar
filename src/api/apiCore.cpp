@@ -690,27 +690,27 @@ void TapePlayer::tape_node_rays_transform(const YAML::Node& yamlNode)
 	tapeNodes.insert({nodeId, node});
 }
 
-//RGL_API rgl_status_t
-//rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_points_transform(node={}, transform={})", repr(node), repr(transform));
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(transform != nullptr);
-//
-//		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
-//	});
-//	TAPE_HOOK(node, transform);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_points_transform(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_points_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()));
-//	tapeNodes.insert({nodeId, node});
-//}
+RGL_API rgl_status_t
+rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_transform(node={}, transform={})", repr(node), repr(transform));
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(transform != nullptr);
+
+		createOrUpdateNode<TransformPointsNode>(node, Mat3x4f::fromRGL(*transform));
+	});
+	TAPE_HOOK(node, transform);
+	return status;
+}
+
+void TapePlayer::tape_node_points_transform(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(fileMmap + yamlNode[1].as<size_t>()));
+	tapeNodes.insert({nodeId, node});
+}
 
 RGL_API rgl_status_t
 rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range)

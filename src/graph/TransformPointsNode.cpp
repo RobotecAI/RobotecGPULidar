@@ -18,23 +18,21 @@
 void TransformPointsNode::enqueueExecImpl()
 {
 	auto pointCount = input->getWidth() * input->getHeight();
-	output->resize(pointCount);
-	const auto inputField = input->getFieldDataTyped<XYZ_F32>();
-	const auto* inputPtr = inputField->getDevicePtr();
-	auto* outputPtr = output->getDevicePtr();
+	output->resize(pointCount, false, false);
+	const auto inputField = input->getFieldDataTyped<XYZ_F32>()->asSubclass<DeviceAsyncArray>();
+	const auto* inputPtr = inputField->getReadPtr();
+	auto* outputPtr = output->getWritePtr();
 	gpuTransformPoints(getStreamHandle(), pointCount, inputPtr, outputPtr, transform);
 }
 
-VArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
+IAnyArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == XYZ_F32) {
-		// AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 		CHECK_CUDA(cudaStreamSynchronize(nullptr));
-		return output->untyped();
+		return output;
 	}
 	return input->getFieldData(field);
 }
-
 
 std::string TransformPointsNode::getArgsString() const
 {
