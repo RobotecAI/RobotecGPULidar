@@ -29,7 +29,7 @@ set(RGL_TEST_FILES
     src/memory/arrayChangeStreamTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/testKernel.cu
-#    src/synchronization/graphThreadSynchronization.cpp
+    src/synchronization/graphThreadSynchronization.cpp
 )
 
 # Only Linux
