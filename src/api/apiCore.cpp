@@ -562,7 +562,9 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
 		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
-		pointCloudNode->getFieldData(field)->copyToExternalRaw(data);
+		auto fieldArray = pointCloudNode->getFieldData(field);
+		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
+		fieldArray->copyToExternalRaw(data, size, CudaStream::getCopyStream());
 	});
 	TAPE_HOOK(node, field, data);
 	return status;

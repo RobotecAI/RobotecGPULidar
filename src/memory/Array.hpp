@@ -20,10 +20,9 @@
 #include <typingUtils.hpp>
 #include <CudaStream.hpp>
 
+#include <memory/IAnyArray.hpp>
 #include <memory/InvalidArrayCast.hpp>
 #include <memory/MemoryOperations.hpp>
-#include <memory/IAnyArray.hpp>
-#include <memory/copy.hpp>
 
 /**
  * Base class implementing resizable Array.
@@ -38,43 +37,21 @@ struct Array : public IAnyArray
 	using ConstPtr = std::shared_ptr<const Array<T>>;
 	using DataType = T;
 
-protected:
-	// Array should not be instanced directly. Use concrete subclasses.
-	Array(MemoryOperations memOps) : memOps(std::move(memOps)) {}
-
-public:
-	virtual ~Array()
-	{
-		if (data != nullptr) {
-			memOps.deallocate(data);
-			data = reinterpret_cast<T*>(0x0000DEAD);
-		}
-	}
-
+	virtual ~Array();
 	Array(const Array<T>&) = delete;
 	Array(Array<T>&&) = delete;
 	Array<T>& operator=(const Array<T>&) = delete;
 	Array<T>& operator=(Array<T>&&) = delete;
 
-public:
+	/**
+	 * Attempts casting into a subclass.
+	 */
 	template<template <typename> typename Subclass>
-	Subclass<T>::Ptr asSubclass()
-	{
-		if (auto ptr = std::dynamic_pointer_cast<Subclass<T>>(this->shared_from_this())) {
-			return ptr;
-		}
-		THROW_INVALID_ARRAY_CAST(Subclass<T>);
-	}
+	Subclass<T>::Ptr asSubclass();
 
 	/** Const overload **/
 	template<template <typename> typename Subclass>
-	Subclass<T>::ConstPtr asSubclass() const
-	{
-		if (auto ptr = std::dynamic_pointer_cast<const Subclass<T>>(this->shared_from_this())) {
-			return ptr;
-		}
-		THROW_INVALID_ARRAY_CAST(const Subclass<T>);
-	}
+	Subclass<T>::ConstPtr asSubclass() const;
 
 	const void* getRawReadPtr() const override { return data; }
 	void* getRawWritePtr() override { return data; }
@@ -82,127 +59,25 @@ public:
 	unsigned long getSizeOf() const override { return sizeof(T); }
 	unsigned long getCapacity() const override { return capacity; }
 
-	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override
-	{
-		// Ensure capacity
-		reserve(newCount, preserveData);
+	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override;
+	void reserve(unsigned long newCapacity, bool preserveData) override;
+	void clear(bool zero) override;
 
-		// Clear expanded part
-		if (newCount >= count && zeroInit) {
-			memOps.clear(data + count, 0, sizeof(T) * (newCount - count));
-		}
+	void copyFrom(Array<T>::ConstPtr src);
 
-		count = newCount;
-	}
+	void copyFromExternal(const T *src, size_t srcCount) { copyFromExternalRaw(src, srcCount * sizeof(T)); }
+	void copyToExternal(T* dst, size_t dstCount) { throw std::runtime_error("unimplemented"); }
 
-	void reserve(unsigned long newCapacity, bool preserveData) override
-	{
-		if (newCapacity == 0) {
-			throw std::invalid_argument("requested to reserve 0 elements");
-		}
-
-		if (!preserveData) {
-			count = 0;
-		}
-
-		if(capacity >= newCapacity) {
-			return;
-		}
-
-		T* newMem = reinterpret_cast<T*>(memOps.allocate(sizeof(T) * newCapacity));
-
-		if (preserveData && data != nullptr) {
-			memOps.copy(newMem, data, sizeof(T) * count);
-		}
-
-		if (data != nullptr) {
-			memOps.deallocate(data);
-		}
-
-		data = newMem;
-		capacity = newCapacity;
-	}
-
-	void clear(bool zero) override
-	{
-		if (data == nullptr) {
-			return;
-		}
-
-		if (zero) {
-			memOps.clear(data, 0, sizeof(T) * count);
-		}
-
-		count = 0;
-	}
-
-	void copyFrom(Array<T>::ConstPtr src)
-	{
-		if (shared_from_this() == src) {
-			throw std::runtime_error("attempted to copy Array from itself");
-		}
-		this->resize(src->getCount(), false, false);
-		copy(CopyOp {
-			.src = {
-				.ptr=src->data,
-				.kind=src->getMemoryKind(),
-				.stream=src->getCudaStream(),
-			},
-			.dst = {
-				.ptr=this->data,
-				.kind=this->getMemoryKind(),
-				.stream=this->getCudaStream()
-			}
-		});
-	}
-
-	void copyToExternalRaw(void *dst, size_t dstLength) const override
-	{
-		size_t srcLength = getSizeOf() * getCount();
-		if (dstLength < srcLength) {
-			auto msg = fmt::format("copyToExternalRaw: dst buffer size ({}) is smaller than src buffer size ({})", dstLength, srcLength);
-			throw std::runtime_error(msg);
-		}
-		copy(CopyOp {
-			.src = {
-				.ptr=data,
-				.kind=getMemoryKind(),
-				.stream=getCudaStream()
-			},
-			.dst = {
-				.ptr=dst,
-				.kind=MemoryKind::HostPageable,
-				.stream=std::nullopt
-			},
-			.bytes=srcLength,
-		});
-	}
-
-	void copyFromExternalRaw(void *src, size_t srcLength) override
-	{
-		if (srcLength % getSizeOf() != 0) {
-			auto msg = fmt::format("copyFromExternalRaw: buffer size ({}) is not a multiply of element size ({})", srcLength, getSizeOf());
-			throw std::runtime_error(msg);
-		}
-		this->resize(srcLength / getSizeOf(), false, false);
-		copy(CopyOp {
-			.src = {
-				.ptr=src,
-				.kind=MemoryKind::HostPageable,
-				.stream=std::nullopt
-			},
-			.dst = {
-				.ptr=data,
-				.kind=getMemoryKind(),
-				.stream=getCudaStream()
-			},
-			.bytes=srcLength,
-		});
-	}
+	void copyToExternalRaw(void *dst, size_t dstLength, std::optional<CudaStream::Ptr> alternativeStream) const override;
+	void copyFromExternalRaw(const void *src, size_t srcLength) override;
 
 protected:
 	unsigned long count = {0 };
 	unsigned long capacity = {0 };
 	DataType* data = { nullptr };
 	MemoryOperations memOps;
+
+protected:
+	// Array should not be instanced directly. Use concrete subclasses.
+	Array(MemoryOperations memOps) : memOps(std::move(memOps)) {}
 };

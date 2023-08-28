@@ -33,7 +33,5 @@ struct DeviceSyncArray : public DeviceArray<T>
 
 protected:
 	using DeviceArray<T>::DeviceArray;
-
-	virtual std::optional<CudaStream::Ptr> getCudaStream() const override { return CudaStream::getNullStream(); }
 };
 

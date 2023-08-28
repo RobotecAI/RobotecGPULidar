@@ -68,8 +68,7 @@ add_custom_command(
     COMMAND ${BIN2C} -c --padd 0 --type char --name optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx> > optixProgramsPtx.c
     DEPENDS optixProgramsPtx $<TARGET_OBJECTS:optixProgramsPtx>  # Should work with just optixProgramsPtx, but CMake..
     VERBATIM)
-add_library(optixPrograms optixProgramsPtx.c
-        src/memory/copy.hpp)
+add_library(optixPrograms optixProgramsPtx.c)
 
 add_library(RobotecGPULidar SHARED
     src/api/apiCommon.cpp

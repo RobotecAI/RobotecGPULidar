@@ -79,6 +79,4 @@ struct HostArray : public Array<T>
 	const T& operator[](size_t idx) const {return data[idx]; }
 protected:
 	using Array<T>::Array;
-
-	virtual std::optional<CudaStream::Ptr> getCudaStream() const override { return std::nullopt; }
 };

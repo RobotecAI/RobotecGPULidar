@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <memory/DeviceArray.hpp>
 #include <memory/MemoryKind.hpp>
-#include <memory/HostPinnedArray.hpp>
+#include <memory/DeviceArray.hpp>
+#include <memory/Array.hpp>
 #include <IStreamBound.hpp>
 #include <StreamBoundObjectsManager.hpp>
 
@@ -57,8 +57,8 @@ protected:
 	  : DeviceArray<T>(MemoryOperations::get<MemoryKind::DeviceAsync>(streamArg))
 	  , stream(streamArg) {}
 
-	virtual std::optional<CudaStream::Ptr> getCudaStream() const override { return stream; }
-
 protected:
 	CudaStream::Ptr stream; // Needed to implement IStreamBound
 };
+
+#include <memory/ArrayImpl.hpp>
