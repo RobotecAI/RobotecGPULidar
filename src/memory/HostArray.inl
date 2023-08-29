@@ -12,27 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <cuda.h>
-
-#include <typingUtils.hpp>
-#include <CudaStream.hpp>
-
-#include <memory/Array.hpp>
-#include <memory/MemoryKind.hpp>
-#include <memory/InvalidArrayCast.hpp>
-#include <memory/HostPageableArray.hpp>
-
 /**
- * DeviceArray extends Array with some convenience methods useful for dealing with device memory.
+ * HostArray extends Array with some convenience methods that are only possible for host memory.
  * @tparam T See base class
  */
-template <typename T>
-struct DeviceArray : public Array<T>
+template<typename T>
+struct HostArray : public Array<T>
 {
-	using Ptr = std::shared_ptr<DeviceArray<T>>;
-	using ConstPtr = std::shared_ptr<const DeviceArray<T>>;
+	using Ptr = std::shared_ptr<HostArray<T>>;
+	using ConstPtr = std::shared_ptr<const HostArray<T>>;
 
 	// Explanation why: https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members
 	// Note: do not repeat this for methods, since it inhibits virtual dispatch mechanism
@@ -42,9 +30,26 @@ struct DeviceArray : public Array<T>
 
 	T* getWritePtr() { return data; }
 	const T* getReadPtr() const { return data; }
-	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
-	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
+
+	/** Appends given value at the end of Array, similar to std::vector<T>::push_back */
+	void append(T value);
+
+	/**
+	 * Accesses data with checking index bounds.
+	 * Throws std::out_of_range if the index is invalid.
+	 */
+	T& at(size_t idx);
+
+	/** Const overload */
+	const T& at(size_t idx) const { return const_cast<HostArray<T>*>(this)->at(idx); }
+
+	/** Accesses data without checking index bounds */
+	T& operator[](size_t idx) { return data[idx]; }
+
+	/** Const overload */
+	const T& operator[](size_t idx) const { return data[idx]; }
 
 protected:
 	using Array<T>::Array;
 };
+

@@ -21,8 +21,7 @@
 #include <gpu/GPUFieldDesc.hpp>
 #include <graph/Interfaces.hpp>
 #include <graph/NodesCore.hpp>
-#include <memory/HostPageableArray.hpp>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 // Builder for GPUFieldDesc. Separated struct to avoid polluting gpu-visible header (gpu/GPUFieldDesc.hpp).
 struct GPUFieldDescBuilder

@@ -14,24 +14,19 @@
 
 #pragma once
 
-#include <memory/DeviceArray.hpp>
-#include <memory/HostPinnedArray.hpp>
-#include <memory/MemoryKind.hpp>
-
 template <typename T>
-struct DeviceSyncArray : public DeviceArray<T>
+struct HostPageableArray : public HostArray<T>
 {
-	using Ptr = std::shared_ptr<DeviceSyncArray<T>>;
-	using ConstPtr = std::shared_ptr<const DeviceSyncArray<T>>;
+	using Ptr = std::shared_ptr<HostPageableArray<T>>;
+	using ConstPtr = std::shared_ptr<const HostPageableArray<T>>;
 
-	MemoryKind getMemoryKind() const override { return MemoryKind::DeviceSync; }
+	MemoryKind getMemoryKind() const override { return MemoryKind::HostPageable; }
 
-	static DeviceSyncArray<T>::Ptr create()
+	static HostPageableArray<T>::Ptr create()
 	{
-		return DeviceSyncArray<T>::Ptr(new DeviceSyncArray(MemoryOperations::get<MemoryKind::DeviceSync>()));
+		return HostPageableArray<T>::Ptr { new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>()) };
 	}
 
 protected:
-	using DeviceArray<T>::DeviceArray;
+	using HostArray<T>::HostArray;
 };
-

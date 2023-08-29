@@ -23,7 +23,7 @@
 
 #include <Time.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 struct Entity;
 

@@ -2,10 +2,7 @@
 #include <gmock/gmock-matchers.h>
 
 #include <memory/InvalidArrayCast.hpp>
-#include <memory/HostPageableArray.hpp>
-#include <memory/HostPinnedArray.hpp>
-#include <memory/DeviceAsyncArray.hpp>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 using namespace ::testing;
 

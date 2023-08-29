@@ -14,10 +14,6 @@
 
 #pragma once
 
-#include <memory/HostArray.hpp>
-#include <memory/MemoryKind.hpp>
-#include <memory/DeviceAsyncArray.hpp>
-
 template <typename T>
 struct HostPinnedArray : public HostArray<T>
 {
@@ -28,9 +24,7 @@ struct HostPinnedArray : public HostArray<T>
 
 	static HostPinnedArray<T>::Ptr create()
 	{
-		return HostPinnedArray<T>::Ptr {
-			new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())
-		};
+		return HostPinnedArray<T>::Ptr { new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())};
 	}
 
 protected:

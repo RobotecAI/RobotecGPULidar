@@ -26,7 +26,7 @@
 #include <scene/ASBuildScratchpad.hpp>
 
 #include <filesystem>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 /**
  * Represents mesh data (at the moment vertices and indices) stored on the GPU.

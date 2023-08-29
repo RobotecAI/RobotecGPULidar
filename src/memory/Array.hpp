@@ -76,3 +76,12 @@ protected:
 	// Array should not be instanced directly. Use concrete subclasses.
 	Array(MemoryOperations memOps) : memOps(std::move(memOps)) {}
 };
+
+// Order matters
+#include <memory/HostArray.inl>
+#include <memory/HostPinnedArray.inl>
+#include <memory/HostPageableArray.inl>
+#include <memory/DeviceArray.inl>
+#include <memory/DeviceSyncArray.inl>
+#include <memory/DeviceAsyncArray.inl>
+#include <memory/ArrayImpl.inl>

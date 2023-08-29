@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory/Array.hpp>
-#include <memory/DeviceAsyncArray.hpp>
+#include <memory/DeviceAsyncArray.inl>
 
 template<typename T>
 Array<T>::~Array() {
@@ -126,4 +126,27 @@ Subclass<T>::Ptr Array<T>::asSubclass() {
 		return ptr;
 	}
 	THROW_INVALID_ARRAY_CAST(Subclass<T>);
+}
+
+/** HOST ARRAY **/
+
+template<typename T>
+T &HostArray<T>::at(size_t idx) {
+	if (idx >= count) {
+		auto msg = fmt::format("index out of range: {}/{}", idx, count);
+		throw std::out_of_range(msg);
+	}
+	return data[idx];
+}
+
+template<typename T>
+void HostArray<T>::append(T value) {
+	if (count + 1 > capacity) {
+		auto newCapacity = (capacity > 0)
+		                   ? (capacity * 2)
+		                   : 1;
+		this->reserve(newCapacity, true);
+	}
+	data[count] = std::move(value);
+	count += 1;
 }

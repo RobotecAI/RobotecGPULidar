@@ -14,14 +14,8 @@
 
 #pragma once
 
-#include <memory/MemoryKind.hpp>
-#include <memory/DeviceArray.hpp>
-#include <memory/Array.hpp>
 #include <IStreamBound.hpp>
 #include <StreamBoundObjectsManager.hpp>
-
-template<typename T>
-struct HostPinnedArray;
 
 template <typename T>
 struct DeviceAsyncArray : public DeviceArray<T>, public IStreamBound
@@ -60,5 +54,3 @@ protected:
 protected:
 	CudaStream::Ptr stream; // Needed to implement IStreamBound
 };
-
-#include <memory/ArrayImpl.hpp>
