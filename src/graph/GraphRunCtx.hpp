@@ -93,4 +93,6 @@ private: // Communication between client's thread and graph thread
 
 	std::unordered_map<Node::Ptr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
+
+	friend void handleDestructorException(std::exception_ptr e, const char* what);
 };

@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #include <cmath>
+#include <thread>
 #include <spdlog/common.h>
 
 #if RGL_BUILD_ROS2_EXTENSION
@@ -122,4 +125,31 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	node->setParameters(args...);
 	node->dirty = true;
 	*nodeRawPtr = node.get();
+}
+
+inline void handleDestructorException(std::exception_ptr e, const char* what)
+{
+	RGL_CRITICAL("Exception thrown from destructor!");
+	updateAPIState(RGL_INTERNAL_EXCEPTION, what);
+	// We got some exception thrown in some destructor
+	// We may be in graph thread; let's check that:
+	for (auto&& ctxWeak : GraphRunCtx::instances) {
+		if (auto ctx = ctxWeak.lock()) {
+			if (!ctx->maybeThread.has_value()) {
+				continue;
+			}
+			if (ctx->maybeThread.value().get_id() != std::this_thread::get_id()) {
+				continue;
+			}
+			// We're a graph thread. Mark remaining nodes as executed and set exception.
+			for (auto&& [node, state] : ctx->executionStatus) {
+				if (state.executed.load(std::memory_order::relaxed)) {
+					continue;
+				}
+				state.exceptionPtr = std::current_exception();
+				state.executed.store(true, std::memory_order::release);
+				throw e; // In Graph thread, rethrow to die.
+			}
+		}
+	}
 }

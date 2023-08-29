@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
     src/graphCaseTest.cpp
-#    src/asyncStressTest.cpp
+    src/asyncStressTest.cpp
     src/apiReadmeExample.cpp
 #    src/gaussianStressTest.cpp
     src/apiSurfaceTests.cpp

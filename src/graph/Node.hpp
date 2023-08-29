@@ -23,10 +23,8 @@
 #include <CudaStream.hpp>
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
-#include <VArray.hpp>
 #include <rgl/api/core.h>
-#include <graph/Node.hpp>
-#include "StreamBoundObjectsManager.hpp"
+#include <StreamBoundObjectsManager.hpp>
 
 struct GraphRunCtx;
 
