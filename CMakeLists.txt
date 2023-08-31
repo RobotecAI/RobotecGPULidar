@@ -75,8 +75,7 @@ add_library(RobotecGPULidar SHARED
     src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
-    src/VArray.cpp
-    src/Optix.cpp
+        src/Optix.cpp
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
     src/scene/Scene.cpp

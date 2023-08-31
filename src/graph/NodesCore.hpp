@@ -30,8 +30,6 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
-#include <VArray.hpp>
-#include <VArrayProxy.hpp>
 
 
 struct FormatPointsNode : IPointsNodeSingleInput

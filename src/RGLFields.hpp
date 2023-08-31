@@ -16,9 +16,10 @@
 
 #include <set>
 #include <cfloat>
+#include <vector>
 
+#include <math/Vector.hpp>
 #include <rgl/api/core.h>
-#include <VArray.hpp>
 
 /*
  * Definition of RGL PointCloud Fields is in the API header.

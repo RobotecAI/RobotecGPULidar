@@ -16,8 +16,6 @@
 
 #include <rgl/api/core.h>
 #include <math/Mat3x4f.hpp>
-#include <VArray.hpp>
-#include <VArrayProxy.hpp>
 #include <RGLFields.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 

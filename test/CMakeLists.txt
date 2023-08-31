@@ -36,7 +36,6 @@ set(RGL_TEST_FILES
 if ((NOT WIN32))
     list(APPEND RGL_TEST_FILES
         src/loggingTests.cpp
-        src/VArrayTest.cpp
     )
 endif()
 
