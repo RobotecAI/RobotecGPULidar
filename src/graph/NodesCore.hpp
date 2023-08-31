@@ -305,29 +305,29 @@ private:
 	size_t width = 0;
 };
 
-//struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<GaussianNoiseAngularRaysNode>;
-//
-//	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override;
-//
-//	// Data getters
-//	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-//
-//private:
-//	float mean;
-//	float stDev;
-//	rgl_axis_t rotationAxis;
-//	std::random_device randomDevice;
-//	Mat3x4f lookAtOriginTransform;
-//
-//	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-//	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
-//};
+struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseAngularRaysNode>;
+
+	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Data getters
+	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+
+private:
+	float mean;
+	float stDev;
+	rgl_axis_t rotationAxis;
+	std::random_device randomDevice;
+	Mat3x4f lookAtOriginTransform;
+
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
+};
 
 struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 {

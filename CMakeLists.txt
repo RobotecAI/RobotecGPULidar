@@ -75,7 +75,7 @@ add_library(RobotecGPULidar SHARED
     src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
-        src/Optix.cpp
+    src/Optix.cpp
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
     src/scene/Scene.cpp
@@ -86,7 +86,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/GraphRunCtx.cpp
     src/graph/Node.cpp
     src/graph/GaussianNoiseAngularHitpointNode.cpp
-#    src/graph/GaussianNoiseAngularRayNode.cpp
+    src/graph/GaussianNoiseAngularRayNode.cpp
     src/graph/GaussianNoiseDistanceNode.cpp
     src/graph/CompactPointsNode.cpp
     src/graph/FormatPointsNode.cpp
