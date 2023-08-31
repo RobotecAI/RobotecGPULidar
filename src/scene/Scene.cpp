@@ -55,16 +55,18 @@ void Scene::requestFullRebuild()
 	requestSBTRebuild();
 }
 
-OptixTraversableHandle Scene::getAS()
+OptixTraversableHandle Scene::getASLocked()
 {
+	std::lock_guard optixStructsLock(optixStructsMutex);
 	if (!cachedAS.has_value()) {
 		cachedAS = buildAS();
 	}
 	return *cachedAS;
 }
 
-OptixShaderBindingTable Scene::getSBT()
+OptixShaderBindingTable Scene::getSBTLocked()
 {
+	std::lock_guard optixStructsLock(optixStructsMutex);
 	if (!cachedSBT.has_value()) {
 		cachedSBT = buildSBT();
 	}

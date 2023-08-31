@@ -14,9 +14,7 @@ const Vec3f cubePosition = {0, 0, 5};
 const Vec3f cubeDims = {2, 2, 2};
 
 static std::random_device randomDevice;
-//static auto randomSeed = randomDevice();
-//static auto randomSeed = 2749340050U; // fails
-static auto randomSeed = 3U; // fails
+static auto randomSeed = randomDevice();
 static std::mt19937 randomGenerator {randomSeed};
 
 // randomizeIndices(10,3): 9, 0, 5
@@ -146,10 +144,10 @@ TEST_F(GraphStress, Async)
 	using namespace testing;
 
 	// Config
-	int GRAPH_COUNT = 1;  // Number of graphs executed in parallel
-	const int GRAPH_SIZE = 2;  // Number of TransformPointsNodes in each graph
-	const int GRAPH_QUERIES = 1;  // How many nodes are checked for results (should be a subset)
-	const int GRAPH_EPOCHS = 1;  // How many times all graphs are executed, changed and queried
+	const int GRAPH_COUNT = 16;  // Number of graphs executed in parallel
+	const int GRAPH_SIZE = 128;  // Number of TransformPointsNodes in each graph
+	const int GRAPH_QUERIES = 32;  // How many nodes are checked for results (should be a subset)
+	const int GRAPH_EPOCHS = 1024;  // How many times all graphs are executed, changed and queried
 	const float EPSILON = 2 * 1E-6;  // Tolerance for GPU-CPU matrix multiplication differences
 	ASSERT_THAT(GRAPH_QUERIES, Lt(GRAPH_SIZE));
 
@@ -217,7 +215,8 @@ TEST_F(GraphStress, Async)
 				// Check if output size is not affected by graph modifications
 				int pointCount = -1, pointSize = -1;
 				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
-				EXPECT_EQ(pointCount,run.expectedPointCount);
+				ASSERT_GT(pointCount, 0);
+				EXPECT_EQ(pointCount, run.expectedPointCount);
 
 				// Get results
 				std::vector<Vec3f> results(pointCount);

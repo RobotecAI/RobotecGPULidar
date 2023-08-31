@@ -54,8 +54,8 @@ void RaytraceNode::enqueueExecImpl()
 
 	// Even though we are in graph thread here, we can access Scene class (see comment there)
 	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	auto sceneAS = scene->getAS();
-	auto sceneSBT = scene->getSBT();
+	auto sceneAS = scene->getASLocked();
+	auto sceneSBT = scene->getSBTLocked();
 	dim3 launchDims = {static_cast<unsigned int>(raysNode->getRayCount()), 1, 1};
 
 	// Optional
