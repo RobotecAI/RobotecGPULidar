@@ -947,31 +947,31 @@ void TapePlayer::tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yam
 	tapeNodes.insert({nodeId, node});
 }
 
-//RGL_API rgl_status_t
-//rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base, float st_dev_rise_per_meter)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_gaussian_noise_distance(node={}, mean={}, st_dev_base={}, st_dev_rise_per_meter={})", repr(node), mean, st_dev_base, st_dev_rise_per_meter);
-//                CHECK_ARG(node != nullptr);
-//                CHECK_ARG(st_dev_base >= 0);
-//		CHECK_ARG(st_dev_rise_per_meter >= 0);
-//
-//		createOrUpdateNode<GaussianNoiseDistanceNode>(node, mean, st_dev_base, st_dev_rise_per_meter);
-//	});
-//	TAPE_HOOK(node, mean, st_dev_base, st_dev_rise_per_meter);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_gaussian_noise_distance(&node,
-//		yamlNode[1].as<float>(),
-//		yamlNode[2].as<float>(),
-//		yamlNode[3].as<float>());
-//	tapeNodes.insert({nodeId, node});
-//}
+RGL_API rgl_status_t
+rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base, float st_dev_rise_per_meter)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_gaussian_noise_distance(node={}, mean={}, st_dev_base={}, st_dev_rise_per_meter={})", repr(node), mean, st_dev_base, st_dev_rise_per_meter);
+                CHECK_ARG(node != nullptr);
+                CHECK_ARG(st_dev_base >= 0);
+		CHECK_ARG(st_dev_rise_per_meter >= 0);
+
+		createOrUpdateNode<GaussianNoiseDistanceNode>(node, mean, st_dev_base, st_dev_rise_per_meter);
+	});
+	TAPE_HOOK(node, mean, st_dev_base, st_dev_rise_per_meter);
+	return status;
+}
+
+void TapePlayer::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_gaussian_noise_distance(&node,
+		yamlNode[1].as<float>(),
+		yamlNode[2].as<float>(),
+		yamlNode[3].as<float>());
+	tapeNodes.insert({nodeId, node});
+}
 
 RGL_API rgl_status_t
 rgl_tape_record_begin(const char* path)

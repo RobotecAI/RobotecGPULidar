@@ -357,30 +357,30 @@ private:
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
-//struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
-//
-//	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override;
-//
-//private:
-//	float mean;
-//	float stDevBase;
-//	float stDevRisePerMeter;
-//	std::random_device randomDevice;
-//	Mat3x4f lookAtOriginTransform;
-//
-//	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-//	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
-//	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
-//};
+struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
+
+	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	float mean;
+	float stDevBase;
+	float stDevRisePerMeter;
+	std::random_device randomDevice;
+	Mat3x4f lookAtOriginTransform;
+
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+};

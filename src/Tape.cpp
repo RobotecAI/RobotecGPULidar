@@ -98,7 +98,7 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_node_points_from_array", std::bind(&TapePlayer::tape_node_points_from_array, this, _1) },
 //		{ "rgl_node_gaussian_noise_angular_ray", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_ray, this, _1) },
 		{ "rgl_node_gaussian_noise_angular_hitpoint", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1) },
-//		{ "rgl_node_gaussian_noise_distance", std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1) },
+		{ "rgl_node_gaussian_noise_distance", std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1) },
 
 		#if RGL_BUILD_PCL_EXTENSION
 //		{ "rgl_graph_write_pcd_file", std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1) },
