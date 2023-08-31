@@ -38,13 +38,13 @@ static std::vector<rgl_mat3x4f> makeGridOfParallelRays(Vec2f minCoord, Vec2f max
 	EXPECT_TRUE(count.x() > 0);
 	EXPECT_TRUE(count.y() > 0);
 
-	float dy = (maxCoord.y() - minCoord.y()) / (count.y() -1);
-	float dx = (maxCoord.x() - minCoord.x()) / (count.x() -1);
-	for (int y = 0; y < count.y(); ++y) {
-		for (int x = 0; x < count.x(); ++x) {
+	float spacingY = (maxCoord.y() - minCoord.y()) / (count.y() + 1);
+	float spacingX = (maxCoord.x() - minCoord.x()) / (count.x() + 1);
+	for (int y = 1; y <= count.y(); ++y) {
+		for (int x = 1; x <= count.x(); ++x) {
 			Vec3f origin {
-				minCoord.x() + dx * static_cast<float>(x),
-				minCoord.y() + dy * static_cast<float>(y),
+				minCoord.x() + spacingX * static_cast<float>(x),
+				minCoord.y() + spacingY * static_cast<float>(y),
 				0.0f
 			};
 			rays.emplace_back(Mat3x4f::translation(origin.x(), origin.y(), origin.z()).toRGL());
