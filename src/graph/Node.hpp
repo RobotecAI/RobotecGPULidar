@@ -141,7 +141,7 @@ protected: // Member methods
 	 * This is required to query node for results.
 	 * If error happened in the graph thread, this function will re-throw it.
 	 */
-	void synchronizeThis();
+	void synchronizeThis() const;
 
 	cudaStream_t getStreamHandle();
 

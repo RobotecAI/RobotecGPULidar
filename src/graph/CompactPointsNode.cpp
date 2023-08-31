@@ -27,12 +27,10 @@ void CompactPointsNode::enqueueExecImpl()
 	size_t pointCount = input->getWidth() * input->getHeight();
 	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getWritePtr(), &width);
-	CHECK_CUDA(cudaEventRecord(finishedEvent, getStreamHandle()));
 }
 
 IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 {
-	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
 		cacheManager.insert(field, fieldData, true);
@@ -51,7 +49,6 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 		const CompactionIndexType * indices = inclusivePrefixSum->getReadPtr();
 		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
-		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}
 
@@ -60,6 +57,6 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 
 size_t CompactPointsNode::getWidth() const
 {
-	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
+	this->synchronizeThis();
 	return width;
 }

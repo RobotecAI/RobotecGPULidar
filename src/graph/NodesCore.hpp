@@ -70,9 +70,6 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	using Ptr = std::shared_ptr<CompactPointsNode>;
 	void setParameters() {}
 
-	CompactPointsNode()	{ CHECK_CUDA(cudaEventCreate(&finishedEvent, cudaEventDisableTiming)); }
-	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
-
 	// Node
 	void enqueueExecImpl() override;
 
@@ -89,7 +86,6 @@ struct CompactPointsNode : IPointsNodeSingleInput
 
 private:
 	size_t width = {0};
-	cudaEvent_t finishedEvent = nullptr;
 	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
 	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 };

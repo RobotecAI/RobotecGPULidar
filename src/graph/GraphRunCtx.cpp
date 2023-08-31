@@ -156,7 +156,7 @@ void GraphRunCtx::synchronize()
 	maybeThread.reset();
 }
 
-void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
+void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 {
 	if (!maybeThread.has_value()) {
 		return; // Already synchronized or never run.

@@ -1,18 +1,7 @@
 #pragma once
 
 #include <memory/Array.hpp>
-
-void handleDestructorException(std::exception_ptr e, const char *string);
-
-#define STR(s) #s
-#define HANDLE_DESTRUCTOR_EXCEPTION                                                                       \
-catch (std::exception& e) {                                                                               \
-	handleDestructorException(std::current_exception(), e.what());                                        \
-}                                                                                                         \
-catch (...) {                                                                                             \
-    const char* msg = "unknown exception at " __FILE__  ":"  STR(__LINE__);                               \
-	handleDestructorException(std::current_exception(), msg); \
-}
+#include <macros/handleDestructorException.hpp>
 
 template<typename T>
 Array<T>::~Array() try {
@@ -83,10 +72,6 @@ void Array<T>::clear(bool zero) {
 
 template<typename T>
 void Array<T>::reserve(unsigned long newCapacity, bool preserveData) {
-	if (newCapacity == 0) {
-		throw std::invalid_argument("requested to reserve 0 elements");
-	}
-
 	if (!preserveData) {
 		count = 0;
 	}
