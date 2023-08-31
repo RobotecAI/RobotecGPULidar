@@ -4,12 +4,12 @@ set(RGL_TEST_FILES
     src/graphCaseTest.cpp
     src/asyncStressTest.cpp
     src/apiReadmeExample.cpp
-#    src/gaussianStressTest.cpp
+    src/gaussianStressTest.cpp
     src/apiSurfaceTests.cpp
     src/testMat3x4f.cpp
-#    src/DistanceFieldTest.cpp
-#    src/scene/textureTest.cpp
-#    src/scene/entityIdTest.cpp
+    src/DistanceFieldTest.cpp
+    src/scene/textureTest.cpp
+    src/scene/entityIdTest.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/SetRingIdsRaysNodeTest.cpp
