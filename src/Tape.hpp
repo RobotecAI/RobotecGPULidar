@@ -229,7 +229,7 @@ private:
 //	void tape_node_points_temporal_merge(const YAML::Node& yamlNode);
 	void tape_node_points_from_array(const YAML::Node& yamlNode);
 //	void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode);
-//	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
+	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
 //	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
 
 	#if RGL_BUILD_PCL_EXTENSION
