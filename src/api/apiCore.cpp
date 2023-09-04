@@ -776,8 +776,19 @@ rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl
 		Node::validatePtr<RaytraceNode>(*node)->setVelocity(reinterpret_cast<const Vec3f*>(linear_velocity),
 		                                                    reinterpret_cast<const Vec3f*>(angular_velocity));
 	});
-	TAPE_HOOK(node, scene);
+	TAPE_HOOK(node, scene, linear_velocity, angular_velocity);
 	return status;
+}
+
+void TapePlayer::tape_node_raytrace_with_distortion(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_raytrace_with_distortion(&node,
+	                                  nullptr,  // TODO(msz-rai) support multiple scenes
+	                                  reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[2].as<size_t>()),
+	                                  reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[3].as<size_t>()));
+	tapeNodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t

@@ -92,6 +92,7 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_node_rays_transform", std::bind(&TapePlayer::tape_node_rays_transform, this, _1) },
 		{ "rgl_node_points_transform", std::bind(&TapePlayer::tape_node_points_transform, this, _1) },
 		{ "rgl_node_raytrace", std::bind(&TapePlayer::tape_node_raytrace, this, _1) },
+		{ "rgl_node_raytrace_with_distortion", std::bind(&TapePlayer::tape_node_raytrace_with_distortion, this, _1) },
 		{ "rgl_node_points_format", std::bind(&TapePlayer::tape_node_points_format, this, _1) },
 		{ "rgl_node_points_yield", std::bind(&TapePlayer::tape_node_points_yield, this, _1) },
 		{ "rgl_node_points_compact", std::bind(&TapePlayer::tape_node_points_compact, this, _1) },

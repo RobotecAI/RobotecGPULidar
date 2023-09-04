@@ -78,6 +78,10 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	std::vector<int> rings = {0, 1};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIds, rings.data(), rings.size()));
 
+	rgl_node_t setTimeOffsets = nullptr;
+	std::vector<float> timeOffsets = {0.0f, 1.0f, 2.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&setTimeOffsets, timeOffsets.data(), timeOffsets.size()));
+
 	rgl_node_t setRange = nullptr;
 	rgl_vec2f range = {0.0f, 1.0f};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRange, &range, 1));
@@ -90,6 +94,11 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 
 	rgl_node_t raytrace = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+
+	rgl_node_t raytraceWithDistortion = nullptr;
+	rgl_vec3f linearVelocity{1.0f, 2.0f, 3.0f};
+	rgl_vec3f angularVelocity{1.0f, 2.0f, 3.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_with_distortion(&raytraceWithDistortion, nullptr, &linearVelocity, &angularVelocity));
 
 	rgl_node_t format = nullptr;
 	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
