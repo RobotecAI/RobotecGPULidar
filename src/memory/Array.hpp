@@ -63,7 +63,6 @@ struct Array : public IAnyArray
 	void reserve(unsigned long newCapacity, bool preserveData) override;
 	void clear(bool zero) override;
 
-	void copyFrom(Array<T>::ConstPtr src);
 	void copyFromExternal(const T *src, size_t srcCount);
 
 protected:
@@ -74,7 +73,7 @@ protected:
 
 protected:
 	// Array should not be instanced directly. Use concrete subclasses.
-	Array(MemoryOperations memOps) : memOps(std::move(memOps)) {}
+	Array(MemoryOperations memOps) : IAnyArray(typeid(T)), memOps(std::move(memOps)) {}
 };
 
 // Order matters

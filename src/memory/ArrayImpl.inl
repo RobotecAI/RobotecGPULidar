@@ -13,47 +13,14 @@ Array<T>::~Array() try {
 HANDLE_DESTRUCTOR_EXCEPTION
 
 template<typename T>
-void Array<T>::copyFrom(Array::ConstPtr src) {
-	if (shared_from_this() == src) {
-		throw std::runtime_error("attempted to copy Array from itself");
-	}
-	this->resize(src->getCount(), false, false);
-	size_t byteCount = src->getCount() * src->getSizeOf();
-
-	// Both operands are on host - either pageable or pinned.
-	// Standard memcpy is faster + avoids the overhead of cudaMemcpy*
-	if (isHost(this->getMemoryKind()) && isHost(src->getMemoryKind())) {
-		memcpy(this->data, src->data, byteCount);
-		return;
-	}
-
-	// Ensure src is ready (one day, it can be optimized to some waiting on some cudaEvent, not entire stream)
-	bool isSrcAsync = src->getMemoryKind() == MemoryKind::DeviceAsync;
-	if (isSrcAsync) {
-		auto asyncSrc = src->template asSubclass<DeviceAsyncArray>();
-		CHECK_CUDA(cudaStreamSynchronize(asyncSrc->getStream()->getHandle()));
-	}
-
-	// Using null stream is hurting performance, but extra safe.
-	// TODO: remove null stream usage once DeviceSyncArray is removed
-	bool isDstAsync = this->getMemoryKind() == MemoryKind::DeviceAsync;
-	CudaStream::Ptr copyStream = isDstAsync
-	                           ? this->asSubclass<DeviceAsyncArray>()->getStream()
-	                           : isSrcAsync ? src->template asSubclass<DeviceAsyncArray>()->getStream()
-	                                        : CudaStream::getNullStream();
-	CHECK_CUDA(cudaMemcpyAsync(data, src->data, byteCount, cudaMemcpyDefault, copyStream->getHandle()));
-	CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
-}
-
-template<typename T>
 void Array<T>::copyFromExternal(const T *src, size_t srcCount) {
 	this->resize(srcCount, false, false);
 
-	bool isDstAsync = this->getMemoryKind() == MemoryKind::DeviceAsync;
-	CudaStream::Ptr copyStream = isDstAsync
-	                             ? this->asSubclass<DeviceAsyncArray>()->getStream()
+	auto dstStreamBound = std::dynamic_pointer_cast<IStreamBound>(shared_from_this());
+	CudaStream::Ptr copyStream = dstStreamBound != nullptr
+	                             ? dstStreamBound->getStream()
 	                             : CudaStream::getNullStream();
-	CHECK_CUDA(cudaMemcpyAsync(data, src, srcCount * sizeof(T), cudaMemcpyDefault, copyStream->getHandle()));
+	CHECK_CUDA(cudaMemcpyAsync(this->getRawWritePtr(), src, srcCount * sizeof(T), cudaMemcpyDefault, copyStream->getHandle()));
 	CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
 }
 

@@ -224,60 +224,60 @@ private:
 	std::unordered_map<rgl_field_t, IAnyArray::ConstPtr> results;
 };
 
-//struct SpatialMergePointsNode : IPointsNode
-//{
-//	using Ptr = std::shared_ptr<SpatialMergePointsNode>;
-//	void setParameters(const std::vector<rgl_field_t>& fields);
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override
-//	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
-//
-//	// Point cloud description
-//	bool isDense() const override;
-//	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
-//	std::size_t getWidth() const override { return width; }
-//	std::size_t getHeight() const override { return 1; }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override
-//	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
-//
-//private:
-//	std::vector<IPointsNode::Ptr> pointInputs;
-//	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
-//	std::size_t width = 0;
-//};
-//
-//struct TemporalMergePointsNode : IPointsNodeSingleInput
-//{
-//	using Ptr = std::shared_ptr<YieldPointsNode>;
-//	void setParameters(const std::vector<rgl_field_t>& fields);
-//
-//	// Node
-//	void validateImpl() override;
-//	void enqueueExecImpl() override;
-//
-//	// Node requirements
-//	std::vector<rgl_field_t> getRequiredFieldList() const override
-//	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
-//
-//	// Point cloud description
-//	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
-//	std::size_t getWidth() const override { return width; }
-//
-//	// Data getters
-//	VArray::ConstPtr getFieldData(rgl_field_t field) override
-//	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
-//
-//private:
-//	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
-//	std::size_t width = 0;
-//};
+struct SpatialMergePointsNode : IPointsNode
+{
+	using Ptr = std::shared_ptr<SpatialMergePointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+
+	// Point cloud description
+	bool isDense() const override;
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
+	std::size_t getWidth() const override { return width; }
+	std::size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(mergedData.at(field)); }
+
+private:
+	std::vector<IPointsNode::Ptr> pointInputs;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
+	std::size_t width = 0;
+};
+
+struct TemporalMergePointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<YieldPointsNode>;
+	void setParameters(const std::vector<rgl_field_t>& fields);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+
+	// Point cloud description
+	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
+	std::size_t getWidth() const override { return width; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(mergedData.at(field)); }
+
+private:
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
+	std::size_t width = 0;
+};
 
 struct FromArrayPointsNode : IPointsNode, INoInputNode
 {
