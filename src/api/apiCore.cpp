@@ -742,6 +742,8 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene)
 		}
 
 		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene));
+		// Clear velocity that could be set by rgl_node_raytrace_with_distortion
+		Node::validatePtr<RaytraceNode>(*node)->setVelocity(nullptr, nullptr);
 	});
 	TAPE_HOOK(node, scene);
 	return status;
@@ -754,6 +756,28 @@ void TapePlayer::tape_node_raytrace(const YAML::Node& yamlNode)
 	rgl_node_raytrace(&node,
 		nullptr);  // TODO(msz-rai) support multiple scenes
 	tapeNodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t
+rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity, const rgl_vec3f* angular_velocity)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_with_distortion(node={}, scene={}, linear_velocity={}, angular_velocity={})",
+		            repr(node), (void*) scene, repr(linear_velocity), repr(angular_velocity));
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(linear_velocity != nullptr);
+		CHECK_ARG(angular_velocity != nullptr);
+
+		if (scene == nullptr) {
+			scene = Scene::defaultInstance().get();
+		}
+
+		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene));
+		Node::validatePtr<RaytraceNode>(*node)->setVelocity(reinterpret_cast<const Vec3f*>(linear_velocity),
+		                                                    reinterpret_cast<const Vec3f*>(angular_velocity));
+	});
+	TAPE_HOOK(node, scene);
+	return status;
 }
 
 RGL_API rgl_status_t

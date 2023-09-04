@@ -168,6 +168,7 @@ struct fmt::formatter<Vector<dim, T>>
 using Vec2f = Vector<2, float>;
 using Vec3f = Vector<3, float>;
 using Vec4f = Vector<4, float>;
+using Vec6f = Vector<6, float>;
 
 using Vec2i = Vector<2, int>;
 using Vec3i = Vector<3, int>;

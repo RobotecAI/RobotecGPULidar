@@ -20,15 +20,21 @@
 struct RaytraceRequestContext
 {
 	// Input
+	Vec6f* sensorVelocity;
+
 	const Mat3x4f* rays;
 	size_t rayCount;
 
 	Mat3x4f rayOriginToWorld;
+
 	const Vec2f* rayRanges;
 	size_t rayRangesCount;
 
 	const int* ringIds;
 	size_t ringIdsCount;
+
+	const float* rayTimeOffsets;
+	size_t rayTimeOffsetsCount;
 
 	OptixTraversableHandle scene;
 	double sceneTime;

@@ -43,6 +43,11 @@ void RaytraceNode::validate()
 		auto msg = fmt::format("requested for field TIME_STAMP_F64, but RaytraceNode cannot get time from scene");
 		throw InvalidPipeline(msg);
 	}
+
+	if (sensorVelocity->getCount() != 0 && !raysNode->getTimeOffsets().has_value()) {
+		auto msg = fmt::format("requested for raytrace with velocity distortion, but RaytraceNode cannot get time offsets");
+		throw InvalidPipeline(msg);
+	}
 }
 
 template<rgl_field_t field>
@@ -64,14 +69,21 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	// Optional
 	auto rayRanges = raysNode->getRanges();
 	auto ringIds = raysNode->getRingIds();
+	auto timeOffsets = raysNode->getTimeOffsets();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
+//		.sensorLinearVelocity = sensorLinearVelocity->getCount() == 0 ? nullptr : sensorLinearVelocity->getDevicePtr(),
+//		.sensorAngularVelocity = sensorAngularVelocity->getCount() == 0 ? nullptr : sensorAngularVelocity->getDevicePtr(),
+		.sensorVelocity = sensorVelocity->getCount() == 0 ? nullptr : sensorVelocity->getDevicePtr(),
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
+		.rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
 		.rayRanges = rayRanges.has_value() ? (*rayRanges)->getDevicePtr() : defaultRange->getDevicePtr(),
 		.rayRangesCount = rayRanges.has_value() ? (*rayRanges)->getCount() : defaultRange->getCount(),
 		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
 		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
+		.rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->getDevicePtr() : nullptr,
+		.rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 		.scene = sceneAS,
 		.sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
 		.xyz = getPtrTo<XYZ_F32>(),
@@ -133,4 +145,17 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	dfsRet(shared_from_this(), false);  // Search in outputs
 
 	return outFields;
+}
+
+void RaytraceNode::setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
+{
+	if (linearVelocity == nullptr || angularVelocity == nullptr) {
+		sensorVelocity->resize(0);
+		return;
+	}
+
+	Vec6f velocity = Vec6f((*linearVelocity)[0], (*linearVelocity)[1], (*linearVelocity)[2],
+	                       (*angularVelocity)[0], (*angularVelocity)[1], (*angularVelocity)[2]);
+
+	sensorVelocity->setData(&velocity, 1);
 }

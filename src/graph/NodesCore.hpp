@@ -127,10 +127,14 @@ struct RaytraceNode : Node, IPointsNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
+	// RaytraceNode specific
+	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
+
 private:
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
+	VArrayProxy<Vec6f>::Ptr sensorVelocity = VArrayProxy<Vec6f>::create();  // x, y, z, roll, pitch, yaw
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 
