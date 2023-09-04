@@ -69,7 +69,7 @@ TEST_F(VelocityDistortRaysNodeTest, use_case)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rayCount));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&offsetsNode, timeOffsets.data(), rayCount));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_velocity_distort(&velocityDistortRaysNode, &lidarVelocity, &lidarangularVelocity));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 
 	// Connect nodes into graph without velocity distortion.
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, offsetsNode));
