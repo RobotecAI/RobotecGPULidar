@@ -183,24 +183,6 @@ private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
 };
 
-struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
-{
-	using Ptr = std::shared_ptr<VelocityDistortRaysNode>;
-	void setParameters(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
-
-	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
-
-	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortedRays; }
-
-private:
-	Vec3f sensorLinearVelocity;
-	Vec3f sensorAngularVelocity;
-	VArrayProxy<Mat3x4f>::Ptr distortedRays = VArrayProxy<Mat3x4f>::create();
-};
-
 struct FromMat3x4fRaysNode : Node, IRaysNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
