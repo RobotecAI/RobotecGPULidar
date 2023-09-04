@@ -72,8 +72,6 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto timeOffsets = raysNode->getTimeOffsets();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
-//		.sensorLinearVelocity = sensorLinearVelocity->getCount() == 0 ? nullptr : sensorLinearVelocity->getDevicePtr(),
-//		.sensorAngularVelocity = sensorAngularVelocity->getCount() == 0 ? nullptr : sensorAngularVelocity->getDevicePtr(),
 		.sensorVelocity = sensorVelocity->getCount() == 0 ? nullptr : sensorVelocity->getDevicePtr(),
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
