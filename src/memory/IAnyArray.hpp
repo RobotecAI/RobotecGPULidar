@@ -153,7 +153,7 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 		n += 1;
 		this->reserve(n, true);
 		this->resize(this->getCount() + src->getCount(), false, true);
-		this->insertAt(src, this->getCount());
+		this->insertAt(src, this->getCount() - src->getCount());
 	}
 
 	virtual ~IAnyArray() = default;
