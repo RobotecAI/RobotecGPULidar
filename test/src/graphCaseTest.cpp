@@ -28,20 +28,20 @@ TEST_F(GraphCase, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&shear, &shearTf));
-//
-//#if RGL_BUILD_PCL_EXTENSION
-//	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 0.1f, 0.1f, 0.1f));
-//#endif
-//
+
+#if RGL_BUILD_PCL_EXTENSION
+	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 0.1f, 0.1f, 0.1f));
+#endif
+
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, shear));
-//
-//#if RGL_BUILD_PCL_EXTENSION
-//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(shear, downsample));
-//#endif
-//
+
+#if RGL_BUILD_PCL_EXTENSION
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(shear, downsample));
+#endif
+
 	EXPECT_RGL_SUCCESS(rgl_graph_run(useRays));
 #if RGL_BUILD_PCL_EXTENSION
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(shear, "minimal.pcd"));

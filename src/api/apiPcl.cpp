@@ -79,28 +79,28 @@ void TapePlayer::tape_graph_write_pcd_file(const YAML::Node& yamlNode)
 		yamlNode[1].as<std::string>().c_str());
 }
 
-//RGL_API rgl_status_t
-//rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
-//{
-//	auto status = rglSafeCall([&]() {
-//		RGL_API_LOG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
-//
-//		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
-//	});
-//	TAPE_HOOK(node, leaf_size_x, leaf_size_y, leaf_size_z);
-//	return status;
-//}
-//
-//void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode)
-//{
-//	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-//	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-//	rgl_node_points_downsample(&node,
-//		yamlNode[1].as<float>(),
-//		yamlNode[2].as<float>(),
-//		yamlNode[3].as<float>());
-//	tapeNodes.insert({nodeId, node});
-//}
+RGL_API rgl_status_t
+rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_downsample(node={}, leaf=({}, {}, {}))", repr(node), leaf_size_x, leaf_size_y, leaf_size_z);
+
+		createOrUpdateNode<DownSamplePointsNode>(node, Vec3f{leaf_size_x, leaf_size_y, leaf_size_z});
+	});
+	TAPE_HOOK(node, leaf_size_x, leaf_size_y, leaf_size_z);
+	return status;
+}
+
+void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_points_downsample(&node,
+		yamlNode[1].as<float>(),
+		yamlNode[2].as<float>(),
+		yamlNode[3].as<float>());
+	tapeNodes.insert({nodeId, node});
+}
 
 RGL_API rgl_status_t
 rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width, int32_t window_height, bool fullscreen)
