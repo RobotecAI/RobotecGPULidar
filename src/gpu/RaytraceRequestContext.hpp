@@ -20,7 +20,9 @@
 struct RaytraceRequestContext
 {
 	// Input
-	Vec6f* sensorVelocity;
+	Vec3f sensorLinearVelocityXYZ;
+	Vec3f sensorAngularVelocityRPY;
+	bool doApplyDistortion;
 
 	const Mat3x4f* rays;
 	size_t rayCount;

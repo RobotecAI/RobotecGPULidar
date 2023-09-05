@@ -44,7 +44,7 @@ void RaytraceNode::validate()
 		throw InvalidPipeline(msg);
 	}
 
-	if (sensorVelocity->getCount() != 0 && !raysNode->getTimeOffsets().has_value()) {
+	if (doApplyDistortion && !raysNode->getTimeOffsets().has_value()) {
 		auto msg = fmt::format("requested for raytrace with velocity distortion, but RaytraceNode cannot get time offsets");
 		throw InvalidPipeline(msg);
 	}
@@ -72,7 +72,9 @@ void RaytraceNode::schedule(cudaStream_t stream)
 	auto timeOffsets = raysNode->getTimeOffsets();
 
 	(*requestCtx)[0] = RaytraceRequestContext{
-		.sensorVelocity = sensorVelocity->getCount() == 0 ? nullptr : sensorVelocity->getDevicePtr(),
+		.sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
+		.sensorAngularVelocityRPY = sensorAngularVelocityRPY,
+		.doApplyDistortion = doApplyDistortion,
 		.rays = rays->getDevicePtr(),
 		.rayCount = rays->getCount(),
 		.rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
@@ -147,13 +149,12 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 
 void RaytraceNode::setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
 {
-	if (linearVelocity == nullptr || angularVelocity == nullptr) {
-		sensorVelocity->resize(0);
+	doApplyDistortion = linearVelocity == nullptr || angularVelocity == nullptr;
+
+	if (!doApplyDistortion) {
 		return;
 	}
 
-	Vec6f velocity = Vec6f((*linearVelocity)[0], (*linearVelocity)[1], (*linearVelocity)[2],
-	                       (*angularVelocity)[0], (*angularVelocity)[1], (*angularVelocity)[2]);
-
-	sensorVelocity->setData(&velocity, 1);
+	sensorLinearVelocityXYZ = *linearVelocity;
+	sensorAngularVelocityRPY = *angularVelocity;
 }

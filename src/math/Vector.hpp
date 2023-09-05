@@ -30,8 +30,8 @@ struct Vector
 	// static_assert(dim >= 2); // TODO: Is dim == 1 OK?
 	// *** *** *** CONSTRUCTORS *** *** *** //
 
-	// Zero constructor
-	HostDevFn Vector() : Vector(static_cast<T>(0)) {}
+	// Default constructor
+	Vector() = default;
 
 	// Uniform constructor
 	HostDevFn Vector(T scalar) {
@@ -168,7 +168,6 @@ struct fmt::formatter<Vector<dim, T>>
 using Vec2f = Vector<2, float>;
 using Vec3f = Vector<3, float>;
 using Vec4f = Vector<4, float>;
-using Vec6f = Vector<6, float>;
 
 using Vec2i = Vector<2, int>;
 using Vec3i = Vector<3, int>;

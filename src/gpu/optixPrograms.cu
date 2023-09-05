@@ -55,12 +55,6 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 	};
 }
 
-__forceinline__ __device__
-bool shouldDistort()
-{
-	return ctx.rayTimeOffsets != nullptr && ctx.sensorVelocity != nullptr;
-}
-
 template<bool isFinite>
 __forceinline__ __device__
 void saveRayResult(const Vec3f* xyz=nullptr, float distance=NON_HIT_VALUE, float intensity=0, const int objectID=RGL_ENTITY_INVALID_ID)
@@ -103,16 +97,14 @@ extern "C" __global__ void __raygen__()
 	const int rayIdx = optixGetLaunchIndex().x;
 	Mat3x4f ray = ctx.rays[rayIdx];
 
-	if (shouldDistort()) {
+	if (ctx.doApplyDistortion) {
 		static const float toDeg = (180.0f / M_PI);
-		Vec3f linearVelocity((*ctx.sensorVelocity)[0], (*ctx.sensorVelocity)[1], (*ctx.sensorVelocity)[2]);
-		Vec3f angularVelocity((*ctx.sensorVelocity)[3], (*ctx.sensorVelocity)[4], (*ctx.sensorVelocity)[5]);
 		// Velocities are in the local frame. Need to transform rays.
 		ray = ctx.rayOriginToWorld.inverse() * ray;
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
-		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * linearVelocity) * 0.001f,
-		                   (ctx.rayTimeOffsets[rayIdx] * (angularVelocity * toDeg)) * 0.001f)
+		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
+		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f)
 		      * ray;
 		// Back to the global frame.
 		ray = ctx.rayOriginToWorld * ray;
@@ -170,7 +162,7 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	// Fix XYZ if distortion is applied (XYZ must be calculated in sensor coordinate frame)
-	if (shouldDistort()) {
+	if (ctx.doApplyDistortion) {
 		const int rayIdx = optixGetLaunchIndex().x;
 		Mat3x4f undistortedRay = ctx.rays[rayIdx];
 		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};

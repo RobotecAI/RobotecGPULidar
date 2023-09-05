@@ -134,7 +134,9 @@ private:
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
-	VArrayProxy<Vec6f>::Ptr sensorVelocity = VArrayProxy<Vec6f>::create();  // x, y, z, roll, pitch, yaw
+	bool doApplyDistortion{false};
+	Vec3f sensorLinearVelocityXYZ;
+	Vec3f sensorAngularVelocityRPY;
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 
