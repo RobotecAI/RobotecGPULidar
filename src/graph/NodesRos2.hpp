@@ -42,7 +42,7 @@ struct Ros2PublishPointsNode : IPointsNodeSingleInput
 	~Ros2PublishPointsNode();
 
 private:
-	VArray::Ptr inputFmtData = VArray::create<char>();
+	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
 
 	std::string topicName{};
 	std::string frameId{};
