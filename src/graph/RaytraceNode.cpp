@@ -149,7 +149,7 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 
 void RaytraceNode::setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
 {
-	doApplyDistortion = linearVelocity == nullptr || angularVelocity == nullptr;
+	doApplyDistortion = linearVelocity != nullptr && angularVelocity != nullptr;
 
 	if (!doApplyDistortion) {
 		return;
