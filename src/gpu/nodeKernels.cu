@@ -43,15 +43,6 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	outRays[tid] = transform * inRays[tid];
 }
 
-__global__ void kVelocityDistortRays(size_t rayCount, const Mat3x4f* inRays, const float* offsets, size_t offsetsCount, const Vec3f sensorLinearVelocity, const Vec3f sensorAngularVelocity, Mat3x4f* outRays)
-{
-	LIMIT(rayCount);
-	// In order to not loose numerical precision, we scale the velocity to meters/radians per millisecond.
-        // Also we transform radians to degrees.
-        float toDeg = (180.0f / M_PI);
-	outRays[tid] = Mat3x4f::TRS(offsets[tid] * (sensorLinearVelocity * 0.001f), offsets[tid] * (sensorAngularVelocity * 0.001f * toDeg), Vec3f(1.0f, 1.0f, 1.0f)) * inRays[tid];
-}
-
 __global__ void kTransformPoints(size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
 {
 	LIMIT(pointCount);
@@ -101,9 +92,6 @@ void gpuFormatAosToSoa(cudaStream_t stream, size_t pointCount, size_t pointSize,
 
 void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform)
 { run(kTransformRays, stream, rayCount, inRays, outRays, transform); };
-
-void gpuVelocityDistortRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRays, const float* offsets, size_t offsetsCount, const Vec3f sensorLinearVelocity, const Vec3f sensorAngularVelocity, Mat3x4f* outRays)
-{ run(kVelocityDistortRays, stream, rayCount, inRays, offsets, offsetsCount, sensorLinearVelocity, sensorAngularVelocity, outRays); }
 
 void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite, const CompactionIndexType *writeIndex, char *dst, const char *src)
 { run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src); }

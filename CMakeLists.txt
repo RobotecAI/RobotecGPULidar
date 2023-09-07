@@ -103,7 +103,6 @@ add_library(RobotecGPULidar SHARED
     src/graph/RaytraceNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
-    src/graph/VelocityDistortRaysNode.cpp
     src/graph/FromArrayPointsNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
     src/graph/SetRangeRaysNode.cpp

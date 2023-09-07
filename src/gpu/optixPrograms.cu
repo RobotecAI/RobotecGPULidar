@@ -97,6 +97,19 @@ extern "C" __global__ void __raygen__()
 	const int rayIdx = optixGetLaunchIndex().x;
 	Mat3x4f ray = ctx.rays[rayIdx];
 
+	if (ctx.doApplyDistortion) {
+		static const float toDeg = (180.0f / M_PI);
+		// Velocities are in the local frame. Need to transform rays.
+		ray = ctx.rayOriginToWorld.inverse() * ray;
+		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
+		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
+		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
+		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f)
+		      * ray;
+		// Back to the global frame.
+		ray = ctx.rayOriginToWorld * ray;
+	}
+
 	Vec3f origin = ray * Vec3f{0, 0, 0};
 	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
 	float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[rayIdx].y();
@@ -148,9 +161,17 @@ extern "C" __global__ void __closesthit__()
 		return;
 	}
 
+	// Fix XYZ if distortion is applied (XYZ must be calculated in sensor coordinate frame)
+	if (ctx.doApplyDistortion) {
+		const int rayIdx = optixGetLaunchIndex().x;
+		Mat3x4f undistortedRay = ctx.rays[rayIdx];
+		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
+		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
+		hitWorld = undistortedOrigin + undistortedDir * distance;
+	}
+
 	float intensity = 0;
-	if (sbtData.texture_coords != nullptr && sbtData.texture != 0)
-	{
+	if (sbtData.texture_coords != nullptr && sbtData.texture != 0) {
 		assert(index.x() < sbtData.texture_coords_count);
 		assert(index.y() < sbtData.texture_coords_count);
 		assert(index.z() < sbtData.texture_coords_count);

@@ -127,10 +127,16 @@ struct RaytraceNode : Node, IPointsNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
+	// RaytraceNode specific
+	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
+
 private:
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
+	bool doApplyDistortion{false};
+	Vec3f sensorLinearVelocityXYZ;
+	Vec3f sensorAngularVelocityRPY;
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 
@@ -181,24 +187,6 @@ struct TransformRaysNode : Node, IRaysNodeSingleInput
 private:
 	Mat3x4f transform;
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
-};
-
-struct VelocityDistortRaysNode : Node, IRaysNodeSingleInput
-{
-	using Ptr = std::shared_ptr<VelocityDistortRaysNode>;
-	void setParameters(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
-
-	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
-
-	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return distortedRays; }
-
-private:
-	Vec3f sensorLinearVelocity;
-	Vec3f sensorAngularVelocity;
-	VArrayProxy<Mat3x4f>::Ptr distortedRays = VArrayProxy<Mat3x4f>::create();
 };
 
 struct FromMat3x4fRaysNode : Node, IRaysNode
