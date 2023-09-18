@@ -166,12 +166,12 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angle
 
     float maxAngle = atan(CUBE_HALF_EDGE / (cubeZDistance - CUBE_HALF_EDGE));
 
-    // Generate angle and print the seed
+    // Generate angle and print the seed for reproducibility
     std::random_device rd;
     auto seed = rd();
     std::mt19937 gen(seed);
     std::uniform_real_distribution<> dis(-maxAngle, maxAngle);
-    std::cerr << "DistanceFieldTest various_angle seed: " << seed << std::endl;
+    fmt::print(stderr, "DistanceFieldTest random seed: {}\n", seed);
 
     std::vector<float> expectedDistances;
 
