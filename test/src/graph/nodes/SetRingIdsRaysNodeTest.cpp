@@ -1,23 +1,26 @@
 #include <utils.hpp>
-#include <RingIdsTestHelper.hpp>
-#include <RaysTestHelper.hpp>
 
 class SetRingIdsNodeTest : public RGLTestWithParam<int> {
 protected:
-    rgl_node_t setRingIdsNode{}, rayNode{};
+    rgl_node_t setRingIdsNode, rayNode;
     std::vector<int> ringIds;
     std::vector<rgl_mat3x4f> rays;
 
     void initializeRingNodeAndIds(int idsCount)
     {
         setRingIdsNode = nullptr;
-        ringIds = RGLRingIdsTestHelper::GenerateRingIds(idsCount);
+        std::vector<int> ids(idsCount);
+        std::iota(ids.begin(), ids.end(), 0);
+        ringIds = ids;
     }
 
     void initializeRaysAndRaysNode(int rayCount)
     {
         rayNode = nullptr;
-        rays = RGLRaysTestHelper::GenerateRays(rayCount);
+        rays.reserve(rayCount);
+        for (int i = 0; i < rayCount; i++) {
+            rays.emplace_back(Mat3x4f::translation((float)i, (float)i+1, (float)i+2).toRGL());
+        }
     }
 };
 
