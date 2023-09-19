@@ -10,4 +10,5 @@ if ((NOT WIN32))
 
     add_executable(tapePlayer tapePlayer.cpp)
     target_link_libraries(tapePlayer RobotecGPULidar spdlog)
+    target_include_directories(tapePlayer PRIVATE ${CMAKE_SOURCE_DIR}/src)
 endif()

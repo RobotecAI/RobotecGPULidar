@@ -165,22 +165,32 @@ public:
 
 struct TapePlayer
 {
+	using APICallIdx = int32_t;
 	explicit TapePlayer(const char* path);
 
-	std::optional<YAML::iterator> getFirstOf(std::set<std::string_view> fnNames);
+	std::optional<APICallIdx> findFirst(std::set<std::string_view> fnNames);
+	std::optional<APICallIdx> findLast(std::set<std::string_view> fnNames);
+	std::vector<APICallIdx> findAll(std::set<std::string_view> fnNames);
 
-	void playNext();
-	void playUntil(std::optional<YAML::iterator> breakpoint= std::nullopt);
-	void rewindTo(YAML::iterator nextCall);
+	void playThis(APICallIdx idx);
+	void playThrough(APICallIdx last);
+	void playUntil(std::optional<APICallIdx> breakpoint=std::nullopt);
 
-	rgl_node_t getNode(TapeAPIObjectID key) { return tapeNodes.at(key); }
+	void rewindTo(APICallIdx nextCall=0);
+
+	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return tapeNodes.at(key); }
+
+	template<typename T>
+	T getCallArg(APICallIdx idx, int arg) {
+		return yamlRecording[idx][arg].as<T>();
+	}
 
 	~TapePlayer();
 
 private:
 	YAML::Node yamlRoot{};
 	YAML::Node yamlRecording{};
-	YAML::iterator nextCall{};
+	APICallIdx nextCall{};
 	uint8_t* fileMmap{};
 	size_t mmapSize{};
 
@@ -193,7 +203,6 @@ private:
 
 private:
 	void mmapInit(const char* path);
-	void playUnchecked(YAML::iterator);
 
 	void tape_get_version_info(const YAML::Node& yamlNode);
 	void tape_get_extension_info(const YAML::Node& yamlNode);
