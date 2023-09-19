@@ -67,6 +67,7 @@ void SpatialMergePointsNode::enqueueExecImpl()
 
 	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {
+		data->resize(0, false, false);
 		for (const auto& input : pointInputs) {
 			const auto toMergeData = input->getFieldData(field);
 			data->appendFrom(toMergeData);

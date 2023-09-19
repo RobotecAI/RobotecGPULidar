@@ -562,7 +562,10 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
-
+		if (!pointCloudNode->hasField(field)) {
+			auto msg = fmt::format("node {} does not provide field {}",pointCloudNode->getName(), toString(field));
+			throw InvalidPipeline(msg);
+		}
 		auto fieldArray = pointCloudNode->getFieldData(field);
 		const void* src = fieldArray->getRawReadPtr();
 		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();

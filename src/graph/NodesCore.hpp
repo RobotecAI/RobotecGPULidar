@@ -44,7 +44,7 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Point cloud description
-	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
+	bool hasField(rgl_field_t field) const override { return field == RGL_FIELD_DYNAMIC_FORMAT || std::find(fields.begin(), fields.end(), field) != fields.end(); }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;

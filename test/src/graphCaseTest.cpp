@@ -324,21 +324,21 @@ TEST_F(GraphCase, FormatNodeResults)
 		EXPECT_EQ(formatDataEx[i].timestamp, timestamp.asSeconds());
 	}
 }
-//
-///**
-// * Temporal merging can lead to exceptionally high memory consumption.
-// * In majority of cases CPU memory is much larger than GPU memory,
-// * therefore TemporalMergeNode should use by default CPU memory.
-// *
-// * This test uses CUDA API to get current total memory usage of the GPU,
-// * which makes this test inevitably prone to random fluctuations.
-// *
-// * In the future this might fixed by wrapping all CUDA allocations and exposing API to internally track memory usage.
-// *
-// * In RGL API we could give user control over which memory is used by this node.
-// * However, this raises question, why not allow it for all nodes, which
-// * summons another jungle of complexity, which I'd prefer to avoid until it is really necessary.
-// */
+
+/**
+ * Temporal merging can lead to exceptionally high memory consumption.
+ * In majority of cases CPU memory is much larger than GPU memory,
+ * therefore TemporalMergeNode should use by default CPU memory.
+ *
+ * This test uses CUDA API to get current total memory usage of the GPU,
+ * which makes this test inevitably prone to random fluctuations.
+ *
+ * In the future this might fixed by wrapping all CUDA allocations and exposing API to internally track memory usage.
+ *
+ * In RGL API we could give user control over which memory is used by this node.
+ * However, this raises question, why not allow it for all nodes, which
+ * summons another jungle of complexity, which I'd prefer to avoid until it is really necessary.
+ */
 TEST_F(GraphCase, TemporalMergeUsesHostMemory)
 {
 	const int32_t STEPS = 4;

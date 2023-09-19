@@ -16,6 +16,11 @@ template<typename T>
 void Array<T>::copyFromExternal(const T *src, size_t srcCount) {
 	this->resize(srcCount, false, false);
 
+	if (isHost(this->getMemoryKind())) {
+		memcpy(this->data, src, srcCount * sizeof(T));
+		return;
+	}
+
 	auto dstStreamBound = std::dynamic_pointer_cast<IStreamBound>(shared_from_this());
 	CudaStream::Ptr copyStream = dstStreamBound != nullptr
 	                             ? dstStreamBound->getStream()
