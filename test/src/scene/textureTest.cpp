@@ -9,7 +9,7 @@
 
 constexpr unsigned short UsMaxValue = 255;
 
-struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>>, public RGLPointTestHelper{};
+struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>>{};
 
 INSTANTIATE_TEST_SUITE_P(
 		Parametrized, TextureTest,
