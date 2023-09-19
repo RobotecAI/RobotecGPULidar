@@ -19,6 +19,8 @@
 #include "macros/checkRGL.hpp"
 
 constexpr std::string_view INTERCEPTED_NODE_CALL = "rgl_node_points_compact";
+
+// Do not modify, code does not handle > 1 FIELD_COUNT (!)
 constexpr size_t FIELDS_COUNT = 1;
 constexpr rgl_field_t FIELDS[FIELDS_COUNT] = {RGL_FIELD_XYZ_F32 };
 
@@ -108,6 +110,8 @@ int main(int argc, char** argv) try
 	for (auto&& [node, executed] : runnableNodeState) {
 		executed = false;
 	}
+
+	// TODO: this will not work if LiDARS have different capture rate.
 	for (auto&& run : graphRuns) {
 		// Run till next run call
 		auto runNodeArg = player.getCallArg<TapeAPIObjectID>(run, 0);
