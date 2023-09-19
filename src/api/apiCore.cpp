@@ -535,8 +535,15 @@ void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
 		&out_count,
 		&out_size_of);
 
-	if (out_count != yamlNode[2].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_count mismatch");
-	if (out_size_of != yamlNode[3].as<int32_t>()) RGL_WARN("tape_graph_get_result_size: out_size_of mismatch");
+	auto tape_count = yamlNode[2].as<int32_t>();
+	auto tape_size_of = yamlNode[3].as<int32_t>();
+	// These warnings may be caused e.g. by gaussian noise (different seed -> different hits)
+	if (out_count != tape_count) {
+		RGL_WARN("tape_graph_get_result_size: actual count ({}) differs from tape count ({})", out_count, tape_count);
+	}
+	if (out_size_of != tape_size_of) {
+		RGL_WARN("tape_graph_get_result_size: actual sizeof ({}) differs from tape sizeof ({})", out_size_of, tape_size_of);
+	}
 }
 
 RGL_API rgl_status_t
