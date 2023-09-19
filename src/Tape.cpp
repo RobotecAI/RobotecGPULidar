@@ -124,45 +124,66 @@ TapePlayer::TapePlayer(const char* path)
 		throw RecordError("recording version does not match rgl version");
 	}
 
-	nextCall = yamlRecording.begin();
+	nextCall = 0;
 }
 
-std::optional<YAML::iterator> TapePlayer::getFirstOf(std::set<std::string_view> fnNames)
+std::optional<TapePlayer::APICallIdx> TapePlayer::findFirst(std::set<std::string_view> fnNames)
 {
-	for (YAML::iterator it = yamlRecording.begin(); it != yamlRecording.end(); ++it) {
-		const YAML::Node& node = *it;
-		bool found = fnNames.contains(node["name"].as<std::string>());
-		if (found) {
-			return {it};
+	for (APICallIdx idx = 0; idx < yamlRecording.size(); ++idx) {
+		if (fnNames.contains(yamlRecording[idx]["name"].as<std::string>())) {
+			return idx;
 		}
 	}
 	return std::nullopt;
 }
 
-void TapePlayer::playUntil(std::optional<YAML::iterator> breakpoint)
+std::optional<TapePlayer::APICallIdx> TapePlayer::findLast(std::set<std::string_view> fnNames)
 {
-	auto end = breakpoint.value_or(yamlRecording.end());
-	for (; nextCall != end; ++nextCall) {
-		playUnchecked(nextCall);
+	for (APICallIdx idx = 0; idx < yamlRecording.size(); ++idx) {
+		auto rIdx = yamlRecording.size() - 1 - idx;
+		if (fnNames.contains(yamlRecording[rIdx]["name"].as<std::string>())) {
+			return rIdx;
+		}
+	}
+	return std::nullopt;
+}
+
+std::vector<TapePlayer::APICallIdx> TapePlayer::findAll(std::set<std::string_view> fnNames)
+{
+	std::vector<APICallIdx> result;
+	for (APICallIdx idx = 0; idx < yamlRecording.size(); ++idx) {
+		if (fnNames.contains((yamlRecording[idx]["name"].as<std::string>()))) {
+			result.push_back(idx);
+		}
+	}
+	return result;
+}
+
+void TapePlayer::playThrough(APICallIdx last) {
+	assert(last < yamlRecording.size());
+	for (; nextCall <= last ; ++nextCall) {
+		playThis(nextCall);
 	}
 }
 
-void TapePlayer::playNext()
+void TapePlayer::playUntil(std::optional<APICallIdx> breakpoint)
 {
-	if (nextCall == yamlRecording.end()) {
-		return;
+	assert(!breakpoint.has_value() || nextCall < breakpoint.value());
+	auto end = breakpoint.value_or(yamlRecording.size());
+	assert(end <= yamlRecording.size());
+	for (; nextCall < end ; ++nextCall) {
+		playThis(nextCall);
 	}
-	playUnchecked(nextCall++);
 }
 
-void TapePlayer::rewindTo(YAML::iterator nextCall)
+void TapePlayer::rewindTo(APICallIdx nextCall)
 {
 	this->nextCall = nextCall;
 }
 
-void TapePlayer::playUnchecked(YAML::iterator call)
+void TapePlayer::playThis(APICallIdx idx)
 {
-	const YAML::Node& node = *call;
+	const YAML::Node& node = yamlRecording[idx];
 	std::string functionName = node["name"].as<std::string>();
 
 	if (!tapeFunctions.contains(functionName)) {
