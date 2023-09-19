@@ -17,8 +17,6 @@
 #include <RGLFields.hpp>
 #include <repr.hpp>
 
-// TODO: WritePCD triggers cudaSynchronizeStream in its indirect input CompactNode
-// TODO: This can be alleviated with a stream-aware VArray :)
 
 void CompactPointsNode::enqueueExecImpl()
 {
@@ -27,10 +25,24 @@ void CompactPointsNode::enqueueExecImpl()
 	size_t pointCount = input->getWidth() * input->getHeight();
 	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getWritePtr(), &width);
+
+	// getFieldData may be called in client's thread from rgl_graph_get_result_data
+	// Doing job there would be:
+	// - unexpected (job was supposed to be done asynchronously)
+	// - hard to implement:
+	//     - to avoid blocking on yet-running graph stream, we would need do it in copy stream, which would require
+	//       temporary rebinding DAAs to copy stream, which seems like nightmarish idea
+	// Therefore, once we know what fields are requested, we compute them eagerly
+	// This is supposed to be removed in some future refactor (e.g. when introducing LayeredSoA)
+	for (auto&& field : cacheManager.getKeys()) {
+		getFieldData(field);
+	}
 }
 
 IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 {
+	std::lock_guard lock {getFieldDataMutex};
+
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
 		cacheManager.insert(field, fieldData, true);

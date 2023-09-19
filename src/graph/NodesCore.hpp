@@ -86,6 +86,7 @@ private:
 	size_t width = {0};
 	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
 	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+	std::mutex getFieldDataMutex;
 };
 
 struct RaytraceNode : IPointsNode

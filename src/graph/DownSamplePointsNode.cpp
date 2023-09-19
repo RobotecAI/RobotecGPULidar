@@ -79,6 +79,18 @@ void DownSamplePointsNode::enqueueExecImpl()
 	auto&& dst = (char*) filteredIndices->getReadPtr();
 	auto&& src = (const char*) filteredPoints->getReadPtr();
 	gpuCutField(getStreamHandle(), filtered->size(), dst, src, offset, stride, size);
+
+	// getFieldData may be called in client's thread from rgl_graph_get_result_data
+	// Doing job there would be:
+	// - unexpected (job was supposed to be done asynchronously)
+	// - hard to implement:
+	//     - to avoid blocking on yet-running graph stream, we would need do it in copy stream, which would require
+	//       temporary rebinding DAAs to copy stream, which seems like nightmarish idea
+	// Therefore, once we know what fields are requested, we compute them eagerly
+	// This is supposed to be removed in some future refactor (e.g. when introducing LayeredSoA)
+	for (auto&& field : cacheManager.getKeys()) {
+		getFieldData(field);
+	}
 }
 
 size_t DownSamplePointsNode::getWidth() const
@@ -89,6 +101,8 @@ size_t DownSamplePointsNode::getWidth() const
 
 IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 {
+	std::lock_guard lock {getFieldDataMutex};
+
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
 		fieldData->resize(filteredIndices->getCount(), false, false);
