@@ -15,6 +15,7 @@
 #pragma once
 
 #include <macros/cuda.hpp>
+#include <macros/handleDestructorException.hpp>
 #include <Logger.hpp>
 
 // RAII object to (de)initialize cudaStream_t
@@ -43,19 +44,15 @@ struct CudaStream
 
 	cudaStream_t getHandle() { return stream; }
 
-	~CudaStream()
+	~CudaStream() try
 	{
 		if (stream != nullptr) {
-			try {
-				CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
-				CHECK_CUDA(cudaStreamDestroy(stream));
-				stream = nullptr;
-			}
-			catch(std::runtime_error& e) {
-				RGL_ERROR("Error in ~CudaStream: {}", e.what());
-			}
+			CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
+			CHECK_CUDA(cudaStreamDestroy(stream));
+			stream = nullptr;
 		}
 	}
+	HANDLE_DESTRUCTOR_EXCEPTION
 
 private:
 	// Wraps null stream

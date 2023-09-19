@@ -23,10 +23,8 @@
 #include <CudaStream.hpp>
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
-#include <VArray.hpp>
 #include <rgl/api/core.h>
-#include <graph/Node.hpp>
-#include "StreamBoundObjectsManager.hpp"
+#include <StreamBoundObjectsManager.hpp>
 
 struct GraphRunCtx;
 
@@ -143,7 +141,7 @@ protected: // Member methods
 	 * This is required to query node for results.
 	 * If error happened in the graph thread, this function will re-throw it.
 	 */
-	void synchronizeThis();
+	void synchronizeThis() const;
 
 	cudaStream_t getStreamHandle();
 

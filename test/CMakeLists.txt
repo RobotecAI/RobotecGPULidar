@@ -25,7 +25,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/SpatialMergePointsNodeTest.cpp
     src/graph/nodes/TemporalMergePointsNodeTest.cpp
     src/graph/addChildTest.cpp
-        src/memory/arrayTypingTest.cpp
+    src/memory/arrayTypingTest.cpp
     src/memory/arrayChangeStreamTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/testKernel.cu
@@ -36,7 +36,6 @@ set(RGL_TEST_FILES
 if ((NOT WIN32))
     list(APPEND RGL_TEST_FILES
         src/loggingTests.cpp
-        src/VArrayTest.cpp
     )
 endif()
 

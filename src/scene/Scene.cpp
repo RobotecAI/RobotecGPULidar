@@ -15,8 +15,7 @@
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
 #include <scene/Texture.hpp>
-#include <memory/DeviceSyncArray.hpp>
-#include <memory/HostPinnedArray.hpp>
+#include <memory/Array.hpp>
 
 API_OBJECT_INSTANCE(Scene);
 
@@ -56,16 +55,18 @@ void Scene::requestFullRebuild()
 	requestSBTRebuild();
 }
 
-OptixTraversableHandle Scene::getAS()
+OptixTraversableHandle Scene::getASLocked()
 {
+	std::lock_guard optixStructsLock(optixStructsMutex);
 	if (!cachedAS.has_value()) {
 		cachedAS = buildAS();
 	}
 	return *cachedAS;
 }
 
-OptixShaderBindingTable Scene::getSBT()
+OptixShaderBindingTable Scene::getSBTLocked()
 {
+	std::lock_guard optixStructsLock(optixStructsMutex);
 	if (!cachedSBT.has_value()) {
 		cachedSBT = buildSBT();
 	}
@@ -104,11 +105,11 @@ OptixShaderBindingTable Scene::buildSBT()
 
 	RaygenRecord hRaygenRecord = {};
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().raygenPG, &hRaygenRecord));
-	dRaygenRecords->copyFromHost(&hRaygenRecord, 1);
+	dRaygenRecords->copyFromExternal(&hRaygenRecord, 1);
 
 	MissRecord hMissRecord = {};
 	CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().missPG, &hMissRecord));
-	dMissRecords->copyFromHost(&hMissRecord, 1);
+	dMissRecords->copyFromExternal(&hMissRecord, 1);
 
 	return OptixShaderBindingTable{
 		.raygenRecord = dRaygenRecords->getDeviceReadPtr(),
@@ -163,7 +164,7 @@ OptixTraversableHandle Scene::buildAS()
 
 	OptixTraversableHandle sceneHandle;
 	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            stream->getHandle(),
+	                            getStream()->getHandle(),
 	                            &accelBuildOptions,
 	                            &instanceInput,
 	                            1,
@@ -176,7 +177,7 @@ OptixTraversableHandle Scene::buildAS()
 	                            1
 	));
 
-	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
+	CHECK_CUDA(cudaStreamSynchronize(getStream()->getHandle()));
 
 	// scratchpad.doCompaction(sceneHandle);
 

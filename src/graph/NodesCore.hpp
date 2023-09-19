@@ -30,22 +30,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
-#include <VArray.hpp>
-#include <VArrayProxy.hpp>
 
-/**
- * Notes for maintainers:
- *
- * Some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
- * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
- * while buffers sizes are not reliable, since they can be resized in enqueueExecImpl().
- *
- * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
- * operations prior to the return are finished.
- */
-
-// TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
-// TODO(prybicki): This would implement automatic getExactlyOneInputOfType() and method forwarding.
 
 struct FormatPointsNode : IPointsNodeSingleInput
 {
@@ -59,23 +44,22 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Point cloud description
-	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
+	bool hasField(rgl_field_t field) const override { return field == RGL_FIELD_DYNAMIC_FORMAT || std::find(fields.begin(), fields.end(), field) != fields.end(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 	std::size_t getFieldPointSize(rgl_field_t field) const override;
 
 	// Actual implementation of formatting made public for other nodes
-	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
-	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream,
-	                        GPUFieldDescBuilder& gpuFieldDescBuilder);
+	static void formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
+	                        const std::vector<rgl_field_t>& fields, GPUFieldDescBuilder& gpuFieldDescBuilder);
 
 private:
 	static std::vector<std::pair<rgl_field_t, const void*>> getFieldToPointerMappings(const IPointsNode::Ptr& input,
 	                                                                                  const std::vector<rgl_field_t>& fields);
 
 	std::vector<rgl_field_t> fields;
-	VArray::Ptr output = VArray::create<char>();
+	DeviceAsyncArray<char>::Ptr output = DeviceAsyncArray<char>::create(arrayMgr);
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
@@ -83,9 +67,6 @@ struct CompactPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<CompactPointsNode>;
 	void setParameters() {}
-
-	CompactPointsNode()	{ CHECK_CUDA(cudaEventCreate(&finishedEvent, cudaEventDisableTiming)); }
-	virtual ~CompactPointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
 
 	// Node
 	void enqueueExecImpl() override;
@@ -99,13 +80,12 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	size_t width = {0};
-	cudaEvent_t finishedEvent = nullptr;
-	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
-	CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
+	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 };
 
 struct RaytraceNode : IPointsNode
@@ -126,15 +106,17 @@ struct RaytraceNode : IPointsNode
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(fieldData.at(field)); }
 
 private:
 	float range;
-	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
-	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
-	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+	std::shared_ptr<Scene> scene;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
+	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
+	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(
+			arrayMgr);
 
 	template<rgl_field_t>
 	auto getPtrTo();
@@ -159,11 +141,11 @@ struct TransformPointsNode : IPointsNodeSingleInput
 	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	Mat3x4f transform;
-	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr output = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 };
 
 struct TransformRaysNode : IRaysNodeSingleInput
@@ -175,12 +157,12 @@ struct TransformRaysNode : IRaysNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	Array<Mat3x4f>::ConstPtr getRays() const override { return transformedRays; }
 	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
 
 private:
 	Mat3x4f transform;
-	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+	DeviceAsyncArray<Mat3x4f>::Ptr transformedRays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
 struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
@@ -196,11 +178,11 @@ struct FromMat3x4fRaysNode : virtual IRaysNode, virtual INoInputNode
 	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
 
 	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	std::optional<Array<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
-	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
 struct SetRingIdsRaysNode : IRaysNodeSingleInput
@@ -216,10 +198,10 @@ struct SetRingIdsRaysNode : IRaysNodeSingleInput
 	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
 
 	// Data getters
-	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
+	std::optional<Array<int>::ConstPtr> getRingIds() const override { return ringIds; }
 
 private:
-	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
+	DeviceAsyncArray<int>::Ptr ringIds = DeviceAsyncArray<int>::create(arrayMgr);
 };
 
 struct YieldPointsNode : IPointsNodeSingleInput
@@ -234,12 +216,12 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{ return results.at(field); }
 
 private:
 	std::vector<rgl_field_t> fields;
-	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
+	std::unordered_map<rgl_field_t, IAnyArray::ConstPtr> results;
 };
 
 struct SpatialMergePointsNode : IPointsNode
@@ -262,12 +244,12 @@ struct SpatialMergePointsNode : IPointsNode
 	std::size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(mergedData.at(field)); }
 
 private:
 	std::vector<IPointsNode::Ptr> pointInputs;
-	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
 	std::size_t width = 0;
 };
 
@@ -289,11 +271,11 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 	std::size_t getWidth() const override { return width; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(mergedData.at(field)); }
 
 private:
-	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
 	std::size_t width = 0;
 };
 
@@ -312,14 +294,14 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{ return std::const_pointer_cast<const IAnyArray>(fieldData.at(field)); }
 
 private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 	std::vector<std::pair<rgl_field_t, void*>> getFieldToPointerMappings(const std::vector<rgl_field_t>& fields);
 
-	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
 	size_t width = 0;
 };
 
@@ -334,7 +316,7 @@ struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 
 private:
 	float mean;
@@ -343,8 +325,8 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
 struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
@@ -361,7 +343,7 @@ struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	float mean;
@@ -370,9 +352,9 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
-	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
 struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
@@ -389,7 +371,7 @@ struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	float mean;
@@ -398,7 +380,7 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
-	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };

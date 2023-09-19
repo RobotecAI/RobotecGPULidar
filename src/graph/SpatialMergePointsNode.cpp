@@ -26,7 +26,7 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
-			mergedData.insert({field, VArray::create(field)});
+			mergedData.insert({field, createArray<DeviceAsyncArray>(field, arrayMgr)});
 		}
 	}
 }
@@ -67,13 +67,10 @@ void SpatialMergePointsNode::enqueueExecImpl()
 
 	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {
-		data->resize(width, false, false);
-		size_t offset = 0;
+		data->resize(0, false, false);
 		for (const auto& input : pointInputs) {
-			size_t pointCount = input->getPointCount();
 			const auto toMergeData = input->getFieldData(field);
-			data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, offset);
-			offset += pointCount;
+			data->appendFrom(toMergeData);
 		}
 	}
 }

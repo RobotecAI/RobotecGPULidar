@@ -156,7 +156,7 @@ void GraphRunCtx::synchronize()
 	maybeThread.reset();
 }
 
-void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
+void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 {
 	if (!maybeThread.has_value()) {
 		return; // Already synchronized or never run.
@@ -168,7 +168,8 @@ void GraphRunCtx::synchronizeNodeCPU(Node::Ptr nodeToSynchronize)
 		;
 	// Rethrow exception, if any
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
-		// Do not clear exception ptr yet, it could give false image that the Node is OK.
+		// Avoid double throw
+		executionStatus.at(nodeToSynchronize).exceptionPtr = nullptr;
 		std::rethrow_exception(ex);
 	}
 }

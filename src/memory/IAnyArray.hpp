@@ -17,8 +17,13 @@
 #include <memory>
 #include <typeindex>
 
+#include <memory/MemoryKind.hpp>
 #include <memory/InvalidArrayCast.hpp>
+#include <IStreamBound.hpp>
 #include <typingUtils.hpp>
+
+template<typename T>
+struct Array;
 
 /**
  * Dynamically typed handle for Array<M, T> and its subclasses.
@@ -31,37 +36,48 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	/**
 	 * Method to convert from statically typed array to dynamically typed array.
 	 */
-	IAnyArray::Ptr asAnyArray() { return IAnyArray::shared_from_this(); }
+	IAnyArray::Ptr asAny() { return IAnyArray::shared_from_this(); }
 
 	/** Const overload */
-	IAnyArray::ConstPtr asAnyArray() const { return IAnyArray::shared_from_this(); }
+	IAnyArray::ConstPtr asAny() const { return IAnyArray::shared_from_this(); }
 
 	/**
 	 * Method to convert from dynamically typed array to statically typed array.
 	 * https://en.cppreference.com/w/cpp/language/template_parameters
 	 */
-	template<typename T, template<typename> typename Subclass>
-	Subclass<T>::Ptr asTypedArray()
+	template<typename T>
+	Array<T>::Ptr asTyped()
 	{
-		static_assert(std::is_base_of<IAnyArray, Subclass<T>>::value);
-		if (auto ptr = std::dynamic_pointer_cast<Subclass<T>>(this->shared_from_this())) {
+		if (auto ptr = std::dynamic_pointer_cast<Array<T>>(this->shared_from_this())) {
 			return ptr;
 		}
-		auto msg = fmt::format("InvalidArrayCast: {} -> {}", this->getTypeName(), name(typeid(T)));
-		throw InvalidArrayCast(msg);
+		THROW_INVALID_ARRAY_CAST(Array<T>);
 	}
 
-	// Const overload
-	template<typename T, template<typename> typename Subclass>
-	Subclass<T>::ConstPtr asTypedArray() const
+	/** Const overload */
+	template<typename T>
+	Array<T>::ConstPtr asTyped() const
 	{
-		static_assert(std::is_base_of<IAnyArray, Subclass<T>>::value);
-		if (auto ptr = std::dynamic_pointer_cast<const Subclass<T>>(this->shared_from_this())) {
+		if (auto ptr = std::dynamic_pointer_cast<const Array<T>>(this->shared_from_this())) {
 			return ptr;
 		}
-		auto msg = fmt::format("InvalidArrayCast: {} -> {}", this->getTypeName(), name(typeid(T)));
-		throw InvalidArrayCast(msg);
+		THROW_INVALID_ARRAY_CAST(Array<T>);
 	}
+
+	/**
+	 * @return Pointer to raw readable data. Use as a last resort and provide reasoning.
+	 */
+	virtual const void* getRawReadPtr() const = 0;
+
+	/**
+	 * @return Pointer to raw writable data. Use as a last resort and provide reasoning.
+	 */
+	virtual void* getRawWritePtr() = 0;
+
+	/**
+	 * @return MemoryKind determining actual subclass.
+	 */
+	virtual MemoryKind getMemoryKind() const = 0;
 
 	/**
 	 * @return Number of elements already in the array.
@@ -72,11 +88,6 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	 * @return Number of elements that array can fit before reallocation.
 	 */
 	virtual std::size_t getCapacity() const = 0;
-
-	/**
-	 * @return Type name of the contained element.
-	 */
-	virtual std::string getTypeName() const = 0;
 
 	/**
 	 * @return Size in bytes of each array element.
@@ -105,5 +116,81 @@ struct IAnyArray : public std::enable_shared_from_this<IAnyArray>
 	 */
 	virtual void clear(bool zero) = 0;
 
+	/**
+	 * Replaces current data with data from src.
+	 */
+	void copyFrom(IAnyArray::ConstPtr src)
+	{
+		if (shared_from_this() == src) {
+			throw std::runtime_error("attempted to copy Array from itself");
+		}
+		if (this->typeIndex != src->typeIndex) {
+			throw std::runtime_error("attempted to copy from Array with different data type");
+		}
+		this->resize(src->getCount(), false, false);
+		this->insertAt(src, 0);
+	}
+	/**
+	 * Appends data from src to current data.
+	 */
+	void appendFrom(IAnyArray::ConstPtr src)
+	{
+		if (shared_from_this() == src) {
+			throw std::runtime_error("attempted to append Array from itself");
+		}
+		if (this->typeIndex != src->typeIndex) {
+			throw std::runtime_error("attempted to append from Arrays with different data type");
+		}
+		std::size_t n = this->getCount() + src->getCount();
+		// Find next power of 2
+		n -= 1;
+		n |= n >> 1;
+		n |= n >> 2;
+		n |= n >> 4;
+		n |= n >> 8;
+		n |= n >> 16;
+		n |= n >> 32;
+		n += 1;
+		this->reserve(n, true);
+		this->resize(this->getCount() + src->getCount(), false, true);
+		this->insertAt(src, this->getCount() - src->getCount());
+	}
+
 	virtual ~IAnyArray() = default;
+
+protected:
+	IAnyArray(std::type_index typeIndex) : typeIndex(typeIndex) {}
+
+private:
+	void insertAt(IAnyArray::ConstPtr src, std::size_t skipCount)
+	{
+		size_t offset = skipCount * src->getSizeOf();
+		size_t byteCount = src->getCount() * src->getSizeOf();
+		void* writePtr = reinterpret_cast<char*>(this->getRawWritePtr()) + offset;
+
+		// Both operands are on host - either pageable or pinned.
+		// Standard memcpy is faster + avoids the overhead of cudaMemcpy*
+		if (isHost(this->getMemoryKind()) && isHost(src->getMemoryKind())) {
+			memcpy(writePtr, src->getRawReadPtr(), byteCount);
+			return;
+		}
+
+		// Ensure src is ready (one day, it can be optimized to some waiting on some cudaEvent, not entire stream)
+		auto srcStreamBound = std::dynamic_pointer_cast<const IStreamBound>(src);
+		if (srcStreamBound != nullptr) {
+			CHECK_CUDA(cudaStreamSynchronize(srcStreamBound->getStream()->getHandle()));
+		}
+
+		// Using null stream is hurting performance, but extra safe.
+		// TODO: remove null stream usage once DeviceSyncArray is removed
+		auto dstStreamBound = std::dynamic_pointer_cast<IStreamBound>(shared_from_this());
+		CudaStream::Ptr copyStream = dstStreamBound != nullptr
+		                             ? dstStreamBound->getStream()
+		                             : srcStreamBound != nullptr ? srcStreamBound->getStream()
+		                                                         : CudaStream::getNullStream();
+		CHECK_CUDA(cudaMemcpyAsync(writePtr, src->getRawReadPtr(), byteCount, cudaMemcpyDefault, copyStream->getHandle()));
+		CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
+	}
+
+	std::type_index typeIndex;
 };

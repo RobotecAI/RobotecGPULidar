@@ -14,16 +14,6 @@
 
 #pragma once
 
-#include <cuda.h>
-
-#include <typingUtils.hpp>
-#include <CudaStream.hpp>
-
-#include <memory/Array.hpp>
-#include <memory/MemoryKind.hpp>
-#include <memory/InvalidArrayCast.hpp>
-#include <memory/HostPageableArray.hpp>
-
 /**
  * DeviceArray extends Array with some convenience methods useful for dealing with device memory.
  * @tparam T See base class
@@ -40,8 +30,11 @@ struct DeviceArray : public Array<T>
 	using Array<T>::count;
 	using Array<T>::capacity;
 
+	T* getWritePtr() { return data; }
+	const T* getReadPtr() const { return data; }
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
+
 protected:
 	using Array<T>::Array;
 };

@@ -41,7 +41,9 @@ void RaytraceNode::validateImpl()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fieldData.contains(field)
+	     ? fieldData.at(field)->asTyped<typename Field<field>::type>()->template asSubclass<DeviceAsyncArray>()->getWritePtr()
+	     : nullptr;
 }
 
 void RaytraceNode::enqueueExecImpl()
@@ -51,19 +53,21 @@ void RaytraceNode::enqueueExecImpl()
 	}
 
 	// Even though we are in graph thread here, we can access Scene class (see comment there)
-	auto rays = raysNode->getRays();
-	auto sceneAS = scene->getAS();
-	auto sceneSBT = scene->getSBT();
-	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
+	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto sceneAS = scene->getASLocked();
+	auto sceneSBT = scene->getSBTLocked();
+	dim3 launchDims = {static_cast<unsigned int>(raysNode->getRayCount()), 1, 1};
 
 	// Optional
 	auto ringIds = raysNode->getRingIds();
 
-	(*requestCtx)[0] = RaytraceRequestContext{
-		.rays = rays->getDevicePtr(),
-		.rayCount = rays->getCount(),
+	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
+	requestCtxHst->resize(1, true, false);
+	requestCtxHst->at(0) = RaytraceRequestContext{
+		.rays = raysPtr,
+		.rayCount = raysNode->getRayCount(),
 		.rayRange = range,
-		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
+		.ringIds = ringIds.has_value() ? (*ringIds)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
 		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 		.scene = sceneAS,
 		.sceneTime = scene->getTime()->asSeconds(),
@@ -77,10 +81,11 @@ void RaytraceNode::enqueueExecImpl()
 		.entityId = getPtrTo<ENTITY_ID_I32>(),
 	};
 
-	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
-	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
+	requestCtxDev->copyFrom(requestCtxHst);
+	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
+	std::size_t pipelineArgsSize = requestCtxDev->getSizeOf() * requestCtxDev->getCount();
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
-	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
@@ -96,7 +101,7 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 		fieldData.erase(field);
 	}
 	for (auto&& field : toInsert) {
-		fieldData.insert({field, VArray::create(field)});
+		fieldData.insert({field, createArray<DeviceAsyncArray>(field, arrayMgr) });
 	}
 }
 

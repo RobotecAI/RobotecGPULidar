@@ -26,10 +26,7 @@ void TemporalMergePointsNode::setParameters(const std::vector<rgl_field_t>& fiel
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
-			mergedData.insert({field, VArray::create(field)});
-
-			// Make VArray reside on MemLoc::Host
-			mergedData.at(field)->getWritePtr(MemLoc::Host);
+			mergedData.insert({field, createArray<HostPageableArray>(field)});
 		}
 	}
 }
@@ -51,9 +48,7 @@ void TemporalMergePointsNode::enqueueExecImpl()
 	for (const auto& [field, data] : mergedData) {
 		size_t pointCount = input->getPointCount();
 		const auto toMergeData = input->getFieldData(field);
-		data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, width);
-		// Double capacity of VArray if is close to run out. It prevents reallocating memory every insertion.
-		data->doubleCapacityIfRunningOut();
+		data->appendFrom(toMergeData);
 	}
 	width += input->getWidth();
 }

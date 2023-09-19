@@ -16,10 +16,10 @@
 
 #include <rgl/api/core.h>
 #include <math/Mat3x4f.hpp>
-#include <VArray.hpp>
-#include <VArrayProxy.hpp>
 #include <RGLFields.hpp>
 #include <gpu/GPUFieldDesc.hpp>
+
+#include <memory/Array.hpp>
 
 struct IRaysNode : virtual Node
 {
@@ -27,11 +27,11 @@ struct IRaysNode : virtual Node
 
 	// Rays
 	virtual std::size_t getRayCount() const = 0;
-	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const = 0;
+	virtual Array<Mat3x4f>::ConstPtr getRays() const = 0;
 
 	// Ring Ids (client-specific data)
 	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
-	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const = 0;
+	virtual std::optional<Array<int>::ConstPtr> getRingIds() const = 0;
 
 	// Returns global transform in world coordinate system
 	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
@@ -48,8 +48,8 @@ struct IRaysNodeSingleInput : virtual IRaysNode
 	virtual std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 
 	// Data getters
-	virtual VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
-	virtual std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
+	virtual Array<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
+	virtual std::optional<Array<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
 	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:
@@ -73,13 +73,12 @@ struct IPointsNode : virtual Node
 	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
 
 	// Data getters
-	virtual VArray::ConstPtr getFieldData(rgl_field_t field) = 0;
+	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) = 0;
 	virtual std::size_t getFieldPointSize(rgl_field_t field) const { return getFieldSize(field); }
 
 	template<rgl_field_t field>
-	typename VArrayProxy<typename Field<field>::type>::ConstPtr
-	getFieldDataTyped()
-	{ return getFieldData(field)->template getTypedProxy<typename Field<field>::type>(); }
+	typename Array<typename Field<field>::type>::ConstPtr getFieldDataTyped()
+	{ return getFieldData(field)->template asTyped<typename Field<field>::type>(); }
 };
 
 struct IPointsNodeSingleInput : virtual IPointsNode
@@ -106,7 +105,7 @@ struct IPointsNodeSingleInput : virtual IPointsNode
 
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
-	virtual VArray::ConstPtr getFieldData(rgl_field_t field) override
+	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{ return input->getFieldData(field); }
 
 protected:

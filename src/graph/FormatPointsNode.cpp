@@ -27,22 +27,24 @@ void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 
 void FormatPointsNode::enqueueExecImpl()
 {
-	formatAsync(output, input, fields, getStreamHandle(), gpuFieldDescBuilder);
+	formatAsync(output, input, fields, gpuFieldDescBuilder);
 }
 
-void FormatPointsNode::formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
-                                   const std::vector<rgl_field_t>& fields, cudaStream_t stream,
-                                   GPUFieldDescBuilder& gpuFieldDescBuilder)
+void FormatPointsNode::formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
+                                   const std::vector<rgl_field_t>& fields, GPUFieldDescBuilder& gpuFieldDescBuilder)
 {
+	// Prepare output array
 	std::size_t pointSize = getPointSize(fields);
 	std::size_t pointCount = input->getPointCount();
 	output->resize(pointCount * pointSize, false, false);
-	auto gpuFields = gpuFieldDescBuilder.buildReadable(getFieldToPointerMappings(input, fields));
-	char* outputPtr = static_cast<char*>(output->getWritePtr(MemLoc::Device));
-	gpuFormatSoaToAos(stream, pointCount, pointSize, fields.size(), gpuFields->getReadPtr(), outputPtr);
+
+	// Kernel Call
+	const GPUFieldDesc* gpuFieldsPtr = gpuFieldDescBuilder.buildReadableAsync(output->getStream(), getFieldToPointerMappings(input, fields)).getReadPtr();
+	char* outputPtr = output->getWritePtr();
+	gpuFormatSoaToAos(output->getStream()->getHandle(), pointCount, pointSize, fields.size(), gpuFieldsPtr, outputPtr);
 }
 
-VArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field)
+IAnyArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
 		return output;
@@ -63,7 +65,21 @@ std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::getFieldToPoi
 {
 	std::vector<std::pair<rgl_field_t, const void*>> outFieldsData;
 	for (auto&& field : fields) {
-		outFieldsData.push_back({field, isDummy(field) ? nullptr : input->getFieldData(field)->getReadPtr(MemLoc::Device)});
+		// We want to ensure that memory kind is something accessible from GPU (i.e. not pageable),
+		// however, we cannot go the regular route (do a type-cast to Array<T>),
+		// and then find out real memory kind (further down-cast to concrete Array),
+		// because we do not know the type in compile time - all we have is rgl_field_t.
+		// Furthermore, all we need here is a void*, because gpuFormat* knows what to do.
+		// Therefore, we need to use IAnyArray::getRawReadPtr().
+		outFieldsData.push_back({field, nullptr});
+		if (!isDummy(field)) {
+			IAnyArray::ConstPtr fieldArray = input->getFieldData(field);
+			if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
+				auto msg = fmt::format("FormatPointsNode: all input fields must be device-accessible, {} is not", toString(field));
+				throw InvalidPipeline(msg);
+			}
+			outFieldsData.rbegin()->second = fieldArray->getRawReadPtr();
+		}
 	}
 	return outFieldsData;
 }

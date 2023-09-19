@@ -540,26 +540,39 @@ void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
-rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data)
+rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*)data);
+		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*) dst);
 		CHECK_ARG(node != nullptr);
-		CHECK_ARG(data != nullptr);
+		CHECK_ARG(dst != nullptr);
 
+		// This part is a bit tricky:
+		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.
+		// All its DAAs are bound to that stream. The stream may be busy with processing other nodes.
+		// We want to copy data without waiting until the aforementioned stream is synchronized.
+		// Therefore, we want to invoke the copy from the source DAA in a separate stream - copy stream.
+		// Take note, that since the source DAA is bound to a stream,
+		// it could be unsafe to issue operations in a different stream.
+		// E.g. If DAA was resized (data pointer already changed its value), but the reallocation didn't yet happen.
+		// However, with the current architecture, we can reasonably expect that no DAA is modified by other Node than its owner.
+		// Therefore, it should be sufficient to wait only for the stream operations issued by the given node (and, obviously, all previous).
+		// After that, all pending operations on the source DAA are done, and it is safe to use it in the copy stream.
+
+		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
-		VArray::ConstPtr output = pointCloudNode->getFieldData(field);
-
-		// TODO: Ensure that copying to pageable memory does not wait
-		CHECK_CUDA(cudaMemcpyAsync(data,
-		                           output->getReadPtr(MemLoc::Device),
-		                           output->getElemCount() * output->getElemSize(),
-		                           cudaMemcpyDefault,
-		                           CudaStream::getCopyStream()->getHandle()));
+		if (!pointCloudNode->hasField(field)) {
+			auto msg = fmt::format("node {} does not provide field {}",pointCloudNode->getName(), toString(field));
+			throw InvalidPipeline(msg);
+		}
+		auto fieldArray = pointCloudNode->getFieldData(field);
+		const void* src = fieldArray->getRawReadPtr();
+		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
+		CHECK_CUDA(cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
 		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
 	});
-	TAPE_HOOK(node, field, data);
+	TAPE_HOOK(node, field, dst);
 	return status;
 }
 
@@ -618,8 +631,8 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ra
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_rays_from_mat3x4f(node={}, rays={})", repr(node), repr(rays, ray_count));
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(rays != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(rays != nullptr);
 		CHECK_ARG(ray_count > 0);
 		createOrUpdateNode<FromMat3x4fRaysNode>(node, reinterpret_cast<const Mat3x4f*>(rays), (size_t)ray_count);
 	});
@@ -860,8 +873,8 @@ rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_from_array(node={}, points=[{},{}], fields={})", repr(node), (void*)points, points_count, repr(fields, field_count));
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(points != nullptr);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(points != nullptr);
 		CHECK_ARG(points_count > 0);
 		CHECK_ARG(fields != nullptr);
 		CHECK_ARG(field_count > 0);
@@ -890,8 +903,8 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_gaussian_noise_angular_ray(node={}, mean={}, stDev={}, rotation_axis={})", repr(node), mean, st_dev, rotation_axis);
-                CHECK_ARG(node != nullptr);
-                CHECK_ARG(st_dev >= 0);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(st_dev >= 0);
 		CHECK_ARG((rotation_axis == RGL_AXIS_X) || (rotation_axis == RGL_AXIS_Y) || (rotation_axis == RGL_AXIS_Z));
 
 		createOrUpdateNode<GaussianNoiseAngularRaysNode>(node, mean, st_dev, rotation_axis);

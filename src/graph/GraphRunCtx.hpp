@@ -58,7 +58,7 @@ struct GraphRunCtx
 	 * Waits until given node finishes its CPU execution.
 	 * The node may still have pending GPU operations.
 	 */
-	void synchronizeNodeCPU(Node::Ptr nodeToSynchronize);
+	void synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize);
 
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
@@ -91,6 +91,8 @@ private: // Communication between client's thread and graph thread
 		std::exception_ptr exceptionPtr {nullptr};
 	};
 
-	std::unordered_map<Node::Ptr, NodeExecStatus> executionStatus;
+	std::unordered_map<Node::ConstPtr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
+
+	friend void handleDestructorException(std::exception_ptr e, const char* what);
 };

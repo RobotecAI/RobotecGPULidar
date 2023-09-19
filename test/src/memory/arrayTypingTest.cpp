@@ -2,10 +2,7 @@
 #include <gmock/gmock-matchers.h>
 
 #include <memory/InvalidArrayCast.hpp>
-#include <memory/HostPageableArray.hpp>
-#include <memory/HostPinnedArray.hpp>
-#include <memory/DeviceAsyncArray.hpp>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 using namespace ::testing;
 
@@ -62,30 +59,43 @@ protected:
 };
 TYPED_TEST_SUITE(ArrayTyping, CastingCombinations);
 
+// Array creation helper, because DeviceAsyncArray does not have ::create() with no arguments like other kinds.
+template<typename T, template<typename> typename Subclass>
+Subclass<T>::Ptr createArray()
+{
+	if constexpr (std::is_same<Subclass<T>, DeviceAsyncArray<T>>::value) {
+		return DeviceAsyncArray<T>::create(CudaStream::getNullStream());
+	}
+	else {
+		return Subclass<T>::create();
+	}
+};
+
 TYPED_TEST(ArrayTyping, Typing) {
 	// Here, you can use Type, WrongType, RealSubclass, and WrongSubclass as if they were type aliases
 	// For example:
 	using SubclassType = typename TypeParam::template Subclass<typename TypeParam::Data>;
-	typename SubclassType::Ptr arrayOriginal = SubclassType::create();
-	IAnyArray::Ptr arrayAny = arrayOriginal->asAnyArray();
+	typename SubclassType::Ptr arrayOriginal = createArray<typename TypeParam::Data, TypeParam::template Subclass>();
+
+	IAnyArray::Ptr arrayAny = arrayOriginal->asAny();
 	arrayAny->resize(1, true, false);
 
 	{
 		// Attempt casting to a wrong Array data type, should throw
 		// Lambda because comma in explicit template parameter list fools GTEST macros
-		auto cast = [&]() { arrayOriginal->template asTypedArray<typename TypeParam::WrongData, TypeParam::template Subclass>(); };
+		auto cast = [&]() { arrayOriginal->template asTyped<typename TypeParam::WrongData>(); };
 		EXPECT_THROW(cast(), InvalidArrayCast);
 	}
 
 	{
 		// Attempt casting to a wrong Array subclass, should throw
 		// Lambda because comma in explicit template parameter list fools GTEST macros
-		auto cast = [&]() { arrayOriginal->template asTypedArray<typename TypeParam::Data, TypeParam::template WrongSubclass>(); };
+		auto cast = [&]() { arrayOriginal->template asTyped<typename TypeParam::Data>()->template asSubclass<TypeParam::template WrongSubclass>(); };
 		EXPECT_THROW(cast(), InvalidArrayCast);
 	}
 	// Continue your tests as usual
 
-	typename SubclassType::ConstPtr arrayOfTypeRecovered = arrayAny->asTypedArray<typename TypeParam::Data, TypeParam::template Subclass>();
+	typename SubclassType::ConstPtr arrayOfTypeRecovered = arrayAny->asTyped<typename TypeParam::Data>()->template asSubclass<TypeParam::template Subclass>();
 	EXPECT_THAT(arrayOfTypeRecovered, NotNull());
 	EXPECT_THAT(arrayOfTypeRecovered, Eq(arrayOriginal));
 	EXPECT_EQ(arrayOfTypeRecovered->getCount(), 1);

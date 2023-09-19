@@ -29,9 +29,6 @@ struct DownSamplePointsNode : IPointsNodeSingleInput
 	using Ptr = std::shared_ptr<DownSamplePointsNode>;
 	void setParameters(Vec3f leafDims) { this->leafDims = leafDims; }
 
-	DownSamplePointsNode() { CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming)); }
-	virtual ~DownSamplePointsNode() { CHECK_CUDA_NO_THROW(cudaEventDestroy(finishedEvent)); }
-
 	// Node
 	void validateImpl() override;
 	void enqueueExecImpl() override;
@@ -45,17 +42,15 @@ struct DownSamplePointsNode : IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field) override;
-
-
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	Vec3f leafDims;
-	VArray::Ptr inputFmtData = VArray::create<char>();
-	cudaEvent_t finishedEvent = nullptr;
-	VArrayProxy<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = VArrayProxy<Field<RAY_IDX_U32>::type>::create();
-	VArray::Ptr filteredPoints = VArray::create<pcl::PointXYZL>();
-	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	DeviceAsyncArray<char>::Ptr formattedInput = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(arrayMgr);
+	DeviceAsyncArray<pcl::PointXYZL>::Ptr filteredPoints = DeviceAsyncArray<pcl::PointXYZL>::create(arrayMgr);
+	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
@@ -77,7 +72,8 @@ struct VisualizePointsNode : IPointsNodeSingleInput
 	virtual ~VisualizePointsNode();
 
 private:
-	VArray::Ptr inputFmtData = VArray::create<char>();
+	DeviceAsyncArray<char>::Ptr formattedInputDev = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
 
 	PCLVisualizerFix::Ptr viewer;
 	std::thread visThread;

@@ -20,7 +20,7 @@ API_OBJECT_INSTANCE(Node);
 
 Node::Node()
 {
-    execCompleted = CudaEvent::create();
+	execCompleted = CudaEvent::create();
 }
 
 void Node::addChild(Node::Ptr child)
@@ -155,7 +155,7 @@ std::set<Node::Ptr> Node::disconnectConnectedNodes()
 	return nodes;
 }
 
-void Node::synchronizeThis()
+void Node::synchronizeThis() const
 {
 	if (!hasGraphRunCtx()) {
 		return; // Nothing to synchronize ¯\_(ツ)_/¯

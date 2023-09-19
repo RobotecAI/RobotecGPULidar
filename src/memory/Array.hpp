@@ -20,9 +20,9 @@
 #include <typingUtils.hpp>
 #include <CudaStream.hpp>
 
+#include <memory/IAnyArray.hpp>
 #include <memory/InvalidArrayCast.hpp>
 #include <memory/MemoryOperations.hpp>
-#include <memory/IAnyArray.hpp>
 
 /**
  * Base class implementing resizable Array.
@@ -37,89 +37,50 @@ struct Array : public IAnyArray
 	using ConstPtr = std::shared_ptr<const Array<T>>;
 	using DataType = T;
 
-protected:
-	// Array should not be instanced directly. Use concrete subclasses.
-	Array(MemoryOperations memOps) : memOps(std::move(memOps)) {}
-
-public:
-	virtual ~Array()
-	{
-		if (data != nullptr) {
-			memOps.deallocate(data);
-			data = reinterpret_cast<T*>(0x0000DEAD);
-		}
-	}
-
+	virtual ~Array();
 	Array(const Array<T>&) = delete;
 	Array(Array<T>&&) = delete;
 	Array<T>& operator=(const Array<T>&) = delete;
 	Array<T>& operator=(Array<T>&&) = delete;
 
-public:
-	T* getWritePtr() { return data; }
-	const T* getReadPtr() const { return data; }
+	/**
+	 * Attempts casting into a subclass.
+	 */
+	template<template <typename> typename Subclass>
+	Subclass<T>::Ptr asSubclass();
+
+	/** Const overload **/
+	template<template <typename> typename Subclass>
+	Subclass<T>::ConstPtr asSubclass() const;
+
+	const void* getRawReadPtr() const override { return data; }
+	void* getRawWritePtr() override { return data; }
 	unsigned long getCount() const override { return count; }
 	unsigned long getSizeOf() const override { return sizeof(T); }
 	unsigned long getCapacity() const override { return capacity; }
-	std::string getTypeName() const override { return name(typeid(T)); }
 
-	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override
-	{
-		// Ensure capacity
-		reserve(newCount, preserveData);
+	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override;
+	void reserve(unsigned long newCapacity, bool preserveData) override;
+	void clear(bool zero) override;
 
-		// Clear expanded part
-		if (newCount >= count && zeroInit) {
-			memOps.clear(data + count, 0, sizeof(T) * (newCount - count));
-		}
-
-		count = newCount;
-	}
-
-	void reserve(unsigned long newCapacity, bool preserveData) override
-	{
-		if (newCapacity == 0) {
-			throw std::invalid_argument("requested to reserve 0 elements");
-		}
-
-		if (!preserveData) {
-			count = 0;
-		}
-
-		if(capacity >= newCapacity) {
-			return;
-		}
-
-		T* newMem = reinterpret_cast<T*>(memOps.allocate(sizeof(T) * newCapacity));
-
-		if (preserveData && data != nullptr) {
-			memOps.copy(newMem, data, sizeof(T) * count);
-		}
-
-		if (data != nullptr) {
-			memOps.deallocate(data);
-		}
-
-		data = newMem;
-		capacity = newCapacity;
-	}
-
-	void clear(bool zero) override
-	{
-		if (data == nullptr) {
-			return;
-		}
-
-		if (zero) {
-			memOps.clear(data, 0, sizeof(T) * count);
-		}
-
-		count = 0;
-	}
+	void copyFromExternal(const T *src, size_t srcCount);
 
 protected:
 	unsigned long count = {0 };
 	unsigned long capacity = {0 };
 	DataType* data = { nullptr };
 	MemoryOperations memOps;
+
+protected:
+	// Array should not be instanced directly. Use concrete subclasses.
+	Array(MemoryOperations memOps) : IAnyArray(typeid(T)), memOps(std::move(memOps)) {}
 };
+
+// Order matters
+#include <memory/HostArray.inl>
+#include <memory/HostPinnedArray.inl>
+#include <memory/HostPageableArray.inl>
+#include <memory/DeviceArray.inl>
+#include <memory/DeviceSyncArray.inl>
+#include <memory/DeviceAsyncArray.inl>
+#include <memory/ArrayImpl.inl>

@@ -21,35 +21,36 @@
 #include <gpu/GPUFieldDesc.hpp>
 #include <graph/Interfaces.hpp>
 #include <graph/NodesCore.hpp>
-#include <memory/HostPageableArray.hpp>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 // Builder for GPUFieldDesc. Separated struct to avoid polluting gpu-visible header (gpu/GPUFieldDesc.hpp).
 struct GPUFieldDescBuilder
 {
-	// TODO: This class has a hidden bug. If hostBuffer was not zeroed on each build,
+	// TODO: This class has (had?) a hidden bug. If hostBuffer was not zeroed on each build,
 	// TODO: fillSizeAndOffset would leave trash in some GPUFieldDesc causing cudaIllegalMemoryAccess
 	// TODO: Also, this class is over-engineered; likely due to using GPUFieldDesc for both directions of formatting
 	// TODO: This should be fixed by splitting GPUFieldDesc into two separate structs and merging fill* methods.
 
-	DeviceSyncArray<GPUFieldDesc>::Ptr buildReadable(const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
+	const DeviceAsyncArray<GPUFieldDesc>& buildReadableAsync(CudaStream::Ptr stream, const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
 	{
 		hostBuffer->clear(false);
 		hostBuffer->resize(fieldsData.size(), true, false);
 		fillSizeAndOffset(getFields(fieldsData));
 		fillPointers(fieldsData);
+		deviceBuffer->setStream(stream);
 		deviceBuffer->copyFrom(hostBuffer);
-		return deviceBuffer;
+		return *deviceBuffer;
 	}
 
-	DeviceSyncArray<GPUFieldDesc>::Ptr buildWritable(const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
+	const DeviceAsyncArray<GPUFieldDesc>& buildWritableAsync(CudaStream::Ptr stream, const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
 	{
 		hostBuffer->clear(false);
 		hostBuffer->resize(fieldsData.size(), true, false);
 		fillSizeAndOffset(getFields(fieldsData));
 		fillPointers(fieldsData);
+		deviceBuffer->setStream(stream);
 		deviceBuffer->copyFrom(hostBuffer);
-		return deviceBuffer;
+		return *deviceBuffer;
 	}
 
 private:
@@ -100,6 +101,6 @@ private:
 	}
 
 private:
-	HostPageableArray<GPUFieldDesc>::Ptr hostBuffer = HostPageableArray<GPUFieldDesc>::create();
-	DeviceSyncArray<GPUFieldDesc>::Ptr deviceBuffer = DeviceSyncArray<GPUFieldDesc>::create();
+	HostPinnedArray<GPUFieldDesc>::Ptr hostBuffer = HostPinnedArray<GPUFieldDesc>::create();
+	DeviceAsyncArray<GPUFieldDesc>::Ptr deviceBuffer = DeviceAsyncArray<GPUFieldDesc>::create(CudaStream::getNullStream());
 };

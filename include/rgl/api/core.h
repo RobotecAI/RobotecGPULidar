@@ -482,7 +482,6 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
 RGL_API rgl_status_t
 rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
-// Applies affine transformation, e.g., to change the coordinate frame.
 /**
  * Creates or modifies TransformPointsNode.
  * The Node applies the affine transformation to all points.

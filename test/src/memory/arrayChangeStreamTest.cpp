@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock-matchers.h>
 
-#include <memory/HostPinnedArray.hpp>
+#include <memory/Array.hpp>
 #include <StreamBoundObjectsManager.hpp>
 #include <CudaEvent.hpp>
 
@@ -79,9 +79,9 @@ TEST_F(ArrayChangeStream, WithManager)
 	arrayMgr.setStream(streamA);
 
 	// Create arrays through managers
-	auto arrayA = DeviceAsyncArray<int>::createWithManager(arrayMgr);
-	auto arrayB = DeviceAsyncArray<float>::createWithManager(arrayMgr);
-	auto arrayC = DeviceAsyncArray<float>::createWithManager(arrayMgr);
+	auto arrayA = DeviceAsyncArray<int>::create(arrayMgr);
+	auto arrayB = DeviceAsyncArray<float>::create(arrayMgr);
+	auto arrayC = DeviceAsyncArray<float>::create(arrayMgr);
 
 	// Calling setStream twice with the same stream should have no effect
 	arrayMgr.setStream(streamA);
@@ -91,7 +91,7 @@ TEST_F(ArrayChangeStream, WithManager)
 	arrayB->copyFrom(nonZeroFloatPattern);
 	arrayC->copyFrom(nonZeroFloatPattern);
 
-	// Remove one of the arrays, arrayMgr should not touch it afterwards
+	// Remove one of the arrays, arrayMgr should not touch it afterward
 	arrayC.reset();
 
 	// Block streamA. This way, scheduled operations will be not executed.

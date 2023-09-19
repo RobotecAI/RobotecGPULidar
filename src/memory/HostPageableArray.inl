@@ -14,20 +14,17 @@
 
 #pragma once
 
-#include <memory/HostArray.hpp>
-#include <memory/MemoryKind.hpp>
-
 template <typename T>
 struct HostPageableArray : public HostArray<T>
 {
 	using Ptr = std::shared_ptr<HostPageableArray<T>>;
 	using ConstPtr = std::shared_ptr<const HostPageableArray<T>>;
 
+	MemoryKind getMemoryKind() const override { return MemoryKind::HostPageable; }
+
 	static HostPageableArray<T>::Ptr create()
 	{
-		return HostPageableArray<T>::Ptr {
-			new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>())
-		};
+		return HostPageableArray<T>::Ptr { new HostPageableArray(MemoryOperations::get<MemoryKind::HostPageable>()) };
 	}
 
 protected:

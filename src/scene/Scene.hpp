@@ -15,6 +15,7 @@
 #pragma once
 
 #include <set>
+#include <mutex>
 #include <string>
 #include <optional>
 #include <unordered_map>
@@ -23,7 +24,7 @@
 
 #include <Time.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
-#include <memory/DeviceSyncArray.hpp>
+#include <memory/Array.hpp>
 
 struct Entity;
 
@@ -37,9 +38,10 @@ struct Entity;
  * This class may be accessed from different threads:
  * - client's thread doing API calls, modifying scene
  * - graph execution threads, requesting AS and SBT from RaytraceNode
- * To avoid the overhead of locking a mutex in every method,
- * we decide to move synchronization to scene-related API calls,
- * which will synchronize all running Graphs before accessing Scene.
+ * As of now, Scene is not thread-safe, i.e. it is meant to be accessed only from the client's thread.
+ * Calls that modify the scene waits until all current graph threads finish (done in API calls).
+ * The only case when graph thread accesses scene is getAS() and getSBT(), which are locked.
+ *
  */
 struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 {
@@ -57,8 +59,9 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 	std::size_t getObjectCount();
 
 	CudaStream::Ptr getStream();
-	OptixTraversableHandle getAS();
-	OptixShaderBindingTable getSBT();
+
+	OptixTraversableHandle getASLocked();
+	OptixShaderBindingTable getSBTLocked();
 
 	void requestFullRebuild();
 	void requestASRebuild();
@@ -73,8 +76,9 @@ private:
 	std::set<std::shared_ptr<Entity>> entities;
 	ASBuildScratchpad scratchpad;
 
-	std::optional<OptixTraversableHandle> cachedAS;
-	std::optional<OptixShaderBindingTable> cachedSBT;
+	std::mutex optixStructsMutex;
+		std::optional<OptixTraversableHandle> cachedAS;
+		std::optional<OptixShaderBindingTable> cachedSBT;
 
 	// TODO: allow non-heap creation;
 	DeviceSyncArray<OptixInstance>::Ptr dInstances = DeviceSyncArray<OptixInstance>::create();

@@ -25,36 +25,38 @@ void CompactPointsNode::enqueueExecImpl()
 	cacheManager.trigger();
 	inclusivePrefixSum->resize(input->getHeight() * input->getWidth(), false, false);
 	size_t pointCount = input->getWidth() * input->getHeight();
-	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>()->getDevicePtr();
-	gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getDevicePtr(), &width);
-	CHECK_CUDA(cudaEventRecord(finishedEvent, getStreamHandle()));
+	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getWritePtr(), &width);
 }
 
-VArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
+IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 {
-	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
 	if (!cacheManager.contains(field)) {
-		auto fieldData = VArray::create(field, width);
+		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
 		cacheManager.insert(field, fieldData, true);
 	}
 
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(width, false, false);
-		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::Device));
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field)->getReadPtr(MemLoc::Device));
-		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->getDevicePtr();
-		const CompactionIndexType * indices = inclusivePrefixSum->getDevicePtr();
+		char* outPtr = static_cast<char *>(fieldData->getRawWritePtr());
+
+		if (!isDeviceAccessible(input->getFieldData(field)->getMemoryKind())) {
+			auto msg = fmt::format("CompactPointsNode requires its input to be device-accessible, {} is not", field);
+			throw InvalidPipeline(msg);
+		}
+		const char* inputPtr = static_cast<const char *>(input->getFieldData(field)->getRawReadPtr());
+		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+		const CompactionIndexType * indices = inclusivePrefixSum->getReadPtr();
 		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
-		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}
 
-	return std::const_pointer_cast<const VArray>(cacheManager.getValue(field));
+	return std::const_pointer_cast<const IAnyArray>(cacheManager.getValue(field));
 }
 
 size_t CompactPointsNode::getWidth() const
 {
-	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
+	this->synchronizeThis();
 	return width;
 }

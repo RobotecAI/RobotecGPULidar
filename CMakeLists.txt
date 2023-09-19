@@ -75,7 +75,6 @@ add_library(RobotecGPULidar SHARED
     src/api/apiCore.cpp
     src/Tape.cpp
     src/Logger.cpp
-    src/VArray.cpp
     src/Optix.cpp
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
@@ -99,7 +98,8 @@ add_library(RobotecGPULidar SHARED
     src/graph/SetRaysRingIdsRaysNode.cpp
     src/graph/SpatialMergePointsNode.cpp
     src/graph/TemporalMergePointsNode.cpp
-    src/graph/YieldPointsNode.cpp)
+    src/graph/YieldPointsNode.cpp
+)
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 

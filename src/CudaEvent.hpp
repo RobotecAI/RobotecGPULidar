@@ -15,6 +15,7 @@
 #pragma once
 #include <macros/cuda.hpp>
 #include <Logger.hpp>
+#include <macros/handleDestructorException.hpp>
 
 // RAII object to (de)initialize cudaEvent_t
 struct CudaEvent {
@@ -27,18 +28,14 @@ struct CudaEvent {
 
     cudaEvent_t getHandle() { return event; }
 
-    ~CudaEvent()
+    ~CudaEvent() try
     {
         if (event != nullptr) {
-            try {
-                CHECK_CUDA(cudaEventDestroy(event));
-                event = nullptr;
-            }
-            catch(std::runtime_error& e) {
-                RGL_ERROR("Error in ~CudaEvent: {}", e.what());
-            }
+            CHECK_CUDA(cudaEventDestroy(event));
+            event = nullptr;
         }
     }
+    HANDLE_DESTRUCTOR_EXCEPTION
 
 private:
     explicit CudaEvent(int flag) { CHECK_CUDA(cudaEventCreateWithFlags(&event, flag)); }

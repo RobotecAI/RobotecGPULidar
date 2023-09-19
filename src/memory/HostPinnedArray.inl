@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
 
 #pragma once
 
-/*
- * Owning VArray wrapper with a typed interface.
- */
-template<typename T>
-struct VArrayTyped
+template <typename T>
+struct HostPinnedArray : public HostArray<T>
 {
-	static VArrayTyped<T>::Ptr create()	{ return VArrayTyped<T>::Ptr(new VArrayTyped<T>());	}
-	static VArrayTyped<T>::Ptr create(VArray&& src)	{ return VArrayTyped<T>::Ptr(new VArrayTyped<T>(src)); }
+	using Ptr = std::shared_ptr<HostPinnedArray<T>>;
+	using ConstPtr = std::shared_ptr<const HostPinnedArray<T>>;
 
-	// TODO: implement if needed :)
+	MemoryKind getMemoryKind() const override { return MemoryKind::HostPinned; }
 
-private:
-	VArrayTyped(std::size_t initialSize) : src(typeid(T), sizeof(T), initialSize) {}
-	explicit VArrayTyped(VArray&& src) : src(std::move(src)) {}
+	static HostPinnedArray<T>::Ptr create()
+	{
+		return HostPinnedArray<T>::Ptr { new HostPinnedArray(MemoryOperations::get<MemoryKind::HostPinned>())};
+	}
 
-private:
-	VArray src;
+protected:
+	using HostArray<T>::HostArray;
 };

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <memory/InvalidArrayCast.hpp>
-#include <memory/HostPinnedArray.hpp>
+#include <memory/Array.hpp>
 
 /*
  * TEST PURPOSE:

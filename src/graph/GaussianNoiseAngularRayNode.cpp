@@ -32,13 +32,14 @@ void GaussianNoiseAngularRaysNode::validateImpl()
 
 	if (randomizationStates->getCount() < rayCount) {
 		randomizationStates->resize(rayCount, false, false);
-		gpuSetupGaussianNoiseGenerator(getStreamHandle(), rayCount, randomDevice(), randomizationStates->getDevicePtr());
+		gpuSetupGaussianNoiseGenerator(getStreamHandle(), rayCount, randomDevice(), randomizationStates->getWritePtr());
 	}
 }
 
 void GaussianNoiseAngularRaysNode::enqueueExecImpl()
 {
-	const auto* inRaysPtr = input->getRays()->getDevicePtr();
-	auto* outRaysPtr = rays->getDevicePtr();
-	gpuAddGaussianNoiseAngularRay(getStreamHandle(), getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randomizationStates->getDevicePtr(), inRaysPtr, outRaysPtr);
+	const auto* inRaysPtr = input->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto* outRaysPtr = rays->getWritePtr();
+	auto* randPtr = randomizationStates->getWritePtr();
+	gpuAddGaussianNoiseAngularRay(getStreamHandle(), getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randPtr, inRaysPtr, outRaysPtr);
 }

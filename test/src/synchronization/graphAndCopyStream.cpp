@@ -43,7 +43,7 @@ TEST(Synchronization, GraphAndCopyStream)
 
     // Copy vector from host memory to device memory
     float* deviceArray;
-    CHECK_CUDA(cudaMallocAsync(&deviceArray, size, graphStream));
+    CHECK_CUDA(cudaMallocAsync(reinterpret_cast<void **>(&deviceArray), size, graphStream));
     CHECK_CUDA(cudaMemcpyAsync(deviceArray, hostArray, size, cudaMemcpyHostToDevice, graphStream));
 
     // Run sensitive job that we forecast, it takes some time.
@@ -54,7 +54,7 @@ TEST(Synchronization, GraphAndCopyStream)
 
     // Perform copy operation on the copyStream parallel to graphStream kernel.
     float* dummyDeviceArray;
-    CHECK_CUDA(cudaMallocAsync(&dummyDeviceArray, size, copyStream));
+    CHECK_CUDA(cudaMallocAsync(reinterpret_cast<void **>(&dummyDeviceArray), size, copyStream));
     CHECK_CUDA(cudaMemcpyAsync(dummyDeviceArray, dummyHostArray, size, cudaMemcpyHostToDevice, copyStream));
     CHECK_CUDA(cudaMemcpyAsync(dummyHostArray, dummyDeviceArray, size, cudaMemcpyDeviceToHost, copyStream));
 

@@ -42,9 +42,9 @@ TEST_F(GraphCase, FullLinear)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(shear, downsample));
 #endif
 
-	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(useRays));
 #if RGL_BUILD_PCL_EXTENSION
-	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(downsample, "minimal.pcd"));
+	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(shear, "minimal.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
 #endif
@@ -373,8 +373,8 @@ TEST_F(GraphCase, TemporalMergeUsesHostMemory)
 	}
 }
 
-// TODO(nebraszka): Conceive a reasonable way to group GraphCase tests to use common fixture(s)
-// TODO(nebraszka): Tests below are actually closer to Graph Unit tests than GraphCase, let's fix that
+//// TODO(nebraszka): Conceive a reasonable way to group GraphCase tests to use common fixture(s)
+//// TODO(nebraszka): Tests below are actually closer to Graph Unit tests than GraphCase, let's fix that
 TEST_F(GraphCase, GetResultsDataWithoutPriorRun)
 {
 	// Setup

@@ -76,10 +76,11 @@ void VisualizePointsNode::enqueueExecImpl()
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), getStreamHandle(), gpuFieldDescBuilder);
+	FormatPointsNode::formatAsync(formattedInputDev, input, getRequiredFieldList(), gpuFieldDescBuilder);
+	formattedInputHst->copyFrom(formattedInputDev);
 
 	// Convert to PCL cloud
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
+	const auto* data = reinterpret_cast<const PCLPointType*>(formattedInputHst->getReadPtr());
 
 	std::scoped_lock<std::mutex> updateLock(updateCloudMutex);
 
