@@ -47,6 +47,7 @@ void VisualizePointsNode::runVisualize()
 	viewer->setFullScreen(fullscreen);
 	viewer->setBackgroundColor(0, 0, 0);
 	viewer->initCameraParameters();
+	viewer->setShowFPS(false);
 
 	viewer->addCoordinateSystem(0.5);
 	viewer->setCameraPosition(-3, 3, 3, 0.1, -0.1, 1);
@@ -54,7 +55,7 @@ void VisualizePointsNode::runVisualize()
 	viewer->addPointCloud(cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(cloudPCL));
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 
-	while (!viewer->wasStopped ())
+	while (!viewer->wasStopped())
 	{
 		bool forceRedraw = false;
 		{
