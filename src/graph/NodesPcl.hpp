@@ -67,21 +67,40 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
-	void runVisualize();
 	virtual ~VisualizePointsNode();
 
 private:
+	struct ViewerData
+	{
+		PCLVisualizerFix::Ptr viewer;
+		std::mutex updateCloudMutex;
+		bool isNewCloud{false};
+		bool isViewerStoppedByRglNode{false};
+		bool isClosed{false};
+		int windowWidth;
+		int windowHeight;
+		bool fullscreen;
+		pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+	};
+
 	VArray::Ptr inputFmtData = VArray::create<char>();
-
-	PCLVisualizerFix::Ptr viewer;
-	std::thread visThread;
-	std::mutex updateCloudMutex;
-	bool isNewCloud{false};
-	bool isViewerStoppedByRglNode{false};
-
 	std::string windowName{};
-	int windowWidth;
-	int windowHeight;
-	bool fullscreen;
-	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+
+	inline static std::mutex modifyViewerDataMutex;
+	inline static std::thread visThread;
+	inline static std::unordered_map<std::string, ViewerData> viewers;
+
+	static void runVisualize();
+
+	//PCLVisualizerFix::Ptr viewer;
+
+	//std::mutex updateCloudMutex;
+//	bool isNewCloud{false};
+//	bool isViewerStoppedByRglNode{false};
+
+
+//	int windowWidth;
+//	int windowHeight;
+//	bool fullscreen;
+//	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
 };

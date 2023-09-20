@@ -36,8 +36,16 @@ public:
 			RGL_WARN("VTK version has changed. Existence of PCLVisualizerFix may not be necessary.");
 		}
 		interactor_->SetDone(true);
-#endif
+#else
 		pcl::visualization::PCLVisualizer::close();
+#endif
+	}
+
+	void closeFinalViewer()
+	{
+#if __unix__
+		pcl::visualization::PCLVisualizer::close();
+#endif
 	}
 
 	virtual ~PCLVisualizerFix() { }
