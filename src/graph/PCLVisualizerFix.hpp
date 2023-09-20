@@ -16,6 +16,7 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/time.h>
+#include <vtkVersion.h>
 
 class PCLVisualizerFix : public pcl::visualization::PCLVisualizer
 {
@@ -24,6 +25,20 @@ public:
 	using ConstPtr = std::shared_ptr<const PCLVisualizerFix>;
 
 	PCLVisualizerFix() : pcl::visualization::PCLVisualizer() { }
+
+	// Based on https://github.com/PointCloudLibrary/pcl/issues/5556
+	void close()
+	{
+#if __unix__
+		// VTX fixed the segmentation fault on close() in version 9.2.3, but we cannot simply check the version because
+		// VTK_BUILD_VERSION is modified in some way (vcpkg?). Manual verification needed.
+		if (VTK_MAJOR_VERSION != 9 && VTK_MINOR_VERSION != 2 && VTK_BUILD_VERSION != 20220823) {
+			RGL_WARN("VTK version has changed. Existence of PCLVisualizerFix may not be necessary.");
+		}
+		interactor_->SetDone(true);
+#endif
+		pcl::visualization::PCLVisualizer::close();
+	}
 
 	virtual ~PCLVisualizerFix() { }
 };

@@ -55,7 +55,7 @@ void VisualizePointsNode::runVisualize()
 	viewer->addPointCloud(cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(cloudPCL));
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 
-	while (!viewer->wasStopped())
+	while (!viewer->wasStopped() && !isViewerStoppedByRglNode)
 	{
 		bool forceRedraw = false;
 		{
@@ -68,6 +68,8 @@ void VisualizePointsNode::runVisualize()
 		}
 		viewer->spinOnce(1000 / FRAME_RATE, forceRedraw);
 	}
+	// All calls to the viewer must be executed from the same thread (also close)
+	viewer->close();
 }
 
 void VisualizePointsNode::schedule(cudaStream_t stream)
@@ -87,7 +89,6 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	cloudPCL->resize(input->getWidth(), input->getHeight());
 	cloudPCL->assign(data, data + cloudPCL->size(), input->getWidth());
 	cloudPCL->is_dense = input->isDense();
-
 
 	// Colorize
 	const auto [minPt, maxPt] = std::minmax_element(cloudPCL->begin(), cloudPCL->end(),
@@ -113,6 +114,7 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 
 VisualizePointsNode::~VisualizePointsNode()
 {
+	isViewerStoppedByRglNode = true;
 	visThread.join();
 }
 

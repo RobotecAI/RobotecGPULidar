@@ -77,6 +77,7 @@ private:
 	std::thread visThread;
 	std::mutex updateCloudMutex;
 	bool isNewCloud{false};
+	bool isViewerStoppedByRglNode{false};
 
 	std::string windowName{};
 	int windowWidth;
