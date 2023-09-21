@@ -47,9 +47,12 @@ void VisualizePointsNode::validate()
 // All calls to the viewers must be executed from the same thread
 void VisualizePointsNode::runVisualize()
 {
+	using namespace std::literals;
 	std::optional<std::string> lastSpunViewerName = std::nullopt;
 	while (!viewers.empty()) {
-		std::scoped_lock<std::mutex> vdLock(modifyViewerDataMutex);
+		// Need to sleep to allow locking modifyViewersMutex from other thread
+		std::this_thread::sleep_for(1ms);
+		std::lock_guard<std::mutex> vdLock(modifyViewersMutex);
 		bool allViewerClosed = true;
 		for (auto&& [windowName, vd] : viewers) {
 			// Create a new viewer
@@ -70,14 +73,15 @@ void VisualizePointsNode::runVisualize()
 				vd.viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 			}
 
-			if (vd.isClosed) {
+			if (vd.isClosed.load()) {
 				continue;
 			}
 
 			// Check if viewer was stopped
 			if (vd.viewer->wasStopped() || vd.isViewerStoppedByRglNode) {
 				vd.viewer->close();
-				vd.isClosed = true;
+				vd.isClosed.store(true);
+				fmt::print("closed {}\n", windowName);
 				continue;
 			}
 
@@ -86,13 +90,14 @@ void VisualizePointsNode::runVisualize()
 			// Update point cloud and render
 			bool forceRedraw = false;
 			{
-				std::scoped_lock<std::mutex> updateLock(vd.updateCloudMutex);
+				std::lock_guard<std::mutex> updateLock(vd.updateCloudMutex);
 				if (vd.isNewCloud) {
 					vd.viewer->updatePointCloud(vd.cloudPCL);
 					vd.isNewCloud = false;
 					forceRedraw = true;
 				}
 			}
+			fmt::print("spinning {}\n", windowName);
 			vd.viewer->spinOnce(1000 / FRAME_RATE, forceRedraw);
 			lastSpunViewerName = windowName;
 		}
@@ -108,13 +113,13 @@ void VisualizePointsNode::runVisualize()
 
 void VisualizePointsNode::schedule(cudaStream_t stream)
 {
-	if (viewers[windowName].isClosed) {
+	if (viewers[windowName].isClosed.load()) {
 		return;  // No need to update point cloud because viewer was closed
 	}
 
 	if (input->getPointCount() == 0) {
 		auto& viewerData = viewers[windowName];
-		std::scoped_lock<std::mutex> updateLock(viewerData.updateCloudMutex);
+		std::lock_guard<std::mutex> updateLock(viewerData.updateCloudMutex);
 		viewerData.cloudPCL->clear();
 		viewerData.isNewCloud = true;
 		return;
@@ -127,7 +132,7 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
 
 	auto& viewerData = viewers[windowName];
-	std::scoped_lock<std::mutex> updateLock(viewerData.updateCloudMutex);
+	std::lock_guard<std::mutex> updateLock(viewerData.updateCloudMutex);
 
 	viewerData.cloudPCL->resize(input->getWidth(), input->getHeight());
 	viewerData.cloudPCL->assign(data, data + viewerData.cloudPCL->size(), input->getWidth());
@@ -161,26 +166,22 @@ VisualizePointsNode::~VisualizePointsNode()
 		return;
 	}
 
-	if (!viewers[windowName].isClosed) {
+	if (!viewers[windowName].isClosed.load()) {
+		fmt::print("closing {}\n", windowName);
 		viewers[windowName].isViewerStoppedByRglNode = true;
 	}
 
 	// Wait for close
-	while (!viewers[windowName].isClosed) {;}
+	while (!viewers[windowName].isClosed.load()) {;}
 
-	bool allClosed = true;
-	for (auto&& [_, vd] : viewers) {
-		if (!vd.isClosed) {
-			allClosed = false;
-			break;
-		}
+	fmt::print("want to erase {}\n", windowName);
+
+	{
+		std::lock_guard<std::mutex> vdLock(modifyViewersMutex);
+		viewers.erase(windowName);
 	}
 
-	if (allClosed) {
-		{
-			std::scoped_lock<std::mutex> vdLock(modifyViewerDataMutex);
-			viewers.clear();
-		}
+	if (viewers.empty()) {
 		visThread.join();
 	}
 }

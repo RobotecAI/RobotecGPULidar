@@ -76,7 +76,7 @@ private:
 		std::mutex updateCloudMutex;
 		bool isNewCloud{false};
 		bool isViewerStoppedByRglNode{false};
-		bool isClosed{false};
+		std::atomic<bool> isClosed{false};
 		int windowWidth;
 		int windowHeight;
 		bool fullscreen;
@@ -86,21 +86,9 @@ private:
 	VArray::Ptr inputFmtData = VArray::create<char>();
 	std::string windowName{};
 
-	inline static std::mutex modifyViewerDataMutex;
+	inline static std::mutex modifyViewersMutex;
 	inline static std::thread visThread;
 	inline static std::unordered_map<std::string, ViewerData> viewers;
 
 	static void runVisualize();
-
-	//PCLVisualizerFix::Ptr viewer;
-
-	//std::mutex updateCloudMutex;
-//	bool isNewCloud{false};
-//	bool isViewerStoppedByRglNode{false};
-
-
-//	int windowWidth;
-//	int windowHeight;
-//	bool fullscreen;
-//	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
 };
