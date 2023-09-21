@@ -58,7 +58,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
-        EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
 
 	rgl_texture_t texture = nullptr;
 	int width = 1024;
