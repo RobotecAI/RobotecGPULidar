@@ -17,23 +17,20 @@
 
 void VisualizePointsNode::setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen)
 {
-	if (viewers.contains(windowName)) {
-		throw InvalidAPIArgument("Visualizer with the same window name already exist. Parameters cannot be updated.");
+	if (!this->windowName.empty()) {
+		throw std::invalid_argument("VisualizePointsNode parameters cannot be changed!");
 	}
-
-	this->windowName = windowName;
-	std::lock_guard<std::mutex> vdLock(modifyViewersMutex);
-	// Cannot create and copy/move ViewerData because of mutex (must be constructed in-place)
-	viewers.emplace(std::piecewise_construct, std::make_tuple(windowName), std::make_tuple());
-
 	// Fill data required to create PCLVisualizer
-	viewers[windowName].windowWidth = windowWidth;
-	viewers[windowName].windowHeight = windowHeight;
-	viewers[windowName].fullscreen = fullscreen;
+	this->windowName = windowName;
+	this->windowWidth = windowWidth;
+	this->windowHeight = windowHeight;
+	this->fullscreen = fullscreen;
 
-	if (!visThread.joinable()) {
-		visThread = std::thread(VisualizePointsNode::runVisualize);
+	if (!visualizeThread.has_value()) {
+		visualizeThread.emplace();
 	}
+	std::lock_guard lock { visualizeThread.value().visualizeNodesMutex };
+	visualizeThread->visualizeNodes.push_back(std::static_pointer_cast<VisualizePointsNode>(shared_from_this()));
 }
 
 void VisualizePointsNode::validate()
@@ -46,83 +43,104 @@ void VisualizePointsNode::validate()
 }
 
 // All calls to the viewers must be executed from the same thread
-void VisualizePointsNode::runVisualize()
+void VisualizePointsNode::VisualizeThread::runVisualize() try
 {
-	using namespace std::literals;
-	std::optional<std::string> lastSpunViewerName = std::nullopt;
-	while (!viewers.empty()) {
-		// Need to sleep to allow locking modifyViewersMutex from other thread
-		std::this_thread::sleep_for(1ms);
-		std::lock_guard<std::mutex> vdLock(modifyViewersMutex);
-		bool allViewerClosed = true;
-		for (auto&& [windowName, vd] : viewers) {
-			// Create a new viewer
-			if (vd.viewer.get() == nullptr) {
-				vd.viewer = std::make_shared<PCLVisualizerFix>();
-				vd.viewer->setWindowName(windowName);
-				vd.viewer->setSize(vd.windowWidth, vd.windowHeight);
-				vd.viewer->setFullScreen(vd.fullscreen);
-				vd.viewer->setBackgroundColor(0, 0, 0);
-				vd.viewer->initCameraParameters();
-				vd.viewer->setShowFPS(false);
-
-				vd.viewer->addCoordinateSystem(0.5);
-				vd.viewer->setCameraPosition(-3, 3, 3, 0.1, -0.1, 1);
-
-				vd.viewer->addPointCloud(vd.cloudPCL,
-				                         pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(vd.cloudPCL));
-				vd.viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
+	// We cannot initialize iterator without having lock!
+	static std::optional<decltype(visualizeNodes)::iterator> it = std::nullopt;
+	VisualizePointsNode::Ptr node = nullptr;
+	while (true) {
+		// Get next node:
+		{
+			std::lock_guard lock { visualizeNodesMutex };
+			if (shouldQuit) {
+				break;
 			}
-
-			if (vd.isClosed.load()) {
+			if (visualizeNodes.empty()) {
 				continue;
 			}
-
-			// Check if viewer was stopped
-			if (vd.viewer->wasStopped() || vd.isViewerStoppedByRglNode) {
-				vd.viewer->close();
-				vd.isClosed.store(true);
-				fmt::print("closed {}\n", windowName);
-				continue;
-			}
-
-			allViewerClosed = false;
-
-			// Update point cloud and render
-			bool forceRedraw = false;
-			{
-				std::lock_guard<std::mutex> updateLock(vd.updateCloudMutex);
-				if (vd.isNewCloud) {
-					vd.viewer->updatePointCloud(vd.cloudPCL);
-					vd.isNewCloud = false;
-					forceRedraw = true;
+			it = [&]() {
+				if (!it.has_value()) { // First loop iteration
+					return visualizeNodes.begin();
 				}
+				++(it.value());
+				if (it.value() == visualizeNodes.end()) {
+					return visualizeNodes.begin();
+				}
+				return it.value();
+			}();
+			node = *it.value();
+
+			// Only two references are left - the local one and the one in visualizeNodes
+			// Mark node for immediate destruction
+			if (node.use_count() == 2) {
+				node->eraseRequested = true;
 			}
-			fmt::print("spinning {}\n", windowName);
-			vd.viewer->spinOnce(1000 / FRAME_RATE, forceRedraw);
-			lastSpunViewerName = windowName;
+			// Nodes are always destroyed and removed from visualizeNodes list
+			// in cooperation with the thread doing ~VisualizePointsNode.
+			// Therefore, from visualizeThread, we should never witness VisualizePointsNode just disappearing.
+			assert(node != nullptr);
 		}
 
-		// To close last viewer window need to call special close function. This is a workaround to bug in vtk.
-		// More info in PCLVisualizerFix.hpp
-		if (allViewerClosed && lastSpunViewerName.has_value()) {
-			viewers[lastSpunViewerName.value()].viewer->closeFinalViewer();
-			lastSpunViewerName.reset();
+		// Perform lazy initialization of the viewer (pcl requires doing this in visualizeThread)
+		if (node->viewer == nullptr) {
+			node->viewer = std::make_shared<PCLVisualizerFix>();
+			node->viewer->setWindowName(node->windowName);
+			node->viewer->setSize(node->windowWidth, node->windowHeight);
+			node->viewer->setFullScreen(node->fullscreen);
+			node->viewer->setBackgroundColor(0, 0, 0);
+			node->viewer->initCameraParameters();
+			node->viewer->setShowFPS(false);
+
+			node->viewer->addCoordinateSystem(0.5);
+			node->viewer->setCameraPosition(-3, 3, 3, 0.1, -0.1, 1);
+			node->viewer->addPointCloud(node->cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(node->cloudPCL));
+			node->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 		}
+
+		// Remove node if requested, either by user (GUI) or client's thread
+		if (node->eraseRequested || node->viewer->wasStopped()) {
+			node->viewer->close();
+			std::lock_guard lock { visualizeNodesMutex };
+			if (visualizeNodes.empty()) {
+				// To close last viewer window need to call special close function. This is a workaround to bug in vtk.
+				// More info in PCLVisualizerFix.hpp
+				node->viewer->closeFinalViewer();
+			}
+			visualizeNodes.erase(it.value());
+			it = std::nullopt; // Restart iterator to avoid incrementing invalid one later.
+			node->isClosed = true;
+			node.reset(); // May trigger destructor
+			continue;
+		}
+
+		// Handle input events and update point cloud if a new one has been delivered by the graph's thread.
+		bool forceRedraw = false;
+		if (node->hasNewPointCloud) {
+			std::lock_guard lock { node->updateCloudMutex };
+			node->viewer->updatePointCloud(node->cloudPCL);
+			node->hasNewPointCloud = false;
+			forceRedraw = true;
+		}
+		node->viewer->spinOnce(1000 / FRAME_RATE, forceRedraw);
 	}
+} catch (std::exception& e) {
+	RGL_WARN("Visualize thread captured exception: {}", e.what());
 }
+catch (...) {
+	RGL_WARN("Visualize thread captured unknown exception :((");
+}
+
 
 void VisualizePointsNode::schedule(cudaStream_t stream)
 {
-	if (viewers[windowName].isClosed.load()) {
+	if (isClosed) {
 		return;  // No need to update point cloud because viewer was closed
 	}
 
 	if (input->getPointCount() == 0) {
-		auto& viewerData = viewers[windowName];
-		std::lock_guard<std::mutex> updateLock(viewerData.updateCloudMutex);
-		viewerData.cloudPCL->clear();
-		viewerData.isNewCloud = true;
+		std::lock_guard lock { updateCloudMutex };
+		cloudPCL->clear();
+		hasNewPointCloud = true;
 		return;
 	}
 
@@ -132,15 +150,14 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	// Convert to PCL cloud
 	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
 
-	auto& viewerData = viewers[windowName];
-	std::lock_guard<std::mutex> updateLock(viewerData.updateCloudMutex);
+	std::lock_guard updateLock { updateCloudMutex };
 
-	viewerData.cloudPCL->resize(input->getWidth(), input->getHeight());
-	viewerData.cloudPCL->assign(data, data + viewerData.cloudPCL->size(), input->getWidth());
-	viewerData.cloudPCL->is_dense = input->isDense();
+	cloudPCL->resize(input->getWidth(), input->getHeight());
+	cloudPCL->assign(data, data + cloudPCL->size(), input->getWidth());
+	cloudPCL->is_dense = input->isDense();
 
 	// Colorize
-	const auto [minPt, maxPt] = std::minmax_element(viewerData.cloudPCL->begin(), viewerData.cloudPCL->end(),
+	const auto [minPt, maxPt] = std::minmax_element(cloudPCL->begin(), cloudPCL->end(),
 	                                                [] (PCLPointType const &lhs, PCLPointType const &rhs) {
 	                                                    return lhs.z < rhs.z;
 	                                                });
@@ -150,7 +167,7 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 	if (min != max) {
 		lutScale = 255.0f / (max - min);
 	}
-	for (auto cloud_it = viewerData.cloudPCL->begin(); cloud_it != viewerData.cloudPCL->end(); ++cloud_it) {
+	for (auto cloud_it = cloudPCL->begin(); cloud_it != cloudPCL->end(); ++cloud_it) {
 		int value = std::lround((cloud_it->z - min) * lutScale);
 		value = std::max(std::min(value, 255), 0);
 		cloud_it->r = value > 128 ? (value - 128) * 2 : 0;
@@ -158,33 +175,16 @@ void VisualizePointsNode::schedule(cudaStream_t stream)
 		cloud_it->b = value < 128 ? 255 - (2 * value) : 0;
 	}
 
-	viewerData.isNewCloud = true;
+	hasNewPointCloud = true;
 }
 
 VisualizePointsNode::~VisualizePointsNode()
 {
-	if (!viewers.contains(windowName)) {
-		return;
-	}
-
-	if (!viewers[windowName].isClosed.load()) {
-		fmt::print("closing {}\n", windowName);
-		viewers[windowName].isViewerStoppedByRglNode = true;
-	}
-
-	// Wait for close
-	while (!viewers[windowName].isClosed.load()) {;}
-
-	fmt::print("want to erase {}\n", windowName);
-
-	{
-		std::lock_guard<std::mutex> vdLock(modifyViewersMutex);
-		viewers.erase(windowName);
-	}
-
-	if (viewers.empty()) {
-		visThread.join();
-	}
+	// May be called from client's thread or visualize thread
+	eraseRequested = true;
+	// TODO fix deadlock here
+	while (!isClosed)
+		;
 }
 
 std::vector<rgl_field_t> VisualizePointsNode::getRequiredFieldList() const

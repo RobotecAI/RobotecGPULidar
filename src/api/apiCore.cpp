@@ -24,7 +24,7 @@
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
-
+#include <graph/NodesPcl.hpp>
 extern "C" {
 
 RGL_API rgl_status_t
@@ -135,6 +135,7 @@ rgl_get_last_error_string(const char** out_error_string)
 	*out_error_string = getLastErrorString();
 }
 
+
 RGL_API rgl_status_t
 rgl_cleanup(void)
 {
@@ -147,6 +148,7 @@ rgl_cleanup(void)
 		while (!Node::instances.empty()) {
 			// Note: Graph::destroy calls Node::release() to remove its from APIObject::instances
 			Node::Ptr node = Node::instances.begin()->second;
+			int a = node.use_count();
 			Graph::destroy(node, false);
 		}
 	});
