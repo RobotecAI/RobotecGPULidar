@@ -22,6 +22,7 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 	}
 
 	this->windowName = windowName;
+	std::lock_guard<std::mutex> vdLock(modifyViewersMutex);
 	// Cannot create and copy/move ViewerData because of mutex (must be constructed in-place)
 	viewers.emplace(std::piecewise_construct, std::make_tuple(windowName), std::make_tuple());
 
