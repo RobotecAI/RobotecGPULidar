@@ -72,6 +72,10 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 private:
 	struct ViewerData
 	{
+		ViewerData() = default;
+		ViewerData (const ViewerData&) = delete;
+		ViewerData& operator= (const ViewerData&) = delete;
+
 		PCLVisualizerFix::Ptr viewer;
 		std::mutex updateCloudMutex;
 		bool isNewCloud{false};
