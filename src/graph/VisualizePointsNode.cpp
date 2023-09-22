@@ -48,13 +48,10 @@ void VisualizePointsNode::VisualizeThread::runVisualize() try
 	// We cannot initialize iterator without having lock!
 	static std::optional<decltype(visualizeNodes)::iterator> it = std::nullopt;
 	VisualizePointsNode::Ptr node = nullptr;
-	while (true) {
+	while (!shouldQuit) {
 		// Get next node:
 		{
 			std::lock_guard lock { visualizeNodesMutex };
-			if (shouldQuit) {
-				break;
-			}
 			if (visualizeNodes.empty()) {
 				continue;
 			}
@@ -101,13 +98,13 @@ void VisualizePointsNode::VisualizeThread::runVisualize() try
 		if (node->eraseRequested || node->viewer->wasStopped()) {
 			node->viewer->close();
 			std::lock_guard lock { visualizeNodesMutex };
+			visualizeNodes.erase(it.value());
+			it = std::nullopt; // Restart iterator to avoid incrementing invalid one later.
 			if (visualizeNodes.empty()) {
 				// To close last viewer window need to call special close function. This is a workaround to bug in vtk.
 				// More info in PCLVisualizerFix.hpp
 				node->viewer->closeFinalViewer();
 			}
-			visualizeNodes.erase(it.value());
-			it = std::nullopt; // Restart iterator to avoid incrementing invalid one later.
 			node->isClosed = true;
 			node.reset(); // May trigger destructor
 			continue;
