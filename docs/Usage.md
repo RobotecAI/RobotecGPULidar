@@ -109,7 +109,7 @@ rgl_mat3x4f ray_tf = {
 rgl_node_t useRays = nullptr, raytrace = nullptr;
 
 rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1);
-rgl_node_raytrace(&raytrace, nullptr, 1000);
+rgl_node_raytrace(&raytrace, nullptr);
 rgl_graph_node_add_child(useRays, raytrace);
 
 // you can run the graph using any one of its nodes

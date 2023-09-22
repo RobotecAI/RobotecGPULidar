@@ -109,7 +109,7 @@ private:
 struct RaytraceNode : Node, IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
-	void setParameters(std::shared_ptr<Scene> scene, float range) { this->scene = scene; this->range = range; }
+	void setParameters(std::shared_ptr<Scene> scene);
 
 	// Node
 	void validate() override;
@@ -128,9 +128,9 @@ struct RaytraceNode : Node, IPointsNode
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
 private:
-	float range;
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
+	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 
@@ -194,10 +194,12 @@ struct FromMat3x4fRaysNode : Node, IRaysNode
 
 	// Rays description
 	size_t getRayCount() const override { return rays->getCount(); }
+	std::optional<size_t> getRangesCount() const override { return std::nullopt; }
 	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return std::nullopt; }
 	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
 
 private:
@@ -221,6 +223,25 @@ struct SetRingIdsRaysNode : Node, IRaysNodeSingleInput
 
 private:
 	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
+};
+
+struct SetRangeRaysNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<SetRangeRaysNode>;
+	void setParameters(const Vec2f* rangesRaw, size_t rangesCount);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override {}
+
+	// Rays description
+	std::optional<std::size_t> getRangesCount() const override { return ranges->getCount(); }
+
+	// Data getters
+	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return ranges; }
+
+private:
+	VArrayProxy<Vec2f>::Ptr ranges = VArrayProxy<Vec2f>::create();
 };
 
 struct YieldPointsNode : Node, IPointsNodeSingleInput

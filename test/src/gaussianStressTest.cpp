@@ -34,7 +34,7 @@ struct GaussianStressTest : public RGLTest {
 		// Create nodes
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, lidarRays.data(), lidarRays.size()));
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 		EXPECT_RGL_SUCCESS(rgl_node_points_transform(&toLidarFrame, &lidarPoseInvTf));
 		EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yield, yieldFields.data(), yieldFields.size()));
 

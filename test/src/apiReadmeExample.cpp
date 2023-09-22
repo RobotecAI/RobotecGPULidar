@@ -36,7 +36,7 @@ TEST(EndToEnd, ReadmeExample)
 	rgl_node_t useRays = nullptr, raytrace = nullptr;
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
 
 	// you can run the graph using any one of its nodes

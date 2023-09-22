@@ -57,7 +57,7 @@ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float intensity=0, const int objectID=RGL_ENTITY_INVALID_ID)
+void saveRayResult(const Vec3f* xyz=nullptr, float distance=NON_HIT_VALUE, float intensity=0, const int objectID=RGL_ENTITY_INVALID_ID)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -74,12 +74,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float 
 		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
 	}
 	if (ctx.distance != nullptr) {
-		ctx.distance[rayIdx] = isFinite
-		                        ? sqrt(
-		                            pow((*xyz)[0] - (*origin)[0], 2) +
-		                            pow((*xyz)[1] - (*origin)[1], 2) +
-		                            pow((*xyz)[2] - (*origin)[2], 2))
-		                        : NON_HIT_VALUE;
+		ctx.distance[rayIdx] = distance;
 	}
 	if (ctx.intensity != nullptr) {
 		ctx.intensity[rayIdx] = intensity;
@@ -99,14 +94,16 @@ extern "C" __global__ void __raygen__()
 		return;
 	}
 
-	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	const int rayIdx = optixGetLaunchIndex().x;
+	Mat3x4f ray = ctx.rays[rayIdx];
 
 	Vec3f origin = ray * Vec3f{0, 0, 0};
 	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[rayIdx].y();
 
 	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
 	Vec3fPayload originPayload = encodePayloadVec3f(origin);
-	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0,
+	optixTrace(ctx.scene, origin, dir, 0.0f, maxRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0,
 	           originPayload.p0, originPayload.p1, originPayload.p2);
 }
 
@@ -139,10 +136,21 @@ extern "C" __global__ void __closesthit__()
 		optixGetPayload_2()
 	});
 
+	// TODO: Optimization - we can use inversesqrt here, which is one operation cheaper then sqrt.
+	float distance = sqrt(pow((hitWorld)[0] - (origin)[0], 2) +
+	                      pow((hitWorld)[1] - (origin)[1], 2) +
+	                      pow((hitWorld)[2] - (origin)[2], 2));
+
+	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
+	if (distance < minRange)
+	{
+		saveRayResult<false>();
+		return;
+	}
+
 	float intensity = 0;
 	if (sbtData.texture_coords != nullptr && sbtData.texture != 0)
 	{
-
 		assert(index.x() < sbtData.texture_coords_count);
 		assert(index.y() < sbtData.texture_coords_count);
 		assert(index.z() < sbtData.texture_coords_count);
@@ -156,7 +164,7 @@ extern "C" __global__ void __closesthit__()
 		intensity =  tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
 	}
 
-	saveRayResult<true>(&hitWorld, &origin, intensity, objectID);
+	saveRayResult<true>(&hitWorld, distance, intensity, objectID);
 }
 
 extern "C" __global__ void __miss__()
