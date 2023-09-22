@@ -48,7 +48,7 @@ public:
 	void transform(const Mat3x4f& transform)
 	{
 		if (std::find(fields.begin(), fields.end(), XYZ_F32) == fields.end()) {
-			throw std::runtime_error(
+			throw std::invalid_argument(
 			    "PointCloud::transform: PointCloud does not contain XYZ_F32 field");
 		} else {
 			std::vector<Field<XYZ_F32>::type> points = getFieldValues<XYZ_F32>();
@@ -84,7 +84,7 @@ public:
 	void setFieldValues(std::vector<typename Field<T>::type> fieldValues)
 	{
 		if (getPointCount() != fieldValues.size()) {
-			throw std::runtime_error("PointCloud::setFieldValues: pointCount does not match");
+			throw std::invalid_argument("PointCloud::setFieldValues: pointCount does not match");
 		}
 
 		std::size_t offset = offsets.at(T);
