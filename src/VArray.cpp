@@ -111,10 +111,7 @@ VArray::~VArray()
 {
 	for (auto&& [location, state] : instance) {
 		if (state.data != nullptr) {
-			try {
-				memFree(state.data, {location});
-			}
-			catch (...) {}
+			memFree(state.data, {location});
 			state = {0};
 		}
 	}
