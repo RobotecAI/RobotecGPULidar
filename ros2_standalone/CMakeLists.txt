@@ -1,5 +1,9 @@
 # This file is based on https://github.com/RobotecAI/ros2cs/blob/develop/src/ros2cs/ros2cs_core/CMakeLists.txt
 
+cmake_minimum_required(VERSION 3.18)
+
+project(RobotecGPULidar_ros2_standalone)
+
 find_program(PATCHELF "patchelf")
 if(UNIX)
     if(NOT PATCHELF)
@@ -172,7 +176,7 @@ macro(install_standalone_dependencies)
                     string(SUBSTRING "${_remainingPath}" 0 ${_lastDotPos} _tempPos)
                     get_filename_component(_libPathFilename "${_tempPos}" NAME)
                     get_filename_component(_resolvedFilename "${_resolvedFile}" NAME)
-                    install(CODE "execute_process(COMMAND ln -s ${_resolvedFilename} ${_libPathFilename} WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/ros2_standalone ERROR_QUIET)")
+                    install(CODE "execute_process(COMMAND ln -s ${_resolvedFilename} ${_libPathFilename} WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR} ERROR_QUIET)")
                     set(_remainingPath "${_tempPos}")
                 endwhile()
             endif()
