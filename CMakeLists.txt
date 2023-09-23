@@ -30,20 +30,6 @@ set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
-set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
-    "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
-
-if (RGL_BUILD_ROS2_EXTENSION_STANDALONE)
-    set(RGL_BUILD_ROS2_EXTENSION ON)
-endif()
-
-# Include ros2_standalone
-# Needs to be added before add_subdirectory(external) to prevent overriding OS libraries by RGL
-# E.g., RGL populate spdlog using FetchContent (statically linked object) which overrides spdlog installed on OS (shared object)
-# It causes the standalone build not to find spdlog which looks for shared objects only
-if(RGL_BUILD_ROS2_EXTENSION_STANDALONE)
-    add_subdirectory(ros2_standalone)
-endif()
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)

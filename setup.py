@@ -49,7 +49,7 @@ def main():
     parser.add_argument("--with-ros2", action='store_true',
                         help="Build RGL with ROS2 extension")
     parser.add_argument("--with-ros2-standalone", action='store_true',
-                        help="Build RGL with ROS2 extension in standalone mode")
+                        help="Build RGL with ROS2 extension and install all dependent ROS2 libraries additionally")
     parser.add_argument("--cmake", type=str, default="",
                         help="Pass arguments to cmake. Usage: --cmake=\"args...\"")
     if on_linux():
@@ -121,12 +121,13 @@ def main():
         os.environ["Path"] = os.environ["Path"] + ";" + os.path.join(os.getcwd(), args.build_dir)
 
     # Build
+    if args.with_ros2_standalone:
+        args.with_ros2 = True
     cmake_args = [
         f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
-        f"-DVCPKG_TARGET_TRIPLET={cfg.VCPKG_TRIPLET}",
+        f"-DVCPKG_TARGET_TRIPLET={cfg.VCPKG_TRIPLET if args.with_pcl else ''}",
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
-        f"-DRGL_BUILD_ROS2_EXTENSION_STANDALONE={'ON' if args.with_ros2_standalone else 'OFF'}"
     ]
 
     if on_linux():
@@ -138,8 +139,6 @@ def main():
                 linker_rpath_flags.append(f"-Wl,-rpath={rpath}")
         cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
 
-    cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}")
-
     # Append user args, possibly overwriting
     cmake_args.append(args.cmake)
 
@@ -148,7 +147,12 @@ def main():
     run_subprocess_command(f"cmake --build {args.build_dir} -- {args.build_args}")
 
     if args.with_ros2_standalone:
-        run_subprocess_command(f"cmake --install {args.build_dir}")
+        # Build RobotecGPULidar_ros2_standalone project to find and install all dependent ROS2 libraries and their dependencies
+        # It cannot be added as a subdirectory of RobotecGPULidar project because there is a conflict in the same libraries required by RGL and ROS2
+        # RGL takes them from vcpkg as statically linked objects while ROS2 standalone required them as a shared objects
+        ros2_standalone_cmake_args = f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}"
+        run_subprocess_command(f"cmake ros2_standalone -B {args.build_dir}/ros2_standalone -G {cfg.CMAKE_GENERATOR} {ros2_standalone_cmake_args}")
+        run_subprocess_command(f"cmake --install {args.build_dir}/ros2_standalone")
 
 
 def on_linux():
