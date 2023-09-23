@@ -1,8 +1,49 @@
 # Change Log
 
+## [0.15.0] 23 September 2023
+
+### Added
+
+- Added feature to simulate velocity distortion
+  - Added API call to specify the delay between firing each ray:
+    - `rgl_node_rays_set_time_offsets`
+  - Added API call to perform raytracing with velocity distortion:
+    - `rgl_node_raytrace_with_distortion`
+  - Note: it is a simplified version of that feature
+    - The distortion takes into account only sensor velocity
+    - The velocity of the objects being scanned by the sensor is not considered
+- Improved ray range configuration
+  - Added API call to define min and max range for rays:
+    - `rgl_node_rays_set_range`
+  - The range for each ray can be specified individually
+  - Modified API call:
+    - `rgl_node_raytrace`
+    - No longer takes range as a parameter
+- Improved tape tools
+  - Multi-lidar tapes are now supported by `tapeVisualizer`
+
+### Fixed
+
+- Fixed `-march=native` imposed compilation option
+  - Library builds are compatible with all 64-bit CPUs
+  - `vcpkg` tag has been updated
+  - `PCL` version has been upgraded (1.13.0 -> 1.13.1)
+- Fixed missing dependencies for ROS2 standalone build
+- Fixed tape for API call `rgl_entity_set_id`
+- Fixed `rgl_node_points_visualize`
+  - Fixed blocking spin loop for up to 1s on some machines
+  - Fixed segmentation fault on window close
+  - Fixed handling multiple windows at the same time
+- Fixed linking the tests on Windows
+
+### Known Issues
+- Destroying `rgl_node_points_visualize` may deadlock on some machines if multiple windows are spawn
+- Destroying `rgl_node_points_visualize` may not close window immediately - main thread exit needed
+
 ## [0.14.1] 5 July 2023
 
 ### Fixed
+
 - Fixed building `PCL` on Windows
   - `vcpkg` tag has been updated
   - `PCL` version has been upgraded (1.12.0 -> 1.13.0)
