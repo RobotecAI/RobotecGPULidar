@@ -67,20 +67,50 @@ struct VisualizePointsNode : Node, IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
-	void runVisualize();
 	virtual ~VisualizePointsNode();
 
 private:
-	VArray::Ptr inputFmtData = VArray::create<char>();
-
 	PCLVisualizerFix::Ptr viewer;
-	std::thread visThread;
-	std::mutex updateCloudMutex;
-	bool isNewCloud{false};
-
-	std::string windowName{};
+	std::string windowName {};
 	int windowWidth;
 	int windowHeight;
 	bool fullscreen;
-	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+
+	std::atomic<bool> eraseRequested {false};
+	std::atomic<bool> isClosed {false};
+
+	std::atomic<bool> hasNewPointCloud {false};
+	std::mutex updateCloudMutex;
+		pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+	VArray::Ptr inputFmtData = VArray::create<char>();
+
+	struct VisualizeThread
+	{
+		void runVisualize();
+		VisualizeThread() {
+			thread = std::thread(&VisualizeThread::runVisualize, this);
+		}
+		~VisualizeThread() {
+			// This might be called when the main thread is doing exit
+			{
+				// Request removing all nodes
+				std::lock_guard lock {visualizeNodesMutex};
+				for (auto&& node : visualizeNodes) {
+					node->eraseRequested = true;
+				}
+			}
+			shouldQuit = true;
+			thread.join();
+		}
+
+		std::thread thread;
+		std::atomic<bool> shouldQuit {false};
+		std::mutex visualizeNodesMutex;
+
+		// Adding: client thread
+		// Removing: visualize thread
+		std::list<VisualizePointsNode::Ptr> visualizeNodes;
+	};
+
+	inline static std::optional<VisualizeThread> visualizeThread;
 };
