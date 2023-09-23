@@ -77,6 +77,7 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_entity_create", std::bind(&TapePlayer::tape_entity_create, this, _1) },
 		{ "rgl_entity_destroy", std::bind(&TapePlayer::tape_entity_destroy, this, _1) },
 		{ "rgl_entity_set_pose", std::bind(&TapePlayer::tape_entity_set_pose, this, _1) },
+		{ "rgl_entity_set_id", std::bind(&TapePlayer::tape_entity_set_id, this, _1) },
 		{ "rgl_entity_set_intensity_texture", std::bind(&TapePlayer::tape_entity_set_intensity_texture, this, _1) },
 		{ "rgl_scene_set_time", std::bind(&TapePlayer::tape_scene_set_time, this, _1) },
 		{ "rgl_graph_run", std::bind(&TapePlayer::tape_graph_run, this, _1) },
