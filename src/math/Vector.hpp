@@ -30,8 +30,8 @@ struct Vector
 	// static_assert(dim >= 2); // TODO: Is dim == 1 OK?
 	// *** *** *** CONSTRUCTORS *** *** *** //
 
-	// Zero constructor
-	HostDevFn Vector() : Vector(static_cast<T>(0)) {}
+	// Default constructor
+	Vector() = default;
 
 	// Uniform constructor
 	HostDevFn Vector(T scalar) {

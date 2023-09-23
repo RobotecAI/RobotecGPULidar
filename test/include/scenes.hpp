@@ -46,8 +46,6 @@ static inline void setupBoxesAlongAxes(rgl_scene_t scene) {
 	constexpr float scaleZ = 3.0f;
 
 	for (int i = 0; i < BOX_COUNT; ++i) {
-
-
 		spawnCubeOnScene(scene, Mat3x4f::TRS({(2 * scaleX + 2) * i, 0, 0}, {45, 0, 0}, {scaleX, 1, 1}));
 		spawnCubeOnScene(scene, Mat3x4f::TRS({0, (2 * scaleY + 2) * i, 0}, {0, 45, 0}, {1, scaleY, 1}));
 		spawnCubeOnScene(scene, Mat3x4f::TRS({0, 0, (2 * scaleZ + 2) * i}, {0, 0, 45}, {1, 1, scaleZ}));

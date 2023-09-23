@@ -127,10 +127,16 @@ struct RaytraceNode : Node, IPointsNode
 	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
 	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
 
+	// RaytraceNode specific
+	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
+
 private:
 	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
 	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
+	bool doApplyDistortion{false};
+	Vec3f sensorLinearVelocityXYZ;
+	Vec3f sensorAngularVelocityRPY;
 	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
 	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
 
@@ -196,11 +202,13 @@ struct FromMat3x4fRaysNode : Node, IRaysNode
 	size_t getRayCount() const override { return rays->getCount(); }
 	std::optional<size_t> getRangesCount() const override { return std::nullopt; }
 	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
+	std::optional<size_t> getTimeOffsetsCount() const override { return std::nullopt; }
 
 	// Data getters
 	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return std::nullopt; }
 	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+	std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return std::nullopt; }
 
 private:
 	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
@@ -242,6 +250,25 @@ struct SetRangeRaysNode : Node, IRaysNodeSingleInput
 
 private:
 	VArrayProxy<Vec2f>::Ptr ranges = VArrayProxy<Vec2f>::create();
+};
+
+struct SetTimeOffsetsRaysNode : Node, IRaysNodeSingleInput
+{
+	using Ptr = std::shared_ptr<SetTimeOffsetsRaysNode>;
+	void setParameters(const float* raysTimeOffsets, size_t timeOffsetsCount);
+
+	// Node
+	void validate() override;
+	void schedule(cudaStream_t stream) override {}
+
+	// Rays description
+	std::optional<size_t> getTimeOffsetsCount() const override { return timeOffsets->getCount(); }
+
+	// Data getters
+	std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return timeOffsets; }
+
+private:
+	VArrayProxy<float>::Ptr timeOffsets = VArrayProxy<float>::create();
 };
 
 struct YieldPointsNode : Node, IPointsNodeSingleInput

@@ -485,6 +485,18 @@ RGL_API rgl_status_t
 rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t ranges_count);
 
 /**
+ * Creates or modifies SetTimeOffsetsRaysNode.
+ * The node assigns time offsets for existing rays.
+ * Input: rays
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param offsets Pointer to time offsets. Time offsets are in milliseconds.
+ * @param offsets_count Size of the `offsets` array. It has to be equal to number of existing rays.
+ */
+RGL_API rgl_status_t
+rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t offsets_count);
+
+/**
  * Creates or modifies TransformRaysNode.
  * Effectively, the node performs the following operation for all rays: `outputRay[i] = (*transform) * inputRay[i]`
  * This function can be used to account for the pose of the device.
@@ -521,6 +533,25 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
  */
 RGL_API rgl_status_t
 rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
+
+/**
+ * Creates or modifies RaytraceNode.
+ * The same as rgl_node_raytrace, but it applies velocity distortion additionally.
+ * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
+ * The velocities passed to that node must be in the local coordinate frame in which rays are described.
+ * NOTE:
+ * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
+ * Graph input: rays
+ * Graph output: point cloud (sparse)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
+ * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
+ *                        The velocity is in units per second.
+ * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
+ *                         The velocity is in radians per second.
+ */
+RGL_API rgl_status_t
+rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity, const rgl_vec3f* angular_velocity);
 
 /**
  * Creates or modifies FormatPointsNode.
