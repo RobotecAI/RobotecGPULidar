@@ -106,9 +106,10 @@ private:
 		std::thread thread;
 		std::atomic<bool> shouldQuit {false};
 		std::mutex visualizeNodesMutex;
-			// Adding: client thread
-			// Removing: visualize thread
-			std::list<VisualizePointsNode::Ptr> visualizeNodes;
+
+		// Adding: client thread
+		// Removing: visualize thread
+		std::list<VisualizePointsNode::Ptr> visualizeNodes;
 	};
 
 	inline static std::optional<VisualizeThread> visualizeThread;

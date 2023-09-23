@@ -24,6 +24,7 @@
 
 #include <graph/NodesCore.hpp>
 #include <graph/Graph.hpp>
+
 extern "C" {
 
 RGL_API rgl_status_t
@@ -133,7 +134,6 @@ rgl_get_last_error_string(const char** out_error_string)
 	// No logging here for now, since it may throw.
 	*out_error_string = getLastErrorString();
 }
-
 
 RGL_API rgl_status_t
 rgl_cleanup(void)
