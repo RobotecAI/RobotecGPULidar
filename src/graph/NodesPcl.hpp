@@ -51,6 +51,7 @@ private:
 	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(arrayMgr);
 	DeviceAsyncArray<pcl::PointXYZL>::Ptr filteredPoints = DeviceAsyncArray<pcl::PointXYZL>::create(arrayMgr);
 	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+	std::mutex getFieldDataMutex;
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 

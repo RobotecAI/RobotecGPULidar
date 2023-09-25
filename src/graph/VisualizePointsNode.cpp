@@ -113,6 +113,9 @@ void VisualizePointsNode::enqueueExecImpl()
 
 VisualizePointsNode::~VisualizePointsNode()
 {
+	if (viewer) {
+		viewer->close();
+	}
 	visThread.join();
 }
 
