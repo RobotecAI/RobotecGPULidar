@@ -17,7 +17,7 @@ public:
 		}
 	}
 
-	static PointCloud createFromNode(const rgl_node_t outputNode, const std::vector<rgl_field_t>& fields)
+	static PointCloud createFromNode(rgl_node_t outputNode, const std::vector<rgl_field_t>& fields)
 	{
 		int32_t outCount;
 		EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(outputNode, fields.at(0), &outCount, nullptr));
@@ -30,7 +30,12 @@ public:
 			EXPECT_EQ(currentSize, getFieldSize(fields.at(i)));
 			EXPECT_EQ(outCount, currentCount);
 
+			if (isDummy(fields.at(i))) {
+				continue;
+			}
+
 			std::vector<char> dataFromNode;
+			dataFromNode.resize(currentCount * currentSize);
 			EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(outputNode, fields.at(i), dataFromNode.data()));
 			for (int j = 0; j < currentCount; j++) {
 				std::move(dataFromNode.begin() + j * currentSize, dataFromNode.begin() + (j + 1) * currentSize,
@@ -48,8 +53,7 @@ public:
 	void transform(const Mat3x4f& transform)
 	{
 		if (std::find(fields.begin(), fields.end(), XYZ_F32) == fields.end()) {
-			throw std::invalid_argument(
-			    "PointCloud::transform: PointCloud does not contain XYZ_F32 field");
+			throw std::invalid_argument("PointCloud::transform: PointCloud does not contain XYZ_F32 field");
 		} else {
 			std::vector<Field<XYZ_F32>::type> points = getFieldValues<XYZ_F32>();
 			for (auto& point : points) {
@@ -128,3 +132,130 @@ private:
 	std::vector<rgl_field_t> fields;
 	std::map<rgl_field_t, std::size_t> offsets;
 };
+
+// ---------------------- Field values generators ----------------------
+
+static std::vector<Field<XYZ_F32>::type> generateCoord(std::size_t count)
+{
+	std::vector<Field<XYZ_F32>::type> coords;
+	coords.reserve(count);
+	for (int i = 0; i < count; i++) {
+		coords.push_back(Vec3f(i, i + 1, i + 2));
+	}
+	return coords;
+}
+
+enum class HitPointDensity
+{
+	HALF_HIT = 0,
+	ALL_NON_HIT,
+	ALL_HIT,
+	RANDOM
+};
+
+template<HitPointDensity T>
+struct Density
+{};
+
+#define DENSITY(NAME, FILLER)                                                                                                  \
+	template<>                                                                                                                 \
+	struct Density<NAME>                                                                                                       \
+	{                                                                                                                          \
+		std::function<int(int)> filler = FILLER;                                                                               \
+	}
+
+DENSITY(HitPointDensity::HALF_HIT, [](int i) { return i % 2; });
+DENSITY(HitPointDensity::ALL_NON_HIT, [](int i) { return 0; });
+DENSITY(HitPointDensity::ALL_HIT, [](int i) { return 1; });
+DENSITY(HitPointDensity::RANDOM, [](int i) { return rand() % 2; }); // TODO change rand generator
+
+static std::vector<Field<IS_HIT_I32>::type> generateIsHit(std::size_t count,
+                                                          HitPointDensity density = HitPointDensity::HALF_HIT)
+{
+	std::vector<Field<IS_HIT_I32>::type> isHit;
+	isHit.reserve(count);
+	for (int i = 0; i < count; i++) {
+		isHit.push_back(Density<HitPointDensity::HALF_HIT>().filler(i));
+	}
+	return isHit;
+}
+
+static std::vector<Field<RAY_IDX_U32>::type> generateRayIdx(std::size_t count)
+{
+	std::vector<Field<RAY_IDX_U32>::type> rayIdx;
+	rayIdx.reserve(count);
+	for (int i = 0; i < count; i++) {
+		rayIdx.push_back(i);
+	}
+	return rayIdx;
+}
+
+static std::vector<Field<ENTITY_ID_I32>::type> generateEntityId(std::size_t count)
+{
+	std::vector<Field<ENTITY_ID_I32>::type> entityId;
+	entityId.reserve(count);
+	for (int i = 0; i < count; i++) {
+		entityId.push_back(i);
+	}
+	return entityId;
+}
+
+static std::vector<Field<INTENSITY_F32>::type> generateIntensity(std::size_t count)
+{
+	std::vector<Field<INTENSITY_F32>::type> intensity;
+	intensity.reserve(count);
+	for (int i = 0; i < count; i++) {
+		intensity.push_back(i * 1.1f);
+	}
+	return intensity;
+}
+
+static std::vector<Field<RING_ID_U16>::type> generateRingId(std::size_t count)
+{
+	std::vector<Field<RING_ID_U16>::type> ringId;
+	ringId.reserve(count);
+	for (int i = 0; i < count; i++) {
+		ringId.push_back(i);
+	}
+	return ringId;
+}
+
+static std::vector<Field<AZIMUTH_F32>::type> generateAzimuth(std::size_t count)
+{
+	std::vector<Field<AZIMUTH_F32>::type> azimuth;
+	azimuth.reserve(count);
+	for (int i = 0; i < count; i++) {
+		azimuth.push_back(i * 1.1f);
+	}
+	return azimuth;
+}
+
+static std::vector<Field<DISTANCE_F32>::type> generateDistance(std::size_t count)
+{
+	std::vector<Field<DISTANCE_F32>::type> distance;
+	distance.reserve(count);
+	for (int i = 0; i < count; i++) {
+		distance.push_back(i * 1.1f);
+	}
+	return distance;
+}
+
+static std::vector<Field<RETURN_TYPE_U8>::type> generateReturnType(std::size_t count)
+{
+	std::vector<Field<RETURN_TYPE_U8>::type> returnType;
+	returnType.reserve(count);
+	for (int i = 0; i < count; i++) {
+		returnType.push_back(i % 3);
+	}
+	return returnType;
+}
+
+static std::vector<Field<TIME_STAMP_F64>::type> generateTimeStamp(std::size_t count)
+{
+	std::vector<Field<TIME_STAMP_F64>::type> timeStamp;
+	timeStamp.reserve(count);
+	for (int i = 0; i < count; i++) {
+		timeStamp.push_back(i * 1.1);
+	}
+	return timeStamp;
+}
