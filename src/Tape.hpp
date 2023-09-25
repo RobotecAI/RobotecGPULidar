@@ -217,6 +217,7 @@ private:
 	void tape_graph_get_result_data(const YAML::Node& yamlNode);
 	void tape_graph_node_add_child(const YAML::Node& yamlNode);
 	void tape_graph_node_remove_child(const YAML::Node& yamlNode);
+	void tape_graph_node_set_priority(const YAML::Node& yamlNode);
 	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode);
 	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode);
 	void tape_node_rays_transform(const YAML::Node& yamlNode);

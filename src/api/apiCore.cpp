@@ -634,6 +634,27 @@ void TapePlayer::tape_graph_node_remove_child(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_graph_node_set_priority(rgl_node_t node, int32_t priority)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_graph_node_set_priority(node={}, priority={})", repr(node), priority);
+		CHECK_ARG(node != nullptr);
+
+		Node::validatePtr(node)->setPriority(priority);
+	});
+	TAPE_HOOK(node, priority);
+	return status;
+}
+
+void TapePlayer::tape_graph_node_set_priority(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	auto priority = yamlNode[1].as<int32_t>();
+	rgl_graph_node_set_priority(node, priority);
+}
+
+RGL_API rgl_status_t
 rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
 {
 	auto status = rglSafeCall([&]() {
