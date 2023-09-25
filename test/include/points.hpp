@@ -1,13 +1,17 @@
 #pragma once
 
 #include <utils.hpp>
+#include <random>
+
+static std::random_device randomDevice;
+static auto randomSeed = randomDevice();
+static std::mt19937 randomGenerator{randomSeed};
 
 class PointCloud
 {
 public:
-	explicit PointCloud(const std::vector<rgl_field_t>& declaredFields, size_t pointCount)
+	explicit PointCloud(const std::vector<rgl_field_t>& declaredFields, std::size_t pointCount) : fields(declaredFields)
 	{
-		fields = declaredFields;
 		resize(pointCount);
 
 		std::size_t offset = 0;
@@ -24,22 +28,22 @@ public:
 
 		PointCloud pointCloud = PointCloud(fields, outCount);
 
-		for (int i = 0; i < fields.size(); i++) {
+		for (auto& field : fields) {
 			int32_t currentCount, currentSize;
-			EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(outputNode, fields.at(i), &currentCount, &currentSize));
-			EXPECT_EQ(currentSize, getFieldSize(fields.at(i)));
+			EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(outputNode, field, &currentCount, &currentSize));
+			EXPECT_EQ(currentSize, getFieldSize(field));
 			EXPECT_EQ(outCount, currentCount);
 
-			if (isDummy(fields.at(i))) {
+			if (isDummy(field)) {
 				continue;
 			}
 
 			std::vector<char> dataFromNode;
 			dataFromNode.resize(currentCount * currentSize);
-			EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(outputNode, fields.at(i), dataFromNode.data()));
+			EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(outputNode, field, dataFromNode.data()));
 			for (int j = 0; j < currentCount; j++) {
 				std::move(dataFromNode.begin() + j * currentSize, dataFromNode.begin() + (j + 1) * currentSize,
-				          pointCloud.data.data() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(fields.at(i)));
+				          pointCloud.data.data() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(field));
 			}
 		}
 
@@ -47,8 +51,6 @@ public:
 	}
 
 	std::size_t getPointCount() const { return data.size() / getPointByteSize(); }
-
-	void resize(std::size_t newCount) { data.resize(newCount * getPointByteSize()); }
 
 	void transform(const Mat3x4f& transform)
 	{
@@ -128,134 +130,39 @@ private:
 		return pointByteSize;
 	}
 
+	void resize(std::size_t newCount) { data.resize(newCount * getPointByteSize()); }
+
 	std::vector<char> data;
 	std::vector<rgl_field_t> fields;
 	std::map<rgl_field_t, std::size_t> offsets;
 };
 
-// ---------------------- Field values generators ----------------------
+/******************************** Field values generators ********************************/
 
-static std::vector<Field<XYZ_F32>::type> generateCoord(std::size_t count)
+template<typename FieldType>
+static std::vector<FieldType> generate(std::size_t count, std::function<FieldType(int)> generator)
 {
-	std::vector<Field<XYZ_F32>::type> coords;
-	coords.reserve(count);
+	std::vector<FieldType> values;
+	values.reserve(count);
 	for (int i = 0; i < count; i++) {
-		coords.push_back(Vec3f(i, i + 1, i + 2));
+		values.push_back(generator(i));
 	}
-	return coords;
+	return values;
 }
 
-enum class HitPointDensity
-{
-	HALF_HIT = 0,
-	ALL_NON_HIT,
-	ALL_HIT,
-	RANDOM
+std::function<Field<XYZ_F32>::type(int)> genCoord = [](int i) { return Vec3f(i, i + 1, i + 2); };
+std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { return i; };
+std::function<Field<ENTITY_ID_I32>::type(int)> genEntityId = [](int i) { return i; };
+std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) { return i * 1.1f; };
+std::function<Field<RING_ID_U16>::type(int)> genRingId = [](int i) { return i; };
+std::function<Field<AZIMUTH_F32>::type(int)> genAzimuth = [](int i) { return i * 1.1f; };
+std::function<Field<DISTANCE_F32>::type(int)> genDistance = [](int i) { return i * 1.1f; };
+std::function<Field<RETURN_TYPE_U8>::type(int)> genReturnType = [](int i) { return i % 3; };
+std::function<Field<TIME_STAMP_F64>::type(int)> genTimeStamp = [](int i) { return i * 1.1; };
+
+std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };
+std::function<Field<IS_HIT_I32>::type(int)> genAllNonHit = [](int i) { return 0; };
+std::function<Field<IS_HIT_I32>::type(int)> genAllHit = [](int i) { return 1; };
+std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
+	return std::uniform_int_distribution<int>(0, 1)(randomGenerator);
 };
-
-template<HitPointDensity T>
-struct Density
-{};
-
-#define DENSITY(NAME, FILLER)                                                                                                  \
-	template<>                                                                                                                 \
-	struct Density<NAME>                                                                                                       \
-	{                                                                                                                          \
-		std::function<int(int)> filler = FILLER;                                                                               \
-	}
-
-DENSITY(HitPointDensity::HALF_HIT, [](int i) { return i % 2; });
-DENSITY(HitPointDensity::ALL_NON_HIT, [](int i) { return 0; });
-DENSITY(HitPointDensity::ALL_HIT, [](int i) { return 1; });
-DENSITY(HitPointDensity::RANDOM, [](int i) { return rand() % 2; }); // TODO change rand generator
-
-static std::vector<Field<IS_HIT_I32>::type> generateIsHit(std::size_t count,
-                                                          HitPointDensity density = HitPointDensity::HALF_HIT)
-{
-	std::vector<Field<IS_HIT_I32>::type> isHit;
-	isHit.reserve(count);
-	for (int i = 0; i < count; i++) {
-		isHit.push_back(Density<HitPointDensity::HALF_HIT>().filler(i));
-	}
-	return isHit;
-}
-
-static std::vector<Field<RAY_IDX_U32>::type> generateRayIdx(std::size_t count)
-{
-	std::vector<Field<RAY_IDX_U32>::type> rayIdx;
-	rayIdx.reserve(count);
-	for (int i = 0; i < count; i++) {
-		rayIdx.push_back(i);
-	}
-	return rayIdx;
-}
-
-static std::vector<Field<ENTITY_ID_I32>::type> generateEntityId(std::size_t count)
-{
-	std::vector<Field<ENTITY_ID_I32>::type> entityId;
-	entityId.reserve(count);
-	for (int i = 0; i < count; i++) {
-		entityId.push_back(i);
-	}
-	return entityId;
-}
-
-static std::vector<Field<INTENSITY_F32>::type> generateIntensity(std::size_t count)
-{
-	std::vector<Field<INTENSITY_F32>::type> intensity;
-	intensity.reserve(count);
-	for (int i = 0; i < count; i++) {
-		intensity.push_back(i * 1.1f);
-	}
-	return intensity;
-}
-
-static std::vector<Field<RING_ID_U16>::type> generateRingId(std::size_t count)
-{
-	std::vector<Field<RING_ID_U16>::type> ringId;
-	ringId.reserve(count);
-	for (int i = 0; i < count; i++) {
-		ringId.push_back(i);
-	}
-	return ringId;
-}
-
-static std::vector<Field<AZIMUTH_F32>::type> generateAzimuth(std::size_t count)
-{
-	std::vector<Field<AZIMUTH_F32>::type> azimuth;
-	azimuth.reserve(count);
-	for (int i = 0; i < count; i++) {
-		azimuth.push_back(i * 1.1f);
-	}
-	return azimuth;
-}
-
-static std::vector<Field<DISTANCE_F32>::type> generateDistance(std::size_t count)
-{
-	std::vector<Field<DISTANCE_F32>::type> distance;
-	distance.reserve(count);
-	for (int i = 0; i < count; i++) {
-		distance.push_back(i * 1.1f);
-	}
-	return distance;
-}
-
-static std::vector<Field<RETURN_TYPE_U8>::type> generateReturnType(std::size_t count)
-{
-	std::vector<Field<RETURN_TYPE_U8>::type> returnType;
-	returnType.reserve(count);
-	for (int i = 0; i < count; i++) {
-		returnType.push_back(i % 3);
-	}
-	return returnType;
-}
-
-static std::vector<Field<TIME_STAMP_F64>::type> generateTimeStamp(std::size_t count)
-{
-	std::vector<Field<TIME_STAMP_F64>::type> timeStamp;
-	timeStamp.reserve(count);
-	for (int i = 0; i < count; i++) {
-		timeStamp.push_back(i * 1.1);
-	}
-	return timeStamp;
-}
