@@ -191,6 +191,7 @@ cudaStream_t Node::getStreamHandle()
 void Node::setPriority(int32_t requestedPriority)
 {
 	// It is illegal to set node's priority to a value lower than max priority value of its outputs.
+	// This keeps the invariant of node's priority being always >= than priority of its children.
 	if (!outputs.empty() && outputs.front()->priority > requestedPriority) {
 		auto msg = fmt::format("cannot set priority of node {} to {}, because it's children {} has higher priority {}",
 		                       getName(), requestedPriority, outputs.front()->getName(), outputs.front()->priority);
