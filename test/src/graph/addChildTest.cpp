@@ -1,7 +1,6 @@
 #include <random>
 #include <gtest/gtest.h>
 #include <utils.hpp>
-#include <RGLExceptions.hpp>
 #include <RGLFields.hpp>
 
 
