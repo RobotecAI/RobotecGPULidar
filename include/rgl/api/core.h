@@ -705,6 +705,7 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
  * This is useful when some branch (e.g. visualization data)
  * needs to be executed before some other (e.g. publishing to ROS2).
  * By default, all nodes have priority 0.
+ * Setting node priority will also affect its parents if needed.
  * It is illegal to set node's priority to a value lower than max priority value of its outputs.
  * @param node Node to set its priority.
  * @param priority Signed integer describing priority.

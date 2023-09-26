@@ -653,7 +653,7 @@ rgl_graph_node_set_priority(rgl_node_t node, int32_t priority)
 void TapePlayer::tape_graph_node_set_priority(const YAML::Node& yamlNode)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_t node = tapeNodes.at(nodeId);
 	auto priority = yamlNode[1].as<int32_t>();
 	rgl_graph_node_set_priority(node, priority);
 }
