@@ -190,6 +190,9 @@ cudaStream_t Node::getStreamHandle()
 
 void Node::setPriority(int32_t requestedPriority)
 {
+	if (requestedPriority == priority) {
+		return;
+	}
 	// It is illegal to set node's priority to a value lower than max priority value of its outputs.
 	// This keeps the invariant of node's priority being always >= than priority of its children.
 	if (!outputs.empty() && outputs.front()->priority > requestedPriority) {
@@ -209,5 +212,9 @@ void Node::setPriority(int32_t requestedPriority)
 		if (input->priority < requestedPriority) {
 			input->setPriority(requestedPriority);
 		}
+	}
+	if (hasGraphRunCtx()) {
+		// Synchronized with Graph thread on API level
+		graphRunCtx.value()->executionOrder.clear();
 	}
 }

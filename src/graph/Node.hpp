@@ -205,6 +205,7 @@ protected:
 	StreamBoundObjectsManager arrayMgr;
 
 	friend struct fmt::formatter<Node>;
+	friend struct GraphRunCtx;
 
 	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
 	template<typename NodeType, typename... Args>

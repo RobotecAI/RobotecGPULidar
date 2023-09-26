@@ -23,7 +23,6 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
 
 	graphRunCtx->nodes = node->getConnectedNodes();
-	graphRunCtx->executionOrder = GraphRunCtx::findExecutionOrder(graphRunCtx->nodes);
 
 	for (auto&& currentNode : graphRunCtx->nodes) {
 		if (currentNode->hasGraphRunCtx()) {
@@ -41,6 +40,10 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 void GraphRunCtx::executeAsync()
 {
 	synchronize(); // Wait until previous execution is completed
+
+	if (executionOrder.empty()) {
+		executionOrder = GraphRunCtx::findExecutionOrder(nodes);
+	}
 
 	// Perform validation in client's thread, this makes error reporting easier.
 	for (auto&& current : executionOrder) {
@@ -100,18 +103,38 @@ catch (...)
 
 std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
 {
+	// Nodes already present in this vector need to be executed after the ones that are added later.
 	std::vector<std::shared_ptr<Node>> reverseOrder {};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
 		nodes.erase(current);
-		for (auto&& output : current->getOutputs()) {
-			if (nodes.contains(output)) {
-				dfsRec(output);
+		for (auto it = current->getOutputs().rbegin(); it != current->getOutputs().rend(); ++it) {
+			const auto& outputNode = *it;
+			if (nodes.contains(outputNode)) {
+				dfsRec(outputNode);
 			}
 		}
 		reverseOrder.push_back(current);
 	};
-	while (!nodes.empty()) {
-		dfsRec(*nodes.begin());
+	// Get entry nodes (graphs may have many)
+	std::vector<Node::Ptr> entryNode;
+	for (auto&& node : nodes) {
+		if (node->getInputs().empty()) {
+			entryNode.push_back(node);
+		}
+	}
+	// Sort entry nodes by priority, ascending!
+	std::stable_sort(entryNode.begin(), entryNode.end(),
+	                 [](Node::Ptr lhs, Node::Ptr rhs)
+	                 { return lhs->priority < rhs->priority; });
+
+	// Iterate in ascending order of entry priorities
+	for (auto&& node : entryNode) {
+		dfsRec(node);
+	}
+
+	if (!nodes.empty()) {
+		// I'm pretty sure the rest of the code guarantees it will not happen, but just in case for now.
+		throw std::logic_error("bug: detected unreachable nodes");
 	}
 	return {reverseOrder.rbegin(), reverseOrder.rend()};
 }

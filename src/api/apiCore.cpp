@@ -640,7 +640,11 @@ rgl_graph_node_set_priority(rgl_node_t node, int32_t priority)
 		RGL_API_LOG("rgl_graph_node_set_priority(node={}, priority={})", repr(node), priority);
 		CHECK_ARG(node != nullptr);
 
-		Node::validatePtr(node)->setPriority(priority);
+		Node::Ptr nodeShared = Node::validatePtr(node);
+		if (nodeShared->hasGraphRunCtx()) {
+			nodeShared->getGraphRunCtx()->synchronize();
+		}
+		nodeShared->setPriority(priority);
 	});
 	TAPE_HOOK(node, priority);
 	return status;
