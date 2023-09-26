@@ -1,7 +1,10 @@
 #pragma once
 
-#include <utils.hpp>
 #include <random>
+
+#include <RGLFields.hpp>
+#include <math/Mat3x4f.hpp>
+#include <testing.hpp>
 
 static std::random_device randomDevice;
 static auto randomSeed = randomDevice();
@@ -68,7 +71,7 @@ public:
 	rgl_node_t createUsePointsNode() const
 	{
 		rgl_node_t node = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&node, data.data(), data.size(), fields.data(), fields.size()));
+		EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&node, data.data(), getPointCount(), fields.data(), fields.size()));
 		return node;
 	}
 
@@ -118,6 +121,8 @@ public:
 		return fieldValues;
 	}
 
+	char* getData() { return data.data(); }
+
 	~PointCloud() = default;
 
 private:
@@ -150,19 +155,42 @@ static std::vector<FieldType> generate(std::size_t count, std::function<FieldTyp
 	return values;
 }
 
-std::function<Field<XYZ_F32>::type(int)> genCoord = [](int i) { return Vec3f(i, i + 1, i + 2); };
-std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { return i; };
-std::function<Field<ENTITY_ID_I32>::type(int)> genEntityId = [](int i) { return i; };
-std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) { return i * 1.1f; };
-std::function<Field<RING_ID_U16>::type(int)> genRingId = [](int i) { return i; };
-std::function<Field<AZIMUTH_F32>::type(int)> genAzimuth = [](int i) { return i * 1.1f; };
-std::function<Field<DISTANCE_F32>::type(int)> genDistance = [](int i) { return i * 1.1f; };
-std::function<Field<RETURN_TYPE_U8>::type(int)> genReturnType = [](int i) { return i % 3; };
-std::function<Field<TIME_STAMP_F64>::type(int)> genTimeStamp = [](int i) { return i * 1.1; };
+static std::function<Field<XYZ_F32>::type(int)> genCoord = [](int i) { return Vec3f(i, i + 1, i + 2); };
+static std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { return i; };
+static std::function<Field<ENTITY_ID_I32>::type(int)> genEntityId = [](int i) { return i; };
+static std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) { return i * 1.1f; };
+static std::function<Field<RING_ID_U16>::type(int)> genRingId = [](int i) { return i; };
+static std::function<Field<AZIMUTH_F32>::type(int)> genAzimuth = [](int i) { return i * 1.1f; };
+static std::function<Field<DISTANCE_F32>::type(int)> genDistance = [](int i) { return i * 1.1f; };
+static std::function<Field<RETURN_TYPE_U8>::type(int)> genReturnType = [](int i) { return i % 3; };
+static std::function<Field<TIME_STAMP_F64>::type(int)> genTimeStamp = [](int i) { return i * 1.1; };
 
-std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };
-std::function<Field<IS_HIT_I32>::type(int)> genAllNonHit = [](int i) { return 0; };
-std::function<Field<IS_HIT_I32>::type(int)> genAllHit = [](int i) { return 1; };
-std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
+static std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };
+static std::function<Field<IS_HIT_I32>::type(int)> genAllNonHit = [](int i) { return 0; };
+static std::function<Field<IS_HIT_I32>::type(int)> genAllHit = [](int i) { return 1; };
+static std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
 	return std::uniform_int_distribution<int>(0, 1)(randomGenerator);
 };
+
+/******************************** Field values validators ********************************/
+
+template<typename FieldType>
+static void checkIfNearEqual(const std::vector<FieldType>& expected, const std::vector<FieldType>& actual,
+                             const float epsilon = 1e-5)
+{
+	ASSERT_EQ(expected.size(), actual.size());
+	for (int i = 0; i < expected.size(); ++i) {
+		EXPECT_NEAR(expected[i], actual[i], epsilon);
+	}
+}
+
+static void checkIfNearEqual(const std::vector<Field<XYZ_F32>::type>& expected, const std::vector<Field<XYZ_F32>::type>& actual,
+							 const float epsilon = 1e-5)
+{
+	ASSERT_EQ(expected.size(), actual.size());
+	for (int i = 0; i < expected.size(); ++i) {
+		EXPECT_NEAR(expected[i][0], actual[i][0], epsilon);
+		EXPECT_NEAR(expected[i][1], actual[i][1], epsilon);
+		EXPECT_NEAR(expected[i][2], actual[i][2], epsilon);
+	}
+}

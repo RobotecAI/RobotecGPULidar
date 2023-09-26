@@ -1,4 +1,4 @@
-#include <utils.hpp>
+#include <testing.hpp>
 
 class TemporalMergePointsNodeTest : public RGLTest{
 protected:

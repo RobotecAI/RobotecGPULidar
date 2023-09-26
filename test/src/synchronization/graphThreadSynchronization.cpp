@@ -1,6 +1,8 @@
-#include "lidars.hpp"
-#include "utils.hpp"
+#include <testing.hpp>
+#include <lidars.hpp>
 #include <scenes.hpp>
+#include <transformations.hpp>
+
 class graphThreadSynchronization : public RGLTestWithParam<int> { };
 
 struct LinearGraph {

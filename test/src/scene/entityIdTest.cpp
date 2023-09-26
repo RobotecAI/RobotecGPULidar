@@ -1,6 +1,8 @@
-#include "lidars.hpp"
-#include "scenes.hpp"
-#include "utils.hpp"
+#include <testing.hpp>
+#include <lidars.hpp>
+#include <scenes.hpp>
+
+#include <RGLFields.hpp>
 
 #ifdef RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>

@@ -1,4 +1,7 @@
-#include <utils.hpp>
+#include <testing.hpp>
+#include <constans.hpp>
+
+#include <math/Mat3x4f.hpp>
 
 class SetRingIdsNodeTest : public RGLTestWithParam<int> {
 protected:

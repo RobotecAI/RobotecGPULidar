@@ -1,8 +1,7 @@
 #pragma once
 
 #include <math/Mat3x4f.hpp>
-#include <gtest/gtest.h>
-#include <utils.hpp>
+#include <testing.hpp>
 
 static std::vector<rgl_mat3x4f> makeLidar3dRays(float fov_x, float fov_y,
                                                 float resolution_x = 1.0f,

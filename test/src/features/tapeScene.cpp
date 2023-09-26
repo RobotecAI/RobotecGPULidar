@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <utils.hpp>
+#include <testing.hpp>
 #include <scenes.hpp>
 #include <RGLFields.hpp>
 #include <rgl/api/extensions/tape.h>

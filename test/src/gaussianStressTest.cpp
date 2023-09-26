@@ -1,7 +1,7 @@
-#include <gtest/gtest.h>
-
-#include <utils.hpp>
+#include <testing.hpp>
 #include <scenes.hpp>
+#include <gaussian.hpp>
+#include <transformations.hpp>
 
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>

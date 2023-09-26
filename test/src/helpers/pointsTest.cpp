@@ -1,4 +1,6 @@
 #include <points.hpp>
+#include <constans.hpp>
+#include <transformations.hpp>
 
 class PointCloudTest : public ::testing::TestWithParam<int>
 {

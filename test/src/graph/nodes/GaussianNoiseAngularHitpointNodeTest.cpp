@@ -1,4 +1,4 @@
-#include <utils.hpp>
+#include <testing.hpp>
 
 class GaussianNoiseAngularHitpointNodeTest : public RGLTest {
 protected:

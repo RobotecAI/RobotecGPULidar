@@ -1,8 +1,7 @@
+#include <testing.hpp>
+#include <files.hpp>
+
 #include <Logger.hpp>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <rgl/api/core.h>
-#include <utils.hpp>
 #include <rgl/api/extensions/tape.h>
 
 using namespace ::testing;

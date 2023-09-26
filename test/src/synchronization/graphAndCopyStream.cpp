@@ -1,8 +1,8 @@
+#include <testing.hpp>
+#include <constans.hpp>
+
 #include <testKernel.hpp>
-#include <cuda.h>
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include "CudaEvent.hpp"
+#include <CudaEvent.hpp>
 
 using namespace testing;
 
