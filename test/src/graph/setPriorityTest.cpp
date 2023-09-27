@@ -14,6 +14,18 @@ struct SetNodePriority : RGLTest
 	static constexpr double SLEEP = 0.001;
 	Vec3f data[1] = {{}};
 	rgl_field_t fields[1] = {XYZ_F32};
+
+	static bool prioritiesEq(const std::map<rgl_node_t, int32_t>& expectedPriorities)
+	{
+		for (auto&& [node, expectedPriority] : expectedPriorities) {
+			int32_t outPriority;
+			EXPECT_RGL_SUCCESS(rgl_graph_node_get_priority(node, &outPriority));
+			if (outPriority != expectedPriority) {
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 // TODO(nebraszka): add the following tests
@@ -21,6 +33,8 @@ struct SetNodePriority : RGLTest
 // Cannot set priority lower than max of children
 // Adding a child with a high priority has the same effect as adding a child and settings its high priority
 // Also, existing tests would benefit from refactor.
+
+
 
 TEST_F(SetNodePriority, Basic)
 {
@@ -72,6 +86,13 @@ TEST_F(SetNodePriority, Basic)
 
 	// At the end, check if we get expected error when trying to set parent's priority lower than its children
 	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_node_set_priority(fromArray, 1), "cannot set priority");
+
+	// At the end, priorities should look like this:
+	std::map<rgl_node_t, int32_t> expectedPriorities = {
+		{nodeA, 2}, {sleepA, 2}, {fromArray, 2},
+		{nodeB, 1}, {sleepB, 1}
+	};
+	EXPECT_TRUE(prioritiesEq(expectedPriorities));
 }
 
 TEST_F(SetNodePriority, TwoEntryNodes)
@@ -119,4 +140,11 @@ TEST_F(SetNodePriority, TwoEntryNodes)
 		timeB = dynamic_cast<RecordTimeNode *>(nodeB)->getMeasurement();
 		ASSERT_LE(timeA, timeB);
 	}
+
+	// At the end, priorities should look like this:
+	std::map<rgl_node_t, int32_t> expectedPriorities = {
+			{nodeA, 2}, {sleepA, 2}, {fromArrayA, 2},
+			{nodeB, 1}, {sleepB, 1}, {fromArrayB, 1}
+	};
+	EXPECT_TRUE(prioritiesEq(expectedPriorities));
 }
