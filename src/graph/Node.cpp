@@ -54,7 +54,10 @@ void Node::addChild(Node::Ptr child)
 	                 [](Node::Ptr lhs, Node::Ptr rhs)
 	                 { return lhs->priority > rhs->priority; });
 
-	this->setPriority(outputs.front()->priority);
+	auto maxChildPriority = outputs.front()->priority;
+	if (maxChildPriority > this->priority) {
+		this->setPriority(maxChildPriority);
+	}
 
 	this->dirty = true;
 	child->dirty = true;
