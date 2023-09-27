@@ -108,6 +108,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	std::set<Node::Ptr> disconnectConnectedNodes();
 
 	void setPriority(int32_t);
+	int32_t getPriority() { return priority; }
 
 public: // Debug methods
 
@@ -205,7 +206,6 @@ protected:
 	StreamBoundObjectsManager arrayMgr;
 
 	friend struct fmt::formatter<Node>;
-	friend struct GraphRunCtx;
 
 	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
 	template<typename NodeType, typename... Args>

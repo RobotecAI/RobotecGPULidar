@@ -659,6 +659,34 @@ void TapePlayer::tape_graph_node_set_priority(const YAML::Node& yamlNode)
 }
 
 RGL_API rgl_status_t
+rgl_graph_node_get_priority(rgl_node_t node, int32_t* out_priority)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_graph_node_get_priority(node={}, priority={})", repr(node), (void*) out_priority);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(out_priority != nullptr);
+
+		Node::Ptr nodeShared = Node::validatePtr(node);
+		// No need to synchronize
+		*out_priority = nodeShared->getPriority();
+	});
+	TAPE_HOOK(node, out_priority);
+	return status;
+}
+
+void TapePlayer::tape_graph_node_get_priority(const YAML::Node& yamlNode)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = tapeNodes.at(nodeId);
+	auto tape_priority = yamlNode[1].as<int32_t>();
+	int32_t out_priority;
+	rgl_graph_node_set_priority(node, out_priority);
+	if (tape_priority != out_priority) {
+		RGL_WARN("tape_graph_node_get_priority: actual priority ({}) differs from tape priority ({})", out_priority, tape_priority);
+	}
+}
+
+RGL_API rgl_status_t
 rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count)
 {
 	auto status = rglSafeCall([&]() {

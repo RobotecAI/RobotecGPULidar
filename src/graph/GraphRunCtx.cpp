@@ -125,7 +125,7 @@ std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std:
 	// Sort entry nodes by priority, ascending!
 	std::stable_sort(entryNode.begin(), entryNode.end(),
 	                 [](Node::Ptr lhs, Node::Ptr rhs)
-	                 { return lhs->priority < rhs->priority; });
+	                 { return lhs->getPriority() < rhs->getPriority(); });
 
 	// Iterate in ascending order of entry priorities
 	for (auto&& node : entryNode) {

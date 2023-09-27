@@ -712,3 +712,11 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
  */
 RGL_API rgl_status_t
 rgl_graph_node_set_priority(rgl_node_t node, int32_t priority);
+
+/**
+ * Returns node's priority.
+ * @param node Node to query
+ * @param out_priority Non-null pointer where priority will be stored.
+ */
+RGL_API rgl_status_t
+rgl_graph_node_get_priority(rgl_node_t node, int32_t* out_priority);
