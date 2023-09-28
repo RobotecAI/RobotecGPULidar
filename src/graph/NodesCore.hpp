@@ -60,6 +60,7 @@ private:
 
 	std::vector<rgl_field_t> fields;
 	DeviceAsyncArray<char>::Ptr output = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr outputHost = HostPinnedArray<char>::create();
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 

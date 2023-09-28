@@ -65,7 +65,7 @@ void Ros2PublishPointsNode::validateImpl()
 
 void Ros2PublishPointsNode::enqueueExecImpl()
 {
-	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT)->asTyped<char>()->asSubclass<DeviceAsyncArray>();
+	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT)->asTyped<char>()->asSubclass<HostArray>();
 	int count = input->getPointCount();
 	ros2Message.data.resize(ros2Message.point_step * count);
 	const void* src = fieldData->getRawReadPtr();
