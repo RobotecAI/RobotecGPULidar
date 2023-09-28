@@ -143,11 +143,11 @@ inline void handleDestructorException(std::exception_ptr e, const char* what)
 			}
 			// We're a graph thread. Mark remaining nodes as executed and set exception.
 			for (auto&& [node, state] : ctx->executionStatus) {
-				if (state.executed.load(std::memory_order::relaxed)) {
+				if (state.enqueued.load(std::memory_order::relaxed)) {
 					continue;
 				}
 				state.exceptionPtr = std::current_exception();
-				state.executed.store(true, std::memory_order::release);
+				state.enqueued.store(true, std::memory_order::release);
 				throw e; // In Graph thread, rethrow to die.
 			}
 		}

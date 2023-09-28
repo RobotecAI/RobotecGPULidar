@@ -69,6 +69,6 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 
 size_t CompactPointsNode::getWidth() const
 {
-	this->synchronizeThis();
+	this->synchronize();
 	return width;
 }

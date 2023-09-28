@@ -85,6 +85,8 @@ TapePlayer::TapePlayer(const char* path)
 		{ "rgl_graph_get_result_data", std::bind(&TapePlayer::tape_graph_get_result_data, this, _1) },
 		{ "rgl_graph_node_add_child", std::bind(&TapePlayer::tape_graph_node_add_child, this, _1) },
 		{ "rgl_graph_node_remove_child", std::bind(&TapePlayer::tape_graph_node_remove_child, this, _1) },
+		{ "rgl_graph_node_set_priority", std::bind(&TapePlayer::tape_graph_node_set_priority, this, _1) },
+		{ "rgl_graph_node_get_priority", std::bind(&TapePlayer::tape_graph_node_get_priority, this, _1) },
 		{ "rgl_node_rays_from_mat3x4f", std::bind(&TapePlayer::tape_node_rays_from_mat3x4f, this, _1) },
 		{ "rgl_node_rays_set_ring_ids", std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1) },
 		{ "rgl_node_rays_transform", std::bind(&TapePlayer::tape_node_rays_transform, this, _1) },

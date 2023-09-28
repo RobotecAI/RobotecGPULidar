@@ -30,6 +30,8 @@ set(RGL_TEST_FILES
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/testKernel.cu
     src/synchronization/graphThreadSynchronization.cpp
+        src/graph/setPriorityTest.cpp
+        include/nodes.hpp
 )
 
 # Only Linux

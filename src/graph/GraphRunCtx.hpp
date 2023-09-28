@@ -84,7 +84,7 @@ private: // Communication between client's thread and graph thread
 	struct NodeExecStatus
 	{
 		// If true, then execution has succeeded or an exception has been thrown.
-		std::atomic<bool> executed {false};
+		std::atomic<bool> enqueued {false};
 
 		// exceptionPtr may be read by client's thread only after it acquire-read true `completed`
 		// exceptionPtr may be written by graph thread only before it release-stores true `completed`
@@ -94,5 +94,6 @@ private: // Communication between client's thread and graph thread
 	std::unordered_map<Node::ConstPtr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
 
+	friend Node;
 	friend void handleDestructorException(std::exception_ptr e, const char* what);
 };

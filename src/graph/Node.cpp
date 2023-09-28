@@ -49,6 +49,16 @@ void Node::addChild(Node::Ptr child)
 	this->outputs.push_back(child);
 	child->inputs.push_back(shared_from_this());
 
+	// Sort outputs by priority
+	std::stable_sort(outputs.begin(), outputs.end(),
+	                 [](Node::Ptr lhs, Node::Ptr rhs)
+	                 { return lhs->priority > rhs->priority; });
+
+	auto maxChildPriority = outputs.front()->priority;
+	if (maxChildPriority > this->priority) {
+		this->setPriority(maxChildPriority);
+	}
+
 	this->dirty = true;
 	child->dirty = true;
 }
@@ -155,7 +165,7 @@ std::set<Node::Ptr> Node::disconnectConnectedNodes()
 	return nodes;
 }
 
-void Node::synchronizeThis() const
+void Node::synchronize() const
 {
 	if (!hasGraphRunCtx()) {
 		return; // Nothing to synchronize ¯\_(ツ)_/¯
@@ -168,15 +178,47 @@ void Node::synchronizeThis() const
 
 void Node::waitForResults()
 {
+	// TODO: merge with synchronize?
 	// ...
 	if (!isValid()) {
 		auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", getName());
 		throw InvalidPipeline(msg);
 	}
-	synchronizeThis();
+	synchronize();
 }
 
 cudaStream_t Node::getStreamHandle()
 {
 	return getGraphRunCtx()->getStream()->getHandle();
+}
+
+void Node::setPriority(int32_t requestedPriority)
+{
+	if (requestedPriority == priority) {
+		return;
+	}
+	// It is illegal to set node's priority to a value lower than max priority value of its outputs.
+	// This keeps the invariant of node's priority being always >= than priority of its children.
+	if (!outputs.empty() && outputs.front()->priority > requestedPriority) {
+		auto msg = fmt::format("cannot set priority of node {} to {}, because it's children {} has higher priority {}",
+		                       getName(), requestedPriority, outputs.front()->getName(), outputs.front()->priority);
+		throw InvalidPipeline(msg);
+	}
+
+	this->priority = requestedPriority;
+	// Update parent nodes.
+	for (auto&& input : inputs) {
+		// Resort parent's list of children, because order may have changed.
+		std::stable_sort(input->outputs.begin(), input->outputs.end(),
+		                 [](Node::Ptr lhs, Node::Ptr rhs)
+		                 { return lhs->priority > rhs->priority; });
+		// Increase parents' priority
+		if (input->priority < requestedPriority) {
+			input->setPriority(requestedPriority);
+		}
+	}
+	if (hasGraphRunCtx()) {
+		// Synchronized with Graph thread on API level
+		graphRunCtx.value()->executionOrder.clear();
+	}
 }

@@ -95,7 +95,7 @@ void DownSamplePointsNode::enqueueExecImpl()
 
 size_t DownSamplePointsNode::getWidth() const
 {
-	this->synchronizeThis();
+	this->synchronize();
 	return filteredIndices->getCount();
 }
 
