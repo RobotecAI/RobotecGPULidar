@@ -81,7 +81,8 @@ void GraphRunCtx::executeThreadMain() try
 		// SPDLOG is thread safe, so we can log here.
 		RGL_DEBUG("Enqueueing node: {}", *node);
 		node->enqueueExec();
-		executionStatus.at(node).executed.store(true, std::memory_order::release);
+		executionStatus.at(node).enqueued.store(true, std::memory_order::release);
+		node->waitForResults();
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 
@@ -93,11 +94,11 @@ catch (...)
 	// We still need to communicate that nodes 'executed' (even though some may not have a chance to start).
 	// If we didn't, we could hang client's thread in synchronizeNodeCPU() waiting for a Node that will never run.
 	for (auto&& [node, state] : executionStatus) {
-		if (state.executed.load(std::memory_order::relaxed)) {
+		if (state.enqueued.load(std::memory_order::relaxed)) {
 			continue;
 		}
 		state.exceptionPtr = std::current_exception();
-		state.executed.store(true, std::memory_order::release);
+		state.enqueued.store(true, std::memory_order::release);
 	}
 }
 
@@ -187,7 +188,7 @@ void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 	// Wait until node is executed
 	// This is call executed in client's thread, which is often engine's main thread.
 	// Therefore, we choose busy wait, since putting it to sleep & waking up would add additional latency.
-	while (!executionStatus.at(nodeToSynchronize).executed.load(std::memory_order_acquire))
+	while (!executionStatus.at(nodeToSynchronize).enqueued.load(std::memory_order_acquire))
 		;
 	// Rethrow exception, if any
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {

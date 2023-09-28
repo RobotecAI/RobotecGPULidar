@@ -8,7 +8,7 @@ struct RecordTimeNode : IPointsNodeSingleInput
 	void setParameters() {}
 	double getMeasurement()
 	{
-		this->synchronizeThis();
+		this->synchronize();
 		return std::chrono::duration<double>(measurement.time_since_epoch()).count();
 	}
 protected:

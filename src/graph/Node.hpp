@@ -108,7 +108,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	std::set<Node::Ptr> disconnectConnectedNodes();
 
 	void setPriority(int32_t);
-	int32_t getPriority() { return priority; }
+	int32_t getPriority() const { return priority; }
 
 public: // Debug methods
 
@@ -144,7 +144,7 @@ protected: // Member methods
 	 * This is required to query node for results.
 	 * If error happened in the graph thread, this function will re-throw it.
 	 */
-	void synchronizeThis() const;
+	void synchronize() const;
 
 	cudaStream_t getStreamHandle();
 

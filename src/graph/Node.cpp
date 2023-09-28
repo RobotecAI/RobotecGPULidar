@@ -165,7 +165,7 @@ std::set<Node::Ptr> Node::disconnectConnectedNodes()
 	return nodes;
 }
 
-void Node::synchronizeThis() const
+void Node::synchronize() const
 {
 	if (!hasGraphRunCtx()) {
 		return; // Nothing to synchronize ¯\_(ツ)_/¯
@@ -178,12 +178,13 @@ void Node::synchronizeThis() const
 
 void Node::waitForResults()
 {
+	// TODO: merge with synchronize?
 	// ...
 	if (!isValid()) {
 		auto msg = fmt::format("Cannot get results from {}; it hasn't been run yet, or the run has failed", getName());
 		throw InvalidPipeline(msg);
 	}
-	synchronizeThis();
+	synchronize();
 }
 
 cudaStream_t Node::getStreamHandle()
