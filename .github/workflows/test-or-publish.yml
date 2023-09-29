@@ -1,0 +1,108 @@
+name: test-or-publish
+
+run-name: ${{ github.actor }} tests RGL or publishes RGL Docker image
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+    branches: main
+
+  workflow_dispatch:
+    inputs:
+      TEST:
+        required: true
+        default: true
+        type: boolean
+        description: test - warning! can't do both in one workflow
+
+      PUBLISH:
+        required: true
+        default: false
+        type: boolean
+        description: publish - warning! can't do both in one workflow
+
+permissions:
+  contents: read
+
+env:
+  RGL_BUILD_TARGET: with-pcl-and-ros2
+  REGISTRY: ghcr.io
+  PACKAGE_NAME: robotecgpulidar
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  wait_for_mutex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ahmadnassri/action-workflow-queue@ecb80b5975f6e540c19d639a5891699ac0ecd1f6
+        with:
+          # 30h
+          timeout: 108000000
+
+  checkout-repository:
+    needs: wait_for_mutex
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+
+  # start of publish workflow
+
+  # set up local Docker registry before publishing
+  # docker run -d -p 5000:5000 --name registry registry:2.7
+  build-docker-image:
+    needs: checkout-repository
+    if: github.event.pull_request.merged == true || inputs.PUBLISH == true
+    runs-on: self-hosted
+    steps:
+      - name: Build and push Docker image to local repository
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          tags: localhost:5000/${{ env.PACKAGE_NAME }}:latest
+          target: ${{ env.RGL_BUILD_TARGET }}
+
+  test-new-image-locally:
+    needs: build-docker-image
+    uses: ./.github/workflows/test-all-RGL-configurations-locally-subworkflow.yml
+
+  publish-to-latest:
+    needs: test-new-image-locally
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set LC repository owner name for docker tag
+        run: |
+          echo "REPOSITORY_OWNER_LC=${REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+        env:
+          REPOSITORY_OWNER: '${{ github.repository_owner }}'
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image to latest
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER_LC }}/${{ env.PACKAGE_NAME }}:latest
+          target: ${{ env.RGL_BUILD_TARGET }}
+  # end of publish workflow
+
+  # start of test workflow
+  test-all-configurations:
+    needs: checkout-repository
+    if: (github.event.pull_request.merged == false && inputs.PUBLISH == false) || inputs.TEST == true
+    uses: ./.github/workflows/test-all-RGL-configurations-from-repo-subworkflow.yml
+  # end of test workflow

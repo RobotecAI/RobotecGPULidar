@@ -1,0 +1,181 @@
+name: test-one-RGL-configuration
+
+run-name: ${{ github.actor }} tests one RGL configuration in Docker
+
+on:
+  workflow_call:
+    inputs:
+
+      RGL_BUILD_TARGET:
+        required: true
+        type: string
+
+      DOCKER_IMG_URL:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  RGL_BUILD_TARGET: ${{ inputs.RGL_BUILD_TARGET}}
+  DOCKER_IMG_URL: ${{ inputs.DOCKER_IMG_URL}}
+  REGISTRY: ghcr.io
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish-env-vars-for-RGL-build:
+    runs-on: self-hosted
+    outputs:
+      PWD: ${{ steps.set_PWD.outputs.PWD }}
+      OptiX_INSTALL_DIR: ${{ steps.set_OptiX_INSTALL_DIR.outputs.OptiX_INSTALL_DIR }}
+      DOCKER_IMG_URL: ${{ steps.set_DOCKER_IMG_URL.outputs.DOCKER_IMG_URL }}
+    steps:
+      - id: set_PWD
+        run: echo "PWD=$(pwd)" >> $GITHUB_OUTPUT
+
+      - id: set_OptiX_INSTALL_DIR
+        run: echo "OptiX_INSTALL_DIR=$OptiX_INSTALL_DIR" >> $GITHUB_OUTPUT
+
+      - id: set_DOCKER_IMG_URL
+        run: echo "DOCKER_IMG_URL=$DOCKER_IMG_URL" >> $GITHUB_OUTPUT
+
+  build-RGL-in-docker:
+    needs: publish-env-vars-for-RGL-build
+    runs-on: self-hosted
+    container:
+      image: ${{ needs.publish-env-vars-for-RGL-build.outputs.DOCKER_IMG_URL }}
+      env:
+        OptiX_INSTALL_DIR: /optix
+        NVIDIA_DRIVER_CAPABILITIES: all
+      volumes:
+        - ${{ needs.publish-env-vars-for-RGL-build.outputs.PWD }}:/code
+        - ${{ needs.publish-env-vars-for-RGL-build.outputs.OptiX_INSTALL_DIR }}:/optix
+      options:
+        --rm
+        --name rgl
+        --gpus all
+    steps:
+      - name: fix git
+        run: git config --global --add safe.directory /__w/RobotecGPULidar/RobotecGPULidar
+
+      - name: build and test RGL
+        run: |
+          if [[ $RGL_BUILD_TARGET == "with-ros2" || $RGL_BUILD_TARGET == "with-pcl-and-ros2" ]]
+          then
+              . /opt/ros/humble/setup.bash
+          fi
+          
+          if [[ $RGL_BUILD_TARGET == "base" ]]
+          then
+              ./setup.py
+          fi
+          
+          if [[ $RGL_BUILD_TARGET == "with-pcl" ]]
+          then
+              ./setup.py --with-pcl
+          fi
+          
+          if [[ $RGL_BUILD_TARGET == "with-ros2" ]]
+          then
+              ./setup.py --with-ros2-standalone
+          fi
+          
+          if [[ $RGL_BUILD_TARGET == "with-pcl-and-ros2" ]]
+          then
+              ./setup.py --with-pcl --with-ros2-standalone
+          fi
+          
+          if [[ $RGL_BUILD_TARGET == "with-ros2" || $RGL_BUILD_TARGET == "with-pcl-and-ros2" ]]
+          then
+              cp -r ./build/ros2_standalone/*.so* ./build/
+          fi
+          
+          sleep 2
+          cd build/test
+          ./RobotecGPULidar_test
+
+  publish-env-vars-for-RGL-testing:
+    needs: build-RGL-in-docker
+    runs-on: self-hosted
+    outputs:
+      PWD: ${{ steps.set_PWD.outputs.PWD }}
+    steps:
+      - id: set_PWD
+        run: echo "PWD=$(pwd)" >> $GITHUB_OUTPUT
+
+  test-RGL-in-default-nvidia-docker:
+    needs: publish-env-vars-for-RGL-testing
+    runs-on: self-hosted
+    container:
+      image: nvidia/cuda:11.7.1-base-ubuntu22.04
+      env:
+        NVIDIA_DRIVER_CAPABILITIES: all
+      volumes:
+        - ${{ needs.publish-env-vars-for-RGL-testing.outputs.PWD }}:/code
+      options:
+        --rm
+        --name rgl
+        --gpus all
+    steps:
+      - name: test RGL inside default nvidia docker
+        # libtinyxml2-9 and libspdlog-dev and RMW_IMPL are necessary because of a RGL ros2 standalone lacking dependencies bug
+        run: |
+          cd /code/build/test
+          apt-get update && apt-get install -y patchelf
+          patchelf --set-rpath '$ORIGIN/..' RobotecGPULidar_test
+          
+          if [[ $RGL_BUILD_TARGET == "with-pcl" || $RGL_BUILD_TARGET == "with-pcl-and-ros2" ]]
+          then
+               apt-get update && apt-get install -y libx11-6
+               apt-get update && apt-get install -y libgl1
+          fi
+          
+          if [[ $RGL_BUILD_TARGET == "with-ros2" || $RGL_BUILD_TARGET == "with-pcl-and-ros2" ]]
+          then
+          
+               apt-get update && apt-get install -y libiceoryx-binding-c-dev
+               apt-get update && apt-get install -y libtinyxml2-9
+               apt-get update && apt-get install -y libspdlog-dev
+          
+               export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+               echo $RMW_IMPLEMENTATION
+               sleep 2
+               ./RobotecGPULidar_test
+               export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+               echo $RMW_IMPLEMENTATION
+               sleep 2
+               ./RobotecGPULidar_test
+          else
+               sleep 2
+               ./RobotecGPULidar_test
+          fi
+
+  publish-env-vars-for-cleanup:
+    if: always()
+    needs: test-RGL-in-default-nvidia-docker
+    runs-on: self-hosted
+    outputs:
+      PWD: ${{ steps.set_PWD.outputs.PWD }}
+    steps:
+      - id: set_PWD
+        run: echo "PWD=$(pwd)" >> $GITHUB_OUTPUT
+
+  cleanup:
+    if: always()
+    needs: publish-env-vars-for-cleanup
+    runs-on: self-hosted
+    container:
+      image: nvidia/cuda:11.7.1-base-ubuntu22.04
+      volumes:
+        - ${{ needs.publish-env-vars-for-cleanup.outputs.PWD }}:/code
+      options:
+        --rm
+    steps:
+      - name: remove build files and tape recordings
+        run: |
+          cd /code
+          rm -rf build

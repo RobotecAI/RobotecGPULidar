@@ -1,0 +1,40 @@
+name: build-and-test-in-Docker-from-repo
+
+run-name: ${{ github.actor }} builds and tests RGL in Docker from repo
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-test-base:
+    uses: ./.github/workflows/test-one-RGL-configuration.yml
+    with:
+      RGL_BUILD_TARGET: base
+      DOCKER_IMG_URL: ghcr.io/robotecai/robotecgpulidar:latest
+
+  build-and-test-with-pcl:
+    needs: build-and-test-base
+    uses: ./.github/workflows/test-one-RGL-configuration.yml
+    with:
+      RGL_BUILD_TARGET: with-pcl
+      DOCKER_IMG_URL: ghcr.io/robotecai/robotecgpulidar:latest
+
+  build-and-test-with-ros2:
+    needs: build-and-test-with-pcl
+    uses: ./.github/workflows/test-one-RGL-configuration.yml
+    with:
+      RGL_BUILD_TARGET: with-ros2
+      DOCKER_IMG_URL: ghcr.io/robotecai/robotecgpulidar:latest
+
+  build-and-test-with-pcl-and-ros2:
+    needs: build-and-test-with-ros2
+    uses: ./.github/workflows/test-one-RGL-configuration.yml
+    with:
+      RGL_BUILD_TARGET: with-pcl-and-ros2
+      DOCKER_IMG_URL: ghcr.io/robotecai/robotecgpulidar:latest
