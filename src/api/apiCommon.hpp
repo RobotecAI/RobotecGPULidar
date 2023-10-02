@@ -132,24 +132,24 @@ inline void handleDestructorException(std::exception_ptr e, const char* what)
 	RGL_CRITICAL("Exception thrown from destructor!");
 	updateAPIState(RGL_INTERNAL_EXCEPTION, what);
 	// We got some exception thrown in some destructor
-	// We may be in graph thread; let's check that:
-	for (auto&& ctxWeak : GraphRunCtx::instances) {
-		if (auto ctx = ctxWeak.lock()) {
-			if (!ctx->maybeThread.has_value()) {
+	// We may be in graph thread which should get gracefully killed:
+	// TODO: Implement this in a thread-safe manner (accessing GraphRunCtx::instances)
+	std::lock_guard lock { GraphRunCtx::instancesMutex };
+	for (auto&& ctx : GraphRunCtx::instances) {
+		if (!ctx->maybeThread.has_value()) {
+			continue;
+		}
+		if (ctx->maybeThread.value().get_id() != std::this_thread::get_id()) {
+			continue;
+		}
+		// We're a graph thread. Mark remaining nodes as executed and set exception.
+		for (auto&& [node, state] : ctx->executionStatus) {
+			if (state.enqueued.load(std::memory_order::relaxed)) {
 				continue;
 			}
-			if (ctx->maybeThread.value().get_id() != std::this_thread::get_id()) {
-				continue;
-			}
-			// We're a graph thread. Mark remaining nodes as executed and set exception.
-			for (auto&& [node, state] : ctx->executionStatus) {
-				if (state.enqueued.load(std::memory_order::relaxed)) {
-					continue;
-				}
-				state.exceptionPtr = std::current_exception();
-				state.enqueued.store(true, std::memory_order::release);
-				throw e; // In Graph thread, rethrow to die.
-			}
+			state.exceptionPtr = std::current_exception();
+			state.enqueued.store(true, std::memory_order::release);
+			throw e; // In Graph thread, rethrow to die.
 		}
 	}
 }

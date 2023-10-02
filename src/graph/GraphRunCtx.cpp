@@ -16,7 +16,7 @@
 #include <graph/NodesCore.hpp>
 #include <graph/Node.hpp>
 
-std::list<std::weak_ptr<GraphRunCtx>> GraphRunCtx::instances;
+std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
 std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> node)
 {
@@ -32,7 +32,10 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 		currentNode->setGraphRunCtx(graphRunCtx);
 	}
 
-	GraphRunCtx::instances.push_back(graphRunCtx);
+	{
+		std::lock_guard lock { instancesMutex };
+		GraphRunCtx::instances.push_back(graphRunCtx);
+	}
 
 	return graphRunCtx;
 }
@@ -77,12 +80,33 @@ void GraphRunCtx::executeThreadMain() try
 	while (!execThreadCanStart.load(std::memory_order::acquire))
 		;
 
-	for (auto&& node : executionOrder) {
-		// SPDLOG is thread safe, so we can log here.
+	for (int i = 0; i < executionOrder.size(); ++i) {
+		auto&& node = executionOrder[i];
+		while (true) {
+			{
+				std::lock_guard lock { GraphRunCtx::instancesMutex };
+				int32_t maxCurrentNodePriorityGlobally = INT_MIN;
+				for (auto&& ctx : GraphRunCtx::instances) {
+					if (ctx.get() == this) {
+						continue; // Ignore this context;
+					}
+					maxCurrentNodePriorityGlobally = std::max(maxCurrentNodePriorityGlobally, ctx->currentNodePriority);
+				}
+				if (node->getPriority() >= maxCurrentNodePriorityGlobally) {
+					currentNodePriority = node->getPriority();
+					break;
+				}
+			}
+			std::this_thread::sleep_for(std::chrono::microseconds(100));
+		}
 		RGL_DEBUG("Enqueueing node: {}", *node);
 		node->enqueueExec();
 		executionStatus.at(node).enqueued.store(true, std::memory_order::release);
 		node->waitForResults();
+	}
+	{
+		std::lock_guard lock { GraphRunCtx::instancesMutex };
+		currentNodePriority = INT32_MIN;
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 
@@ -163,7 +187,10 @@ void GraphRunCtx::detachAndDestroy()
 	for (auto&& node : nodes) {
 		node->setGraphRunCtx(std::nullopt);
 	}
-	// After this loop, we should have removed all shared_ptrs to GraphRunCtx, so it will be destroyed.
+	{
+		std::lock_guard lock { instancesMutex };
+		erase_if(GraphRunCtx::instances, [&](std::shared_ptr<GraphRunCtx> ctx) { return ctx.get() == this; });
+	}
 }
 
 void GraphRunCtx::synchronize()
@@ -200,15 +227,8 @@ void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 
 void GraphRunCtx::synchronizeAll()
 {
-	auto it = instances.begin();
-	for (; it != instances.end(); ++it)
-	{
-		auto&& ctxWeakPtr = *it;
-		auto ctxSharedPtr = ctxWeakPtr.lock();
-		if (ctxSharedPtr == nullptr) {
-			it = instances.erase(it);
-			continue;
-		}
-		ctxSharedPtr->synchronize();
+	// No need to lock here, because the only concurrent modification may happen in the same thread.
+	for (auto&& ctx : GraphRunCtx::instances) {
+		ctx->synchronize();
 	}
 }
