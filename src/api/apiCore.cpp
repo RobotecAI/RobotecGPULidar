@@ -1109,7 +1109,7 @@ rgl_tape_play(const char* path)
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
 			TapePlayer player(path);
-			player.playUntil(std::nullopt);
+			player.playRealtime();
 		}
 	});
 	#endif //_WIN32
