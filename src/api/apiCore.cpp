@@ -349,8 +349,7 @@ rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 
 void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
 {
-	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
-					  yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
+	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
 }
 
 RGL_API rgl_status_t
@@ -425,6 +424,7 @@ void TapePlayer::tape_texture_destroy(const YAML::Node &yamlNode)
 RGL_API rgl_status_t
 rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
+	TAPE_HOOK(scene, nanoseconds);
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_scene_set_time(scene={}, nanoseconds={})", (void*) scene, nanoseconds);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
@@ -549,6 +549,7 @@ void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
 RGL_API rgl_status_t
 rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 {
+	static auto buffer = HostPinnedArray<char>::create();
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*) dst);
 		CHECK_ARG(node != nullptr);
@@ -570,14 +571,17 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
 		if (!pointCloudNode->hasField(field)) {
-			auto msg = fmt::format("node {} does not provide field {}",pointCloudNode->getName(), toString(field));
+			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
 			throw InvalidPipeline(msg);
 		}
 		auto fieldArray = pointCloudNode->getFieldData(field);
+		buffer->resize(fieldArray->getCount() * fieldArray->getSizeOf(), false, false);
+		void* bufferDst = buffer->getWritePtr();
 		const void* src = fieldArray->getRawReadPtr();
 		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
-		CHECK_CUDA(cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
+		CHECK_CUDA(cudaMemcpyAsync(bufferDst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
 		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
+		memcpy(dst, bufferDst, size);
 	});
 	TAPE_HOOK(node, field, dst);
 	return status;

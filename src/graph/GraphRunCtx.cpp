@@ -104,10 +104,6 @@ void GraphRunCtx::executeThreadMain() try
 		executionStatus.at(node).enqueued.store(true, std::memory_order::release);
 		node->waitForResults();
 	}
-	{
-		std::lock_guard lock { GraphRunCtx::instancesMutex };
-		currentNodePriority = INT32_MIN;
-	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 
 	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
