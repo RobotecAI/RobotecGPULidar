@@ -7,8 +7,8 @@
 constexpr uint32_t NVTX_CAT_API = 0; // Positive numbers = graphOrdinal
 constexpr uint32_t NVTX_COL_SYNC = 0xffffd700;
 constexpr uint32_t NVTX_COL_SYNC_CPU = 0xffdaa520;
-constexpr uint32_t NVTX_COL_WORK = 0xff9370db;
-constexpr uint32_t NVTX_COL_CALL = 0xff0000cd;
+constexpr uint32_t NVTX_COL_WORK = 0xff90ee90;
+constexpr uint32_t NVTX_COL_CALL = 0xff9370db;
 
 
 struct NvtxRange
