@@ -24,6 +24,7 @@
 
 #include <graph/NodesCore.hpp>
 #include <graph/GraphRunCtx.hpp>
+#include <NvtxWrappers.hpp>
 
 extern "C" {
 
@@ -449,6 +450,7 @@ rgl_graph_run(rgl_node_t raw_node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(raw_node));
 		CHECK_ARG(raw_node != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_run"};
 		auto node = Node::validatePtr(raw_node);
 		if (!node->hasGraphRunCtx()) {
 			GraphRunCtx::createAndAttach(node);
@@ -514,6 +516,7 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_size"};
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
@@ -554,6 +557,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*) dst);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(dst != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_data"};
 
 		// This part is a bit tricky:
 		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.

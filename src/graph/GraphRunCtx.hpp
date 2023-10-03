@@ -76,11 +76,11 @@ private:
 	std::optional<std::thread> maybeThread;
 	std::set<Node::Ptr> nodes;
 	std::vector<Node::Ptr> executionOrder;
+	uint32_t graphOrdinal; // I.e. How many graphs already existed when this was created + 1
 
-	static inline std::mutex instancesMutex;
-		// Used to synchronize all existing instances (e.g. to safely access Scene).
-		// Modified by client's thread, read by graph thread
-		static std::list<std::shared_ptr<GraphRunCtx>> instances;
+	// Used to synchronize all existing instances (e.g. to safely access Scene).
+	// Modified by client's thread, read by graph thread
+	static std::list<std::shared_ptr<GraphRunCtx>> instances;
 
 private: // Communication between client's thread and graph thread
 	struct NodeExecStatus
@@ -95,7 +95,6 @@ private: // Communication between client's thread and graph thread
 
 	std::unordered_map<Node::ConstPtr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
-	int32_t currentNodePriority = INT32_MIN; // Synchronized using instancesMutex
 
 	friend Node;
 	friend void handleDestructorException(std::exception_ptr e, const char* what);

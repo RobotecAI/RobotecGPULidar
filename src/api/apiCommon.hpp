@@ -134,7 +134,6 @@ inline void handleDestructorException(std::exception_ptr e, const char* what)
 	// We got some exception thrown in some destructor
 	// We may be in graph thread which should get gracefully killed:
 	// TODO: Implement this in a thread-safe manner (accessing GraphRunCtx::instances)
-	std::lock_guard lock { GraphRunCtx::instancesMutex };
 	for (auto&& ctx : GraphRunCtx::instances) {
 		if (!ctx->maybeThread.has_value()) {
 			continue;
