@@ -578,6 +578,15 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
 			throw InvalidPipeline(msg);
 		}
+		if (auto yieldNode = std::dynamic_pointer_cast<YieldPointsNode>(pointCloudNode)) {
+			// Temporary optimization
+			if (field == XYZ_F32) {
+				auto fieldArray = yieldNode->getXYZCache();
+				size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
+				memcpy(dst, fieldArray->getRawReadPtr(), size);
+				return;
+			}
+		}
 		auto fieldArray = pointCloudNode->getFieldData(field);
 		buffer->resize(fieldArray->getCount() * fieldArray->getSizeOf(), false, false);
 		void* bufferDst = buffer->getWritePtr();

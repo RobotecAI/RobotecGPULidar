@@ -27,5 +27,14 @@ void YieldPointsNode::enqueueExecImpl()
 	for (auto&& field : fields) {
 		results[field] = input->getFieldData(field);
 	}
+	if (std::find(fields.begin(), fields.end(), XYZ_F32) != fields.end()) {
+		xyzHostCache->resize(results.at(XYZ_F32)->getCount(), false, false);
+		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(),
+		                           results[XYZ_F32]->getRawReadPtr(),
+		                           xyzHostCache->getCount() * xyzHostCache->getSizeOf(),
+		                           cudaMemcpyDefault,
+		                           getStreamHandle()));
+	}
+
 }
 
