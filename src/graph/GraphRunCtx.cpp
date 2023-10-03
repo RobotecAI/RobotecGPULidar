@@ -84,7 +84,8 @@ void GraphRunCtx::executeThreadMain() try
 		{
 			NvtxRange rg {graphOrdinal, NVTX_COL_WORK, "Enqueue({})", node->getName()};
 			node->enqueueExec();
-			executionStatus.at(node).enqueued.store(true, std::memory_order::release);
+			executionStatus.at(node).enqueued.store(true);
+			executionStatus.at(node).enqueued.notify_all();
 		}
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
@@ -99,7 +100,8 @@ catch (...)
 			continue;
 		}
 		state.exceptionPtr = std::current_exception();
-		state.enqueued.store(true, std::memory_order::release);
+		state.enqueued.store(true);
+		state.enqueued.notify_all();
 	}
 }
 
@@ -192,9 +194,7 @@ void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 	// Therefore, we choose busy wait, since putting it to sleep & waking up would add additional latency.
 	{
 		NvtxRange rg {graphOrdinal, NVTX_COL_SYNC_CPU, "SyncCPU({})", nodeToSynchronize->getName()};
-		while (!executionStatus.at(nodeToSynchronize).enqueued.load(std::memory_order_acquire))
-			;
-
+		executionStatus.at(nodeToSynchronize).enqueued.wait(false);
 	}
 	// Rethrow exception, if any
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
