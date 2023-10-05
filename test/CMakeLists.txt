@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-    src/graphCaseTest.cpp
     src/asyncStressTest.cpp
     src/apiReadmeExample.cpp
     src/gaussianStressTest.cpp
@@ -24,6 +23,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
     src/graph/nodes/SpatialMergePointsNodeTest.cpp
     src/graph/nodes/TemporalMergePointsNodeTest.cpp
+    src/graph/graphCaseTest.cpp
     src/graph/addChildTest.cpp
     src/memory/arrayTypingTest.cpp
     src/memory/arrayChangeStreamTest.cpp
@@ -38,7 +38,7 @@ set(RGL_TEST_FILES
 # Only Linux
 if ((NOT WIN32))
     list(APPEND RGL_TEST_FILES
-        src/loggingTests.cpp
+        src/features/loggingTests.cpp
     )
 endif()
 

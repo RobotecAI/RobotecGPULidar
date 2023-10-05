@@ -1,9 +1,8 @@
-#include <testing.hpp>
-#include <scenes.hpp>
-#include <models.hpp>
-#include <lidars.hpp>
-#include <textures.hpp>
-#include <constans.hpp>
+#include <helpers/geometryData.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/textureHelpers.hpp>
 
 #include <RGLFields.hpp>
 

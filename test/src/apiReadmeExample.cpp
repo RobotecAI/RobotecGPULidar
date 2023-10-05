@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <rgl/api/core.h>
-#include <scenes.hpp>
+#include <helpers/sceneHelpers.hpp>
 
 TEST(EndToEnd, ReadmeExample)
 {

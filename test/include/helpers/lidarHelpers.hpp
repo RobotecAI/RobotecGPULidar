@@ -1,7 +1,8 @@
 #pragma once
 
+#include <helpers/commonHelpers.hpp>
+
 #include <math/Mat3x4f.hpp>
-#include <testing.hpp>
 
 static std::vector<rgl_mat3x4f> makeLidar3dRays(float fov_x, float fov_y,
                                                 float resolution_x = 1.0f,
@@ -24,7 +25,7 @@ static std::vector<rgl_mat3x4f> makeLidar3dRays(float fov_x, float fov_y,
         for (float add_y = 0.0f; add_y <= fov_y; add_y += resolution_y)
         {
             float rot_y = angle_start_y + add_y;
-            rays.push_back(Mat3x4f::rotation(rot_x, rot_y, 0.0).toRGL());
+            rays.emplace_back(Mat3x4f::rotation(rot_x, rot_y, 0.0).toRGL());
         }
     }
 

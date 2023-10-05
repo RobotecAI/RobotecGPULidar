@@ -1,6 +1,6 @@
-#include <testing.hpp>
-#include <models.hpp>
-#include <textures.hpp>
+#include <helpers/geometryData.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/textureHelpers.hpp>
 
 #include <rgl/api/extensions/tape.h>
 

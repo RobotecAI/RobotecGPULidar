@@ -1,7 +1,6 @@
-#include <testing.hpp>
-#include <transformations.hpp>
-#include <constans.hpp>
-#include <points.hpp>
+#include <helpers/testPointCloud.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
 
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
@@ -57,7 +56,7 @@ TEST_P(TransformPointsNodeTest, use_case)
 	auto [pointsCount, transform] = GetParam();
 	rgl_node_t transformNode = nullptr;
 
-	PointCloud pointCloud = PointCloud(fields, pointsCount);
+	TestPointCloud pointCloud = TestPointCloud(fields, pointsCount);
 	rgl_node_t usePointsNode = pointCloud.createUsePointsNode();
 
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformNode, &transform));
@@ -67,7 +66,7 @@ TEST_P(TransformPointsNodeTest, use_case)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
-	PointCloud outputPointCloud = PointCloud::createFromNode(transformNode, fields);
+	TestPointCloud outputPointCloud = TestPointCloud::createFromNode(transformNode, fields);
 
 	pointCloud.transform(Mat3x4f::fromRGL(transform));
 

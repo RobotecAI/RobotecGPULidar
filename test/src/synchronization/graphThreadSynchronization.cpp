@@ -1,7 +1,7 @@
-#include <testing.hpp>
-#include <lidars.hpp>
-#include <scenes.hpp>
-#include <transformations.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
 
 class graphThreadSynchronization : public RGLTestWithParam<int> { };
 

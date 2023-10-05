@@ -1,8 +1,8 @@
 #include <random>
 
-#include <testing.hpp>
-#include <scenes.hpp>
-#include <lidars.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <math/Mat3x4f.hpp>
 #include <graph/NodesCore.hpp>

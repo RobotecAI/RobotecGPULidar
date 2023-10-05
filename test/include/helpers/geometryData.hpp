@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rgl/api/core.h>
+
 static constexpr float CUBE_HALF_EDGE = 1.0;
 
 static rgl_vec3f cubeVertices[] = {

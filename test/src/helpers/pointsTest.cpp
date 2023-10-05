@@ -1,6 +1,6 @@
-#include <points.hpp>
-#include <constans.hpp>
-#include <transformations.hpp>
+#include <helpers/testPointCloud.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
 
 class PointCloudTest : public ::testing::TestWithParam<int>
 {
@@ -8,30 +8,95 @@ protected:
 	std::vector<rgl_field_t> allNotDummyFields = {XYZ_F32,     IS_HIT_I32,  RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,
 	                                              RING_ID_U16, AZIMUTH_F32, DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64};
 
-	std::vector<rgl_field_t> fieldsWithPaddings = {PADDING_32, XYZ_F32,       PADDING_8, IS_HIT_I32,
-	                                               PADDING_16, INTENSITY_F32, PADDING_32};
+	std::vector<rgl_field_t> fieldsWithPaddings = {PADDING_32,   XYZ_F32,        PADDING_16,     IS_HIT_I32,  PADDING_8,
+	                                               RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,  RING_ID_U16, AZIMUTH_F32,
+	                                               DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64, PADDING_16,  PADDING_32};
 
-	std::vector<rgl_field_t> fields = {XYZ_F32, IS_HIT_I32, INTENSITY_F32};
+	std::vector<Field<XYZ_F32>::type> pointCoord;
+	std::vector<Field<IS_HIT_I32>::type> isHit;
+	std::vector<Field<RAY_IDX_U32>::type> rayIdx;
+	std::vector<Field<ENTITY_ID_I32>::type> entityId;
+	std::vector<Field<INTENSITY_F32>::type> intensity;
+	std::vector<Field<RING_ID_U16>::type> ringId;
+	std::vector<Field<AZIMUTH_F32>::type> azimuth;
+	std::vector<Field<DISTANCE_F32>::type> distance;
+	std::vector<Field<RETURN_TYPE_U8>::type> returnType;
+	std::vector<Field<TIME_STAMP_F64>::type> timeStamp;
 
+#pragma pack(push, 1)
 	struct TestPointStruct
 	{
 		Field<XYZ_F32>::type xyz;
 		Field<IS_HIT_I32>::type isHit;
+		Field<RAY_IDX_U32>::type rayIdx;
+		Field<ENTITY_ID_I32>::type entityId;
 		Field<INTENSITY_F32>::type intensity;
+		Field<RING_ID_U16>::type ringId;
+		Field<AZIMUTH_F32>::type azimuth;
+		Field<DISTANCE_F32>::type distance;
+		Field<RETURN_TYPE_U8>::type returnType;
+		Field<TIME_STAMP_F64>::type timeStamp;
 	};
+#pragma pack(pop)
 
-	std::vector<TestPointStruct> generateTestPointsArray(int count)
+	std::vector<TestPointStruct> generateTestPoints(int pointsCount)
 	{
 		std::vector<TestPointStruct> points;
-		points.reserve(count);
-		for (int i = 0; i < count; ++i) {
-			auto currentPoint = TestPointStruct{
-			    .xyz = {i, i + 1, i + 2},
-                  .isHit = i % 2, .intensity = 100
-            };
-			points.push_back(currentPoint);
+		points.reserve(pointsCount);
+		for (int i = 0; i < pointsCount; i++) {
+			points.emplace_back(TestPointStruct{genCoord(i), genHalfHit(i), genRayIdx(i), genEntityId(i), genIntensity(i),
+			                                    genRingId(i), genAzimuth(i), genDistance(i), genReturnType(i),
+			                                    genTimeStamp(i)});
 		}
 		return points;
+	}
+
+	void generateFieldValues(int pointsCount)
+	{
+		pointCoord = generate(pointsCount, genCoord);
+		isHit = generate(pointsCount, genHalfHit);
+		rayIdx = generate(pointsCount, genRayIdx);
+		entityId = generate(pointsCount, genEntityId);
+		intensity = generate(pointsCount, genIntensity);
+		ringId = generate(pointsCount, genRingId);
+		azimuth = generate(pointsCount, genAzimuth);
+		distance = generate(pointsCount, genDistance);
+		returnType = generate(pointsCount, genReturnType);
+		timeStamp = generate(pointsCount, genTimeStamp);
+	}
+
+	void setFieldValues(TestPointCloud& pointCloud)
+	{
+		pointCloud.setFieldValues<XYZ_F32>(pointCoord);
+		pointCloud.setFieldValues<IS_HIT_I32>(isHit);
+		pointCloud.setFieldValues<RAY_IDX_U32>(rayIdx);
+		pointCloud.setFieldValues<ENTITY_ID_I32>(entityId);
+		pointCloud.setFieldValues<INTENSITY_F32>(intensity);
+		pointCloud.setFieldValues<RING_ID_U16>(ringId);
+		pointCloud.setFieldValues<AZIMUTH_F32>(azimuth);
+		pointCloud.setFieldValues<DISTANCE_F32>(distance);
+		pointCloud.setFieldValues<RETURN_TYPE_U8>(returnType);
+		pointCloud.setFieldValues<TIME_STAMP_F64>(timeStamp);
+	}
+
+	void verifyResults(TestPointCloud& pointCloud, int pointsCount, Mat3x4f transform = Mat3x4f::identity())
+	{
+		std::vector<Field<XYZ_F32>::type> outPointsCoord = pointCloud.getFieldValues<XYZ_F32>();
+		for (int i = 0; i < pointsCount; ++i) {
+			pointCoord.at(i) = transform * pointCoord.at(i);
+			EXPECT_EQ(outPointsCoord.at(i)[0], pointCoord.at(i)[0]);
+			EXPECT_EQ(outPointsCoord.at(i)[1], pointCoord.at(i)[1]);
+			EXPECT_EQ(outPointsCoord.at(i)[2], pointCoord.at(i)[2]);
+		}
+		EXPECT_EQ(pointCloud.getFieldValues<IS_HIT_I32>(), isHit);
+		EXPECT_EQ(pointCloud.getFieldValues<RAY_IDX_U32>(), rayIdx);
+		EXPECT_EQ(pointCloud.getFieldValues<ENTITY_ID_I32>(), entityId);
+		EXPECT_EQ(pointCloud.getFieldValues<INTENSITY_F32>(), intensity);
+		EXPECT_EQ(pointCloud.getFieldValues<RING_ID_U16>(), ringId);
+		EXPECT_EQ(pointCloud.getFieldValues<AZIMUTH_F32>(), azimuth);
+		EXPECT_EQ(pointCloud.getFieldValues<DISTANCE_F32>(), distance);
+		EXPECT_EQ(pointCloud.getFieldValues<RETURN_TYPE_U8>(), returnType);
+		EXPECT_EQ(pointCloud.getFieldValues<TIME_STAMP_F64>(), timeStamp);
 	}
 };
 
@@ -41,73 +106,29 @@ INSTANTIATE_TEST_SUITE_P(PointCloudTests, PointCloudTest, testing::Values(1, 100
 TEST_P(PointCloudTest, setter_and_getter_with_transform)
 {
 	int pointsCount = GetParam();
+	Mat3x4f transform = Mat3x4f::fromRGL(complexTestTransform);
 
-	PointCloud pointCloud = PointCloud(allNotDummyFields, pointsCount);
+	TestPointCloud pointCloud = TestPointCloud(allNotDummyFields, pointsCount);
 	EXPECT_EQ(pointCloud.getPointCount(), pointsCount);
 
-	std::vector<Field<XYZ_F32>::type> pointCoord = generate(pointsCount, genCoord);
-	std::vector<Field<IS_HIT_I32>::type> isHit = generate(pointsCount, genHalfHit);
-	std::vector<Field<RAY_IDX_U32>::type> rayIdx = generate(pointsCount, genRayIdx);
-	std::vector<Field<ENTITY_ID_I32>::type> entityId = generate(pointsCount, genEntityId);
-	std::vector<Field<INTENSITY_F32>::type> intensity = generate(pointsCount, genIntensity);
-	std::vector<Field<RING_ID_U16>::type> ringId = generate(pointsCount, genRingId);
-	std::vector<Field<AZIMUTH_F32>::type> azimuth = generate(pointsCount, genAzimuth);
-	std::vector<Field<DISTANCE_F32>::type> distances = generate(pointsCount, genDistance);
-	std::vector<Field<RETURN_TYPE_U8>::type> returnType = generate(pointsCount, genReturnType);
-	std::vector<Field<TIME_STAMP_F64>::type> timeStamp = generate(pointsCount, genTimeStamp);
-	pointCloud.setFieldValues<XYZ_F32>(pointCoord);
-	pointCloud.setFieldValues<IS_HIT_I32>(isHit);
-	pointCloud.setFieldValues<RAY_IDX_U32>(rayIdx);
-	pointCloud.setFieldValues<ENTITY_ID_I32>(entityId);
-	pointCloud.setFieldValues<INTENSITY_F32>(intensity);
-	pointCloud.setFieldValues<RING_ID_U16>(ringId);
-	pointCloud.setFieldValues<AZIMUTH_F32>(azimuth);
-	pointCloud.setFieldValues<DISTANCE_F32>(distances);
-	pointCloud.setFieldValues<RETURN_TYPE_U8>(returnType);
-	pointCloud.setFieldValues<TIME_STAMP_F64>(timeStamp);
+	generateFieldValues(pointsCount);
+	setFieldValues(pointCloud);
+	pointCloud.transform(transform);
 
-	pointCloud.transform(Mat3x4f::fromRGL(complexTestTransform));
-
-	std::vector<Field<XYZ_F32>::type> outPointsCoord = pointCloud.getFieldValues<XYZ_F32>();
-	for (int i = 0; i < pointsCount; i++) {
-		pointCoord.at(i) = Mat3x4f::fromRGL(complexTestTransform) * pointCoord.at(i);
-		EXPECT_EQ(outPointsCoord.at(i)[0], pointCoord.at(i)[0]);
-		EXPECT_EQ(outPointsCoord.at(i)[1], pointCoord.at(i)[1]);
-		EXPECT_EQ(outPointsCoord.at(i)[2], pointCoord.at(i)[2]);
-	}
-	EXPECT_EQ(pointCloud.getFieldValues<IS_HIT_I32>(), isHit);
-	EXPECT_EQ(pointCloud.getFieldValues<RAY_IDX_U32>(), rayIdx);
-	EXPECT_EQ(pointCloud.getFieldValues<ENTITY_ID_I32>(), entityId);
-	EXPECT_EQ(pointCloud.getFieldValues<INTENSITY_F32>(), intensity);
-	EXPECT_EQ(pointCloud.getFieldValues<RING_ID_U16>(), ringId);
-	EXPECT_EQ(pointCloud.getFieldValues<AZIMUTH_F32>(), azimuth);
-	EXPECT_EQ(pointCloud.getFieldValues<DISTANCE_F32>(), distances);
-	EXPECT_EQ(pointCloud.getFieldValues<RETURN_TYPE_U8>(), returnType);
-	EXPECT_EQ(pointCloud.getFieldValues<TIME_STAMP_F64>(), timeStamp);
+	verifyResults(pointCloud, pointsCount, transform);
 }
 
 TEST_P(PointCloudTest, setter_and_getter_with_paddings)
 {
 	int pointsCount = GetParam();
 
-	PointCloud pointCloud = PointCloud(fieldsWithPaddings, pointsCount);
+	TestPointCloud pointCloud = TestPointCloud(fieldsWithPaddings, pointsCount);
 	EXPECT_EQ(pointCloud.getPointCount(), pointsCount);
 
-	std::vector<Field<XYZ_F32>::type> pointCoord = generate(pointsCount, genCoord);
-	std::vector<Field<IS_HIT_I32>::type> isHit = generate(pointsCount, genHalfHit);
-	std::vector<Field<INTENSITY_F32>::type> intensity = generate(pointsCount, genIntensity);
-	pointCloud.setFieldValues<XYZ_F32>(pointCoord);
-	pointCloud.setFieldValues<IS_HIT_I32>(isHit);
-	pointCloud.setFieldValues<INTENSITY_F32>(intensity);
+	generateFieldValues(pointsCount);
+	setFieldValues(pointCloud);
 
-	std::vector<Field<XYZ_F32>::type> outPointsCoord = pointCloud.getFieldValues<XYZ_F32>();
-	for (int i = 0; i < pointsCount; i++) {
-		EXPECT_EQ(outPointsCoord.at(i)[0], pointCoord.at(i)[0]);
-		EXPECT_EQ(outPointsCoord.at(i)[1], pointCoord.at(i)[1]);
-		EXPECT_EQ(outPointsCoord.at(i)[2], pointCoord.at(i)[2]);
-	}
-	EXPECT_EQ(pointCloud.getFieldValues<IS_HIT_I32>(), isHit);
-	EXPECT_EQ(pointCloud.getFieldValues<INTENSITY_F32>(), intensity);
+	verifyResults(pointCloud, pointsCount);
 }
 
 TEST_P(PointCloudTest, create_from_node)
@@ -115,24 +136,16 @@ TEST_P(PointCloudTest, create_from_node)
 	int pointsCount = GetParam();
 	rgl_node_t usePointsNode = nullptr;
 
-	std::vector<TestPointStruct> inPoints = generateTestPointsArray(pointsCount);
-	ASSERT_RGL_SUCCESS(
-	    rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), fields.data(), fields.size()));
+	std::vector<TestPointStruct> inPoints = generateTestPoints(pointsCount);
+	generateFieldValues(pointsCount);
+
+	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), allNotDummyFields.data(),
+	                                              allNotDummyFields.size()));
 	ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
+	TestPointCloud fromNodePointCloud = TestPointCloud::createFromNode(usePointsNode, allNotDummyFields);
+	EXPECT_EQ(fromNodePointCloud.getPointCount(), pointsCount);
 
-	PointCloud pointCloud = PointCloud::createFromNode(usePointsNode, fieldsWithPaddings);
-	EXPECT_EQ(pointCloud.getPointCount(), pointsCount);
-	std::vector<Field<XYZ_F32>::type> outPointsCoord = pointCloud.getFieldValues<XYZ_F32>();
-	std::vector<Field<IS_HIT_I32>::type> outIsHit = pointCloud.getFieldValues<IS_HIT_I32>();
-	std::vector<Field<INTENSITY_F32>::type> outIntensity = pointCloud.getFieldValues<INTENSITY_F32>();
-
-	for (int i = 0; i < pointsCount; i++) {
-		EXPECT_EQ(outPointsCoord.at(i)[0], inPoints.at(i).xyz[0]);
-		EXPECT_EQ(outPointsCoord.at(i)[1], inPoints.at(i).xyz[1]);
-		EXPECT_EQ(outPointsCoord.at(i)[2], inPoints.at(i).xyz[2]);
-		EXPECT_EQ(outIsHit.at(i), inPoints.at(i).isHit);
-		EXPECT_EQ(outIntensity.at(i), inPoints.at(i).intensity);
-	}
+	verifyResults(fromNodePointCloud, pointsCount);
 }
 
 TEST_P(PointCloudTest, equal_operator)
@@ -140,27 +153,16 @@ TEST_P(PointCloudTest, equal_operator)
 	int pointsCount = GetParam();
 	rgl_node_t usePointsNode = nullptr;
 
-	std::vector<TestPointStruct> inPoints = generateTestPointsArray(pointsCount);
-	ASSERT_RGL_SUCCESS(
-	    rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), fields.data(), fields.size()));
+	std::vector<TestPointStruct> inPoints = generateTestPoints(pointsCount);
+	generateFieldValues(pointsCount);
+
+	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), allNotDummyFields.data(),
+	                                              allNotDummyFields.size()));
 	ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
-	PointCloud pointCloudFromNode = PointCloud::createFromNode(usePointsNode, fields);
+	TestPointCloud pointCloudFromNode = TestPointCloud::createFromNode(usePointsNode, allNotDummyFields);
 
-	PointCloud pointCloud = PointCloud(fields, pointsCount);
-	std::vector<Field<XYZ_F32>::type> pointCoord;
-	std::vector<Field<IS_HIT_I32>::type> isHit;
-	std::vector<Field<INTENSITY_F32>::type> intensity;
-	pointCoord.reserve(pointsCount);
-	isHit.reserve(pointsCount);
-	intensity.reserve(pointsCount);
-	for (int i = 0; i < pointsCount; i++) {
-		pointCoord.push_back(inPoints.at(i).xyz);
-		isHit.push_back(inPoints.at(i).isHit);
-		intensity.push_back(inPoints.at(i).intensity);
-	}
-	pointCloud.setFieldValues<XYZ_F32>(pointCoord);
-	pointCloud.setFieldValues<IS_HIT_I32>(isHit);
-	pointCloud.setFieldValues<INTENSITY_F32>(intensity);
+	TestPointCloud expectedPointCloud = TestPointCloud(allNotDummyFields, pointsCount);
+	setFieldValues(expectedPointCloud);
 
-	EXPECT_TRUE(pointCloud == pointCloudFromNode);
+	EXPECT_TRUE(expectedPointCloud == pointCloudFromNode);
 }

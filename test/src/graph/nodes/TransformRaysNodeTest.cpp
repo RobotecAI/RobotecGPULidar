@@ -1,5 +1,5 @@
-#include <testing.hpp>
-#include <transformations.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
 
 class TransformRaysNodeTest : public RGLTest{
 protected:

@@ -1,5 +1,4 @@
-#include <testing.hpp>
-#include <constans.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <math/Mat3x4f.hpp>
 
@@ -22,7 +21,8 @@ protected:
         rayNode = nullptr;
         rays.reserve(rayCount);
         for (int i = 0; i < rayCount; i++) {
-            rays.emplace_back(Mat3x4f::translation((float)i, (float)i+1, (float)i+2).toRGL());
+            rays.emplace_back(
+			    Mat3x4f::translation(static_cast<float>(i), static_cast<float>(i+1), static_cast<float>(i+2)).toRGL());
         }
     }
 };

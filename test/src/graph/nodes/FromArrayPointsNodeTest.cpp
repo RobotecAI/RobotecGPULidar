@@ -1,6 +1,5 @@
-#include <testing.hpp>
-#include <constans.hpp>
-#include <points.hpp>
+#include <helpers/testPointCloud.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
@@ -8,7 +7,7 @@
 class FromArrayPointsNodeTest : public RGLTestWithParam<int> {
 protected:
 	rgl_node_t usePointsNode = nullptr;
-	std::unique_ptr<PointCloud> pointCloud;
+	std::unique_ptr<TestPointCloud> pointCloud;
 	std::vector<rgl_field_t> pointFields = {XYZ_F32, IS_HIT_I32, INTENSITY_F32};
 };
 
@@ -23,7 +22,7 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 {
     auto initializeArgumentsLambda = [this]() {
         int pointsCount = GetParam();
-		pointCloud = std::make_unique<PointCloud>(pointFields, pointsCount);
+		pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
 		usePointsNode = nullptr;
     };
 
@@ -45,7 +44,7 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 TEST_P(FromArrayPointsNodeTest, valid_arguments)
 {
     int pointsCount = GetParam();
-	pointCloud = std::make_unique<PointCloud>(pointFields, pointsCount);
+	pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
 
     EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, pointCloud->getData(), pointCloud->getPointCount(), pointFields.data(), pointFields.size()));
     ASSERT_THAT(usePointsNode, testing::NotNull());
@@ -55,12 +54,12 @@ TEST_P(FromArrayPointsNodeTest, use_case)
 {
     int pointsCount = GetParam();
 
-	pointCloud = std::make_unique<PointCloud>(pointFields, pointsCount);
+	pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
 
 	usePointsNode = pointCloud->createUsePointsNode();
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
-	PointCloud outputPointCloud = PointCloud::createFromNode(usePointsNode, pointFields);
+	TestPointCloud outputPointCloud = TestPointCloud::createFromNode(usePointsNode, pointFields);
 
 	checkIfNearEqual(pointCloud->getFieldValues<XYZ_F32>(), outputPointCloud.getFieldValues<XYZ_F32>(), EPSILON_F);
 	checkIfNearEqual(pointCloud->getFieldValues<IS_HIT_I32>(), outputPointCloud.getFieldValues<IS_HIT_I32>(), EPSILON_F);

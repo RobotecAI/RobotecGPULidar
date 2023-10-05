@@ -1,6 +1,6 @@
-#include <testing.hpp>
-#include <lidars.hpp>
-#include <scenes.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <RGLFields.hpp>
 

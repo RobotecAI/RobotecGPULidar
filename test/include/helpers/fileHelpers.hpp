@@ -1,6 +1,7 @@
 #pragma once
 
-#include <gtest/gtest.h>
+#include <helpers/commonHelpers.hpp>
+
 #include <vector>
 #include <filesystem>
 #include <fstream>
@@ -31,4 +32,13 @@ static std::string readFileStr(std::filesystem::path path)
 {
 	std::vector<char> logFileChars = loadVec<char>(path);
 	return {logFileChars.begin(), logFileChars.end()};
+}
+
+static rgl_mesh_t loadMesh(std::filesystem::path path)
+{
+        rgl_mesh_t mesh = nullptr;
+        std::vector<rgl_vec3f> vs = loadVec<rgl_vec3f>(path.string() + std::string(".vertices"));
+        std::vector<rgl_vec3i> is = loadVec<rgl_vec3i>(path.string() + std::string(".indices"));
+        EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, vs.data(), vs.size(), is.data(), is.size()));
+        return mesh;
 }

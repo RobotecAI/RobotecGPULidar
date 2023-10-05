@@ -1,4 +1,4 @@
-#include <testing.hpp>
+#include <helpers/commonHelpers.hpp>
 
 class TemporalMergePointsNodeTest : public RGLTest{
 protected:

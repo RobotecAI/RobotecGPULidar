@@ -1,8 +1,7 @@
-#include <testing.hpp>
-#include <scenes.hpp>
-#include <lidars.hpp>
-#include <models.hpp>
-#include <constans.hpp>
+#include <helpers/geometryData.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <RGLFields.hpp>
 #include <Time.hpp>
@@ -297,8 +296,8 @@ TEST_F(GraphCase, FormatNodeResults)
 	}
 
 	// Test if fields update is propagated over graph properly
-	formatFields.push_back(DISTANCE_F32);  // Add distance field
-	formatFields.push_back(PADDING_32);  // Align to 8 bytes
+	formatFields.emplace_back(DISTANCE_F32);  // Add distance field
+	formatFields.emplace_back(PADDING_32);  // Align to 8 bytes
 	struct FormatStructExtended : public  FormatStruct
 	{
 		Field<DISTANCE_F32>::type distance;

@@ -1,6 +1,6 @@
-#include <testing.hpp>
-#include <scenes.hpp>
-#include <transformations.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
 
 #include <Logger.hpp>
 

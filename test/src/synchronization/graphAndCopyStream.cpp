@@ -1,5 +1,4 @@
-#include <testing.hpp>
-#include <constans.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <testKernel.hpp>
 #include <CudaEvent.hpp>

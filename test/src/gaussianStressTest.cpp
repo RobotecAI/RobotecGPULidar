@@ -1,7 +1,6 @@
-#include <testing.hpp>
-#include <scenes.hpp>
-#include <gaussian.hpp>
-#include <transformations.hpp>
+#include <helpers/mathHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
