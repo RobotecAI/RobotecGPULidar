@@ -43,7 +43,7 @@ void Array<T>::clear(bool zero) {
 }
 
 template<typename T>
-void Array<T>::reserve(unsigned long newCapacity, bool preserveData) {
+void Array<T>::reserve(std::size_t newCapacity, bool preserveData) {
 	if (!preserveData) {
 		count = 0;
 	}
@@ -67,7 +67,7 @@ void Array<T>::reserve(unsigned long newCapacity, bool preserveData) {
 }
 
 template<typename T>
-void Array<T>::resize(unsigned long newCount, bool zeroInit, bool preserveData) {
+void Array<T>::resize(std::size_t newCount, bool zeroInit, bool preserveData) {
 	// Ensure capacity
 	reserve(newCount, preserveData);
 

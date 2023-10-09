@@ -58,6 +58,9 @@ endif()
 include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
 include_directories(${spdlog_SOURCE_DIR}/include)
+include_directories(${YAML_CPP_SOURCE_DIR}/include)
+
+message("include ${yaml-cpp_SOURCE_DIR}")
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
 add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)

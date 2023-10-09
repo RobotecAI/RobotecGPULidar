@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cinttypes>
-#include <nvToolsExt.h>
+#include <nvtx3/nvToolsExt.h>
 #include <optional>
 
 constexpr uint32_t NVTX_CAT_API = 0; // Positive numbers = graphOrdinal

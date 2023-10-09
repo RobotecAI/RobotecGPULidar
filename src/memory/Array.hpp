@@ -55,19 +55,19 @@ struct Array : public IAnyArray
 
 	const void* getRawReadPtr() const override { return data; }
 	void* getRawWritePtr() override { return data; }
-	unsigned long getCount() const override { return count; }
-	unsigned long getSizeOf() const override { return sizeof(T); }
-	unsigned long getCapacity() const override { return capacity; }
+	std::size_t getCount() const override { return count; }
+	std::size_t getSizeOf() const override { return sizeof(T); }
+	std::size_t getCapacity() const override { return capacity; }
 
-	void resize(unsigned long newCount, bool zeroInit, bool preserveData) override;
-	void reserve(unsigned long newCapacity, bool preserveData) override;
+	void resize(std::size_t newCount, bool zeroInit, bool preserveData) override;
+	void reserve(std::size_t newCapacity, bool preserveData) override;
 	void clear(bool zero) override;
 
 	void copyFromExternal(const T *src, size_t srcCount);
 
 protected:
-	unsigned long count = {0 };
-	unsigned long capacity = {0 };
+	std::size_t count = {0 };
+	std::size_t capacity = {0 };
 	DataType* data = { nullptr };
 	MemoryOperations memOps;
 
