@@ -15,7 +15,7 @@ class GraphCase : public RGLTest {};
 
 TEST_F(GraphCase, FullLinear)
 {
-	setupBoxesAlongAxes(nullptr);
+	setupBoxesAlongAxes();
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
 
