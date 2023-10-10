@@ -1,8 +1,7 @@
-#include <random>
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include <RGLFields.hpp>
+#include <helpers/commonHelpers.hpp>
 
+#include <random>
+#include <RGLFields.hpp>
 
 using namespace ::testing;
 

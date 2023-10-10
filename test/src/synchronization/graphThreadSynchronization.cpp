@@ -1,6 +1,8 @@
-#include "lidars.hpp"
-#include "utils.hpp"
-#include <scenes.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
+
 class graphThreadSynchronization : public RGLTestWithParam<int> { };
 
 struct LinearGraph {
@@ -18,7 +20,7 @@ struct LinearGraph {
 
     LinearGraph()
     {
-        setupBoxesAlongAxes(nullptr);
+        setupBoxesAlongAxes();
         useRaysNode = nullptr, raytraceNode = nullptr, transformRaysNode = nullptr, transformPointsNode = nullptr, compactNode = nullptr;
         std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
         lidarPoseTf = Mat3x4f::TRS({ 5, 5, 5 }, { 45, 45, 45 }).toRGL();

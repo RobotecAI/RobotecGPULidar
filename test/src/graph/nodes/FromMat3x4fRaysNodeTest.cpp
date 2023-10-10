@@ -1,4 +1,5 @@
-#include <utils.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
 
 class FromMat3x4fRaysNodeTest : public RGLTest{
 protected:

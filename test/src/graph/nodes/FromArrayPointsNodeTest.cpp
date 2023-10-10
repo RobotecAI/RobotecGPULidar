@@ -1,9 +1,15 @@
+#include <helpers/testPointCloud.hpp>
+#include <helpers/commonHelpers.hpp>
+
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
-#include <gtest/gtest.h>
-#include <utils.hpp>
 
-class FromArrayPointsNodeTest : public RGLTestWithParam<int>, public RGLPointTestHelper {};
+class FromArrayPointsNodeTest : public RGLTestWithParam<int> {
+protected:
+	rgl_node_t usePointsNode = nullptr;
+	std::unique_ptr<TestPointCloud> pointCloud;
+	std::vector<rgl_field_t> pointFields = {XYZ_F32, IS_HIT_I32, INTENSITY_F32};
+};
 
 INSTANTIATE_TEST_SUITE_P(
     FromArrayPointsNodeTests, FromArrayPointsNodeTest,
@@ -16,32 +22,31 @@ TEST_P(FromArrayPointsNodeTest, invalid_arguments)
 {
     auto initializeArgumentsLambda = [this]() {
         int pointsCount = GetParam();
-        inPoints = GenerateTestPointsArray(pointsCount);
-        usePointsNode = nullptr;
+		pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
+		usePointsNode = nullptr;
     };
 
-    initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), 0), "field_count > 0");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, pointCloud->getData(), pointCloud->getPointCount(), pointFields.data(), 0), "field_count > 0");
 
-    initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), nullptr, pointFields.size()), "fields != nullptr");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, pointCloud->getData(), pointCloud->getPointCount(), nullptr, pointFields.size()), "fields != nullptr");
 
-    initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, inPoints.data(), 0, pointFields.data(), pointFields.size()), "points_count > 0");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, pointCloud->getData(), 0, pointFields.data(), pointFields.size()), "points_count > 0");
 
-    initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, nullptr, inPoints.size(), pointFields.data(), pointFields.size()), "points != nullptr");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(&usePointsNode, nullptr, pointCloud->getPointCount(), pointFields.data(), pointFields.size()), "points != nullptr");
 
-    initializeArgumentsLambda();
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(nullptr, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()), "node != nullptr");
+	initializeArgumentsLambda();
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_from_array(nullptr, pointCloud->getData(), pointCloud->getPointCount(), pointFields.data(), pointFields.size()), "node != nullptr");
 }
 TEST_P(FromArrayPointsNodeTest, valid_arguments)
 {
     int pointsCount = GetParam();
-    auto inPoints = GenerateTestPointsArray(pointsCount);
-    rgl_node_t usePointsNode = nullptr;
+	pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
 
-    EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), pointFields.data(), pointFields.size()));
+    EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, pointCloud->getData(), pointCloud->getPointCount(), pointFields.data(), pointFields.size()));
     ASSERT_THAT(usePointsNode, testing::NotNull());
 }
 
@@ -49,50 +54,14 @@ TEST_P(FromArrayPointsNodeTest, use_case)
 {
     int pointsCount = GetParam();
 
-    CreateTestUsePointsNode(pointsCount);
+	pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
+
+	usePointsNode = pointCloud->createUsePointsNode();
     EXPECT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 
-    std::vector<TestPointStruct> expectedPoints = GenerateTestPointsArray(pointsCount);
+	TestPointCloud outputPointCloud = TestPointCloud::createFromNode(usePointsNode, pointFields);
 
-    std::vector<::Field<XYZ_F32>::type> expectedXYZ;
-    expectedXYZ.resize(pointsCount);
-
-    for (auto field : pointFields) {
-        int32_t outCount, outSizeOf;
-        EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(usePointsNode, field, &outCount, &outSizeOf));
-        EXPECT_EQ(outCount, inPoints.size());
-        EXPECT_EQ(outSizeOf, getFieldSize(field));
-
-        switch (field) {
-        case XYZ_F32: {
-            std::vector<::Field<XYZ_F32>::type> outData;
-            outData.resize(outCount);
-            EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
-            for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints.at(i).xyz[0], outData.at(i)[0], EPSILON_F);
-                EXPECT_NEAR(expectedPoints.at(i).xyz[1], outData.at(i)[1], EPSILON_F);
-                EXPECT_NEAR(expectedPoints.at(i).xyz[2], outData.at(i)[2], EPSILON_F);
-            }
-            break;
-        }
-        case IS_HIT_I32: {
-            std::vector<::Field<IS_HIT_I32>::type> outData;
-            outData.resize(outCount);
-            EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
-            for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints.at(i).isHit, outData.at(i), EPSILON_F);
-            }
-            break;
-        }
-        case INTENSITY_F32: {
-            std::vector<::Field<INTENSITY_F32>::type> outData;
-            outData.resize(outCount);
-            EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(usePointsNode, field, outData.data()));
-            for (int i = 0; i < outCount; ++i) {
-                EXPECT_NEAR(expectedPoints.at(i).intensity, outData.at(i), EPSILON_F);
-            }
-            break;
-        }
-        }
-    }
+	checkIfNearEqual(pointCloud->getFieldValues<XYZ_F32>(), outputPointCloud.getFieldValues<XYZ_F32>(), EPSILON_F);
+	checkIfNearEqual(pointCloud->getFieldValues<IS_HIT_I32>(), outputPointCloud.getFieldValues<IS_HIT_I32>(), EPSILON_F);
+	checkIfNearEqual(pointCloud->getFieldValues<INTENSITY_F32>(), outputPointCloud.getFieldValues<INTENSITY_F32>(), EPSILON_F);
 }

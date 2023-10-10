@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include <scenes.hpp>
-#include <lidars.hpp>
+#include <helpers/geometryData.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+
 #include <RGLFields.hpp>
 #include <Time.hpp>
-
 #include <math/Mat3x4f.hpp>
 
 class GraphCase : public RGLTest {};
@@ -15,7 +15,7 @@ class GraphCase : public RGLTest {};
 
 TEST_F(GraphCase, FullLinear)
 {
-	setupBoxesAlongAxes(nullptr);
+	setupBoxesAlongAxes();
 
 	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
 
@@ -296,8 +296,8 @@ TEST_F(GraphCase, FormatNodeResults)
 	}
 
 	// Test if fields update is propagated over graph properly
-	formatFields.push_back(DISTANCE_F32);  // Add distance field
-	formatFields.push_back(PADDING_32);  // Align to 8 bytes
+	formatFields.emplace_back(DISTANCE_F32);  // Add distance field
+	formatFields.emplace_back(PADDING_32);  // Align to 8 bytes
 	struct FormatStructExtended : public  FormatStruct
 	{
 		Field<DISTANCE_F32>::type distance;

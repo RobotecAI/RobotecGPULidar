@@ -1,11 +1,9 @@
 #include <random>
-#include <gtest/gtest.h>
 
-#include <utils.hpp>
-#include <scenes.hpp>
-#include <lidars.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
-#include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 #include <graph/NodesCore.hpp>
 
@@ -154,7 +152,7 @@ TEST_F(GraphStress, Async)
 	// Optional logging
 	// EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true));
 
-	spawnCubeOnScene(nullptr, Mat3x4f::TRS(cubePosition));
+	spawnCubeOnScene(Mat3x4f::TRS(cubePosition));
 
 	// Print random seed for reproducibility
 	fmt::print(stderr, "Graph Stress Test random seed: {}\n", randomSeed);

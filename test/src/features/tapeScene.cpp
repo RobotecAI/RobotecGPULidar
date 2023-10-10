@@ -1,9 +1,8 @@
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include <scenes.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+
 #include <RGLFields.hpp>
 #include <rgl/api/extensions/tape.h>
-
 #include <math/Mat3x4f.hpp>
 
 class Tape : public RGLTest {};

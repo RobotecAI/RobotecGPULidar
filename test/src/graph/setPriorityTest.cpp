@@ -1,7 +1,6 @@
+#include <helpers/commonHelpers.hpp>
 
-#include <gtest/gtest.h>
 #include <RGLFields.hpp>
-#include <utils.hpp>
 #include <nodes.hpp>
 
 #include <api/apiCommon.hpp>

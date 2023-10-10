@@ -1,7 +1,10 @@
-#include <gtest/gtest.h>
-#include "utils.hpp"
-#include "scenes.hpp"
-#include "lidars.hpp"
+#include <helpers/geometryData.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/textureHelpers.hpp>
+
+#include <RGLFields.hpp>
 
 #ifdef RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
@@ -9,7 +12,7 @@
 
 constexpr unsigned short UsMaxValue = 255;
 
-struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>>, public RGLPointTestHelper{};
+struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>> {};
 
 INSTANTIATE_TEST_SUITE_P(
 		Parametrized, TextureTest,
