@@ -23,6 +23,13 @@
 #include <typingUtils.hpp>
 #include <RGLExceptions.hpp>
 
+// This file is included by tests, so we need to have correct __declspec on static members
+#if defined _MSC_VER && !defined RGL_BUILD
+#define DATA_DECLSPEC __declspec(dllimport)
+#else
+#define DATA_DECLSPEC __declspec(dllexport)
+#endif
+
 /**
  * Objects shared through C-API should inherit from APIObject<T>, which:
  * - Tracks instances, which may be helpful to e.g. debug leaks on the client side.
@@ -32,7 +39,7 @@
 template<typename T>
 struct APIObject
 {
-	static std::unordered_map<APIObject<T>*, std::shared_ptr<T>> instances;
+	static DATA_DECLSPEC std::unordered_map<APIObject<T>*, std::shared_ptr<T>> instances;
 
 	// Constructs T instance + 2 shared_ptrs:
 	// - One is stored in instances to account for non-C++ usage
@@ -101,6 +108,6 @@ protected:
 
 // This should be used in .cpp file to make an instance of static variable(s) of APIObject<Type>
 #define API_OBJECT_INSTANCE(Type)                \
-template<typename T>                             \
-std::unordered_map<APIObject<T>*, std::shared_ptr<T>> APIObject<T>::instances; \
+template<typename T>                                                                        \
+        DATA_DECLSPEC std::unordered_map<APIObject<T>*, std::shared_ptr<T>> APIObject<T>::instances; \
 template struct APIObject<Type>
