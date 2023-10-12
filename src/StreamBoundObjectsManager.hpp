@@ -63,6 +63,10 @@ struct StreamBoundObjectsManager
 			auto objectSharedPtr = objectWeakPtr.lock();
 			if (objectSharedPtr == nullptr) {
 				it = streamBoundObjects.erase(it);
+                                if (it == streamBoundObjects.end()) {
+                                    // Avoid incrementing end iterator, breaks on Windows
+                                    break;
+                                }
 				continue;
 			}
 			objectSharedPtr->setStream(newStream);
