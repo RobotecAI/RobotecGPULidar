@@ -425,7 +425,6 @@ void TapePlayer::tape_texture_destroy(const YAML::Node &yamlNode)
 RGL_API rgl_status_t
 rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
-	TAPE_HOOK(scene, nanoseconds);
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_scene_set_time(scene={}, nanoseconds={})", (void*) scene, nanoseconds);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
@@ -571,15 +570,18 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		// Therefore, it should be sufficient to wait only for the stream operations issued by the given node (and, obviously, all previous).
 		// After that, all pending operations on the source DAA are done, and it is safe to use it in the copy stream.
 
-		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
+
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
 		if (!pointCloudNode->hasField(field)) {
 			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
 			throw InvalidPipeline(msg);
 		}
+                // Temporary optimization to yield better results in AWSIM:
+                // YieldNode (which has complementary part of this optimization) prefetches XYZ to host mem.
+                // If we are asked for XYZ from YieldNode, we can use its host cache and immediately memcpy it.
+                // TODO: This should work for any field in YieldNode (encountered test fails for other fields)
 		if (auto yieldNode = std::dynamic_pointer_cast<YieldPointsNode>(pointCloudNode)) {
-			// Temporary optimization
 			if (field == XYZ_F32) {
 				auto fieldArray = yieldNode->getXYZCache();
 				size_t size = fieldArray->getCount() * fieldArray->getSizeOf();

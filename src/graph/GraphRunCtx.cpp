@@ -81,12 +81,10 @@ void GraphRunCtx::executeThreadMain() try
 
 	for(auto&& node : executionOrder) {
 		RGL_DEBUG("Enqueueing node: {}", *node);
-		{
-			NvtxRange rg {graphOrdinal, NVTX_COL_WORK, "Enqueue({})", node->getName()};
-			node->enqueueExec();
-			executionStatus.at(node).enqueued.store(true);
-			executionStatus.at(node).enqueued.notify_all();
-		}
+                NvtxRange rg {graphOrdinal, NVTX_COL_WORK, "Enqueue({})", node->getName()};
+                node->enqueueExec();
+                executionStatus.at(node).enqueued.store(true);
+                executionStatus.at(node).enqueued.notify_all();
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
 }
