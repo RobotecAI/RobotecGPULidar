@@ -75,6 +75,7 @@ class TapeRecorder
 	std::ofstream fileYaml;
 
 	size_t currentBinOffset = 0;
+	std::chrono::time_point<std::chrono::steady_clock> beginTimestamp;
 
 	static void recordRGLVersion(YAML::Node& node);
 
@@ -156,6 +157,7 @@ public:
 	{
 		YAML::Node apiCallNode;
 		apiCallNode["name"] = fnName;
+		apiCallNode["timestamp"] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
 		if constexpr(sizeof...(args) > 0) {
 			recordApiArguments(apiCallNode, 0, args...);
 		}
@@ -172,6 +174,7 @@ struct TapePlayer
 	void playNext();
 	void playUntil(std::optional<YAML::iterator> breakpoint= std::nullopt);
 	void rewindTo(YAML::iterator nextCall);
+	void playRealtime();
 
 	rgl_node_t getNode(TapeAPIObjectID key) { return tapeNodes.at(key); }
 

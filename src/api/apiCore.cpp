@@ -24,6 +24,7 @@
 
 #include <graph/NodesCore.hpp>
 #include <graph/GraphRunCtx.hpp>
+#include <NvtxWrappers.hpp>
 
 extern "C" {
 
@@ -349,8 +350,7 @@ rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 
 void TapePlayer::tape_entity_set_id(const YAML::Node& yamlNode)
 {
-	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()),
-					  yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
+	rgl_entity_set_id(tapeEntities.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
 }
 
 RGL_API rgl_status_t
@@ -449,6 +449,7 @@ rgl_graph_run(rgl_node_t raw_node)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_run(node={})", repr(raw_node));
 		CHECK_ARG(raw_node != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_run"};
 		auto node = Node::validatePtr(raw_node);
 		if (!node->hasGraphRunCtx()) {
 			GraphRunCtx::createAndAttach(node);
@@ -514,6 +515,7 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_get_result_size(node={}, field={}, out_count={}, out_size_of={})", repr(node), field, (void*)out_count, (void*)out_size_of);
 		CHECK_ARG(node != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_size"};
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
@@ -549,10 +551,12 @@ void TapePlayer::tape_graph_get_result_size(const YAML::Node& yamlNode)
 RGL_API rgl_status_t
 rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 {
+	static auto buffer = HostPinnedArray<char>::create();
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_graph_get_result_data(node={}, field={}, data={})", repr(node), field, (void*) dst);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(dst != nullptr);
+		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_data"};
 
 		// This part is a bit tricky:
 		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.
@@ -566,18 +570,33 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		// Therefore, it should be sufficient to wait only for the stream operations issued by the given node (and, obviously, all previous).
 		// After that, all pending operations on the source DAA are done, and it is safe to use it in the copy stream.
 
-		// TODO: Check if copy to pageable is async and replace with dev -> pinned -> pageable if needed.
+
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
 		if (!pointCloudNode->hasField(field)) {
-			auto msg = fmt::format("node {} does not provide field {}",pointCloudNode->getName(), toString(field));
+			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
 			throw InvalidPipeline(msg);
 		}
+                // Temporary optimization to yield better results in AWSIM:
+                // YieldNode (which has complementary part of this optimization) prefetches XYZ to host mem.
+                // If we are asked for XYZ from YieldNode, we can use its host cache and immediately memcpy it.
+                // TODO: This should work for any field in YieldNode (encountered test fails for other fields)
+		if (auto yieldNode = std::dynamic_pointer_cast<YieldPointsNode>(pointCloudNode)) {
+			if (field == XYZ_F32) {
+				auto fieldArray = yieldNode->getXYZCache();
+				size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
+				memcpy(dst, fieldArray->getRawReadPtr(), size);
+				return;
+			}
+		}
 		auto fieldArray = pointCloudNode->getFieldData(field);
+		buffer->resize(fieldArray->getCount() * fieldArray->getSizeOf(), false, false);
+		void* bufferDst = buffer->getWritePtr();
 		const void* src = fieldArray->getRawReadPtr();
 		size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
-		CHECK_CUDA(cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
+		CHECK_CUDA(cudaMemcpyAsync(bufferDst, src, size, cudaMemcpyDefault, CudaStream::getCopyStream()->getHandle()));
 		CHECK_CUDA(cudaStreamSynchronize(CudaStream::getCopyStream()->getHandle()));
+		memcpy(dst, bufferDst, size);
 	});
 	TAPE_HOOK(node, field, dst);
 	return status;
@@ -1109,7 +1128,7 @@ rgl_tape_play(const char* path)
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
 			TapePlayer player(path);
-			player.playUntil(std::nullopt);
+			player.playRealtime();
 		}
 	});
 	#endif //_WIN32

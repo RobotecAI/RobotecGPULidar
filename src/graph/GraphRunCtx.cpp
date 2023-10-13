@@ -15,8 +15,9 @@
 #include <graph/GraphRunCtx.hpp>
 #include <graph/NodesCore.hpp>
 #include <graph/Node.hpp>
+#include <NvtxWrappers.hpp>
 
-std::list<std::weak_ptr<GraphRunCtx>> GraphRunCtx::instances;
+std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
 std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> node)
 {
@@ -32,6 +33,7 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 		currentNode->setGraphRunCtx(graphRunCtx);
 	}
 
+	graphRunCtx->graphOrdinal = GraphRunCtx::instances.size() + 1;
 	GraphRunCtx::instances.push_back(graphRunCtx);
 
 	return graphRunCtx;
@@ -77,16 +79,14 @@ void GraphRunCtx::executeThreadMain() try
 	while (!execThreadCanStart.load(std::memory_order::acquire))
 		;
 
-	for (auto&& node : executionOrder) {
-		// SPDLOG is thread safe, so we can log here.
+	for(auto&& node : executionOrder) {
 		RGL_DEBUG("Enqueueing node: {}", *node);
-		node->enqueueExec();
-		executionStatus.at(node).enqueued.store(true, std::memory_order::release);
-		node->waitForResults();
+                NvtxRange rg {graphOrdinal, NVTX_COL_WORK, "Enqueue({})", node->getName()};
+                node->enqueueExec();
+                executionStatus.at(node).enqueued.store(true);
+                executionStatus.at(node).enqueued.notify_all();
 	}
 	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
-
-	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 }
 catch (...)
 {
@@ -98,7 +98,8 @@ catch (...)
 			continue;
 		}
 		state.exceptionPtr = std::current_exception();
-		state.enqueued.store(true, std::memory_order::release);
+		state.enqueued.store(true);
+		state.enqueued.notify_all();
 	}
 }
 
@@ -163,11 +164,12 @@ void GraphRunCtx::detachAndDestroy()
 	for (auto&& node : nodes) {
 		node->setGraphRunCtx(std::nullopt);
 	}
-	// After this loop, we should have removed all shared_ptrs to GraphRunCtx, so it will be destroyed.
+	erase_if(GraphRunCtx::instances, [&](std::shared_ptr<GraphRunCtx> ctx) { return ctx.get() == this; });
 }
 
 void GraphRunCtx::synchronize()
 {
+	NvtxRange rg {graphOrdinal, NVTX_COL_SYNC, "SyncGraph({})", graphOrdinal};
 	if (!maybeThread.has_value()) {
 		return; // Already synchronized or never run.
 	}
@@ -188,8 +190,10 @@ void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 	// Wait until node is executed
 	// This is call executed in client's thread, which is often engine's main thread.
 	// Therefore, we choose busy wait, since putting it to sleep & waking up would add additional latency.
-	while (!executionStatus.at(nodeToSynchronize).enqueued.load(std::memory_order_acquire))
-		;
+	{
+		NvtxRange rg {graphOrdinal, NVTX_COL_SYNC_CPU, "SyncCPU({})", nodeToSynchronize->getName()};
+		executionStatus.at(nodeToSynchronize).enqueued.wait(false);
+	}
 	// Rethrow exception, if any
 	if (auto ex = executionStatus.at(nodeToSynchronize).exceptionPtr) {
 		// Avoid double throw
@@ -200,15 +204,8 @@ void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 
 void GraphRunCtx::synchronizeAll()
 {
-	auto it = instances.begin();
-	for (; it != instances.end(); ++it)
-	{
-		auto&& ctxWeakPtr = *it;
-		auto ctxSharedPtr = ctxWeakPtr.lock();
-		if (ctxSharedPtr == nullptr) {
-			it = instances.erase(it);
-			continue;
-		}
-		ctxSharedPtr->synchronize();
+	// No need to lock here, because the only concurrent modification may happen in the same thread.
+	for (auto&& ctx : GraphRunCtx::instances) {
+		ctx->synchronize();
 	}
 }

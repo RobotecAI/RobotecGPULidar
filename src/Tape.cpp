@@ -36,6 +36,7 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 	}
 	TapeRecorder::recordRGLVersion(yamlRoot);
 	yamlRecording = yamlRoot["recording"];
+	beginTimestamp = std::chrono::steady_clock::now();
 }
 
 TapeRecorder::~TapeRecorder()
@@ -172,6 +173,18 @@ void TapePlayer::playUnchecked(YAML::iterator call)
 	}
 
 	tapeFunctions[functionName](node);
+}
+
+#include <thread>
+void TapePlayer::playRealtime()
+{
+	auto beginTimestamp = std::chrono::steady_clock::now();
+	for (; nextCall != yamlRecording.end(); ++nextCall) {
+		auto nextCallNs = std::chrono::nanoseconds((*nextCall)["timestamp"].as<int64_t>());
+		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
+		std::this_thread::sleep_for(nextCallNs - elapsed);
+		playUnchecked(nextCall);
+	}
 }
 
 TapePlayer::~TapePlayer()

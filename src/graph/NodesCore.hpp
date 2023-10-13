@@ -60,6 +60,7 @@ private:
 
 	std::vector<rgl_field_t> fields;
 	DeviceAsyncArray<char>::Ptr output = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr outputHost = HostPinnedArray<char>::create();
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
@@ -217,12 +218,14 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return results.at(field); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return results.at(field); }
+
+	HostPinnedArray<Field<XYZ_F32>::type>::Ptr getXYZCache() { return xyzHostCache; }
 
 private:
 	std::vector<rgl_field_t> fields;
 	std::unordered_map<rgl_field_t, IAnyArray::ConstPtr> results;
+	HostPinnedArray<Field<XYZ_F32>::type>::Ptr xyzHostCache = HostPinnedArray<Field<XYZ_F32>::type>::create();
 };
 
 struct SpatialMergePointsNode : IPointsNode

@@ -28,6 +28,9 @@ void FormatPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 void FormatPointsNode::enqueueExecImpl()
 {
 	formatAsync(output, input, fields, gpuFieldDescBuilder);
+	auto bytes = getPointSize(fields) * input->getPointCount();
+	outputHost->resize(bytes, false, false);
+	CHECK_CUDA(cudaMemcpyAsync(outputHost->getRawWritePtr(), output->getRawReadPtr(), bytes, cudaMemcpyDeviceToHost, getStreamHandle()));
 }
 
 void FormatPointsNode::formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
@@ -47,7 +50,7 @@ void FormatPointsNode::formatAsync(DeviceAsyncArray<char>::Ptr output, const IPo
 IAnyArray::ConstPtr FormatPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == RGL_FIELD_DYNAMIC_FORMAT) {
-		return output;
+		return outputHost;
 	}
 	return input->getFieldData(field);
 }

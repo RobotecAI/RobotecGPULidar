@@ -43,8 +43,9 @@ int main(int argc, char** argv)
 	YAML::iterator animationEnd = player.getFirstOf({"rgl_entity_destroy", "rgl_mesh_destroy"}).value();
 
 	while (true) {
-		player.playUntil(animationEnd);
-		player.rewindTo(animationBegin);
+		player.playRealtime();
+//		player.playUntil(animationEnd);
+//		player.rewindTo(animationBegin);
 	}
 	rgl_cleanup();
 }
