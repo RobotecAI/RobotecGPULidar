@@ -46,6 +46,14 @@ if (WIN32)
     add_definitions(-D_USE_MATH_DEFINES)
 endif()
 
+if (WIN32 AND RGL_BUILD_TESTS)
+    # Sometimes, for convenience, tests reference non-public symbols from the library
+    # By default, those symbols are not visible and not annotated with __declspec(dllexport)
+    # However, there's a CMake workaround for such scenarios, described further at
+    # https://www.kitware.com//create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
+
 # External dependencies
 add_subdirectory(external)
 find_package(CUDAToolkit REQUIRED)
@@ -58,6 +66,7 @@ endif()
 include_directories(include)
 include_directories($ENV{OptiX_INSTALL_DIR}/include)
 include_directories(${spdlog_SOURCE_DIR}/include)
+include_directories(${YAML_CPP_SOURCE_DIR}/include)
 
 # Compile OptiX device programs (pipeline) and embed the binary in a library as a char[]
 add_library(optixProgramsPtx OBJECT src/gpu/optixPrograms.cu)
@@ -176,6 +185,7 @@ target_compile_definitions(RobotecGPULidar
     PUBLIC RGL_LOG_FILE="${RGL_LOG_FILE}"
     PUBLIC RGL_LOG_LEVEL=RGL_LOG_LEVEL_${RGL_LOG_LEVEL}
     PUBLIC RGL_AUTO_TAPE_PATH="${RGL_AUTO_TAPE_PATH}"
+    PRIVATE RGL_BUILD # Used in headers to differentiate whether it is parsed as library or client's code, affects __declspec on Windows.
 )
 
 # Include tests

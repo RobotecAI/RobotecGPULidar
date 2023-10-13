@@ -15,6 +15,7 @@
 #pragma once
 
 #include <typeindex>
+#include <string>
 
 static std::string name(const std::type_index& typeIndex)
 {

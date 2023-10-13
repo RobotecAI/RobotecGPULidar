@@ -3,6 +3,7 @@
 #include <helpers/sceneHelpers.hpp>
 #include <helpers/commonHelpers.hpp>
 
+#include <Logger.hpp>
 #include <RGLFields.hpp>
 #include <Time.hpp>
 #include <math/Mat3x4f.hpp>
