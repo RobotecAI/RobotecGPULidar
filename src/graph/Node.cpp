@@ -101,9 +101,7 @@ void Node::removeChild(Node::Ptr child)
 
 void Node::setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph)
 {
-	if (graph.has_value()) {
-		arrayMgr.setStream(graph.value()->getStream());
-	}
+	arrayMgr.setStream(graph.has_value() ? graph.value()->getStream() : CudaStream::getNullStream());
 	this->graphRunCtx = graph;
 	this->dirty = true;
 }

@@ -29,7 +29,6 @@ struct StreamBoundObjectsManager
 {
 	/**
 	 * Registers IStreamBound object.
-	 * The object must be bound with the stream provided to setStream.
 	 * @param object Object to register.
 	 */
 	void registerObject(IStreamBound::Ptr object)

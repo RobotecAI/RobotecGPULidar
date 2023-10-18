@@ -113,22 +113,22 @@ inline bool isDummy(rgl_field_t type)
 // Therefore, we use forward declaration and shared_ptr<IAnyArray> instead of IAnyArray::Ptr
 struct IAnyArray;
 template<template <typename> typename Subclass, typename... Args>
-inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args... args)
+inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 {
 	if (isDummy(type)) {
 		throw std::invalid_argument(fmt::format("Cannot create Array<T> for non-instantiable type {}", type));
 	}
 	switch (type) {
-		case XYZ_F32: return Subclass<Field<XYZ_F32>::type>::create(args...);
-		case RAY_IDX_U32: return Subclass<Field<RAY_IDX_U32>::type>::create(args...);
-		case ENTITY_ID_I32: return Subclass<Field<ENTITY_ID_I32>::type>::create(args...);
-		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(args...);
-		case RING_ID_U16: return Subclass<Field<RING_ID_U16>::type>::create(args...);
-		case AZIMUTH_F32: return Subclass<Field<AZIMUTH_F32>::type>::create(args...);
-		case DISTANCE_F32: return Subclass<Field<DISTANCE_F32>::type>::create(args...);
-		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(args...);
-		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(args...);
-		case IS_HIT_I32: return Subclass<Field<IS_HIT_I32>::type>::create(args...);
+		case XYZ_F32: return Subclass<Field<XYZ_F32>::type>::create(std::forward<Args>(args)...);
+		case RAY_IDX_U32: return Subclass<Field<RAY_IDX_U32>::type>::create(std::forward<Args>(args)...);
+		case ENTITY_ID_I32: return Subclass<Field<ENTITY_ID_I32>::type>::create(std::forward<Args>(args)...);
+		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(std::forward<Args>(args)...);
+		case RING_ID_U16: return Subclass<Field<RING_ID_U16>::type>::create(std::forward<Args>(args)...);
+		case AZIMUTH_F32: return Subclass<Field<AZIMUTH_F32>::type>::create(std::forward<Args>(args)...);
+		case DISTANCE_F32: return Subclass<Field<DISTANCE_F32>::type>::create(std::forward<Args>(args)...);
+		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(std::forward<Args>(args)...);
+		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(std::forward<Args>(args)...);
+		case IS_HIT_I32: return Subclass<Field<IS_HIT_I32>::type>::create(std::forward<Args>(args)...);
 	}
 	throw std::invalid_argument(fmt::format("createArray: unknown RGL field {}", type));
 }

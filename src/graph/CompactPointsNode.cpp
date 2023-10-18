@@ -16,6 +16,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <RGLFields.hpp>
 #include <repr.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 
 void CompactPointsNode::enqueueExecImpl()
@@ -61,6 +62,15 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 		const CompactionIndexType * indices = inclusivePrefixSum->getReadPtr();
 		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
+		bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
+		if (!calledFromEnqueue) {
+			// This is a special case, where API calls getFieldData for this field for the first time
+			// We did not enqueued compcation in enqueueExecImpl, yet, we are asked for results.
+			// This operation was enqueued in the graph stream, but API won't wait for whole graph stream.
+			// Therefore, we need a manual sync here.
+			// TODO: remove this cancer.
+			CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+		}
 		cacheManager.setUpdated(field);
 	}
 

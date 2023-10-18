@@ -60,6 +60,8 @@ struct GraphRunCtx
 	 */
 	void synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize);
 
+	bool isThisThreadGraphThread() const {return maybeThread.has_value() && maybeThread->get_id() == std::this_thread::get_id(); }
+
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 

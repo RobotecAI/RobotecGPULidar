@@ -157,7 +157,7 @@ target_link_libraries(RobotecGPULidar PUBLIC
 
 # Create a CMake list with available log levels (rgl_log_level_t)
 set(RGL_AVAILABLE_LOG_LEVELS
-    RGL_LOG_LEVEL_ALLc
+    RGL_LOG_LEVEL_ALL
     RGL_LOG_LEVEL_TRACE
     RGL_LOG_LEVEL_DEBUG
     RGL_LOG_LEVEL_INFO

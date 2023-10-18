@@ -558,6 +558,12 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		CHECK_ARG(dst != nullptr);
 		NvtxRange rg {NVTX_CAT_API, NVTX_COL_CALL, "rgl_graph_get_result_data"};
 
+		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
+		if (!pointCloudNode->hasField(field)) {
+			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
+			throw InvalidPipeline(msg);
+		}
+
 		// This part is a bit tricky:
 		// The node is operating in a GraphRunCtx, i.e. in some CUDA stream.
 		// All its DAAs are bound to that stream. The stream may be busy with processing other nodes.
@@ -569,18 +575,12 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 		// However, with the current architecture, we can reasonably expect that no DAA is modified by other Node than its owner.
 		// Therefore, it should be sufficient to wait only for the stream operations issued by the given node (and, obviously, all previous).
 		// After that, all pending operations on the source DAA are done, and it is safe to use it in the copy stream.
-
-
-		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 		pointCloudNode->waitForResults();
-		if (!pointCloudNode->hasField(field)) {
-			auto msg = fmt::format("node {} does not provide field {}", pointCloudNode->getName(), toString(field));
-			throw InvalidPipeline(msg);
-		}
-                // Temporary optimization to yield better results in AWSIM:
-                // YieldNode (which has complementary part of this optimization) prefetches XYZ to host mem.
-                // If we are asked for XYZ from YieldNode, we can use its host cache and immediately memcpy it.
-                // TODO: This should work for any field in YieldNode (encountered test fails for other fields)
+
+		// Temporary optimization to yield better results in AWSIM:
+		// YieldNode (which has complementary part of this optimization) prefetches XYZ to host mem.
+		// If we are asked for XYZ from YieldNode, we can use its host cache and immediately memcpy it.
+		// TODO: This should work for any field in YieldNode (encountered test fails for other fields)
 		if (auto yieldNode = std::dynamic_pointer_cast<YieldPointsNode>(pointCloudNode)) {
 			if (field == XYZ_F32) {
 				auto fieldArray = yieldNode->getXYZCache();
@@ -589,6 +589,7 @@ rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* dst)
 				return;
 			}
 		}
+
 		auto fieldArray = pointCloudNode->getFieldData(field);
 		buffer->resize(fieldArray->getCount() * fieldArray->getSizeOf(), false, false);
 		void* bufferDst = buffer->getWritePtr();
