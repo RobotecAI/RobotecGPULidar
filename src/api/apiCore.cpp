@@ -1054,6 +1054,20 @@ void TapePlayer::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode)
 		yamlNode[3].as<float>());
 	tapeNodes.insert({nodeId, node});
 }
+RGL_API rgl_status_t
+rgl_node_points_simulate_snow(rgl_node_t* node, float snowfall_rate, float terminal_velocity,
+    int32_t num_channels, float max_range, float beam_divergence)
+{
+	auto status = rglSafeCall([&]() {
+			RGL_API_LOG("rgl_node_points_simulate_snow(node={}, snowfall_rate={}, terminal_velocity={}), num_channels={}), max_range={}, beam_divergence={})", repr(node), snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
+			CHECK_ARG(node != nullptr);
+
+            createOrUpdateNode<SimulateSnowPointsNode>(node, snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
+	});
+
+    return status;
+}
+
 
 RGL_API rgl_status_t
 rgl_tape_record_begin(const char* path)

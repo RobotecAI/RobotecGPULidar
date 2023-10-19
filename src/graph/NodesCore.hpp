@@ -388,3 +388,28 @@ private:
 	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
+
+
+struct SimulateSnowPointsNode :IPointsNodeSingleInput
+{
+        using Ptr = std::shared_ptr<SimulateSnowPointsNode>;
+
+        void setParameters(float snowfallRate, float snowflakeTerminalVelicity, int numberOfChannels, float maxRange, float beamDivergence);
+
+        // Node
+        void validateImpl() override;
+        void enqueueExecImpl() override;
+
+        // Node requirements
+        std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
+
+        // Data getters
+        IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+    int32_t numberOfChannels;
+    float snowfallRate;
+    float terminalVelocity;
+    float maxRange;
+    float beamDivergence;
+};

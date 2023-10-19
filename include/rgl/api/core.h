@@ -644,6 +644,23 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
 RGL_API rgl_status_t
 rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base, float st_dev_rise_per_meter);
 
+
+/**
+ * Creates or modifies SimulateSnowNode.
+ * The Node simulates snowfall on the scene.
+ *
+ * TODO: check those params.
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param snowfall_rate Snowfall rate in meters per second.
+ * @param terminal_velocity Terminal velocity of snowflakes in meters per second.
+ * @param num_channels Number of channels in the lidar. Note: feature in order to work properly has to have the same nubmer of channels as the lidar.
+ * @param max_range Maximum range of the lidar in meters.
+ * @param beam_divergence Beam divergence of the lidar in radians.
+ */
+RGL_API rgl_status_t
+    rgl_node_points_simulate_snow(rgl_node_t* node, float snowfall_rate, float terminal_velocity,
+    int32_t num_channels, float max_range, float beam_divergence);
+
 /******************************** GRAPH ********************************/
 
 /**
