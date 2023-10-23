@@ -32,7 +32,6 @@ typedef unsigned char TextureTexelFormat;
 
 // Shorter versions to avoid long type names
 #define XYZ_F32 RGL_FIELD_XYZ_F32
-#define UV_F32 RGL_FIELD_UV_F32
 #define IS_HIT_I32 RGL_FIELD_IS_HIT_I32
 #define RAY_IDX_U32 RGL_FIELD_RAY_IDX_U32
 #define ENTITY_ID_I32 RGL_FIELD_ENTITY_ID_I32
@@ -58,7 +57,6 @@ struct Field<NAME>                                    \
 }
 
 FIELD(XYZ_F32, Vec3f);
-FIELD(UV_F32, Vec2f);
 FIELD(RAY_IDX_U32, uint32_t);  // PCL uses uint32_t
 FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
@@ -76,7 +74,6 @@ inline std::size_t getFieldSize(rgl_field_t type)
 {
 	switch (type) {
 		case XYZ_F32: return Field<XYZ_F32>::size;
-		case UV_F32: return Field<UV_F32>::size;
 		case RAY_IDX_U32: return Field<RAY_IDX_U32>::size;
 		case ENTITY_ID_I32: return Field<ENTITY_ID_I32>::size;
 		case IS_HIT_I32: return Field<IS_HIT_I32>::size;
@@ -123,7 +120,6 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args... args)
 	}
 	switch (type) {
 		case XYZ_F32: return Subclass<Field<XYZ_F32>::type>::create(args...);
-		case UV_F32: return Subclass<Field<UV_F32>::type>::create(args...);
 		case RAY_IDX_U32: return Subclass<Field<RAY_IDX_U32>::type>::create(args...);
 		case ENTITY_ID_I32: return Subclass<Field<ENTITY_ID_I32>::type>::create(args...);
 		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(args...);
@@ -141,7 +137,6 @@ inline std::string toString(rgl_field_t type)
 {
 	switch (type) {
 		case XYZ_F32: return "XYZ_F32";
-		case UV_F32: return "UV_F32";
 		case IS_HIT_I32: return "IS_HIT_I32";
 		case RAY_IDX_U32: return "RAY_IDX_U32";
 		case ENTITY_ID_I32: return "ENTITY_ID_I32";

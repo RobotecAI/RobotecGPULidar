@@ -237,7 +237,6 @@ typedef enum : int32_t
 typedef enum : int32_t
 {
 	RGL_FIELD_XYZ_F32 = 1,
-        RGL_FIELD_UV_F32,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_RAY_IDX_U32,
