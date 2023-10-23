@@ -1059,8 +1059,9 @@ rgl_node_points_simulate_snow(rgl_node_t* node, float snowfall_rate, float termi
     int32_t num_channels, float max_range, float beam_divergence)
 {
 	auto status = rglSafeCall([&]() {
-			RGL_API_LOG("rgl_node_points_simulate_snow(node={}, snowfall_rate={}, terminal_velocity={}), num_channels={}), max_range={}, beam_divergence={})", repr(node), snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
+			RGL_API_LOG("rgl_node_points_simulate_snow(node={}, snowfall_rate={}, terminal_velocity={}, num_channels={}, max_range={}, beam_divergence={})", repr(node), snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
 			CHECK_ARG(node != nullptr);
+                        CHECK_ARG(num_channels>0);
 
             createOrUpdateNode<SimulateSnowPointsNode>(node, snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
 	});

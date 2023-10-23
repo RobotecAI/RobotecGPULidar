@@ -408,8 +408,14 @@ struct SimulateSnowPointsNode :IPointsNodeSingleInput
 
 private:
     int32_t numberOfChannels;
+    int numberOfFlakesPerChannel = 0;
     float snowfallRate;
     float terminalVelocity;
     float maxRange;
     float beamDivergence;
+
+    std::random_device randomDevice;
+    DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+    std::vector<DeviceAsyncArray<Vec2f>::Ptr> snowflakesDisks;
+    DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 };
