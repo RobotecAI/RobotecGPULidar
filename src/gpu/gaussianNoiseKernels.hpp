@@ -18,7 +18,6 @@
 #include <math/Mat3x4f.hpp>
 #include <RGLFields.hpp>
 
-void gpuSetupGaussianNoiseGenerator(cudaStream_t stream, size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* outPHILOXStates);
 void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
 	curandStatePhilox4_32_10_t* randomStates, const Mat3x4f* inRays, Mat3x4f* outRays);
 void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,

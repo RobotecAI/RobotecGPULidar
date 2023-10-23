@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <graph/NodesCore.hpp>
+#include "gpu/helpersKernels.hpp"
 #include <gpu/gaussianNoiseKernels.hpp>
+#include <graph/NodesCore.hpp>
 
 void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float stDevRisePerMeter)
 {
@@ -52,7 +53,7 @@ void GaussianNoiseDistanceNode::enqueueExecImpl()
 
 	if (randomizationStates->getCount() < pointCount) {
 		randomizationStates->resize(pointCount, false, false);
-		gpuSetupGaussianNoiseGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getWritePtr());
+                gpuSetupRandomNumberGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getWritePtr());
 	}
 
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();

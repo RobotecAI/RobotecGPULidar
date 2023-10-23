@@ -18,15 +18,6 @@
 #include <gpu/kernelUtils.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
 
-// Philox algorithm chosen based on performance
-// https://stackoverflow.com/questions/18506697/curand-properties-of-generators
-
-__global__ void kSetupGaussianNoiseGenerator(size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* states)
-{
-	LIMIT(pointCount);
-	/* Each thread gets same seed, a different sequence number, no offset */
-	curand_init(seed, tid, 0, &states[tid]);
-}
 
 __global__ void kAddGaussianNoiseAngularRay(size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
 	curandStatePhilox4_32_10_t* randomStates, const Mat3x4f* inRays, Mat3x4f* outRays)
@@ -71,10 +62,6 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 
 	outPoints[tid] = inPoints[tid] + inPoints[tid].normalize() * distanceError;
 }
-
-
-void gpuSetupGaussianNoiseGenerator(cudaStream_t stream, size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* outPHILOXStates)
-{ run(kSetupGaussianNoiseGenerator, stream, pointCount, seed, outPHILOXStates); }
 
 void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
 	curandStatePhilox4_32_10_t* randomStates, const Mat3x4f* inRays, Mat3x4f* outRays)
