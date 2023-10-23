@@ -23,6 +23,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
     src/graph/nodes/SpatialMergePointsNodeTest.cpp
     src/graph/nodes/TemporalMergePointsNodeTest.cpp
+    src/graph/nodes/SimulateSnowPointsNodeTest.cpp
     src/graph/graphCaseTest.cpp
     src/graph/addChildTest.cpp
     src/memory/arrayTypingTest.cpp

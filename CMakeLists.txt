@@ -85,7 +85,9 @@ add_library(RobotecGPULidar SHARED
     src/Tape.cpp
     src/Logger.cpp
     src/Optix.cpp
+    src/gpu/helpersKernels.cu
     src/gpu/gaussianNoiseKernels.cu
+    src/gpu/snowflakesKernels.cu
     src/gpu/nodeKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
@@ -97,6 +99,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/GaussianNoiseAngularHitpointNode.cpp
     src/graph/GaussianNoiseAngularRayNode.cpp
     src/graph/GaussianNoiseDistanceNode.cpp
+    src/graph/SimulateSnowPointsNode.cpp
     src/graph/CompactPointsNode.cpp
     src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
