@@ -337,7 +337,7 @@ private:
 	std::size_t width = 0;
 };
 
-struct FromArrayPointsNode : virtual IPointsNode, virtual INoInputNode
+struct FromArrayPointsNode : IPointsNode, INoInputNode
 {
 	using Ptr = std::shared_ptr<FromArrayPointsNode>;
 	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);

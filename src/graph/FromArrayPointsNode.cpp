@@ -39,7 +39,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	inputData->copyFromExternal(static_cast<const char *>(points), pointCount * pointSize);
 	const char* inputPtr = inputData->getReadPtr();
 
-	auto& gpuFields = gpuFieldDescBuilder.buildWritableAsync(arrayMgr.getStream(), getFieldToPointerMappings(fields));
+	auto&& gpuFields = gpuFieldDescBuilder.buildWritableAsync(arrayMgr.getStream(), getFieldToPointerMappings(fields));
 	gpuFormatAosToSoa(arrayMgr.getStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr, gpuFields.getReadPtr());
 	CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));
 }

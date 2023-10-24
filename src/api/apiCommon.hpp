@@ -122,7 +122,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	if (node->hasGraphRunCtx()) {
 		node->getGraphRunCtx()->synchronize();
 	}
-	node->setParameters(args...);
+	node->setParameters(std::forward<Args>(args)...);
 	node->dirty = true;
 	*nodeRawPtr = node.get();
 }

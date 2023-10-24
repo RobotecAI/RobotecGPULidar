@@ -76,8 +76,8 @@ void DownSamplePointsNode::enqueueExecImpl()
 	size_t offset = offsetof(PCLPoint, label);
 	size_t stride = sizeof(PCLPoint);
 	size_t size = sizeof(PCLPoint::label);
-	auto&& dst = (char*) filteredIndices->getReadPtr();
-	auto&& src = (const char*) filteredPoints->getReadPtr();
+	auto&& dst = reinterpret_cast<char*>(filteredIndices->getWritePtr());
+	auto&& src = reinterpret_cast<const char*>(filteredPoints->getReadPtr());
 	gpuCutField(getStreamHandle(), filtered->size(), dst, src, offset, stride, size);
 
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data

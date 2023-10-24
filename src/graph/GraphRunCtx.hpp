@@ -29,6 +29,9 @@
  */
 struct GraphRunCtx
 {
+	friend Node;
+	friend void handleDestructorException(std::exception_ptr e, const char* what);
+
 	static std::shared_ptr<GraphRunCtx> createAndAttach(std::shared_ptr<Node> node);
 
 	/**
@@ -66,14 +69,15 @@ struct GraphRunCtx
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
 	virtual ~GraphRunCtx();
-private:
+
+private: // Methods
 	GraphRunCtx() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
 	void executeThreadMain();
 
-private:
+private: // Internal fields
 	CudaStream::Ptr stream;
 	std::optional<std::thread> maybeThread;
 	std::set<Node::Ptr> nodes;
@@ -97,7 +101,4 @@ private: // Communication between client's thread and graph thread
 
 	std::unordered_map<Node::ConstPtr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
-
-	friend Node;
-	friend void handleDestructorException(std::exception_ptr e, const char* what);
 };

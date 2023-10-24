@@ -34,6 +34,9 @@
  */
 struct Mesh : APIObject<Mesh>
 {
+	friend APIObject<Mesh>;
+	friend struct Scene;
+
 	/**
 	 * Updates vertices of this mesh. Vertex count must remain unchanged, otherwise an exception is thrown.
 	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
@@ -61,8 +64,6 @@ private:
 	void updateGAS(CudaStream::Ptr stream);
 
 private:
-	friend APIObject<Mesh>;
-	friend struct Scene;
 	ASBuildScratchpad scratchpad;
 	bool gasNeedsUpdate;
 	std::optional<OptixTraversableHandle> cachedGAS;

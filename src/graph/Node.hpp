@@ -56,6 +56,12 @@ struct GraphRunCtx;
  */
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
+	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
+	template<typename NodeType, typename... Args>
+	friend void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args);
+	friend struct fmt::formatter<Node>;
+	friend struct GraphRunCtx;
+
 	using Ptr = std::shared_ptr<Node>;
 	using ConstPtr = std::shared_ptr<const Node>;
 
@@ -65,12 +71,6 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	void removeChild(Node::Ptr child);
 
-	/**
-	 * Called to set/change/clear current GraphRunCtx.
-	 * Node must ensure that its future operations will be enqueued
-	 * to the stream associated with given graph.
-	 */
-	void setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph);
 	bool hasGraphRunCtx() const { return graphRunCtx.has_value(); }
 	std::shared_ptr<GraphRunCtx> getGraphRunCtx() { return graphRunCtx.value(); }
 
@@ -152,6 +152,14 @@ protected: // Member methods
 	typename T::Ptr getExactlyOneInputOfType()
 	{ return getExactlyOneNodeOfType<T>(inputs); }
 
+private: // Used by friend GraphRunCtx
+	/**
+	 * Called to set/change/clear current GraphRunCtx.
+	 * Node must ensure that its future operations will be enqueued
+	 * to the stream associated with given graph.
+	 */
+	void setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph);
+
 public: // Static methods
 
 	template<template<typename, typename...> typename Container, typename...CArgs>
@@ -204,12 +212,6 @@ protected:
 
 	std::optional<std::shared_ptr<GraphRunCtx>> graphRunCtx; // Pointer may be destroyed e.g. on addChild
 	StreamBoundObjectsManager arrayMgr;
-
-	friend struct fmt::formatter<Node>;
-
-	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
-	template<typename NodeType, typename... Args>
-	friend void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args);
 };
 
 #ifndef __CUDACC__

@@ -17,9 +17,9 @@
 #include <math/Vector.hpp>
 #include <rgl/api/core.h>
 
-struct Texture : APIObject<Texture> {
-
-public:
+struct Texture : APIObject<Texture>
+{
+	friend APIObject<Texture>;
 
 	~Texture();
 
@@ -43,7 +43,6 @@ private:
 
 	void cleanup();
 
-	friend APIObject<Texture>;
 	Vec2i resolution{-1};
 
 	cudaTextureObject_t dTextureObject;
