@@ -700,7 +700,7 @@ void TapePlayer::tape_graph_node_get_priority(const YAML::Node& yamlNode)
 	rgl_node_t node = tapeNodes.at(nodeId);
 	auto tape_priority = yamlNode[1].as<int32_t>();
 	int32_t out_priority;
-	rgl_graph_node_set_priority(node, out_priority);
+	rgl_graph_node_get_priority(node, &out_priority);
 	if (tape_priority != out_priority) {
 		RGL_WARN("tape_graph_node_get_priority: actual priority ({}) differs from tape priority ({})", out_priority, tape_priority);
 	}
