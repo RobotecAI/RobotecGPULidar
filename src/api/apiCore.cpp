@@ -1055,15 +1055,19 @@ void TapePlayer::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode)
 	tapeNodes.insert({nodeId, node});
 }
 RGL_API rgl_status_t
-rgl_node_points_simulate_snow(rgl_node_t* node, float snowfall_rate, float terminal_velocity,
-    int32_t num_channels, float max_range, float beam_divergence)
+rgl_node_points_simulate_snow(rgl_node_t* node, float max_range,
+    float rain_rate, float mean_snowflake_diameter, float terminal_velocity,
+    float density, int32_t num_channels, float beam_divergence)
 {
 	auto status = rglSafeCall([&]() {
-			RGL_API_LOG("rgl_node_points_simulate_snow(node={}, snowfall_rate={}, terminal_velocity={}, num_channels={}, max_range={}, beam_divergence={})", repr(node), snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
+			RGL_API_LOG("rgl_node_points_simulate_snow(node={}, max_range={}, rain_rate={}, mean_snowflake_diameter={}, terminal_velocity={}, density={}, num_channels={}, beam_divergence={})",
+                        repr(node), max_range, rain_rate, mean_snowflake_diameter, terminal_velocity, density, beam_divergence, num_channels, beam_divergence);
 			CHECK_ARG(node != nullptr);
-                        CHECK_ARG(num_channels>0);
+                        CHECK_ARG(num_channels > 0);
 
-            createOrUpdateNode<SimulateSnowPointsNode>(node, snowfall_rate, terminal_velocity, num_channels, max_range, beam_divergence);
+            createOrUpdateNode<SimulateSnowPointsNode>(node, max_range,
+                            rain_rate, mean_snowflake_diameter, terminal_velocity,
+                            density, num_channels, beam_divergence);
 	});
 
     return status;
