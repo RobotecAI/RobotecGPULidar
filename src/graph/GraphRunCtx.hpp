@@ -73,14 +73,14 @@ struct GraphRunCtx
 
 	virtual ~GraphRunCtx();
 
-private: // Methods
+private:
 	GraphRunCtx() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
 	static std::vector<std::shared_ptr<Node>> findExecutionOrder(std::set<std::shared_ptr<Node>> nodes);
 
 	void executeThreadMain();
 
-private: // Internal fields
+	// Internal fields
 	CudaStream::Ptr stream;
 	std::optional<std::thread> maybeThread;
 	std::set<Node::Ptr> nodes;
@@ -91,7 +91,7 @@ private: // Internal fields
 	// Modified by client's thread, read by graph thread
 	static std::list<std::shared_ptr<GraphRunCtx>> instances;
 
-private: // Communication between client's thread and graph thread
+	// Communication between client's thread and graph thread
 	struct NodeExecStatus
 	{
 		// If true, then execution has succeeded or an exception has been thrown.

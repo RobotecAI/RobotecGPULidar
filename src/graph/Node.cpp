@@ -127,7 +127,7 @@ void Node::enqueueExec()
 	CHECK_CUDA(cudaEventRecord(execCompleted->getHandle(), getGraphRunCtx()->getStream()->getHandle()));
 }
 
-std::set<Node::Ptr> Node::getConnectedNodes()
+std::set<Node::Ptr> Node::getConnectedComponentNodes()
 {
 	if (hasGraphRunCtx()) {
 		return getGraphRunCtx()->getNodes();
@@ -152,8 +152,8 @@ std::set<Node::Ptr> Node::getConnectedNodes()
 
 std::set<Node::Ptr> Node::disconnectConnectedNodes()
 {
-	auto nodes = getConnectedNodes();
-	for (auto&& node : getConnectedNodes()) {
+	auto nodes = getConnectedComponentNodes();
+	for (auto&& node : getConnectedComponentNodes()) {
 		node->inputs.clear();
 		node->outputs.clear();
 		node->setGraphRunCtx(std::nullopt);

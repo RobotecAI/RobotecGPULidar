@@ -23,7 +23,7 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 {
 	auto graphRunCtx = std::shared_ptr<GraphRunCtx>(new GraphRunCtx());
 
-	graphRunCtx->nodes = node->getConnectedNodes();
+	graphRunCtx->nodes = node->getConnectedComponentNodes();
 
 	for (auto&& currentNode : graphRunCtx->nodes) {
 		if (currentNode->hasGraphRunCtx()) {

@@ -99,7 +99,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	/**
 	 * @return Set of nodes reachable from this node.
 	 */
-	std::set<Node::Ptr> getConnectedNodes();
+	std::set<Node::Ptr> getConnectedComponentNodes();
 
 	/**
 	 * Removes all connections between connected nodes.

@@ -458,7 +458,7 @@ RGL_API rgl_status_t rgl_graph_destroy(rgl_node_t raw_node)
 void TapePlayer::tape_graph_destroy(const YAML::Node& yamlNode)
 {
 	rgl_node_t userNode = tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>());
-	std::set<Node::Ptr> graph = Node::validatePtr(userNode)->getConnectedNodes();
+	std::set<Node::Ptr> graph = Node::validatePtr(userNode)->getConnectedComponentNodes();
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
