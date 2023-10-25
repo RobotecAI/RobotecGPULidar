@@ -18,16 +18,25 @@
 
 #include <gpu/snowflakesKernels.hpp>
 
-__global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, Vec2f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
+__global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
 {
     LIMIT(snowflakesCount);
-    Vec2f snowflakePosition = snowflakePosition *= maxRange;
+    // Non-uniformly distributed distance [0, maxRange] from the lidar.
+    // This is necessary to obtain uniform distribution on the disk.
+    float snowflakeR = sqrt(curand_uniform(&randomStates[tid])) * maxRange;
+    // Uniformly distributed angle [0, 2pi] (whole circle) from the lidar.
+    float snowflakeAngle = curand_uniform(&randomStates[tid]) * 2 * M_PI;
 
-    snowflakePosition =  curand_normal2(&randomStates[tid]);
-    outSnowflakesDisk[tid] = snowflakePosition;
+    // Transform from polar coordinates to cartesian
+    float x = snowflakeR * cos(snowflakeAngle);
+    float y = snowflakeR * sin(snowflakeAngle);
+
+    float diameter = curand_poisson(&randomStates[tid], distributionRate);
+
+    outSnowflakesDisk[tid] = Vec3f(x, y, diameter);
 }
 
 
 void gpuSnowflakesSimulationCalculateDisk(cudaStream_t stream, size_t snowflakeCount,
-    float maxRange, Vec2f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
-{ run(kSetupSnowflakesDisk, stream, snowflakeCount, maxRange, outSnowflakesDisk, randomStates);}
+    float maxRange, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
+{ run(kSetupSnowflakesDisk, stream, snowflakeCount, maxRange, distributionRate,  outSnowflakesDisk, randomStates);}
