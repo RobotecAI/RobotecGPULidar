@@ -21,11 +21,10 @@ rclcpp::Node::SharedPtr Ros2PublishPointsNode::ros2Node = nullptr;
 std::string Ros2PublishPointsNode::ros2NodeName = "RobotecGPULidar";
 std::set<std::string> Ros2PublishPointsNode::ros2TopicNames = {};
 
-void Ros2PublishPointsNode::setParameters(
-	const char* topicName, const char* frameId,
-	rgl_qos_policy_reliability_t qosReliability,
-	rgl_qos_policy_durability_t qosDurability,
-	rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth)
+void Ros2PublishPointsNode::setParameters(const char* topicName, const char* frameId,
+                                          rgl_qos_policy_reliability_t qosReliability,
+                                          rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory,
+                                          int32_t qosHistoryDepth)
 {
 	// Check if rclcpp initialized
 	if (!rclcpp::ok()) {
@@ -82,8 +81,8 @@ void Ros2PublishPointsNode::enqueueExecImpl()
 	// TODO(msz-rai): Assign scene to the Graph.
 	// For now, only default scene is supported.
 	ros2Message.header.stamp = Scene::defaultInstance()->getTime().has_value() ?
-	                           Scene::defaultInstance()->getTime()->asRos2Msg() :
-	                           static_cast<builtin_interfaces::msg::Time>(ros2Node->get_clock()->now());
+	                               Scene::defaultInstance()->getTime()->asRos2Msg() :
+	                               static_cast<builtin_interfaces::msg::Time>(ros2Node->get_clock()->now());
 	if (!rclcpp::ok()) {
 		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
 	}
@@ -128,9 +127,6 @@ void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fi
 			offset += ros2sizes[i];
 		}
 	}
-	ros2Message.height = 1,
-	ros2Message.point_step = offset,
-	ros2Message.is_dense = isDense,
-	ros2Message.is_bigendian = false,
+	ros2Message.height = 1, ros2Message.point_step = offset, ros2Message.is_dense = isDense, ros2Message.is_bigendian = false,
 	ros2Message.header.frame_id = frameId;
 }

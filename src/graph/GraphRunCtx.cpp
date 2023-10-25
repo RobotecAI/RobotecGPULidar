@@ -27,7 +27,8 @@ std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> 
 
 	for (auto&& currentNode : graphRunCtx->nodes) {
 		if (currentNode->hasGraphRunCtx()) {
-			auto msg = fmt::format("attempted to replace existing graphRunCtx in node {} when creating for {}", currentNode->getName(), node->getName());
+			auto msg = fmt::format("attempted to replace existing graphRunCtx in node {} when creating for {}",
+			                       currentNode->getName(), node->getName());
 			throw std::logic_error(msg);
 		}
 		currentNode->setGraphRunCtx(graphRunCtx);
@@ -52,7 +53,7 @@ void GraphRunCtx::executeAsync()
 		RGL_DEBUG("Validating node: {}", *current);
 		current->validate();
 	}
-	RGL_DEBUG("Node validation completed");  // This also logs the time diff for the last one.
+	RGL_DEBUG("Node validation completed"); // This also logs the time diff for the last one.
 
 	// Clear execution states
 	executionStatus.clear();
@@ -73,23 +74,22 @@ void GraphRunCtx::executeAsync()
 }
 
 
-void GraphRunCtx::executeThreadMain() try
-{
+void GraphRunCtx::executeThreadMain()
+try {
 	// Wait for trigger from the client's thread
 	while (!execThreadCanStart.load(std::memory_order::acquire))
 		;
 
-	for(auto&& node : executionOrder) {
+	for (auto&& node : executionOrder) {
 		RGL_DEBUG("Enqueueing node: {}", *node);
-                NvtxRange rg {graphOrdinal, NVTX_COL_WORK, "Enqueue({})", node->getName()};
-                node->enqueueExec();
-                executionStatus.at(node).enqueued.store(true);
-                executionStatus.at(node).enqueued.notify_all();
+		NvtxRange rg{graphOrdinal, NVTX_COL_WORK, "Enqueue({})", node->getName()};
+		node->enqueueExec();
+		executionStatus.at(node).enqueued.store(true);
+		executionStatus.at(node).enqueued.notify_all();
 	}
-	RGL_DEBUG("Node enqueueing done");  // This also logs the time diff for the last one
+	RGL_DEBUG("Node enqueueing done"); // This also logs the time diff for the last one
 }
-catch (...)
-{
+catch (...) {
 	// Exception most likely happened in a Node, but might have happened around executionOrder loop.
 	// We still need to communicate that nodes 'executed' (even though some may not have a chance to start).
 	// If we didn't, we could hang client's thread in synchronizeNodeCPU() waiting for a Node that will never run.
@@ -106,7 +106,7 @@ catch (...)
 std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std::shared_ptr<Node>> nodes)
 {
 	// Nodes already present in this vector need to be executed after the ones that are added later.
-	std::vector<std::shared_ptr<Node>> reverseOrder {};
+	std::vector<std::shared_ptr<Node>> reverseOrder{};
 	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
 		nodes.erase(current);
 		for (auto it = current->getOutputs().rbegin(); it != current->getOutputs().rend(); ++it) {
@@ -126,8 +126,7 @@ std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std:
 	}
 	// Sort entry nodes by priority, ascending!
 	std::stable_sort(entryNode.begin(), entryNode.end(),
-	                 [](Node::Ptr lhs, Node::Ptr rhs)
-	                 { return lhs->getPriority() < rhs->getPriority(); });
+	                 [](Node::Ptr lhs, Node::Ptr rhs) { return lhs->getPriority() < rhs->getPriority(); });
 
 	// Iterate in ascending order of entry priorities
 	for (auto&& node : entryNode) {
@@ -169,7 +168,7 @@ void GraphRunCtx::detachAndDestroy()
 
 void GraphRunCtx::synchronize()
 {
-	NvtxRange rg {graphOrdinal, NVTX_COL_SYNC, "SyncGraph({})", graphOrdinal};
+	NvtxRange rg{graphOrdinal, NVTX_COL_SYNC, "SyncGraph({})", graphOrdinal};
 	if (!maybeThread.has_value()) {
 		return; // Already synchronized or never run.
 	}
@@ -191,7 +190,7 @@ void GraphRunCtx::synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize)
 	// This is call executed in client's thread, which is often engine's main thread.
 	// Therefore, we choose busy wait, since putting it to sleep & waking up would add additional latency.
 	{
-		NvtxRange rg {graphOrdinal, NVTX_COL_SYNC_CPU, "SyncCPU({})", nodeToSynchronize->getName()};
+		NvtxRange rg{graphOrdinal, NVTX_COL_SYNC_CPU, "SyncCPU({})", nodeToSynchronize->getName()};
 		executionStatus.at(nodeToSynchronize).enqueued.wait(false);
 	}
 	// Rethrow exception, if any

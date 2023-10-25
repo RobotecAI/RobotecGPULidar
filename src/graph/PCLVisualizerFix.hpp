@@ -24,11 +24,11 @@ public:
 	using Ptr = std::shared_ptr<PCLVisualizerFix>;
 	using ConstPtr = std::shared_ptr<const PCLVisualizerFix>;
 
-	PCLVisualizerFix() : pcl::visualization::PCLVisualizer() { }
+	PCLVisualizerFix() : pcl::visualization::PCLVisualizer() {}
 
-	void spinOnce (int time, bool force_redraw = true)
+	void spinOnce(int time, bool force_redraw = true)
 	{
-		if(!interactor_->IsA("vtkXRenderWindowInteractor")) {
+		if (!interactor_->IsA("vtkXRenderWindowInteractor")) {
 			pcl::visualization::PCLVisualizer::spinOnce(time, force_redraw);
 			return;
 		}
@@ -59,8 +59,7 @@ public:
 		interactor_->ProcessEvents();
 
 		// Wait for the requested amount of time to have elapsed or exit immediately via GetDone being true when terminateApp is called
-		while(std::chrono::steady_clock::now() < stop_time && !interactor_->GetDone() )
-		{
+		while (std::chrono::steady_clock::now() < stop_time && !interactor_->GetDone()) {
 			interactor_->ProcessEvents();
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
@@ -88,5 +87,5 @@ public:
 #endif
 	}
 
-	virtual ~PCLVisualizerFix() { }
+	virtual ~PCLVisualizerFix() {}
 };

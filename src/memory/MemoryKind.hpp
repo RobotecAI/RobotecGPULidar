@@ -41,12 +41,6 @@ enum struct MemoryKind
 	HostPinned,
 };
 
-inline bool isDeviceAccessible(MemoryKind kind)
-{
-	return kind != MemoryKind::HostPageable;
-}
+inline bool isDeviceAccessible(MemoryKind kind) { return kind != MemoryKind::HostPageable; }
 
-inline bool isHost(MemoryKind kind)
-{
-	return kind == MemoryKind::HostPinned || kind == MemoryKind::HostPageable;
-}
+inline bool isHost(MemoryKind kind) { return kind == MemoryKind::HostPinned || kind == MemoryKind::HostPageable; }

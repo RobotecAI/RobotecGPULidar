@@ -6,7 +6,8 @@
 #include <rgl/api/extensions/ros2.h>
 #endif
 
-class ExternalLibraryTest : public RGLTest {};
+class ExternalLibraryTest : public RGLTest
+{};
 
 // TODO (msz-rai): Make it work on Windows.
 //  Currently, there is a bug when destroying Optix on Windows which causes non-zero exit code.
@@ -24,14 +25,16 @@ class ExternalLibraryTest : public RGLTest {};
 TEST_F(ExternalLibraryTest, RclcppInitializeAndShutDownProperly)
 {
 	::testing::GTEST_FLAG(death_test_style) = "threadsafe";
-	ASSERT_EXIT({
-		rgl_node_t ros2pub = nullptr;
-		rgl_node_points_ros2_publish(&ros2pub, "rglTopic", "rglFrame");
-		rgl_cleanup();
-		exit(0);
-	}, ::testing::ExitedWithCode(0), "")
-		<< "Test for rclcpp (de)initialization failed. "
-		<< "It is probably caused by a mismatched version of the spdlog library for RGL and ROS2. "
-		<< "Check its compatibility.";
+	ASSERT_EXIT(
+	    {
+		    rgl_node_t ros2pub = nullptr;
+		    rgl_node_points_ros2_publish(&ros2pub, "rglTopic", "rglFrame");
+		    rgl_cleanup();
+		    exit(0);
+	    },
+	    ::testing::ExitedWithCode(0), "")
+	    << "Test for rclcpp (de)initialization failed. "
+	    << "It is probably caused by a mismatched version of the spdlog library for RGL and ROS2. "
+	    << "Check its compatibility.";
 }
 #endif

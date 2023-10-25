@@ -65,7 +65,7 @@ protected:
 		ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &raytraceRange, 1));
 		ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 		ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldPointsNode, fields.data(), fields.size()));
-//		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+		//		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 	}
 
 	void getResults(rgl_node_t node = nullptr)

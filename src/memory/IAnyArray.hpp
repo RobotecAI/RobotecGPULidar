@@ -184,10 +184,9 @@ private:
 		// Using null stream is hurting performance, but extra safe.
 		// TODO: remove null stream usage once DeviceSyncArray is removed
 		auto dstStreamBound = std::dynamic_pointer_cast<IStreamBound>(shared_from_this());
-		CudaStream::Ptr copyStream = dstStreamBound != nullptr
-		                             ? dstStreamBound->getStream()
-		                             : srcStreamBound != nullptr ? srcStreamBound->getStream()
-		                                                         : CudaStream::getNullStream();
+		CudaStream::Ptr copyStream = dstStreamBound != nullptr ? dstStreamBound->getStream() :
+		                             srcStreamBound != nullptr ? srcStreamBound->getStream() :
+		                                                         CudaStream::getNullStream();
 		CHECK_CUDA(cudaMemcpyAsync(writePtr, src->getRawReadPtr(), byteCount, cudaMemcpyDefault, copyStream->getHandle()));
 		CHECK_CUDA(cudaStreamSynchronize(copyStream->getHandle()));
 	}

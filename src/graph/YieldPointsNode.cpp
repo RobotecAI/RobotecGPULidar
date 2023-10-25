@@ -29,12 +29,7 @@ void YieldPointsNode::enqueueExecImpl()
 	}
 	if (results.contains(XYZ_F32)) {
 		xyzHostCache->resize(results.at(XYZ_F32)->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(),
-		                           results[XYZ_F32]->getRawReadPtr(),
-		                           xyzHostCache->getCount() * xyzHostCache->getSizeOf(),
-		                           cudaMemcpyDefault,
-		                           getStreamHandle()));
+		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(), results[XYZ_F32]->getRawReadPtr(),
+		                           xyzHostCache->getCount() * xyzHostCache->getSizeOf(), cudaMemcpyDefault, getStreamHandle()));
 	}
-
 }
-

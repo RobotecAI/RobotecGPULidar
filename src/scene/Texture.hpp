@@ -33,11 +33,10 @@ struct Texture : APIObject<Texture>
 
 
 private:
-
 	Texture(const void* texels, int width, int height);
 
-	Texture(const Texture&) = delete; // non construction-copyable
-	Texture &operator=(const Texture&) = delete; // non copyable
+	Texture(const Texture&) = delete;            // non construction-copyable
+	Texture& operator=(const Texture&) = delete; // non copyable
 
 	void createTextureObject(const void* texels, int width, int height);
 

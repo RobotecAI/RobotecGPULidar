@@ -55,7 +55,7 @@ void DownSamplePointsNode::enqueueExecImpl()
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
 	}
-	pcl::VoxelGrid<PCLPoint> voxelGrid {};
+	pcl::VoxelGrid<PCLPoint> voxelGrid{};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
 
@@ -66,8 +66,7 @@ void DownSamplePointsNode::enqueueExecImpl()
 	// Warn if nothing changed
 	bool pclReduced = filtered->size() < toFilter->size();
 	if (!pclReduced) {
-		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}",
-		                           toFilter->size(), filtered->size(), leafDims);
+		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}", toFilter->size(), filtered->size(), leafDims);
 		RGL_WARN("Down-sampling node had no effect! ({})", details);
 	}
 	filteredPoints->copyFromExternal(filtered->data(), filtered->size());
@@ -101,7 +100,7 @@ size_t DownSamplePointsNode::getWidth() const
 
 IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 {
-	std::lock_guard lock {getFieldDataMutex};
+	std::lock_guard lock{getFieldDataMutex};
 
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
@@ -112,14 +111,15 @@ IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(filteredIndices->getCount(), false, false);
-		char* outPtr = static_cast<char *>(fieldData->getRawWritePtr());
+		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
 		auto fieldArray = input->getFieldData(field);
 		if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
 			auto msg = fmt::format("DownSampleNode requires its input to be device-accessible, {} is not", field);
 			throw InvalidPipeline(msg);
 		}
-		const char* inputPtr = static_cast<const char *>(fieldArray->getRawReadPtr());
-		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getReadPtr(), outPtr, inputPtr, getFieldSize(field));
+		const char* inputPtr = static_cast<const char*>(fieldArray->getRawReadPtr());
+		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getReadPtr(), outPtr, inputPtr,
+		          getFieldSize(field));
 		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}

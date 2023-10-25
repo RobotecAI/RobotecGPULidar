@@ -82,7 +82,9 @@ protected:
 protected:
 	rgl_field_t fields[1] = {XYZ_F32};
 	rgl_field_t wrongFields[1] = {INTENSITY_F32};
-	rgl_vec3f points[1] = {{42.0f, 61.5f, 0.14f}};
+	rgl_vec3f points[1] = {
+	    {42.0f, 61.5f, 0.14f}
+    };
 	rgl_node_t yieldA = nullptr;
 	rgl_node_t yieldB = nullptr;
 	rgl_node_t fromArrayA = nullptr;
@@ -95,7 +97,10 @@ protected:
 INSTANTIATE_TEST_SUITE_P(CorrectInput, GraphAddChild, testing::Values(true));
 INSTANTIATE_TEST_SUITE_P(WrongInput, GraphAddChild, testing::Values(false));
 
-#define SUCCEED_IF_TRUE(statement) if (statement) { return; }
+#define SUCCEED_IF_TRUE(statement)                                                                                             \
+	if (statement) {                                                                                                           \
+		return;                                                                                                                \
+	}
 TEST_P(GraphAddChild, ColdChildColdParent)
 {
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(fromArrayA, yieldA));

@@ -20,17 +20,17 @@ namespace fs = std::filesystem;
 
 API_OBJECT_INSTANCE(Mesh);
 
-Mesh::Mesh(const Vec3f *vertices, size_t vertexCount, const Vec3i *indices, size_t indexCount)
+Mesh::Mesh(const Vec3f* vertices, size_t vertexCount, const Vec3i* indices, size_t indexCount)
 {
 	dVertices->copyFromExternal(vertices, vertexCount);
 	dIndices->copyFromExternal(indices, indexCount);
 }
 
-void Mesh::updateVertices(const Vec3f *vertices, std::size_t vertexCount)
+void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
 {
 	if (dVertices->getCount() != vertexCount) {
 		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
-		                        dVertices->getCount(), vertexCount);
+		                       dVertices->getCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
 	dVertices->copyFromExternal(vertices, vertexCount);
@@ -63,18 +63,12 @@ void Mesh::updateGAS(CudaStream::Ptr stream)
 
 	// Fun fact: calling optixAccelBuild does not change anything visually, but introduces a significant slowdown
 	// Investigation is needed whether it needs to be called at all (OptiX documentation says yes, but it works without)
-	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            stream->getHandle(),
-	                            &updateOptions,
-	                            &updateInput,
-	                            1,
-	                            scratchpad.dTemp->getDeviceReadPtr(),
-	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
-	                            scratchpad.dFull->getDeviceReadPtr(),
-	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
-	                            &cachedGAS.value(),
-	                            nullptr, // &emitDesc,
-	                            0));
+	CHECK_OPTIX(optixAccelBuild(
+	    Optix::getOrCreate().context, stream->getHandle(), &updateOptions, &updateInput, 1,
+	    scratchpad.dTemp->getDeviceReadPtr(), scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
+	    scratchpad.dFull->getDeviceReadPtr(), scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &cachedGAS.value(),
+	    nullptr, // &emitDesc,
+	    0));
 
 	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 
@@ -87,30 +81,27 @@ OptixTraversableHandle Mesh::buildGAS(CudaStream::Ptr stream)
 	vertexBuffers[0] = dVertices->getDeviceReadPtr();
 
 	buildInput = {
-		.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-		.triangleArray = {
-			.vertexBuffers = vertexBuffers,
-			.numVertices = static_cast<unsigned int>(dVertices->getCount()),
-			.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-			.vertexStrideInBytes = sizeof(decltype(dVertices)::element_type::DataType),
-			.indexBuffer = dIndices->getDeviceReadPtr(),
-			.numIndexTriplets = static_cast<unsigned int>(dIndices->getCount()),
-			.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-			.indexStrideInBytes = sizeof(decltype(dIndices)::element_type::DataType),
-			.flags = &triangleInputFlags,
-			.numSbtRecords = 1,
-			.sbtIndexOffsetBuffer = 0,
-			.sbtIndexOffsetSizeInBytes = 0,
-			.sbtIndexOffsetStrideInBytes = 0,
-		}
-	};
+	    .type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
+	    .triangleArray = {
+	                      .vertexBuffers = vertexBuffers,
+	                      .numVertices = static_cast<unsigned int>(dVertices->getCount()),
+	                      .vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
+	                      .vertexStrideInBytes = sizeof(decltype(dVertices)::element_type::DataType),
+	                      .indexBuffer = dIndices->getDeviceReadPtr(),
+	                      .numIndexTriplets = static_cast<unsigned int>(dIndices->getCount()),
+	                      .indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
+	                      .indexStrideInBytes = sizeof(decltype(dIndices)::element_type::DataType),
+	                      .flags = &triangleInputFlags,
+	                      .numSbtRecords = 1,
+	                      .sbtIndexOffsetBuffer = 0,
+	                      .sbtIndexOffsetSizeInBytes = 0,
+	                      .sbtIndexOffsetStrideInBytes = 0,
+	                      }
+    };
 
-	buildOptions = {
-			.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE
-			              | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-			// | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-			.operation = OPTIX_BUILD_OPERATION_BUILD
-	};
+	buildOptions = {.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
+	                // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
+	                .operation = OPTIX_BUILD_OPERATION_BUILD};
 
 	scratchpad.resizeToFit(buildInput, buildOptions);
 
@@ -120,19 +111,12 @@ OptixTraversableHandle Mesh::buildGAS(CudaStream::Ptr stream)
 	// };
 
 	OptixTraversableHandle gasHandle;
-	CHECK_OPTIX(optixAccelBuild(Optix::getOrCreate().context,
-	                            stream->getHandle(),
-	                            &buildOptions,
-	                            &buildInput,
-	                            1,
-	                            scratchpad.dTemp->getDeviceReadPtr(),
-	                            scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
-	                            scratchpad.dFull->getDeviceReadPtr(),
-	                            scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(),
-	                            &gasHandle,
-	                            nullptr, // &emitDesc,
-	                            0
-	));
+	CHECK_OPTIX(optixAccelBuild(
+	    Optix::getOrCreate().context, stream->getHandle(), &buildOptions, &buildInput, 1, scratchpad.dTemp->getDeviceReadPtr(),
+	    scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(), scratchpad.dFull->getDeviceReadPtr(),
+	    scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &gasHandle,
+	    nullptr, // &emitDesc,
+	    0));
 
 	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 
@@ -143,17 +127,16 @@ OptixTraversableHandle Mesh::buildGAS(CudaStream::Ptr stream)
 	return gasHandle;
 }
 
-void Mesh::setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount)
+void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 {
 	if (texCoordCount != dVertices->getCount()) {
-		auto msg = fmt::format(
-				"Invalid argument: cannot set texture coordinates because vertex count do not match with texture coordinates count: vertices={}, texture_coords={}",
-				dVertices->getCount(), texCoordCount);
+		auto msg = fmt::format("Invalid argument: cannot set texture coordinates because vertex count do not match with "
+		                       "texture coordinates count: vertices={}, texture_coords={}",
+		                       dVertices->getCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}
 
-	if (!dTextureCoords.has_value())
-	{
+	if (!dTextureCoords.has_value()) {
 		dTextureCoords = DeviceSyncArray<Vec2f>::create();
 	}
 

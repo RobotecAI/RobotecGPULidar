@@ -25,21 +25,21 @@ struct IRaysNode : virtual Node
 {
 	using Ptr = std::shared_ptr<IRaysNode>;
 
-        // Transforms
-        virtual std::size_t getRayCount() const = 0;
-        virtual Array<Mat3x4f>::ConstPtr getRays() const = 0;
+	// Transforms
+	virtual std::size_t getRayCount() const = 0;
+	virtual Array<Mat3x4f>::ConstPtr getRays() const = 0;
 
-        // Ring Ids (client-specific data)
-        virtual std::optional<std::size_t> getRingIdsCount() const = 0;
-        virtual std::optional<Array<int>::ConstPtr> getRingIds() const = 0;
+	// Ring Ids (client-specific data)
+	virtual std::optional<std::size_t> getRingIdsCount() const = 0;
+	virtual std::optional<Array<int>::ConstPtr> getRingIds() const = 0;
 
-        // Ranges
-        virtual std::optional<std::size_t> getRangesCount() const = 0;
-        virtual std::optional<Array<Vec2f>::ConstPtr> getRanges() const = 0;
+	// Ranges
+	virtual std::optional<std::size_t> getRangesCount() const = 0;
+	virtual std::optional<Array<Vec2f>::ConstPtr> getRanges() const = 0;
 
-        // Firing time offsets
-        virtual std::optional<std::size_t> getTimeOffsetsCount() const = 0;
-        virtual std::optional<Array<float>::ConstPtr> getTimeOffsets() const = 0;
+	// Firing time offsets
+	virtual std::optional<std::size_t> getTimeOffsetsCount() const = 0;
+	virtual std::optional<Array<float>::ConstPtr> getTimeOffsets() const = 0;
 
 	virtual Mat3x4f getCumulativeRayTransfrom() const { return Mat3x4f::identity(); }
 };
@@ -54,22 +54,22 @@ struct IRaysNodeSingleInput : IRaysNode
 	virtual size_t getRayCount() const override { return input->getRayCount(); }
 	virtual Array<Mat3x4f>::ConstPtr getRays() const override { return input->getRays(); };
 
-        // Ring Ids (client-specific data)
+	// Ring Ids (client-specific data)
 	virtual std::optional<size_t> getRingIdsCount() const override { return input->getRingIdsCount(); }
 	virtual std::optional<Array<int>::ConstPtr> getRingIds() const override { return input->getRingIds(); }
 
-        // Ranges
+	// Ranges
 	virtual std::optional<size_t> getRangesCount() const override { return input->getRangesCount(); }
 	virtual std::optional<Array<Vec2f>::ConstPtr> getRanges() const override { return input->getRanges(); }
 
-        // Firing time offsets
+	// Firing time offsets
 	virtual std::optional<size_t> getTimeOffsetsCount() const override { return input->getTimeOffsetsCount(); }
 	virtual std::optional<Array<float>::ConstPtr> getTimeOffsets() const override { return input->getTimeOffsets(); }
 
-        virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
+	virtual Mat3x4f getCumulativeRayTransfrom() const override { return input->getCumulativeRayTransfrom(); }
 
 protected:
-	IRaysNode::Ptr input {0};
+	IRaysNode::Ptr input{0};
 };
 
 struct IPointsNode : virtual Node
@@ -94,7 +94,9 @@ struct IPointsNode : virtual Node
 
 	template<rgl_field_t field>
 	typename Array<typename Field<field>::type>::ConstPtr getFieldDataTyped()
-	{ return getFieldData(field)->template asTyped<typename Field<field>::type>(); }
+	{
+		return getFieldData(field)->template asTyped<typename Field<field>::type>();
+	}
 };
 
 struct IPointsNodeSingleInput : IPointsNode
@@ -121,11 +123,10 @@ struct IPointsNodeSingleInput : IPointsNode
 
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
-	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return input->getFieldData(field); }
+	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return input->getFieldData(field); }
 
 protected:
-	IPointsNode::Ptr input {0};
+	IPointsNode::Ptr input{0};
 };
 
 struct INoInputNode : virtual Node

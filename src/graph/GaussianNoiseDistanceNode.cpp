@@ -58,7 +58,8 @@ void GaussianNoiseDistanceNode::enqueueExecImpl()
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outXyzPtr = outXyz->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
-	gpuAddGaussianNoiseDistance(getStreamHandle(), pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseDistance(getStreamHandle(), pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform,
+	                            randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 IAnyArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field)

@@ -25,7 +25,8 @@ void SetTimeOffsetsRaysNode::validateImpl()
 
 	if (input->getRayCount() != timeOffsets->getCount()) {
 		auto msg = fmt::format("time offsets don't match number of rays. "
-		                       "RayCount({}) and TimeOffsetsCount({}) should be equal", input->getRayCount(), timeOffsets->getCount());
+		                       "RayCount({}) and TimeOffsetsCount({}) should be equal",
+		                       input->getRayCount(), timeOffsets->getCount());
 		throw InvalidPipeline(msg);
 	}
 }

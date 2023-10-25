@@ -36,12 +36,12 @@ void SetRangeRaysNode::setParameters(const Vec2f* rangesRaw, size_t rangesCount)
 
 void SetRangeRaysNode::validateImpl()
 {
-        IRaysNodeSingleInput::validateImpl();
+	IRaysNodeSingleInput::validateImpl();
 
 	if (!(ranges->getCount() == 1 || ranges->getCount() == input->getRayCount())) {
 		auto msg = fmt::format("ranges doesn't match number of rays. "
-							   "RangesCount({}) should be one or equal to RayCount({})",
-							   ranges->getCount(), input->getRayCount());
+		                       "RangesCount({}) should be one or equal to RayCount({})",
+		                       ranges->getCount(), input->getRayCount());
 		throw InvalidPipeline(msg);
 	}
 }

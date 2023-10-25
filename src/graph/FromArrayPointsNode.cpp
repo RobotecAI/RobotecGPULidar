@@ -36,15 +36,17 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 
 	auto inputData = DeviceSyncArray<char>::create();
 	std::size_t pointSize = getPointSize(fields);
-	inputData->copyFromExternal(static_cast<const char *>(points), pointCount * pointSize);
+	inputData->copyFromExternal(static_cast<const char*>(points), pointCount * pointSize);
 	const char* inputPtr = inputData->getReadPtr();
 
 	auto&& gpuFields = gpuFieldDescBuilder.buildWritableAsync(arrayMgr.getStream(), getFieldToPointerMappings(fields));
-	gpuFormatAosToSoa(arrayMgr.getStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr, gpuFields.getReadPtr());
+	gpuFormatAosToSoa(arrayMgr.getStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr,
+	                  gpuFields.getReadPtr());
 	CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));
 }
 
-std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointerMappings(const std::vector<rgl_field_t>& fields)
+std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointerMappings(
+    const std::vector<rgl_field_t>& fields)
 {
 	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;
 	for (auto&& field : fields) {
@@ -52,4 +54,3 @@ std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointe
 	}
 	return outFieldsData;
 }
-

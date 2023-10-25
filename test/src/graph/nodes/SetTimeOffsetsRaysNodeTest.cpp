@@ -3,7 +3,8 @@
 #include <gtest/gtest.h>
 #include <helpers/commonHelpers.hpp>
 
-class SetTimeOffsetsRaysNodeTest : public RGLTest {};
+class SetTimeOffsetsRaysNodeTest : public RGLTest
+{};
 
 TEST_F(SetTimeOffsetsRaysNodeTest, invalid_arguments)
 {
@@ -14,7 +15,8 @@ TEST_F(SetTimeOffsetsRaysNodeTest, invalid_arguments)
 
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_time_offsets(&setTimeOffsetsRaysNode, nullptr, 0), "offsets != nullptr");
 
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_time_offsets(&setTimeOffsetsRaysNode, dummyOffsets.data(), -1), "offsets_count > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_rays_set_time_offsets(&setTimeOffsetsRaysNode, dummyOffsets.data(), -1),
+	                            "offsets_count > 0");
 }
 
 TEST_F(SetTimeOffsetsRaysNodeTest, valid_arguments)
@@ -34,5 +36,3 @@ TEST_F(SetTimeOffsetsRaysNodeTest, use_case)
 {
 	//TODO: implement
 }
-
-

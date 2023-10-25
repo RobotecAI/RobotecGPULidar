@@ -28,22 +28,27 @@ __global__ void kSetupGaussianNoiseGenerator(size_t pointCount, unsigned int see
 	curand_init(seed, tid, 0, &states[tid]);
 }
 
-__global__ void kAddGaussianNoiseAngularRay(size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
-	curandStatePhilox4_32_10_t* randomStates, const Mat3x4f* inRays, Mat3x4f* outRays)
+__global__ void kAddGaussianNoiseAngularRay(size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis,
+                                            Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
+                                            const Mat3x4f* inRays, Mat3x4f* outRays)
 {
 	LIMIT(rayCount);
 
 	float angularError = mean + curand_normal(&randomStates[tid]) * stDev;
-	outRays[tid] = lookAtOriginTransform.inverse() * (Mat3x4f::rotationRad(rotationAxis, angularError) * (lookAtOriginTransform * inRays[tid]));
+	outRays[tid] = lookAtOriginTransform.inverse() *
+	               (Mat3x4f::rotationRad(rotationAxis, angularError) * (lookAtOriginTransform * inRays[tid]));
 }
 
-__global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
-	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+__global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis,
+                                                 Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
+                                                 const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints,
+                                                 Field<DISTANCE_F32>::type* outDistances)
 {
 	LIMIT(pointCount);
 
 	float angularError = mean + curand_normal(&randomStates[tid]) * stDev;
-	Field<XYZ_F32>::type originWithNoisePoint = Mat3x4f::rotationRad(rotationAxis, angularError) * (lookAtOriginTransform * inPoints[tid]);
+	Field<XYZ_F32>::type originWithNoisePoint = Mat3x4f::rotationRad(rotationAxis, angularError) *
+	                                            (lookAtOriginTransform * inPoints[tid]);
 
 	if (outDistances != nullptr) {
 		outDistances[tid] = originWithNoisePoint.length();
@@ -52,8 +57,10 @@ __global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, 
 	outPoints[tid] = lookAtOriginTransform.inverse() * originWithNoisePoint;
 }
 
-__global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, Mat3x4f lookAtOriginTransform,
-	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+__global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter,
+                                          Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
+                                          const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints,
+                                          Field<DISTANCE_F32>::type* outDistances)
 {
 	LIMIT(pointCount);
 
@@ -73,17 +80,34 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 }
 
 
-void gpuSetupGaussianNoiseGenerator(cudaStream_t stream, size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* outPHILOXStates)
-{ run(kSetupGaussianNoiseGenerator, stream, pointCount, seed, outPHILOXStates); }
+void gpuSetupGaussianNoiseGenerator(cudaStream_t stream, size_t pointCount, unsigned int seed,
+                                    curandStatePhilox4_32_10_t* outPHILOXStates)
+{
+	run(kSetupGaussianNoiseGenerator, stream, pointCount, seed, outPHILOXStates);
+}
 
-void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
-	curandStatePhilox4_32_10_t* randomStates, const Mat3x4f* inRays, Mat3x4f* outRays)
-{ run(kAddGaussianNoiseAngularRay, stream, rayCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomStates, inRays, outRays); }
+void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis,
+                                   Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
+                                   const Mat3x4f* inRays, Mat3x4f* outRays)
+{
+	run(kAddGaussianNoiseAngularRay, stream, rayCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomStates, inRays,
+	    outRays);
+}
 
-void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, float mean, float stDev, rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
-	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
-{ run(kAddGaussianNoiseAngularHitpoint, stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomStates, inPoints, outPoints, outDistances); }
+void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, float mean, float stDev,
+                                        rgl_axis_t rotationAxis, Mat3x4f lookAtOriginTransform,
+                                        curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints,
+                                        Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
+{
+	run(kAddGaussianNoiseAngularHitpoint, stream, pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randomStates,
+	    inPoints, outPoints, outDistances);
+}
 
-void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter, Mat3x4f lookAtOriginTransform,
-	curandStatePhilox4_32_10_t* randomStates, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
-{ run(kAddGaussianNoiseDistance, stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomStates, inPoints, outPoints, outDistances); }
+void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter,
+                                 Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
+                                 const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints,
+                                 Field<DISTANCE_F32>::type* outDistances)
+{
+	run(kAddGaussianNoiseDistance, stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomStates,
+	    inPoints, outPoints, outDistances);
+}

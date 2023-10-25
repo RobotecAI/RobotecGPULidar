@@ -18,16 +18,14 @@
 
 API_OBJECT_INSTANCE(Texture);
 
-Texture::Texture(const void* texels, int width, int height) try :
-		resolution(width, height)
-		{
-			createTextureObject(texels, width, height);
-		}
-		catch (...)
-		{
-			cleanup();
-			throw;
-		}
+Texture::Texture(const void* texels, int width, int height)
+try : resolution(width, height) {
+	createTextureObject(texels, width, height);
+}
+catch (...) {
+	cleanup();
+	throw;
+}
 
 void Texture::createTextureObject(const void* texels, int width, int height)
 {
@@ -44,12 +42,7 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 	// Current copyFromExternal and ensureDeviceCanFit are not working with cudaArray_t
 	CHECK_CUDA(cudaMallocArray(&dPixelArray, &channel_desc, width, height));
 
-	CHECK_CUDA(cudaMemcpy2DToArray(
-			dPixelArray,
-			0, 0,
-			texels,
-			pitch, pitch, height,
-			cudaMemcpyHostToDevice));
+	CHECK_CUDA(cudaMemcpy2DToArray(dPixelArray, 0, 0, texels, pitch, pitch, height, cudaMemcpyHostToDevice));
 
 	res_desc.resType = cudaResourceTypeArray;
 	res_desc.res.array.array = dPixelArray;
@@ -70,17 +63,13 @@ void Texture::createTextureObject(const void* texels, int width, int height)
 	CHECK_CUDA(cudaCreateTextureObject(&dTextureObject, &res_desc, &tex_desc, nullptr));
 }
 
-Texture::~Texture()
-{
-	cleanup();
-}
+Texture::~Texture() { cleanup(); }
 
 void Texture::cleanup()
 {
 	cudaDestroyTextureObject(dTextureObject);
 	dTextureObject = 0;
-	if(dPixelArray != nullptr)
-	{
+	if (dPixelArray != nullptr) {
 		cudaFreeArray(dPixelArray);
 		dPixelArray = nullptr;
 	}

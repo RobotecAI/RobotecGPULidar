@@ -63,8 +63,8 @@ TEST_F(SetNodePriority, TwoBranches)
 	ASSERT_RGL_SUCCESS(rgl_graph_node_set_priority(nodeB, 1));
 	for (int i = 0; i < CHECKS; ++i) {
 		ASSERT_RGL_SUCCESS(rgl_graph_run(fromArray));
-		timestampA = dynamic_cast<RecordTimeNode *>(nodeA)->getMeasurement();
-		timestampB = dynamic_cast<RecordTimeNode *>(nodeB)->getMeasurement();
+		timestampA = dynamic_cast<RecordTimeNode*>(nodeA)->getMeasurement();
+		timestampB = dynamic_cast<RecordTimeNode*>(nodeB)->getMeasurement();
 		ASSERT_LE(timestampB, timestampA);
 	}
 
@@ -72,8 +72,8 @@ TEST_F(SetNodePriority, TwoBranches)
 	ASSERT_RGL_SUCCESS(rgl_graph_node_set_priority(nodeA, 2));
 	for (int i = 0; i < CHECKS; ++i) {
 		ASSERT_RGL_SUCCESS(rgl_graph_run(fromArray));
-		timestampA = dynamic_cast<RecordTimeNode *>(nodeA)->getMeasurement();
-		timestampB = dynamic_cast<RecordTimeNode *>(nodeB)->getMeasurement();
+		timestampA = dynamic_cast<RecordTimeNode*>(nodeA)->getMeasurement();
+		timestampB = dynamic_cast<RecordTimeNode*>(nodeB)->getMeasurement();
 		ASSERT_LE(timestampA, timestampB);
 	}
 
@@ -82,9 +82,12 @@ TEST_F(SetNodePriority, TwoBranches)
 
 	// At the end, priorities should look like this:
 	std::map<rgl_node_t, int32_t> expectedPriorities = {
-		{nodeA, 2}, {sleepA, 2}, {fromArray, 2},
-		{nodeB, 1}, {sleepB, 1}
-	};
+	    {    nodeA, 2},
+        {   sleepA, 2},
+        {fromArray, 2},
+        {    nodeB, 1},
+        {   sleepB, 1}
+    };
 	EXPECT_TRUE(prioritiesMatch(expectedPriorities));
 }
 
@@ -120,8 +123,8 @@ TEST_F(SetNodePriority, TwoEntryNodes)
 	ASSERT_RGL_SUCCESS(rgl_graph_node_set_priority(nodeB, 1));
 	for (int i = 0; i < CHECKS; ++i) {
 		ASSERT_RGL_SUCCESS(rgl_graph_run(merge));
-		timestampA = dynamic_cast<RecordTimeNode *>(nodeA)->getMeasurement();
-		timestampB = dynamic_cast<RecordTimeNode *>(nodeB)->getMeasurement();
+		timestampA = dynamic_cast<RecordTimeNode*>(nodeA)->getMeasurement();
+		timestampB = dynamic_cast<RecordTimeNode*>(nodeB)->getMeasurement();
 		ASSERT_LE(timestampB, timestampA);
 	}
 
@@ -129,16 +132,20 @@ TEST_F(SetNodePriority, TwoEntryNodes)
 	ASSERT_RGL_SUCCESS(rgl_graph_node_set_priority(nodeA, 2));
 	for (int i = 0; i < CHECKS; ++i) {
 		ASSERT_RGL_SUCCESS(rgl_graph_run(merge));
-		timestampA = dynamic_cast<RecordTimeNode *>(nodeA)->getMeasurement();
-		timestampB = dynamic_cast<RecordTimeNode *>(nodeB)->getMeasurement();
+		timestampA = dynamic_cast<RecordTimeNode*>(nodeA)->getMeasurement();
+		timestampB = dynamic_cast<RecordTimeNode*>(nodeB)->getMeasurement();
 		ASSERT_LE(timestampA, timestampB);
 	}
 
 	// At the end, priorities should look like this:
 	std::map<rgl_node_t, int32_t> expectedPriorities = {
-			{nodeA, 2}, {sleepA, 2}, {fromArrayA, 2},
-			{nodeB, 1}, {sleepB, 1}, {fromArrayB, 1}
-	};
+	    {     nodeA, 2},
+        {    sleepA, 2},
+        {fromArrayA, 2},
+        {     nodeB, 1},
+        {    sleepB, 1},
+        {fromArrayB, 1}
+    };
 	EXPECT_TRUE(prioritiesMatch(expectedPriorities));
 }
 
@@ -146,11 +153,11 @@ TEST_F(SetNodePriority, AddChild)
 {
 	double timestampA, timestampB, timestampC;
 
-	rgl_node_t fromArray=nullptr;
+	rgl_node_t fromArray = nullptr;
 	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&fromArray, data, 1, fields, 1));
 
 	// Branch A, priority 1
-	rgl_node_t sleepA=nullptr, nodeA=nullptr;
+	rgl_node_t sleepA = nullptr, nodeA = nullptr;
 	createOrUpdateNode<RecordTimeNode>(&nodeA);
 	createOrUpdateNode<SleepNode>(&sleepA, SLEEP);
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(fromArray, sleepA));
@@ -158,14 +165,17 @@ TEST_F(SetNodePriority, AddChild)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_set_priority(nodeA, 1));
 
 	// Branch B, priority -1
-	rgl_node_t sleepB=nullptr, nodeB=nullptr;
+	rgl_node_t sleepB = nullptr, nodeB = nullptr;
 	createOrUpdateNode<RecordTimeNode>(&nodeB);
 	createOrUpdateNode<SleepNode>(&sleepB, SLEEP);
 	{
 		EXPECT_RGL_SUCCESS(rgl_graph_node_set_priority(nodeB, -1));
 		// Connect child with lower priority, its priority should not propagate to parent
 		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(sleepB, nodeB));
-		std::map<rgl_node_t, int32_t> expectedPriorities = { {nodeB, -1}, {sleepB, 0} };
+		std::map<rgl_node_t, int32_t> expectedPriorities = {
+		    { nodeB, -1},
+            {sleepB,  0}
+        };
 		EXPECT_TRUE(prioritiesMatch(expectedPriorities));
 		// Now explicitly set sleepB priority to -1, to have all branch C on -1
 		EXPECT_RGL_SUCCESS(rgl_graph_node_set_priority(sleepB, -1));
@@ -173,7 +183,7 @@ TEST_F(SetNodePriority, AddChild)
 	// Branch B still not connected to root
 
 	// Branch C, priority 2
-	rgl_node_t sleepC=nullptr, nodeC=nullptr;
+	rgl_node_t sleepC = nullptr, nodeC = nullptr;
 	createOrUpdateNode<RecordTimeNode>(&nodeC);
 	createOrUpdateNode<SleepNode>(&sleepC, SLEEP);
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(sleepC, nodeC));
@@ -190,19 +200,22 @@ TEST_F(SetNodePriority, AddChild)
 	// Expect that the nodes will run in expected order - C, A, B
 	for (int i = 0; i < CHECKS; ++i) {
 		ASSERT_RGL_SUCCESS(rgl_graph_run(fromArray));
-		timestampA = dynamic_cast<RecordTimeNode *>(nodeA)->getMeasurement();
-		timestampB = dynamic_cast<RecordTimeNode *>(nodeB)->getMeasurement();
-		timestampC = dynamic_cast<RecordTimeNode *>(nodeC)->getMeasurement();
+		timestampA = dynamic_cast<RecordTimeNode*>(nodeA)->getMeasurement();
+		timestampB = dynamic_cast<RecordTimeNode*>(nodeB)->getMeasurement();
+		timestampC = dynamic_cast<RecordTimeNode*>(nodeC)->getMeasurement();
 		ASSERT_LE(timestampC, timestampA);
 		ASSERT_LE(timestampA, timestampB);
 	}
 
 	// Verify priorities
 	std::map<rgl_node_t, int32_t> expectedPriorities2 = {
-			{nodeA, 1}, {sleepA, 1}, {fromArray, 2},
-			{nodeB, -1}, {sleepB, -1},
-			{nodeC, 2}, {sleepC, 2}
-	};
+	    {    nodeA,  1},
+        {   sleepA,  1},
+        {fromArray,  2},
+        {    nodeB, -1},
+        {   sleepB, -1},
+        {    nodeC,  2},
+        {   sleepC,  2}
+    };
 	EXPECT_TRUE(prioritiesMatch(expectedPriorities2));
 }
-

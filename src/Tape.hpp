@@ -16,22 +16,22 @@
 
 // Hack to complete compilation on Windows. In runtime it is never used.
 #ifdef _WIN32
-	#include <io.h>
-	#define PROT_READ 1
-	#define MAP_PRIVATE 1
-	#define MAP_FAILED nullptr
-	static int munmap(void* addr, size_t length) { return -1; }
-	static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
+#include <io.h>
+#define PROT_READ 1
+#define MAP_PRIVATE 1
+#define MAP_FAILED nullptr
+static int munmap(void* addr, size_t length) { return -1; }
+static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
 #else
-	#include <sys/mman.h>
-	#include <sys/stat.h>
-	#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif // _WIN32
 
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
-#include <string> 
+#include <string>
 #include <optional>
 #include <unordered_map>
 #include <map>
@@ -51,24 +51,28 @@
 #ifdef _WIN32
 #define TAPE_HOOK(...)
 #else
-#define TAPE_HOOK(...)                                              \
-do if (tapeRecorder.has_value()) {                                    \
-	tapeRecorder->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__); \
-} while (0)
+#define TAPE_HOOK(...)                                                                                                         \
+	do                                                                                                                         \
+		if (tapeRecorder.has_value()) {                                                                                        \
+			tapeRecorder->recordApiCall(__func__ __VA_OPT__(, ) __VA_ARGS__);                                                  \
+		}                                                                                                                      \
+	while (0)
 #endif // _WIN32
 
 #define TAPE_ARRAY(data, count) std::make_pair(data, count)
-#define FWRITE(source, elemSize, elemCount, file)                          \
-do if (fwrite(source, elemSize, elemCount, file) != elemCount) {           \
-    throw RecordError(fmt::format("Failed to write data to binary file")); \
-} while(0)
+#define FWRITE(source, elemSize, elemCount, file)                                                                              \
+	do                                                                                                                         \
+		if (fwrite(source, elemSize, elemCount, file) != elemCount) {                                                          \
+			throw RecordError(fmt::format("Failed to write data to binary file"));                                             \
+		}                                                                                                                      \
+	while (0)
 
 // Type used as a key in TapePlayer object registry
 using TapeAPIObjectID = size_t;
 
 class TapeRecorder
 {
-	YAML::Node yamlRoot; // Represents the whole yaml file
+	YAML::Node yamlRoot;      // Represents the whole yaml file
 	YAML::Node yamlRecording; // The sequence of API calls
 
 	FILE* fileBin;
@@ -102,7 +106,7 @@ class TapeRecorder
 	{
 		node[currentArgIdx] = valueToYaml(currentArg);
 
-		if constexpr(sizeof...(remainingArgs) > 0) {
+		if constexpr (sizeof...(remainingArgs) > 0) {
 			recordApiArguments(node, ++currentArgIdx, remainingArgs...);
 			return;
 		}
@@ -110,7 +114,10 @@ class TapeRecorder
 
 	//// value to yaml converters
 	template<typename T>
-	T valueToYaml(T value) { return value; }
+	T valueToYaml(T value)
+	{
+		return value;
+	}
 
 	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
@@ -143,10 +150,16 @@ class TapeRecorder
 
 	// TAPE_ARRAY
 	template<typename T, typename N>
-	size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
+	size_t valueToYaml(std::pair<T, N> value)
+	{
+		return writeToBin(value.first, value.second);
+	}
 
 	template<typename N>
-	size_t valueToYaml(std::pair<const void*, N> value) { return writeToBin(static_cast<const char*>(value.first), value.second); }
+	size_t valueToYaml(std::pair<const void*, N> value)
+	{
+		return writeToBin(static_cast<const char*>(value.first), value.second);
+	}
 
 public:
 	explicit TapeRecorder(const std::filesystem::path& path);
@@ -158,8 +171,9 @@ public:
 	{
 		YAML::Node apiCallNode;
 		apiCallNode["name"] = fnName;
-		apiCallNode["timestamp"] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
-		if constexpr(sizeof...(args) > 0) {
+		apiCallNode["timestamp"] =
+		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
+		if constexpr (sizeof...(args) > 0) {
 			recordApiArguments(apiCallNode, 0, args...);
 		}
 		yamlRecording.push_back(apiCallNode);
@@ -177,15 +191,16 @@ struct TapePlayer
 
 	void playThis(APICallIdx idx);
 	void playThrough(APICallIdx last);
-	void playUntil(std::optional<APICallIdx> breakpoint=std::nullopt);
+	void playUntil(std::optional<APICallIdx> breakpoint = std::nullopt);
 	void playRealtime();
 
-	void rewindTo(APICallIdx nextCall=0);
+	void rewindTo(APICallIdx nextCall = 0);
 
 	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return tapeNodes.at(key); }
 
 	template<typename T>
-	T getCallArg(APICallIdx idx, int arg) {
+	T getCallArg(APICallIdx idx, int arg)
+	{
 		return yamlRecording[idx][arg].as<T>();
 	}
 
@@ -216,13 +231,13 @@ private:
 	void tape_mesh_destroy(const YAML::Node& yamlNode);
 	void tape_mesh_update_vertices(const YAML::Node& yamlNode);
 	void tape_mesh_set_texture_coords(const YAML::Node& yamlNode);
-	void tape_texture_create(const YAML::Node &yamlNode);
-	void tape_texture_destroy(const YAML::Node &yamlNode);
+	void tape_texture_create(const YAML::Node& yamlNode);
+	void tape_texture_destroy(const YAML::Node& yamlNode);
 	void tape_entity_create(const YAML::Node& yamlNode);
 	void tape_entity_destroy(const YAML::Node& yamlNode);
 	void tape_entity_set_pose(const YAML::Node& yamlNode);
 	void tape_entity_set_id(const YAML::Node& yamlNode);
-	void tape_entity_set_intensity_texture(const YAML::Node &yamlNode);
+	void tape_entity_set_intensity_texture(const YAML::Node& yamlNode);
 	void tape_scene_set_time(const YAML::Node& yamlNode);
 	void tape_graph_run(const YAML::Node& yamlNode);
 	void tape_graph_destroy(const YAML::Node& yamlNode);
@@ -250,17 +265,16 @@ private:
 	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
 	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
 
-	#if RGL_BUILD_PCL_EXTENSION
+#if RGL_BUILD_PCL_EXTENSION
 	void tape_graph_write_pcd_file(const YAML::Node& yamlNode);
 	void tape_node_points_downsample(const YAML::Node& yamlNode);
 	void tape_node_points_visualize(const YAML::Node& yamlNode);
-	#endif
+#endif
 
-	#if RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
 	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
-	#endif
-
+#endif
 };
 
 extern std::optional<TapeRecorder> tapeRecorder;

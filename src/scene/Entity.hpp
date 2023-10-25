@@ -26,7 +26,7 @@ struct Entity : APIObject<Entity>
 	friend struct APIObject<Entity>;
 	friend struct Scene;
 
-	Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name=std::nullopt);
+	Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name = std::nullopt);
 
 	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
 	void setTransform(Mat3x4f newTransform);
@@ -42,6 +42,7 @@ struct Entity : APIObject<Entity>
 	std::shared_ptr<Texture> intensityTexture = nullptr;
 
 	std::shared_ptr<Scene> scene;
+
 private:
 	Mat3x4f transform;
 	int id;

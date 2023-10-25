@@ -48,7 +48,8 @@ struct CacheManager
 		cacheAge.erase(key);
 	}
 
-	std::vector<Key> getKeys() const {
+	std::vector<Key> getKeys() const
+	{
 		std::vector<Key> result;
 		result.reserve(cache.size());
 		for (auto&& [key, _] : cache) {

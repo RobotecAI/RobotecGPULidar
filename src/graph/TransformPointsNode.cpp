@@ -33,7 +33,4 @@ IAnyArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 	return input->getFieldData(field);
 }
 
-std::string TransformPointsNode::getArgsString() const
-{
-	return fmt::format("TR={}", transform.translation());
-}
+std::string TransformPointsNode::getArgsString() const { return fmt::format("TR={}", transform.translation()); }

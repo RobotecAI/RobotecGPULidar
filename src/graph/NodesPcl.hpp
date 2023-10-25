@@ -48,7 +48,8 @@ private:
 	Vec3f leafDims;
 	DeviceAsyncArray<char>::Ptr formattedInput = DeviceAsyncArray<char>::create(arrayMgr);
 	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
-	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
+	    arrayMgr);
 	DeviceAsyncArray<pcl::PointXYZL>::Ptr filteredPoints = DeviceAsyncArray<pcl::PointXYZL>::create(arrayMgr);
 	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 	std::mutex getFieldDataMutex;
@@ -77,29 +78,28 @@ private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 
 	PCLVisualizerFix::Ptr viewer;
-	std::string windowName {};
+	std::string windowName{};
 	int windowWidth;
 	int windowHeight;
 	bool fullscreen;
 
-	std::atomic<bool> eraseRequested {false};
-	std::atomic<bool> isClosed {false};
+	std::atomic<bool> eraseRequested{false};
+	std::atomic<bool> isClosed{false};
 
-	std::atomic<bool> hasNewPointCloud {false};
+	std::atomic<bool> hasNewPointCloud{false};
 	std::mutex updateCloudMutex;
-		pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
+	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
 
 	struct VisualizeThread
 	{
 		void runVisualize();
-		VisualizeThread() {
-			thread = std::thread(&VisualizeThread::runVisualize, this);
-		}
-		~VisualizeThread() {
+		VisualizeThread() { thread = std::thread(&VisualizeThread::runVisualize, this); }
+		~VisualizeThread()
+		{
 			// This might be called when the main thread is doing exit
 			{
 				// Request removing all nodes
-				std::lock_guard lock {visualizeNodesMutex};
+				std::lock_guard lock{visualizeNodesMutex};
 				for (auto&& node : visualizeNodes) {
 					node->eraseRequested = true;
 				}
@@ -109,7 +109,7 @@ private:
 		}
 
 		std::thread thread;
-		std::atomic<bool> shouldQuit {false};
+		std::atomic<bool> shouldQuit{false};
 		std::mutex visualizeNodesMutex;
 
 		// Adding: client thread

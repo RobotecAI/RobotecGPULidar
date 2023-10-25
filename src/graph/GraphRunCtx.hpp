@@ -63,7 +63,10 @@ struct GraphRunCtx
 	 */
 	void synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize);
 
-	bool isThisThreadGraphThread() const {return maybeThread.has_value() && maybeThread->get_id() == std::this_thread::get_id(); }
+	bool isThisThreadGraphThread() const
+	{
+		return maybeThread.has_value() && maybeThread->get_id() == std::this_thread::get_id();
+	}
 
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
@@ -92,11 +95,11 @@ private: // Communication between client's thread and graph thread
 	struct NodeExecStatus
 	{
 		// If true, then execution has succeeded or an exception has been thrown.
-		std::atomic<bool> enqueued {false};
+		std::atomic<bool> enqueued{false};
 
 		// exceptionPtr may be read by client's thread only after it acquire-read true `completed`
 		// exceptionPtr may be written by graph thread only before it release-stores true `completed`
-		std::exception_ptr exceptionPtr {nullptr};
+		std::exception_ptr exceptionPtr{nullptr};
 	};
 
 	std::unordered_map<Node::ConstPtr, NodeExecStatus> executionStatus;

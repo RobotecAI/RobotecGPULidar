@@ -42,7 +42,7 @@ void CompactPointsNode::enqueueExecImpl()
 
 IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 {
-	std::lock_guard lock {getFieldDataMutex};
+	std::lock_guard lock{getFieldDataMutex};
 
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
@@ -52,15 +52,15 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(width, false, false);
-		char* outPtr = static_cast<char *>(fieldData->getRawWritePtr());
+		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
 
 		if (!isDeviceAccessible(input->getFieldData(field)->getMemoryKind())) {
 			auto msg = fmt::format("CompactPointsNode requires its input to be device-accessible, {} is not", field);
 			throw InvalidPipeline(msg);
 		}
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field)->getRawReadPtr());
+		const char* inputPtr = static_cast<const char*>(input->getFieldData(field)->getRawReadPtr());
 		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-		const CompactionIndexType * indices = inclusivePrefixSum->getReadPtr();
+		const CompactionIndexType* indices = inclusivePrefixSum->getReadPtr();
 		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
 		bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
 		if (!calledFromEnqueue) {

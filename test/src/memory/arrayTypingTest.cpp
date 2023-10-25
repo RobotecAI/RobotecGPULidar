@@ -13,7 +13,7 @@ using namespace ::testing;
  * - Works for correct casts: allows to convert from a concrete type to IAnyArray and back.
  */
 
-template<typename T, typename U, template<typename> typename V, template<typename> typename  W>
+template<typename T, typename U, template<typename> typename V, template<typename> typename W>
 struct ArrayTypes
 {
 	using Data = T;
@@ -28,25 +28,21 @@ struct ArrayTypes
 };
 
 using CastingCombinations = ::testing::Types<
-		ArrayTypes<int, float, DeviceAsyncArray, DeviceSyncArray>,
-		ArrayTypes<int, float, DeviceAsyncArray, HostPageableArray>,
-		ArrayTypes<int, float, DeviceAsyncArray, HostPinnedArray>,
+    ArrayTypes<int, float, DeviceAsyncArray, DeviceSyncArray>, ArrayTypes<int, float, DeviceAsyncArray, HostPageableArray>,
+    ArrayTypes<int, float, DeviceAsyncArray, HostPinnedArray>,
 
-		ArrayTypes<int, float, DeviceSyncArray, DeviceAsyncArray>,
-		ArrayTypes<int, float, DeviceSyncArray, HostPageableArray>,
-		ArrayTypes<int, float, DeviceSyncArray, HostPinnedArray>,
+    ArrayTypes<int, float, DeviceSyncArray, DeviceAsyncArray>, ArrayTypes<int, float, DeviceSyncArray, HostPageableArray>,
+    ArrayTypes<int, float, DeviceSyncArray, HostPinnedArray>,
 
-		ArrayTypes<int, float, HostPageableArray, DeviceAsyncArray>,
-		ArrayTypes<int, float, HostPageableArray, DeviceSyncArray>,
-		ArrayTypes<int, float, HostPageableArray, HostPinnedArray>,
+    ArrayTypes<int, float, HostPageableArray, DeviceAsyncArray>, ArrayTypes<int, float, HostPageableArray, DeviceSyncArray>,
+    ArrayTypes<int, float, HostPageableArray, HostPinnedArray>,
 
-		ArrayTypes<int, float, HostPinnedArray, DeviceAsyncArray>,
-		ArrayTypes<int, float, HostPinnedArray, DeviceSyncArray>,
-		ArrayTypes<int, float, HostPinnedArray, HostPageableArray>
->;
+    ArrayTypes<int, float, HostPinnedArray, DeviceAsyncArray>, ArrayTypes<int, float, HostPinnedArray, DeviceSyncArray>,
+    ArrayTypes<int, float, HostPinnedArray, HostPageableArray>>;
 
-template <typename T>
-class ArrayTyping : public ::testing::Test {
+template<typename T>
+class ArrayTyping : public ::testing::Test
+{
 protected:
 	using Data = typename T::Data;
 	using WrongData = typename T::WrongData;
@@ -65,13 +61,13 @@ Subclass<T>::Ptr createArray()
 {
 	if constexpr (std::is_same<Subclass<T>, DeviceAsyncArray<T>>::value) {
 		return DeviceAsyncArray<T>::create(CudaStream::getNullStream());
-	}
-	else {
+	} else {
 		return Subclass<T>::create();
 	}
 };
 
-TYPED_TEST(ArrayTyping, Typing) {
+TYPED_TEST(ArrayTyping, Typing)
+{
 	// Here, you can use Type, WrongType, RealSubclass, and WrongSubclass as if they were type aliases
 	// For example:
 	using SubclassType = typename TypeParam::template Subclass<typename TypeParam::Data>;
@@ -90,12 +86,16 @@ TYPED_TEST(ArrayTyping, Typing) {
 	{
 		// Attempt casting to a wrong Array subclass, should throw
 		// Lambda because comma in explicit template parameter list fools GTEST macros
-		auto cast = [&]() { arrayOriginal->template asTyped<typename TypeParam::Data>()->template asSubclass<TypeParam::template WrongSubclass>(); };
+		auto cast = [&]() {
+			arrayOriginal->template asTyped<typename TypeParam::Data>()
+			    ->template asSubclass<TypeParam::template WrongSubclass>();
+		};
 		EXPECT_THROW(cast(), InvalidArrayCast);
 	}
 	// Continue your tests as usual
 
-	typename SubclassType::ConstPtr arrayOfTypeRecovered = arrayAny->asTyped<typename TypeParam::Data>()->template asSubclass<TypeParam::template Subclass>();
+	typename SubclassType::ConstPtr arrayOfTypeRecovered =
+	    arrayAny->asTyped<typename TypeParam::Data>()->template asSubclass<TypeParam::template Subclass>();
 	EXPECT_THAT(arrayOfTypeRecovered, NotNull());
 	EXPECT_THAT(arrayOfTypeRecovered, Eq(arrayOriginal));
 	EXPECT_EQ(arrayOfTypeRecovered->getCount(), 1);

@@ -22,7 +22,7 @@ constexpr std::string_view INTERCEPTED_NODE_CALL = "rgl_node_points_compact";
 
 // Do not modify, code does not handle > 1 FIELD_COUNT (!)
 constexpr size_t FIELDS_COUNT = 1;
-constexpr rgl_field_t FIELDS[FIELDS_COUNT] = {RGL_FIELD_XYZ_F32 };
+constexpr rgl_field_t FIELDS[FIELDS_COUNT] = {RGL_FIELD_XYZ_F32};
 
 struct InputNode
 {
@@ -44,19 +44,20 @@ struct InputNode
 	}
 
 	rgl_node_t fromArrayNode = nullptr;
+
 private:
 	std::vector<rgl_vec3f> points;
 };
 
-int main(int argc, char** argv) try
-{
+int main(int argc, char** argv)
+try {
 	if (argc != 2) {
 		fmt::print(stderr, "USAGE: {} <path-to-tape-without-suffix>\n", argv[0]);
 		std::exit(EXIT_FAILURE);
 	}
 
 	fmt::print("Reading tape '{}' ...\n", argv[1]);
-	TapePlayer player {argv[1]};
+	TapePlayer player{argv[1]};
 
 	std::vector<TapePlayer::APICallIdx> interceptedNodeCalls = player.findAll({INTERCEPTED_NODE_CALL});
 	if (interceptedNodeCalls.empty()) {
@@ -89,8 +90,8 @@ int main(int argc, char** argv) try
 	// It might be tempting to just add spatial merge as a child of intercepted nodes
 	// However, that would potentially join multiple original graphs into a single one
 	// which is a bad idea here, because any rgl_graph_run would run all existing nodes.
-	std::vector<InputNode> inputNodes {interceptedNodes.size()};
-	rgl_node_t visualizeParent=inputNodes.back().fromArrayNode, visualizeNode=nullptr;
+	std::vector<InputNode> inputNodes{interceptedNodes.size()};
+	rgl_node_t visualizeParent = inputNodes.back().fromArrayNode, visualizeNode = nullptr;
 	if (inputNodes.size() > 1) {
 		visualizeParent = nullptr;
 		CHECK_RGL(rgl_node_points_spatial_merge(&visualizeParent, FIELDS, FIELDS_COUNT));
@@ -101,11 +102,11 @@ int main(int argc, char** argv) try
 	CHECK_RGL(rgl_node_points_visualize(&visualizeNode, "Tape Visualizer", 1920, 1080, false));
 	CHECK_RGL(rgl_graph_node_add_child(visualizeParent, visualizeNode));
 
-//	// Here we assume that rgl_entity_set_pose is AFTER NODE_CREATION_CALLS
-//	// TODO: fix repeating visualization
-//	auto animationBegin = player.findFirst({"rgl_entity_set_pose"}).value();
-//	player.playUntil(animationBegin);
-//	auto animationEnd = player.findLast({"rgl_graph_run"}).value() + 3; // get_size + get_data + 1
+	//	// Here we assume that rgl_entity_set_pose is AFTER NODE_CREATION_CALLS
+	//	// TODO: fix repeating visualization
+	//	auto animationBegin = player.findFirst({"rgl_entity_set_pose"}).value();
+	//	player.playUntil(animationBegin);
+	//	auto animationEnd = player.findLast({"rgl_graph_run"}).value() + 3; // get_size + get_data + 1
 
 	for (auto&& [node, executed] : runnableNodeState) {
 		executed = false;
@@ -143,8 +144,7 @@ int main(int argc, char** argv) try
 	}
 	player.playUntil();
 }
-catch(std::exception& e)
-{
+catch (std::exception& e) {
 	fmt::print(stderr, "Exception was thrown: {}\n", e.what());
 	fmt::print(stderr, "You may need to adjust tapeVisualizer source code to your specific tape\n");
 	std::exit(1);

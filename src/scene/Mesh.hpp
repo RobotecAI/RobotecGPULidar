@@ -41,13 +41,13 @@ struct Mesh : APIObject<Mesh>
 	 * Updates vertices of this mesh. Vertex count must remain unchanged, otherwise an exception is thrown.
 	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
 	 */
-	void updateVertices(const Vec3f *vertices, std::size_t vertexCount);
+	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
 
 	/**
 	 * Sets textures coordinates to the mesh. Vertex count and texture coordinates count must be equal.
 	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
 	 */
-	void setTexCoords(const Vec2f *texCoords, std::size_t texCoordCount);
+	void setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount);
 
 	/**
 	 * Returns GAS for this mesh.
@@ -57,8 +57,7 @@ struct Mesh : APIObject<Mesh>
 	OptixTraversableHandle getGAS(CudaStream::Ptr stream);
 
 private:
-	Mesh(const Vec3f* vertices, std::size_t vertexCount,
-		 const Vec3i* indices, std::size_t indexCount);
+	Mesh(const Vec3f* vertices, std::size_t vertexCount, const Vec3i* indices, std::size_t indexCount);
 
 	OptixTraversableHandle buildGAS(CudaStream::Ptr stream);
 	void updateGAS(CudaStream::Ptr stream);

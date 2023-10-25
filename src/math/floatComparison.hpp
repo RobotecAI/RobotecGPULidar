@@ -20,23 +20,23 @@
 template<typename T>
 bool approximatelyEqual(T a, T b, T epsilon)
 {
-	return fabs(a - b) <= ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return fabs(a - b) <= ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
 }
 
 template<typename T>
 bool essentiallyEqual(T a, T b, T epsilon)
 {
-	return fabs(a - b) <= ( (fabs(a) > fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return fabs(a - b) <= ((fabs(a) > fabs(b) ? fabs(b) : fabs(a)) * epsilon);
 }
 
 template<typename T>
 bool definitelyGreaterThan(T a, T b, T epsilon)
 {
-	return (a - b) > ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return (a - b) > ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
 }
 
 template<typename T>
 bool definitelyLessThan(T a, T b, T epsilon)
 {
-	return (b - a) > ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return (b - a) > ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
 }

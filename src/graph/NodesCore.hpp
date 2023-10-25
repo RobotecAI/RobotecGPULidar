@@ -44,7 +44,10 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Point cloud description
-	bool hasField(rgl_field_t field) const override { return field == RGL_FIELD_DYNAMIC_FORMAT || std::find(fields.begin(), fields.end(), field) != fields.end(); }
+	bool hasField(rgl_field_t field) const override
+	{
+		return field == RGL_FIELD_DYNAMIC_FORMAT || std::find(fields.begin(), fields.end(), field) != fields.end();
+	}
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
@@ -103,13 +106,15 @@ struct RaytraceNode : IPointsNode
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
-	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
+	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const IAnyArray>(fieldData.at(field)); }
+	{
+		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
+	}
 
 	// RaytraceNode specific
 	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
@@ -293,7 +298,9 @@ struct SpatialMergePointsNode : IPointsNode
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+	{
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
+	}
 
 	// Point cloud description
 	bool isDense() const override;
@@ -303,7 +310,9 @@ struct SpatialMergePointsNode : IPointsNode
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const IAnyArray>(mergedData.at(field)); }
+	{
+		return std::const_pointer_cast<const IAnyArray>(mergedData.at(field));
+	}
 
 private:
 	std::vector<IPointsNode::Ptr> pointInputs;
@@ -322,7 +331,9 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+	{
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
+	}
 
 	// Point cloud description
 	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
@@ -330,7 +341,9 @@ struct TemporalMergePointsNode : IPointsNodeSingleInput
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const IAnyArray>(mergedData.at(field)); }
+	{
+		return std::const_pointer_cast<const IAnyArray>(mergedData.at(field));
+	}
 
 private:
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
@@ -353,7 +366,9 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{ return std::const_pointer_cast<const IAnyArray>(fieldData.at(field)); }
+	{
+		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
+	}
 
 private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
@@ -383,7 +398,8 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
+	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
 	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
@@ -410,7 +426,8 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
+	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
 	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
@@ -438,7 +455,8 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
+	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
 	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };

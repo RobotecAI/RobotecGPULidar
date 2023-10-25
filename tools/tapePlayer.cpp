@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 		fmt::print(stderr, "USAGE: {} <path-to-tape-without-suffix>\n", argv[0]);
 		return 1;
 	}
-	TapePlayer player {argv[1]};
+	TapePlayer player{argv[1]};
 	player.playUntil();
 	return 0;
 }

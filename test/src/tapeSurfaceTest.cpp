@@ -17,12 +17,14 @@
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 
-class TapeCase : public RGLTest {};
+class TapeCase : public RGLTest
+{};
 
 TEST_F(TapeCase, RecordPlayLoggingCall)
 {
-	std::string loggingRecordPath { (std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord")).string() };
-	std::string logFilePath { (std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord").concat(".log")).string() };
+	std::string loggingRecordPath{(std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord")).string()};
+	std::string logFilePath{
+	    (std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord").concat(".log")).string()};
 
 	// Logging with Tape
 	ASSERT_RGL_SUCCESS(rgl_tape_record_begin(loggingRecordPath.c_str()));
@@ -41,7 +43,7 @@ TEST_F(TapeCase, RecordPlayLoggingCall)
 
 TEST_F(TapeCase, RecordPlayAllCalls)
 {
-	std::string allCallsRecordPath { (std::filesystem::temp_directory_path() / std::filesystem::path("allCallsRecord")).string() };
+	std::string allCallsRecordPath{(std::filesystem::temp_directory_path() / std::filesystem::path("allCallsRecord")).string()};
 	EXPECT_RGL_SUCCESS(rgl_tape_record_begin(allCallsRecordPath.c_str()));
 	bool isTapeRecordActive = false;
 	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
@@ -124,19 +126,23 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 
 	rgl_node_t usePoints = nullptr;
 	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_F32};
-	std::vector<::Field<XYZ_F32>::type> usePointsData = {{1, 2, 3}, {4, 5, 6}};
-	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(), usePointsFields.data(), usePointsFields.size()));
+	std::vector<::Field<XYZ_F32>::type> usePointsData = {
+	    {1, 2, 3},
+        {4, 5, 6}
+    };
+	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(),
+	                                              usePointsFields.data(), usePointsFields.size()));
 
-	#if RGL_BUILD_ROS2_EXTENSION
-		rgl_node_t ros2pub = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
+#if RGL_BUILD_ROS2_EXTENSION
+	rgl_node_t ros2pub = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
 
-		rgl_node_t ros2pubqos = nullptr;
-		rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
-		rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
-		rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
-		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish_with_qos(&ros2pubqos, "pointcloud_ex", "rgl", qos_r, qos_d, qos_h, 10));
-	#endif
+	rgl_node_t ros2pubqos = nullptr;
+	rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
+	rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
+	rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish_with_qos(&ros2pubqos, "pointcloud_ex", "rgl", qos_r, qos_d, qos_h, 10));
+#endif
 
 	rgl_node_t noiseAngularRay = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noiseAngularRay, 0.1f, 0.1f, RGL_AXIS_X));
@@ -156,15 +162,15 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	#if RGL_BUILD_PCL_EXTENSION
-		rgl_node_t downsample = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
+#if RGL_BUILD_PCL_EXTENSION
+	rgl_node_t downsample = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
 
-		// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_F32 in raytrace.
-		EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
+	// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_F32 in raytrace.
+	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
 
-		// Skipping rgl_node_points_visualize (user interaction needed)
-	#endif
+	// Skipping rgl_node_points_visualize (user interaction needed)
+#endif
 
 	int32_t outCount, outSizeOf;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
