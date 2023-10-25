@@ -27,4 +27,5 @@ If you use your own git hook, you can alternatively copy ours or overwrite your 
 
 ```bash
 cat .githooks/pre-commit >> .git/hooks/pre-commit
+sudo chmod +x .git/hooks/pre-commit # Ensure executable bit is set, otherwise git will not run it.
 ```
