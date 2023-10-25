@@ -17,4 +17,4 @@
 #include <RGLFields.hpp>
 
 void gpuSnowflakesSimulationCalculateDisk(cudaStream_t stream, size_t snowflakeCount,
-    float maxRange, Field<RGL_FIELD_UV_F32>::type* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates);
+    float maxRange, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates);

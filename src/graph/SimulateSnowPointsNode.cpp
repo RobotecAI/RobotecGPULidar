@@ -17,20 +17,36 @@
 #include <gpu/helpersKernels.hpp>
 
 
-void SimulateSnowPointsNode::setParameters(float snowfallRate, float snowflakeTerminalVelicity, int numberOfChannels, float maxRange, float beamDivergence)
+void SimulateSnowPointsNode::setParameters(float maxRange,
+    float rainRate, float meanSnowflakeDiameter, float terminalVelocity,
+    float density, int32_t numberOfChannels, float beamDivergence)
 {
-    this->snowfallRate = snowfallRate;
-    this->terminalVelocity = snowflakeTerminalVelicity;
     this->numberOfChannels = numberOfChannels;
     this->maxRange = maxRange;
     this->beamDivergence = beamDivergence;
 
-    // TODO: calculate number of flakes per channel.
-    this ->numberOfFlakesPerChannel = 100;
+    // Calculate derived snow parameters
+    // Only God and Mr Hahner knows WTF is going on there. DEBUG it with someone slowly.
+    // Duck it for now.
+    float helper = rainRate / terminalVelocity;
+    float snowfallHelper = rainRate / (487.0f * density * meanSnowflakeDiameter * terminalVelocity);
+    float snowfallRate = sqrt(snowfallHelper * snowfallHelper * snowfallHelper);
+    float distributionRate = 2.55f * pow(snowfallRate, 0.48f);
+
+    float areaOfDisk =  3.14 * maxRange * maxRange;
+    float snowedArea = (rainRate / (density * terminalVelocity)) * areaOfDisk;
+    // Clamp snowed area.
+    if(snowedArea>areaOfDisk)
+    {
+        snowedArea = areaOfDisk;
+    }
+
+    float meanAreaOfFlake = 3.14 * meanSnowflakeDiameter * meanSnowflakeDiameter;
+    this ->numberOfFlakesPerChannel = snowedArea / meanAreaOfFlake;
 
     for(int i = 0; i < numberOfChannels; i++)
     {
-        snowflakesDisks.emplace_back(DeviceAsyncArray<Vec2f>::create(arrayMgr));
+        snowflakesDisks.emplace_back(DeviceAsyncArray<Vec3f>::create(arrayMgr));
 
         snowflakesDisks[i]->resize(numberOfFlakesPerChannel, false, false);
         randomizationStates->resize(numberOfFlakesPerChannel, false, false);
@@ -39,7 +55,7 @@ void SimulateSnowPointsNode::setParameters(float snowfallRate, float snowflakeTe
         auto* randPtr = randomizationStates->getWritePtr();
         auto currentDiskPtr = snowflakesDisks[i]->getWritePtr();
 
-        gpuSnowflakesSimulationCalculateDisk(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, maxRange, currentDiskPtr, randPtr);
+        gpuSnowflakesSimulationCalculateDisk(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, maxRange, distributionRate, currentDiskPtr, randPtr);
 
     }
     CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));

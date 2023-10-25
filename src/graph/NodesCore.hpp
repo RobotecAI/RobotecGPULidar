@@ -394,7 +394,9 @@ struct SimulateSnowPointsNode :IPointsNodeSingleInput
 {
         using Ptr = std::shared_ptr<SimulateSnowPointsNode>;
 
-        void setParameters(float snowfallRate, float snowflakeTerminalVelicity, int numberOfChannels, float maxRange, float beamDivergence);
+        void setParameters(float maxRange,
+            float rainRate, float meanSnowflakeDiameter, float terminalVelocity,
+            float density, int32_t numberOfChannels, float beamDivergence);
 
         // Node
         void validateImpl() override;
@@ -416,6 +418,6 @@ private:
 
     std::random_device randomDevice;
     DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates = DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
-    std::vector<DeviceAsyncArray<Vec2f>::Ptr> snowflakesDisks;
+    std::vector<DeviceAsyncArray<Vec3f>::Ptr> snowflakesDisks;  // (X, Y) coordinates of snowflakes with diameter of flake in Z coordinate.
     DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 };
