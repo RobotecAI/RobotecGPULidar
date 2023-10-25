@@ -8,16 +8,17 @@ class SimulateSnowPointsNodeTest : public RGLTest {
 
 TEST_F(SimulateSnowPointsNodeTest, invalid_argument_node)
 {
-    rgl_node_t gaussianNoiseNode = nullptr;
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_simulate_snow(nullptr, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f), "node != nullptr");
+    rgl_node_t snowfallNode = nullptr;
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_simulate_snow(nullptr, 100.0f, 1.0f, 0.001f, 1.0f, 0.1f, 10, 0.01f), "node != nullptr");
+    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_simulate_snow(&snowfallNode, 100.0f, 1.0f, 0.001f, 1.0f, 0.1f, 0, 0.01f), "num_channels > 0");
 
-    EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_simulate_snow(&gaussianNoiseNode, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f), "num_channels>0");
 }
 
 TEST_F(SimulateSnowPointsNodeTest, valid_argument_node)
 {
     rgl_node_t simulateSnowNode = nullptr;
-    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnowNode, 0.0f, 0.0f, 8, 0.0f, 0.0f));
+    rgl_configure_logging(RGL_LOG_LEVEL_ALL,nullptr, true);
+    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnowNode, 100.0f, 1.0f, 0.005f, 1.6f, 0.1f, 10, 0.01f));
 }
 
 TEST_F(SimulateSnowPointsNodeTest, use_case)
@@ -32,7 +33,7 @@ TEST_F(SimulateSnowPointsNodeTest, use_case)
     EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
     EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
     EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
-    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnow, 0.0f, 0.0f, 8, 1000.0f, 0.0f));
+    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnow, 100.0f, 1.0f, 0.001f, 1.0f, 0.1f, 10, 0.01f));
 
 
     EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
