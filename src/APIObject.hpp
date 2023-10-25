@@ -23,6 +23,17 @@
 #include <typingUtils.hpp>
 #include <RGLExceptions.hpp>
 
+// TL;DR: these chants make APIObject<T>::instances visible for client's code.
+// It is needed in tests to bypass API calls creating nodes and use createOrUpdateNode directly, which allows for more concise test code.
+#if defined _MSC_VER && !defined RGL_BUILD
+// If we are building client code (e.g. tests) on Windows, we need to explicitly import global data dymbols.
+#define DATA_DECLSPEC __declspec(dllimport)
+#else
+// On Windows, when building library code and tests, all symbols will be exported thanks to CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.
+// On Linux symbols are exported by default.
+#define DATA_DECLSPEC
+#endif
+
 /**
  * Objects shared through C-API should inherit from APIObject<T>, which:
  * - Tracks instances, which may be helpful to e.g. debug leaks on the client side.
@@ -32,7 +43,7 @@
 template<typename T>
 struct APIObject
 {
-	static std::unordered_map<APIObject<T>*, std::shared_ptr<T>> instances;
+	static DATA_DECLSPEC std::unordered_map<APIObject<T>*, std::shared_ptr<T>> instances;
 
 	// Constructs T instance + 2 shared_ptrs:
 	// - One is stored in instances to account for non-C++ usage
@@ -51,6 +62,7 @@ struct APIObject
 	{
 		// Cannot use std::make_shared due to private constructor
 		auto ptr = std::shared_ptr<SubClass>(new SubClass(std::forward<Args>(args)...));
+		// Implicit static cast converts ptr to std::shared_ptr<Base> (this changes value returned by .get())
 		instances.insert({ptr.get(), ptr});
 		return ptr;
 	}
@@ -64,7 +76,8 @@ struct APIObject
 	{
 		auto it = instances.find(rawPtr);
 		if (it == instances.end()) {
-			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name(typeid(T)), reinterpret_cast<void*>(rawPtr));
+			auto msg = fmt::format("RGL API Error: Object does not exist: {} {}", name(typeid(T)),
+			                       reinterpret_cast<void*>(rawPtr));
 			throw InvalidAPIObject(msg);
 		}
 		return it->second;
@@ -78,9 +91,9 @@ struct APIObject
 		if (subclass != nullptr) {
 			return subclass;
 		}
-		auto msg = fmt::format("RGL API Error: Node type mismatch: expected {}, got {}", name(typeid(SubClass)), name(typeid(*node)));
+		auto msg = fmt::format("RGL API Error: Node type mismatch: expected {}, got {}", name(typeid(SubClass)),
+		                       name(typeid(*node)));
 		throw InvalidAPIObject(msg);
-
 	}
 
 	static void release(T* toDestroy)
@@ -94,12 +107,13 @@ struct APIObject
 	APIObject<T>& operator=(APIObject<T>&) = delete;
 	APIObject<T>& operator=(APIObject<T>&&) = delete;
 	virtual ~APIObject() = default;
+
 protected:
 	APIObject() = default;
 };
 
 // This should be used in .cpp file to make an instance of static variable(s) of APIObject<Type>
-#define API_OBJECT_INSTANCE(Type)                \
-template<typename T>                             \
-std::unordered_map<APIObject<T>*, std::shared_ptr<T>> APIObject<T>::instances; \
-template struct APIObject<Type>
+#define API_OBJECT_INSTANCE(Type)                                                                                              \
+	template<typename T>                                                                                                       \
+	DATA_DECLSPEC std::unordered_map<APIObject<T>*, std::shared_ptr<T>> APIObject<T>::instances;                               \
+	template struct APIObject<Type>

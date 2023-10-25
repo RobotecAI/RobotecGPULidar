@@ -15,13 +15,12 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void TransformRaysNode::validate()
+void TransformRaysNode::enqueueExecImpl()
 {
-	input = getValidInput<IRaysNode>();
-}
+	transformedRays->resize(getRayCount(), false, false);
 
-void TransformRaysNode::schedule(cudaStream_t stream)
-{
-	rays->resize(getRayCount());
-	gpuTransformRays(stream, getRayCount(), input->getRays()->getDevicePtr(), rays->getDevicePtr(), transform);
+	// Kernel Call
+	const Mat3x4f* inRaysPtr = input->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	Mat3x4f* outRaysPtr = transformedRays->getWritePtr();
+	gpuTransformRays(getStreamHandle(), getRayCount(), inRaysPtr, outRaysPtr, transform);
 }

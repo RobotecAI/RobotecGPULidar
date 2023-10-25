@@ -24,25 +24,23 @@
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-struct Ros2PublishPointsNode : Node, IPointsNodeSingleInput
+struct Ros2PublishPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 
-	void setParameters(
-		const char* topicName, const char* frameId,
-		rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
-		rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
-		rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT,
-		int32_t qosHistoryDepth = 10);
+	void setParameters(const char* topicName, const char* frameId,
+	                   rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	~Ros2PublishPointsNode();
 
 private:
-	VArray::Ptr inputFmtData = VArray::create<char>();
+	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
 
 	std::string topicName{};
 	std::string frameId{};

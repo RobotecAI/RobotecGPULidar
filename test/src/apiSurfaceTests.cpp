@@ -1,9 +1,8 @@
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/mathHelpers.hpp>
+
 #include <Logger.hpp>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <utils.hpp>
-#include <rgl/api/core.h>
-#include <scenes.hpp>
 
 #define VERTICES cubeVertices
 #define INDICES cubeIndices
@@ -65,8 +64,7 @@ TEST_F(APISurfaceTests, rgl_mesh_update_vertices)
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, VERTICES, 0), "vertex_count > 0");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES) + 1),
 	                            "vertex counts do not match");
-	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_update_vertices((rgl_mesh_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)),
-	                          "Mesh 0x1234");
+	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_update_vertices((rgl_mesh_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)), "Mesh 0x1234");
 
 	// Correct update_vertices
 	EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES)));

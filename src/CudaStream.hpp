@@ -15,29 +15,49 @@
 #pragma once
 
 #include <macros/cuda.hpp>
+#include <macros/handleDestructorException.hpp>
+#include <Logger.hpp>
 
 // RAII object to (de)initialize cudaStream_t
 struct CudaStream
-{   
-	CudaStream()
+{
+	using Ptr = std::shared_ptr<CudaStream>;
+
+	static CudaStream::Ptr create(unsigned flags = 0U) { return CudaStream::Ptr(new CudaStream(flags)); }
+
+	static CudaStream::Ptr getNullStream()
 	{
-		CHECK_CUDA(cudaStreamCreate(&stream));
+		// Copy Stream does not synchronize with the NULL stream
+		// Copy Stream is always synchronized before client thread finished API call
+		static CudaStream::Ptr nullStream{new CudaStream()};
+		return nullStream;
 	}
+
+	static CudaStream::Ptr getCopyStream()
+	{
+		static CudaStream::Ptr copyStream{new CudaStream(cudaStreamNonBlocking)};
+		return copyStream;
+	}
+
+	cudaStream_t getHandle() { return stream; }
 
 	~CudaStream()
-	{
+	try {
 		if (stream != nullptr) {
-			try {
-				CHECK_CUDA(cudaStreamSynchronize(stream));  // May not be required, but it is safer
-				CHECK_CUDA(cudaStreamDestroy(stream));
-				stream = nullptr;
-			}
-			catch(std::exception& e) {
-				RGL_ERROR("Error in ~CudaStream: {}", e.what());
-			}
+			CHECK_CUDA(cudaStreamSynchronize(stream)); // May not be required, but it is safer
+			CHECK_CUDA(cudaStreamDestroy(stream));
+			stream = nullptr;
 		}
 	}
+	HANDLE_DESTRUCTOR_EXCEPTION
 
 private:
-	cudaStream_t stream {nullptr};
+	// Wraps null stream
+	CudaStream() {}
+
+	// Constructs a new stream
+	explicit CudaStream(unsigned flags) { CHECK_CUDA(cudaStreamCreateWithFlags(&stream, flags)); }
+
+private:
+	cudaStream_t stream{nullptr};
 };

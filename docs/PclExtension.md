@@ -1,6 +1,6 @@
 # RGL PCL extension
 
-The extension introduces the nodes and functions for point cloud processing. RGL features are enhanced with:
+The extension introduces the nodes and functions for point cloud processing. RGL features are enhanced with the following:
 
 - Downsampling
 - Writing to PCD file
@@ -10,7 +10,7 @@ For operations listed above, the extension uses [Point Cloud Library](https://po
 
 ## Building
 
-Before building RGL PCL extension, it is necessary to install the required dependencies. Run the setup script with `--install-pcl-deps` flag to download and install them. It could take some time (Point Cloud Library is built from source):
+Before building RGL PCL extension, it is necessary to install the required dependencies. Run the setup script with the `--install-pcl-deps` flag to download and install them. It could take some time (Point Cloud Library is built from source):
 
 ```bash
 # Linux:

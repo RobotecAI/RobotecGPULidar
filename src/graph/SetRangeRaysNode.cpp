@@ -31,17 +31,17 @@ void SetRangeRaysNode::setParameters(const Vec2f* rangesRaw, size_t rangesCount)
 		}
 	}
 
-	ranges->setData(rangesRaw, rangesCount);
+	ranges->copyFromExternal(rangesRaw, rangesCount);
 }
 
-void SetRangeRaysNode::validate()
+void SetRangeRaysNode::validateImpl()
 {
-	input = getValidInput<IRaysNode>();
+	IRaysNodeSingleInput::validateImpl();
 
 	if (!(ranges->getCount() == 1 || ranges->getCount() == input->getRayCount())) {
 		auto msg = fmt::format("ranges doesn't match number of rays. "
-							   "RangesCount({}) should be one or equal to RayCount({})",
-							   ranges->getCount(), input->getRayCount());
+		                       "RangesCount({}) should be one or equal to RayCount({})",
+		                       ranges->getCount(), input->getRayCount());
 		throw InvalidPipeline(msg);
 	}
 }

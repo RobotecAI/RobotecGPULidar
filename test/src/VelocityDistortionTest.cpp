@@ -1,12 +1,12 @@
 #include <RGLFields.hpp>
 #include <graph/Node.hpp>
 #include <gtest/gtest.h>
-#include "utils.hpp"
-#include "scenes.hpp"
+#include <helpers/sceneHelpers.hpp>
 
 using namespace ::testing;
 
-class VelocityDistortionTest : public RGLTest {};
+class VelocityDistortionTest : public RGLTest
+{};
 
 // TEST TODOs:
 // - angular velocity
@@ -20,26 +20,25 @@ TEST_F(VelocityDistortionTest, smoke_test)
 	rgl_node_t raytrace = nullptr;
 
 	// Prepare scene
-	spawnCubeOnScene(nullptr, Mat3x4f::identity());
+	spawnCubeOnScene(Mat3x4f::identity());
 
 	// Generate 10 rays in the same origin looking at the same direction with time offset of firing.
 	const int rayCount = 10;
 	const float rayTimeOffsetToPrevious = 300.0f; // in milliseconds
 	std::vector<rgl_mat3x4f> rays(rayCount);
 	std::vector<float> timeOffsets(rayCount);
-	for (int i = 0; i < rayCount; ++i)
-	{
+	for (int i = 0; i < rayCount; ++i) {
 		rays[i] = Mat3x4f::identity().toRGL();
 		timeOffsets[i] = i * rayTimeOffsetToPrevious;
 	}
 
 	const Vec3f expectedHitpoint = {0.0f, 0.0f, 1.0f};
 
-	const rgl_vec3f linearVelocity = { 0.0f, 1.0f, 0.0f };
-	const rgl_vec3f angularVelocity = { 0.0f, 0.0f, 0.0f };
+	const rgl_vec3f linearVelocity = {0.0f, 1.0f, 0.0f};
+	const rgl_vec3f angularVelocity = {0.0f, 0.0f, 0.0f};
 
 	// Some rays will be fired out of cube
-	auto isRayIndexOutOfCube = [&](int index){
+	auto isRayIndexOutOfCube = [&](int index) {
 		const static float cubeSize = 2.0f;
 		return linearVelocity.value[1] * rayTimeOffsetToPrevious * 0.001 * index > cubeSize / 2.0f;
 	};
@@ -60,7 +59,7 @@ TEST_F(VelocityDistortionTest, smoke_test)
 
 	for (int i = 0; i < rayCount; ++i) {
 		// Rays that hit the cube should have the same hit point (the same distance between sensor origin and cube)
-		Vec3f toCompare = isRayIndexOutOfCube(i) ? Vec3f(NON_HIT_VALUE): expectedHitpoint;
+		Vec3f toCompare = isRayIndexOutOfCube(i) ? Vec3f(NON_HIT_VALUE) : expectedHitpoint;
 		EXPECT_NEAR(outPoints[i].x(), toCompare.x(), EPSILON_F);
 		EXPECT_NEAR(outPoints[i].y(), toCompare.y(), EPSILON_F);
 		EXPECT_NEAR(outPoints[i].z(), toCompare.z(), EPSILON_F);

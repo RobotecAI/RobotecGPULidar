@@ -14,9 +14,14 @@
 
 #pragma once
 
-static std::string name(const std::type_info& type)
+#include <typeindex>
+#include <string>
+
+static std::string name(const std::type_index& typeIndex)
 {
-	std::string_view name = type.name();
+	std::string_view name = typeIndex.name();
 	name.remove_prefix(name.find_first_not_of("0123456789"));
 	return std::string(name);
 }
+
+static std::string name(const std::type_info& typeInfo) { return name(std::type_index(typeInfo)); }

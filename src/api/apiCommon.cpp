@@ -19,7 +19,7 @@ std::optional<std::string> lastStatusString = std::nullopt;
 
 static bool isCompiledWithAutoTape() { return !std::string(RGL_AUTO_TAPE_PATH).empty(); }
 
-const char* getLastErrorString()
+const char* getLastErrorString() noexcept
 {
 	// By default, use lastStatusString value, which is usually a message from the caught exception
 	if (lastStatusString.has_value()) {
@@ -43,15 +43,9 @@ const char* getLastErrorString()
 bool canContinueAfterStatus(rgl_status_t status)
 {
 	// Set constructor may throw, hence lazy initialization.
-	static std::set recoverableErrors = {
-		RGL_INVALID_ARGUMENT,
-		RGL_INVALID_API_OBJECT,
-		RGL_INVALID_PIPELINE,
-		RGL_INVALID_FILE_PATH,
-		RGL_NOT_IMPLEMENTED,
-		RGL_TAPE_ERROR,
-		RGL_ROS2_ERROR
-	};
+	static std::set recoverableErrors = {RGL_INVALID_ARGUMENT,  RGL_INVALID_API_OBJECT, RGL_INVALID_PIPELINE,
+	                                     RGL_INVALID_FILE_PATH, RGL_NOT_IMPLEMENTED,    RGL_TAPE_ERROR,
+	                                     RGL_ROS2_ERROR};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
 };
 
@@ -64,8 +58,7 @@ rgl_status_t updateAPIState(rgl_status_t status, std::optional<std::string> auxE
 		const char* msg = getLastErrorString();
 		if (canContinueAfterStatus(lastStatusCode)) {
 			RGL_ERROR("Recoverable error (code={}): {}", lastStatusCode, msg);
-		}
-		else {
+		} else {
 			RGL_CRITICAL("Unrecoverable error (code={}): {}", lastStatusCode, msg);
 		}
 		Logger::getOrCreate().flush();

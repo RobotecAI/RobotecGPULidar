@@ -21,19 +21,16 @@
 
 using PCLPoint = pcl::PointXYZL;
 
-void DownSamplePointsNode::validate()
+void DownSamplePointsNode::validateImpl()
 {
-	if (finishedEvent == nullptr) {
-		CHECK_CUDA(cudaEventCreateWithFlags(&finishedEvent, cudaEventDisableTiming));
-	}
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::validateImpl();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
 	}
 }
 
-void DownSamplePointsNode::schedule(cudaStream_t stream)
+void DownSamplePointsNode::enqueueExecImpl()
 {
 	cacheManager.trigger();
 
@@ -42,66 +39,92 @@ void DownSamplePointsNode::schedule(cudaStream_t stream)
 		return;
 	}
 
-	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
+	// Get formatted input data (SSE2-aligned XYZ)
+	FormatPointsNode::formatAsync(formattedInput, input, getRequiredFieldList(), gpuFieldDescBuilder);
+	formattedInputHst->copyFrom(formattedInput);
 
-	// Downsample
-	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
-	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
+	// Copy data into pcl::PointCloud
 	auto pointCount = input->getPointCount();
+	auto toFilter = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	toFilter->reserve(pointCount);
-	const PCLPoint* begin = static_cast<const PCLPoint*>(inputFmtData->getReadPtr(MemLoc::Host));
+	const PCLPoint* begin = reinterpret_cast<const PCLPoint*>(formattedInputHst->getReadPtr());
 	const PCLPoint* end = begin + pointCount;
 	toFilter->assign(begin, end, pointCount);
+
+	// Set indices that will help find out which points have been removed
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
 	}
-	pcl::VoxelGrid<PCLPoint> voxelGrid {};
+	pcl::VoxelGrid<PCLPoint> voxelGrid{};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
+
+	// Perform filtering
+	auto filtered = std::make_shared<pcl::PointCloud<PCLPoint>>();
 	voxelGrid.filter(*filtered);
+
+	// Warn if nothing changed
 	bool pclReduced = filtered->size() < toFilter->size();
 	if (!pclReduced) {
-		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}",
-		                           toFilter->size(), filtered->size(), leafDims);
+		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}", toFilter->size(), filtered->size(), leafDims);
 		RGL_WARN("Down-sampling node had no effect! ({})", details);
 	}
-	filteredPoints->setData(filtered->data(), filtered->size());
+	filteredPoints->copyFromExternal(filtered->data(), filtered->size());
 	filteredIndices->resize(filtered->size(), false, false);
 
 	size_t offset = offsetof(PCLPoint, label);
 	size_t stride = sizeof(PCLPoint);
 	size_t size = sizeof(PCLPoint::label);
-	auto&& dst = (char*) filteredIndices->getDevicePtr();
-	auto&& src = (const char*) filteredPoints->getReadPtr(MemLoc::Device);
-	gpuCutField(stream, filtered->size(), dst, src, offset, stride, size);
-	CHECK_CUDA(cudaEventRecord(finishedEvent, stream));
+	auto&& dst = reinterpret_cast<char*>(filteredIndices->getWritePtr());
+	auto&& src = reinterpret_cast<const char*>(filteredPoints->getReadPtr());
+	gpuCutField(getStreamHandle(), filtered->size(), dst, src, offset, stride, size);
+
+	// getFieldData may be called in client's thread from rgl_graph_get_result_data
+	// Doing job there would be:
+	// - unexpected (job was supposed to be done asynchronously)
+	// - hard to implement:
+	//     - to avoid blocking on yet-running graph stream, we would need do it in copy stream, which would require
+	//       temporary rebinding DAAs to copy stream, which seems like nightmarish idea
+	// Therefore, once we know what fields are requested, we compute them eagerly
+	// This is supposed to be removed in some future refactor (e.g. when introducing LayeredSoA)
+	for (auto&& field : cacheManager.getKeys()) {
+		getFieldData(field);
+	}
 }
 
 size_t DownSamplePointsNode::getWidth() const
 {
-	CHECK_CUDA(cudaEventSynchronize(finishedEvent));
+	this->synchronize();
 	return filteredIndices->getCount();
 }
 
-VArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field, cudaStream_t stream) const
+IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 {
+	std::lock_guard lock{getFieldDataMutex};
+
 	if (!cacheManager.contains(field)) {
-		auto fieldData = VArray::create(field, filteredIndices->getCount());
+		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
+		fieldData->resize(filteredIndices->getCount(), false, false);
 		cacheManager.insert(field, fieldData, true);
 	}
 
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(filteredIndices->getCount(), false, false);
-		char* outPtr = static_cast<char *>(fieldData->getWritePtr(MemLoc::Device));
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field, stream)->getReadPtr(MemLoc::Device));
-		gpuFilter(stream, filteredIndices->getCount(), filteredIndices->getDevicePtr(), outPtr, inputPtr, getFieldSize(field));
-		CHECK_CUDA(cudaStreamSynchronize(stream));
+		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
+		auto fieldArray = input->getFieldData(field);
+		if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
+			auto msg = fmt::format("DownSampleNode requires its input to be device-accessible, {} is not", field);
+			throw InvalidPipeline(msg);
+		}
+		const char* inputPtr = static_cast<const char*>(fieldArray->getRawReadPtr());
+		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getReadPtr(), outPtr, inputPtr,
+		          getFieldSize(field));
+		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}
 
-	return std::const_pointer_cast<const VArray>(cacheManager.getValue(field));
+	return cacheManager.getValue(field);
 }
 
 std::vector<rgl_field_t> DownSamplePointsNode::getRequiredFieldList() const

@@ -16,9 +16,10 @@
 
 #include <set>
 #include <cfloat>
+#include <vector>
 
+#include <math/Vector.hpp>
 #include <rgl/api/core.h>
-#include <VArray.hpp>
 
 /*
  * Definition of RGL PointCloud Fields is in the API header.
@@ -45,21 +46,22 @@ typedef unsigned char TextureTexelFormat;
 #define PADDING_32 RGL_FIELD_PADDING_32
 
 template<rgl_field_t>
-struct Field {};
+struct Field
+{};
 
-#define FIELD(NAME, TYPE)                             \
-template<>                                            \
-struct Field<NAME>                                    \
-{                                                     \
-	using type = TYPE;                                \
-	static constexpr std::size_t size = sizeof(TYPE); \
-}
+#define FIELD(NAME, TYPE)                                                                                                      \
+	template<>                                                                                                                 \
+	struct Field<NAME>                                                                                                         \
+	{                                                                                                                          \
+		using type = TYPE;                                                                                                     \
+		static constexpr std::size_t size = sizeof(TYPE);                                                                      \
+	}
 
 FIELD(XYZ_F32, Vec3f);
-FIELD(RAY_IDX_U32, uint32_t);  // PCL uses uint32_t
+FIELD(RAY_IDX_U32, uint32_t); // PCL uses uint32_t
 FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
-FIELD(IS_HIT_I32, int32_t);  // Signed may be faster
+FIELD(IS_HIT_I32, int32_t); // Signed may be faster
 FIELD(DISTANCE_F32, float);
 FIELD(AZIMUTH_F32, float);
 FIELD(RING_ID_U16, uint16_t);
@@ -101,31 +103,35 @@ inline std::size_t getPointSize(const std::vector<rgl_field_t>& fields)
 inline bool isDummy(rgl_field_t type)
 {
 	static std::set<rgl_field_t> dummies = {
-		PADDING_8,
-		PADDING_16,
-		PADDING_32,
+	    PADDING_8,
+	    PADDING_16,
+	    PADDING_32,
 	};
 	return dummies.find(type) != dummies.end();
 }
 
-inline VArray::Ptr createVArray(rgl_field_t type, std::size_t initialSize)
+// This header is included by nvcc (GPU-side compiler) which fails to compile IAnyArray and subclasses.
+// Therefore, we use forward declaration and shared_ptr<IAnyArray> instead of IAnyArray::Ptr
+struct IAnyArray;
+template<template<typename> typename Subclass, typename... Args>
+inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 {
 	if (isDummy(type)) {
-		throw std::invalid_argument(fmt::format("Cannot create VArray for non-instantiable type {}", type));
+		throw std::invalid_argument(fmt::format("Cannot create Array<T> for non-instantiable type {}", type));
 	}
 	switch (type) {
-		case XYZ_F32: return VArray::create<Field<XYZ_F32>::type>(initialSize);
-		case RAY_IDX_U32: return VArray::create<Field<RAY_IDX_U32>::type>(initialSize);
-		case ENTITY_ID_I32: return VArray::create<Field<ENTITY_ID_I32>::type>(initialSize);
-		case INTENSITY_F32: return VArray::create<Field<INTENSITY_F32>::type>(initialSize);
-		case RING_ID_U16: return VArray::create<Field<RING_ID_U16>::type>(initialSize);
-		case AZIMUTH_F32: return VArray::create<Field<AZIMUTH_F32>::type>(initialSize);
-		case DISTANCE_F32: return VArray::create<Field<DISTANCE_F32>::type>(initialSize);
-		case RETURN_TYPE_U8: return VArray::create<Field<RETURN_TYPE_U8>::type>(initialSize);
-		case TIME_STAMP_F64: return VArray::create<Field<TIME_STAMP_F64>::type>(initialSize);
-		case IS_HIT_I32: return VArray::create<Field<IS_HIT_I32>::type>(initialSize);
+		case XYZ_F32: return Subclass<Field<XYZ_F32>::type>::create(std::forward<Args>(args)...);
+		case RAY_IDX_U32: return Subclass<Field<RAY_IDX_U32>::type>::create(std::forward<Args>(args)...);
+		case ENTITY_ID_I32: return Subclass<Field<ENTITY_ID_I32>::type>::create(std::forward<Args>(args)...);
+		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(std::forward<Args>(args)...);
+		case RING_ID_U16: return Subclass<Field<RING_ID_U16>::type>::create(std::forward<Args>(args)...);
+		case AZIMUTH_F32: return Subclass<Field<AZIMUTH_F32>::type>::create(std::forward<Args>(args)...);
+		case DISTANCE_F32: return Subclass<Field<DISTANCE_F32>::type>::create(std::forward<Args>(args)...);
+		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(std::forward<Args>(args)...);
+		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(std::forward<Args>(args)...);
+		case IS_HIT_I32: return Subclass<Field<IS_HIT_I32>::type>::create(std::forward<Args>(args)...);
 	}
-	throw std::invalid_argument(fmt::format("createVArray: unknown RGL field {}", type));
+	throw std::invalid_argument(fmt::format("createArray: unknown RGL field {}", type));
 }
 
 inline std::string toString(rgl_field_t type)
@@ -154,21 +160,21 @@ inline std::string toString(rgl_field_t type)
 inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return { sensor_msgs::msg::PointField::FLOAT32,
-		                       sensor_msgs::msg::PointField::FLOAT32,
-		                       sensor_msgs::msg::PointField::FLOAT32 };
-		case IS_HIT_I32: return { sensor_msgs::msg::PointField::INT32 };
-		case RAY_IDX_U32: return { sensor_msgs::msg::PointField::UINT32 };
-		case ENTITY_ID_I32: return { sensor_msgs::msg::PointField::INT32 };
-		case INTENSITY_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
-		case RING_ID_U16: return { sensor_msgs::msg::PointField::UINT16 };
-		case AZIMUTH_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
-		case DISTANCE_F32: return { sensor_msgs::msg::PointField::FLOAT32 };
-		case RETURN_TYPE_U8: return { sensor_msgs::msg::PointField::UINT8 };
-		case TIME_STAMP_F64: return { sensor_msgs::msg::PointField::FLOAT64 };
-		case PADDING_8: return { };
-		case PADDING_16: return { };
-		case PADDING_32: return { };
+		case XYZ_F32:
+			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			        sensor_msgs::msg::PointField::FLOAT32};
+		case IS_HIT_I32: return {sensor_msgs::msg::PointField::INT32};
+		case RAY_IDX_U32: return {sensor_msgs::msg::PointField::UINT32};
+		case ENTITY_ID_I32: return {sensor_msgs::msg::PointField::INT32};
+		case INTENSITY_F32: return {sensor_msgs::msg::PointField::FLOAT32};
+		case RING_ID_U16: return {sensor_msgs::msg::PointField::UINT16};
+		case AZIMUTH_F32: return {sensor_msgs::msg::PointField::FLOAT32};
+		case DISTANCE_F32: return {sensor_msgs::msg::PointField::FLOAT32};
+		case RETURN_TYPE_U8: return {sensor_msgs::msg::PointField::UINT8};
+		case TIME_STAMP_F64: return {sensor_msgs::msg::PointField::FLOAT64};
+		case PADDING_8: return {};
+		case PADDING_16: return {};
+		case PADDING_32: return {};
 	}
 	throw std::invalid_argument(fmt::format("toRos2Fields: unknown RGL field {}", type));
 }
@@ -176,19 +182,19 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 inline std::vector<std::string> toRos2Names(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return { "x", "y", "z" };
-		case IS_HIT_I32: return { "is_hit" };
-		case ENTITY_ID_I32: return { "entity_id" };
-		case RAY_IDX_U32: return { "ray_idx" };
-		case INTENSITY_F32: return { "intensity" };
-		case RING_ID_U16: return { "ring" };
-		case AZIMUTH_F32: return { "azimuth" };
-		case DISTANCE_F32: return { "distance" };
-		case RETURN_TYPE_U8: return { "return_type" };
-		case TIME_STAMP_F64: return { "time_stamp" };
-		case PADDING_8: return { };
-		case PADDING_16: return { };
-		case PADDING_32: return { };
+		case XYZ_F32: return {"x", "y", "z"};
+		case IS_HIT_I32: return {"is_hit"};
+		case ENTITY_ID_I32: return {"entity_id"};
+		case RAY_IDX_U32: return {"ray_idx"};
+		case INTENSITY_F32: return {"intensity"};
+		case RING_ID_U16: return {"ring"};
+		case AZIMUTH_F32: return {"azimuth"};
+		case DISTANCE_F32: return {"distance"};
+		case RETURN_TYPE_U8: return {"return_type"};
+		case TIME_STAMP_F64: return {"time_stamp"};
+		case PADDING_8: return {};
+		case PADDING_16: return {};
+		case PADDING_32: return {};
 	}
 	throw std::invalid_argument(fmt::format("toRos2Names: unknown RGL field {}", type));
 }
@@ -196,19 +202,19 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return { sizeof(float), sizeof(float), sizeof(float) };
-		case IS_HIT_I32: return { getFieldSize(type) };
-		case RAY_IDX_U32: return { getFieldSize(type) };
-		case ENTITY_ID_I32: return { getFieldSize(type) };
-		case INTENSITY_F32: return { getFieldSize(type) };
-		case RING_ID_U16: return { getFieldSize(type) };
-		case AZIMUTH_F32: return { getFieldSize(type) };
-		case DISTANCE_F32: return { getFieldSize(type) };
-		case RETURN_TYPE_U8: return { getFieldSize(type) };
-		case TIME_STAMP_F64: return { getFieldSize(type) };
-		case PADDING_8: return { getFieldSize(type) };
-		case PADDING_16: return { getFieldSize(type) };
-		case PADDING_32: return { getFieldSize(type) };
+		case XYZ_F32: return {sizeof(float), sizeof(float), sizeof(float)};
+		case IS_HIT_I32: return {getFieldSize(type)};
+		case RAY_IDX_U32: return {getFieldSize(type)};
+		case ENTITY_ID_I32: return {getFieldSize(type)};
+		case INTENSITY_F32: return {getFieldSize(type)};
+		case RING_ID_U16: return {getFieldSize(type)};
+		case AZIMUTH_F32: return {getFieldSize(type)};
+		case DISTANCE_F32: return {getFieldSize(type)};
+		case RETURN_TYPE_U8: return {getFieldSize(type)};
+		case TIME_STAMP_F64: return {getFieldSize(type)};
+		case PADDING_8: return {getFieldSize(type)};
+		case PADDING_16: return {getFieldSize(type)};
+		case PADDING_32: return {getFieldSize(type)};
 	}
 	throw std::invalid_argument(fmt::format("toRos2Sizes: unknown RGL field {}", type));
 }

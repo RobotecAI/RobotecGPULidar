@@ -47,7 +47,8 @@ struct MicroRGL
 
 	rgl_get_extension_info_t get_rgl_get_extension_infos()
 	{
-		auto dyn_rgl_get_extension_info = reinterpret_cast<rgl_get_extension_info_t>(GetProcAddress(handle, "rgl_get_extension_info"));
+		auto dyn_rgl_get_extension_info = reinterpret_cast<rgl_get_extension_info_t>(
+		    GetProcAddress(handle, "rgl_get_extension_info"));
 		if (dyn_rgl_get_extension_info == NULL) {
 			auto msg = fmt::format("GetProcAddress error: {}\n", GetLastError());
 			throw std::runtime_error(msg);
@@ -104,14 +105,14 @@ private:
 #endif
 
 
-int main(int argc, char** argv) try
-{
+int main(int argc, char** argv)
+try {
 	if (argc != 2) {
 		fmt::print(stderr, "Usage: {} <libRGL_path>\n", argv[0]);
 		return 1;
 	}
 
-	MicroRGL lib {argv[1]};
+	MicroRGL lib{argv[1]};
 
 	int32_t major = 0, minor = 0, patch = 0;
 	rgl_status_t status = lib.get_rgl_get_version()(&major, &minor, &patch);
@@ -126,7 +127,6 @@ int main(int argc, char** argv) try
 	}
 	return 0;
 }
-catch (std::runtime_error& e)
-{
+catch (std::runtime_error& e) {
 	fmt::print(stderr, "{}\n", e.what());
 }

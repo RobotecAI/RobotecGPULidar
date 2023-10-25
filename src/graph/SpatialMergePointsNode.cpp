@@ -17,7 +17,7 @@
 
 void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
-	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field){ return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
+	if (std::any_of(fields.begin(), fields.end(), [](rgl_field_t field) { return field == RGL_FIELD_DYNAMIC_FORMAT; })) {
 		throw InvalidAPIArgument("cannot perform spatial merge on field 'RGL_FIELD_DYNAMIC_FORMAT'");
 	}
 
@@ -26,17 +26,18 @@ void SpatialMergePointsNode::setParameters(const std::vector<rgl_field_t>& field
 
 	for (auto&& field : fields) {
 		if (!mergedData.contains(field) && !isDummy(field)) {
-			mergedData.insert({field, VArray::create(field)});
+			mergedData.insert({field, createArray<DeviceAsyncArray>(field, arrayMgr)});
 		}
 	}
 }
 
-void SpatialMergePointsNode::validate()
+void SpatialMergePointsNode::validateImpl()
 {
-	pointInputs = Node::filter<IPointsNode>(this->inputs);
+	pointInputs = Node::getNodesOfType<IPointsNode>(this->inputs);
 
-	if (pointInputs.empty()) {
-		auto msg = "expected at least one IPointsNode input for SpatialMergePointsNode";
+	if (pointInputs.size() < 2) {
+		// Having just one input does not make sense, because it is equivalent to removing this Node.
+		auto msg = fmt::format("{} requires >= 2 input nodes, found {}", getName(), pointInputs.size());
 		throw InvalidPipeline(msg);
 	}
 
@@ -48,17 +49,16 @@ void SpatialMergePointsNode::validate()
 		}
 
 		// Check input pointcloud has required fields
-		for (const auto& requiredField : std::views::keys(mergedData)) {
+		for (const auto& requiredField : getRequiredFieldList()) {
 			if (!input->hasField(requiredField)) {
-				auto msg = fmt::format("SpatialMergePointsNode input does not have required field '{}'",
-				                       toString(requiredField));
+				auto msg = fmt::format("{} input does not have required field '{}'", getName(), toString(requiredField));
 				throw InvalidPipeline(msg);
 			}
 		}
 	}
 }
 
-void SpatialMergePointsNode::schedule(cudaStream_t stream)
+void SpatialMergePointsNode::enqueueExecImpl()
 {
 	width = 0;
 	for (const auto& input : pointInputs) {
@@ -67,19 +67,15 @@ void SpatialMergePointsNode::schedule(cudaStream_t stream)
 
 	// This could work lazily - merging only on demand
 	for (const auto& [field, data] : mergedData) {
-		data->resize(width, false, false);
-		size_t offset = 0;
+		data->resize(0, false, false);
 		for (const auto& input : pointInputs) {
-			size_t pointCount = input->getPointCount();
-			const auto toMergeData = input->getFieldData(field, stream);
-			data->insertData(toMergeData->getReadPtr(MemLoc::Device), pointCount, offset);
-			offset += pointCount;
+			const auto toMergeData = input->getFieldData(field);
+			data->appendFrom(toMergeData);
 		}
 	}
 }
 
 bool SpatialMergePointsNode::isDense() const
 {
-	return std::all_of(pointInputs.begin(), pointInputs.end(),
-	                   [](IPointsNode::Ptr node) { return node->isDense(); });
+	return std::all_of(pointInputs.begin(), pointInputs.end(), [](IPointsNode::Ptr node) { return node->isDense(); });
 }

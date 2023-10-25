@@ -24,15 +24,15 @@ void RaytraceNode::setParameters(std::shared_ptr<Scene> scene)
 {
 	this->scene = scene;
 	const static Vec2f defaultRangeValue = Vec2f(0.0f, FLT_MAX);
-	defaultRange->setData(&defaultRangeValue, 1);
+	defaultRange->copyFromExternal(&defaultRangeValue, 1);
 }
 
-void RaytraceNode::validate()
+void RaytraceNode::validateImpl()
 {
 	// It should be viewed as a temporary solution. Will change in v14.
 	setFields(findFieldsToCompute());
 
-	raysNode = getValidInput<IRaysNode>();
+	raysNode = getExactlyOneInputOfType<IRaysNode>();
 
 	if (fieldData.contains(RING_ID_U16) && !raysNode->getRingIds().has_value()) {
 		auto msg = fmt::format("requested for field RING_ID_U16, but RaytraceNode cannot get ring ids");
@@ -53,59 +53,69 @@ void RaytraceNode::validate()
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fieldData.contains(field) ? fieldData.at(field)->getTypedProxy<typename Field<field>::type>()->getDevicePtr() : nullptr;
+	return fieldData.contains(field) ? fieldData.at(field)
+	                                       ->asTyped<typename Field<field>::type>()
+	                                       ->template asSubclass<DeviceAsyncArray>()
+	                                       ->getWritePtr() :
+	                                   nullptr;
 }
 
-void RaytraceNode::schedule(cudaStream_t stream)
+void RaytraceNode::enqueueExecImpl()
 {
 	for (auto const& [_, data] : fieldData) {
 		data->resize(raysNode->getRayCount(), false, false);
 	}
-	auto rays = raysNode->getRays();
-	auto sceneAS = scene->getAS();
-	auto sceneSBT = scene->getSBT();
-	dim3 launchDims = {static_cast<unsigned int>(rays->getCount()), 1, 1};
+
+	// Even though we are in graph thread here, we can access Scene class (see comment there)
+	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto sceneAS = scene->getASLocked();
+	auto sceneSBT = scene->getSBTLocked();
+	dim3 launchDims = {static_cast<unsigned int>(raysNode->getRayCount()), 1, 1};
 
 	// Optional
 	auto rayRanges = raysNode->getRanges();
 	auto ringIds = raysNode->getRingIds();
 	auto timeOffsets = raysNode->getTimeOffsets();
 
-	(*requestCtx)[0] = RaytraceRequestContext{
-		.sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
-		.sensorAngularVelocityRPY = sensorAngularVelocityRPY,
-		.doApplyDistortion = doApplyDistortion,
-		.rays = rays->getDevicePtr(),
-		.rayCount = rays->getCount(),
-		.rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
-		.rayRanges = rayRanges.has_value() ? (*rayRanges)->getDevicePtr() : defaultRange->getDevicePtr(),
-		.rayRangesCount = rayRanges.has_value() ? (*rayRanges)->getCount() : defaultRange->getCount(),
-		.ringIds = ringIds.has_value() ? (*ringIds)->getDevicePtr() : nullptr,
-		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
-		.rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->getDevicePtr() : nullptr,
-		.rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
-		.scene = sceneAS,
-		.sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
-		.xyz = getPtrTo<XYZ_F32>(),
-		.isHit = getPtrTo<IS_HIT_I32>(),
-		.rayIdx = getPtrTo<RAY_IDX_U32>(),
-		.ringIdx = getPtrTo<RING_ID_U16>(),
-		.distance = getPtrTo<DISTANCE_F32>(),
-		.intensity = getPtrTo<INTENSITY_F32>(),
-		.timestamp = getPtrTo<TIME_STAMP_F64>(),
-		.entityId = getPtrTo<ENTITY_ID_I32>(),
+	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
+	requestCtxHst->resize(1, true, false);
+	requestCtxHst->at(0) = RaytraceRequestContext{
+	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
+	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
+	    .doApplyDistortion = doApplyDistortion,
+	    .rays = raysPtr,
+	    .rayCount = raysNode->getRayCount(),
+	    .rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
+	    .rayRanges = rayRanges.has_value() ? (*rayRanges)->asSubclass<DeviceAsyncArray>()->getReadPtr() :
+	                                         defaultRange->getReadPtr(),
+	    .rayRangesCount = rayRanges.has_value() ? (*rayRanges)->getCount() : defaultRange->getCount(),
+	    .ringIds = ringIds.has_value() ? (*ringIds)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
+	    .ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
+	    .rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
+	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
+	    .scene = sceneAS,
+	    .sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
+	    .xyz = getPtrTo<XYZ_F32>(),
+	    .isHit = getPtrTo<IS_HIT_I32>(),
+	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
+	    .ringIdx = getPtrTo<RING_ID_U16>(),
+	    .distance = getPtrTo<DISTANCE_F32>(),
+	    .intensity = getPtrTo<INTENSITY_F32>(),
+	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
+	    .entityId = getPtrTo<ENTITY_ID_I32>(),
 	};
 
-	CUdeviceptr pipelineArgsPtr = requestCtx->getCUdeviceptr();
-	std::size_t pipelineArgsSize = requestCtx->getBytesInUse();
-	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, stream, pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
-	CHECK_CUDA(cudaStreamSynchronize(stream));
+	requestCtxDev->copyFrom(requestCtxHst);
+	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
+	std::size_t pipelineArgsSize = requestCtxDev->getSizeOf() * requestCtxDev->getCount();
+	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
+	                        launchDims.x, launchDims.y, launchDims.y));
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
-	std::set<rgl_field_t> currentFields { keyViewer.begin(), keyViewer.end() };
+	std::set<rgl_field_t> currentFields{keyViewer.begin(), keyViewer.end()};
 
 	std::set<rgl_field_t> toRemove, toInsert;
 	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));
@@ -115,7 +125,7 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 		fieldData.erase(field);
 	}
 	for (auto&& field : toInsert) {
-		fieldData.insert({field, VArray::create(field)});
+		fieldData.insert({field, createArray<DeviceAsyncArray>(field, arrayMgr)});
 	}
 }
 
@@ -127,7 +137,7 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	outFields.insert(XYZ_F32);
 
 	// dfsInputs - if false dfs for outputs
-	std::function<void(Node::Ptr, bool)> dfsRet = [&](const Node::Ptr & current, bool dfsInputs) {
+	std::function<void(Node::Ptr, bool)> dfsRet = [&](const Node::Ptr& current, bool dfsInputs) {
 		auto dfsNodes = dfsInputs ? current->getInputs() : current->getOutputs();
 		for (auto&& node : dfsNodes) {
 			if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
@@ -142,7 +152,7 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	};
 
 	dfsRet(shared_from_this(), true);  // Search in inputs. Needed for SetRingIds only.
-	dfsRet(shared_from_this(), false);  // Search in outputs
+	dfsRet(shared_from_this(), false); // Search in outputs
 
 	return outFields;
 }

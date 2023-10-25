@@ -15,6 +15,7 @@
 #pragma once
 
 #include <set>
+#include <mutex>
 #include <string>
 #include <optional>
 #include <unordered_map>
@@ -23,6 +24,7 @@
 
 #include <Time.hpp>
 #include <gpu/ShaderBindingTableTypes.h>
+#include <memory/Array.hpp>
 
 struct Entity;
 
@@ -32,10 +34,20 @@ struct Entity;
  * Because of that, when some objects share a mesh, SBT records will be duplicated.
  * This will still work, but it causes pointless CPU -> GPU copies.
  * TODO(prybicki): fix it
+ *
+ * This class may be accessed from different threads:
+ * - client's thread doing API calls, modifying scene
+ * - graph execution threads, requesting AS and SBT from RaytraceNode
+ * As of now, Scene is not thread-safe, i.e. it is meant to be accessed only from the client's thread.
+ * Calls that modify the scene waits until all current graph threads finish (done in API calls).
+ * The only case when graph thread accesses scene is getAS() and getSBT(), which are locked.
+ *
  */
 struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 {
 	static std::shared_ptr<Scene> defaultInstance();
+
+	Scene();
 
 	void addEntity(std::shared_ptr<Entity> entity);
 	void removeEntity(std::shared_ptr<Entity> entity);
@@ -46,8 +58,10 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 
 	std::size_t getObjectCount();
 
-	OptixTraversableHandle getAS();
-	OptixShaderBindingTable getSBT();
+	CudaStream::Ptr getStream();
+
+	OptixTraversableHandle getASLocked();
+	OptixShaderBindingTable getSBTLocked();
 
 	void requestFullRebuild();
 	void requestASRebuild();
@@ -58,13 +72,16 @@ private:
 	OptixTraversableHandle buildAS();
 
 private:
+	CudaStream::Ptr stream;
 	std::set<std::shared_ptr<Entity>> entities;
 	ASBuildScratchpad scratchpad;
 
+	std::mutex optixStructsMutex;
 	std::optional<OptixTraversableHandle> cachedAS;
 	std::optional<OptixShaderBindingTable> cachedSBT;
 
-	DeviceBuffer<OptixInstance> dInstances;
+	// TODO: allow non-heap creation;
+	DeviceSyncArray<OptixInstance>::Ptr dInstances = DeviceSyncArray<OptixInstance>::create();
 
 	std::optional<Time> time;
 };

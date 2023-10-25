@@ -30,63 +30,50 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
-#include <VArray.hpp>
-#include <VArrayProxy.hpp>
 
-/**
- * Notes for maintainers:
- *
- * Some nodes define extra methods such as get*Count() to obtain the number of elements in their output buffers.
- * This is purposeful: interface-level methods are guaranteed to return correct number of elements or throw,
- * while buffers sizes are not reliable, since they can be resized in execute().
- *
- * For methods taking cudaStream as an argument, it is legal to return VArray that becomes valid only after stream
- * operations prior to the return are finished.
- */
 
-// TODO(prybicki): Consider templatizing IPointCloudNode with its InputInterface type.
-// TODO(prybicki): This would implement automatic getValidInput() and method forwarding.
-
-struct FormatPointsNode : Node, IPointsNodeSingleInput
+struct FormatPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FormatPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Point cloud description
-	bool hasField(rgl_field_t field) const override { return std::find(fields.begin(), fields.end(), field) != fields.end(); }
+	bool hasField(rgl_field_t field) const override
+	{
+		return field == RGL_FIELD_DYNAMIC_FORMAT || std::find(fields.begin(), fields.end(), field) != fields.end();
+	}
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 	std::size_t getFieldPointSize(rgl_field_t field) const override;
 
 	// Actual implementation of formatting made public for other nodes
-	static void formatAsync(const VArray::Ptr& output, const IPointsNode::Ptr& input,
-	                        const std::vector<rgl_field_t>& fields, cudaStream_t stream);
+	static void formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
+	                        const std::vector<rgl_field_t>& fields, GPUFieldDescBuilder& gpuFieldDescBuilder);
 
 private:
-	static std::vector<std::pair<rgl_field_t, const void*>> collectFieldConstRawData(const IPointsNode::Ptr& input,
-	                                                                                 const std::vector<rgl_field_t>& fields,
-	                                                                                 cudaStream_t stream);
+	static std::vector<std::pair<rgl_field_t, const void*>> getFieldToPointerMappings(const IPointsNode::Ptr& input,
+	                                                                                  const std::vector<rgl_field_t>& fields);
 
 	std::vector<rgl_field_t> fields;
-	VArray::Ptr output = VArray::create<char>();
+	DeviceAsyncArray<char>::Ptr output = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr outputHost = HostPinnedArray<char>::create();
+	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
-struct CompactPointsNode : Node, IPointsNodeSingleInput
+struct CompactPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<CompactPointsNode>;
 	void setParameters() {}
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
@@ -97,48 +84,54 @@ struct CompactPointsNode : Node, IPointsNodeSingleInput
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
-	size_t width;
-	cudaEvent_t finishedEvent = nullptr;
-	VArrayProxy<CompactionIndexType>::Ptr inclusivePrefixSum = VArrayProxy<CompactionIndexType>::create();
-	mutable CacheManager<rgl_field_t, VArray::Ptr> cacheManager;
+	size_t width = {0};
+	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
+	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+	std::mutex getFieldDataMutex;
 };
 
-struct RaytraceNode : Node, IPointsNode
+struct RaytraceNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
 	void setParameters(std::shared_ptr<Scene> scene);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Point cloud description
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
-	size_t getHeight() const override { return 1; }  // TODO: implement height in use_rays
+	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{
+		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
+	}
 
 	// RaytraceNode specific
 	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
 
 private:
-	std::shared_ptr<Scene> scene;
 	IRaysNode::Ptr raysNode;
-	VArrayProxy<Vec2f>::Ptr defaultRange = VArrayProxy<Vec2f>::create(1);
+	std::shared_ptr<Scene> scene;
+
+	DeviceAsyncArray<Vec2f>::Ptr defaultRange = DeviceAsyncArray<Vec2f>::create(arrayMgr);
 	bool doApplyDistortion{false};
 	Vec3f sensorLinearVelocityXYZ;
 	Vec3f sensorAngularVelocityRPY;
-	VArrayProxy<RaytraceRequestContext>::Ptr requestCtx = VArrayProxy<RaytraceRequestContext>::create(1);
-	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+
+	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
+	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
+
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
 
 	template<rgl_field_t>
 	auto getPtrTo();
@@ -147,163 +140,167 @@ private:
 	void setFields(const std::set<rgl_field_t>& fields);
 };
 
-struct TransformPointsNode : Node, IPointsNodeSingleInput
+struct TransformPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformPointsNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 	Mat3x4f getTransform() const { return transform; }
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 	std::string getArgsString() const override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	Mat3x4f transform;
-	VArrayProxy<Field<XYZ_F32>::type>::Ptr output = VArrayProxy<Field<XYZ_F32>::type>::create();
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr output = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
 };
 
-struct TransformRaysNode : Node, IRaysNodeSingleInput
+struct TransformRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<TransformRaysNode>;
 	void setParameters(Mat3x4f transform) { this->transform = transform; }
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	Array<Mat3x4f>::ConstPtr getRays() const override { return transformedRays; }
 	Mat3x4f getCumulativeRayTransfrom() const override { return transform * input->getCumulativeRayTransfrom(); }
 
 private:
 	Mat3x4f transform;
-	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+	DeviceAsyncArray<Mat3x4f>::Ptr transformedRays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
-struct FromMat3x4fRaysNode : Node, IRaysNode
+struct FromMat3x4fRaysNode : IRaysNode, INoInputNode
 {
 	using Ptr = std::shared_ptr<FromMat3x4fRaysNode>;
 	void setParameters(const Mat3x4f* raysRaw, size_t rayCount);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override {}
+	void enqueueExecImpl() override {}
 
-	// Rays description
+	// Transforms
 	size_t getRayCount() const override { return rays->getCount(); }
-	std::optional<size_t> getRangesCount() const override { return std::nullopt; }
-	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
-	std::optional<size_t> getTimeOffsetsCount() const override { return std::nullopt; }
+	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 
-	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
-	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return std::nullopt; }
-	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
-	std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return std::nullopt; }
+	// Ring Ids
+	std::optional<size_t> getRingIdsCount() const override { return std::nullopt; }
+	std::optional<Array<int>::ConstPtr> getRingIds() const override { return std::nullopt; }
+
+	// Ranges
+	std::optional<size_t> getRangesCount() const override { return std::nullopt; }
+	std::optional<Array<Vec2f>::ConstPtr> getRanges() const override { return std::nullopt; }
+
+	// Firing time offsets
+	std::optional<size_t> getTimeOffsetsCount() const override { return std::nullopt; }
+	std::optional<Array<float>::ConstPtr> getTimeOffsets() const override { return std::nullopt; }
 
 private:
-	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
-struct SetRingIdsRaysNode : Node, IRaysNodeSingleInput
+struct SetRingIdsRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetRingIdsRaysNode>;
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override {}
+	void validateImpl() override;
+	void enqueueExecImpl() override {}
 
 	// Rays description
 	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
 
 	// Data getters
-	std::optional<VArrayProxy<int>::ConstPtr> getRingIds() const override { return ringIds; }
+	std::optional<Array<int>::ConstPtr> getRingIds() const override { return ringIds; }
 
 private:
-	VArrayProxy<int>::Ptr ringIds = VArrayProxy<int>::create();
+	DeviceAsyncArray<int>::Ptr ringIds = DeviceAsyncArray<int>::create(arrayMgr);
 };
 
-struct SetRangeRaysNode : Node, IRaysNodeSingleInput
+struct SetRangeRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetRangeRaysNode>;
 	void setParameters(const Vec2f* rangesRaw, size_t rangesCount);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override {}
+	void validateImpl() override;
+	void enqueueExecImpl() override {}
 
 	// Rays description
 	std::optional<std::size_t> getRangesCount() const override { return ranges->getCount(); }
 
 	// Data getters
-	std::optional<VArrayProxy<Vec2f>::ConstPtr> getRanges() const override { return ranges; }
+	std::optional<Array<Vec2f>::ConstPtr> getRanges() const override { return ranges; }
 
 private:
-	VArrayProxy<Vec2f>::Ptr ranges = VArrayProxy<Vec2f>::create();
+	Array<Vec2f>::Ptr ranges = DeviceAsyncArray<Vec2f>::create(arrayMgr);
 };
 
-struct SetTimeOffsetsRaysNode : Node, IRaysNodeSingleInput
+struct SetTimeOffsetsRaysNode : IRaysNodeSingleInput
 {
 	using Ptr = std::shared_ptr<SetTimeOffsetsRaysNode>;
 	void setParameters(const float* raysTimeOffsets, size_t timeOffsetsCount);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override {}
+	void validateImpl() override;
+	void enqueueExecImpl() override {}
 
 	// Rays description
 	std::optional<size_t> getTimeOffsetsCount() const override { return timeOffsets->getCount(); }
 
 	// Data getters
-	std::optional<VArrayProxy<float>::ConstPtr> getTimeOffsets() const override { return timeOffsets; }
+	std::optional<Array<float>::ConstPtr> getTimeOffsets() const override { return timeOffsets; }
 
 private:
-	VArrayProxy<float>::Ptr timeOffsets = VArrayProxy<float>::create();
+	Array<float>::Ptr timeOffsets = DeviceAsyncArray<float>::create(arrayMgr);
 };
 
-struct YieldPointsNode : Node, IPointsNodeSingleInput
+struct YieldPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return results.at(field); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return results.at(field); }
+
+	HostPinnedArray<Field<XYZ_F32>::type>::Ptr getXYZCache() { return xyzHostCache; }
 
 private:
 	std::vector<rgl_field_t> fields;
-	std::unordered_map<rgl_field_t, VArray::ConstPtr> results;
+	std::unordered_map<rgl_field_t, IAnyArray::ConstPtr> results;
+	HostPinnedArray<Field<XYZ_F32>::type>::Ptr xyzHostCache = HostPinnedArray<Field<XYZ_F32>::type>::create();
 };
 
-struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
+struct SpatialMergePointsNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<SpatialMergePointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+	{
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
+	}
 
 	// Point cloud description
 	bool isDense() const override;
@@ -312,48 +309,54 @@ struct SpatialMergePointsNode : Node, IPointsNodeMultiInput
 	std::size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{
+		return std::const_pointer_cast<const IAnyArray>(mergedData.at(field));
+	}
 
 private:
-	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::vector<IPointsNode::Ptr> pointInputs;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
 	std::size_t width = 0;
 };
 
-struct TemporalMergePointsNode : Node, IPointsNodeSingleInput
+struct TemporalMergePointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<YieldPointsNode>;
 	void setParameters(const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{ return { std::views::keys(mergedData).begin(), std::views::keys(mergedData).end() }; }
+	{
+		return {std::views::keys(mergedData).begin(), std::views::keys(mergedData).end()};
+	}
 
 	// Point cloud description
 	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	std::size_t getWidth() const override { return width; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(mergedData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{
+		return std::const_pointer_cast<const IAnyArray>(mergedData.at(field));
+	}
 
 private:
-	std::unordered_map<rgl_field_t, VArray::Ptr> mergedData;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> mergedData;
 	std::size_t width = 0;
 };
 
-struct FromArrayPointsNode : Node, IPointsNode
+struct FromArrayPointsNode : IPointsNode, INoInputNode
 {
 	using Ptr = std::shared_ptr<FromArrayPointsNode>;
 	void setParameters(const void* points, size_t pointCount, const std::vector<rgl_field_t>& fields);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override {}
+	void enqueueExecImpl() override {}
 
 	// Point cloud description
 	bool isDense() const override { return false; }
@@ -362,28 +365,31 @@ struct FromArrayPointsNode : Node, IPointsNode
 	size_t getHeight() const override { return 1; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override
-	{ return std::const_pointer_cast<const VArray>(fieldData.at(field)); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{
+		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
+	}
 
 private:
-	std::vector<std::pair<rgl_field_t, void*>> collectFieldRawData(const std::vector<rgl_field_t>& fields);
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+	std::vector<std::pair<rgl_field_t, void*>> getFieldToPointerMappings(const std::vector<rgl_field_t>& fields);
 
-	std::unordered_map<rgl_field_t, VArray::Ptr> fieldData;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
 	size_t width = 0;
 };
 
-struct GaussianNoiseAngularRayNode : Node, IRaysNodeSingleInput
+struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 {
-	using Ptr = std::shared_ptr<GaussianNoiseAngularRayNode>;
+	using Ptr = std::shared_ptr<GaussianNoiseAngularRaysNode>;
 
 	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Data getters
-	VArrayProxy<Mat3x4f>::ConstPtr getRays() const override { return rays; }
+	Array<Mat3x4f>::ConstPtr getRays() const override { return rays; }
 
 private:
 	float mean;
@@ -392,25 +398,26 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-	VArrayProxy<Mat3x4f>::Ptr rays = VArrayProxy<Mat3x4f>::create();
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
+	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Mat3x4f>::Ptr rays = DeviceAsyncArray<Mat3x4f>::create(arrayMgr);
 };
 
-struct GaussianNoiseAngularHitpointNode : Node, IPointsNodeSingleInput
+struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseAngularHitpointNode>;
 
 	void setParameters(float mean, float stDev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	float mean;
@@ -419,26 +426,27 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
-	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
+	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
-struct GaussianNoiseDistanceNode : Node, IPointsNodeSingleInput
+struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<GaussianNoiseDistanceNode>;
 
 	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
 
 	// Node
-	void validate() override;
-	void schedule(cudaStream_t stream) override;
+	void validateImpl() override;
+	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override;
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
 
 	// Data getters
-	VArray::ConstPtr getFieldData(rgl_field_t field, cudaStream_t stream) const override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	float mean;
@@ -447,7 +455,8 @@ private:
 	std::random_device randomDevice;
 	Mat3x4f lookAtOriginTransform;
 
-	VArrayProxy<curandStatePhilox4_32_10_t>::Ptr randomizationStates = VArrayProxy<curandStatePhilox4_32_10_t>::create();
-	VArrayProxy<Field<XYZ_F32>::type>::Ptr outXyz = VArrayProxy<Field<XYZ_F32>::type>::create();
-	VArrayProxy<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
+	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };

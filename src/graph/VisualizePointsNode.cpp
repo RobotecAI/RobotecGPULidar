@@ -29,13 +29,13 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 	if (!visualizeThread.has_value()) {
 		visualizeThread.emplace();
 	}
-	std::lock_guard lock { visualizeThread.value().visualizeNodesMutex };
-	visualizeThread->visualizeNodes.push_back(std::static_pointer_cast<VisualizePointsNode>(shared_from_this()));
+	std::lock_guard lock{visualizeThread.value().visualizeNodesMutex};
+	visualizeThread->visualizeNodes.push_back(std::dynamic_pointer_cast<VisualizePointsNode>(shared_from_this()));
 }
 
-void VisualizePointsNode::validate()
+void VisualizePointsNode::validateImpl()
 {
-	input = getValidInput<IPointsNode>();
+	IPointsNodeSingleInput::validateImpl();
 	if (!input->hasField(XYZ_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
@@ -43,15 +43,15 @@ void VisualizePointsNode::validate()
 }
 
 // All calls to the viewers must be executed from the same thread
-void VisualizePointsNode::VisualizeThread::runVisualize() try
-{
+void VisualizePointsNode::VisualizeThread::runVisualize()
+try {
 	// We cannot initialize iterator without having lock!
 	static std::optional<decltype(visualizeNodes)::iterator> it = std::nullopt;
 	VisualizePointsNode::Ptr node = nullptr;
 	while (!shouldQuit) {
 		// Get next node:
 		{
-			std::lock_guard lock { visualizeNodesMutex };
+			std::lock_guard lock{visualizeNodesMutex};
 			if (visualizeNodes.empty()) {
 				continue;
 			}
@@ -90,14 +90,15 @@ void VisualizePointsNode::VisualizeThread::runVisualize() try
 
 			node->viewer->addCoordinateSystem(0.5);
 			node->viewer->setCameraPosition(-3, 3, 3, 0.1, -0.1, 1);
-			node->viewer->addPointCloud(node->cloudPCL, pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(node->cloudPCL));
+			node->viewer->addPointCloud(node->cloudPCL,
+			                            pcl::visualization::PointCloudColorHandlerRGBField<PCLPointType>(node->cloudPCL));
 			node->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1);
 		}
 
 		// Remove node if requested, either by user (GUI) or client's thread
 		if (node->eraseRequested || node->viewer->wasStopped()) {
 			node->viewer->close();
-			std::lock_guard lock { visualizeNodesMutex };
+			std::lock_guard lock{visualizeNodesMutex};
 			visualizeNodes.erase(it.value());
 			it = std::nullopt; // Restart iterator to avoid incrementing invalid one later.
 			if (visualizeNodes.empty()) {
@@ -113,51 +114,50 @@ void VisualizePointsNode::VisualizeThread::runVisualize() try
 		// Handle input events and update point cloud if a new one has been delivered by the graph's thread.
 		bool forceRedraw = false;
 		if (node->hasNewPointCloud) {
-			std::lock_guard lock { node->updateCloudMutex };
+			std::lock_guard lock{node->updateCloudMutex};
 			node->viewer->updatePointCloud(node->cloudPCL);
 			node->hasNewPointCloud = false;
 			forceRedraw = true;
 		}
 		node->viewer->spinOnce(1000 / FRAME_RATE, forceRedraw);
 	}
-} catch (std::exception& e) {
+}
+catch (std::exception& e) {
 	RGL_WARN("Visualize thread captured exception: {}", e.what());
 }
 catch (...) {
 	RGL_WARN("Visualize thread captured unknown exception :((");
 }
 
-
-void VisualizePointsNode::schedule(cudaStream_t stream)
+void VisualizePointsNode::enqueueExecImpl()
 {
 	if (isClosed) {
-		return;  // No need to update point cloud because viewer was closed
+		return; // No need to update point cloud because viewer was closed
 	}
 
 	if (input->getPointCount() == 0) {
-		std::lock_guard lock { updateCloudMutex };
+		std::lock_guard lock{updateCloudMutex};
 		cloudPCL->clear();
 		hasNewPointCloud = true;
 		return;
 	}
 
 	// Get formatted input data
-	FormatPointsNode::formatAsync(inputFmtData, input, getRequiredFieldList(), stream);
+	FormatPointsNode::formatAsync(formattedInputDev, input, getRequiredFieldList(), gpuFieldDescBuilder);
+	formattedInputHst->copyFrom(formattedInputDev);
 
 	// Convert to PCL cloud
-	const PCLPointType * data = reinterpret_cast<const PCLPointType*>(inputFmtData->getReadPtr(MemLoc::Host));
+	const auto* data = reinterpret_cast<const PCLPointType*>(formattedInputHst->getReadPtr());
 
-	std::lock_guard updateLock { updateCloudMutex };
+	std::lock_guard updateLock{updateCloudMutex};
 
 	cloudPCL->resize(input->getWidth(), input->getHeight());
 	cloudPCL->assign(data, data + cloudPCL->size(), input->getWidth());
 	cloudPCL->is_dense = input->isDense();
 
 	// Colorize
-	const auto [minPt, maxPt] = std::minmax_element(cloudPCL->begin(), cloudPCL->end(),
-	                                                [] (PCLPointType const &lhs, PCLPointType const &rhs) {
-	                                                    return lhs.z < rhs.z;
-	                                                });
+	const auto [minPt, maxPt] = std::minmax_element(
+	    cloudPCL->begin(), cloudPCL->end(), [](PCLPointType const& lhs, PCLPointType const& rhs) { return lhs.z < rhs.z; });
 	float min = (*minPt).z;
 	float max = (*maxPt).z;
 	float lutScale = 1.0;
