@@ -26,10 +26,10 @@ protected:
 	void removeNonHitPoints()
 	{
 		/** Remove non hit points from vector
-	 *
-	 * TODO(nebraszka): Consider adding the ability to iterate over points in TestPointCloud and delete selected ones
-	 *         instead of copying the data to a vector and deleting the points from there.
-	 */
+		 *
+		 * TODO(nebraszka): Consider adding the ability to iterate over points in TestPointCloud and delete selected ones
+		 *         instead of copying the data to a vector and deleting the points from there.
+		 */
 		std::vector<int> indicesToRemove;
 		for (int i = 0; i < pointIsHitValues.size(); ++i) {
 			if (pointIsHitValues[i] == 0) {
