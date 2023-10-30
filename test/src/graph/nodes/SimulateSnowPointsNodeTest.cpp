@@ -18,7 +18,7 @@ TEST_F(SimulateSnowPointsNodeTest, valid_argument_node)
 {
     rgl_node_t simulateSnowNode = nullptr;
     rgl_configure_logging(RGL_LOG_LEVEL_ALL,nullptr, true);
-    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnowNode, 100.0f, 9.0f, 0.005f, 1.6f, 0.07f, 10, 0.01f));
+    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnowNode, 100.0f, 9.0f, 0.0002f, 1.6f, 0.07f, 10, 0.01f));
 }
 
 TEST_F(SimulateSnowPointsNodeTest, use_case)
@@ -33,13 +33,12 @@ TEST_F(SimulateSnowPointsNodeTest, use_case)
     EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
     EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
     EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
-    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnow, 100.0f, 1.0f, 0.005f, 1.6f, 0.1f, 10, 0.01f));
+    EXPECT_RGL_SUCCESS(rgl_node_points_simulate_snow(&simulateSnow, 100.0f, 9.0f, 0.0002f, 1.6f, 0.07f, 10, 0.01f));
 
     EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
     EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
     EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, simulateSnow));
 
     EXPECT_RGL_SUCCESS(rgl_graph_run(useRays));
-
 
 }

@@ -1064,6 +1064,11 @@ rgl_node_points_simulate_snow(rgl_node_t* node, float max_range,
                         repr(node), max_range, rain_rate, mean_snowflake_diameter, terminal_velocity, density, beam_divergence, num_channels, beam_divergence);
 			CHECK_ARG(node != nullptr);
                         CHECK_ARG(num_channels > 0);
+                        CHECK_ARG(mean_snowflake_diameter > 0);
+                        CHECK_ARG(max_range > 0);
+                        CHECK_ARG(rain_rate > 0);
+                        CHECK_ARG(pow(rain_rate, 0.666666666f) <(1/(487.0f * mean_snowflake_diameter)));
+
 
             createOrUpdateNode<SimulateSnowPointsNode>(node, max_range,
                             rain_rate, mean_snowflake_diameter, terminal_velocity,

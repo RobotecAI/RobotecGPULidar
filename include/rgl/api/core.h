@@ -651,7 +651,7 @@ rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param max_range Maximum range of the lidar in meters.
  * @param rain_rate The precipitation rate for snow rs expressed in rate of equivalent water depth in mm per hour. E.g. r_s = 1 mm/h. Varies from 0.5 (slight rain) to 50 (violent shower)
- * @param mean_snowflake_diameter Mean diameter of snowflakes in meters. E.g. D0 = 0.005m. Varies from 0.001 to 0.01,
+ * @param mean_snowflake_diameter Mean diameter of snowflakes in meters. E.g. D0 = 0.0002m. Varies from 0.0001 to 0.001,
  * @param terminal_velocity Terminal velocity of snowflakes in meters per second. E.g. v_s=  1 m/s. Varies from 0.2 to 2
  * @param density Density of snowflakes in g per cubic centimeter. E.g. rho_s = 0.1 g/cm^3. Varies from 0.01 to 0.2 depending on snow wetness.
  * @param num_channels Number of channels in the lidar. Note: feature in order to work properly has to have the same number of channels as the lidar.

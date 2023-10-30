@@ -33,7 +33,7 @@ void SimulateSnowPointsNode::setParameters(float maxRange,
     float distributionRate = 2.55f * pow(rainRate, 0.48f);
 
     float areaOfDisk =  3.141592653589793f * maxRange * maxRange;
-    float snowedArea = (snowfallRate / (density * terminalVelocity)) 65* areaOfDisk;
+    float snowedArea = (snowfallRate / (density * terminalVelocity)) * areaOfDisk;
 
     // Clamp snowed area.
     if(snowedArea>areaOfDisk/10)
@@ -43,6 +43,12 @@ void SimulateSnowPointsNode::setParameters(float maxRange,
 
     float meanAreaOfFlake = 3.14 * meanSnowflakeDiameter * meanSnowflakeDiameter;
     this ->numberOfFlakesPerChannel = snowedArea / meanAreaOfFlake;
+
+    //clamp number of flakes
+    if(numberOfFlakesPerChannel > 100000 || numberOfFlakesPerChannel < 0)
+    {
+        numberOfFlakesPerChannel = 100000;
+    }
 
     for(int i = 0; i < numberOfChannels; i++)
     {
@@ -55,7 +61,7 @@ void SimulateSnowPointsNode::setParameters(float maxRange,
         auto* randPtr = randomizationStates->getWritePtr();
         auto currentDiskPtr = snowflakesDisks[i]->getWritePtr();
 
-        gpuSnowflakesSimulationCalculateDisk(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, maxRange, distributionRate, currentDiskPtr, randPtr);
+        gpuSnowflakesSimulationCalculateDisk(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, maxRange,meanSnowflakeDiameter, distributionRate, currentDiskPtr, randPtr);
 
     }
     CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));

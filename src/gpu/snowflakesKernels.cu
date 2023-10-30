@@ -18,7 +18,7 @@
 
 #include <gpu/snowflakesKernels.hpp>
 
-__global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
+__global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, float meanSnowflakeDiameter, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
 {
     LIMIT(snowflakesCount);
     // Non-uniformly distributed distance [0, maxRange] from the lidar.
@@ -31,13 +31,16 @@ __global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, flo
     float x = snowflakeR * cos(snowflakeAngle);
     float y = snowflakeR * sin(snowflakeAngle);
 
-    // Poisson distribution of the snowflake diameter. This is a closest method to pure exponential distribution, which can be accelerated by hardware easily.
-    float diameter = curand_poisson(&randomStates[tid], distributionRate);
+    // Generate random values form 0 to 1 uniformly. Then transform them to exponential distribution with lambda = distributionRate.
+    float diameter = curand_uniform(&randomStates[tid]);
+    diameter*=meanSnowflakeDiameter;
+    diameter = log(1-diameter)/(-distributionRate);
 
     outSnowflakesDisk[tid] = Vec3f(x, y, diameter);
+    printf("x: %f, y: %f, diameter: %f\n", x, y, diameter);
 }
 
 
 void gpuSnowflakesSimulationCalculateDisk(cudaStream_t stream, size_t snowflakeCount,
-    float maxRange, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
-{ run(kSetupSnowflakesDisk, stream, snowflakeCount, maxRange, distributionRate,  outSnowflakesDisk, randomStates);}
+    float maxRange, float meanSnowflakeDiameter, float distributionRate, Vec3f* outSnowflakesDisk, curandStatePhilox4_32_10_t* randomStates)
+{ run(kSetupSnowflakesDisk, stream, snowflakeCount, maxRange, meanSnowflakeDiameter, distributionRate,  outSnowflakesDisk, randomStates);}
