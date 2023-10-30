@@ -95,7 +95,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .scene = sceneAS,
 	    .sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
-	    .xyz = getPtrTo<XYZ_F32>(),
+	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
 	    .ringIdx = getPtrTo<RING_ID_U16>(),
@@ -134,7 +134,7 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	std::set<rgl_field_t> outFields;
 
 	// Add primary field
-	outFields.insert(XYZ_F32);
+	outFields.insert(XYZ_VEC3_F32);
 
 	// dfsInputs - if false dfs for outputs
 	std::function<void(Node::Ptr, bool)> dfsRet = [&](const Node::Ptr& current, bool dfsInputs) {

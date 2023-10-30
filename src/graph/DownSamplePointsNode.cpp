@@ -24,7 +24,7 @@ using PCLPoint = pcl::PointXYZL;
 void DownSamplePointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	if (!input->hasField(XYZ_F32)) {
+	if (!input->hasField(XYZ_VEC3_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
 	}
@@ -130,5 +130,5 @@ IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 std::vector<rgl_field_t> DownSamplePointsNode::getRequiredFieldList() const
 {
 	// pcl::PointXYZL is aligned to 32 bytes for SSE2 ¯\_(ツ)_/¯
-	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
+	return {XYZ_VEC3_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }

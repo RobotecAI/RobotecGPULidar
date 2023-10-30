@@ -14,7 +14,7 @@ struct SetNodePriority : RGLTest
 	static constexpr int CHECKS = 32;
 	static constexpr double SLEEP = 0.001;
 	Vec3f data[1] = {{}};
-	rgl_field_t fields[1] = {XYZ_F32};
+	rgl_field_t fields[1] = {XYZ_VEC3_F32};
 
 	static bool prioritiesMatch(const std::map<rgl_node_t, int32_t>& expectedPriorities)
 	{

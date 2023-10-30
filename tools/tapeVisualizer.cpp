@@ -22,7 +22,7 @@ constexpr std::string_view INTERCEPTED_NODE_CALL = "rgl_node_points_compact";
 
 // Do not modify, code does not handle > 1 FIELD_COUNT (!)
 constexpr size_t FIELDS_COUNT = 1;
-constexpr rgl_field_t FIELDS[FIELDS_COUNT] = {RGL_FIELD_XYZ_F32};
+constexpr rgl_field_t FIELDS[FIELDS_COUNT] = {RGL_FIELD_XYZ_VEC3_F32};
 
 struct InputNode
 {
@@ -133,7 +133,7 @@ try {
 			CHECK_RGL(rgl_graph_run(visualizeNode));
 			// Synchronize visualization graph
 			int32_t count, sizeOf;
-			CHECK_RGL(rgl_graph_get_result_size(visualizeNode, RGL_FIELD_XYZ_F32, &count, &sizeOf));
+			CHECK_RGL(rgl_graph_get_result_size(visualizeNode, RGL_FIELD_XYZ_VEC3_F32, &count, &sizeOf));
 			fmt::print("Visualized {} points\n", count);
 
 			// Reset runnable nodes status

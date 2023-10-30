@@ -37,7 +37,7 @@ RGL_API rgl_status_t rgl_graph_write_pcd_file(rgl_node_t node, const char* file_
 
 		auto pointCloudNode = Node::validatePtr<IPointsNode>(node);
 
-		if (!pointCloudNode->hasField(XYZ_F32)) {
+		if (!pointCloudNode->hasField(XYZ_VEC3_F32)) {
 			throw InvalidAPIObject(
 			    fmt::format("Saving PCD file {} failed - requested node does not have field XYZ.", file_path));
 		}
@@ -45,12 +45,12 @@ RGL_API rgl_status_t rgl_graph_write_pcd_file(rgl_node_t node, const char* file_
 		// We are not using format node to avoid transferring huge point cloud to GPU (risk of cuda out of memory error)
 		// We are formatting manually on the CPU instead.
 		pointCloudNode->waitForResults();
-		Array<Field<XYZ_F32>::type>::ConstPtr xyzTyped = pointCloudNode->getFieldDataTyped<XYZ_F32>();
-		HostArray<Field<XYZ_F32>::type>::ConstPtr xyzTypedHost = nullptr;
+		Array<Field<XYZ_VEC3_F32>::type>::ConstPtr xyzTyped = pointCloudNode->getFieldDataTyped<XYZ_VEC3_F32>();
+		HostArray<Field<XYZ_VEC3_F32>::type>::ConstPtr xyzTypedHost = nullptr;
 		if (isHost(xyzTyped->getMemoryKind())) {
 			xyzTypedHost = xyzTyped->asSubclass<HostArray>();
 		} else {
-			auto tmp = HostPinnedArray<Field<XYZ_F32>::type>::create();
+			auto tmp = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 			tmp->copyFrom(xyzTyped);
 			xyzTypedHost = tmp;
 		}

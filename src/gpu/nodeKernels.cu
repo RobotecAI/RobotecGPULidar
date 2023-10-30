@@ -47,8 +47,8 @@ __global__ void kTransformRays(size_t rayCount, const Mat3x4f* inRays, Mat3x4f* 
 	outRays[tid] = transform * inRays[tid];
 }
 
-__global__ void kTransformPoints(size_t pointCount, const Field<XYZ_F32>::type* inPoints, Field<XYZ_F32>::type* outPoints,
-                                 Mat3x4f transform)
+__global__ void kTransformPoints(size_t pointCount, const Field<XYZ_VEC3_F32>::type* inPoints,
+                                 Field<XYZ_VEC3_F32>::type* outPoints, Mat3x4f transform)
 {
 	LIMIT(pointCount);
 	outPoints[tid] = transform * inPoints[tid];
@@ -115,8 +115,8 @@ void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize
 	run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src);
 }
 
-void gpuTransformPoints(cudaStream_t stream, size_t pointCount, const Field<XYZ_F32>::type* inPoints,
-                        Field<XYZ_F32>::type* outPoints, Mat3x4f transform)
+void gpuTransformPoints(cudaStream_t stream, size_t pointCount, const Field<XYZ_VEC3_F32>::type* inPoints,
+                        Field<XYZ_VEC3_F32>::type* outPoints, Mat3x4f transform)
 {
 	run(kTransformPoints, stream, pointCount, inPoints, outPoints, transform);
 }

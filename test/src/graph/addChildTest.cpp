@@ -80,7 +80,7 @@ protected:
 	}
 
 protected:
-	rgl_field_t fields[1] = {XYZ_F32};
+	rgl_field_t fields[1] = {XYZ_VEC3_F32};
 	rgl_field_t wrongFields[1] = {INTENSITY_F32};
 	rgl_vec3f points[1] = {
 	    {42.0f, 61.5f, 0.14f}

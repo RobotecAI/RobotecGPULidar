@@ -53,9 +53,9 @@ TEST_F(VelocityDistortionTest, smoke_test)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	std::vector<::Field<XYZ_F32>::type> outPoints;
+	std::vector<::Field<XYZ_VEC3_F32>::type> outPoints;
 	outPoints.resize(rayCount);
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, XYZ_F32, outPoints.data()));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, XYZ_VEC3_F32, outPoints.data()));
 
 	for (int i = 0; i < rayCount; ++i) {
 		// Rays that hit the cube should have the same hit point (the same distance between sensor origin and cube)
@@ -70,7 +70,7 @@ TEST_F(VelocityDistortionTest, smoke_test)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, XYZ_F32, outPoints.data()));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(raytrace, XYZ_VEC3_F32, outPoints.data()));
 
 	for (int i = 0; i < rayCount; ++i) {
 		EXPECT_NEAR(outPoints[i].x(), expectedHitpoint.x(), EPSILON_F);

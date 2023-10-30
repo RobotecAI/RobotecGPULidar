@@ -212,13 +212,13 @@ TEST_F(GraphStress, Async)
 
 				// Check if output size is not affected by graph modifications
 				int pointCount = -1, pointSize = -1;
-				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
+				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_VEC3_F32, &pointCount, &pointSize));
 				ASSERT_GT(pointCount, 0);
 				EXPECT_EQ(pointCount, run.expectedPointCount);
 
 				// Get results
 				std::vector<Vec3f> results(pointCount);
-				EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(checkedNode, RGL_FIELD_XYZ_F32, results.data()));
+				EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(checkedNode, RGL_FIELD_XYZ_VEC3_F32, results.data()));
 
 				// Verify results are correctly transformed
 				Vec3f expectedPoint = run.expectedTransform.at(checkedNode) * run.expectedPointWorld;

@@ -9,7 +9,7 @@ class FromArrayPointsNodeTest : public RGLTestWithParam<int>
 protected:
 	rgl_node_t usePointsNode = nullptr;
 	std::unique_ptr<TestPointCloud> pointCloud;
-	std::vector<rgl_field_t> pointFields = {XYZ_F32, IS_HIT_I32, INTENSITY_F32};
+	std::vector<rgl_field_t> pointFields = {XYZ_VEC3_F32, IS_HIT_I32, INTENSITY_F32};
 };
 
 INSTANTIATE_TEST_SUITE_P(FromArrayPointsNodeTests, FromArrayPointsNodeTest, testing::Values(1, 100, maxGPUCoresTestCount),
@@ -69,7 +69,7 @@ TEST_P(FromArrayPointsNodeTest, use_case)
 
 	TestPointCloud outputPointCloud = TestPointCloud::createFromNode(usePointsNode, pointFields);
 
-	checkIfNearEqual(pointCloud->getFieldValues<XYZ_F32>(), outputPointCloud.getFieldValues<XYZ_F32>(), EPSILON_F);
+	checkIfNearEqual(pointCloud->getFieldValues<XYZ_VEC3_F32>(), outputPointCloud.getFieldValues<XYZ_VEC3_F32>(), EPSILON_F);
 	checkIfNearEqual(pointCloud->getFieldValues<IS_HIT_I32>(), outputPointCloud.getFieldValues<IS_HIT_I32>(), EPSILON_F);
 	checkIfNearEqual(pointCloud->getFieldValues<INTENSITY_F32>(), outputPointCloud.getFieldValues<INTENSITY_F32>(), EPSILON_F);
 }

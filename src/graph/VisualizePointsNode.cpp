@@ -36,7 +36,7 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 void VisualizePointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	if (!input->hasField(XYZ_F32)) {
+	if (!input->hasField(XYZ_VEC3_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
 	}
@@ -186,5 +186,5 @@ VisualizePointsNode::~VisualizePointsNode()
 
 std::vector<rgl_field_t> VisualizePointsNode::getRequiredFieldList() const
 {
-	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
+	return {XYZ_VEC3_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }

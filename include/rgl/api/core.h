@@ -236,7 +236,7 @@ typedef enum : int32_t
  */
 typedef enum : int32_t
 {
-	RGL_FIELD_XYZ_F32 = 1,
+	RGL_FIELD_XYZ_VEC3_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_RAY_IDX_U32,
@@ -484,7 +484,7 @@ RGL_API rgl_status_t rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f
  * Creates or modifies TransformPointsNode.
  * The Node applies the affine transformation to all points.
  * It can be used to e.g., change coordinate frame after raytracing.
- * Note: affects only RGL_FIELD_XYZ_F32. Other fields are not modified.
+ * Note: affects only RGL_FIELD_XYZ_VEC3_F32. Other fields are not modified.
  * Graph input: point cloud
  * Graph output: point cloud (transformed)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
@@ -593,7 +593,7 @@ RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_
  * Example of that structure:
  * struct ExamplePoint
  * {
- *   Field<XYZ_F32>::type xyz;
+ *   Field<XYZ_VEC3_F32>::type xyz;
  *   Field<PADDING_32>::type padding;
  *   Field<IS_HIT_I32>::type isHit;
  *   Field<INTENSITY_F32>::type intensity;
@@ -621,9 +621,9 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float
 /**
  * Creates or modifies GaussianNoiseAngularHitpointNode.
  * Adds angular noise to already computed hitpoints.
- * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
+ * Note: affects on RGL_FIELD_XYZ_VEC3_F32 and RGL_DISTANCE_F32.
  * Should be used after the raytrace Node.
- * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
+ * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_VEC3_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#hitpoint-based-angular-noise
  * Graph input: point cloud
  * Graph output: point cloud
@@ -638,9 +638,9 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, 
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
  * Changes the distance between the hitpoint and the lidar's origin.
- * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
+ * Note: affects on RGL_FIELD_XYZ_VEC3_F32 and RGL_DISTANCE_F32.
  * Should be used after the raytrace Node.
- * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
+ * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_VEC3_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#distance-noise
  * Graph input: point cloud
  * Graph output: point cloud
