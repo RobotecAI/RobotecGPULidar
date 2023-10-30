@@ -554,7 +554,7 @@ RGL_API rgl_status_t rgl_graph_get_result_data(rgl_node_t node, rgl_field_t fiel
 		// If we are asked for XYZ from YieldNode, we can use its host cache and immediately memcpy it.
 		// TODO: This should work for any field in YieldNode (encountered test fails for other fields)
 		if (auto yieldNode = std::dynamic_pointer_cast<YieldPointsNode>(pointCloudNode)) {
-			if (field == XYZ_F32) {
+			if (field == XYZ_VEC3_F32) {
 				auto fieldArray = yieldNode->getXYZCache();
 				size_t size = fieldArray->getCount() * fieldArray->getSizeOf();
 				memcpy(dst, fieldArray->getRawReadPtr(), size);

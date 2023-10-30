@@ -110,7 +110,7 @@ TEST_P(TextureTest, rgl_texture_use_case)
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
 
-	std::vector<rgl_field_t> yieldFields = {XYZ_F32, INTENSITY_F32, IS_HIT_I32};
+	std::vector<rgl_field_t> yieldFields = {XYZ_VEC3_F32, INTENSITY_F32, IS_HIT_I32};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));

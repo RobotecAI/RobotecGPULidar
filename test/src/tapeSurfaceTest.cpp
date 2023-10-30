@@ -107,7 +107,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_with_distortion(&raytraceWithDistortion, nullptr, &linearVelocity, &angularVelocity));
 
 	rgl_node_t format = nullptr;
-	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
+	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 
 	rgl_node_t yield = nullptr;
@@ -117,16 +117,16 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 
 	rgl_node_t spatialMerge = nullptr;
-	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));
 
 	rgl_node_t temporalMerge = nullptr;
-	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
 
 	rgl_node_t usePoints = nullptr;
-	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_F32};
-	std::vector<::Field<XYZ_F32>::type> usePointsData = {
+	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_VEC3_F32};
+	std::vector<::Field<XYZ_VEC3_F32>::type> usePointsData = {
 	    {1, 2, 3},
         {4, 5, 6}
     };
@@ -166,7 +166,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	rgl_node_t downsample = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
 
-	// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_F32 in raytrace.
+	// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_VEC3_F32 in raytrace.
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
 
 	// Skipping rgl_node_points_visualize (user interaction needed)

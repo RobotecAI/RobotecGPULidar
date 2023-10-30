@@ -45,7 +45,7 @@ struct GaussianStressTest : public RGLTest
 	void runAndFetchData()
 	{
 		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
-		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yield, XYZ_F32, outPoints.data()));
+		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yield, XYZ_VEC3_F32, outPoints.data()));
 		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yield, DISTANCE_F32, outDistances.data()));
 	}
 
@@ -64,9 +64,9 @@ struct GaussianStressTest : public RGLTest
 	rgl_node_t yield = nullptr;
 	rgl_node_t noise = nullptr;
 
-	std::vector<rgl_field_t> yieldFields = {XYZ_F32, DISTANCE_F32};
+	std::vector<rgl_field_t> yieldFields = {XYZ_VEC3_F32, DISTANCE_F32};
 
-	std::vector<::Field<XYZ_F32>::type> outPoints;
+	std::vector<::Field<XYZ_VEC3_F32>::type> outPoints;
 	std::vector<::Field<DISTANCE_F32>::type> outDistances;
 };
 

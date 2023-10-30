@@ -5,14 +5,14 @@
 class PointCloudTest : public ::testing::TestWithParam<int>
 {
 protected:
-	std::vector<rgl_field_t> allNotDummyFields = {XYZ_F32,     IS_HIT_I32,  RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,
-	                                              RING_ID_U16, AZIMUTH_F32, DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64};
+	std::vector<rgl_field_t> allNotDummyFields = {XYZ_VEC3_F32, IS_HIT_I32,  RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,
+	                                              RING_ID_U16,  AZIMUTH_F32, DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64};
 
-	std::vector<rgl_field_t> fieldsWithPaddings = {PADDING_32,   XYZ_F32,        PADDING_16,     IS_HIT_I32,  PADDING_8,
+	std::vector<rgl_field_t> fieldsWithPaddings = {PADDING_32,   XYZ_VEC3_F32,   PADDING_16,     IS_HIT_I32,  PADDING_8,
 	                                               RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,  RING_ID_U16, AZIMUTH_F32,
 	                                               DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64, PADDING_16,  PADDING_32};
 
-	std::vector<Field<XYZ_F32>::type> pointCoord;
+	std::vector<Field<XYZ_VEC3_F32>::type> pointCoord;
 	std::vector<Field<IS_HIT_I32>::type> isHit;
 	std::vector<Field<RAY_IDX_U32>::type> rayIdx;
 	std::vector<Field<ENTITY_ID_I32>::type> entityId;
@@ -26,7 +26,7 @@ protected:
 #pragma pack(push, 1)
 	struct TestPointStruct
 	{
-		Field<XYZ_F32>::type xyz;
+		Field<XYZ_VEC3_F32>::type xyz;
 		Field<IS_HIT_I32>::type isHit;
 		Field<RAY_IDX_U32>::type rayIdx;
 		Field<ENTITY_ID_I32>::type entityId;
@@ -67,7 +67,7 @@ protected:
 
 	void setFieldValues(TestPointCloud& pointCloud)
 	{
-		pointCloud.setFieldValues<XYZ_F32>(pointCoord);
+		pointCloud.setFieldValues<XYZ_VEC3_F32>(pointCoord);
 		pointCloud.setFieldValues<IS_HIT_I32>(isHit);
 		pointCloud.setFieldValues<RAY_IDX_U32>(rayIdx);
 		pointCloud.setFieldValues<ENTITY_ID_I32>(entityId);
@@ -81,7 +81,7 @@ protected:
 
 	void verifyResults(TestPointCloud& pointCloud, int pointsCount, Mat3x4f transform = Mat3x4f::identity())
 	{
-		std::vector<Field<XYZ_F32>::type> outPointsCoord = pointCloud.getFieldValues<XYZ_F32>();
+		std::vector<Field<XYZ_VEC3_F32>::type> outPointsCoord = pointCloud.getFieldValues<XYZ_VEC3_F32>();
 		for (int i = 0; i < pointsCount; ++i) {
 			pointCoord.at(i) = transform * pointCoord.at(i);
 			EXPECT_EQ(outPointsCoord.at(i)[0], pointCoord.at(i)[0]);

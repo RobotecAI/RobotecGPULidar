@@ -151,7 +151,7 @@ struct TransformPointsNode : IPointsNodeSingleInput
 	std::string getArgsString() const override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32}; }
 
 	Mat3x4f getLookAtOriginTransform() const override { return transform.inverse() * input->getLookAtOriginTransform(); }
 
@@ -160,7 +160,7 @@ struct TransformPointsNode : IPointsNodeSingleInput
 
 private:
 	Mat3x4f transform;
-	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr output = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr output = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
 };
 
 struct TransformRaysNode : IRaysNodeSingleInput
@@ -279,12 +279,12 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return results.at(field); }
 
-	HostPinnedArray<Field<XYZ_F32>::type>::Ptr getXYZCache() { return xyzHostCache; }
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr getXYZCache() { return xyzHostCache; }
 
 private:
 	std::vector<rgl_field_t> fields;
 	std::unordered_map<rgl_field_t, IAnyArray::ConstPtr> results;
-	HostPinnedArray<Field<XYZ_F32>::type>::Ptr xyzHostCache = HostPinnedArray<Field<XYZ_F32>::type>::create();
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostCache = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 };
 
 struct SpatialMergePointsNode : IPointsNode
@@ -414,7 +414,7 @@ struct GaussianNoiseAngularHitpointNode : IPointsNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32}; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
@@ -428,7 +428,7 @@ private:
 
 	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
-	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };
 
@@ -443,7 +443,7 @@ struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_F32}; };
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32}; };
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
@@ -457,6 +457,6 @@ private:
 
 	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
-	DeviceAsyncArray<Field<XYZ_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
 };

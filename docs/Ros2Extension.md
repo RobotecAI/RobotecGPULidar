@@ -99,7 +99,7 @@ Each RGL node for ROS2 publishing must be connected to a format node that define
 ```c
 ...
 rgl_node_t nodeFormat = nullptr, nodeRos2 = nullptr;
-std::vector<rgl_field_t> fieldsToPublish = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+std::vector<rgl_field_t> fieldsToPublish = { RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32 };
 rgl_node_points_format(&nodeFormat, fieldsToPublish.data(), fieldsToPublish.size())
 rgl_node_points_ros2_publish(&nodeRos2, "example_topic", "example_frame");
 

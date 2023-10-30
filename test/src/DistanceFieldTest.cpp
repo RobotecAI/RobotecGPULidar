@@ -29,9 +29,9 @@ protected:
 
 	std::vector<rgl_mat3x4f> rayTf;
 
-	std::vector<rgl_field_t> fields = {DISTANCE_F32, XYZ_F32};
+	std::vector<rgl_field_t> fields = {DISTANCE_F32, XYZ_VEC3_F32};
 	std::vector<::Field<DISTANCE_F32>::type> outDistances;
-	std::vector<::Field<XYZ_F32>::type> outPoints;
+	std::vector<::Field<XYZ_VEC3_F32>::type> outPoints;
 
 	std::unique_ptr<TestPointCloud> pointCloud;
 
@@ -78,7 +78,7 @@ protected:
 		pointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(node, fields));
 		ASSERT_EQ(pointCloud->getPointCount(), rayTf.size());
 		outDistances = pointCloud->getFieldValues<DISTANCE_F32>();
-		outPoints = pointCloud->getFieldValues<XYZ_F32>();
+		outPoints = pointCloud->getFieldValues<XYZ_VEC3_F32>();
 	}
 };
 

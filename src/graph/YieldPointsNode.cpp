@@ -27,9 +27,9 @@ void YieldPointsNode::enqueueExecImpl()
 	for (auto&& field : fields) {
 		results[field] = input->getFieldData(field);
 	}
-	if (results.contains(XYZ_F32)) {
-		xyzHostCache->resize(results.at(XYZ_F32)->getCount(), false, false);
-		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(), results[XYZ_F32]->getRawReadPtr(),
+	if (results.contains(XYZ_VEC3_F32)) {
+		xyzHostCache->resize(results.at(XYZ_VEC3_F32)->getCount(), false, false);
+		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(), results[XYZ_VEC3_F32]->getRawReadPtr(),
 		                           xyzHostCache->getCount() * xyzHostCache->getSizeOf(), cudaMemcpyDefault, getStreamHandle()));
 	}
 }

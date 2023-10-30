@@ -31,7 +31,7 @@
 typedef unsigned char TextureTexelFormat;
 
 // Shorter versions to avoid long type names
-#define XYZ_F32 RGL_FIELD_XYZ_F32
+#define XYZ_VEC3_F32 RGL_FIELD_XYZ_VEC3_F32
 #define IS_HIT_I32 RGL_FIELD_IS_HIT_I32
 #define RAY_IDX_U32 RGL_FIELD_RAY_IDX_U32
 #define ENTITY_ID_I32 RGL_FIELD_ENTITY_ID_I32
@@ -57,7 +57,7 @@ struct Field
 		static constexpr std::size_t size = sizeof(TYPE);                                                                      \
 	}
 
-FIELD(XYZ_F32, Vec3f);
+FIELD(XYZ_VEC3_F32, Vec3f);
 FIELD(RAY_IDX_U32, uint32_t); // PCL uses uint32_t
 FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
@@ -74,7 +74,7 @@ FIELD(PADDING_32, uint32_t);
 inline std::size_t getFieldSize(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return Field<XYZ_F32>::size;
+		case XYZ_VEC3_F32: return Field<XYZ_VEC3_F32>::size;
 		case RAY_IDX_U32: return Field<RAY_IDX_U32>::size;
 		case ENTITY_ID_I32: return Field<ENTITY_ID_I32>::size;
 		case IS_HIT_I32: return Field<IS_HIT_I32>::size;
@@ -120,7 +120,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		throw std::invalid_argument(fmt::format("Cannot create Array<T> for non-instantiable type {}", type));
 	}
 	switch (type) {
-		case XYZ_F32: return Subclass<Field<XYZ_F32>::type>::create(std::forward<Args>(args)...);
+		case XYZ_VEC3_F32: return Subclass<Field<XYZ_VEC3_F32>::type>::create(std::forward<Args>(args)...);
 		case RAY_IDX_U32: return Subclass<Field<RAY_IDX_U32>::type>::create(std::forward<Args>(args)...);
 		case ENTITY_ID_I32: return Subclass<Field<ENTITY_ID_I32>::type>::create(std::forward<Args>(args)...);
 		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(std::forward<Args>(args)...);
@@ -137,7 +137,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 inline std::string toString(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return "XYZ_F32";
+		case XYZ_VEC3_F32: return "XYZ_VEC3_F32";
 		case IS_HIT_I32: return "IS_HIT_I32";
 		case RAY_IDX_U32: return "RAY_IDX_U32";
 		case ENTITY_ID_I32: return "ENTITY_ID_I32";
@@ -160,7 +160,7 @@ inline std::string toString(rgl_field_t type)
 inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32:
+		case XYZ_VEC3_F32:
 			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
 			        sensor_msgs::msg::PointField::FLOAT32};
 		case IS_HIT_I32: return {sensor_msgs::msg::PointField::INT32};
@@ -182,7 +182,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 inline std::vector<std::string> toRos2Names(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return {"x", "y", "z"};
+		case XYZ_VEC3_F32: return {"x", "y", "z"};
 		case IS_HIT_I32: return {"is_hit"};
 		case ENTITY_ID_I32: return {"entity_id"};
 		case RAY_IDX_U32: return {"ray_idx"};
@@ -202,7 +202,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 {
 	switch (type) {
-		case XYZ_F32: return {sizeof(float), sizeof(float), sizeof(float)};
+		case XYZ_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
 		case IS_HIT_I32: return {getFieldSize(type)};
 		case RAY_IDX_U32: return {getFieldSize(type)};
 		case ENTITY_ID_I32: return {getFieldSize(type)};

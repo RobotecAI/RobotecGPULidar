@@ -19,7 +19,7 @@ void TransformPointsNode::enqueueExecImpl()
 {
 	auto pointCount = input->getWidth() * input->getHeight();
 	output->resize(pointCount, false, false);
-	const auto inputField = input->getFieldDataTyped<XYZ_F32>()->asSubclass<DeviceAsyncArray>();
+	const auto inputField = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>();
 	const auto* inputPtr = inputField->getReadPtr();
 	auto* outputPtr = output->getWritePtr();
 	gpuTransformPoints(getStreamHandle(), pointCount, inputPtr, outputPtr, transform);
@@ -27,7 +27,7 @@ void TransformPointsNode::enqueueExecImpl()
 
 IAnyArray::ConstPtr TransformPointsNode::getFieldData(rgl_field_t field)
 {
-	if (field == XYZ_F32) {
+	if (field == XYZ_VEC3_F32) {
 		return output;
 	}
 	return input->getFieldData(field);

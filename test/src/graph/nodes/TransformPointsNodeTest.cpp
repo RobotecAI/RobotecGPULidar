@@ -11,7 +11,7 @@ class TransformPointsNodeTest : public RGLTestWithParam<std::tuple<int, rgl_mat3
 protected:
 	static constexpr int TEST_PARAM_TRANSFORM_ID = 1;
 
-	std::vector<rgl_field_t> fields = {XYZ_F32, IS_HIT_I32, INTENSITY_F32};
+	std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, INTENSITY_F32};
 };
 
 INSTANTIATE_TEST_SUITE_P(TransformPointsNodeTests, TransformPointsNodeTest,
@@ -70,7 +70,7 @@ TEST_P(TransformPointsNodeTest, use_case)
 
 	pointCloud.transform(Mat3x4f::fromRGL(transform));
 
-	checkIfNearEqual(pointCloud.getFieldValues<XYZ_F32>(), outputPointCloud.getFieldValues<XYZ_F32>(), EPSILON_F);
+	checkIfNearEqual(pointCloud.getFieldValues<XYZ_VEC3_F32>(), outputPointCloud.getFieldValues<XYZ_VEC3_F32>(), EPSILON_F);
 	checkIfNearEqual(pointCloud.getFieldValues<IS_HIT_I32>(), outputPointCloud.getFieldValues<IS_HIT_I32>(), EPSILON_F);
 	checkIfNearEqual(pointCloud.getFieldValues<INTENSITY_F32>(), outputPointCloud.getFieldValues<INTENSITY_F32>(), EPSILON_F);
 
