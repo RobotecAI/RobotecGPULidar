@@ -247,6 +247,27 @@ typedef enum : int32_t
 	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
 	RGL_FIELD_TIME_STAMP_F64,
+
+	/**
+	 * Velocity of the hit point on the entity.
+	 * It depends on entity's
+	 * - linear velocity
+	 * - angular velocity
+	 * - mesh deformations (e.g. skinning)
+	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgL_mesh_update_vertices`.
+	 */
+	RGL_FIELD_SCENE_VELOCITY_VEC3_F32,
+
+	/**
+	 * Velocity of the hit point on the entity, in the coordinate frame of rays source.
+	 */
+	RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32,
+
+	/**
+	 * Scalar describing distance increase per second between hit point and ray source.
+	 */
+	RGL_FIELD_RADIAL_SPEED_F32,
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
