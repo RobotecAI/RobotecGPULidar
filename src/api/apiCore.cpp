@@ -1069,7 +1069,7 @@ rgl_node_points_simulate_snow(rgl_node_t* node, float max_range,
                             rain_rate, mean_snowflake_diameter, terminal_velocity,
                             density, num_channels, beam_divergence);
 	});
-
+    TAPE_HOOK(node, max_range, rain_rate, mean_snowflake_diameter, terminal_velocity, density, num_channels, beam_divergence);
     return status;
 }
 

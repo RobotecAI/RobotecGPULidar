@@ -411,8 +411,6 @@ struct SimulateSnowPointsNode :IPointsNodeSingleInput
 private:
     int32_t numberOfChannels;
     int numberOfFlakesPerChannel = 0;
-    float snowfallRate;
-    float terminalVelocity;
     float maxRange;
     float beamDivergence;
 

@@ -26,19 +26,19 @@ void SimulateSnowPointsNode::setParameters(float maxRange,
     this->beamDivergence = beamDivergence;
 
     // Calculate derived snow parameters
-    // Only God and Mr Hahner knows WTF is going on there. DEBUG it with someone slowly.
-    // Duck it for now.
-    float helper = rainRate / terminalVelocity;
-    float snowfallHelper = rainRate / (487.0f * density * meanSnowflakeDiameter * terminalVelocity);
-    float snowfallRate = sqrt(snowfallHelper * snowfallHelper * snowfallHelper);
-    float distributionRate = 2.55f * pow(snowfallRate, 0.48f);
 
-    float areaOfDisk =  3.14 * maxRange * maxRange;
-    float snowedArea = (rainRate / (density * terminalVelocity)) * areaOfDisk;
+    float snowfallHelper = rainRate / (487.0f * density * meanSnowflakeDiameter * terminalVelocity);
+
+    float snowfallRate = 487.0f * density * meanSnowflakeDiameter * terminalVelocity * pow(rainRate, 0.666666666f);
+    float distributionRate = 2.55f * pow(rainRate, 0.48f);
+
+    float areaOfDisk =  3.141592653589793f * maxRange * maxRange;
+    float snowedArea = (snowfallRate / (density * terminalVelocity)) 65* areaOfDisk;
+
     // Clamp snowed area.
-    if(snowedArea>areaOfDisk)
+    if(snowedArea>areaOfDisk/10)
     {
-        snowedArea = areaOfDisk;
+        snowedArea = areaOfDisk/10;
     }
 
     float meanAreaOfFlake = 3.14 * meanSnowflakeDiameter * meanSnowflakeDiameter;
@@ -75,7 +75,6 @@ void SimulateSnowPointsNode::enqueueExecImpl()
 {
     // TODO raytrace cloud again with snowflakes
     auto pointCount = input->getPointCount();
-  //  outXyz->resize(pointCount, false, false);
 }
 IAnyArray::ConstPtr SimulateSnowPointsNode::getFieldData(rgl_field_t field)
 {

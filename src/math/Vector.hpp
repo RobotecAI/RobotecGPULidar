@@ -75,12 +75,6 @@ struct Vector
 	template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
 	DevFn operator float3() { return float3 {row[0], row[1], row[2]}; }
 
-        template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 2>>
-        DevFn Vector(float2 v) : Vector(v.x, v.y) {}
-
-        template<typename TT=T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 2>>
-        DevFn operator float2() { return float2 {row[0], row[1]}; }
-
 
         // *** *** *** ACCESSORS *** *** *** //
 

@@ -31,6 +31,7 @@ __global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, flo
     float x = snowflakeR * cos(snowflakeAngle);
     float y = snowflakeR * sin(snowflakeAngle);
 
+    // Poisson distribution of the snowflake diameter. This is a closest method to pure exponential distribution, which can be accelerated by hardware easily.
     float diameter = curand_poisson(&randomStates[tid], distributionRate);
 
     outSnowflakesDisk[tid] = Vec3f(x, y, diameter);
