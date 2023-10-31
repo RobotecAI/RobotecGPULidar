@@ -27,4 +27,5 @@ struct IStreamBound
 	using Ptr = std::shared_ptr<IStreamBound>;
 	virtual void setStream(CudaStream::Ptr) = 0;
 	virtual CudaStream::Ptr getStream() const = 0;
+	virtual ~IStreamBound() = default;
 };

@@ -16,14 +16,14 @@ static std::mt19937 randomGenerator{randomSeed};
  * @details
  * The `TestPointCloud` class facilitates the construction, manipulation, and extraction of point clouds based on RGL fields.
  * Each point's data is a continuous byte block, structured by the cloud's defined fields. Users should be mindful of these fields,
- * especially when invoking operations that rely on a specific field, like transformations depending on XYZ_F32.
+ * especially when invoking operations that rely on a specific field, like transformations depending on XYZ_VEC3_F32.
  * Additionally, this class provides functionality to instantiate a point cloud from a node and to create a node from the point cloud.
  *
  * @example
  * std::vector<rgl_field_t> fields = { ... }; // Define your fields here
- * std::vector<XYZ_F32> xyzValues = ...;     // Define your XYZ values here
+ * std::vector<XYZ_VEC3_F32> xyzValues = ...;     // Define your XYZ values here
  * TestPointCloud pointCloud(fields, 100);   // Create a point cloud with 100 points
- * pointCloud.setFieldValues<XYZ_F32>(xyzValues); // Set the XYZ values for each point
+ * pointCloud.setFieldValues<XYZ_VEC3_F32>(xyzValues); // Set the XYZ values for each point
  * Mat3x4f transformMatrix = ...; // Define your transformation matrix
  * pointCloud.transform(transformMatrix);    // Apply transformation
  * TestPointCloud fromNode = TestPointCloud::createFromNode(transformNode, fields); // Create a point cloud from a node
@@ -78,14 +78,14 @@ public:
 	void transform(const Mat3x4f& transform)
 	{
 		// TODO: Once XYZ is separated from distance+vector spaces, this check will need to be updated.
-		if (std::find(fields.begin(), fields.end(), XYZ_F32) == fields.end()) {
-			throw std::invalid_argument("TestPointCloud::transform: TestPointCloud does not contain XYZ_F32 field");
+		if (std::find(fields.begin(), fields.end(), XYZ_VEC3_F32) == fields.end()) {
+			throw std::invalid_argument("TestPointCloud::transform: TestPointCloud does not contain XYZ_VEC3_F32 field");
 		} else {
-			std::vector<Field<XYZ_F32>::type> points = getFieldValues<XYZ_F32>();
+			std::vector<Field<XYZ_VEC3_F32>::type> points = getFieldValues<XYZ_VEC3_F32>();
 			for (auto& point : points) {
 				point = transform * point;
 			}
-			setFieldValues<XYZ_F32>(points);
+			setFieldValues<XYZ_VEC3_F32>(points);
 		}
 	}
 
@@ -185,7 +185,7 @@ static std::vector<FieldType> generate(std::size_t count, std::function<FieldTyp
  * Collection of generator functions for various RGL PointCloud Fields.
  * These can be passed as the 'generator' argument to the `generate` function.
 */
-static std::function<Field<XYZ_F32>::type(int)> genCoord = [](int i) { return Vec3f(i, i + 1, i + 2); };
+static std::function<Field<XYZ_VEC3_F32>::type(int)> genCoord = [](int i) { return Vec3f(i, i + 1, i + 2); };
 static std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { return i; };
 static std::function<Field<ENTITY_ID_I32>::type(int)> genEntityId = [](int i) { return i; };
 static std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) { return i * 1.1f; };
@@ -215,8 +215,8 @@ static void checkIfNearEqual(const std::vector<FieldType>& expected, const std::
 	}
 }
 
-static void checkIfNearEqual(const std::vector<Field<XYZ_F32>::type>& expected, const std::vector<Field<XYZ_F32>::type>& actual,
-                             const float epsilon = 1e-5)
+static void checkIfNearEqual(const std::vector<Field<XYZ_VEC3_F32>::type>& expected,
+                             const std::vector<Field<XYZ_VEC3_F32>::type>& actual, const float epsilon = 1e-5)
 {
 	ASSERT_EQ(expected.size(), actual.size());
 	for (int i = 0; i < expected.size(); ++i) {

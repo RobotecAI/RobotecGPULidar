@@ -64,8 +64,7 @@ TEST_F(APISurfaceTests, rgl_mesh_update_vertices)
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, VERTICES, 0), "vertex_count > 0");
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES) + 1),
 	                            "vertex counts do not match");
-	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_update_vertices((rgl_mesh_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)),
-	                          "Mesh 0x1234");
+	EXPECT_RGL_INVALID_OBJECT(rgl_mesh_update_vertices((rgl_mesh_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)), "Mesh 0x1234");
 
 	// Correct update_vertices
 	EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, VERTICES, ARRAY_SIZE(VERTICES)));
@@ -108,4 +107,17 @@ TEST_F(APISurfaceTests, rgl_entity_set_pose)
 
 	// Correct set_pose
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTestTransform));
+}
+
+TEST_F(APISurfaceTests, rgl_entity_set_id)
+{
+	rgl_entity_t entity = makeEntity();
+	int validID = 1;
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_id(nullptr, validID), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_id(entity, RGL_ENTITY_INVALID_ID), "id != RGL_ENTITY_INVALID_ID");
+
+	// Correct set_id
+	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, validID));
 }

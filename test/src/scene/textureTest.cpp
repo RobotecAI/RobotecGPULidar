@@ -12,15 +12,12 @@
 
 constexpr unsigned short UsMaxValue = 255;
 
-struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>> {};
+struct TextureTest : public RGLTestWithParam<std::tuple<int, int, TextureTexelFormat>>
+{};
 
-INSTANTIATE_TEST_SUITE_P(
-		Parametrized, TextureTest,
-		testing::Combine(
-				testing::Values(1, 400),
-				testing::Values(3, 16, 2000),
-				testing::Values(0, UsMaxValue/2, UsMaxValue)
-		));
+INSTANTIATE_TEST_SUITE_P(Parametrized, TextureTest,
+                         testing::Combine(testing::Values(1, 400), testing::Values(3, 16, 2000),
+                                          testing::Values(0, UsMaxValue / 2, UsMaxValue)));
 
 TEST_F(TextureTest, rgl_texture_invalid_argument)
 {
@@ -28,7 +25,7 @@ TEST_F(TextureTest, rgl_texture_invalid_argument)
 	std::vector<unsigned char> textureRawData;
 
 	auto initializeArgumentsLambda = [&texture, &textureRawData]() {
-		texture= nullptr;
+		texture = nullptr;
 		textureRawData = generateStaticColorTexture<TextureTexelFormat>(100, 100, 100);
 	};
 	initializeArgumentsLambda();
@@ -39,14 +36,13 @@ TEST_F(TextureTest, rgl_texture_invalid_argument)
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData.data(), -1, 100), "width > 0");
 	initializeArgumentsLambda();
 	EXPECT_RGL_INVALID_ARGUMENT(rgl_texture_create(&texture, textureRawData.data(), 100, 0), "height > 0");
-
 }
 
 TEST_P(TextureTest, rgl_texture_reading)
 {
 	auto [width, height, value] = GetParam();
-	
-	rgl_texture_t texture= nullptr;
+
+	rgl_texture_t texture = nullptr;
 	rgl_entity_t entity = nullptr;
 	rgl_mesh_t mesh = makeCubeMesh();
 	auto textureRawData = generateStaticColorTexture<TextureTexelFormat>(width, height, value);
@@ -62,12 +58,10 @@ TEST_P(TextureTest, rgl_texture_reading)
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
 
-	std::vector<rgl_field_t> yieldFields = {
-			INTENSITY_F32
-	};
+	std::vector<rgl_field_t> yieldFields = {INTENSITY_F32};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
 
@@ -87,11 +81,9 @@ TEST_P(TextureTest, rgl_texture_reading)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, INTENSITY_F32, outIntensity.data()));
 
-	for (int i = 0; i < outCount; ++i)
-	{
-		EXPECT_NEAR(((float)value), outIntensity.at(i), EPSILON_F);
+	for (int i = 0; i < outCount; ++i) {
+		EXPECT_NEAR(((float) value), outIntensity.at(i), EPSILON_F);
 	}
-
 }
 
 // Use-case test. Create texture, mesh and entity. Set texture to entity and run graph pipeline.
@@ -118,14 +110,10 @@ TEST_P(TextureTest, rgl_texture_use_case)
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
 
-	std::vector<rgl_field_t> yieldFields = {
-			XYZ_F32,
-			INTENSITY_F32,
-			IS_HIT_I32
-	};
+	std::vector<rgl_field_t> yieldFields = {XYZ_VEC3_F32, INTENSITY_F32, IS_HIT_I32};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
 
@@ -149,7 +137,4 @@ TEST_P(TextureTest, rgl_texture_use_case)
 	//		}
 
 #endif
-
-
 }
-

@@ -8,7 +8,8 @@
 #include <Time.hpp>
 #include <math/Mat3x4f.hpp>
 
-class GraphCase : public RGLTest {};
+class GraphCase : public RGLTest
+{};
 
 #if RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
@@ -18,15 +19,16 @@ TEST_F(GraphCase, FullLinear)
 {
 	setupBoxesAlongAxes();
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, shear=nullptr, compact=nullptr, downsample=nullptr;
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, shear = nullptr, compact = nullptr,
+	           downsample = nullptr;
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({5, 5, 5}, {45, 45, 45}).toRGL();
-	rgl_mat3x4f shearTf = Mat3x4f::shear({0,0}, {-1, -1}, {0, 0}).toRGL();
+	rgl_mat3x4f shearTf = Mat3x4f::shear({0, 0}, {-1, -1}, {0, 0}).toRGL();
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&shear, &shearTf));
 
@@ -45,7 +47,7 @@ TEST_F(GraphCase, FullLinear)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(useRays));
 #if RGL_BUILD_PCL_EXTENSION
-	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(shear, "minimal.pcd"));
+	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(downsample, "minimal.pcd"));
 #else
 	RGL_WARN("RGL compiled without PCL extension. Tests will not save PCD!");
 #endif
@@ -59,9 +61,10 @@ TEST_F(GraphCase, NodeRemoval)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr, downsample=nullptr;
-	rgl_node_t temporalMerge=nullptr;
-	std::vector<rgl_field_t> tMergeFields = { RGL_FIELD_XYZ_F32 };
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, transformPts = nullptr, compact = nullptr,
+	           downsample = nullptr;
+	rgl_node_t temporalMerge = nullptr;
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_VEC3_F32};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -71,7 +74,7 @@ TEST_F(GraphCase, NodeRemoval)
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
@@ -110,10 +113,10 @@ TEST_F(GraphCase, SpatialMergeFromTransforms)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr;
-	rgl_node_t transformPtsZero=nullptr, transformPtsY=nullptr;
-	rgl_node_t spatialMerge=nullptr;
-	std::vector<rgl_field_t> sMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, compact = nullptr;
+	rgl_node_t transformPtsZero = nullptr, transformPtsY = nullptr;
+	rgl_node_t spatialMerge = nullptr;
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -122,7 +125,7 @@ TEST_F(GraphCase, SpatialMergeFromTransforms)
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsZero, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsY, &translateYTf));
@@ -154,7 +157,7 @@ TEST_F(GraphCase, SpatialMergeFromRaytraces)
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
 	constexpr int LIDAR_FOV_Y = 40;
-	constexpr int LIDAR_ROTATION_STEP = LIDAR_FOV_Y / 2;  // Make laser overlaps to validate merging
+	constexpr int LIDAR_ROTATION_STEP = LIDAR_FOV_Y / 2; // Make laser overlaps to validate merging
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(180, LIDAR_FOV_Y, 0.18, 1);
 
@@ -164,8 +167,8 @@ TEST_F(GraphCase, SpatialMergeFromRaytraces)
 		lidarTfs.emplace_back(Mat3x4f::TRS({0, 0, 0}, {0, LIDAR_ROTATION_STEP * i, 0}).toRGL());
 	}
 
-	rgl_node_t spatialMerge=nullptr;
-	std::vector<rgl_field_t> sMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+	rgl_node_t spatialMerge = nullptr;
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));
 
 	for (auto& lidarTf : lidarTfs) {
@@ -175,7 +178,7 @@ TEST_F(GraphCase, SpatialMergeFromRaytraces)
 
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&lidarRays, rays.data(), rays.size()));
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarRaysTf, &lidarTf));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 
 		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarRays, lidarRaysTf));
 		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarRaysTf, raytrace));
@@ -198,9 +201,9 @@ TEST_F(GraphCase, TemporalMerge)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, compact=nullptr, transformPts=nullptr;
-	rgl_node_t temporalMerge=nullptr;
-	std::vector<rgl_field_t> tMergeFields = { RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32 };
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, compact = nullptr, transformPts = nullptr;
+	rgl_node_t temporalMerge = nullptr;
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, -5}).toRGL();
@@ -209,7 +212,7 @@ TEST_F(GraphCase, TemporalMerge)
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
@@ -241,27 +244,19 @@ TEST_F(GraphCase, FormatNodeResults)
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
 	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
 
-	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, format=nullptr;
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, format = nullptr;
 
 	// The cube located in 0,0,0 with width equals 1, rays shoot in perpendicular direction
 	constexpr float EXPECTED_HITPOINT_Z = 1.0f;
 	constexpr float EXPECTED_RAY_DISTANCE = 1.0f;
-	std::vector<rgl_mat3x4f> rays = {
-		Mat3x4f::TRS({0, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.2, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
-		Mat3x4f::TRS({0.4, 0, 0}).toRGL()
-	};
+	std::vector<rgl_mat3x4f> rays = {Mat3x4f::TRS({0, 0, 0}).toRGL(), Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
+	                                 Mat3x4f::TRS({0.2, 0, 0}).toRGL(), Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
+	                                 Mat3x4f::TRS({0.4, 0, 0}).toRGL()};
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
-	std::vector<rgl_field_t> formatFields = {
-		XYZ_F32,
-		PADDING_32,
-		TIME_STAMP_F64
-	};
+	std::vector<rgl_field_t> formatFields = {XYZ_VEC3_F32, PADDING_32, TIME_STAMP_F64};
 	struct FormatStruct
 	{
-		Field<XYZ_F32>::type xyz;
+		Field<XYZ_VEC3_F32>::type xyz;
 		Field<PADDING_32>::type padding;
 		Field<TIME_STAMP_F64>::type timestamp;
 	} formatStruct;
@@ -271,7 +266,7 @@ TEST_F(GraphCase, FormatNodeResults)
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
@@ -297,24 +292,24 @@ TEST_F(GraphCase, FormatNodeResults)
 	}
 
 	// Test if fields update is propagated over graph properly
-	formatFields.emplace_back(DISTANCE_F32);  // Add distance field
-	formatFields.emplace_back(PADDING_32);  // Align to 8 bytes
-	struct FormatStructExtended : public  FormatStruct
+	formatFields.emplace_back(DISTANCE_F32); // Add distance field
+	formatFields.emplace_back(PADDING_32);   // Align to 8 bytes
+	struct FormatStructExtended : public FormatStruct
 	{
 		Field<DISTANCE_F32>::type distance;
-		Field<PADDING_32>::type padding2;  // Align to 8 bytes
+		Field<PADDING_32>::type padding2; // Align to 8 bytes
 	} formatStructEx;
 
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	outCount = -1;  // reset variables
+	outCount = -1; // reset variables
 	outSizeOf = -1;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
 	EXPECT_EQ(outCount, rays.size());
 	EXPECT_EQ(outSizeOf, sizeof(formatStructEx));
 
-	std::vector<FormatStructExtended> formatDataEx{(size_t)outCount};
+	std::vector<FormatStructExtended> formatDataEx{(size_t) outCount};
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatDataEx.data()));
 
 	for (int i = 0; i < formatDataEx.size(); ++i) {
@@ -381,12 +376,11 @@ TEST_F(GraphCase, GetResultsDataWithoutPriorRun)
 	// Setup
 	rgl_node_t pointsFromArray = nullptr;
 	rgl_vec3f points = {0};
-	rgl_field_t fields = RGL_FIELD_XYZ_F32;
+	rgl_field_t fields = RGL_FIELD_XYZ_VEC3_F32;
 	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&pointsFromArray, &points, 1, &fields, 1));
 
 	// Test
-	EXPECT_RGL_STATUS(rgl_graph_get_result_data(pointsFromArray, RGL_FIELD_XYZ_F32, &points),
-	                  RGL_INVALID_PIPELINE,
+	EXPECT_RGL_STATUS(rgl_graph_get_result_data(pointsFromArray, RGL_FIELD_XYZ_VEC3_F32, &points), RGL_INVALID_PIPELINE,
 	                  "it hasn't been run yet");
 }
 
@@ -395,12 +389,12 @@ TEST_F(GraphCase, GetResultsSizeWithoutPriorRun)
 	// Setup
 	rgl_node_t pointsFromArray = nullptr;
 	rgl_vec3f points = {0};
-	rgl_field_t fields = RGL_FIELD_XYZ_F32;
+	rgl_field_t fields = RGL_FIELD_XYZ_VEC3_F32;
 	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&pointsFromArray, &points, 1, &fields, 1));
 
 	// Test
 	int32_t count, size;
-	EXPECT_RGL_STATUS(rgl_graph_get_result_size(pointsFromArray, RGL_FIELD_XYZ_F32, &count, &size), RGL_INVALID_PIPELINE);
+	EXPECT_RGL_STATUS(rgl_graph_get_result_size(pointsFromArray, RGL_FIELD_XYZ_VEC3_F32, &count, &size), RGL_INVALID_PIPELINE);
 }
 
 TEST_F(GraphCase, DetectMissingInput)
@@ -414,9 +408,64 @@ TEST_F(GraphCase, NoInputNodesDoNotRequireInput)
 {
 	rgl_node_t pointsFromArray = nullptr;
 	rgl_vec3f points = {0};
-	rgl_field_t fields = RGL_FIELD_XYZ_F32;
+	rgl_field_t fields = RGL_FIELD_XYZ_VEC3_F32;
 	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&pointsFromArray, &points, 1, &fields, 1));
 
 	// TODO(nebraszka): Test that all other nodes that inherit from INoInputNode can be run with no input
 	EXPECT_RGL_SUCCESS(rgl_graph_run(pointsFromArray));
 }
+
+// Test for rgl_node_points_visualize. May not work inside docker (graphical environment needed). Uncomment to use.
+//#if RGL_BUILD_PCL_EXTENSION
+//#include <rgl/api/extensions/pcl.h>
+//TEST_F(GraphCase, Visualize)
+//{
+//	using namespace std::chrono_literals;
+//	auto mesh = makeCubeMesh();
+//
+//	auto entity = makeEntity(mesh);
+//	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+//	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+//
+//	rgl_node_t useRays=nullptr, raytrace=nullptr, lidarPose=nullptr, transformPts=nullptr, compact=nullptr;
+//	rgl_node_t visualize=nullptr;
+//	rgl_node_t visualize2=nullptr;
+//	rgl_node_t visualize3=nullptr;
+//
+//	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 3.6, 1.8);
+//	rgl_mat3x4f lidarPoseTf = Mat3x4f::TRS({0, 0, 0}).toRGL();
+//	rgl_mat3x4f zeroTf = Mat3x4f::TRS({0, 0, 0}).toRGL();
+//
+//	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+//	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+//	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+//	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+//	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
+//	EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize,  "aaa", 800, 600, false));
+//	EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize2,  "bbb", 800, 600, false));
+//
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPts));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, visualize));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, visualize2));
+//
+//	for (int i = 0; i < 300; ++i) {
+//		rgl_mat3x4f ePoseTf = Mat3x4f::TRS({0,0,0},{i,i,0}).toRGL();
+//		ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &ePoseTf));
+//		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+//		std::this_thread::sleep_for(16ms);
+//
+//		if (i == 200) {
+//		EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(transformPts, visualize2));
+//		EXPECT_RGL_SUCCESS(rgl_graph_destroy(visualize2));
+//		}
+//
+//		if (i == 100) {
+//		EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize3,  "ccc", 800, 600, false));
+//		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPts, visualize3));
+//		}
+//	}
+//}
+//#endif

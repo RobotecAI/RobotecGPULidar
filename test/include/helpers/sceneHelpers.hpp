@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <helpers/commonHelpers.hpp>
 #include <helpers/geometryData.hpp>
 

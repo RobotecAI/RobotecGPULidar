@@ -30,7 +30,7 @@ void GaussianNoiseAngularHitpointNode::validateImpl()
 
 	// This node will modify field DISTANCE_F32 if present.
 	// In the future: only one field should be modified.
-	// Other fields that depend on the main field (for now, it's XYZ_F32) should be calculated somewhere else (e.g., in data getters nodes).
+	// Other fields that depend on the main field (for now, it's XYZ_VEC3_F32) should be calculated somewhere else (e.g., in data getters nodes).
 	if (input->hasField(DISTANCE_F32)) {
 		if (outDistance == nullptr) {
 			outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr);
@@ -53,18 +53,19 @@ void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 
 	if (randomizationStates->getCount() < pointCount) {
 		randomizationStates->resize(pointCount, false, false);
-                gpuSetupRandomNumberGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getWritePtr());
+		gpuSetupRandomNumberGenerator(getStreamHandle(), pointCount, randomDevice(), randomizationStates->getWritePtr());
 	}
 
-	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outXyzPtr = outXyz->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
-	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randPtr,
+	                                   inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 IAnyArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field)
 {
-	if (field == XYZ_F32) {
+	if (field == XYZ_VEC3_F32) {
 		return outXyz;
 	}
 	if (field == DISTANCE_F32 && outDistance != nullptr) {

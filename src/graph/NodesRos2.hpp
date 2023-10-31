@@ -28,12 +28,10 @@ struct Ros2PublishPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 
-	void setParameters(
-		const char* topicName, const char* frameId,
-		rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
-		rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
-		rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT,
-		int32_t qosHistoryDepth = 10);
+	void setParameters(const char* topicName, const char* frameId,
+	                   rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10);
 
 	// Node
 	void validateImpl() override;
@@ -50,6 +48,7 @@ private:
 	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ros2Publisher;
 	sensor_msgs::msg::PointCloud2 ros2Message;
 
+	static bool isRclcppInitializedByRGL;
 	static rclcpp::Node::SharedPtr ros2Node;
 	static std::string ros2NodeName;
 	static std::set<std::string> ros2TopicNames;

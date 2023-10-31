@@ -33,10 +33,8 @@ struct NvtxRange
 	NvtxRange& operator=(const NvtxRange&) = delete;
 	NvtxRange& operator=(NvtxRange&&) = delete;
 
-	~NvtxRange()
-	{
-		nvtxRangeEnd(correlationId);
-	}
+	~NvtxRange() { nvtxRangeEnd(correlationId); }
+
 private:
 	nvtxRangeId_t correlationId;
 };

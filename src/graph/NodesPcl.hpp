@@ -48,7 +48,8 @@ private:
 	Vec3f leafDims;
 	DeviceAsyncArray<char>::Ptr formattedInput = DeviceAsyncArray<char>::create(arrayMgr);
 	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
-	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
+	    arrayMgr);
 	DeviceAsyncArray<pcl::PointXYZL>::Ptr filteredPoints = DeviceAsyncArray<pcl::PointXYZL>::create(arrayMgr);
 	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 	std::mutex getFieldDataMutex;
@@ -69,22 +70,52 @@ struct VisualizePointsNode : IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
-	void runVisualize();
 	virtual ~VisualizePointsNode();
 
 private:
 	DeviceAsyncArray<char>::Ptr formattedInputDev = DeviceAsyncArray<char>::create(arrayMgr);
 	HostPinnedArray<char>::Ptr formattedInputHst = HostPinnedArray<char>::create();
+	GPUFieldDescBuilder gpuFieldDescBuilder;
 
 	PCLVisualizerFix::Ptr viewer;
-	std::thread visThread;
-	std::mutex updateCloudMutex;
-	bool isNewCloud{false};
-
 	std::string windowName{};
 	int windowWidth;
 	int windowHeight;
 	bool fullscreen;
+
+	std::atomic<bool> eraseRequested{false};
+	std::atomic<bool> isClosed{false};
+
+	std::atomic<bool> hasNewPointCloud{false};
+	std::mutex updateCloudMutex;
 	pcl::PointCloud<PCLPointType>::Ptr cloudPCL{new pcl::PointCloud<PCLPointType>};
-	GPUFieldDescBuilder gpuFieldDescBuilder;
+
+	struct VisualizeThread
+	{
+		void runVisualize();
+		VisualizeThread() { thread = std::thread(&VisualizeThread::runVisualize, this); }
+		~VisualizeThread()
+		{
+			// This might be called when the main thread is doing exit
+			{
+				// Request removing all nodes
+				std::lock_guard lock{visualizeNodesMutex};
+				for (auto&& node : visualizeNodes) {
+					node->eraseRequested = true;
+				}
+			}
+			shouldQuit = true;
+			thread.join();
+		}
+
+		std::thread thread;
+		std::atomic<bool> shouldQuit{false};
+		std::mutex visualizeNodesMutex;
+
+		// Adding: client thread
+		// Removing: visualize thread
+		std::list<VisualizePointsNode::Ptr> visualizeNodes;
+	};
+
+	inline static std::optional<VisualizeThread> visualizeThread;
 };

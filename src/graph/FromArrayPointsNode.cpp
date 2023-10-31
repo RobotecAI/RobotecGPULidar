@@ -28,7 +28,7 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 	for (auto&& field : fields) {
 		if (!fieldData.contains(field) && !isDummy(field)) {
 			// We may not have stream yet
-			auto array = createArray<DeviceAsyncArray>(field, CudaStream::getNullStream());
+			auto array = createArray<DeviceAsyncArray>(field, arrayMgr);
 			array->resize(pointCount, false, false);
 			fieldData.insert({field, array});
 		}
@@ -36,16 +36,17 @@ void FromArrayPointsNode::setParameters(const void* points, size_t pointCount, c
 
 	auto inputData = DeviceSyncArray<char>::create();
 	std::size_t pointSize = getPointSize(fields);
-	inputData->copyFromExternal(static_cast<const char *>(points), pointCount * pointSize);
+	inputData->copyFromExternal(static_cast<const char*>(points), pointCount * pointSize);
 	const char* inputPtr = inputData->getReadPtr();
 
-	// Immediately copy data to the GPU. We may not have stream yet, so use NULL stream and synchronize it.
-	auto& gpuFields = gpuFieldDescBuilder.buildWritableAsync(CudaStream::getNullStream(), getFieldToPointerMappings(fields));
-	gpuFormatAosToSoa(CudaStream::getNullStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr, gpuFields.getReadPtr());
-	CHECK_CUDA(cudaStreamSynchronize(CudaStream::getNullStream()->getHandle()));
+	auto&& gpuFields = gpuFieldDescBuilder.buildWritableAsync(arrayMgr.getStream(), getFieldToPointerMappings(fields));
+	gpuFormatAosToSoa(arrayMgr.getStream()->getHandle(), pointCount, pointSize, fields.size(), inputPtr,
+	                  gpuFields.getReadPtr());
+	CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));
 }
 
-std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointerMappings(const std::vector<rgl_field_t>& fields)
+std::vector<std::pair<rgl_field_t, void*>> FromArrayPointsNode::getFieldToPointerMappings(
+    const std::vector<rgl_field_t>& fields)
 {
 	std::vector<std::pair<rgl_field_t, void*>> outFieldsData;
 	for (auto&& field : fields) {

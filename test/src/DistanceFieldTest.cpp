@@ -9,7 +9,6 @@
 
 #include <random>
 
-static constexpr float RAYTRACE_DEPTH = 1000;
 static constexpr int ANGLE_ITERATIONS = 100;
 static constexpr int LIDAR_RAYS_COUNT = 100000;
 static constexpr float STD_DEV = 0.01;
@@ -22,50 +21,51 @@ class DistanceFieldTest : public RGLTestWithParam<float>
 {
 protected:
 	rgl_node_t useRaysNode = nullptr;
+	rgl_node_t setRangeNode = nullptr;
 	rgl_node_t raytraceNode = nullptr;
 	rgl_node_t gaussianNoiseNode = nullptr;
 	rgl_node_t yieldPointsNode = nullptr;
-	rgl_node_t compactPointsNode = nullptr;
 	rgl_node_t transformPointsNode = nullptr;
 
 	std::vector<rgl_mat3x4f> rayTf;
 
-	std::vector<rgl_field_t> fields = {DISTANCE_F32, XYZ_F32};
+	std::vector<rgl_field_t> fields = {DISTANCE_F32, XYZ_VEC3_F32};
 	std::vector<::Field<DISTANCE_F32>::type> outDistances;
-	std::vector<::Field<XYZ_F32>::type> outPoints;
+	std::vector<::Field<XYZ_VEC3_F32>::type> outPoints;
 
 	std::unique_ptr<TestPointCloud> pointCloud;
 
 	void connectNodes(bool withGaussianNoiseNode)
 	{
-		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
-		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, compactPointsNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, setRangeNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(setRangeNode, raytraceNode));
 		if (withGaussianNoiseNode) {
-			ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compactPointsNode, gaussianNoiseNode));
+			ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, gaussianNoiseNode));
 			ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(gaussianNoiseNode, yieldPointsNode));
 		} else {
-			ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compactPointsNode, yieldPointsNode));
+			ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldPointsNode));
 		}
 	}
 
 	void disconnectNodes(bool withGaussianNoiseNode)
 	{
-		ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(useRaysNode, raytraceNode));
-		ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, compactPointsNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(useRaysNode, setRangeNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(setRangeNode, raytraceNode));
 		if (withGaussianNoiseNode) {
-			ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(compactPointsNode, gaussianNoiseNode));
+			ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, gaussianNoiseNode));
 			ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(gaussianNoiseNode, yieldPointsNode));
 		} else {
-			ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(compactPointsNode, yieldPointsNode));
+			ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raytraceNode, yieldPointsNode));
 		}
 	}
 
-	void prepareNodes()
+	void prepareNodes(rgl_vec2f raytraceRange)
 	{
 		ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
-		ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, RAYTRACE_DEPTH));
+		ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &raytraceRange, 1));
+		ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 		ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldPointsNode, fields.data(), fields.size()));
-		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+		//		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 	}
 
 	void getResults(rgl_node_t node = nullptr)
@@ -78,7 +78,7 @@ protected:
 		pointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(node, fields));
 		ASSERT_EQ(pointCloud->getPointCount(), rayTf.size());
 		outDistances = pointCloud->getFieldValues<DISTANCE_F32>();
-		outPoints = pointCloud->getFieldValues<XYZ_F32>();
+		outPoints = pointCloud->getFieldValues<XYZ_VEC3_F32>();
 	}
 };
 
@@ -92,7 +92,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distance_for_single_object_on_r
 
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -109,7 +109,7 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_on_cub
 
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -126,7 +126,7 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside
 
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -135,7 +135,7 @@ TEST_F(DistanceFieldTest, should_compute_correct_distance_when_ray_origin_inside
 	EXPECT_EQ(outDistances.at(0), CUBE_HALF_EDGE + cubeZDistance);
 }
 
-TEST_F(DistanceFieldTest, should_compute_infinite_distance_for_object_off_ray_path)
+TEST_F(DistanceFieldTest, should_compute_nonhit_distance_for_object_off_ray_path)
 {
 	float cubeYAxisTranslation = 55.5f;
 	const Mat3x4f cubePoseTf = Mat3x4f::translation(0, cubeYAxisTranslation, 0);
@@ -145,15 +145,64 @@ TEST_F(DistanceFieldTest, should_compute_infinite_distance_for_object_off_ray_pa
 	// After sending a ray in the direction of negative infinity, the distance should still be positive.
 	rayTf.emplace_back(Mat3x4f::rotationRad(RGL_AXIS_X, M_PI).toRGL());
 
-	prepareNodes();
-
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldPointsNode));
-
+	prepareNodes({0.0f, 10000.0f});
+	connectNodes(false);
 	getResults();
 
 	EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
 	EXPECT_EQ(outDistances.at(1), NON_HIT_VALUE);
+}
+
+TEST_P(DistanceFieldTest, should_compute_nonhit_distance_for_object_out_of_max_range)
+{
+	float cubeZDistance = GetParam();
+	const Mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance);
+	spawnCubeOnScene(cubePoseTf);
+
+	rayTf.push_back(Mat3x4f::identity().toRGL());
+
+	prepareNodes({0.0f, cubeZDistance - CUBE_HALF_EDGE - 1.0f});
+	connectNodes(false);
+
+	getResults();
+
+	EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
+}
+
+TEST_P(DistanceFieldTest, should_compute_nonhit_distance_for_object_out_of_min_range)
+{
+	float cubeZDistance = GetParam();
+	const Mat3x4f cubePoseTf = Mat3x4f::translation(0, 0, cubeZDistance);
+	spawnCubeOnScene(cubePoseTf);
+
+	rayTf.push_back(Mat3x4f::identity().toRGL());
+
+	prepareNodes({cubeZDistance + CUBE_HALF_EDGE + 1.0f, cubeZDistance + CUBE_HALF_EDGE + 2.0f});
+	connectNodes(false);
+
+	getResults();
+
+	EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
+}
+
+TEST_P(DistanceFieldTest, object_in_range_behind_object_out_of_min_range)
+{
+	float nearCubeZDistance = GetParam();
+	float distanceBetweenCubes = 10.0f;
+	float farCubeZDistance = nearCubeZDistance + distanceBetweenCubes;
+	const Mat3x4f nearCubePoseTf = Mat3x4f::translation(0, 0, nearCubeZDistance);
+	const Mat3x4f farCubePoseTf = Mat3x4f::translation(0, 0, farCubeZDistance);
+	spawnCubeOnScene(nearCubePoseTf);
+	spawnCubeOnScene(farCubePoseTf);
+
+	rayTf.push_back(Mat3x4f::identity().toRGL());
+
+	prepareNodes({nearCubeZDistance + CUBE_HALF_EDGE + 1.0f, farCubeZDistance + CUBE_HALF_EDGE + 1.0f});
+	connectNodes(false);
+
+	getResults();
+
+	EXPECT_EQ(outDistances.at(0), NON_HIT_VALUE);
 }
 
 TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angles)
@@ -181,7 +230,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angle
 		expectedDistances.emplace_back(expectedDistance);
 	}
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -200,7 +249,7 @@ TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
 
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -216,7 +265,7 @@ TEST_F(DistanceFieldTest, should_compute_distance_from_ray_beginning)
 	float rayZAxisTranslation = 5.0f;
 	rayTf.emplace_back(Mat3x4f::translation(0.0f, 0.0f, rayZAxisTranslation).toRGL());
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -235,7 +284,7 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
 
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -265,7 +314,7 @@ TEST_F(DistanceFieldTest, should_change_distance_when_gaussian_distance_noise_co
 	rayTf.assign(LIDAR_RAYS_COUNT, Mat3x4f::identity().toRGL());
 
 	ASSERT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&gaussianNoiseNode, MEAN, STD_DEV, STD_DEV_PER_METER));
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(true);
 
 	getResults();
@@ -289,7 +338,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_when_points_transform
 	rayTf.emplace_back(transform);
 
 	// Before points transformation
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 
 	getResults();
@@ -301,7 +350,7 @@ TEST_P(DistanceFieldTest, should_compute_correct_distances_when_points_transform
 	disconnectNodes(false);
 
 	// After points transformation
-	prepareNodes();
+	prepareNodes({0.0f, cubeZDistance + 10.0f});
 	connectNodes(false);
 	rgl_mat3x4f inverseTransform = Mat3x4f::fromRGL(transform).inverse().toRGL();
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPointsNode, &inverseTransform));

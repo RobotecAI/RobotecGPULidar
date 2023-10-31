@@ -16,6 +16,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <RGLFields.hpp>
 #include <repr.hpp>
+#include <graph/GraphRunCtx.hpp>
 
 
 void CompactPointsNode::enqueueExecImpl()
@@ -41,7 +42,7 @@ void CompactPointsNode::enqueueExecImpl()
 
 IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 {
-	std::lock_guard lock {getFieldDataMutex};
+	std::lock_guard lock{getFieldDataMutex};
 
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
@@ -51,16 +52,25 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(width, false, false);
-		char* outPtr = static_cast<char *>(fieldData->getRawWritePtr());
+		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
 
 		if (!isDeviceAccessible(input->getFieldData(field)->getMemoryKind())) {
 			auto msg = fmt::format("CompactPointsNode requires its input to be device-accessible, {} is not", field);
 			throw InvalidPipeline(msg);
 		}
-		const char* inputPtr = static_cast<const char *>(input->getFieldData(field)->getRawReadPtr());
+		const char* inputPtr = static_cast<const char*>(input->getFieldData(field)->getRawReadPtr());
 		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-		const CompactionIndexType * indices = inclusivePrefixSum->getReadPtr();
+		const CompactionIndexType* indices = inclusivePrefixSum->getReadPtr();
 		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
+		bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
+		if (!calledFromEnqueue) {
+			// This is a special case, where API calls getFieldData for this field for the first time
+			// We did not enqueued compcation in enqueueExecImpl, yet, we are asked for results.
+			// This operation was enqueued in the graph stream, but API won't wait for whole graph stream.
+			// Therefore, we need a manual sync here.
+			// TODO: remove this cancer.
+			CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+		}
 		cacheManager.setUpdated(field);
 	}
 

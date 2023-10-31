@@ -27,12 +27,14 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 	fileBin = fopen(pathBin.c_str(), "wb");
 	if (nullptr == fileBin) {
 		throw InvalidFilePath(fmt::format("rgl_tape_record_begin: could not open binary file '{}' "
-		                                  "due to the error: {}", pathBin, std::strerror(errno)));
+		                                  "due to the error: {}",
+		                                  pathBin, std::strerror(errno)));
 	}
 	fileYaml.open(pathYaml);
 	if (fileYaml.fail()) {
 		throw InvalidFilePath(fmt::format("rgl_tape_record_begin: could not open yaml file '{}' "
-		                                  "due to the error: {}", pathYaml, std::strerror(errno)));
+		                                  "due to the error: {}",
+		                                  pathYaml, std::strerror(errno)));
 	}
 	TapeRecorder::recordRGLVersion(yamlRoot);
 	yamlRecording = yamlRoot["recording"];
@@ -65,54 +67,59 @@ void TapeRecorder::recordRGLVersion(YAML::Node& node)
 TapePlayer::TapePlayer(const char* path)
 {
 	tapeFunctions = {
-		{ "rgl_get_version_info", std::bind(&TapePlayer::tape_get_version_info, this, _1) },
-		{ "rgl_get_extension_info", std::bind(&TapePlayer::tape_get_extension_info, this, _1) },
-		{ "rgl_configure_logging", std::bind(&TapePlayer::tape_configure_logging, this, _1) },
-		{ "rgl_cleanup", std::bind(&TapePlayer::tape_cleanup, this, _1) },
-		{ "rgl_mesh_create", std::bind(&TapePlayer::tape_mesh_create, this, _1) },
-		{ "rgl_mesh_destroy", std::bind(&TapePlayer::tape_mesh_destroy, this, _1) },
-		{ "rgl_mesh_update_vertices", std::bind(&TapePlayer::tape_mesh_update_vertices, this, _1) },
-		{ "rgl_mesh_set_texture_coords", std::bind(&TapePlayer::tape_mesh_set_texture_coords, this, _1) },
-		{ "rgl_texture_create", std::bind(&TapePlayer::tape_texture_create, this, _1) },
-		{ "rgl_texture_destroy", std::bind(&TapePlayer::tape_texture_destroy, this, _1) },
-		{ "rgl_entity_create", std::bind(&TapePlayer::tape_entity_create, this, _1) },
-		{ "rgl_entity_destroy", std::bind(&TapePlayer::tape_entity_destroy, this, _1) },
-		{ "rgl_entity_set_pose", std::bind(&TapePlayer::tape_entity_set_pose, this, _1) },
-		{ "rgl_entity_set_intensity_texture", std::bind(&TapePlayer::tape_entity_set_intensity_texture, this, _1) },
-		{ "rgl_scene_set_time", std::bind(&TapePlayer::tape_scene_set_time, this, _1) },
-		{ "rgl_graph_run", std::bind(&TapePlayer::tape_graph_run, this, _1) },
-		{ "rgl_graph_destroy", std::bind(&TapePlayer::tape_graph_destroy, this, _1) },
-		{ "rgl_graph_get_result_size", std::bind(&TapePlayer::tape_graph_get_result_size, this, _1) },
-		{ "rgl_graph_get_result_data", std::bind(&TapePlayer::tape_graph_get_result_data, this, _1) },
-		{ "rgl_graph_node_add_child", std::bind(&TapePlayer::tape_graph_node_add_child, this, _1) },
-		{ "rgl_graph_node_remove_child", std::bind(&TapePlayer::tape_graph_node_remove_child, this, _1) },
-		{ "rgl_graph_node_set_priority", std::bind(&TapePlayer::tape_graph_node_set_priority, this, _1) },
-		{ "rgl_graph_node_get_priority", std::bind(&TapePlayer::tape_graph_node_get_priority, this, _1) },
-		{ "rgl_node_rays_from_mat3x4f", std::bind(&TapePlayer::tape_node_rays_from_mat3x4f, this, _1) },
-		{ "rgl_node_rays_set_ring_ids", std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1) },
-		{ "rgl_node_rays_transform", std::bind(&TapePlayer::tape_node_rays_transform, this, _1) },
-		{ "rgl_node_points_transform", std::bind(&TapePlayer::tape_node_points_transform, this, _1) },
-		{ "rgl_node_raytrace", std::bind(&TapePlayer::tape_node_raytrace, this, _1) },
-		{ "rgl_node_points_format", std::bind(&TapePlayer::tape_node_points_format, this, _1) },
-		{ "rgl_node_points_yield", std::bind(&TapePlayer::tape_node_points_yield, this, _1) },
-		{ "rgl_node_points_compact", std::bind(&TapePlayer::tape_node_points_compact, this, _1) },
-		{ "rgl_node_points_spatial_merge", std::bind(&TapePlayer::tape_node_points_spatial_merge, this, _1) },
-		{ "rgl_node_points_temporal_merge", std::bind(&TapePlayer::tape_node_points_temporal_merge, this, _1) },
-		{ "rgl_node_points_from_array", std::bind(&TapePlayer::tape_node_points_from_array, this, _1) },
-		{ "rgl_node_gaussian_noise_angular_ray", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_ray, this, _1) },
-		{ "rgl_node_gaussian_noise_angular_hitpoint", std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1) },
-		{ "rgl_node_gaussian_noise_distance", std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1) },
+		{		            "rgl_get_version_info",std::bind(&TapePlayer::tape_get_version_info, this, _1)                                                    },
+		{		          "rgl_get_extension_info",                std::bind(&TapePlayer::tape_get_extension_info, this, _1)},
+		{		           "rgl_configure_logging",                 std::bind(&TapePlayer::tape_configure_logging, this, _1)},
+		{		                     "rgl_cleanup",		                   std::bind(&TapePlayer::tape_cleanup, this, _1)},
+		{		                 "rgl_mesh_create",                       std::bind(&TapePlayer::tape_mesh_create, this, _1)},
+		{		                "rgl_mesh_destroy",                      std::bind(&TapePlayer::tape_mesh_destroy, this, _1)},
+		{		        "rgl_mesh_update_vertices",              std::bind(&TapePlayer::tape_mesh_update_vertices, this, _1)},
+		{		     "rgl_mesh_set_texture_coords",           std::bind(&TapePlayer::tape_mesh_set_texture_coords, this, _1)},
+		{		              "rgl_texture_create",                    std::bind(&TapePlayer::tape_texture_create, this, _1)},
+		{		             "rgl_texture_destroy",                   std::bind(&TapePlayer::tape_texture_destroy, this, _1)},
+		{		               "rgl_entity_create",                     std::bind(&TapePlayer::tape_entity_create, this, _1)},
+		{		              "rgl_entity_destroy",                    std::bind(&TapePlayer::tape_entity_destroy, this, _1)},
+		{		             "rgl_entity_set_pose",                   std::bind(&TapePlayer::tape_entity_set_pose, this, _1)},
+		{		               "rgl_entity_set_id",                     std::bind(&TapePlayer::tape_entity_set_id, this, _1)},
+		{        "rgl_entity_set_intensity_texture",      std::bind(&TapePlayer::tape_entity_set_intensity_texture, this, _1)},
+		{		              "rgl_scene_set_time",                    std::bind(&TapePlayer::tape_scene_set_time, this, _1)},
+		{		                   "rgl_graph_run",                         std::bind(&TapePlayer::tape_graph_run, this, _1)},
+		{		               "rgl_graph_destroy",                     std::bind(&TapePlayer::tape_graph_destroy, this, _1)},
+		{		       "rgl_graph_get_result_size",             std::bind(&TapePlayer::tape_graph_get_result_size, this, _1)},
+		{		       "rgl_graph_get_result_data",             std::bind(&TapePlayer::tape_graph_get_result_data, this, _1)},
+		{		        "rgl_graph_node_add_child",              std::bind(&TapePlayer::tape_graph_node_add_child, this, _1)},
+		{		     "rgl_graph_node_remove_child",           std::bind(&TapePlayer::tape_graph_node_remove_child, this, _1)},
+		{		     "rgl_graph_node_set_priority",           std::bind(&TapePlayer::tape_graph_node_set_priority, this, _1)},
+		{		     "rgl_graph_node_get_priority",           std::bind(&TapePlayer::tape_graph_node_get_priority, this, _1)},
+		{		      "rgl_node_rays_from_mat3x4f",            std::bind(&TapePlayer::tape_node_rays_from_mat3x4f, this, _1)},
+		{		         "rgl_node_rays_set_range",               std::bind(&TapePlayer::tape_node_rays_set_range, this, _1)},
+		{		      "rgl_node_rays_set_ring_ids",            std::bind(&TapePlayer::tape_node_rays_set_ring_ids, this, _1)},
+		{		  "rgl_node_rays_set_time_offsets",        std::bind(&TapePlayer::tape_node_rays_set_time_offsets, this, _1)},
+		{		         "rgl_node_rays_transform",               std::bind(&TapePlayer::tape_node_rays_transform, this, _1)},
+		{		       "rgl_node_points_transform",             std::bind(&TapePlayer::tape_node_points_transform, this, _1)},
+		{		               "rgl_node_raytrace",                     std::bind(&TapePlayer::tape_node_raytrace, this, _1)},
+		{       "rgl_node_raytrace_with_distortion",     std::bind(&TapePlayer::tape_node_raytrace_with_distortion, this, _1)},
+		{		          "rgl_node_points_format",                std::bind(&TapePlayer::tape_node_points_format, this, _1)},
+		{		           "rgl_node_points_yield",                 std::bind(&TapePlayer::tape_node_points_yield, this, _1)},
+		{		         "rgl_node_points_compact",               std::bind(&TapePlayer::tape_node_points_compact, this, _1)},
+		{		   "rgl_node_points_spatial_merge",         std::bind(&TapePlayer::tape_node_points_spatial_merge, this, _1)},
+		{		  "rgl_node_points_temporal_merge",        std::bind(&TapePlayer::tape_node_points_temporal_merge, this, _1)},
+		{		      "rgl_node_points_from_array",            std::bind(&TapePlayer::tape_node_points_from_array, this, _1)},
+		{     "rgl_node_gaussian_noise_angular_ray",   std::bind(&TapePlayer::tape_node_gaussian_noise_angular_ray, this, _1)},
+		{"rgl_node_gaussian_noise_angular_hitpoint",
+		 std::bind(&TapePlayer::tape_node_gaussian_noise_angular_hitpoint, this, _1)                                         },
+		{        "rgl_node_gaussian_noise_distance",      std::bind(&TapePlayer::tape_node_gaussian_noise_distance, this, _1)},
 
-		#if RGL_BUILD_PCL_EXTENSION
-		{ "rgl_graph_write_pcd_file", std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1) },
-		{ "rgl_node_points_downsample", std::bind(&TapePlayer::tape_node_points_downsample, this, _1) },
-		{ "rgl_node_points_visualize", std::bind(&TapePlayer::tape_node_points_visualize, this, _1) },
-		#endif
+#if RGL_BUILD_PCL_EXTENSION
+		{		        "rgl_graph_write_pcd_file",              std::bind(&TapePlayer::tape_graph_write_pcd_file, this, _1)},
+		{		      "rgl_node_points_downsample",            std::bind(&TapePlayer::tape_node_points_downsample, this, _1)},
+		{		       "rgl_node_points_visualize",             std::bind(&TapePlayer::tape_node_points_visualize, this, _1)},
+#endif
 
-		#if RGL_BUILD_ROS2_EXTENSION
-		{ "rgl_node_points_ros2_publish", std::bind(&TapePlayer::tape_node_points_ros2_publish, this, _1) },
-		{ "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlayer::tape_node_points_ros2_publish_with_qos, this, _1) },
-		#endif
+#if RGL_BUILD_ROS2_EXTENSION
+		{		    "rgl_node_points_ros2_publish",          std::bind(&TapePlayer::tape_node_points_ros2_publish, this, _1)},
+		{   "rgl_node_points_ros2_publish_with_qos", std::bind(&TapePlayer::tape_node_points_ros2_publish_with_qos, this, _1)},
+#endif
 	};
 
 	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
@@ -127,45 +134,64 @@ TapePlayer::TapePlayer(const char* path)
 		throw RecordError("recording version does not match rgl version");
 	}
 
-	nextCall = yamlRecording.begin();
+	nextCall = 0;
 }
 
-std::optional<YAML::iterator> TapePlayer::getFirstOf(std::set<std::string_view> fnNames)
+std::optional<TapePlayer::APICallIdx> TapePlayer::findFirst(std::set<std::string_view> fnNames)
 {
-	for (YAML::iterator it = yamlRecording.begin(); it != yamlRecording.end(); ++it) {
-		const YAML::Node& node = *it;
-		bool found = fnNames.contains(node["name"].as<std::string>());
-		if (found) {
-			return {it};
+	for (APICallIdx idx = 0; idx < yamlRecording.size(); ++idx) {
+		if (fnNames.contains(yamlRecording[idx]["name"].as<std::string>())) {
+			return idx;
 		}
 	}
 	return std::nullopt;
 }
 
-void TapePlayer::playUntil(std::optional<YAML::iterator> breakpoint)
+std::optional<TapePlayer::APICallIdx> TapePlayer::findLast(std::set<std::string_view> fnNames)
 {
-	auto end = breakpoint.value_or(yamlRecording.end());
-	for (; nextCall != end; ++nextCall) {
-		playUnchecked(nextCall);
+	for (APICallIdx idx = 0; idx < yamlRecording.size(); ++idx) {
+		auto rIdx = yamlRecording.size() - 1 - idx;
+		if (fnNames.contains(yamlRecording[rIdx]["name"].as<std::string>())) {
+			return rIdx;
+		}
+	}
+	return std::nullopt;
+}
+
+std::vector<TapePlayer::APICallIdx> TapePlayer::findAll(std::set<std::string_view> fnNames)
+{
+	std::vector<APICallIdx> result;
+	for (APICallIdx idx = 0; idx < yamlRecording.size(); ++idx) {
+		if (fnNames.contains((yamlRecording[idx]["name"].as<std::string>()))) {
+			result.push_back(idx);
+		}
+	}
+	return result;
+}
+
+void TapePlayer::playThrough(APICallIdx last)
+{
+	assert(last < yamlRecording.size());
+	for (; nextCall <= last; ++nextCall) {
+		playThis(nextCall);
 	}
 }
 
-void TapePlayer::playNext()
+void TapePlayer::playUntil(std::optional<APICallIdx> breakpoint)
 {
-	if (nextCall == yamlRecording.end()) {
-		return;
+	assert(!breakpoint.has_value() || nextCall < breakpoint.value());
+	auto end = breakpoint.value_or(yamlRecording.size());
+	assert(end <= yamlRecording.size());
+	for (; nextCall < end; ++nextCall) {
+		playThis(nextCall);
 	}
-	playUnchecked(nextCall++);
 }
 
-void TapePlayer::rewindTo(YAML::iterator nextCall)
-{
-	this->nextCall = nextCall;
-}
+void TapePlayer::rewindTo(APICallIdx nextCall) { this->nextCall = nextCall; }
 
-void TapePlayer::playUnchecked(YAML::iterator call)
+void TapePlayer::playThis(APICallIdx idx)
 {
-	const YAML::Node& node = *call;
+	const YAML::Node& node = yamlRecording[idx];
 	std::string functionName = node["name"].as<std::string>();
 
 	if (!tapeFunctions.contains(functionName)) {
@@ -179,11 +205,11 @@ void TapePlayer::playUnchecked(YAML::iterator call)
 void TapePlayer::playRealtime()
 {
 	auto beginTimestamp = std::chrono::steady_clock::now();
-	for (; nextCall != yamlRecording.end(); ++nextCall) {
-		auto nextCallNs = std::chrono::nanoseconds((*nextCall)["timestamp"].as<int64_t>());
+	for (; nextCall < yamlRecording.size(); ++nextCall) {
+		auto nextCallNs = std::chrono::nanoseconds(yamlRecording[nextCall]["timestamp"].as<int64_t>());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
-		playUnchecked(nextCall);
+		playThis(nextCall);
 	}
 }
 
@@ -199,10 +225,12 @@ void TapePlayer::mmapInit(const char* path)
 	int fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		throw InvalidFilePath(fmt::format("rgl_tape_play: could not open binary file: '{}' "
-		                                  " due to the error: {}", path, std::strerror(errno)));
+		                                  " due to the error: {}",
+		                                  path, std::strerror(errno)));
 	}
 
-	struct stat staticBuffer{};
+	struct stat staticBuffer
+	{};
 	int err = fstat(fd, &staticBuffer);
 	if (err < 0) {
 		throw RecordError("rgl_tape_play: couldn't read bin file length");
@@ -215,6 +243,7 @@ void TapePlayer::mmapInit(const char* path)
 	}
 	if (close(fd)) {
 		RGL_WARN("rgl_tape_play: failed to close binary file: '{}' "
-		         "due to the error: {}", path, std::strerror(errno));
+		         "due to the error: {}",
+		         path, std::strerror(errno));
 	}
 }

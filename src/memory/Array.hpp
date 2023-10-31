@@ -46,11 +46,11 @@ struct Array : public IAnyArray
 	/**
 	 * Attempts casting into a subclass.
 	 */
-	template<template <typename> typename Subclass>
+	template<template<typename> typename Subclass>
 	Subclass<T>::Ptr asSubclass();
 
 	/** Const overload **/
-	template<template <typename> typename Subclass>
+	template<template<typename> typename Subclass>
 	Subclass<T>::ConstPtr asSubclass() const;
 
 	const void* getRawReadPtr() const override { return data; }
@@ -63,12 +63,12 @@ struct Array : public IAnyArray
 	void reserve(std::size_t newCapacity, bool preserveData) override;
 	void clear(bool zero) override;
 
-	void copyFromExternal(const T *src, size_t srcCount);
+	void copyFromExternal(const T* src, size_t srcCount);
 
 protected:
-	std::size_t count = {0 };
-	std::size_t capacity = {0 };
-	DataType* data = { nullptr };
+	std::size_t count = {0};
+	std::size_t capacity = {0};
+	DataType* data = {nullptr};
 	MemoryOperations memOps;
 
 protected:

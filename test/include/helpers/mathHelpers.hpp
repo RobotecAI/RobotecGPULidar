@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <math/Mat3x4f.hpp>
 
 static rgl_mat3x4f identityTestTransform = Mat3x4f::identity().toRGL();

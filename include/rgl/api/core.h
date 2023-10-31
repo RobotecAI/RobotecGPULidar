@@ -26,14 +26,14 @@
 
 #if defined _WIN32 || defined __CYGWIN__
 #ifdef __GNUC__
-  #define RGL_VISIBLE __attribute__ ((dllexport))
- #else
-  #define RGL_VISIBLE __declspec(dllexport)
- #endif // __GNUC__
+#define RGL_VISIBLE __attribute__((dllexport))
 #else
-#define RGL_VISIBLE __attribute__ ((visibility("default")))
+#define RGL_VISIBLE __declspec(dllexport)
+#endif // __GNUC__
+#else
+#define RGL_VISIBLE __attribute__((visibility("default")))
 #if __GNUC__ >= 4
-#define RGL_VISIBLE __attribute__ ((visibility("default")))
+#define RGL_VISIBLE __attribute__((visibility("default")))
 #else
 #define RGL_VISIBLE
 #endif
@@ -42,12 +42,12 @@
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 14
+#define RGL_VERSION_MINOR 16
 #define RGL_VERSION_PATCH 0
 
 // Invalid Entity ID is assign to rays that does not hit any Entity.
 // Cannot be assigned to Mesh manually. It is reserved for internal raytracing use.
-#define RGL_ENTITY_INVALID_ID  0
+#define RGL_ENTITY_INVALID_ID 0
 
 // Default Entity ID is the largest positive 32-bit integer.
 // It is assigned by default if the user does not specify it.
@@ -236,7 +236,7 @@ typedef enum : int32_t
  */
 typedef enum : int32_t
 {
-	RGL_FIELD_XYZ_F32 = 1,
+	RGL_FIELD_XYZ_VEC3_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_RAY_IDX_U32,
@@ -275,8 +275,7 @@ typedef enum : int32_t
  * @param out_minor Address to store minor version number
  * @param out_patch Address to store patch version number
  */
-RGL_API rgl_status_t
-rgl_get_version_info(int32_t *out_major, int32_t *out_minor, int32_t *out_patch);
+RGL_API rgl_status_t rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch);
 
 /**
  * As stated in README, some RGL features (extensions) are opt-in in compile-time.
@@ -284,8 +283,7 @@ rgl_get_version_info(int32_t *out_major, int32_t *out_minor, int32_t *out_patch)
  * @param extension Extension to query.
  * @param out_available Pointer to the result. Pointee is set to non-zero value if the extension is available.
  */
-RGL_API rgl_status_t
-rgl_get_extension_info(rgl_extension_t extension, int32_t* out_available);
+RGL_API rgl_status_t rgl_get_extension_info(rgl_extension_t extension, int32_t* out_available);
 
 /**
  * Optionally (re)configures internal logging. This feature may be useful for debugging / issue reporting.
@@ -297,24 +295,21 @@ rgl_get_extension_info(rgl_extension_t extension, int32_t* out_available);
  * Pass nullptr to disable logging to file
  * @param use_stdout If true, logs will be outputted to stdout.
  */
-RGL_API rgl_status_t
-rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout);
+RGL_API rgl_status_t rgl_configure_logging(rgl_log_level_t log_level, const char* log_file_path, bool use_stdout);
 
 /**
  * Returns a pointer to a string explaining the last error. This function always succeeds.
  * Returned pointer is valid only until the next RGL API call.
  * @param out_error Address to store a pointer to the string explaining the error's cause.
  */
-RGL_API void
-rgl_get_last_error_string(const char **out_error_string);
+RGL_API void rgl_get_last_error_string(const char** out_error_string);
 
 /**
  * Removes all user-created API objects: Meshes, Entities, Scenes, lidars, etc.
  * Effectively brings the library to the state as if it was not yet used.
  * All API handles are invalidated.
  */
-RGL_API rgl_status_t
-rgl_cleanup(void);
+RGL_API rgl_status_t rgl_cleanup(void);
 
 /******************************** MESH ********************************/
 
@@ -327,12 +322,8 @@ rgl_cleanup(void);
  * @param indices An array of rgl_vec3i or binary-compatible data representing Mesh indices
  * @param index_count Number of elements in the indices array
  */
-RGL_API rgl_status_t
-rgl_mesh_create(rgl_mesh_t* out_mesh,
-                const rgl_vec3f* vertices,
-                int32_t vertex_count,
-                const rgl_vec3i* indices,
-                int32_t index_count);
+RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_count,
+                                     const rgl_vec3i* indices, int32_t index_count);
 
 /**
  * Assign texture coordinates to given Mesh. Pair of texture coordinates is assigned to each vertex.
@@ -341,18 +332,14 @@ rgl_mesh_create(rgl_mesh_t* out_mesh,
  * @param uvs An array of rgl_vec2f or binary-compatible data representing Mesh uv coordinates
  * @param vertex_count Number of elements in the vertices array. It has to be equal to vertex buffer size.
  */
-RGL_API rgl_status_t
-rgl_mesh_set_texture_coords(rgl_mesh_t mesh,
-                       const rgl_vec2f* uvs,
-                       int32_t uv_count);
+RGL_API rgl_status_t rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_count);
 
 /**
  * Informs that the given Mesh will be no longer used.
  * The Mesh will be destroyed after all referring Entities are destroyed.
  * @param mesh Mesh to be marked as no longer needed
  */
-RGL_API rgl_status_t
-rgl_mesh_destroy(rgl_mesh_t mesh);
+RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
 
 /**
  * Updates Mesh vertex data. The number of vertices must not change.
@@ -361,10 +348,7 @@ rgl_mesh_destroy(rgl_mesh_t mesh);
  * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
  * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
  */
-RGL_API rgl_status_t
-rgl_mesh_update_vertices(rgl_mesh_t mesh,
-                         const rgl_vec3f* vertices,
-                         int32_t vertex_count);
+RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
 
 /******************************** ENTITY ********************************/
 
@@ -375,40 +359,35 @@ rgl_mesh_update_vertices(rgl_mesh_t mesh,
  * @param scene Scene where the Entity will be added. Pass NULL to use the default Scene.
  * @param mesh Handle to the Mesh, which will represent the Entity on the Scene.
  */
-RGL_API rgl_status_t
-rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
+RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh);
 
 /**
  * Removes an Entity from the Scene and releases its resources (memory).
  * This operation does not affect the Entity's Mesh since it can be shared among other Entities.
  * @param entity Entity to remove
  */
-RGL_API rgl_status_t
-rgl_entity_destroy(rgl_entity_t entity);
+RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity);
 
 /**
  * Changes transform (position, rotation, scaling) of the given Entity.
  * @param entity Entity to modify
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (Entity -> world) coordinate system transform.
  */
-RGL_API rgl_status_t
-rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f *transform);
+RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform);
 
 /**
  * Set instance ID of the given Entity.
  * @param entity Entity to modify
  * @param int ID to set. If not set, value of the Entity id will be automatically generated as a DEFAULT_ENTITY_ID.
  */
-RGL_API rgl_status_t
-rgl_entity_set_id(rgl_entity_t entity, int32_t id);
+RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 
 /**
  * Assign intensity texture to the given Entity. The assumption is that the Entity can hold only one intensity texture.
  * @param entity Entity to modify.
  * @apram texture Texture to assign.
  */
-RGL_API rgl_status_t
-rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
 
 /******************************* TEXTURE *******************************/
 
@@ -420,16 +399,14 @@ rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
  * @param width Width of the texture. Has to be positive.
  * @param height Height of the texture. It is not demanded that width == height. Has to be positive.
  */
-RGL_API rgl_status_t
-rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height);
+RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height);
 
 /**
  * Informs that the given texture will be no longer used.
  * The texture will be destroyed after all referring Entities are destroyed.
  * @param mesh Texture to be marked as no longer needed
  */
-RGL_API rgl_status_t
-rgl_texture_destroy(rgl_texture_t texture);
+RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
 
 /******************************** SCENE ********************************/
 
@@ -440,8 +417,7 @@ rgl_texture_destroy(rgl_texture_t texture);
  * @param scene Scene where time will be set. Pass NULL to use the default Scene.
  * @param nanoseconds Timestamp in nanoseconds.
  */
-RGL_API rgl_status_t
-rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds);
+RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds);
 
 /******************************** NODES ********************************/
 
@@ -455,8 +431,7 @@ rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds);
  * @param rays Pointer to 3x4 affine matrices describing rays poses.
  * @param ray_count Size of the `rays` array
  */
-RGL_API rgl_status_t
-rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count);
+RGL_API rgl_status_t rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ray_count);
 
 /**
  * Creates or modifies SetRingIdsRaysNode.
@@ -467,8 +442,32 @@ rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3x4f* rays, int32_t ra
  * @param ring_ids Pointer to ring ids.
  * @param ray_count Size of the `ring_ids` array.
  */
-RGL_API rgl_status_t
-rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count);
+RGL_API rgl_status_t rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count);
+
+/**
+ * Creates or modifies SetRangeRaysNode.
+ * The node defines min and max range for existing rays.
+ * It could be passed:
+ * - one range value and it will be applied to all of the rays
+ * - number of ranges equals to the number of rays (range for each ray will be specified individually)
+ * Input: rays
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param ranges Pointer to ranges.
+ * @param ranges_count Size of the `ranges` array.
+ */
+RGL_API rgl_status_t rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t ranges_count);
+
+/**
+ * Creates or modifies SetTimeOffsetsRaysNode.
+ * The node assigns time offsets for existing rays.
+ * Input: rays
+ * Output: rays
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param offsets Pointer to time offsets. Time offsets are in milliseconds.
+ * @param offsets_count Size of the `offsets` array. It has to be equal to number of existing rays.
+ */
+RGL_API rgl_status_t rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t offsets_count);
 
 /**
  * Creates or modifies TransformRaysNode.
@@ -479,21 +478,19 @@ rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ri
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
-RGL_API rgl_status_t
-rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
+RGL_API rgl_status_t rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
  * Creates or modifies TransformPointsNode.
  * The Node applies the affine transformation to all points.
  * It can be used to e.g., change coordinate frame after raytracing.
- * Note: affects only RGL_FIELD_XYZ_F32. Other fields are not modified.
+ * Note: affects only RGL_FIELD_XYZ_VEC3_F32. Other fields are not modified.
  * Graph input: point cloud
  * Graph output: point cloud (transformed)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param transform Pointer to a single 3x4 affine matrix describing the transformation to be applied.
  */
-RGL_API rgl_status_t
-rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
+RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
 /**
  * Creates or modifies RaytraceNode.
@@ -503,10 +500,27 @@ rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
  * Graph output: point cloud (sparse)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param scene Handle to a Scene to perform raytracing on. Pass null to use the default Scene
- * @param range Maximum distance to travel for every ray
  */
-RGL_API rgl_status_t
-rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
+RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
+
+/**
+ * Creates or modifies RaytraceNode.
+ * The same as rgl_node_raytrace, but it applies velocity distortion additionally.
+ * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
+ * The velocities passed to that node must be in the local coordinate frame in which rays are described.
+ * NOTE:
+ * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
+ * Graph input: rays
+ * Graph output: point cloud (sparse)
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
+ * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
+ *                        The velocity is in units per second.
+ * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
+ *                         The velocity is in radians per second.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
+                                                       const rgl_vec3f* angular_velocity);
 
 /**
  * Creates or modifies FormatPointsNode.
@@ -518,8 +532,7 @@ rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene, float range);
  * @param fields Subsequent fields to be present in the binary output
  * @param field_count Number of elements in the `fields` array
  */
-RGL_API rgl_status_t
-rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
+RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies YieldPointsNode.
@@ -530,8 +543,7 @@ rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t fiel
  * @param fields Subsequent fields expected to be available
  * @param field_count Number of elements in the `fields` array
  */
-RGL_API rgl_status_t
-rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
+RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies CompactPointsNode.
@@ -540,8 +552,7 @@ rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  */
-RGL_API rgl_status_t
-rgl_node_points_compact(rgl_node_t* node);
+RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node);
 
 /**
  * Creates or modifies SpatialMergePointsNode.
@@ -555,8 +566,7 @@ rgl_node_points_compact(rgl_node_t* node);
  * @param fields Fields to be merged.
  * @param field_count Number of elements in the `fields` array.
  */
-RGL_API rgl_status_t
-rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
+RGL_API rgl_status_t rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies TemporalMergePointsNode.
@@ -570,8 +580,7 @@ rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32
  * @param fields Fields to be merged.
  * @param field_count Number of elements in the `fields` array.
  */
-RGL_API rgl_status_t
-rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
+RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies FromArrayPointsNode.
@@ -584,7 +593,7 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
  * Example of that structure:
  * struct ExamplePoint
  * {
- *   Field<XYZ_F32>::type xyz;
+ *   Field<XYZ_VEC3_F32>::type xyz;
  *   Field<PADDING_32>::type padding;
  *   Field<IS_HIT_I32>::type isHit;
  *   Field<INTENSITY_F32>::type intensity;
@@ -593,8 +602,8 @@ rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int3
  * @param rgl_field_t Subsequent fields to be present in the binary input.
  * @param field_count Number of elements in the `fields` array.
  */
-RGL_API rgl_status_t
-rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count, const rgl_field_t* fields, int32_t field_count);
+RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count,
+                                                const rgl_field_t* fields, int32_t field_count);
 
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.
@@ -607,15 +616,14 @@ rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_
  * @param st_dev Angular noise standard deviation in radians.
  * @param axis Axis on which angular noise will be performed.
  */
-RGL_API rgl_status_t
-rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
+RGL_API rgl_status_t rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
 
 /**
  * Creates or modifies GaussianNoiseAngularHitpointNode.
  * Adds angular noise to already computed hitpoints.
- * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
+ * Note: affects on RGL_FIELD_XYZ_VEC3_F32 and RGL_DISTANCE_F32.
  * Should be used after the raytrace Node.
- * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
+ * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_VEC3_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#hitpoint-based-angular-noise
  * Graph input: point cloud
  * Graph output: point cloud
@@ -624,15 +632,15 @@ rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, 
  * @param st_dev Angular noise standard deviation in radians.
  * @param axis Axis on which angular noise will be performed.
  */
-RGL_API rgl_status_t
-rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis);
+RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_dev,
+                                                              rgl_axis_t rotation_axis);
 
 /**
  * Creates or modifies GaussianNoiseDistanceNode.
  * Changes the distance between the hitpoint and the lidar's origin.
- * Note: affects on RGL_FIELD_XYZ_F32 and RGL_DISTANCE_F32.
+ * Note: affects on RGL_FIELD_XYZ_VEC3_F32 and RGL_DISTANCE_F32.
  * Should be used after the raytrace Node.
- * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_F32.
+ * Using this noise after Nodes that modify XYZ (e.g. points_transform, points_downsample) may cause incorrect values in fields other than RGL_FIELD_XYZ_VEC3_F32.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#distance-noise
  * Graph input: point cloud
  * Graph output: point cloud
@@ -641,8 +649,8 @@ rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_
  * @param st_dev_base Distance noise standard deviation base in meters.
  * @param st_dev_rise_per_meter Distance noise standard deviation rise per meter.
  */
-RGL_API rgl_status_t
-rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base, float st_dev_rise_per_meter);
+RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base,
+                                                      float st_dev_rise_per_meter);
 
 
 /**
@@ -669,15 +677,13 @@ rgl_node_points_simulate_snow(rgl_node_t* node, float max_range,
  * This function is asynchronous.
  * @param node Any Node from the graph to execute
  */
-RGL_API rgl_status_t
-rgl_graph_run(rgl_node_t node);
+RGL_API rgl_status_t rgl_graph_run(rgl_node_t node);
 
 /**
  * Destroys RGL graph (all connected Nodes) containing the provided Node.
  * @param node Any Node from the graph to destroy
  */
-RGL_API rgl_status_t
-rgl_graph_destroy(rgl_node_t node);
+RGL_API rgl_status_t rgl_graph_destroy(rgl_node_t node);
 
 /**
  * Obtains the result information of any Node in the graph.
@@ -688,8 +694,7 @@ rgl_graph_destroy(rgl_node_t node);
  * @param out_count Returns the number of available elements (e.g., points). It may be null.
  * @param out_size_of Returns byte size of a single element (e.g., point). It may be null.
  */
-RGL_API rgl_status_t
-rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of);
+RGL_API rgl_status_t rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count, int32_t* out_size_of);
 
 /**
  * Obtains the result data of any Node in the graph.
@@ -698,24 +703,21 @@ rgl_graph_get_result_size(rgl_node_t node, rgl_field_t field, int32_t* out_count
  * @param field Field to get output from. Formatted output with FormatNode should be marked as RGL_FIELD_DYNAMIC_FORMAT.
  * @param data Returns binary data, expects a buffer of size (*out_count) * (*out_size_of) from rgl_graph_get_result_size(...) call.
  */
-RGL_API rgl_status_t
-rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data);
+RGL_API rgl_status_t rgl_graph_get_result_data(rgl_node_t node, rgl_field_t field, void* data);
 
 /**
- * Adds child to the parent Node 
+ * Adds child to the parent Node
  * @param parent Node that will be set as the parent of (child)
  * @param child Node that will be set as the child of (parent)
  */
-RGL_API rgl_status_t
-rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child);
+RGL_API rgl_status_t rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t child);
 
 /**
  * Removes child from the parent Node
  * @param parent Node that will be removed as a parent from (child)
  * @param child Node that will be removed as a child from (parent)
  */
-RGL_API rgl_status_t
-rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
+RGL_API rgl_status_t rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
 
 /**
  * Allows to set relative node's priority, which determine their execution order.
@@ -728,13 +730,11 @@ rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child);
  * @param node Node to set its priority.
  * @param priority Signed integer describing priority.
  */
-RGL_API rgl_status_t
-rgl_graph_node_set_priority(rgl_node_t node, int32_t priority);
+RGL_API rgl_status_t rgl_graph_node_set_priority(rgl_node_t node, int32_t priority);
 
 /**
  * Returns node's priority.
  * @param node Node to query
  * @param out_priority Non-null pointer where priority will be stored.
  */
-RGL_API rgl_status_t
-rgl_graph_node_get_priority(rgl_node_t node, int32_t* out_priority);
+RGL_API rgl_status_t rgl_graph_node_get_priority(rgl_node_t node, int32_t* out_priority);

@@ -8,8 +8,8 @@
 #include <rgl/api/extensions/ros2.h>
 #endif
 
-class EntityIdTest : public RGLTest {
-};
+class EntityIdTest : public RGLTest
+{};
 
 // Test spawns 3 boxes along Y axis:
 // box1 and box2 with specific entity ID assigned, box3 with no entity ID (RGL should assign default ID in that case).
@@ -45,14 +45,10 @@ TEST_F(EntityIdTest, BaseTest)
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);
 
-	std::vector<rgl_field_t> yieldFields = {
-			XYZ_F32,
-			ENTITY_ID_I32,
-			IS_HIT_I32
-	};
+	std::vector<rgl_field_t> yieldFields = {XYZ_VEC3_F32, ENTITY_ID_I32, IS_HIT_I32};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 1000));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
@@ -60,7 +56,7 @@ TEST_F(EntityIdTest, BaseTest)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 
-	std::vector<::Field<XYZ_F32>::type> outPoints;
+	std::vector<::Field<XYZ_VEC3_F32>::type> outPoints;
 	std::vector<::Field<ENTITY_ID_I32>::type> outID;
 	std::vector<::Field<IS_HIT_I32>::type> outIsHit;
 
@@ -68,12 +64,11 @@ TEST_F(EntityIdTest, BaseTest)
 	outID.resize(rays.size());
 	outIsHit.resize(rays.size());
 
-	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, XYZ_F32, outPoints.data()));
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, XYZ_VEC3_F32, outPoints.data()));
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, ENTITY_ID_I32, outID.data()));
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, IS_HIT_I32, outIsHit.data()));
 
-	for (int i = 0; i < rays.size(); ++i)
-	{
+	for (int i = 0; i < rays.size(); ++i) {
 		// Non-hit should have id equals INVALID_ENTITY_ID
 		if (!outIsHit[i]) {
 			EXPECT_EQ(outID[i], RGL_ENTITY_INVALID_ID);
@@ -100,12 +95,12 @@ TEST_F(EntityIdTest, BaseTest)
 	}
 
 	// Infinite loop to publish point cloud to ROS2 topic for visualization purposes. Uncomment to use. Use wisely.
-//#ifdef RGL_BUILD_ROS2_EXTENSION
-//    rgl_node_t ros2publishNode = nullptr;
-//
-//    EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2publishNode, "pointcloud", "rgl"));
-//    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(formatNode, ros2publishNode));
-//    while(true)
-//        EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
-//#endif
+	//#ifdef RGL_BUILD_ROS2_EXTENSION
+	//    rgl_node_t ros2publishNode = nullptr;
+	//
+	//    EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2publishNode, "pointcloud", "rgl"));
+	//    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(formatNode, ros2publishNode));
+	//    while(true)
+	//        EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
+	//#endif
 }

@@ -11,14 +11,14 @@ import argparse
 class Config:
     # Default values for Linux
     CUDA_MIN_VER_MAJOR = 11
-    CUDA_MIN_VER_MINOR = 2
+    CUDA_MIN_VER_MINOR = 7
     CUDA_MIN_VER_PATCH = 0
     CMAKE_GENERATOR = "'Unix Makefiles'"
     VCPKG_INSTALL_DIR = os.path.join("external", "vcpkg")
-    VCPKG_TAG = "2022.08.15"
+    VCPKG_TAG = "2023.08.09"
     VCPKG_EXEC = "vcpkg"
     VCPKG_BOOTSTRAP = "bootstrap-vcpkg.sh"
-    VCPKG_PLATFORM_SPEC = ""
+    VCPKG_TRIPLET = "x64-linux"
 
     def __init__(self):
         # Platform-dependent configuration
@@ -31,7 +31,7 @@ class Config:
             self.CMAKE_GENERATOR = "Ninja"
             self.VCPKG_EXEC = "vcpkg.exe"
             self.VCPKG_BOOTSTRAP = "bootstrap-vcpkg.bat"
-            self.VCPKG_PLATFORM_SPEC = ":x64-windows"
+            self.VCPKG_TRIPLET = "x64-windows"
 
 
 def main():
@@ -49,7 +49,7 @@ def main():
     parser.add_argument("--with-ros2", action='store_true',
                         help="Build RGL with ROS2 extension")
     parser.add_argument("--with-ros2-standalone", action='store_true',
-                        help="Build RGL with ROS2 extension in standalone mode")
+                        help="Build RGL with ROS2 extension and install all dependent ROS2 libraries additionally")
     parser.add_argument("--cmake", type=str, default="",
                         help="Pass arguments to cmake. Usage: --cmake=\"args...\"")
     if on_linux():
@@ -74,8 +74,9 @@ def main():
         # Bootstrap vcpkg
         if not os.path.isfile(os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)):
             run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_BOOTSTRAP)}")
+
         # Install dependencies via vcpkg
-        run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]{cfg.VCPKG_PLATFORM_SPEC}")
+        run_subprocess_command(f"{os.path.join(cfg.VCPKG_INSTALL_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]:{cfg.VCPKG_TRIPLET}")
         return 0
 
     # Check CUDA
@@ -102,6 +103,10 @@ def main():
     if os.environ["OptiX_INSTALL_DIR"] == "":
         raise RuntimeError("OptiX not found! Make sure you have exported environment variable OptiX_INSTALL_DIR")
 
+    # Check extension requirements
+    if args.with_pcl and not os.path.isdir(cfg.VCPKG_INSTALL_DIR):
+        raise RuntimeError("PCL extension requires dependencies to be installed: run this script with --install-pcl-deps flag")
+
     # Go to script directory
     os.chdir(sys.path[0])
 
@@ -116,11 +121,13 @@ def main():
         os.environ["Path"] = os.environ["Path"] + ";" + os.path.join(os.getcwd(), args.build_dir)
 
     # Build
+    if args.with_ros2_standalone:
+        args.with_ros2 = True
     cmake_args = [
         f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(cfg.VCPKG_INSTALL_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
+        f"-DVCPKG_TARGET_TRIPLET={cfg.VCPKG_TRIPLET if args.with_pcl else ''}",
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
-        f"-DRGL_BUILD_ROS2_EXTENSION_STANDALONE={'ON' if args.with_ros2_standalone else 'OFF'}"
     ]
 
     if on_linux():
@@ -132,8 +139,6 @@ def main():
                 linker_rpath_flags.append(f"-Wl,-rpath={rpath}")
         cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
 
-    cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}")
-
     # Append user args, possibly overwriting
     cmake_args.append(args.cmake)
 
@@ -142,7 +147,12 @@ def main():
     run_subprocess_command(f"cmake --build {args.build_dir} -- {args.build_args}")
 
     if args.with_ros2_standalone:
-        run_subprocess_command(f"cmake --install {args.build_dir}")
+        # Build RobotecGPULidar_ros2_standalone project to find and install all dependent ROS2 libraries and their dependencies
+        # It cannot be added as a subdirectory of RobotecGPULidar project because there is a conflict in the same libraries required by RGL and ROS2
+        # RGL takes them from vcpkg as statically linked objects while ROS2 standalone required them as a shared objects
+        ros2_standalone_cmake_args = f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}"
+        run_subprocess_command(f"cmake ros2_standalone -B {args.build_dir}/ros2_standalone -G {cfg.CMAKE_GENERATOR} {ros2_standalone_cmake_args}")
+        run_subprocess_command(f"cmake --install {args.build_dir}/ros2_standalone")
 
 
 def on_linux():

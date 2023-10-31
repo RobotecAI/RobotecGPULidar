@@ -30,7 +30,8 @@ void FormatPointsNode::enqueueExecImpl()
 	formatAsync(output, input, fields, gpuFieldDescBuilder);
 	auto bytes = getPointSize(fields) * input->getPointCount();
 	outputHost->resize(bytes, false, false);
-	CHECK_CUDA(cudaMemcpyAsync(outputHost->getRawWritePtr(), output->getRawReadPtr(), bytes, cudaMemcpyDeviceToHost, getStreamHandle()));
+	CHECK_CUDA(cudaMemcpyAsync(outputHost->getRawWritePtr(), output->getRawReadPtr(), bytes, cudaMemcpyDeviceToHost,
+	                           getStreamHandle()));
 }
 
 void FormatPointsNode::formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
@@ -42,7 +43,8 @@ void FormatPointsNode::formatAsync(DeviceAsyncArray<char>::Ptr output, const IPo
 	output->resize(pointCount * pointSize, false, false);
 
 	// Kernel Call
-	const GPUFieldDesc* gpuFieldsPtr = gpuFieldDescBuilder.buildReadableAsync(output->getStream(), getFieldToPointerMappings(input, fields)).getReadPtr();
+	const GPUFieldDesc* gpuFieldsPtr =
+	    gpuFieldDescBuilder.buildReadableAsync(output->getStream(), getFieldToPointerMappings(input, fields)).getReadPtr();
 	char* outputPtr = output->getWritePtr();
 	gpuFormatSoaToAos(output->getStream()->getHandle(), pointCount, pointSize, fields.size(), gpuFieldsPtr, outputPtr);
 }
@@ -63,8 +65,8 @@ std::size_t FormatPointsNode::getFieldPointSize(rgl_field_t field) const
 	return getFieldSize(field);
 }
 
-std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::getFieldToPointerMappings(const IPointsNode::Ptr& input,
-                                                                                             const std::vector<rgl_field_t>& fields)
+std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::getFieldToPointerMappings(
+    const IPointsNode::Ptr& input, const std::vector<rgl_field_t>& fields)
 {
 	std::vector<std::pair<rgl_field_t, const void*>> outFieldsData;
 	for (auto&& field : fields) {
@@ -78,7 +80,8 @@ std::vector<std::pair<rgl_field_t, const void*>> FormatPointsNode::getFieldToPoi
 		if (!isDummy(field)) {
 			IAnyArray::ConstPtr fieldArray = input->getFieldData(field);
 			if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
-				auto msg = fmt::format("FormatPointsNode: all input fields must be device-accessible, {} is not", toString(field));
+				auto msg = fmt::format("FormatPointsNode: all input fields must be device-accessible, {} is not",
+				                       toString(field));
 				throw InvalidPipeline(msg);
 			}
 			outFieldsData.rbegin()->second = fieldArray->getRawReadPtr();

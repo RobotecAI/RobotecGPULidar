@@ -108,7 +108,7 @@ rgl_mat3x4f ray_tf = {
 rgl_node_t useRays = nullptr, raytrace = nullptr;
 
 rgl_node_rays_from_mat3x4f(&useRays, &ray_tf, 1);
-rgl_node_raytrace(&raytrace, nullptr, 1000);
+rgl_node_raytrace(&raytrace, nullptr);
 rgl_graph_node_add_child(useRays, raytrace);
 
 // You can run the Graph using any one of its Nodes
@@ -118,8 +118,8 @@ rgl_graph_run(raytrace);
 int32_t hitpoint_count;
 int32_t point_size;
 rgl_vec3f results[1];
-rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_F32, &hitpoint_count, &point_size);
-rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_F32, &results);
+rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_VEC3_F32, &hitpoint_count, &point_size);
+rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_VEC3_F32, &results);
 
 printf("Got %d hitpoint(s)\n", hitpoint_count);
 for (int i = 0; i < hitpoint_count; ++i) {

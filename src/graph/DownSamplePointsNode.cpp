@@ -24,7 +24,7 @@ using PCLPoint = pcl::PointXYZL;
 void DownSamplePointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	if (!input->hasField(XYZ_F32)) {
+	if (!input->hasField(XYZ_VEC3_F32)) {
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
 	}
@@ -55,7 +55,7 @@ void DownSamplePointsNode::enqueueExecImpl()
 	for (int i = 0; i < toFilter->size(); ++i) {
 		toFilter->points[i].label = i;
 	}
-	pcl::VoxelGrid<PCLPoint> voxelGrid {};
+	pcl::VoxelGrid<PCLPoint> voxelGrid{};
 	voxelGrid.setInputCloud(toFilter);
 	voxelGrid.setLeafSize(leafDims.x(), leafDims.y(), leafDims.z());
 
@@ -66,8 +66,7 @@ void DownSamplePointsNode::enqueueExecImpl()
 	// Warn if nothing changed
 	bool pclReduced = filtered->size() < toFilter->size();
 	if (!pclReduced) {
-		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}",
-		                           toFilter->size(), filtered->size(), leafDims);
+		auto details = fmt::format("original: {}; filtered: {}; leafDims: {}", toFilter->size(), filtered->size(), leafDims);
 		RGL_WARN("Down-sampling node had no effect! ({})", details);
 	}
 	filteredPoints->copyFromExternal(filtered->data(), filtered->size());
@@ -76,8 +75,8 @@ void DownSamplePointsNode::enqueueExecImpl()
 	size_t offset = offsetof(PCLPoint, label);
 	size_t stride = sizeof(PCLPoint);
 	size_t size = sizeof(PCLPoint::label);
-	auto&& dst = (char*) filteredIndices->getReadPtr();
-	auto&& src = (const char*) filteredPoints->getReadPtr();
+	auto&& dst = reinterpret_cast<char*>(filteredIndices->getWritePtr());
+	auto&& src = reinterpret_cast<const char*>(filteredPoints->getReadPtr());
 	gpuCutField(getStreamHandle(), filtered->size(), dst, src, offset, stride, size);
 
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data
@@ -101,7 +100,7 @@ size_t DownSamplePointsNode::getWidth() const
 
 IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 {
-	std::lock_guard lock {getFieldDataMutex};
+	std::lock_guard lock{getFieldDataMutex};
 
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
@@ -112,14 +111,15 @@ IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(filteredIndices->getCount(), false, false);
-		char* outPtr = static_cast<char *>(fieldData->getRawWritePtr());
+		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
 		auto fieldArray = input->getFieldData(field);
 		if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
 			auto msg = fmt::format("DownSampleNode requires its input to be device-accessible, {} is not", field);
 			throw InvalidPipeline(msg);
 		}
-		const char* inputPtr = static_cast<const char *>(fieldArray->getRawReadPtr());
-		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getReadPtr(), outPtr, inputPtr, getFieldSize(field));
+		const char* inputPtr = static_cast<const char*>(fieldArray->getRawReadPtr());
+		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getReadPtr(), outPtr, inputPtr,
+		          getFieldSize(field));
 		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 		cacheManager.setUpdated(field);
 	}
@@ -130,5 +130,5 @@ IAnyArray::ConstPtr DownSamplePointsNode::getFieldData(rgl_field_t field)
 std::vector<rgl_field_t> DownSamplePointsNode::getRequiredFieldList() const
 {
 	// pcl::PointXYZL is aligned to 32 bytes for SSE2 ¯\_(ツ)_/¯
-	return {XYZ_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
+	return {XYZ_VEC3_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
 }

@@ -77,8 +77,8 @@ private:
 	ASBuildScratchpad scratchpad;
 
 	std::mutex optixStructsMutex;
-		std::optional<OptixTraversableHandle> cachedAS;
-		std::optional<OptixShaderBindingTable> cachedSBT;
+	std::optional<OptixTraversableHandle> cachedAS;
+	std::optional<OptixShaderBindingTable> cachedSBT;
 
 	// TODO: allow non-heap creation;
 	DeviceSyncArray<OptixInstance>::Ptr dInstances = DeviceSyncArray<OptixInstance>::create();

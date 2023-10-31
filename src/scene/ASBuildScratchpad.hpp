@@ -26,6 +26,9 @@
  */
 struct ASBuildScratchpad
 {
+	friend struct Mesh;
+	friend struct Scene;
+
 	void resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options);
 	void doCompaction(OptixTraversableHandle& handle);
 
@@ -35,7 +38,4 @@ private:
 	DeviceSyncArray<std::byte>::Ptr dTemp = DeviceSyncArray<std::byte>::create();
 	DeviceSyncArray<std::byte>::Ptr dFull = DeviceSyncArray<std::byte>::create();
 	DeviceSyncArray<std::byte>::Ptr dCompact = DeviceSyncArray<std::byte>::create();
-
-	friend struct Mesh;
-	friend struct Scene;
 };

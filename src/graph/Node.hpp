@@ -56,6 +56,12 @@ struct GraphRunCtx;
  */
 struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 {
+	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
+	template<typename NodeType, typename... Args>
+	friend void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args);
+	friend struct fmt::formatter<Node>;
+	friend struct GraphRunCtx;
+
 	using Ptr = std::shared_ptr<Node>;
 	using ConstPtr = std::shared_ptr<const Node>;
 
@@ -65,12 +71,6 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 
 	void removeChild(Node::Ptr child);
 
-	/**
-	 * Called to set/change/clear current GraphRunCtx.
-	 * Node must ensure that its future operations will be enqueued
-	 * to the stream associated with given graph.
-	 */
-	void setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph);
 	bool hasGraphRunCtx() const { return graphRunCtx.has_value(); }
 	std::shared_ptr<GraphRunCtx> getGraphRunCtx() { return graphRunCtx.value(); }
 
@@ -99,7 +99,7 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	/**
 	 * @return Set of nodes reachable from this node.
 	 */
-	std::set<Node::Ptr> getConnectedNodes();
+	std::set<Node::Ptr> getConnectedComponentNodes();
 
 	/**
 	 * Removes all connections between connected nodes.
@@ -111,7 +111,6 @@ struct Node : APIObject<Node>, std::enable_shared_from_this<Node>
 	int32_t getPriority() const { return priority; }
 
 public: // Debug methods
-
 	std::string getName() const { return name(typeid(*this)); }
 
 	/**
@@ -121,7 +120,6 @@ public: // Debug methods
 	virtual std::string getArgsString() const { return {}; }
 
 protected: // Member methods
-
 	Node();
 
 	/**
@@ -150,12 +148,21 @@ protected: // Member methods
 
 	template<typename T>
 	typename T::Ptr getExactlyOneInputOfType()
-	{ return getExactlyOneNodeOfType<T>(inputs); }
+	{
+		return getExactlyOneNodeOfType<T>(inputs);
+	}
+
+private: // Used by friend GraphRunCtx
+	/**
+	 * Called to set/change/clear current GraphRunCtx.
+	 * Node must ensure that its future operations will be enqueued
+	 * to the stream associated with given graph.
+	 */
+	void setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph);
 
 public: // Static methods
-
-	template<template<typename, typename...> typename Container, typename...CArgs>
-	static std::string getNamesOfNodes(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator= ", ")
+	template<template<typename, typename...> typename Container, typename... CArgs>
+	static std::string getNamesOfNodes(const Container<Node::Ptr, CArgs...>& nodes, std::string_view separator = ", ")
 	{
 		std::string output{};
 		for (auto&& node : nodes) {
@@ -163,17 +170,17 @@ public: // Static methods
 			output += separator;
 		}
 		if (!output.empty()) {
-			std::string_view view {output};
+			std::string_view view{output};
 			view.remove_suffix(separator.size()); // Remove trailing separator
 			output = std::string(view);
 		}
 		return output;
 	}
 
-	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
+	template<typename T, template<typename, typename...> typename Container, typename... CArgs>
 	static std::vector<typename T::Ptr> getNodesOfType(const Container<Node::Ptr, CArgs...>& nodes)
 	{
-		std::vector<typename T::Ptr> typedNodes {};
+		std::vector<typename T::Ptr> typedNodes{};
 		for (auto&& node : nodes) {
 			auto typedNode = std::dynamic_pointer_cast<T>(node);
 			if (typedNode != nullptr) {
@@ -183,7 +190,7 @@ public: // Static methods
 		return typedNodes;
 	}
 
-	template<typename T, template<typename, typename...> typename Container, typename...CArgs>
+	template<typename T, template<typename, typename...> typename Container, typename... CArgs>
 	static typename T::Ptr getExactlyOneNodeOfType(const Container<Node::Ptr, CArgs...>& nodes)
 	{
 		std::vector<typename T::Ptr> typedNodes = Node::getNodesOfType<T>(nodes);
@@ -195,21 +202,15 @@ public: // Static methods
 	}
 
 protected:
-	std::vector<Node::Ptr> inputs {};
-	std::vector<Node::Ptr> outputs {}; // Always sorted by priority (descending)
-	int32_t priority {0}; // Must be >= than children priorities
+	std::vector<Node::Ptr> inputs{};
+	std::vector<Node::Ptr> outputs{}; // Always sorted by priority (descending)
+	int32_t priority{0};              // Must be >= than children priorities
 
-	bool dirty { true };
-	CudaEvent::Ptr execCompleted { nullptr };
+	bool dirty{true};
+	CudaEvent::Ptr execCompleted{nullptr};
 
 	std::optional<std::shared_ptr<GraphRunCtx>> graphRunCtx; // Pointer may be destroyed e.g. on addChild
 	StreamBoundObjectsManager arrayMgr;
-
-	friend struct fmt::formatter<Node>;
-
-	// This friendship allows API to mark node as dirty and avoid implementing public invalidate() method.
-	template<typename NodeType, typename... Args>
-	friend void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args);
 };
 
 #ifndef __CUDACC__
@@ -217,18 +218,17 @@ template<>
 struct fmt::formatter<Node>
 {
 	template<typename ParseContext>
-	constexpr auto parse(ParseContext& ctx) {
+	constexpr auto parse(ParseContext& ctx)
+	{
 		return ctx.begin();
 	}
 
 	template<typename FormatContext>
-	auto format(const Node& node, FormatContext& ctx) {
+	auto format(const Node& node, FormatContext& ctx)
+	{
 
-		return fmt::format_to(ctx.out(), fmt::runtime("{}{{in=[{}], out=[{}]}}({})"),
-		                      node.getName(),
-		                      Node::getNamesOfNodes(node.inputs),
-		                      Node::getNamesOfNodes(node.outputs),
-		                      node.getArgsString());
+		return fmt::format_to(ctx.out(), fmt::runtime("{}{{in=[{}], out=[{}]}}({})"), node.getName(),
+		                      Node::getNamesOfNodes(node.inputs), Node::getNamesOfNodes(node.outputs), node.getArgsString());
 	}
 };
 #endif // __CUDACC__

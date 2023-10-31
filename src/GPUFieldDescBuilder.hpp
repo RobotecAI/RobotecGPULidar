@@ -31,7 +31,8 @@ struct GPUFieldDescBuilder
 	// TODO: Also, this class is over-engineered; likely due to using GPUFieldDesc for both directions of formatting
 	// TODO: This should be fixed by splitting GPUFieldDesc into two separate structs and merging fill* methods.
 
-	const DeviceAsyncArray<GPUFieldDesc>& buildReadableAsync(CudaStream::Ptr stream, const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
+	const DeviceAsyncArray<GPUFieldDesc>& buildReadableAsync(CudaStream::Ptr stream,
+	                                                         const std::vector<std::pair<rgl_field_t, const void*>>& fieldsData)
 	{
 		hostBuffer->clear(false);
 		hostBuffer->resize(fieldsData.size(), true, false);
@@ -42,7 +43,8 @@ struct GPUFieldDescBuilder
 		return *deviceBuffer;
 	}
 
-	const DeviceAsyncArray<GPUFieldDesc>& buildWritableAsync(CudaStream::Ptr stream, const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
+	const DeviceAsyncArray<GPUFieldDesc>& buildWritableAsync(CudaStream::Ptr stream,
+	                                                         const std::vector<std::pair<rgl_field_t, void*>>& fieldsData)
 	{
 		hostBuffer->clear(false);
 		hostBuffer->resize(fieldsData.size(), true, false);
@@ -60,19 +62,15 @@ private:
 		std::size_t gpuFieldIdx = 0;
 		for (auto field : fields) {
 			if (!isDummy(field)) {
-				(*hostBuffer)[gpuFieldIdx] = GPUFieldDesc {
-					.readDataPtr = nullptr,
-					.writeDataPtr = nullptr,
-					.size = getFieldSize(field),
-					.dstOffset = offset
-				};
+				(*hostBuffer)[gpuFieldIdx] = GPUFieldDesc{
+				    .readDataPtr = nullptr, .writeDataPtr = nullptr, .size = getFieldSize(field), .dstOffset = offset};
 			}
 			++gpuFieldIdx;
 			offset += getFieldSize(field);
 		}
 	}
 
-	template <typename T>
+	template<typename T>
 	std::vector<rgl_field_t> getFields(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		std::vector<rgl_field_t> fields;
@@ -81,12 +79,12 @@ private:
 		return fields;
 	}
 
-	template <typename T>
+	template<typename T>
 	void fillPointers(const std::vector<std::pair<rgl_field_t, T>>& fieldsData)
 	{
 		static_assert(std::is_same_v<T, void*> || std::is_same_v<T, const void*>);
 		for (size_t i = 0; i < hostBuffer->getCount(); ++i) {
-			if (fieldsData[i].second == nullptr) {  // dummy field
+			if (fieldsData[i].second == nullptr) { // dummy field
 				continue;
 			}
 			if constexpr (std::is_same_v<T, const void*>) {

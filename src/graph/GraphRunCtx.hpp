@@ -29,6 +29,9 @@
  */
 struct GraphRunCtx
 {
+	friend Node;
+	friend void handleDestructorException(std::exception_ptr e, const char* what);
+
 	static std::shared_ptr<GraphRunCtx> createAndAttach(std::shared_ptr<Node> node);
 
 	/**
@@ -60,10 +63,16 @@ struct GraphRunCtx
 	 */
 	void synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize);
 
+	bool isThisThreadGraphThread() const
+	{
+		return maybeThread.has_value() && maybeThread->get_id() == std::this_thread::get_id();
+	}
+
 	CudaStream::Ptr getStream() const { return stream; }
 	const std::set<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 
 	virtual ~GraphRunCtx();
+
 private:
 	GraphRunCtx() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
@@ -71,7 +80,7 @@ private:
 
 	void executeThreadMain();
 
-private:
+	// Internal fields
 	CudaStream::Ptr stream;
 	std::optional<std::thread> maybeThread;
 	std::set<Node::Ptr> nodes;
@@ -82,20 +91,17 @@ private:
 	// Modified by client's thread, read by graph thread
 	static std::list<std::shared_ptr<GraphRunCtx>> instances;
 
-private: // Communication between client's thread and graph thread
+	// Communication between client's thread and graph thread
 	struct NodeExecStatus
 	{
 		// If true, then execution has succeeded or an exception has been thrown.
-		std::atomic<bool> enqueued {false};
+		std::atomic<bool> enqueued{false};
 
 		// exceptionPtr may be read by client's thread only after it acquire-read true `completed`
 		// exceptionPtr may be written by graph thread only before it release-stores true `completed`
-		std::exception_ptr exceptionPtr {nullptr};
+		std::exception_ptr exceptionPtr{nullptr};
 	};
 
 	std::unordered_map<Node::ConstPtr, NodeExecStatus> executionStatus;
 	std::atomic<bool> execThreadCanStart;
-
-	friend Node;
-	friend void handleDestructorException(std::exception_ptr e, const char* what);
 };

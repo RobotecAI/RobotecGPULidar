@@ -35,8 +35,7 @@ struct Vec3fPayload
 	unsigned p2;
 };
 
-__forceinline__ __device__
-Vec3fPayload encodePayloadVec3f(const Vec3f& src)
+__forceinline__ __device__ Vec3fPayload encodePayloadVec3f(const Vec3f& src)
 {
 	Vec3fPayload dst;
 	dst.p0 = *(reinterpret_cast<const unsigned*>(&src[0]));
@@ -45,19 +44,18 @@ Vec3fPayload encodePayloadVec3f(const Vec3f& src)
 	return dst;
 }
 
-__forceinline__ __device__
-Vec3f decodePayloadVec3f(const Vec3fPayload& src)
+__forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 {
-	return Vec3f {
-		*reinterpret_cast<const float*>(&src.p0),
-		*reinterpret_cast<const float*>(&src.p1),
-		*reinterpret_cast<const float*>(&src.p2),
+	return Vec3f{
+	    *reinterpret_cast<const float*>(&src.p0),
+	    *reinterpret_cast<const float*>(&src.p1),
+	    *reinterpret_cast<const float*>(&src.p2),
 	};
 }
 
 template<bool isFinite>
-__forceinline__ __device__
-void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float intensity=0, const int objectID=RGL_ENTITY_INVALID_ID)
+__forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float distance = NON_HIT_VALUE, float intensity = 0,
+                                              const int objectID = RGL_ENTITY_INVALID_ID)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -74,12 +72,7 @@ void saveRayResult(const Vec3f* xyz=nullptr, const Vec3f* origin=nullptr, float 
 		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
 	}
 	if (ctx.distance != nullptr) {
-		ctx.distance[rayIdx] = isFinite
-		                        ? sqrt(
-		                            pow((*xyz)[0] - (*origin)[0], 2) +
-		                            pow((*xyz)[1] - (*origin)[1], 2) +
-		                            pow((*xyz)[2] - (*origin)[2], 2))
-		                        : NON_HIT_VALUE;
+		ctx.distance[rayIdx] = distance;
 	}
 	if (ctx.intensity != nullptr) {
 		ctx.intensity[rayIdx] = intensity;
@@ -99,15 +92,30 @@ extern "C" __global__ void __raygen__()
 		return;
 	}
 
-	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	const int rayIdx = optixGetLaunchIndex().x;
+	Mat3x4f ray = ctx.rays[rayIdx];
+
+	if (ctx.doApplyDistortion) {
+		static const float toDeg = (180.0f / M_PI);
+		// Velocities are in the local frame. Need to transform rays.
+		ray = ctx.rayOriginToWorld.inverse() * ray;
+		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
+		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
+		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
+		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f) *
+		      ray;
+		// Back to the global frame.
+		ray = ctx.rayOriginToWorld * ray;
+	}
 
 	Vec3f origin = ray * Vec3f{0, 0, 0};
 	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[rayIdx].y();
 
 	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
 	Vec3fPayload originPayload = encodePayloadVec3f(origin);
-	optixTrace(ctx.scene, origin, dir, 0.0f, ctx.rayRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0,
-	           originPayload.p0, originPayload.p1, originPayload.p2);
+	optixTrace(ctx.scene, origin, dir, 0.0f, maxRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0, originPayload.p0,
+	           originPayload.p1, originPayload.p2);
 }
 
 extern "C" __global__ void __closesthit__()
@@ -133,35 +141,45 @@ extern "C" __global__ void __closesthit__()
 
 	int objectID = sbtData.entity_id;
 
-	Vec3f origin = decodePayloadVec3f({
-		optixGetPayload_0(),
-		optixGetPayload_1(),
-		optixGetPayload_2()
-	});
+	Vec3f origin = decodePayloadVec3f({optixGetPayload_0(), optixGetPayload_1(), optixGetPayload_2()});
+
+	// TODO: Optimization - we can use inversesqrt here, which is one operation cheaper then sqrt.
+	float distance = sqrt(pow((hitWorld)[0] - (origin)[0], 2) + pow((hitWorld)[1] - (origin)[1], 2) +
+	                      pow((hitWorld)[2] - (origin)[2], 2));
+
+	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
+	if (distance < minRange) {
+		saveRayResult<false>();
+		return;
+	}
+
+	// Fix XYZ if distortion is applied (XYZ must be calculated in sensor coordinate frame)
+	if (ctx.doApplyDistortion) {
+		const int rayIdx = optixGetLaunchIndex().x;
+		Mat3x4f undistortedRay = ctx.rays[rayIdx];
+		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
+		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
+		hitWorld = undistortedOrigin + undistortedDir * distance;
+	}
 
 	float intensity = 0;
-	if (sbtData.texture_coords != nullptr && sbtData.texture != 0)
-	{
-
+	if (sbtData.texture_coords != nullptr && sbtData.texture != 0) {
 		assert(index.x() < sbtData.texture_coords_count);
 		assert(index.y() < sbtData.texture_coords_count);
 		assert(index.z() < sbtData.texture_coords_count);
 
-		const Vec2f &uvA = sbtData.texture_coords[index.x()];
-		const Vec2f &uvB = sbtData.texture_coords[index.y()];
-		const Vec2f &uvC = sbtData.texture_coords[index.z()];
+		const Vec2f& uvA = sbtData.texture_coords[index.x()];
+		const Vec2f& uvB = sbtData.texture_coords[index.y()];
+		const Vec2f& uvC = sbtData.texture_coords[index.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		intensity =  tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
+		intensity = tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
 	}
 
-	saveRayResult<true>(&hitWorld, &origin, intensity, objectID);
+	saveRayResult<true>(&hitWorld, distance, intensity, objectID);
 }
 
-extern "C" __global__ void __miss__()
-{
-	saveRayResult<false>();
-}
+extern "C" __global__ void __miss__() { saveRayResult<false>(); }
 
-extern "C" __global__ void __anyhit__(){}
+extern "C" __global__ void __anyhit__() {}

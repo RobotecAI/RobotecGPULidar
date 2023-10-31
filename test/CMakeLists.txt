@@ -1,46 +1,52 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
-    src/asyncStressTest.cpp
     src/apiReadmeExample.cpp
-    src/gaussianStressTest.cpp
     src/apiSurfaceTests.cpp
-    src/testMat3x4f.cpp
+    src/asyncStressTest.cpp
     src/DistanceFieldTest.cpp
-    src/scene/textureTest.cpp
-    src/scene/entityIdTest.cpp
-    src/graph/nodes/FromArrayPointsNodeTest.cpp
-    src/graph/nodes/TransformPointsNodeTest.cpp
-    src/graph/nodes/SetRingIdsRaysNodeTest.cpp
+    src/externalLibraryTest.cpp
+    src/features/loggingTests.cpp
+    src/gaussianStressTest.cpp
+    src/graph/addChildTest.cpp
+    src/graph/graphCaseTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
-    src/graph/nodes/YieldPointsNodeTest.cpp
+    src/graph/nodes/FromArrayPointsNodeTest.cpp
+    src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
+    src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
     src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
     src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
-    src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
     src/graph/nodes/RaytraceNodeTest.cpp
-    src/graph/nodes/TransformRaysNodeTest.cpp
-    src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
+    src/graph/nodes/SetRingIdsRaysNodeTest.cpp
+    src/graph/nodes/SetTimeOffsetsRaysNodeTest.cpp
+    src/graph/nodes/SimulateSnowPointsNodeTest.cpp
     src/graph/nodes/SpatialMergePointsNodeTest.cpp
     src/graph/nodes/TemporalMergePointsNodeTest.cpp
-    src/graph/nodes/SimulateSnowPointsNodeTest.cpp
-    src/graph/graphCaseTest.cpp
-    src/graph/addChildTest.cpp
-    src/memory/arrayTypingTest.cpp
-    src/memory/arrayChangeStreamTest.cpp
-    src/synchronization/graphAndCopyStream.cpp
-    src/synchronization/testKernel.cu
-    src/synchronization/graphThreadSynchronization.cpp
+    src/graph/nodes/TransformPointsNodeTest.cpp
+    src/graph/nodes/TransformPointsNodeTest.cpp
+    src/graph/nodes/TransformRaysNodeTest.cpp
+    src/graph/nodes/YieldPointsNodeTest.cpp
     src/graph/setPriorityTest.cpp
-    include/nodes.hpp
     src/helpers/pointsTest.cpp
+    src/memory/arrayChangeStreamTest.cpp
+    src/memory/arrayOpsTest.cpp
+    src/memory/arrayTypingTest.cpp
+    src/scene/entityIdTest.cpp
+    src/scene/textureTest.cpp
+    src/synchronization/graphAndCopyStream.cpp
+    src/synchronization/graphThreadSynchronization.cpp
+    src/synchronization/testKernel.cu
+    src/testMat3x4f.cpp
+    src/VelocityDistortionTest.cpp
 )
+
 
 # Only Linux
 if ((NOT WIN32))
-    list(APPEND RGL_TEST_FILES
-        src/features/loggingTests.cpp
-    )
+#    list(APPEND RGL_TEST_FILES
+        # Placeholder for Linux-only tests.
+#    )
 endif()
 
 # On Windows, tape is not available since it uses Linux sys-calls (mmap)
@@ -52,8 +58,7 @@ if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     )
 endif()
 
-add_executable(RobotecGPULidar_test ${RGL_TEST_FILES}
-        src/memory/arrayOpsTest.cpp)
+add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
 target_link_libraries(RobotecGPULidar_test
     gtest_main

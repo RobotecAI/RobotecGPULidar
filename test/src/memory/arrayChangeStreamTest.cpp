@@ -48,10 +48,9 @@ protected:
 			EXPECT_EQ(hostArray->at(i), static_cast<T>(0));
 		}
 	}
-
 };
 
-static void waitCb(cudaStream_t _1,  cudaError_t _2, void*  userData)
+static void waitCb(cudaStream_t _1, cudaError_t _2, void* userData)
 {
 	std::atomic<bool>& shouldSleep = *(reinterpret_cast<std::atomic<bool>*>(userData));
 	while (shouldSleep)

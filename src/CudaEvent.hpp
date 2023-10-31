@@ -18,28 +18,26 @@
 #include <macros/handleDestructorException.hpp>
 
 // RAII object to (de)initialize cudaEvent_t
-struct CudaEvent {
-    using Ptr = std::shared_ptr<CudaEvent>;
+struct CudaEvent
+{
+	using Ptr = std::shared_ptr<CudaEvent>;
 
-    static CudaEvent::Ptr create(int flag = cudaEventDisableTiming)
-    {
-        return CudaEvent::Ptr(new CudaEvent(flag));
-    }
+	static CudaEvent::Ptr create(int flag = cudaEventDisableTiming) { return CudaEvent::Ptr(new CudaEvent(flag)); }
 
-    cudaEvent_t getHandle() { return event; }
+	cudaEvent_t getHandle() { return event; }
 
-    ~CudaEvent() try
-    {
-        if (event != nullptr) {
-            CHECK_CUDA(cudaEventDestroy(event));
-            event = nullptr;
-        }
-    }
-    HANDLE_DESTRUCTOR_EXCEPTION
+	~CudaEvent()
+	try {
+		if (event != nullptr) {
+			CHECK_CUDA(cudaEventDestroy(event));
+			event = nullptr;
+		}
+	}
+	HANDLE_DESTRUCTOR_EXCEPTION
 
 private:
-    explicit CudaEvent(int flag) { CHECK_CUDA(cudaEventCreateWithFlags(&event, flag)); }
+	explicit CudaEvent(int flag) { CHECK_CUDA(cudaEventCreateWithFlags(&event, flag)); }
 
 private:
-    cudaEvent_t event { nullptr };
+	cudaEvent_t event{nullptr};
 };

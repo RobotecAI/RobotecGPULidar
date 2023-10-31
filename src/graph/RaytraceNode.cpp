@@ -20,6 +20,13 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
+void RaytraceNode::setParameters(std::shared_ptr<Scene> scene)
+{
+	this->scene = scene;
+	const static Vec2f defaultRangeValue = Vec2f(0.0f, FLT_MAX);
+	defaultRange->copyFromExternal(&defaultRangeValue, 1);
+}
+
 void RaytraceNode::validateImpl()
 {
 	// It should be viewed as a temporary solution. Will change in v14.
@@ -36,14 +43,21 @@ void RaytraceNode::validateImpl()
 		auto msg = fmt::format("requested for field TIME_STAMP_F64, but RaytraceNode cannot get time from scene");
 		throw InvalidPipeline(msg);
 	}
+
+	if (doApplyDistortion && !raysNode->getTimeOffsets().has_value()) {
+		auto msg = fmt::format("requested for raytrace with velocity distortion, but RaytraceNode cannot get time offsets");
+		throw InvalidPipeline(msg);
+	}
 }
 
 template<rgl_field_t field>
 auto RaytraceNode::getPtrTo()
 {
-	return fieldData.contains(field)
-	     ? fieldData.at(field)->asTyped<typename Field<field>::type>()->template asSubclass<DeviceAsyncArray>()->getWritePtr()
-	     : nullptr;
+	return fieldData.contains(field) ? fieldData.at(field)
+	                                       ->asTyped<typename Field<field>::type>()
+	                                       ->template asSubclass<DeviceAsyncArray>()
+	                                       ->getWritePtr() :
+	                                   nullptr;
 }
 
 void RaytraceNode::enqueueExecImpl()
@@ -59,39 +73,49 @@ void RaytraceNode::enqueueExecImpl()
 	dim3 launchDims = {static_cast<unsigned int>(raysNode->getRayCount()), 1, 1};
 
 	// Optional
+	auto rayRanges = raysNode->getRanges();
 	auto ringIds = raysNode->getRingIds();
+	auto timeOffsets = raysNode->getTimeOffsets();
 
 	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
 	requestCtxHst->resize(1, true, false);
 	requestCtxHst->at(0) = RaytraceRequestContext{
-		.rays = raysPtr,
-		.rayCount = raysNode->getRayCount(),
-		.rayRange = range,
-		.ringIds = ringIds.has_value() ? (*ringIds)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
-		.ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
-		.scene = sceneAS,
-		.sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
-		.xyz = getPtrTo<XYZ_F32>(),
-		.isHit = getPtrTo<IS_HIT_I32>(),
-		.rayIdx = getPtrTo<RAY_IDX_U32>(),
-		.ringIdx = getPtrTo<RING_ID_U16>(),
-		.distance = getPtrTo<DISTANCE_F32>(),
-		.intensity = getPtrTo<INTENSITY_F32>(),
-		.timestamp = getPtrTo<TIME_STAMP_F64>(),
-		.entityId = getPtrTo<ENTITY_ID_I32>(),
+	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
+	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
+	    .doApplyDistortion = doApplyDistortion,
+	    .rays = raysPtr,
+	    .rayCount = raysNode->getRayCount(),
+	    .rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
+	    .rayRanges = rayRanges.has_value() ? (*rayRanges)->asSubclass<DeviceAsyncArray>()->getReadPtr() :
+	                                         defaultRange->getReadPtr(),
+	    .rayRangesCount = rayRanges.has_value() ? (*rayRanges)->getCount() : defaultRange->getCount(),
+	    .ringIds = ringIds.has_value() ? (*ringIds)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
+	    .ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
+	    .rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
+	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
+	    .scene = sceneAS,
+	    .sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
+	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
+	    .isHit = getPtrTo<IS_HIT_I32>(),
+	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
+	    .ringIdx = getPtrTo<RING_ID_U16>(),
+	    .distance = getPtrTo<DISTANCE_F32>(),
+	    .intensity = getPtrTo<INTENSITY_F32>(),
+	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
+	    .entityId = getPtrTo<ENTITY_ID_I32>(),
 	};
 
 	requestCtxDev->copyFrom(requestCtxHst);
 	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
 	std::size_t pipelineArgsSize = requestCtxDev->getSizeOf() * requestCtxDev->getCount();
-	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT, launchDims.x, launchDims.y, launchDims.y));
-
+	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
+	                        launchDims.x, launchDims.y, launchDims.y));
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);
-	std::set<rgl_field_t> currentFields { keyViewer.begin(), keyViewer.end() };
+	std::set<rgl_field_t> currentFields{keyViewer.begin(), keyViewer.end()};
 
 	std::set<rgl_field_t> toRemove, toInsert;
 	std::ranges::set_difference(currentFields, fields, std::inserter(toRemove, toRemove.end()));
@@ -101,7 +125,7 @@ void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 		fieldData.erase(field);
 	}
 	for (auto&& field : toInsert) {
-		fieldData.insert({field, createArray<DeviceAsyncArray>(field, arrayMgr) });
+		fieldData.insert({field, createArray<DeviceAsyncArray>(field, arrayMgr)});
 	}
 }
 
@@ -110,10 +134,10 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	std::set<rgl_field_t> outFields;
 
 	// Add primary field
-	outFields.insert(XYZ_F32);
+	outFields.insert(XYZ_VEC3_F32);
 
 	// dfsInputs - if false dfs for outputs
-	std::function<void(Node::Ptr, bool)> dfsRet = [&](const Node::Ptr & current, bool dfsInputs) {
+	std::function<void(Node::Ptr, bool)> dfsRet = [&](const Node::Ptr& current, bool dfsInputs) {
 		auto dfsNodes = dfsInputs ? current->getInputs() : current->getOutputs();
 		for (auto&& node : dfsNodes) {
 			if (auto pointNode = std::dynamic_pointer_cast<IPointsNode>(node)) {
@@ -128,8 +152,19 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	};
 
 	dfsRet(shared_from_this(), true);  // Search in inputs. Needed for SetRingIds only.
-	dfsRet(shared_from_this(), false);  // Search in outputs
+	dfsRet(shared_from_this(), false); // Search in outputs
 
 	return outFields;
 }
 
+void RaytraceNode::setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
+{
+	doApplyDistortion = linearVelocity != nullptr && angularVelocity != nullptr;
+
+	if (!doApplyDistortion) {
+		return;
+	}
+
+	sensorLinearVelocityXYZ = *linearVelocity;
+	sensorAngularVelocityRPY = *angularVelocity;
+}

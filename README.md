@@ -39,6 +39,7 @@ And more:
 - Gaussian noise (see [documentation](docs/GaussianNoise.md))
 - Instance/semantic segmentation
 - Intensity based on provided textures
+- Simple velocity distortion (only sensor velocity considered)
 
 \* [extension](README.md#extensions) required.
 

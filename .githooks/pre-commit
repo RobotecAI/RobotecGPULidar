@@ -1,0 +1,12 @@
+#!/bin/sh
+
+for FILE in $(git diff --cached --name-only | grep -E '.*\.(c|h|cpp|hpp|cu|cuh)$')
+do
+    FORMATTED=$(clang-format "${FILE}" -output-replacements-xml | grep -c "<replacement ")
+    if [ "$FORMATTED" -ne 0 ]; then
+        clang-format -i "${FILE}"
+        git add "${FILE}"
+        echo "Reformatted ${FILE}"
+    fi
+done
+

@@ -1,3 +1,5 @@
+#include <filesystem>
+
 #include <helpers/geometryData.hpp>
 #include <helpers/commonHelpers.hpp>
 #include <helpers/textureHelpers.hpp>
@@ -15,11 +17,34 @@
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 
-class TapeCase : public RGLTest {};
+class TapeCase : public RGLTest
+{};
+
+TEST_F(TapeCase, RecordPlayLoggingCall)
+{
+	std::string loggingRecordPath{(std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord")).string()};
+	std::string logFilePath{
+	    (std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord").concat(".log")).string()};
+
+	// Logging with Tape
+	ASSERT_RGL_SUCCESS(rgl_tape_record_begin(loggingRecordPath.c_str()));
+	bool isTapeRecordActive = false;
+	ASSERT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
+	ASSERT_TRUE(isTapeRecordActive);
+
+	EXPECT_RGL_SUCCESS(rgl_configure_logging(RGL_LOG_LEVEL_DEBUG, logFilePath.c_str(), false));
+
+	EXPECT_RGL_SUCCESS(rgl_tape_record_end());
+	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
+	EXPECT_FALSE(isTapeRecordActive);
+	// TODO(nebraszka): As the bin file is empty, the tape fails to play
+	// EXPECT_RGL_SUCCESS(rgl_tape_play(loggingRecordPath.c_str()));
+}
 
 TEST_F(TapeCase, RecordPlayAllCalls)
 {
-	EXPECT_RGL_SUCCESS(rgl_tape_record_begin("all_calls_recording"));
+	std::string allCallsRecordPath{(std::filesystem::temp_directory_path() / std::filesystem::path("allCallsRecord")).string()};
+	EXPECT_RGL_SUCCESS(rgl_tape_record_begin(allCallsRecordPath.c_str()));
 	bool isTapeRecordActive = false;
 	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
 	EXPECT_TRUE(isTapeRecordActive);
@@ -29,7 +54,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	int32_t major, minor, patch;
 	EXPECT_RGL_SUCCESS(rgl_get_version_info(&major, &minor, &patch));
 
-	// Note: the logging using tape test have been moved to the file loggingTests.cpp
+	// Note: the logging using tape test has been moved to another test case (RecordPlayLoggingCall) to not change the logging level of this test case.
 
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
@@ -38,6 +63,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
 
 	rgl_texture_t texture = nullptr;
 	int width = 1024;
@@ -58,6 +84,14 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	std::vector<int> rings = {0, 1};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIds, rings.data(), rings.size()));
 
+	rgl_node_t setTimeOffsets = nullptr;
+	std::vector<float> timeOffsets = {0.0f, 1.0f, 2.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&setTimeOffsets, timeOffsets.data(), timeOffsets.size()));
+
+	rgl_node_t setRange = nullptr;
+	rgl_vec2f range = {0.0f, 1.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_rays_set_range(&setRange, &range, 1));
+
 	rgl_node_t transformRays = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformRays, &identityTf));
 
@@ -65,10 +99,15 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &identityTf));
 
 	rgl_node_t raytrace = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr, 100));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+
+	rgl_node_t raytraceWithDistortion = nullptr;
+	rgl_vec3f linearVelocity{1.0f, 2.0f, 3.0f};
+	rgl_vec3f angularVelocity{1.0f, 2.0f, 3.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_with_distortion(&raytraceWithDistortion, nullptr, &linearVelocity, &angularVelocity));
 
 	rgl_node_t format = nullptr;
-	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32};
+	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 
 	rgl_node_t yield = nullptr;
@@ -78,28 +117,32 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 
 	rgl_node_t spatialMerge = nullptr;
-	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));
 
 	rgl_node_t temporalMerge = nullptr;
-	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
+	std::vector<rgl_field_t> tMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
 
 	rgl_node_t usePoints = nullptr;
-	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_F32};
-	std::vector<::Field<XYZ_F32>::type> usePointsData = {{1, 2, 3}, {4, 5, 6}};
-	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(), usePointsFields.data(), usePointsFields.size()));
+	std::vector<rgl_field_t> usePointsFields = {RGL_FIELD_XYZ_VEC3_F32};
+	std::vector<::Field<XYZ_VEC3_F32>::type> usePointsData = {
+	    {1, 2, 3},
+        {4, 5, 6}
+    };
+	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(),
+	                                              usePointsFields.data(), usePointsFields.size()));
 
-	#if RGL_BUILD_ROS2_EXTENSION
-		rgl_node_t ros2pub = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
+#if RGL_BUILD_ROS2_EXTENSION
+	rgl_node_t ros2pub = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));
 
-		rgl_node_t ros2pubqos = nullptr;
-		rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
-		rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
-		rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
-		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish_with_qos(&ros2pubqos, "pointcloud_ex", "rgl", qos_r, qos_d, qos_h, 10));
-	#endif
+	rgl_node_t ros2pubqos = nullptr;
+	rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
+	rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
+	rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish_with_qos(&ros2pubqos, "pointcloud_ex", "rgl", qos_r, qos_d, qos_h, 10));
+#endif
 
 	rgl_node_t noiseAngularRay = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noiseAngularRay, 0.1f, 0.1f, RGL_AXIS_X));
@@ -110,7 +153,8 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	rgl_node_t noiseDistance = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noiseDistance, 0.1f, 0.1f, 0.01f));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 
@@ -118,15 +162,15 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
-	#if RGL_BUILD_PCL_EXTENSION
-		rgl_node_t downsample = nullptr;
-		EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
+#if RGL_BUILD_PCL_EXTENSION
+	rgl_node_t downsample = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_downsample(&downsample, 1.0f, 1.0f, 1.0f));
 
-		// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_F32 in raytrace.
-		EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
+	// Have to be executed after rgl_graph_run. Graph::run() must set field XYZ_VEC3_F32 in raytrace.
+	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
 
-		// Skipping rgl_node_points_visualize (user interaction needed)
-	#endif
+	// Skipping rgl_node_points_visualize (user interaction needed)
+#endif
 
 	int32_t outCount, outSizeOf;
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
@@ -147,5 +191,5 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
 	EXPECT_FALSE(isTapeRecordActive);
 
-	EXPECT_RGL_SUCCESS(rgl_tape_play("all_calls_recording"));
+	EXPECT_RGL_SUCCESS(rgl_tape_play(allCallsRecordPath.c_str()));
 }

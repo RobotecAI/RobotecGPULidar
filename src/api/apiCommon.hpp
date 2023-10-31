@@ -35,11 +35,13 @@
 
 #define RGL_API_LOG RGL_TRACE
 
-#define CHECK_ARG(expr)                                                                          \
-do if (!(expr)) {                                                                                \
-    auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr); \
-    throw std::invalid_argument(msg);                                                            \
-} while(0)
+#define CHECK_ARG(expr)                                                                                                        \
+	do                                                                                                                         \
+		if (!(expr)) {                                                                                                         \
+			auto msg = fmt::format("RGL API Error: Invalid argument, condition unsatisfied: {}", #expr);                       \
+			throw std::invalid_argument(msg);                                                                                  \
+		}                                                                                                                      \
+	while (0)
 
 extern rgl_status_t lastStatusCode;
 extern std::optional<std::string> lastStatusString;
@@ -59,31 +61,32 @@ rgl_status_t rglSafeCall(Fn fn)
 			try {
 				Logger::getOrCreate().configure(RGL_LOG_LEVEL_OFF, std::nullopt, false);
 			}
-			catch (std::exception& e) {}
+			catch (std::exception& e) {
+			}
 		}
 		return updateAPIState(RGL_INVALID_STATE);
 	}
 	try {
 		std::invoke(fn);
 	}
-	#if RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 	catch (rclcpp::exceptions::RCLErrorBase& e) {
 		return updateAPIState(RGL_ROS2_ERROR, e.message.c_str());
 	}
-	#endif
+#endif
 	catch (spdlog::spdlog_ex& e) {
 		return updateAPIState(RGL_LOGGING_ERROR, e.what());
 	}
 	catch (InvalidAPIObject& e) {
 		return updateAPIState(RGL_INVALID_API_OBJECT, e.what());
 	}
-	catch (InvalidPipeline &e) {
+	catch (InvalidPipeline& e) {
 		return updateAPIState(RGL_INVALID_PIPELINE, e.what());
 	}
 	catch (InvalidFilePath& e) {
 		return updateAPIState(RGL_INVALID_FILE_PATH, e.what());
 	}
-	catch (std::invalid_argument &e) {
+	catch (std::invalid_argument& e) {
 		return updateAPIState(RGL_INVALID_ARGUMENT, e.what());
 	}
 	catch (RecordError& e) {
@@ -104,15 +107,14 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	std::shared_ptr<NodeType> node;
 	if (*nodeRawPtr == nullptr) {
 		node = Node::create<NodeType>();
-	}
-	else {
+	} else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
 	}
 	// TODO: The magic below detects calls changing rgl_field_t* (e.g. FormatPointsNode)
 	// TODO: Such changes may require recomputing required fields in RaytraceNode.
 	// TODO: However, taking care of this manually is very bug prone.
 	// TODO: There are other ways to automate this, however, for now this should be enough.
-	bool fieldsModified = ((std::is_same_v<Args, std::vector<rgl_field_t>> || ... ));
+	bool fieldsModified = ((std::is_same_v<Args, std::vector<rgl_field_t>> || ...));
 	if (fieldsModified && node->hasGraphRunCtx()) {
 		node->getGraphRunCtx()->detachAndDestroy();
 	}
@@ -122,7 +124,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	if (node->hasGraphRunCtx()) {
 		node->getGraphRunCtx()->synchronize();
 	}
-	node->setParameters(args...);
+	node->setParameters(std::forward<Args>(args)...);
 	node->dirty = true;
 	*nodeRawPtr = node.get();
 }

@@ -24,7 +24,4 @@ static std::string name(const std::type_index& typeIndex)
 	return std::string(name);
 }
 
-static std::string name(const std::type_info& typeInfo)
-{
-	return name(std::type_index(typeInfo));
-}
+static std::string name(const std::type_info& typeInfo) { return name(std::type_index(typeInfo)); }

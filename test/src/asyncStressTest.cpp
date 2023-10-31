@@ -7,16 +7,18 @@
 #include <math/Mat3x4f.hpp>
 #include <graph/NodesCore.hpp>
 
-struct GraphStress : public RGLTest {};
+struct GraphStress : public RGLTest
+{};
 const Vec3f cubePosition = {0, 0, 5};
 const Vec3f cubeDims = {2, 2, 2};
 
 static std::random_device randomDevice;
 static auto randomSeed = randomDevice();
-static std::mt19937 randomGenerator {randomSeed};
+static std::mt19937 randomGenerator{randomSeed};
 
 // randomizeIndices(10,3): 9, 0, 5
-std::vector<int> randomizeIndices(int containerSize, int firstN=0) {
+std::vector<int> randomizeIndices(int containerSize, int firstN = 0)
+{
 	std::vector<int> indices;
 	indices.resize(containerSize);
 	std::iota(indices.begin(), indices.end(), 0);
@@ -49,7 +51,7 @@ struct RandomGraph
 		// Build minimal linear part
 		rgl_mat3x4f dummyRay = Mat3x4f::identity().toRGL();
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, &dummyRay, 1));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr, 100.0f));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 		EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
 
 		rgl_mat3x4f identity = Mat3x4f::identity().toRGL();
@@ -68,11 +70,8 @@ struct RandomGraph
 			std::uniform_real_distribution<float> randomFloat{-1, 1};
 			size_t parentIndex = randomIndex(randomGenerator);
 			rgl_node_t parentNode = transformNodes.at(parentIndex);
-			Mat3x4f childTransform = Mat3x4f::translation(
-				randomFloat(randomGenerator),
-				randomFloat(randomGenerator),
-				randomFloat(randomGenerator)
-			);
+			Mat3x4f childTransform = Mat3x4f::translation(randomFloat(randomGenerator), randomFloat(randomGenerator),
+			                                              randomFloat(randomGenerator));
 
 			rgl_node_t childNode = nullptr;
 			rgl_mat3x4f childTransformRGL = childTransform.toRGL();
@@ -88,10 +87,10 @@ struct RandomGraph
 	void generateRandomRays()
 	{
 		// We want rays to hit the cube and do not bother with edge cases
-		std::uniform_real_distribution<float> randomFloat {-0.9, 0.9};
-		std::uniform_int_distribution<size_t> randomInt {1, 10};
-		raysXY = { randomFloat(randomGenerator), randomFloat(randomGenerator) };
-		rayCount = { randomInt(randomGenerator), randomInt(randomGenerator) };
+		std::uniform_real_distribution<float> randomFloat{-0.9, 0.9};
+		std::uniform_int_distribution<size_t> randomInt{1, 10};
+		raysXY = {randomFloat(randomGenerator), randomFloat(randomGenerator)};
+		rayCount = {randomInt(randomGenerator), randomInt(randomGenerator)};
 		std::vector<rgl_mat3x4f> rays = makeGridOfParallelRays(raysXY, raysXY, {rayCount.x(), rayCount.y()});
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	}
@@ -103,7 +102,7 @@ struct RandomGraph
 			auto* currentTyped = dynamic_cast<TransformPointsNode*>(currentBase);
 			Mat3x4f currentCumulative = currentTyped->getTransform() * parentCumulative;
 			result.insert({currentBase, currentCumulative});
-			for(auto&& childBase : currentBase->getOutputs()) {
+			for (auto&& childBase : currentBase->getOutputs()) {
 				if (!result.contains(childBase.get())) {
 					dfs(childBase.get(), currentCumulative);
 				}
@@ -115,7 +114,8 @@ struct RandomGraph
 };
 
 /* Helper structure for data associated with a single graph and a single run-modify-check cycle */
-struct GraphRun {
+struct GraphRun
+{
 	int expectedPointCount;
 	Vec3f expectedPointWorld;
 	rgl_node_t updateRaysAfterCheckingNode;
@@ -142,11 +142,11 @@ TEST_F(GraphStress, Async)
 	using namespace testing;
 
 	// Config
-	const int GRAPH_COUNT = 16;  // Number of graphs executed in parallel
-	const int GRAPH_SIZE = 128;  // Number of TransformPointsNodes in each graph
-	const int GRAPH_QUERIES = 32;  // How many nodes are checked for results (should be a subset)
+	const int GRAPH_COUNT = 16;     // Number of graphs executed in parallel
+	const int GRAPH_SIZE = 128;     // Number of TransformPointsNodes in each graph
+	const int GRAPH_QUERIES = 32;   // How many nodes are checked for results (should be a subset)
 	const int GRAPH_EPOCHS = 1024;  // How many times all graphs are executed, changed and queried
-	const float EPSILON = 2 * 1E-6;  // Tolerance for GPU-CPU matrix multiplication differences
+	const float EPSILON = 2 * 1E-6; // Tolerance for GPU-CPU matrix multiplication differences
 	ASSERT_THAT(GRAPH_QUERIES, Lt(GRAPH_SIZE));
 
 	// Optional logging
@@ -212,13 +212,13 @@ TEST_F(GraphStress, Async)
 
 				// Check if output size is not affected by graph modifications
 				int pointCount = -1, pointSize = -1;
-				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_F32, &pointCount, &pointSize));
+				EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(checkedNode, RGL_FIELD_XYZ_VEC3_F32, &pointCount, &pointSize));
 				ASSERT_GT(pointCount, 0);
 				EXPECT_EQ(pointCount, run.expectedPointCount);
 
 				// Get results
 				std::vector<Vec3f> results(pointCount);
-				EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(checkedNode, RGL_FIELD_XYZ_F32, results.data()));
+				EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(checkedNode, RGL_FIELD_XYZ_VEC3_F32, results.data()));
 
 				// Verify results are correctly transformed
 				Vec3f expectedPoint = run.expectedTransform.at(checkedNode) * run.expectedPointWorld;

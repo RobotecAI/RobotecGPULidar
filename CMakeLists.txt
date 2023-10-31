@@ -30,12 +30,6 @@ set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
-set(RGL_BUILD_ROS2_EXTENSION_STANDALONE OFF CACHE BOOL
-    "Enables building ROS2 extension in standalone mode. It requires installed and sourced ROS2.")
-
-if (RGL_BUILD_ROS2_EXTENSION_STANDALONE)
-    set(RGL_BUILD_ROS2_EXTENSION ON)
-endif()
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -44,6 +38,7 @@ set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 if (WIN32)
     add_definitions(-DNOMINMAX)  # http://www.suodenjoki.dk/us/archive/2010/min-max.htm
     add_definitions(-D_USE_MATH_DEFINES)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)  # https://www.kitware.com//create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
 endif()
 
 if (WIN32 AND RGL_BUILD_TESTS)
@@ -54,7 +49,7 @@ if (WIN32 AND RGL_BUILD_TESTS)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
-# External dependencies
+# `External` dependencies
 add_subdirectory(external)
 find_package(CUDAToolkit REQUIRED)
 find_program(BIN2C bin2c DOC "Path to the cuda-sdk bin2c executable.")
@@ -107,7 +102,9 @@ add_library(RobotecGPULidar SHARED
     src/graph/TransformRaysNode.cpp
     src/graph/FromArrayPointsNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
+    src/graph/SetRangeRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp
+    src/graph/SetTimeOffsetsRaysNode.cpp
     src/graph/SpatialMergePointsNode.cpp
     src/graph/TemporalMergePointsNode.cpp
     src/graph/YieldPointsNode.cpp
@@ -200,9 +197,4 @@ endif()
 # Include tools
 if (RGL_BUILD_TOOLS)
     add_subdirectory(tools)
-endif()
-
-# Include ros2_standalone
-if(RGL_BUILD_ROS2_EXTENSION_STANDALONE)
-    add_subdirectory(ros2_standalone)
 endif()

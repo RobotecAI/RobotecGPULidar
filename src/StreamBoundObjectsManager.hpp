@@ -29,7 +29,6 @@ struct StreamBoundObjectsManager
 {
 	/**
 	 * Registers IStreamBound object.
-	 * The object must be bound with the stream provided to setStream.
 	 * @param object Object to register.
 	 */
 	void registerObject(IStreamBound::Ptr object)
@@ -63,10 +62,10 @@ struct StreamBoundObjectsManager
 			auto objectSharedPtr = objectWeakPtr.lock();
 			if (objectSharedPtr == nullptr) {
 				it = streamBoundObjects.erase(it);
-                                if (it == streamBoundObjects.end()) {
-                                    // Avoid incrementing end iterator, breaks on Windows
-                                    break;
-                                }
+				if (it == streamBoundObjects.end()) {
+					// Avoid incrementing end iterator, breaks on Windows
+					break;
+				}
 				continue;
 			}
 			objectSharedPtr->setStream(newStream);

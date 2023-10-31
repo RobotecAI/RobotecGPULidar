@@ -17,9 +17,9 @@
 #include <math/Vector.hpp>
 #include <rgl/api/core.h>
 
-struct Texture : APIObject<Texture> {
-
-public:
+struct Texture : APIObject<Texture>
+{
+	friend APIObject<Texture>;
 
 	~Texture();
 
@@ -33,17 +33,15 @@ public:
 
 
 private:
-
 	Texture(const void* texels, int width, int height);
 
-	Texture(const Texture&) = delete; // non construction-copyable
-	Texture &operator=(const Texture&) = delete; // non copyable
+	Texture(const Texture&) = delete;            // non construction-copyable
+	Texture& operator=(const Texture&) = delete; // non copyable
 
 	void createTextureObject(const void* texels, int width, int height);
 
 	void cleanup();
 
-	friend APIObject<Texture>;
 	Vec2i resolution{-1};
 
 	cudaTextureObject_t dTextureObject;

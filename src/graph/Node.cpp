@@ -18,10 +18,7 @@
 
 API_OBJECT_INSTANCE(Node);
 
-Node::Node()
-{
-	execCompleted = CudaEvent::create();
-}
+Node::Node() { execCompleted = CudaEvent::create(); }
 
 void Node::addChild(Node::Ptr child)
 {
@@ -51,8 +48,7 @@ void Node::addChild(Node::Ptr child)
 
 	// Sort outputs by priority
 	std::stable_sort(outputs.begin(), outputs.end(),
-	                 [](Node::Ptr lhs, Node::Ptr rhs)
-	                 { return lhs->priority > rhs->priority; });
+	                 [](Node::Ptr lhs, Node::Ptr rhs) { return lhs->priority > rhs->priority; });
 
 	auto maxChildPriority = outputs.front()->priority;
 	if (maxChildPriority > this->priority) {
@@ -73,14 +69,16 @@ void Node::removeChild(Node::Ptr child)
 	auto childIt = std::find(this->outputs.begin(), this->outputs.end(), child);
 	if (childIt == this->outputs.end()) {
 		auto msg = fmt::format("attempted to remove child {} from {},"
-		                       "but it was not found", child->getName(), getName());
+		                       "but it was not found",
+		                       child->getName(), getName());
 		throw InvalidPipeline(msg);
 	}
 
 	auto thisIt = std::find(child->inputs.begin(), child->inputs.end(), shared_from_this());
 	if (thisIt == child->inputs.end()) {
 		auto msg = fmt::format("attempted to remove parent {} from {},"
-		                       "but it was not found", getName(), child->getName());
+		                       "but it was not found",
+		                       getName(), child->getName());
 		throw InvalidPipeline(msg);
 	}
 
@@ -101,9 +99,7 @@ void Node::removeChild(Node::Ptr child)
 
 void Node::setGraphRunCtx(std::optional<std::shared_ptr<GraphRunCtx>> graph)
 {
-	if (graph.has_value()) {
-		arrayMgr.setStream(graph.value()->getStream());
-	}
+	arrayMgr.setStream(graph.has_value() ? graph.value()->getStream() : CudaStream::getNullStream());
 	this->graphRunCtx = graph;
 	this->dirty = true;
 }
@@ -131,7 +127,7 @@ void Node::enqueueExec()
 	CHECK_CUDA(cudaEventRecord(execCompleted->getHandle(), getGraphRunCtx()->getStream()->getHandle()));
 }
 
-std::set<Node::Ptr> Node::getConnectedNodes()
+std::set<Node::Ptr> Node::getConnectedComponentNodes()
 {
 	if (hasGraphRunCtx()) {
 		return getGraphRunCtx()->getNodes();
@@ -156,8 +152,8 @@ std::set<Node::Ptr> Node::getConnectedNodes()
 
 std::set<Node::Ptr> Node::disconnectConnectedNodes()
 {
-	auto nodes = getConnectedNodes();
-	for (auto&& node : getConnectedNodes()) {
+	auto nodes = getConnectedComponentNodes();
+	for (auto&& node : getConnectedComponentNodes()) {
 		node->inputs.clear();
 		node->outputs.clear();
 		node->setGraphRunCtx(std::nullopt);
@@ -187,10 +183,7 @@ void Node::waitForResults()
 	synchronize();
 }
 
-cudaStream_t Node::getStreamHandle()
-{
-	return getGraphRunCtx()->getStream()->getHandle();
-}
+cudaStream_t Node::getStreamHandle() { return getGraphRunCtx()->getStream()->getHandle(); }
 
 void Node::setPriority(int32_t requestedPriority)
 {
@@ -210,8 +203,7 @@ void Node::setPriority(int32_t requestedPriority)
 	for (auto&& input : inputs) {
 		// Resort parent's list of children, because order may have changed.
 		std::stable_sort(input->outputs.begin(), input->outputs.end(),
-		                 [](Node::Ptr lhs, Node::Ptr rhs)
-		                 { return lhs->priority > rhs->priority; });
+		                 [](Node::Ptr lhs, Node::Ptr rhs) { return lhs->priority > rhs->priority; });
 		// Increase parents' priority
 		if (input->priority < requestedPriority) {
 			input->setPriority(requestedPriority);

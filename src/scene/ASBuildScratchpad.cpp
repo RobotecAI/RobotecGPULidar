@@ -27,7 +27,7 @@ void ASBuildScratchpad::resizeToFit(OptixBuildInput input, OptixAccelBuildOption
 	dCompactedSize->resize(1, false, false);
 }
 
-void ASBuildScratchpad::doCompaction(OptixTraversableHandle &handle)
+void ASBuildScratchpad::doCompaction(OptixTraversableHandle& handle)
 {
 	throw std::runtime_error("AS compaction is disabled due to performance reasons");
 	// TODO(prybicki): Too many lines for getting a number from GPU :(
