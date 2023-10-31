@@ -1,6 +1,8 @@
-#include <helpers/commonHelpers.hpp>
 #include <helpers/testPointCloud.hpp>
+#include <helpers/commonHelpers.hpp>
+#include <helpers/graphHelpers.hpp>
 
+#include <api/apiCommon.hpp>
 #include <math/Mat3x4f.hpp>
 #include <RGLFields.hpp>
 #include <ranges>
@@ -12,67 +14,33 @@ class CompactPointsNodeTest : public RGLTestWithParam<int>
 public:
 	static void SetUpTestCase()
 	{
-		// Print random seed for reproducibility
-		static bool hasPrintedRandomSeed = false;
-		if (!hasPrintedRandomSeed) {
-			fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
-		}
-		hasPrintedRandomSeed = true;
+		static std::once_flag flag;
+		std::call_once(flag, []() { fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed); });
 	}
 
 protected:
-	rgl_node_t useRaysNode = nullptr;
-	rgl_node_t usePointsNode = nullptr;
 	rgl_node_t compactPointsNode = nullptr;
 
-	std::unique_ptr<TestPointCloud> inPointCloud;
-	std::unique_ptr<TestPointCloud> outPointCloud;
-	std::unique_ptr<TestPointCloud> expectedPointCloud;
 	std::vector<rgl_field_t> pointFields = {XYZ_F32, IS_HIT_I32};
 
-	std::vector<Field<XYZ_F32>::type> pointCoordValues;
-	std::vector<Field<IS_HIT_I32>::type> pointIsHitValues;
-
-	void removeNonHitPoints()
+	std::pair<std::unique_ptr<TestPointCloud>, rgl_node_t> createPointCloud(
+	    int pointsCount, const std::function<Field<XYZ_F32>::type(int)>& genCoords,
+	    const std::function<Field<IS_HIT_I32>::type(int)>& genIsHit)
 	{
-		/** Remove non hit points from vector
-		 *
-		 * TODO(nebraszka): Consider adding the ability to iterate over points in TestPointCloud and delete selected ones
-		 *         instead of copying the data to a vector and deleting the points from there.
-		 */
-		std::vector<int> indicesToRemove;
-		for (int i = 0; i < pointIsHitValues.size(); ++i) {
-			if (pointIsHitValues[i] == 0) {
-				indicesToRemove.push_back(i);
-			}
-		}
-		pointIsHitValues.erase(
-		    std::remove_if(pointIsHitValues.begin(), pointIsHitValues.end(), [](int hitValue) { return hitValue == 0; }),
-		    pointIsHitValues.end());
-		for (int& it : std::ranges::reverse_view(indicesToRemove)) {
-			pointCoordValues.erase(pointCoordValues.begin() + it);
-		}
+		std::unique_ptr<TestPointCloud> pointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
+		auto pointCoordValues = generateFieldValues(pointsCount, genCoords);
+		auto pointIsHitValues = generateFieldValues(pointsCount, genIsHit);
+		pointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
+		pointCloud->setFieldValues<IS_HIT_I32>(pointIsHitValues);
+		return {std::move(pointCloud), pointCloud->createUsePointsNode()};
 	}
 
-	void setUpPointCloud(int pointsCount, const std::function<Field<XYZ_F32>::type(int)>& genCoords,
-	                     const std::function<Field<IS_HIT_I32>::type(int)>& genIsHit)
-	{
-		inPointCloud = std::make_unique<TestPointCloud>(pointFields, pointsCount);
-		pointCoordValues = generateFieldValues(pointsCount, genCoords);
-		pointIsHitValues = generateFieldValues(pointsCount, genIsHit);
-
-		inPointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
-		inPointCloud->setFieldValues<IS_HIT_I32>(pointIsHitValues);
-
-		usePointsNode = inPointCloud->createUsePointsNode();
-	}
-
-	void runGraphWithAssertions()
+	void runGraphWithAssertions(rgl_node_t& inNode)
 	{
 		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 		ASSERT_THAT(compactPointsNode, testing::NotNull());
-		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactPointsNode));
-		ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(inNode, compactPointsNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(inNode));
 	}
 };
 
@@ -107,6 +75,7 @@ TEST_F(CompactPointsNodeTest, invalid_pipeline_when_no_input_node)
 
 TEST_F(CompactPointsNodeTest, invalid_pipeline_when_incorrect_input_node)
 {
+	rgl_node_t useRaysNode = nullptr;
 	std::vector<rgl_mat3x4f> rayTf;
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
@@ -120,10 +89,11 @@ TEST_P(CompactPointsNodeTest, points_all_non_hit)
 {
 	int pointsCount = GetParam();
 
-	setUpPointCloud(pointsCount, genCoord, genAllNonHit);
-	runGraphWithAssertions();
+	auto&& [inPointCloud, inNode] = createPointCloud(pointsCount, genCoord, genAllNonHit);
 
-	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
+	runGraphWithAssertions(inNode);
+
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
 	EXPECT_EQ(outPointCloud->getPointCount(), 0);
 
 	// Check if the contents of outData have changed (they should not have)
@@ -153,10 +123,11 @@ TEST_P(CompactPointsNodeTest, points_all_hit)
 {
 	int pointsCount = GetParam();
 
-	setUpPointCloud(pointsCount, genCoord, genAllHit);
-	runGraphWithAssertions();
+	auto&& [inPointCloud, inNode] = createPointCloud(pointsCount, genCoord, genAllHit);
 
-	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
+	runGraphWithAssertions(inNode);
+
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
 
 	EXPECT_EQ(*outPointCloud, *inPointCloud);
 }
@@ -165,53 +136,49 @@ TEST_P(CompactPointsNodeTest, points_random_hit)
 {
 	int pointsCount = GetParam();
 
-	setUpPointCloud(pointsCount, genCoord, genRandHit);
+	auto&& [inPointCloud, inNode] = createPointCloud(pointsCount, genCoord, genRandHit);
 
-	runGraphWithAssertions();
+	runGraphWithAssertions(inNode);
 
-	removeNonHitPoints();
+	auto&& inPointCloudWithoutNonHits = inPointCloud;
+	inPointCloudWithoutNonHits->removeNonHitPoints();
 
-	expectedPointCloud = std::make_unique<TestPointCloud>(pointFields, pointCoordValues.size());
-	expectedPointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
-	expectedPointCloud->setFieldValues<IS_HIT_I32>(pointIsHitValues);
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
 
-	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
-
-	EXPECT_EQ(*outPointCloud, *expectedPointCloud);
+	EXPECT_EQ(*outPointCloud, *inPointCloudWithoutNonHits);
 }
 
 TEST_P(CompactPointsNodeTest, multiple_compactions_applied_to_same_data)
 {
 	int pointsCount = GetParam();
 
-	setUpPointCloud(pointsCount, genCoord, genRandHit);
+	auto&& [inPointCloud, inNode] = createPointCloud(pointsCount, genCoord, genRandHit);
 
 	std::vector<rgl_node_t> compactNodes(MULTIPLE_COMPACTIONS_COUNT);
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
 	ASSERT_THAT(compactNodes.at(0), testing::NotNull());
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNodes.at(0)));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(inNode, compactNodes.at(0)));
 	for (int i = 1; i < MULTIPLE_COMPACTIONS_COUNT; ++i) {
 		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(i)));
 		ASSERT_THAT(compactNodes.at(i), testing::NotNull());
 		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compactNodes.at(i - 1), compactNodes.at(i)));
 	}
-	ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_run(inNode));
 
-	removeNonHitPoints();
+	auto&& inPointCloudWithoutNonHits = inPointCloud;
+	inPointCloudWithoutNonHits->removeNonHitPoints();
 
-	expectedPointCloud = std::make_unique<TestPointCloud>(pointFields, pointCoordValues.size());
-	expectedPointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
-	expectedPointCloud->setFieldValues<IS_HIT_I32>(pointIsHitValues);
-
-	outPointCloud = std::make_unique<TestPointCloud>(
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(
 	    TestPointCloud::createFromNode(compactNodes.at(MULTIPLE_COMPACTIONS_COUNT - 1), pointFields));
 
-	EXPECT_EQ(*outPointCloud, *expectedPointCloud);
+	EXPECT_EQ(*outPointCloud, *inPointCloudWithoutNonHits);
 }
 
 TEST_F(CompactPointsNodeTest, should_warn_when_empty_point_cloud)
 {
-	rgl_node_t emptyPointCloudOutputNode = simulateEmptyPointCloudOutputNode();
+	rgl_node_t emptyPointCloudOutputNode = nullptr;
+	createOrUpdateNode<EmptyNode>(&emptyPointCloudOutputNode);
 
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(emptyPointCloudOutputNode, compactPointsNode));
@@ -227,11 +194,11 @@ TEST_F(CompactPointsNodeTest, without_IS_HIT_field)
 	int pointCount = 10;
 	std::vector<rgl_field_t> pointFields = {XYZ_F32};
 
-	inPointCloud = std::make_unique<TestPointCloud>(pointFields, pointCount);
-	pointCoordValues = generateFieldValues(pointCount, genCoord);
+	auto&& inPointCloud = std::make_unique<TestPointCloud>(pointFields, pointCount);
+	auto pointCoordValues = generateFieldValues(pointCount, genCoord);
 	inPointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
 
-	usePointsNode = inPointCloud->createUsePointsNode();
+	rgl_node_t usePointsNode = inPointCloud->createUsePointsNode();
 	ASSERT_THAT(usePointsNode, testing::NotNull());
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactPointsNode));

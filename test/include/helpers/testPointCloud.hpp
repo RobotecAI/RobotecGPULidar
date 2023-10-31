@@ -77,6 +77,34 @@ public:
 		return pointCloud;
 	}
 
+	/**
+	 * TODO(nebraszka): Consider adding the ability to iterate over points in TestPointCloud and delete selected ones
+	 *         instead of copying the data to a new vector. This would be more flexible, cleaner, and more efficient.
+	 */
+	void removeNonHitPoints()
+	{
+		if (std::find(fields.begin(), fields.end(), IS_HIT_I32) == fields.end()) {
+			throw std::invalid_argument("TestPointCloud::removeNonHitPoints: TestPointCloud does not contain IS_HIT field");
+		}
+
+		std::size_t isHitOffset = offsets.at(IS_HIT_I32);
+
+		std::vector<char> filteredData;
+		filteredData.reserve(data.size());
+
+		std::size_t pointByteSize = getPointByteSize();
+
+		for (int i = 0; i < getPointCount(); ++i) {
+			char isHitValue = *(data.data() + i * pointByteSize + isHitOffset);
+			if (isHitValue != 0) {
+				std::copy(data.begin() + i * pointByteSize, data.begin() + (i + 1) * pointByteSize,
+				          std::back_inserter(filteredData));
+			}
+		}
+
+		data = std::move(filteredData);
+	}
+
 	std::size_t getPointCount() const { return data.size() / getPointByteSize(); }
 
 	void transform(const Mat3x4f& transform)
@@ -230,26 +258,4 @@ static void checkIfNearEqual(const std::vector<Field<XYZ_VEC3_F32>::type>& expec
 		EXPECT_NEAR(expected[i][1], actual[i][1], epsilon);
 		EXPECT_NEAR(expected[i][2], actual[i][2], epsilon);
 	}
-}
-
-/**
-* Other helper functions.
-*/
-
-static rgl_node_t simulateEmptyPointCloudOutputNode()
-{
-	// Create TestPointCloud with one non hit point
-	int pointsCount = 1;
-	TestPointCloud pointCloud({XYZ_F32, IS_HIT_I32}, pointsCount);
-	pointCloud.setFieldValues<XYZ_F32>(generateFieldValues(pointsCount, genCoord));
-	pointCloud.setFieldValues<IS_HIT_I32>(generateFieldValues(pointsCount, genAllNonHit));
-
-	// Prepare graph
-	rgl_node_t usePointsNode = pointCloud.createUsePointsNode();
-	rgl_node_t compactNode = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
-	EXPECT_THAT(compactNode, testing::NotNull());
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNode));
-
-	return compactNode;
 }
