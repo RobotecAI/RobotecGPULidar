@@ -164,9 +164,9 @@ extern "C" __global__ void __closesthit__()
 
 	float intensity = 0;
 	if (sbtData.textureCoords != nullptr && sbtData.texture != 0) {
-		assert(index.x() < sbtData.TextureCoordsCount);
-		assert(index.y() < sbtData.TextureCoordsCount);
-		assert(index.z() < sbtData.TextureCoordsCount);
+		assert(index.x() < sbtData.textureCoordsCount);
+		assert(index.y() < sbtData.textureCoordsCount);
+		assert(index.z() < sbtData.textureCoordsCount);
 
 		const Vec2f& uvA = sbtData.textureCoords[index.x()];
 		const Vec2f& uvB = sbtData.textureCoords[index.y()];

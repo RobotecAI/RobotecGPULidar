@@ -13,7 +13,7 @@ struct TriangleMeshSBTData
 	int entityId;
 
 	const Vec2f* textureCoords;
-	size_t TextureCoordsCount;
+	size_t textureCoordsCount;
 	cudaTextureObject_t texture;
 };
 

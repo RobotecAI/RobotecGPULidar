@@ -93,7 +93,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .indexCount = mesh->dIndices->getCount(),
 		             .entityId = entity->getId(),
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
-		             .TextureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
+		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
 		             }
         });
