@@ -14,20 +14,21 @@ using namespace std::chrono_literals;
  * - angular velocity
  * - mesh updates
  * - ray source velocity
- * *) outputs = {RGL_FIELD_SCENE_VELOCITY_VEC3_F32, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, RGL_FIELD_RADIAL_SPEED_F32}
+ * *) outputs = {RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, RGL_FIELD_RADIAL_SPEED_F32}
  */
 #ifdef RGL_BUILD_ROS2_EXTENSION
 #include "rgl/api/extensions/ros2.h"
 #include "helpers/sceneHelpers.hpp"
 TEST(EntityVelocity, Interactive)
 {
+	GTEST_SKIP();
 	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
 
 	// Published fields
 	std::vector<rgl_field_t> fields = {
 	    RGL_FIELD_XYZ_VEC3_F32,
-	    //	    RGL_FIELD_SCENE_VELOCITY_VEC3_F32,
+	    //	    RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 	    //	    RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32,
 	    //	    RGL_FIELD_RADIAL_SPEED_F32
 	};

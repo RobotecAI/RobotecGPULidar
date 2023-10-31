@@ -41,7 +41,7 @@ typedef unsigned char TextureTexelFormat;
 #define DISTANCE_F32 RGL_FIELD_DISTANCE_F32
 #define RETURN_TYPE_U8 RGL_FIELD_RETURN_TYPE_U8
 #define TIME_STAMP_F64 RGL_FIELD_TIME_STAMP_F64
-#define SCENE_VELOCITY_VEC3_F32 RGL_FIELD_SCENE_VELOCITY_VEC3_F32
+#define ABSOLUTE_VELOCITY_VEC3_F32 RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32
 #define RELATIVE_VELOCITY_VEC3_F32 RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32
 #define RADIAL_SPEED_F32 RGL_FIELD_RADIAL_SPEED_F32
 #define PADDING_8 RGL_FIELD_PADDING_8
@@ -73,7 +73,7 @@ FIELD(TIME_STAMP_F64, double);
 FIELD(PADDING_8, uint8_t);
 FIELD(PADDING_16, uint16_t);
 FIELD(PADDING_32, uint32_t);
-FIELD(SCENE_VELOCITY_VEC3_F32, Vec3f);
+FIELD(ABSOLUTE_VELOCITY_VEC3_F32, Vec3f);
 FIELD(RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, Vec3f);
 FIELD(RGL_FIELD_RADIAL_SPEED_F32, float);
 
@@ -90,7 +90,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case DISTANCE_F32: return Field<DISTANCE_F32>::size;
 		case RETURN_TYPE_U8: return Field<RETURN_TYPE_U8>::size;
 		case TIME_STAMP_F64: return Field<TIME_STAMP_F64>::size;
-		case SCENE_VELOCITY_VEC3_F32: return Field<SCENE_VELOCITY_VEC3_F32>::size;
+		case ABSOLUTE_VELOCITY_VEC3_F32: return Field<ABSOLUTE_VELOCITY_VEC3_F32>::size;
 		case RELATIVE_VELOCITY_VEC3_F32: return Field<RELATIVE_VELOCITY_VEC3_F32>::size;
 		case RADIAL_SPEED_F32: return Field<RADIAL_SPEED_F32>::size;
 		case PADDING_8: return Field<PADDING_8>::size;
@@ -139,8 +139,8 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(std::forward<Args>(args)...);
 		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(std::forward<Args>(args)...);
 		case IS_HIT_I32: return Subclass<Field<IS_HIT_I32>::type>::create(std::forward<Args>(args)...);
-		case SCENE_VELOCITY_VEC3_F32:
-			return Subclass<Field<SCENE_VELOCITY_VEC3_F32>::type>::create(std::forward<Args>(args)...);
+		case ABSOLUTE_VELOCITY_VEC3_F32:
+			return Subclass<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create(std::forward<Args>(args)...);
 		case RELATIVE_VELOCITY_VEC3_F32:
 			return Subclass<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create(std::forward<Args>(args)...);
 		case RADIAL_SPEED_F32: return Subclass<Field<RADIAL_SPEED_F32>::type>::create(std::forward<Args>(args)...);
@@ -161,7 +161,7 @@ inline std::string toString(rgl_field_t type)
 		case DISTANCE_F32: return "DISTANCE_F32";
 		case RETURN_TYPE_U8: return "RETURN_TYPE_U8";
 		case TIME_STAMP_F64: return "TIME_STAMP_F64";
-		case SCENE_VELOCITY_VEC3_F32: return "SCENE_VELOCITY_VEC3_F32";
+		case ABSOLUTE_VELOCITY_VEC3_F32: return "ABSOLUTE_VELOCITY_VEC3_F32";
 		case RELATIVE_VELOCITY_VEC3_F32: return "RELATIVE_VELOCITY_VEC3_F32";
 		case RADIAL_SPEED_F32: return "RADIAL_SPEED_F32";
 		case PADDING_8: return "PADDING_8";
@@ -189,7 +189,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 		case DISTANCE_F32: return {sensor_msgs::msg::PointField::FLOAT32};
 		case RETURN_TYPE_U8: return {sensor_msgs::msg::PointField::UINT8};
 		case TIME_STAMP_F64: return {sensor_msgs::msg::PointField::FLOAT64};
-		case SCENE_VELOCITY_VEC3_F32:
+		case ABSOLUTE_VELOCITY_VEC3_F32:
 			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
 			        sensor_msgs::msg::PointField::FLOAT32};
 		case RELATIVE_VELOCITY_VEC3_F32:
@@ -216,7 +216,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		case DISTANCE_F32: return {"distance"};
 		case RETURN_TYPE_U8: return {"return_type"};
 		case TIME_STAMP_F64: return {"time_stamp"};
-		case SCENE_VELOCITY_VEC3_F32: return {"abs_vx", "abs_vy", "abs_vz"};
+		case ABSOLUTE_VELOCITY_VEC3_F32: return {"abs_vx", "abs_vy", "abs_vz"};
 		case RELATIVE_VELOCITY_VEC3_F32: return {"rel_vx", "rel_vy", "rel_vz"};
 		case RADIAL_SPEED_F32: return {"radial_speed"};
 		case PADDING_8: return {};
@@ -231,7 +231,7 @@ inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 	switch (type) {
 		// Add here all vector fields
 		case XYZ_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
-		case SCENE_VELOCITY_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
+		case ABSOLUTE_VELOCITY_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
 		case RELATIVE_VELOCITY_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
 		default: return {getFieldSize(type)};
 	}

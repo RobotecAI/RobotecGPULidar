@@ -256,7 +256,7 @@ typedef enum : int32_t
 	 * - mesh deformations (e.g. skinning)
 	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgL_mesh_update_vertices`.
 	 */
-	RGL_FIELD_SCENE_VELOCITY_VEC3_F32,
+	RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 
 	/**
 	 * Velocity of the hit point on the entity, in the coordinate frame of rays source.
