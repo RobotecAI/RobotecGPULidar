@@ -14,6 +14,7 @@
 
 #include <graph/NodesCore.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
+#include <gpu/helpersKernels.hpp>
 
 void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float stDevRisePerMeter)
 {

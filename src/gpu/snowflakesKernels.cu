@@ -37,7 +37,6 @@ __global__ void kSetupSnowflakesDisk(size_t snowflakesCount, float maxRange, flo
     diameter = log(1-diameter)/(-distributionRate);
 
     outSnowflakesDisk[tid] = Vec3f(x, y, diameter);
-    printf("x: %f, y: %f, diameter: %f\n", x, y, diameter);
 }
 
 

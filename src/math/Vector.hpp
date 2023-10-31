@@ -82,7 +82,6 @@ struct Vector
 		return float3{row[0], row[1], row[2]};
 	}
 
-
         // *** *** *** ACCESSORS *** *** *** //
 
 	FORWARD_ITERATION(row, HostDevFn)

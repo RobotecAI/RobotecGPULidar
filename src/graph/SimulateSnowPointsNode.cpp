@@ -17,75 +17,70 @@
 #include <gpu/helpersKernels.hpp>
 
 
-void SimulateSnowPointsNode::setParameters(float maxRange,
-    float rainRate, float meanSnowflakeDiameter, float terminalVelocity,
-    float density, int32_t numberOfChannels, float beamDivergence)
+void SimulateSnowPointsNode::setParameters(float maxRange, float rainRate, float meanSnowflakeDiameter, float terminalVelocity,
+                                           float density, int32_t numberOfChannels, float beamDivergence)
 {
-    this->numberOfChannels = numberOfChannels;
-    this->maxRange = maxRange;
-    this->beamDivergence = beamDivergence;
+	this->numberOfChannels = numberOfChannels;
+	this->maxRange = maxRange;
+	this->beamDivergence = beamDivergence;
 
-    // Calculate derived snow parameters
+	// Calculate derived snow parameters
 
-    float snowfallHelper = rainRate / (487.0f * density * meanSnowflakeDiameter * terminalVelocity);
+	float snowfallHelper = rainRate / (487.0f * density * meanSnowflakeDiameter * terminalVelocity);
 
-    float snowfallRate = 487.0f * density * meanSnowflakeDiameter * terminalVelocity * pow(rainRate, 0.666666666f);
-    float distributionRate = 2.55f * pow(rainRate, 0.48f);
+	float snowfallRate = 487.0f * density * meanSnowflakeDiameter * terminalVelocity * pow(rainRate, 0.666666666f);
+	float distributionRate = 2.55f * pow(rainRate, 0.48f);
 
-    float areaOfDisk =  3.141592653589793f * maxRange * maxRange;
-    float snowedArea = (snowfallRate / (density * terminalVelocity)) * areaOfDisk;
+	float areaOfDisk = 3.141592653589793f * maxRange * maxRange;
+	float snowedArea = (snowfallRate / (density * terminalVelocity)) * areaOfDisk;
 
-    // Clamp snowed area.
-    if(snowedArea>areaOfDisk/10)
-    {
-        snowedArea = areaOfDisk/10;
-    }
+	// Clamp snowed area.
+	if (snowedArea > areaOfDisk / 10) {
+		snowedArea = areaOfDisk / 10;
+	}
 
-    float meanAreaOfFlake = 3.14 * meanSnowflakeDiameter * meanSnowflakeDiameter;
-    this ->numberOfFlakesPerChannel = snowedArea / meanAreaOfFlake;
+	float meanAreaOfFlake = 3.14 * meanSnowflakeDiameter * meanSnowflakeDiameter;
+	this->numberOfFlakesPerChannel = snowedArea / meanAreaOfFlake;
 
-    //clamp number of flakes
-    if(numberOfFlakesPerChannel > 100000 || numberOfFlakesPerChannel < 0)
-    {
-        numberOfFlakesPerChannel = 100000;
-    }
+	//clamp number of flakes
+	if (numberOfFlakesPerChannel > 100000 || numberOfFlakesPerChannel < 0) {
+		numberOfFlakesPerChannel = 100000;
+	}
 
-    for(int i = 0; i < numberOfChannels; i++)
-    {
-        snowflakesDisks.emplace_back(DeviceAsyncArray<Vec3f>::create(arrayMgr));
+	for (int i = 0; i < numberOfChannels; i++) {
+		snowflakesDisks.emplace_back(DeviceAsyncArray<Vec3f>::create(arrayMgr));
 
-        snowflakesDisks[i]->resize(numberOfFlakesPerChannel, false, false);
-        randomizationStates->resize(numberOfFlakesPerChannel, false, false);
-        gpuSetupRandomNumberGenerator(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, randomDevice(), randomizationStates->getWritePtr());
+		snowflakesDisks[i]->resize(numberOfFlakesPerChannel, false, false);
+		randomizationStates->resize(numberOfFlakesPerChannel, false, false);
+		gpuSetupRandomNumberGenerator(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, randomDevice(),
+		                              randomizationStates->getWritePtr());
 
-        auto* randPtr = randomizationStates->getWritePtr();
-        auto currentDiskPtr = snowflakesDisks[i]->getWritePtr();
+		auto* randPtr = randomizationStates->getWritePtr();
+		auto currentDiskPtr = snowflakesDisks[i]->getWritePtr();
 
-        gpuSnowflakesSimulationCalculateDisk(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, maxRange,meanSnowflakeDiameter, distributionRate, currentDiskPtr, randPtr);
-
-    }
-    CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));
-
+		gpuSnowflakesSimulationCalculateDisk(arrayMgr.getStream()->getHandle(), numberOfFlakesPerChannel, maxRange,
+		                                     meanSnowflakeDiameter, distributionRate, currentDiskPtr, randPtr);
+	}
+	CHECK_CUDA(cudaStreamSynchronize(arrayMgr.getStream()->getHandle()));
 }
 void SimulateSnowPointsNode::validateImpl()
 {
-    IPointsNodeSingleInput::validateImpl();
+	IPointsNodeSingleInput::validateImpl();
 
-    for (int i = 0; i < numberOfChannels; ++i) {
-       if(snowflakesDisks[i]->getCount() != numberOfFlakesPerChannel)
-           throw std::runtime_error("Snowflakes disks are not calculated!");
-
-    }
+	for (int i = 0; i < numberOfChannels; ++i) {
+		if (snowflakesDisks[i]->getCount() != numberOfFlakesPerChannel)
+			throw std::runtime_error("Snowflakes disks are not calculated!");
+	}
 }
 void SimulateSnowPointsNode::enqueueExecImpl()
 {
-    // TODO raytrace cloud again with snowflakes
-    auto pointCount = input->getPointCount();
+	// TODO raytrace cloud again with snowflakes
+	auto pointCount = input->getPointCount();
 }
 IAnyArray::ConstPtr SimulateSnowPointsNode::getFieldData(rgl_field_t field)
 {
-    if (field == XYZ_F32) {
-        return outXyz;
-    }
-    return input->getFieldData(field);
+	if (field == XYZ_VEC3_F32) {
+		return outXyz;
+	}
+	return input->getFieldData(field);
 }
