@@ -131,7 +131,7 @@ void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 {
 	if (texCoordCount != dVertices->getCount()) {
 		auto msg = fmt::format("Invalid argument: cannot set texture coordinates because vertex count do not match with "
-		                       "texture coordinates count: vertices={}, texture_coords={}",
+		                       "texture coordinates count: vertices={}, textureCoords={}",
 		                       dVertices->getCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}

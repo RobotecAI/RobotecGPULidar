@@ -123,14 +123,14 @@ extern "C" __global__ void __closesthit__()
 	const TriangleMeshSBTData& sbtData = *(const TriangleMeshSBTData*) optixGetSbtDataPointer();
 
 	const int primID = optixGetPrimitiveIndex();
-	assert(primID < sbtData.index_count);
+	assert(primID < sbtData.indexCount);
 	const Vec3i index = sbtData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
 	const float v = optixGetTriangleBarycentrics().y;
 
-	assert(index.x() < sbtData.vertex_count);
-	assert(index.y() < sbtData.vertex_count);
-	assert(index.z() < sbtData.vertex_count);
+	assert(index.x() < sbtData.vertexCount);
+	assert(index.y() < sbtData.vertexCount);
+	assert(index.z() < sbtData.vertexCount);
 
 	const Vec3f& A = sbtData.vertex[index.x()];
 	const Vec3f& B = sbtData.vertex[index.y()];
@@ -139,7 +139,7 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
-	int objectID = sbtData.entity_id;
+	int objectID = sbtData.entityId;
 
 	Vec3f origin = decodePayloadVec3f({optixGetPayload_0(), optixGetPayload_1(), optixGetPayload_2()});
 
@@ -163,14 +163,14 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	float intensity = 0;
-	if (sbtData.texture_coords != nullptr && sbtData.texture != 0) {
-		assert(index.x() < sbtData.texture_coords_count);
-		assert(index.y() < sbtData.texture_coords_count);
-		assert(index.z() < sbtData.texture_coords_count);
+	if (sbtData.textureCoords != nullptr && sbtData.texture != 0) {
+		assert(index.x() < sbtData.TextureCoordsCount);
+		assert(index.y() < sbtData.TextureCoordsCount);
+		assert(index.z() < sbtData.TextureCoordsCount);
 
-		const Vec2f& uvA = sbtData.texture_coords[index.x()];
-		const Vec2f& uvB = sbtData.texture_coords[index.y()];
-		const Vec2f& uvC = sbtData.texture_coords[index.z()];
+		const Vec2f& uvA = sbtData.textureCoords[index.x()];
+		const Vec2f& uvB = sbtData.textureCoords[index.y()];
+		const Vec2f& uvC = sbtData.textureCoords[index.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 

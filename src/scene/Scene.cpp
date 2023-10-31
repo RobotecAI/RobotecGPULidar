@@ -89,11 +89,11 @@ OptixShaderBindingTable Scene::buildSBT()
 		    .data = {
 		             .vertex = mesh->dVertices->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
-		             .vertex_count = mesh->dVertices->getCount(),
-		             .index_count = mesh->dIndices->getCount(),
-		             .entity_id = entity->getId(),
-		             .texture_coords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
-		             .texture_coords_count = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
+		             .vertexCount = mesh->dVertices->getCount(),
+		             .indexCount = mesh->dIndices->getCount(),
+		             .entityId = entity->getId(),
+		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
+		             .TextureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
 		             }
         });
@@ -132,9 +132,6 @@ OptixTraversableHandle Scene::buildAS()
 		// TODO(prybicki): this is somewhat inefficient, because most of the time only transform changes.
 		instances->append(entity->getIAS(static_cast<int>(instances->getCount())));
 	}
-
-	// *** *** *** ACHTUNG *** *** ***
-	// Calls to cudaMemcpy below are a duck-tape for synchronizing all streams from LidarContexts.
 
 	dInstances->resize(instances->getCount(), false, false);
 	dInstances->copyFrom(instances);
