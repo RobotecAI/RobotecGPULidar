@@ -9,15 +9,25 @@ static constexpr int MULTIPLE_COMPACTIONS_COUNT = 15;
 
 class CompactPointsNodeTest : public RGLTestWithParam<int>
 {
-protected:
-	CompactPointsNodeTest() : compactNodes(MULTIPLE_COMPACTIONS_COUNT, nullptr) {}
+public:
+	static void SetUpTestCase()
+	{
+		// Print random seed for reproducibility
+		static bool hasPrintedRandomSeed = false;
+		if (!hasPrintedRandomSeed) {
+			fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
+		}
+		hasPrintedRandomSeed = true;
+	}
 
+protected:
 	rgl_node_t useRaysNode = nullptr;
 	rgl_node_t usePointsNode = nullptr;
-	std::vector<rgl_node_t> compactNodes;
+	rgl_node_t compactPointsNode = nullptr;
 
 	std::unique_ptr<TestPointCloud> inPointCloud;
 	std::unique_ptr<TestPointCloud> outPointCloud;
+	std::unique_ptr<TestPointCloud> expectedPointCloud;
 	std::vector<rgl_field_t> pointFields = {XYZ_F32, IS_HIT_I32};
 
 	std::vector<Field<XYZ_F32>::type> pointCoordValues;
@@ -59,9 +69,9 @@ protected:
 
 	void runGraphWithAssertions()
 	{
-		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-		ASSERT_THAT(compactNodes.at(0), testing::NotNull());
-		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNodes.at(0)));
+		ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+		ASSERT_THAT(compactPointsNode, testing::NotNull());
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactPointsNode));
 		ASSERT_RGL_SUCCESS(rgl_graph_run(usePointsNode));
 	}
 };
@@ -76,23 +86,23 @@ TEST_F(CompactPointsNodeTest, invalid_argument_node)
 
 TEST_F(CompactPointsNodeTest, valid_argument_node_is_nullptr)
 {
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-	EXPECT_THAT(compactNodes.at(0), testing::NotNull());
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+	EXPECT_THAT(compactPointsNode, testing::NotNull());
 }
 
 TEST_F(CompactPointsNodeTest, valid_argument_node_is_not_nullptr)
 {
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-	ASSERT_THAT(compactNodes.at(0), testing::NotNull());
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+	ASSERT_THAT(compactPointsNode, testing::NotNull());
 
-	// If (*compactNodes.at(0)) != nullptr
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
+	// If (*compactPointsNode) != nullptr
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 }
 
 TEST_F(CompactPointsNodeTest, invalid_pipeline_when_no_input_node)
 {
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactNodes.at(0)), "looked for IPointsNode");
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactPointsNode), "looked for IPointsNode");
 }
 
 TEST_F(CompactPointsNodeTest, invalid_pipeline_when_incorrect_input_node)
@@ -101,9 +111,9 @@ TEST_F(CompactPointsNodeTest, invalid_pipeline_when_incorrect_input_node)
 	rayTf.emplace_back(Mat3x4f::identity().toRGL());
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
 
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, compactNodes.at(0)));
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactNodes.at(0)), "looked for IPointsNode");
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, compactPointsNode));
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactPointsNode), "looked for IPointsNode");
 }
 
 TEST_P(CompactPointsNodeTest, points_all_non_hit)
@@ -113,7 +123,7 @@ TEST_P(CompactPointsNodeTest, points_all_non_hit)
 	setUpPointCloud(pointsCount, genCoord, genAllNonHit);
 	runGraphWithAssertions();
 
-	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactNodes.at(0), pointFields));
+	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
 	EXPECT_EQ(outPointCloud->getPointCount(), 0);
 
 	// Check if the contents of outData have changed (they should not have)
@@ -124,7 +134,13 @@ TEST_P(CompactPointsNodeTest, points_all_non_hit)
     };
 	auto outDataCopy = outData;
 
-	ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(compactNodes.at(0), RGL_FIELD_XYZ_F32, outData.data()));
+	int32_t outCount, outSize;
+	ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(compactPointsNode, RGL_FIELD_XYZ_F32, &outCount, &outSize));
+	ASSERT_EQ(outSize, sizeof(Field<XYZ_F32>::type));
+	ASSERT_EQ(outCount, 0);
+
+	// Verify that the data is unchanged; this is a sanity check to make sure that the data is not overwritten
+	ASSERT_RGL_SUCCESS(rgl_graph_get_result_data(compactPointsNode, RGL_FIELD_XYZ_F32, outData.data()));
 	ASSERT_EQ(outData.size(), outDataCopy.size());
 	for (int i = 0; i < outData.size(); ++i) {
 		EXPECT_EQ(outData.at(i)[0], outDataCopy.at(i)[0]);
@@ -140,7 +156,7 @@ TEST_P(CompactPointsNodeTest, points_all_hit)
 	setUpPointCloud(pointsCount, genCoord, genAllHit);
 	runGraphWithAssertions();
 
-	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactNodes.at(0), pointFields));
+	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
 
 	EXPECT_EQ(*outPointCloud, *inPointCloud);
 }
@@ -151,20 +167,17 @@ TEST_P(CompactPointsNodeTest, points_random_hit)
 
 	setUpPointCloud(pointsCount, genCoord, genRandHit);
 
-	// Print random seed for reproducibility
-	fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
-
 	runGraphWithAssertions();
 
 	removeNonHitPoints();
 
-	TestPointCloud expectedPointCloud(pointFields, pointCoordValues.size());
-	expectedPointCloud.setFieldValues<XYZ_F32>(pointCoordValues);
-	expectedPointCloud.setFieldValues<IS_HIT_I32>(pointIsHitValues);
+	expectedPointCloud = std::make_unique<TestPointCloud>(pointFields, pointCoordValues.size());
+	expectedPointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
+	expectedPointCloud->setFieldValues<IS_HIT_I32>(pointIsHitValues);
 
-	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactNodes.at(0), pointFields));
+	outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactPointsNode, pointFields));
 
-	EXPECT_EQ(*outPointCloud, expectedPointCloud);
+	EXPECT_EQ(*outPointCloud, *expectedPointCloud);
 }
 
 TEST_P(CompactPointsNodeTest, multiple_compactions_applied_to_same_data)
@@ -173,9 +186,7 @@ TEST_P(CompactPointsNodeTest, multiple_compactions_applied_to_same_data)
 
 	setUpPointCloud(pointsCount, genCoord, genRandHit);
 
-	// Print random seed for reproducibility
-	fmt::print(stderr, "Compact Points Node Test random seed: {}\n", randomSeed);
-
+	std::vector<rgl_node_t> compactNodes(MULTIPLE_COMPACTIONS_COUNT);
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
 	ASSERT_THAT(compactNodes.at(0), testing::NotNull());
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNodes.at(0)));
@@ -188,25 +199,25 @@ TEST_P(CompactPointsNodeTest, multiple_compactions_applied_to_same_data)
 
 	removeNonHitPoints();
 
-	TestPointCloud expectedPointCloud(pointFields, pointCoordValues.size());
-	expectedPointCloud.setFieldValues<XYZ_F32>(pointCoordValues);
-	expectedPointCloud.setFieldValues<IS_HIT_I32>(pointIsHitValues);
+	expectedPointCloud = std::make_unique<TestPointCloud>(pointFields, pointCoordValues.size());
+	expectedPointCloud->setFieldValues<XYZ_F32>(pointCoordValues);
+	expectedPointCloud->setFieldValues<IS_HIT_I32>(pointIsHitValues);
 
 	outPointCloud = std::make_unique<TestPointCloud>(
 	    TestPointCloud::createFromNode(compactNodes.at(MULTIPLE_COMPACTIONS_COUNT - 1), pointFields));
 
-	EXPECT_EQ(*outPointCloud, expectedPointCloud);
+	EXPECT_EQ(*outPointCloud, *expectedPointCloud);
 }
 
 TEST_F(CompactPointsNodeTest, should_warn_when_empty_point_cloud)
 {
 	rgl_node_t emptyPointCloudOutputNode = simulateEmptyPointCloudOutputNode();
 
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(emptyPointCloudOutputNode, compactNodes.at(0)));
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(emptyPointCloudOutputNode, compactPointsNode));
 
 	// TODO: Causes Segmentation fault
-	// ASSERT_RGL_SUCCESS(rgl_graph_run(compactNodes.at(0)));
+	// ASSERT_RGL_SUCCESS(rgl_graph_run(compactPointsNode));
 
 	FAIL();
 }
@@ -222,8 +233,8 @@ TEST_F(CompactPointsNodeTest, without_IS_HIT_field)
 
 	usePointsNode = inPointCloud->createUsePointsNode();
 	ASSERT_THAT(usePointsNode, testing::NotNull());
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactNodes.at(0)));
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactNodes.at(0)));
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, compactPointsNode));
 
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactNodes.at(0)), "IS_HIT_I32");
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactPointsNode), "IS_HIT_I32");
 }
