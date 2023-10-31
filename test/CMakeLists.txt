@@ -39,6 +39,7 @@ set(RGL_TEST_FILES
     src/synchronization/testKernel.cu
     src/testMat3x4f.cpp
     src/VelocityDistortionTest.cpp
+    src/scene/entityVelocityTest.cpp
 )
 
 # Only Linux
