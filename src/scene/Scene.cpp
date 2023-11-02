@@ -91,7 +91,6 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .index = mesh->dIndices->getReadPtr(),
 		             .vertexCount = mesh->dVertices->getCount(),
 		             .indexCount = mesh->dIndices->getCount(),
-		             .entityId = entity->id,
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
@@ -134,9 +133,9 @@ OptixTraversableHandle Scene::buildAS()
 	for (auto&& entity : entities) {
 		int idx = instances->getCount();
 		OptixInstance instance = {
-		    .instanceId = static_cast<unsigned int>(idx), // TODO: Here, we could have used instanceId to pass EntityId
-		                                                  // (more efficient), instead of storing it in HitGroupRecord
-		    .sbtOffset = static_cast<unsigned int>(idx),  // NOTE: this assumes a single SBT record per GAS
+		    .instanceId = static_cast<unsigned int>(entity->id),
+		    // (more efficient), instead of storing it in HitGroupRecord
+		    .sbtOffset = static_cast<unsigned int>(idx), // NOTE: this assumes a single SBT record per GAS
 		    .visibilityMask = 255,
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		    .traversableHandle = entity->mesh->getGAS(getStream()),

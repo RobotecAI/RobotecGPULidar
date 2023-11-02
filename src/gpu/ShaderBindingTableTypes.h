@@ -10,8 +10,6 @@ struct TriangleMeshSBTData
 	size_t vertexCount;
 	size_t indexCount;
 
-	int entityId;
-
 	const Vec2f* textureCoords;
 	size_t textureCoordsCount;
 	cudaTextureObject_t texture;

@@ -38,9 +38,9 @@ TEST_F(EntityIdTest, BaseTest)
 	constexpr float BOX1_BOX2_BORDER = (BOX1_Y_POS + BOX2_Y_POS) / 2.0f;
 	constexpr float BOX2_BOX3_BORDER = (BOX2_Y_POS + BOX3_Y_POS) / 2.0f;
 
-	spawnCubeOnScene(Mat3x4f::TRS({6, BOX1_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX1_ID);
-	spawnCubeOnScene(Mat3x4f::TRS({6, BOX2_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX2_ID);
-	spawnCubeOnScene(Mat3x4f::TRS({6, BOX3_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}));
+	auto box1 = spawnCubeOnScene(Mat3x4f::TRS({6, BOX1_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX1_ID);
+	auto box2 = spawnCubeOnScene(Mat3x4f::TRS({6, BOX2_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX2_ID);
+	auto box3 = spawnCubeOnScene(Mat3x4f::TRS({6, BOX3_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}));
 
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);
@@ -94,13 +94,19 @@ TEST_F(EntityIdTest, BaseTest)
 		}
 	}
 
-	// Infinite loop to publish point cloud to ROS2 topic for visualization purposes. Uncomment to use. Use wisely.
-	//#ifdef RGL_BUILD_ROS2_EXTENSION
-	//    rgl_node_t ros2publishNode = nullptr;
-	//
-	//    EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2publishNode, "pointcloud", "rgl"));
-	//    EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(formatNode, ros2publishNode));
-	//    while(true)
-	//        EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
-	//#endif
+// Infinite loop to publish point cloud to ROS2 topic for visualization purposes. Uncomment to use. Use wisely.
+#ifdef RGL_BUILD_ROS2_EXTENSION
+//	rgl_node_t formatNode = nullptr;
+//	rgl_node_t ros2publishNode = nullptr;
+//
+//	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, yieldFields.data(), yieldFields.size()));
+//	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2publishNode, "pointcloud", "world"));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(yieldNode, formatNode));
+//	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(formatNode, ros2publishNode));
+//	while (true) {
+//		// In each frame randomize one of the ids to ensure changes are visible & arbitrary ids are handled correctly.
+//		EXPECT_RGL_SUCCESS(rgl_entity_set_id(box2, 1 + rand() % 100));
+//		EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
+//	}
+#endif
 }

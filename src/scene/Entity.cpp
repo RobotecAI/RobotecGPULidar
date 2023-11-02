@@ -39,7 +39,7 @@ void Entity::setId(int newId)
 		throw std::invalid_argument(msg);
 	}
 	id = newId;
-	scene->requestSBTRebuild();
+	scene->requestASRebuild();
 }
 
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
