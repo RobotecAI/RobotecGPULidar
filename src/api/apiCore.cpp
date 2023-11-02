@@ -260,8 +260,7 @@ RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t sce
 		if (scene == nullptr) {
 			scene = Scene::defaultInstance().get();
 		}
-		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
-		Scene::validatePtr(scene)->addEntity(Entity::validatePtr(*out_entity));
+		*out_entity = Entity::create(Mesh::validatePtr(mesh), Scene::validatePtr(scene)).get();
 	});
 	TAPE_HOOK(out_entity, scene, mesh);
 	return status;
@@ -283,7 +282,7 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity)
 		CHECK_ARG(entity != nullptr);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
-		entitySafe->scene->removeEntity(entitySafe);
+		entitySafe->getScene()->removeEntity(entitySafe);
 		Entity::release(entity);
 	});
 	TAPE_HOOK(entity);

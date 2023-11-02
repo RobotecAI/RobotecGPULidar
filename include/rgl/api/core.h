@@ -49,9 +49,9 @@
 // Cannot be assigned to Mesh manually. It is reserved for internal raytracing use.
 #define RGL_ENTITY_INVALID_ID 0
 
-// Default Entity ID is the largest positive 32-bit integer.
+// Default Entity ID is the largest positive 28-bit integer (OptiX limit).
 // It is assigned by default if the user does not specify it.
-#define RGL_DEFAULT_ENTITY_ID 2147483647
+#define RGL_DEFAULT_ENTITY_ID 268435455
 
 /**
  * Two consecutive 32-bit floats.

@@ -14,37 +14,68 @@
 
 #pragma once
 
+#include <utility>
+
+#include <APIObject.hpp>
+#include <RGLFields.hpp>
 #include <scene/Scene.hpp>
 #include <scene/Mesh.hpp>
-#include <APIObject.hpp>
-#include <utility>
 #include <math/Mat3x4f.hpp>
 
-
+/**
+ * Entity represents an instance of a mesh on the scene, with attributes such as transform, id, intensity texture, etc.
+ */
 struct Entity : APIObject<Entity>
 {
 	friend struct APIObject<Entity>;
 	friend struct Scene;
 
-	Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name = std::nullopt);
+	/**
+	 * Factory methods which creates an Entity and adds it to the given Scene.
+	 * See constructor docs for more details.
+	 */
+	static std::shared_ptr<Entity> create(std::shared_ptr<Mesh> mesh, std::shared_ptr<Scene> scene);
 
-	// TODO(prybicki): low-prio optimization: do not rebuild whole IAS if only transform changed
+	/**
+	 * Sets ID that will be used as a point attribute ENTITY_ID_I32 when a ray hits this entity.
+	 */
+	void setId(int newId);
+
+	/**
+	 * Sets or updates Entity's transform.
+	 */
 	void setTransform(Mat3x4f newTransform);
 
-	void setId(int newId);
-	int getId() const { return id; }
-
+	/**
+	 * Sets intensity texture that will be used as a point attribute INTENSITY_F32 when a ray hits this entity.
+	 */
 	void setIntensityTexture(std::shared_ptr<Texture> texture);
 
-	OptixInstance getIAS(int idx);
+	/**
+	 * @return Estimated velocity based on current and previous transforms.
+	 */
+	Mat3x4f getVelocity() const;
 
-	std::shared_ptr<Mesh> mesh;
-	std::shared_ptr<Texture> intensityTexture = nullptr;
-
-	std::shared_ptr<Scene> scene;
+	/**
+	 * @return The Scene in which this Entity is present.
+	 */
+	std::shared_ptr<Scene> getScene() const { return scene; }
 
 private:
-	Mat3x4f transform;
-	int id;
-	std::optional<std::string> humanReadableName;
+	/**
+	 * Creates Entity with given mesh and identity transform.
+	 * Before using Entity, it is required to register it on some Scene.
+	 * However, it cannot be done without having its shared_ptr,
+	 * therefore this constructor is private and Entity::create() should be used.
+	 * @param mesh Mesh used by this Entity. May be shared by multiple Entities.
+	 */
+	Entity(std::shared_ptr<Mesh> mesh);
+
+private:
+	Mat3x4f transform{Mat3x4f::identity()};
+	Field<ENTITY_ID_I32>::type id{RGL_DEFAULT_ENTITY_ID};
+
+	std::shared_ptr<Mesh> mesh{};
+	std::shared_ptr<Texture> intensityTexture{};
+	std::shared_ptr<Scene> scene{};
 };

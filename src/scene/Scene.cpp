@@ -91,7 +91,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .index = mesh->dIndices->getReadPtr(),
 		             .vertexCount = mesh->dVertices->getCount(),
 		             .indexCount = mesh->dIndices->getCount(),
-		             .entityId = entity->getId(),
+		             .entityId = entity->id,
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
@@ -126,11 +126,23 @@ OptixTraversableHandle Scene::buildAS()
 	if (getObjectCount() == 0) {
 		return static_cast<OptixTraversableHandle>(0);
 	}
+
+	// Construct Instance Acceleration Structures based on Entities present on the scene
+	// TODO: this approach may be inefficient - most of the time only transform changes
 	auto instances = HostPinnedArray<OptixInstance>::create();
 	instances->reserve(entities.size(), false);
 	for (auto&& entity : entities) {
-		// TODO(prybicki): this is somewhat inefficient, because most of the time only transform changes.
-		instances->append(entity->getIAS(static_cast<int>(instances->getCount())));
+		int idx = instances->getCount();
+		OptixInstance instance = {
+		    .instanceId = static_cast<unsigned int>(idx), // TODO: Here, we could have used instanceId to pass EntityId
+		                                                  // (more efficient), instead of storing it in HitGroupRecord
+		    .sbtOffset = static_cast<unsigned int>(idx),  // NOTE: this assumes a single SBT record per GAS
+		    .visibilityMask = 255,
+		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
+		    .traversableHandle = entity->mesh->getGAS(getStream()),
+		};
+		entity->transform.toRaw(instance.transform);
+		instances->append(instance);
 	}
 
 	dInstances->resize(instances->getCount(), false, false);
