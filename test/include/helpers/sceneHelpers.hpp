@@ -26,7 +26,7 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh = nullptr)
 	return entity;
 }
 
-static inline void spawnCubeOnScene(const Mat3x4f& transform, std::optional<int> id = std::nullopt)
+static inline rgl_entity_t spawnCubeOnScene(const Mat3x4f& transform, std::optional<int> id = std::nullopt)
 {
 	rgl_entity_t boxEntity = makeEntity(makeCubeMesh());
 
@@ -36,6 +36,7 @@ static inline void spawnCubeOnScene(const Mat3x4f& transform, std::optional<int>
 	if (id.has_value()) {
 		EXPECT_RGL_SUCCESS(rgl_entity_set_id(boxEntity, id.value()));
 	}
+	return boxEntity;
 }
 
 static inline void setupBoxesAlongAxes()

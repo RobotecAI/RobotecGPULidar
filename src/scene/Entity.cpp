@@ -16,9 +16,14 @@
 
 API_OBJECT_INSTANCE(Entity);
 
-Entity::Entity(std::shared_ptr<Mesh> mesh, std::optional<std::string> name)
-  : mesh(std::move(mesh)), transform(Mat3x4f::identity()), humanReadableName(std::move(name)), id(RGL_DEFAULT_ENTITY_ID)
-{}
+std::shared_ptr<Entity> Entity::create(std::shared_ptr<Mesh> mesh, std::shared_ptr<Scene> scene)
+{
+	auto entity = APIObject<Entity>::create(mesh);
+	scene->addEntity(entity);
+	return entity;
+}
+
+Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(std::move(mesh)) {}
 
 void Entity::setTransform(Mat3x4f newTransform)
 {
@@ -28,22 +33,13 @@ void Entity::setTransform(Mat3x4f newTransform)
 
 void Entity::setId(int newId)
 {
+	constexpr auto optixMaxInstanceId = 1 << 28; // https://raytracing-docs.nvidia.com/optix7/guide/index.html#limits#limits
+	if (newId >= optixMaxInstanceId) {
+		auto msg = fmt::format("Entity ID ({}) must be less than {}", newId, optixMaxInstanceId);
+		throw std::invalid_argument(msg);
+	}
 	id = newId;
-	scene->requestSBTRebuild();
-}
-
-OptixInstance Entity::getIAS(int idx)
-{
-	// NOTE: this assumes a single SBT record per GAS
-	OptixInstance instance = {
-	    .instanceId = static_cast<unsigned int>(idx),
-	    .sbtOffset = static_cast<unsigned int>(idx),
-	    .visibilityMask = 255,
-	    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
-	    .traversableHandle = mesh->getGAS(scene->getStream()),
-	};
-	transform.toRaw(instance.transform);
-	return instance;
+	scene->requestASRebuild();
 }
 
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
@@ -51,3 +47,5 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	intensityTexture = texture;
 	scene->requestSBTRebuild();
 }
+
+Mat3x4f Entity::getVelocity() const { throw std::runtime_error("unimplemented"); }
