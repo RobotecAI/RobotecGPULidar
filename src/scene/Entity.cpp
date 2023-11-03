@@ -33,7 +33,7 @@ void Entity::setTransform(Mat3x4f newTransform)
 
 void Entity::setId(int newId)
 {
-	auto optixMaxInstanceId = 1 << 28; // https://raytracing-docs.nvidia.com/optix7/guide/index.html#limits#limits
+	constexpr auto optixMaxInstanceId = 1 << 28; // https://raytracing-docs.nvidia.com/optix7/guide/index.html#limits#limits
 	if (newId >= optixMaxInstanceId) {
 		auto msg = fmt::format("Entity ID ({}) must be less than {}", newId, optixMaxInstanceId);
 		throw std::invalid_argument(msg);

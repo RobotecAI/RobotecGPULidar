@@ -23,7 +23,12 @@
 #include <math/Mat3x4f.hpp>
 
 /**
- * Entity represents an instance of a mesh on the scene, with attributes such as transform, id, intensity texture, etc.
+ * Entity represents an object on a scene, consisting of:
+ * - reference to mesh
+ * - pose (local-to-world transform)
+ * - (optional) reference to intensity texture
+ * - (optional) id (for instance segmentation)
+ * - etc.
  */
 struct Entity : APIObject<Entity>
 {
