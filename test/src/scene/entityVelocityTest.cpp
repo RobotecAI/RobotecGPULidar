@@ -21,14 +21,13 @@ using namespace std::chrono_literals;
 #include "helpers/sceneHelpers.hpp"
 TEST(EntityVelocity, Interactive)
 {
-	GTEST_SKIP();
+	GTEST_SKIP(); // Comment to run the test
 	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
 
 	// Published fields
 	std::vector<rgl_field_t> fields = {
-	    RGL_FIELD_XYZ_VEC3_F32,
-	    //	    RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
+	    RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 	    //	    RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32,
 	    //	    RGL_FIELD_RADIAL_SPEED_F32
 	};
@@ -47,17 +46,14 @@ TEST(EntityVelocity, Interactive)
 	// Helper struct
 	struct DynamicCube
 	{
-		DynamicCube(Mat3x4f startPose) : startPose(startPose)
+		DynamicCube(Mat3x4f startPose, std::function<void(DynamicCube&, double)> updateFn) : startPose(startPose)
 		{
 			auto startPoseRGL = startPose.toRGL();
 			EXPECT_RGL_SUCCESS(
 			    rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
 			EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &startPoseRGL));
-		}
-		void setUpdate(std::function<void(DynamicCube&, double)> fn)
-		{
-			update = [=, this](double t) { fn(*this, t); };
+			update = [=, this](double t) { updateFn(*this, t); };
 		}
 
 		Mat3x4f startPose;
@@ -68,37 +64,36 @@ TEST(EntityVelocity, Interactive)
 
 	// Setup scene
 	constexpr float CUBE_DIST = 5.0f;
-	DynamicCube translatingCube{Mat3x4f::translation({CUBE_DIST, 0, 0})};
-	DynamicCube rotatingCube{Mat3x4f::translation(-CUBE_DIST, 0, 0)};
-	DynamicCube scalingCube{Mat3x4f::translation(0, CUBE_DIST, 0)};
-	DynamicCube morphingCube{Mat3x4f::translation(0, -CUBE_DIST, 0)};
 
-	// Setup behavior
-	translatingCube.setUpdate([](DynamicCube& cube, double t) {
+	// +X, moves +/- 1 from initial position
+	DynamicCube translatingCube(Mat3x4f::translation({CUBE_DIST, 0, 0}), [](DynamicCube& cube, double t) {
 		auto change = Mat3x4f::translation(Vec3f{std::sin(t), 0, 0});
 		auto newPose = (cube.startPose * change).toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &newPose));
 	});
 
-	rotatingCube.setUpdate([](DynamicCube& cube, double t) {
+	// -X, rotates around Z, ccw
+	DynamicCube rotatingCube(Mat3x4f::translation(-CUBE_DIST, 0, 0), [](DynamicCube& cube, double t) {
 		auto change = Mat3x4f::rotationRad(0, 0, t);
 		auto newPose = (cube.startPose * change).toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &newPose));
 	});
 
-	scalingCube.setUpdate([](DynamicCube& cube, double t) {
+	// +Y, scales between 0.5 and 1.5
+	DynamicCube scalingCube(Mat3x4f::translation(0, CUBE_DIST, 0), [](DynamicCube& cube, double t) {
 		auto ds = 1.0f + sin(t) / 2.0f;
 		auto change = Mat3x4f::scale(ds, ds, ds);
 		auto newPose = (cube.startPose * change).toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &newPose));
 	});
 
-	morphingCube.setUpdate([](DynamicCube& cube, double t) {
+	// -Y, oscillates between cube and pyramid by collapsing frontal face into cube's center point
+	DynamicCube morphingCube(Mat3x4f::translation(0, -CUBE_DIST, 0), [](DynamicCube& cube, double t) {
 		rgl_vec3f changed[ARRAY_SIZE(cubeVertices)];
 		for (int i = 0; i < ARRAY_SIZE(cubeVertices); ++i) {
 			changed[i] = cubeVertices[i];
 		}
-		// Oscillate between cube and pyramid by collapsing frontal face into cube's center point
+
 		changed[2].value[0] += sin(t);
 		changed[2].value[1] += sin(t);
 		changed[2].value[2] -= sin(t);
@@ -120,13 +115,13 @@ TEST(EntityVelocity, Interactive)
 	while (true) {
 		auto currentTime = frameId * nsPerFrame;
 		auto currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
+		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
 
 		translatingCube.update(currentTimeSeconds);
 		rotatingCube.update(currentTimeSeconds);
 		scalingCube.update(currentTimeSeconds);
 		morphingCube.update(currentTimeSeconds);
 
-		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
 		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 		std::this_thread::sleep_for(10ms);
 		frameId += 1;

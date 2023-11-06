@@ -73,23 +73,22 @@ OptixShaderBindingTable Scene::buildSBT()
 	static DeviceSyncArray<MissRecord>::Ptr dMissRecords = DeviceSyncArray<MissRecord>::create();
 	static HostPinnedArray<HitgroupRecord>::Ptr hHitgroupRecords = HostPinnedArray<HitgroupRecord>::create();
 
-	// TODO(prybicki): low priority: can HG count be reduced to be == count(GASes)? or must it be count(IASes)?
-
 	hHitgroupRecords->reserve(entities.size(), false);
 	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
+		std::optional<Mat3x4f> prevFrameTransform = entity->getPreviousFrameTransform();
 		hHitgroupRecords->append(HitgroupRecord{
-		    .data = {
-		             .vertex = mesh->dVertices->getReadPtr(),
+		    .data = {.vertex = mesh->dVertices->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
 		             .vertexCount = mesh->dVertices->getCount(),
 		             .indexCount = mesh->dIndices->getCount(),
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
-		             }
-        });
+		             .prevFrameLocalToWorld = prevFrameTransform.value_or(Mat3x4f::identity()),
+		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value()},
+		});
 		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, last.header));
 	}
@@ -128,13 +127,12 @@ OptixTraversableHandle Scene::buildAS()
 		int idx = instances->getCount();
 		OptixInstance instance = {
 		    .instanceId = static_cast<unsigned int>(entity->id),
-		    // (more efficient), instead of storing it in HitGroupRecord
 		    .sbtOffset = static_cast<unsigned int>(idx), // NOTE: this assumes a single SBT record per GAS
 		    .visibilityMask = 255,
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		    .traversableHandle = entity->mesh->getGAS(getStream()),
 		};
-		entity->transform.toRaw(instance.transform);
+		entity->transform.matrix.toRaw(instance.transform);
 		instances->append(instance);
 	}
 

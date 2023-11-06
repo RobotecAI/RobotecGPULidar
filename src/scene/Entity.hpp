@@ -57,9 +57,12 @@ struct Entity : APIObject<Entity>
 	void setIntensityTexture(std::shared_ptr<Texture> texture);
 
 	/**
-	 * @return Estimated velocity based on current and previous transforms.
+	 * Returns Entity's transform such that it is possible to compute meaningful velocity between it and the current transform.
+	 * Most often it will return the previous frame (if Entity is updated on each frame). See source for details.
+	 * NOTE: It is assumed that (current) transform is always valid for the present scene time (even if it was set in the past).
+	 * @return Mat3x4f of the local-to-world transform from the previous frame if available.
 	 */
-	Mat3x4f getVelocity() const;
+	std::optional<Mat3x4f> getPreviousFrameTransform() const;
 
 private:
 	/**
@@ -72,7 +75,14 @@ private:
 	Entity(std::shared_ptr<Mesh> mesh);
 
 private:
-	Mat3x4f transform{Mat3x4f::identity()};
+	struct TransformWithTime
+	{
+		Mat3x4f matrix;
+		std::optional<Time> time;
+	};
+	TransformWithTime transform{Mat3x4f::identity(), std::nullopt};
+	TransformWithTime formerTransform{Mat3x4f::identity(), std::nullopt};
+
 	Field<ENTITY_ID_I32>::type id{RGL_DEFAULT_ENTITY_ID};
 
 	std::shared_ptr<Mesh> mesh{};
