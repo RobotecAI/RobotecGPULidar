@@ -27,8 +27,9 @@ Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(std::move(mesh)) {}
 
 void Entity::setTransform(Mat3x4f newTransform)
 {
-	transform = newTransform;
-	scene->requestASRebuild();
+	prevTransform = transform;
+	transform = {newTransform, scene->getTime()};
+	scene->requestFullRebuild();
 }
 
 void Entity::setId(int newId)
@@ -48,4 +49,23 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	scene->requestSBTRebuild();
 }
 
-Mat3x4f Entity::getVelocity() const { throw std::runtime_error("unimplemented"); }
+std::optional<Mat3x4f> Entity::getPrevFrameTransform() const
+{
+	// Currently, setting Scene time (rgl_scene_set_time) is optional.
+	// Making it mandatory (refusing to raytrace without time set) would simplify the code below.
+	// However, it would be a breaking change, requiring fixing all plugins.
+	bool hasTransformsTimestamps = transform.time.has_value() && prevTransform.time.has_value();
+	bool hasSceneTimestamps = scene->getTime().has_value() && scene->getPrevTime().has_value();
+	if (!hasSceneTimestamps || !hasTransformsTimestamps) {
+		return std::nullopt;
+	}
+	bool transformsTimestampsOk = transform.time.value() == scene->getTime().value() &&
+	                              prevTransform.time.value() == scene->getPrevTime().value();
+	if (!transformsTimestampsOk) {
+		RGL_WARN("Detected stale transforms! Timestamps: entity=(curr={}, prev={}), scene=(curr={}, prev={})",
+		         transform.time.value().asSeconds(), prevTransform.time.value().asSeconds(), scene->getTime()->asSeconds(),
+		         scene->getPrevTime()->asSeconds());
+		return std::nullopt;
+	}
+	return prevTransform.matrix;
+}

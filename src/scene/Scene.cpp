@@ -79,23 +79,22 @@ OptixShaderBindingTable Scene::buildSBT()
 	static DeviceSyncArray<MissRecord>::Ptr dMissRecords = DeviceSyncArray<MissRecord>::create();
 	static HostPinnedArray<HitgroupRecord>::Ptr hHitgroupRecords = HostPinnedArray<HitgroupRecord>::create();
 
-	// TODO(prybicki): low priority: can HG count be reduced to be == count(GASes)? or must it be count(IASes)?
-
 	hHitgroupRecords->reserve(entities.size(), false);
 	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
+		auto sceneDt = time.has_value() && prevTime.has_value() ? (*time - *prevTime).asSeconds() : 0.0;
 		hHitgroupRecords->append(HitgroupRecord{
-		    .data = {
-		             .vertex = mesh->dVertices->getReadPtr(),
+		    .data = {.vertex = mesh->dVertices->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
 		             .vertexCount = mesh->dVertices->getCount(),
 		             .indexCount = mesh->dIndices->getCount(),
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
-		             }
-        });
+		             .prevFrameTimeDiff = static_cast<float>(sceneDt),
+		             .prevFrameLocalToWorld = entity->getPrevFrameTransform().value_or(Mat3x4f::identity())},
+		});
 		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, last.header));
 	}
@@ -140,7 +139,7 @@ OptixTraversableHandle Scene::buildAS()
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		    .traversableHandle = entity->mesh->getGAS(getStream()),
 		};
-		entity->transform.toRaw(instance.transform);
+		entity->transform.matrix.toRaw(instance.transform);
 		instances->append(instance);
 	}
 

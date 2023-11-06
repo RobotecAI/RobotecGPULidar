@@ -53,8 +53,13 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 	void removeEntity(std::shared_ptr<Entity> entity);
 	void clear();
 
-	void setTime(Time time) { this->time = time; }
+	void setTime(Time time)
+	{
+		prevTime = this->time;
+		this->time = time;
+	}
 	std::optional<Time> getTime() const { return time; }
+	std::optional<Time> getPrevTime() const { return prevTime; }
 
 	std::size_t getObjectCount() const;
 
@@ -84,4 +89,5 @@ private:
 	DeviceSyncArray<OptixInstance>::Ptr dInstances = DeviceSyncArray<OptixInstance>::create();
 
 	std::optional<Time> time;
+	std::optional<Time> prevTime;
 };
