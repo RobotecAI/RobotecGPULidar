@@ -57,11 +57,11 @@ struct Scene
 	void clear();
 
 	void setTime(Time time) { this->time = time; }
-	std::optional<Time> getTime() { return time; }
+	std::optional<Time> getTime() const { return time; }
 
-	std::size_t getObjectCount();
+	std::size_t getObjectCount() const;
 
-	CudaStream::Ptr getStream();
+	CudaStream::Ptr getStream() const;
 
 	OptixTraversableHandle getASLocked();
 	OptixShaderBindingTable getSBTLocked();
