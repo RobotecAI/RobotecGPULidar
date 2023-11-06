@@ -27,7 +27,7 @@ std::shared_ptr<Scene> Scene::defaultInstance()
 
 Scene::Scene() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
-std::size_t Scene::getObjectCount() { return entities.size(); }
+std::size_t Scene::getObjectCount() const { return entities.size(); }
 
 void Scene::clear()
 {
@@ -184,4 +184,4 @@ void Scene::requestASRebuild() { cachedAS.reset(); }
 
 void Scene::requestSBTRebuild() { cachedSBT.reset(); }
 
-CudaStream::Ptr Scene::getStream() { return stream; }
+CudaStream::Ptr Scene::getStream() const { return stream; }
