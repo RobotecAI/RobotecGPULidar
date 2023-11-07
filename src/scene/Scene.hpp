@@ -60,6 +60,7 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 	}
 	std::optional<Time> getTime() const { return time; }
 	std::optional<Time> getPrevTime() const { return prevTime; }
+	std::optional<Time> getDeltaTime() const { return prevTime.has_value() ? std::optional(*time - *prevTime) : std::nullopt; }
 
 	std::size_t getObjectCount() const;
 

@@ -83,7 +83,7 @@ OptixShaderBindingTable Scene::buildSBT()
 	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
-		auto sceneDt = time.has_value() && prevTime.has_value() ? (*time - *prevTime).asSeconds() : 0.0;
+		std::optional<Mat3x4f> prevFrameTransform = entity->getPrecedingFrameTransform();
 		hHitgroupRecords->append(HitgroupRecord{
 		    .data = {.vertex = mesh->dVertices->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
@@ -92,8 +92,8 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
-		             .prevFrameTimeDiff = static_cast<float>(sceneDt),
-		             .prevFrameLocalToWorld = entity->getPrevFrameTransform().value_or(Mat3x4f::identity())},
+		             .prevFrameLocalToWorld = prevFrameTransform.value_or(Mat3x4f::identity()),
+		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value()},
 		});
 		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, last.header));
@@ -133,7 +133,6 @@ OptixTraversableHandle Scene::buildAS()
 		int idx = instances->getCount();
 		OptixInstance instance = {
 		    .instanceId = static_cast<unsigned int>(entity->id),
-		    // (more efficient), instead of storing it in HitGroupRecord
 		    .sbtOffset = static_cast<unsigned int>(idx), // NOTE: this assumes a single SBT record per GAS
 		    .visibilityMask = 255,
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,

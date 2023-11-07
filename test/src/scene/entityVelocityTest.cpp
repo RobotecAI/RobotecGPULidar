@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 #include "helpers/sceneHelpers.hpp"
 TEST(EntityVelocity, Interactive)
 {
-	GTEST_SKIP(); // Uncomment to run the test
+	GTEST_SKIP(); // Comment to run the test
 	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
 

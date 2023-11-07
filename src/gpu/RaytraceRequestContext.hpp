@@ -40,6 +40,7 @@ struct RaytraceRequestContext
 
 	OptixTraversableHandle scene;
 	double sceneTime;
+	float sceneDeltaTime;
 
 	// Output
 	Field<XYZ_VEC3_F32>::type* xyz;

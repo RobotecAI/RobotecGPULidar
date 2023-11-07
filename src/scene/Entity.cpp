@@ -27,9 +27,9 @@ Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(std::move(mesh)) {}
 
 void Entity::setTransform(Mat3x4f newTransform)
 {
-	prevTransform = transform;
+	previousTransform = transform;
 	transform = {newTransform, scene->getTime()};
-	scene->requestFullRebuild();
+	scene->requestFullRebuild(); // Update transforms: current one in AS, previous one in SBT
 }
 
 void Entity::setId(int newId)
@@ -40,7 +40,7 @@ void Entity::setId(int newId)
 		throw std::invalid_argument(msg);
 	}
 	id = newId;
-	scene->requestASRebuild();
+	scene->requestASRebuild(); // Update instanceId field in AS
 }
 
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
@@ -49,23 +49,24 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	scene->requestSBTRebuild();
 }
 
-std::optional<Mat3x4f> Entity::getPrevFrameTransform() const
+std::optional<Mat3x4f> Entity::getPrecedingFrameTransform() const
 {
-	// Currently, setting Scene time (rgl_scene_set_time) is optional.
-	// Making it mandatory (refusing to raytrace without time set) would simplify the code below.
+	// At the moment of writing, setting Scene time (rgl_scene_set_time) is optional.
+	// Making it mandatory (e.g. refusing to raytrace without time set) would simplify the code below.
 	// However, it would be a breaking change, requiring fixing all plugins.
-	bool hasTransformsTimestamps = transform.time.has_value() && prevTransform.time.has_value();
-	bool hasSceneTimestamps = scene->getTime().has_value() && scene->getPrevTime().has_value();
-	if (!hasSceneTimestamps || !hasTransformsTimestamps) {
+
+	bool transformWasSetOnlyOnce = transform.time.has_value() && !previousTransform.time.has_value();
+	if (transformWasSetOnlyOnce) {
+		// The first transform set might be the last one (e.g. static objects),
+		// so let's assume this object was in the same pose in the previous frame to get zero velocity.
+		return transform.matrix;
+	}
+
+	bool previousFrameWasSetInPrecedingFrame = previousTransform.time.has_value() &&
+	                                           previousTransform.time == scene->getPrevTime();
+	if (!previousFrameWasSetInPrecedingFrame) {
 		return std::nullopt;
 	}
-	bool transformsTimestampsOk = transform.time.value() == scene->getTime().value() &&
-	                              prevTransform.time.value() == scene->getPrevTime().value();
-	if (!transformsTimestampsOk) {
-		RGL_WARN("Detected stale transforms! Timestamps: entity=(curr={}, prev={}), scene=(curr={}, prev={})",
-		         transform.time.value().asSeconds(), prevTransform.time.value().asSeconds(), scene->getTime()->asSeconds(),
-		         scene->getPrevTime()->asSeconds());
-		return std::nullopt;
-	}
-	return prevTransform.matrix;
+
+	return previousTransform.matrix;
 }

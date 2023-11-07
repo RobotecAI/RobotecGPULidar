@@ -181,7 +181,7 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	Vec3f velocity{NAN};
-	if (entityData.prevFrameTimeDiff > 0) {
+	if (ctx.sceneDeltaTime > 0 && entityData.hasPrevFrameLocalToWorld) {
 		// Computing hit point velocity in simple words:
 		// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
 		// Think of it as a marker dot on the Entity.
@@ -191,7 +191,7 @@ extern "C" __global__ void __closesthit__()
 		// Dividing displacement by time elapsed from the previous raytracing frame yields velocity vector.
 		Vec3f displacementOriginWorld = entityData.prevFrameLocalToWorld * hitObject;
 		Vec3f displacement = hitWorld - displacementOriginWorld;
-		velocity = displacement / entityData.prevFrameTimeDiff;
+		velocity = displacement / static_cast<float>(ctx.sceneDeltaTime);
 	}
 
 	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);
