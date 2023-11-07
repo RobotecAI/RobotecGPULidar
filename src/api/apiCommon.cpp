@@ -35,6 +35,7 @@ const char* getLastErrorString() noexcept
 		case RGL_LOGGING_ERROR: return "spdlog error";
 		case RGL_INVALID_FILE_PATH: return "invalid file path";
 		case RGL_TAPE_ERROR: return "tape error";
+		case RGL_UDP_ERROR: return "UDP error";
 		case RGL_ROS2_ERROR: return "ROS2 error";
 		default: return "???";
 	}
@@ -45,7 +46,7 @@ bool canContinueAfterStatus(rgl_status_t status)
 	// Set constructor may throw, hence lazy initialization.
 	static std::set recoverableErrors = {RGL_INVALID_ARGUMENT,  RGL_INVALID_API_OBJECT, RGL_INVALID_PIPELINE,
 	                                     RGL_INVALID_FILE_PATH, RGL_NOT_IMPLEMENTED,    RGL_TAPE_ERROR,
-	                                     RGL_ROS2_ERROR};
+	                                     RGL_UDP_ERROR,         RGL_ROS2_ERROR};
 	return status == RGL_SUCCESS || recoverableErrors.contains(status);
 };
 

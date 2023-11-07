@@ -184,6 +184,12 @@ typedef enum : int32_t
 	RGL_TAPE_ERROR,
 
 	/**
+	* Indicates that a UDP operation (e.g., creating socket, sending packet) was not successful.
+	* This is a recoverable error.
+	*/
+	RGL_UDP_ERROR,
+
+	/**
 	* Indicates that a ROS2 native library throws an exception.
 	* This is a recoverable error.
 	*/
