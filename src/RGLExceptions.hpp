@@ -38,3 +38,8 @@ struct RecordError : public std::logic_error
 {
 	using std::logic_error::logic_error;
 };
+
+struct UdpError : public std::runtime_error
+{
+	using std::runtime_error::runtime_error;
+};

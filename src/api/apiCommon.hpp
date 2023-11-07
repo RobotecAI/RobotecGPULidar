@@ -92,6 +92,9 @@ rgl_status_t rglSafeCall(Fn fn)
 	catch (RecordError& e) {
 		return updateAPIState(RGL_TAPE_ERROR, e.what());
 	}
+	catch (UdpError& e) {
+		return updateAPIState(RGL_UDP_ERROR, e.what());
+	}
 	catch (std::exception& e) {
 		return updateAPIState(RGL_INTERNAL_EXCEPTION, e.what());
 	}
