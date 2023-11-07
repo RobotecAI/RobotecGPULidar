@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.16.0] 7 November 2023
+
+### Added
+
+- Added relative node's priority, which determines their execution order
+  - Added API calls to set/get node's priority:
+    - `rgl_graph_node_set_priority`
+    - `rgl_graph_node_get_priority`
+
+### Changed
+
+- Changed the way RGL runs graphs
+  - It is performed fully asynchronous now
+- Moved Entity ID from SBT to OptixInstance
+  - Efficiency has been improved
+  - Maximum value has been reduced
+    - The Entity ID is now held in a 28-bit integer (OptiX limit) instead of a 32-bit integer
+- Renamed XYZ field name to be more precise
+  - `RGL_FIELD_XYZ_F32` -> `RGL_FIELD_XYZ_VEC3_F32`
+
 ## [0.15.0] 23 September 2023
 
 ### Added
