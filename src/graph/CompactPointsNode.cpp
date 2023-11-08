@@ -25,7 +25,9 @@ void CompactPointsNode::enqueueExecImpl()
 	inclusivePrefixSum->resize(input->getHeight() * input->getWidth(), false, false);
 	size_t pointCount = input->getWidth() * input->getHeight();
 	const auto* isHit = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getWritePtr(), &width);
+	if (pointCount > 0) {
+		gpuFindCompaction(getStreamHandle(), pointCount, isHit, inclusivePrefixSum->getWritePtr(), &width);
+	}
 
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data
 	// Doing job there would be:
@@ -52,24 +54,26 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 	if (!cacheManager.isLatest(field)) {
 		auto fieldData = cacheManager.getValue(field);
 		fieldData->resize(width, false, false);
-		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
-
-		if (!isDeviceAccessible(input->getFieldData(field)->getMemoryKind())) {
-			auto msg = fmt::format("CompactPointsNode requires its input to be device-accessible, {} is not", field);
-			throw InvalidPipeline(msg);
-		}
-		const char* inputPtr = static_cast<const char*>(input->getFieldData(field)->getRawReadPtr());
-		const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-		const CompactionIndexType* indices = inclusivePrefixSum->getReadPtr();
-		gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr, inputPtr);
-		bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
-		if (!calledFromEnqueue) {
-			// This is a special case, where API calls getFieldData for this field for the first time
-			// We did not enqueued compcation in enqueueExecImpl, yet, we are asked for results.
-			// This operation was enqueued in the graph stream, but API won't wait for whole graph stream.
-			// Therefore, we need a manual sync here.
-			// TODO: remove this cancer.
-			CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+		if (width > 0) {
+			char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
+			if (!isDeviceAccessible(input->getFieldData(field)->getMemoryKind())) {
+				auto msg = fmt::format("CompactPointsNode requires its input to be device-accessible, {} is not", field);
+				throw InvalidPipeline(msg);
+			}
+			const char* inputPtr = static_cast<const char*>(input->getFieldData(field)->getRawReadPtr());
+			const auto* isHitPtr = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+			const CompactionIndexType* indices = inclusivePrefixSum->getReadPtr();
+			gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), isHitPtr, indices, outPtr,
+			                   inputPtr);
+			bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
+			if (!calledFromEnqueue) {
+				// This is a special case, where API calls getFieldData for this field for the first time
+				// We did not enqueued compcation in enqueueExecImpl, yet, we are asked for results.
+				// This operation was enqueued in the graph stream, but API won't wait for whole graph stream.
+				// Therefore, we need a manual sync here.
+				// TODO: remove this cancer.
+				CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+			}
 		}
 		cacheManager.setUpdated(field);
 	}

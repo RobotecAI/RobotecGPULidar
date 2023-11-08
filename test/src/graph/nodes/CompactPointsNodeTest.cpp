@@ -183,10 +183,7 @@ TEST_F(CompactPointsNodeTest, should_warn_when_empty_point_cloud)
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compactPointsNode));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(emptyPointCloudOutputNode, compactPointsNode));
 
-	// TODO: Causes Segmentation fault
-	// ASSERT_RGL_SUCCESS(rgl_graph_run(compactPointsNode));
-
-	FAIL();
+	ASSERT_RGL_SUCCESS(rgl_graph_run(compactPointsNode));
 }
 
 TEST_F(CompactPointsNodeTest, without_IS_HIT_field)
