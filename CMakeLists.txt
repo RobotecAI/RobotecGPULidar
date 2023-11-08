@@ -30,6 +30,8 @@ set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
+set(RGL_BUILD_UDP_EXTENSION OFF CACHE BOOL
+    "Enables building UDP extension.")
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -111,7 +113,7 @@ set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
-target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=0)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=$<BOOL:${RGL_BUILD_UDP_EXTENSION}>)
 
 if (RGL_BUILD_PCL_EXTENSION)
     add_subdirectory(extensions/pcl)
@@ -119,6 +121,10 @@ endif()
 
 if (RGL_BUILD_ROS2_EXTENSION)
     add_subdirectory(extensions/ros2)
+endif()
+
+if (RGL_BUILD_UDP_EXTENSION)
+    add_subdirectory(extensions/udp)
 endif()
 
 target_include_directories(RobotecGPULidar
