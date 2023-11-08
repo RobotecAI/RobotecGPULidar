@@ -27,7 +27,7 @@ Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(std::move(mesh)) {}
 
 void Entity::setTransform(Mat3x4f newTransform)
 {
-	previousTransform = transform;
+	formerTransform = transform;
 	transform = {newTransform, scene->getTime()};
 	scene->requestFullRebuild(); // Update transforms: current one in AS, previous one in SBT
 }
@@ -49,24 +49,24 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	scene->requestSBTRebuild();
 }
 
-std::optional<Mat3x4f> Entity::getPrecedingFrameTransform() const
+std::optional<Mat3x4f> Entity::getPreviousFrameTransform() const
 {
 	// At the moment of writing, setting Scene time (rgl_scene_set_time) is optional.
 	// Making it mandatory (e.g. refusing to raytrace without time set) would simplify the code below.
 	// However, it would be a breaking change, requiring fixing all plugins.
 
-	bool transformWasSetOnlyOnce = transform.time.has_value() && !previousTransform.time.has_value();
+	bool transformWasSetOnlyOnce = transform.time.has_value() && !formerTransform.time.has_value();
 	if (transformWasSetOnlyOnce) {
 		// The first transform set might be the last one (e.g. static objects),
 		// so let's assume this object was in the same pose in the previous frame to get zero velocity.
 		return transform.matrix;
 	}
 
-	bool previousFrameWasSetInPrecedingFrame = previousTransform.time.has_value() &&
-	                                           previousTransform.time == scene->getPrevTime();
-	if (!previousFrameWasSetInPrecedingFrame) {
+	bool formerTransformWasSetInPrecedingFrame = formerTransform.time.has_value() &&
+	                                             formerTransform.time == scene->getPrevTime();
+	if (!formerTransformWasSetInPrecedingFrame) {
 		return std::nullopt;
 	}
 
-	return previousTransform.matrix;
+	return formerTransform.matrix;
 }

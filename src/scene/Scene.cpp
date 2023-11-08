@@ -83,7 +83,7 @@ OptixShaderBindingTable Scene::buildSBT()
 	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
-		std::optional<Mat3x4f> prevFrameTransform = entity->getPrecedingFrameTransform();
+		std::optional<Mat3x4f> prevFrameTransform = entity->getPreviousFrameTransform();
 		hHitgroupRecords->append(HitgroupRecord{
 		    .data = {.vertex = mesh->dVertices->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
