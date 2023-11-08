@@ -89,7 +89,7 @@ private:
 
 	// Used to synchronize all existing instances (e.g. to safely access Scene).
 	// Modified by client's thread, read by graph thread
-	static std::list<std::shared_ptr<GraphRunCtx>> instances;
+	DATA_DECLSPEC static std::list<std::shared_ptr<GraphRunCtx>> instances;
 
 	// Communication between client's thread and graph thread
 	struct NodeExecStatus
