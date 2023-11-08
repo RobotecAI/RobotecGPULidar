@@ -127,17 +127,17 @@ extern "C" __global__ void __closesthit__()
 
 	const int primID = optixGetPrimitiveIndex();
 	assert(primID < entityData.indexCount);
-	const Vec3i index = entityData.index[primID];
+	const Vec3i triangleIndices = entityData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
 	const float v = optixGetTriangleBarycentrics().y;
 
-	assert(index.x() < entityData.vertexCount);
-	assert(index.y() < entityData.vertexCount);
-	assert(index.z() < entityData.vertexCount);
+	assert(triangleIndices.x() < entityData.vertexCount);
+	assert(triangleIndices.y() < entityData.vertexCount);
+	assert(triangleIndices.z() < entityData.vertexCount);
 
-	const Vec3f& A = entityData.vertex[index.x()];
-	const Vec3f& B = entityData.vertex[index.y()];
-	const Vec3f& C = entityData.vertex[index.z()];
+	const Vec3f& A = entityData.vertex[triangleIndices.x()];
+	const Vec3f& B = entityData.vertex[triangleIndices.y()];
+	const Vec3f& C = entityData.vertex[triangleIndices.z()];
 
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
@@ -167,13 +167,13 @@ extern "C" __global__ void __closesthit__()
 
 	float intensity = 0;
 	if (entityData.textureCoords != nullptr && entityData.texture != 0) {
-		assert(index.x() < entityData.textureCoordsCount);
-		assert(index.y() < entityData.textureCoordsCount);
-		assert(index.z() < entityData.textureCoordsCount);
+		assert(triangleIndices.x() < entityData.textureCoordsCount);
+		assert(triangleIndices.y() < entityData.textureCoordsCount);
+		assert(triangleIndices.z() < entityData.textureCoordsCount);
 
-		const Vec2f& uvA = entityData.textureCoords[index.x()];
-		const Vec2f& uvB = entityData.textureCoords[index.y()];
-		const Vec2f& uvC = entityData.textureCoords[index.z()];
+		const Vec2f& uvA = entityData.textureCoords[triangleIndices.x()];
+		const Vec2f& uvB = entityData.textureCoords[triangleIndices.y()];
+		const Vec2f& uvC = entityData.textureCoords[triangleIndices.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
@@ -191,7 +191,16 @@ extern "C" __global__ void __closesthit__()
 		// Dividing displacement by time elapsed from the previous raytracing frame yields velocity vector.
 		Vec3f displacementOriginWorld = entityData.prevFrameLocalToWorld * hitObject;
 		Vec3f displacement = hitWorld - displacementOriginWorld;
-		velocity = displacement / static_cast<float>(ctx.sceneDeltaTime);
+		Vec3f transformDiffVelocity = velocity = displacement / static_cast<float>(ctx.sceneDeltaTime);
+
+		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
+		bool wasSkinned = entityData.vertexDisplacementSincePrevFrame != nullptr;
+		const Vec3f& vA = wasSkinned ? entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()] : Vec3f(0.0f);
+		const Vec3f& vB = wasSkinned ? entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()] : Vec3f(0.0f);
+		const Vec3f& vC = wasSkinned ? entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()] : Vec3f(0.0f);
+		Vec3f skinningVelocity = Vec3f((1 - u - v) * vA + u * vB + v * vC);
+
+		velocity = transformDiffVelocity + skinningVelocity;
 	}
 
 	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);

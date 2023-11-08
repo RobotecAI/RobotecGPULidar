@@ -16,6 +16,7 @@
 
 #include <macros/cuda.hpp>
 #include <macros/handleDestructorException.hpp>
+//#include <scene/Scene.hpp>
 #include <Logger.hpp>
 
 // RAII object to (de)initialize cudaStream_t
@@ -25,31 +26,25 @@ struct CudaStream
 
 	static CudaStream::Ptr create(unsigned flags = 0U) { return CudaStream::Ptr(new CudaStream(flags)); }
 
-	static CudaStream::Ptr getNullStream()
-	{
-		// Copy Stream does not synchronize with the NULL stream
-		// Copy Stream is always synchronized before client thread finished API call
-		static CudaStream::Ptr nullStream{new CudaStream()};
-		return nullStream;
-	}
+	static CudaStream::Ptr getNullStream();
 
-	static CudaStream::Ptr getCopyStream()
-	{
-		static CudaStream::Ptr copyStream{new CudaStream(cudaStreamNonBlocking)};
-		return copyStream;
-	}
+	/**
+	 * Copy stream is used to e.g. copy results from a completed node to user,
+	 * while the rest of Graph Nodes are still being executed in Graph Stream.
+	 */
+	static CudaStream::Ptr getCopyStream();
+
+	/**
+	 * Mesh stream is used to perform mesh-related operations, such as copying/updating vertex data and building GASes.
+	 * Meshes are supposed to be shared between scenes.
+	 * That would require some synchronization between scene streams and mesh stream.
+	 * Therefore, since for now only a single scene is supported, we use Scene stream instead.
+	 */
+	static CudaStream::Ptr getMeshStream();
 
 	cudaStream_t getHandle() { return stream; }
 
-	~CudaStream()
-	try {
-		if (stream != nullptr) {
-			CHECK_CUDA(cudaStreamSynchronize(stream)); // May not be required, but it is safer
-			CHECK_CUDA(cudaStreamDestroy(stream));
-			stream = nullptr;
-		}
-	}
-	HANDLE_DESTRUCTOR_EXCEPTION
+	~CudaStream();
 
 private:
 	// Wraps null stream

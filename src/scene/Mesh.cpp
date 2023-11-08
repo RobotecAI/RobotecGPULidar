@@ -15,6 +15,7 @@
 #include <scene/Mesh.hpp>
 
 #include <filesystem>
+#include <gpu/helperKernels.hpp>
 
 namespace fs = std::filesystem;
 
@@ -33,7 +34,15 @@ void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
 		                       dVertices->getCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
-	dVertices->copyFromExternal(vertices, vertexCount);
+	// Use dVertexSkinningDisplacement as a buffer
+	dVertexSkinningDisplacement->resize(vertexCount, false, false);
+	dVertexSkinningDisplacement->copyFromExternal(vertices, vertexCount);
+
+	// Update both displacements and vertices in a single kernel
+	gpuUpdateVertices(CudaStream::getNullStream()->getHandle(), vertexCount, dVertexSkinningDisplacement->getWritePtr(),
+	                  dVertices->getWritePtr());
+	CHECK_CUDA(cudaStreamSynchronize(CudaStream::getNullStream()->getHandle()));
+	// Inform Entity/Scene that SBT needs to be rebuild
 	gasNeedsUpdate = true;
 }
 
@@ -143,3 +152,4 @@ void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 	dTextureCoords.value()->copyFromExternal(texCoords, texCoordCount);
 	gasNeedsUpdate = true;
 }
+const Vec3f* Mesh::getSkinningDisplacement() const { return dVertexSkinningDisplacement->getReadPtr(); }
