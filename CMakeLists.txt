@@ -114,15 +114,7 @@ target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOO
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=0)
 
 if (RGL_BUILD_PCL_EXTENSION)
-    find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
-    target_sources(RobotecGPULidar PRIVATE
-        src/api/apiPcl.cpp
-        src/graph/DownSamplePointsNode.cpp
-        src/graph/VisualizePointsNode.cpp
-    )
-    target_include_directories(RobotecGPULidar PUBLIC ${PCL_INCLUDE_DIRS})
-    target_link_directories(RobotecGPULidar PRIVATE ${PCL_LIBRARY_DIRS})
-    target_link_libraries(RobotecGPULidar PRIVATE ${PCL_LIBRARIES})
+    add_subdirectory(extensions/pcl)
 endif()
 
 if (RGL_BUILD_ROS2_EXTENSION)
