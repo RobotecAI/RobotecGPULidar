@@ -14,10 +14,8 @@
 
 #include <cuda.h>
 #include <curand_kernel.h>
-
 #include <gpu/kernelUtils.hpp>
 #include <gpu/gaussianNoiseKernels.hpp>
-
 
 __global__ void kAddGaussianNoiseAngularRay(size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis,
                                             Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
@@ -69,7 +67,6 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 
 	outPoints[tid] = inPoints[tid] + inPoints[tid].normalize() * distanceError;
 }
-
 
 void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis,
                                    Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,

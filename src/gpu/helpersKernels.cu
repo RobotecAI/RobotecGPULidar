@@ -15,7 +15,6 @@
 #include <cuda.h>
 #include <curand_kernel.h>
 #include <gpu/kernelUtils.hpp>
-
 #include <gpu/helpersKernels.hpp>
 
 // Philox algorithm chosen based on performance
