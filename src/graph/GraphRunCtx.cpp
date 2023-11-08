@@ -15,9 +15,10 @@
 #include <graph/GraphRunCtx.hpp>
 #include <graph/NodesCore.hpp>
 #include <graph/Node.hpp>
+#include <macros/dataDeclspec.hpp>
 #include <NvtxWrappers.hpp>
 
-std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
+DATA_DECLSPEC std::list<std::shared_ptr<GraphRunCtx>> GraphRunCtx::instances;
 
 std::shared_ptr<GraphRunCtx> GraphRunCtx::createAndAttach(std::shared_ptr<Node> node)
 {

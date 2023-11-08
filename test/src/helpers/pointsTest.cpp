@@ -51,18 +51,18 @@ protected:
 		return points;
 	}
 
-	void generateFieldValues(int pointsCount)
+	void generateAllFieldValues(int pointsCount)
 	{
-		pointCoord = generate(pointsCount, genCoord);
-		isHit = generate(pointsCount, genHalfHit);
-		rayIdx = generate(pointsCount, genRayIdx);
-		entityId = generate(pointsCount, genEntityId);
-		intensity = generate(pointsCount, genIntensity);
-		ringId = generate(pointsCount, genRingId);
-		azimuth = generate(pointsCount, genAzimuth);
-		distance = generate(pointsCount, genDistance);
-		returnType = generate(pointsCount, genReturnType);
-		timeStamp = generate(pointsCount, genTimeStamp);
+		pointCoord = generateFieldValues(pointsCount, genCoord);
+		isHit = generateFieldValues(pointsCount, genHalfHit);
+		rayIdx = generateFieldValues(pointsCount, genRayIdx);
+		entityId = generateFieldValues(pointsCount, genEntityId);
+		intensity = generateFieldValues(pointsCount, genIntensity);
+		ringId = generateFieldValues(pointsCount, genRingId);
+		azimuth = generateFieldValues(pointsCount, genAzimuth);
+		distance = generateFieldValues(pointsCount, genDistance);
+		returnType = generateFieldValues(pointsCount, genReturnType);
+		timeStamp = generateFieldValues(pointsCount, genTimeStamp);
 	}
 
 	void setFieldValues(TestPointCloud& pointCloud)
@@ -111,7 +111,7 @@ TEST_P(PointCloudTest, setter_and_getter_with_transform)
 	TestPointCloud pointCloud = TestPointCloud(allNotDummyFields, pointsCount);
 	EXPECT_EQ(pointCloud.getPointCount(), pointsCount);
 
-	generateFieldValues(pointsCount);
+	generateAllFieldValues(pointsCount);
 	setFieldValues(pointCloud);
 	pointCloud.transform(transform);
 
@@ -125,7 +125,7 @@ TEST_P(PointCloudTest, setter_and_getter_with_paddings)
 	TestPointCloud pointCloud = TestPointCloud(fieldsWithPaddings, pointsCount);
 	EXPECT_EQ(pointCloud.getPointCount(), pointsCount);
 
-	generateFieldValues(pointsCount);
+	generateAllFieldValues(pointsCount);
 	setFieldValues(pointCloud);
 
 	verifyResults(pointCloud, pointsCount);
@@ -137,7 +137,7 @@ TEST_P(PointCloudTest, create_from_node)
 	rgl_node_t usePointsNode = nullptr;
 
 	std::vector<TestPointStruct> inPoints = generateTestPoints(pointsCount);
-	generateFieldValues(pointsCount);
+	generateAllFieldValues(pointsCount);
 
 	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), allNotDummyFields.data(),
 	                                              allNotDummyFields.size()));
@@ -154,7 +154,7 @@ TEST_P(PointCloudTest, equal_operator)
 	rgl_node_t usePointsNode = nullptr;
 
 	std::vector<TestPointStruct> inPoints = generateTestPoints(pointsCount);
-	generateFieldValues(pointsCount);
+	generateAllFieldValues(pointsCount);
 
 	ASSERT_RGL_SUCCESS(rgl_node_points_from_array(&usePointsNode, inPoints.data(), inPoints.size(), allNotDummyFields.data(),
 	                                              allNotDummyFields.size()));

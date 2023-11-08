@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graph/Node.hpp"
 #include "graph/Interfaces.hpp"
 #include "graph/Node.hpp"
 
@@ -33,4 +34,18 @@ protected:
 private:
 	double seconds;
 	std::chrono::time_point<std::chrono::steady_clock> measurement;
+};
+
+
+struct EmptyNode : IPointsNode, INoInputNode
+{
+	void setParameters() {}
+	bool isDense() const override { return false; }
+	bool hasField(rgl_field_t field) const override { return true; }
+	size_t getWidth() const override { return 0; }
+	size_t getHeight() const override { return 0; }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return createArray<DeviceAsyncArray>(field, arrayMgr); }
+
+protected:
+	void enqueueExecImpl() override {}
 };

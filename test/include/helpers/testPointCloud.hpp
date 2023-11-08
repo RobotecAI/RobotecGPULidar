@@ -51,6 +51,10 @@ public:
 
 		TestPointCloud pointCloud = TestPointCloud(fields, outCount);
 
+		if (outCount == 0) {
+			return pointCloud;
+		}
+
 		for (auto& field : fields) {
 			int32_t currentCount, currentSize;
 			EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(outputNode, field, &currentCount, &currentSize));
@@ -73,6 +77,34 @@ public:
 		return pointCloud;
 	}
 
+	/**
+	 * TODO(nebraszka): Consider adding the ability to iterate over points in TestPointCloud and delete selected ones
+	 *         instead of copying the data to a new vector. This would be more flexible, cleaner, and more efficient.
+	 */
+	void removeNonHitPoints()
+	{
+		if (std::find(fields.begin(), fields.end(), IS_HIT_I32) == fields.end()) {
+			throw std::invalid_argument("TestPointCloud::removeNonHitPoints: TestPointCloud does not contain IS_HIT field");
+		}
+
+		std::size_t isHitOffset = offsets.at(IS_HIT_I32);
+
+		std::vector<char> filteredData;
+		filteredData.reserve(data.size());
+
+		std::size_t pointByteSize = getPointByteSize();
+
+		for (int i = 0; i < getPointCount(); ++i) {
+			char isHitValue = *(data.data() + i * pointByteSize + isHitOffset);
+			if (isHitValue != 0) {
+				std::copy(data.begin() + i * pointByteSize, data.begin() + (i + 1) * pointByteSize,
+				          std::back_inserter(filteredData));
+			}
+		}
+
+		data = std::move(filteredData);
+	}
+
 	std::size_t getPointCount() const { return data.size() / getPointByteSize(); }
 
 	void transform(const Mat3x4f& transform)
@@ -93,6 +125,8 @@ public:
 	{
 		rgl_node_t node = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&node, data.data(), getPointCount(), fields.data(), fields.size()));
+		EXPECT_THAT(node, testing::NotNull());
+
 		return node;
 	}
 
@@ -171,7 +205,7 @@ private:
 * @return A vector of generated values.
  */
 template<typename FieldType>
-static std::vector<FieldType> generate(std::size_t count, std::function<FieldType(int)> generator)
+static std::vector<FieldType> generateFieldValues(std::size_t count, std::function<FieldType(int)> generator)
 {
 	std::vector<FieldType> values;
 	values.reserve(count);
