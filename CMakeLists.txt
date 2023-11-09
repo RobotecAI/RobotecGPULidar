@@ -30,6 +30,8 @@ set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
+set(RGL_BUILD_UDP_EXTENSION OFF CACHE BOOL
+    "Enables building UDP extension.")
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -112,29 +114,18 @@ set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
-target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=0)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=$<BOOL:${RGL_BUILD_UDP_EXTENSION}>)
 
 if (RGL_BUILD_PCL_EXTENSION)
-    find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
-    target_sources(RobotecGPULidar PRIVATE
-        src/api/apiPcl.cpp
-        src/graph/DownSamplePointsNode.cpp
-        src/graph/VisualizePointsNode.cpp
-    )
-    target_include_directories(RobotecGPULidar PUBLIC ${PCL_INCLUDE_DIRS})
-    target_link_directories(RobotecGPULidar PRIVATE ${PCL_LIBRARY_DIRS})
-    target_link_libraries(RobotecGPULidar PRIVATE ${PCL_LIBRARIES})
+    add_subdirectory(extensions/pcl)
 endif()
 
 if (RGL_BUILD_ROS2_EXTENSION)
-    if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
-      message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Only humble is available.")
-    endif()
-    find_package(rclcpp REQUIRED)
-    find_package(sensor_msgs REQUIRED)
-    target_sources(RobotecGPULidar PRIVATE src/api/apiRos2.cpp src/graph/Ros2PublishPointsNode.cpp)
-    target_include_directories(RobotecGPULidar PUBLIC ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
-    target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
+    add_subdirectory(extensions/ros2)
+endif()
+
+if (RGL_BUILD_UDP_EXTENSION)
+    add_subdirectory(extensions/udp)
 endif()
 
 target_include_directories(RobotecGPULidar
