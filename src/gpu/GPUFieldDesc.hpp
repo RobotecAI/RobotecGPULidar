@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 // Used to send e.g. formatting request to GPU
 struct GPUFieldDesc
 {
