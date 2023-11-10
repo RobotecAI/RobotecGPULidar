@@ -45,9 +45,12 @@ struct Entity;
  */
 struct Scene
 {
-	static std::shared_ptr<Scene> instance();
+	static Scene& instance();
 
-	Scene();
+	Scene(const Scene&) = delete;
+	Scene(Scene&&) = delete;
+	Scene& operator=(const Scene&) = delete;
+	Scene& operator=(Scene&&) = delete;
 
 	void addEntity(std::shared_ptr<Entity> entity);
 	void removeEntity(std::shared_ptr<Entity> entity);
@@ -67,6 +70,8 @@ struct Scene
 	void requestSBTRebuild();
 
 private:
+	Scene();
+
 	OptixShaderBindingTable buildSBT();
 	OptixTraversableHandle buildAS();
 

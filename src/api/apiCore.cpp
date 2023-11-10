@@ -147,7 +147,7 @@ RGL_API rgl_status_t rgl_cleanup(void)
 		Entity::instances.clear();
 		Mesh::instances.clear();
 		Texture::instances.clear();
-		Scene::instance()->clear();
+		Scene::instance().clear();
 	});
 	TAPE_HOOK();
 	return status;
@@ -278,7 +278,7 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity)
 		CHECK_ARG(entity != nullptr);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
-		Scene::instance()->removeEntity(entitySafe);
+		Scene::instance().removeEntity(entitySafe);
 		Entity::release(entity);
 	});
 	TAPE_HOOK(entity);
@@ -401,7 +401,7 @@ RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 		CHECK_ARG(scene == nullptr);   // TODO: remove once rgl_scene_t param is removed
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 
-		Scene::instance()->setTime(Time::nanoseconds(nanoseconds));
+		Scene::instance().setTime(Time::nanoseconds(nanoseconds));
 	});
 	TAPE_HOOK(scene, nanoseconds);
 	return status;

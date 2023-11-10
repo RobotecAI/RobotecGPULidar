@@ -17,9 +17,9 @@
 #include <scene/Texture.hpp>
 #include <memory/Array.hpp>
 
-std::shared_ptr<Scene> Scene::instance()
+Scene& Scene::instance()
 {
-	static auto scene = std::make_shared<Scene>();
+	static Scene scene;
 	return scene;
 }
 

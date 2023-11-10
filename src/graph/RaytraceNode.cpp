@@ -38,7 +38,7 @@ void RaytraceNode::validateImpl()
 		throw InvalidPipeline(msg);
 	}
 
-	if (fieldData.contains(TIME_STAMP_F64) && !Scene::instance()->getTime().has_value()) {
+	if (fieldData.contains(TIME_STAMP_F64) && !Scene::instance().getTime().has_value()) {
 		auto msg = fmt::format("requested for field TIME_STAMP_F64, but RaytraceNode cannot get time from scene");
 		throw InvalidPipeline(msg);
 	}
@@ -67,8 +67,8 @@ void RaytraceNode::enqueueExecImpl()
 
 	// Even though we are in graph thread here, we can access Scene class (see comment there)
 	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	auto sceneAS = Scene::instance()->getASLocked();
-	auto sceneSBT = Scene::instance()->getSBTLocked();
+	auto sceneAS = Scene::instance().getASLocked();
+	auto sceneSBT = Scene::instance().getSBTLocked();
 	dim3 launchDims = {static_cast<unsigned int>(raysNode->getRayCount()), 1, 1};
 
 	// Optional
@@ -93,7 +93,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .scene = sceneAS,
-	    .sceneTime = Scene::instance()->getTime().value_or(Time::zero()).asSeconds(),
+	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
 	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),

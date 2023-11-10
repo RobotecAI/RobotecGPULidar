@@ -19,7 +19,7 @@ API_OBJECT_INSTANCE(Entity);
 std::shared_ptr<Entity> Entity::create(std::shared_ptr<Mesh> mesh)
 {
 	auto entity = APIObject<Entity>::create(mesh);
-	Scene::instance()->addEntity(entity);
+	Scene::instance().addEntity(entity);
 	return entity;
 }
 
@@ -28,7 +28,7 @@ Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(std::move(mesh)) {}
 void Entity::setTransform(Mat3x4f newTransform)
 {
 	transform = newTransform;
-	Scene::instance()->requestASRebuild();
+	Scene::instance().requestASRebuild();
 }
 
 void Entity::setId(int newId)
@@ -39,13 +39,13 @@ void Entity::setId(int newId)
 		throw std::invalid_argument(msg);
 	}
 	id = newId;
-	Scene::instance()->requestASRebuild();
+	Scene::instance().requestASRebuild();
 }
 
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 {
 	intensityTexture = texture;
-	Scene::instance()->requestSBTRebuild();
+	Scene::instance().requestSBTRebuild();
 }
 
 Mat3x4f Entity::getVelocity() const { throw std::runtime_error("unimplemented"); }
