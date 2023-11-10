@@ -80,8 +80,8 @@ void Ros2PublishPointsNode::enqueueExecImpl()
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
 	// TODO(msz-rai): Assign scene to the Graph.
 	// For now, only default scene is supported.
-	ros2Message.header.stamp = Scene::defaultInstance()->getTime().has_value() ?
-	                               Scene::defaultInstance()->getTime()->asRos2Msg() :
+	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
+	                               Scene::instance().getTime()->asRos2Msg() :
 	                               static_cast<builtin_interfaces::msg::Time>(ros2Node->get_clock()->now());
 	if (!rclcpp::ok()) {
 		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");

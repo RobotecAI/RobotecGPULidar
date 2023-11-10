@@ -20,9 +20,8 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
-void RaytraceNode::setParameters(std::shared_ptr<Scene> scene)
+void RaytraceNode::setParameters()
 {
-	this->scene = scene;
 	const static Vec2f defaultRangeValue = Vec2f(0.0f, FLT_MAX);
 	defaultRange->copyFromExternal(&defaultRangeValue, 1);
 }
@@ -39,7 +38,7 @@ void RaytraceNode::validateImpl()
 		throw InvalidPipeline(msg);
 	}
 
-	if (fieldData.contains(TIME_STAMP_F64) && !scene->getTime().has_value()) {
+	if (fieldData.contains(TIME_STAMP_F64) && !Scene::instance().getTime().has_value()) {
 		auto msg = fmt::format("requested for field TIME_STAMP_F64, but RaytraceNode cannot get time from scene");
 		throw InvalidPipeline(msg);
 	}
@@ -68,8 +67,8 @@ void RaytraceNode::enqueueExecImpl()
 
 	// Even though we are in graph thread here, we can access Scene class (see comment there)
 	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	auto sceneAS = scene->getASLocked();
-	auto sceneSBT = scene->getSBTLocked();
+	auto sceneAS = Scene::instance().getASLocked();
+	auto sceneSBT = Scene::instance().getSBTLocked();
 	dim3 launchDims = {static_cast<unsigned int>(raysNode->getRayCount()), 1, 1};
 
 	// Optional
@@ -94,7 +93,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .scene = sceneAS,
-	    .sceneTime = scene->getTime().has_value() ? scene->getTime()->asSeconds() : 0,
+	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
 	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),

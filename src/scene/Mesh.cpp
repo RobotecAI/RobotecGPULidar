@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <scene/Mesh.hpp>
+#include <scene/Scene.hpp>
 
 #include <filesystem>
 
@@ -35,6 +36,7 @@ void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
 	}
 	dVertices->copyFromExternal(vertices, vertexCount);
 	gasNeedsUpdate = true;
+	Scene::instance().requestASRebuild();
 }
 
 OptixTraversableHandle Mesh::getGAS(CudaStream::Ptr stream)
@@ -142,4 +144,5 @@ void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 
 	dTextureCoords.value()->copyFromExternal(texCoords, texCoordCount);
 	gasNeedsUpdate = true;
+	Scene::instance().requestSBTRebuild();
 }

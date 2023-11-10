@@ -147,7 +147,7 @@ RGL_API rgl_status_t rgl_cleanup(void)
 		Entity::instances.clear();
 		Mesh::instances.clear();
 		Texture::instances.clear();
-		Scene::defaultInstance()->clear();
+		Scene::instance().clear();
 	});
 	TAPE_HOOK();
 	return status;
@@ -256,11 +256,9 @@ RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t sce
 		RGL_API_LOG("rgl_entity_create(out_entity={}, scene={}, mesh={})", (void*) out_entity, (void*) scene, (void*) mesh);
 		CHECK_ARG(out_entity != nullptr);
 		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(scene == nullptr);   // TODO: remove once rgl_scene_t param is removed
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
-		if (scene == nullptr) {
-			scene = Scene::defaultInstance().get();
-		}
-		*out_entity = Entity::create(Mesh::validatePtr(mesh), Scene::validatePtr(scene)).get();
+		*out_entity = Entity::create(Mesh::validatePtr(mesh)).get();
 	});
 	TAPE_HOOK(out_entity, scene, mesh);
 	return status;
@@ -269,9 +267,7 @@ RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t sce
 void TapePlayer::tape_entity_create(const YAML::Node& yamlNode)
 {
 	rgl_entity_t entity = nullptr;
-	rgl_entity_create(&entity,
-	                  nullptr, // TODO(msz-rai) support multiple scenes
-	                  tapeMeshes.at(yamlNode[2].as<TapeAPIObjectID>()));
+	rgl_entity_create(&entity, nullptr, tapeMeshes.at(yamlNode[2].as<TapeAPIObjectID>()));
 	tapeEntities.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), entity));
 }
 
@@ -282,7 +278,7 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity)
 		CHECK_ARG(entity != nullptr);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
 		auto entitySafe = Entity::validatePtr(entity);
-		entitySafe->getScene()->removeEntity(entitySafe);
+		Scene::instance().removeEntity(entitySafe);
 		Entity::release(entity);
 	});
 	TAPE_HOOK(entity);
@@ -402,21 +398,16 @@ RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_scene_set_time(scene={}, nanoseconds={})", (void*) scene, nanoseconds);
+		CHECK_ARG(scene == nullptr);   // TODO: remove once rgl_scene_t param is removed
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
-		if (scene == nullptr) {
-			scene = Scene::defaultInstance().get();
-		}
-		Scene::validatePtr(scene)->setTime(Time::nanoseconds(nanoseconds));
+
+		Scene::instance().setTime(Time::nanoseconds(nanoseconds));
 	});
 	TAPE_HOOK(scene, nanoseconds);
 	return status;
 }
 
-void TapePlayer::tape_scene_set_time(const YAML::Node& yamlNode)
-{
-	rgl_scene_set_time(nullptr, // TODO(msz-rai) support multiple scenes
-	                   yamlNode[1].as<uint64_t>());
-}
+void TapePlayer::tape_scene_set_time(const YAML::Node& yamlNode) { rgl_scene_set_time(nullptr, yamlNode[1].as<uint64_t>()); }
 
 RGL_API rgl_status_t rgl_graph_run(rgl_node_t raw_node)
 {
@@ -810,12 +801,9 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene)
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_raytrace(node={}, scene={})", repr(node), (void*) scene);
 		CHECK_ARG(node != nullptr);
+		CHECK_ARG(scene == nullptr); // TODO: remove once rgl_scene_t param is removed
 
-		if (scene == nullptr) {
-			scene = Scene::defaultInstance().get();
-		}
-
-		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene));
+		createOrUpdateNode<RaytraceNode>(node);
 		// Clear velocity that could be set by rgl_node_raytrace_with_distortion
 		Node::validatePtr<RaytraceNode>(*node)->setVelocity(nullptr, nullptr);
 	});
@@ -827,7 +815,7 @@ void TapePlayer::tape_node_raytrace(const YAML::Node& yamlNode)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-	rgl_node_raytrace(&node, nullptr); // TODO(msz-rai) support multiple scenes
+	rgl_node_raytrace(&node, nullptr);
 	tapeNodes.insert({nodeId, node});
 }
 
@@ -840,12 +828,9 @@ RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_sce
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(linear_velocity != nullptr);
 		CHECK_ARG(angular_velocity != nullptr);
+		CHECK_ARG(scene == nullptr);
 
-		if (scene == nullptr) {
-			scene = Scene::defaultInstance().get();
-		}
-
-		createOrUpdateNode<RaytraceNode>(node, Scene::validatePtr(scene));
+		createOrUpdateNode<RaytraceNode>(node);
 		Node::validatePtr<RaytraceNode>(*node)->setVelocity(reinterpret_cast<const Vec3f*>(linear_velocity),
 		                                                    reinterpret_cast<const Vec3f*>(angular_velocity));
 	});
@@ -857,9 +842,7 @@ void TapePlayer::tape_node_raytrace_with_distortion(const YAML::Node& yamlNode)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
-	rgl_node_raytrace_with_distortion(&node,
-	                                  nullptr, // TODO(msz-rai) support multiple scenes
-	                                  reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[2].as<size_t>()),
+	rgl_node_raytrace_with_distortion(&node, nullptr, reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[2].as<size_t>()),
 	                                  reinterpret_cast<const rgl_vec3f*>(fileMmap + yamlNode[3].as<size_t>()));
 	tapeNodes.insert({nodeId, node});
 }
