@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <macros/cuda.hpp>
+
 #if RGL_BUILD_ROS2_EXTENSION
 #include <builtin_interfaces/msg/time.hpp>
 #endif
@@ -24,8 +26,8 @@ struct Time
 	static Time seconds(double seconds) { return Time(static_cast<uint64_t>(seconds * 1.0e9)); }
 	static Time nanoseconds(uint64_t nanoseconds) { return Time(nanoseconds); }
 
-	double asSeconds() { return static_cast<double>(timeNs) * 1.0e-9; };
-	uint64_t asNanoseconds() { return timeNs; }
+	HostDevFn double asSeconds() const { return static_cast<double>(timeNs) * 1.0e-9; };
+	HostDevFn uint64_t asNanoseconds() const { return timeNs; }
 
 #if RGL_BUILD_ROS2_EXTENSION
 	builtin_interfaces::msg::Time asRos2Msg()
@@ -38,7 +40,7 @@ struct Time
 #endif
 
 private:
-	Time(uint64_t nanoseconds) { timeNs = nanoseconds; }
+	explicit Time(uint64_t nanoseconds) { timeNs = nanoseconds; }
 
 	uint64_t timeNs;
 };

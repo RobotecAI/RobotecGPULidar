@@ -57,10 +57,11 @@ struct FormatPointsNode : IPointsNodeSingleInput
 	static void formatAsync(DeviceAsyncArray<char>::Ptr output, const IPointsNode::Ptr& input,
 	                        const std::vector<rgl_field_t>& fields, GPUFieldDescBuilder& gpuFieldDescBuilder);
 
-private:
+	// Needed to create GPUFieldDesc for other nodes
 	static std::vector<std::pair<rgl_field_t, const void*>> getFieldToPointerMappings(const IPointsNode::Ptr& input,
 	                                                                                  const std::vector<rgl_field_t>& fields);
 
+private:
 	std::vector<rgl_field_t> fields;
 	DeviceAsyncArray<char>::Ptr output = DeviceAsyncArray<char>::create(arrayMgr);
 	HostPinnedArray<char>::Ptr outputHost = HostPinnedArray<char>::create();
