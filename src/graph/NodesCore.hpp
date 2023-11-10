@@ -97,7 +97,7 @@ private:
 struct RaytraceNode : IPointsNode
 {
 	using Ptr = std::shared_ptr<RaytraceNode>;
-	void setParameters(std::shared_ptr<Scene> scene);
+	void setParameters();
 
 	// Node
 	void validateImpl() override;
@@ -122,7 +122,6 @@ struct RaytraceNode : IPointsNode
 
 private:
 	IRaysNode::Ptr raysNode;
-	std::shared_ptr<Scene> scene;
 
 	DeviceAsyncArray<Vec2f>::Ptr defaultRange = DeviceAsyncArray<Vec2f>::create(arrayMgr);
 	bool doApplyDistortion{false};

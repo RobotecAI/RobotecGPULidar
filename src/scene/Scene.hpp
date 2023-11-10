@@ -43,9 +43,9 @@ struct Entity;
  * The only case when graph thread accesses scene is getAS() and getSBT(), which are locked.
  *
  */
-struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
+struct Scene
 {
-	static std::shared_ptr<Scene> defaultInstance();
+	static std::shared_ptr<Scene> instance();
 
 	Scene();
 
@@ -63,7 +63,6 @@ struct Scene : APIObject<Scene>, std::enable_shared_from_this<Scene>
 	OptixTraversableHandle getASLocked();
 	OptixShaderBindingTable getSBTLocked();
 
-	void requestFullRebuild();
 	void requestASRebuild();
 	void requestSBTRebuild();
 

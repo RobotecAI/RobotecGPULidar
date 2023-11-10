@@ -39,7 +39,7 @@ struct Entity : APIObject<Entity>
 	 * Factory methods which creates an Entity and adds it to the given Scene.
 	 * See constructor docs for more details.
 	 */
-	static std::shared_ptr<Entity> create(std::shared_ptr<Mesh> mesh, std::shared_ptr<Scene> scene);
+	static std::shared_ptr<Entity> create(std::shared_ptr<Mesh> mesh);
 
 	/**
 	 * Sets ID that will be used as a point attribute ENTITY_ID_I32 when a ray hits this entity.
@@ -61,11 +61,6 @@ struct Entity : APIObject<Entity>
 	 */
 	Mat3x4f getVelocity() const;
 
-	/**
-	 * @return The Scene in which this Entity is present.
-	 */
-	std::shared_ptr<Scene> getScene() const { return scene; }
-
 private:
 	/**
 	 * Creates Entity with given mesh and identity transform.
@@ -82,5 +77,4 @@ private:
 
 	std::shared_ptr<Mesh> mesh{};
 	std::shared_ptr<Texture> intensityTexture{};
-	std::shared_ptr<Scene> scene{};
 };

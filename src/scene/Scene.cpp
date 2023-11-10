@@ -17,11 +17,9 @@
 #include <scene/Texture.hpp>
 #include <memory/Array.hpp>
 
-API_OBJECT_INSTANCE(Scene);
-
-std::shared_ptr<Scene> Scene::defaultInstance()
+std::shared_ptr<Scene> Scene::instance()
 {
-	static auto scene = Scene::create();
+	static auto scene = std::make_shared<Scene>();
 	return scene;
 }
 
@@ -32,24 +30,20 @@ std::size_t Scene::getObjectCount() { return entities.size(); }
 void Scene::clear()
 {
 	entities.clear();
-	requestFullRebuild();
+	requestASRebuild();
+	requestSBTRebuild();
 }
 
 void Scene::addEntity(std::shared_ptr<Entity> entity)
 {
-	entity->scene = shared_from_this();
 	entities.insert(entity);
-	requestFullRebuild();
+	requestASRebuild();
+	requestSBTRebuild();
 }
 
 void Scene::removeEntity(std::shared_ptr<Entity> entity)
 {
 	entities.erase(entity);
-	requestFullRebuild();
-}
-
-void Scene::requestFullRebuild()
-{
 	requestASRebuild();
 	requestSBTRebuild();
 }
