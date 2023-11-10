@@ -13,7 +13,7 @@ To install clang-format on Ubuntu 22.04, follow the steps described in the [inst
 
 To reformat all C/C++ files in the repository, follow these instructions:
 ```bash
-find src/ test/ include/ tools/ | grep -E '.*\.(c|h|cpp|hpp|cu|cuh)$' | xargs clang-format -i
+find src/ test/ include/ tools/ extensions/ | grep -E '.*\.(c|h|cpp|hpp|cu|cuh)$' | xargs clang-format-14 -i
 ```
 
 ### Git hook
