@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.16.0] 7 November 2023
+## [0.16.0] 10 November 2023
 
 ### Added
 
