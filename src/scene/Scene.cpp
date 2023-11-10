@@ -79,7 +79,8 @@ OptixShaderBindingTable Scene::buildSBT()
 		auto& mesh = entity->mesh;
 		std::optional<Mat3x4f> prevFrameTransform = entity->getPreviousFrameTransform();
 		hHitgroupRecords->append(HitgroupRecord{
-		    .data = {.vertex = mesh->dVertices->getReadPtr(),
+		    .data = {
+		             .vertex = mesh->dVertices->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
 		             .vertexCount = mesh->dVertices->getCount(),
 		             .indexCount = mesh->dIndices->getCount(),
@@ -87,8 +88,10 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
 		             .prevFrameLocalToWorld = prevFrameTransform.value_or(Mat3x4f::identity()),
-		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value()},
-		});
+		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value(),
+		             .vertexDisplacementSincePrevFrame = mesh->getSkinningDisplacementSinceLastFrame(),
+		             }
+        });
 		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
 		CHECK_OPTIX(optixSbtRecordPackHeader(Optix::getOrCreate().hitgroupPG, last.header));
 	}

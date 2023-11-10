@@ -31,3 +31,17 @@ void gpuSetupRandomNumberGenerator(cudaStream_t stream, size_t elementsCount, un
 {
 	run(kSetupRandomNumberGenerator, stream, elementsCount, seed, outPHILOXStates);
 }
+
+__global__ void kUpdateVertices(size_t vertexCount, Vec3f* newVerticesToVelocity, Vec3f* oldToNewVertices)
+{
+	LIMIT(vertexCount);
+	// See Mesh::updateVertices to understand the logic here.
+	Vec3f newVertex = newVerticesToVelocity[tid];
+	newVerticesToVelocity[tid] -= oldToNewVertices[tid];
+	oldToNewVertices[tid] = newVertex;
+}
+
+void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToVelocity, Vec3f* oldToNewVertices)
+{
+	run(kUpdateVertices, stream, vertexCount, newVerticesToVelocity, oldToNewVertices);
+}

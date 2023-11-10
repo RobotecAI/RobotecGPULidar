@@ -127,17 +127,17 @@ extern "C" __global__ void __closesthit__()
 
 	const int primID = optixGetPrimitiveIndex();
 	assert(primID < entityData.indexCount);
-	const Vec3i index = entityData.index[primID];
+	const Vec3i triangleIndices = entityData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
 	const float v = optixGetTriangleBarycentrics().y;
 
-	assert(index.x() < entityData.vertexCount);
-	assert(index.y() < entityData.vertexCount);
-	assert(index.z() < entityData.vertexCount);
+	assert(triangleIndices.x() < entityData.vertexCount);
+	assert(triangleIndices.y() < entityData.vertexCount);
+	assert(triangleIndices.z() < entityData.vertexCount);
 
-	const Vec3f& A = entityData.vertex[index.x()];
-	const Vec3f& B = entityData.vertex[index.y()];
-	const Vec3f& C = entityData.vertex[index.z()];
+	const Vec3f& A = entityData.vertex[triangleIndices.x()];
+	const Vec3f& B = entityData.vertex[triangleIndices.y()];
+	const Vec3f& C = entityData.vertex[triangleIndices.z()];
 
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
@@ -167,13 +167,13 @@ extern "C" __global__ void __closesthit__()
 
 	float intensity = 0;
 	if (entityData.textureCoords != nullptr && entityData.texture != 0) {
-		assert(index.x() < entityData.textureCoordsCount);
-		assert(index.y() < entityData.textureCoordsCount);
-		assert(index.z() < entityData.textureCoordsCount);
+		assert(triangleIndices.x() < entityData.textureCoordsCount);
+		assert(triangleIndices.y() < entityData.textureCoordsCount);
+		assert(triangleIndices.z() < entityData.textureCoordsCount);
 
-		const Vec2f& uvA = entityData.textureCoords[index.x()];
-		const Vec2f& uvB = entityData.textureCoords[index.y()];
-		const Vec2f& uvC = entityData.textureCoords[index.z()];
+		const Vec2f& uvA = entityData.textureCoords[triangleIndices.x()];
+		const Vec2f& uvB = entityData.textureCoords[triangleIndices.y()];
+		const Vec2f& uvC = entityData.textureCoords[triangleIndices.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
@@ -181,17 +181,34 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	Vec3f velocity{NAN};
-	if (ctx.sceneDeltaTime > 0 && entityData.hasPrevFrameLocalToWorld) {
-		// Computing hit point velocity in simple words:
-		// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
-		// Think of it as a marker dot on the Entity.
-		// Having access to Entity's previous pose, we can compute (entityData.prevFrameLocalToWorld * hitObject),
-		// where the marker dot would be in the previous raytracing frame (displacementOriginWorld).
-		// Then, we can connect marker dot in previous raytracing frame with its current position and obtain displacement vector
-		// Dividing displacement by time elapsed from the previous raytracing frame yields velocity vector.
-		Vec3f displacementOriginWorld = entityData.prevFrameLocalToWorld * hitObject;
-		Vec3f displacement = hitWorld - displacementOriginWorld;
-		velocity = displacement / static_cast<float>(ctx.sceneDeltaTime);
+	Vec3f transformDisplacement = {0, 0, 0};
+	Vec3f skinningDisplacement = {0, 0, 0};
+	if (ctx.sceneDeltaTime > 0) {
+		if (entityData.hasPrevFrameLocalToWorld) {
+			// Computing hit point velocity in simple words:
+			// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
+			// Think of it as a marker dot on the Entity.
+			// Having access to Entity's previous pose, we can compute (entityData.prevFrameLocalToWorld * hitObject),
+			// where the marker dot would be in the previous raytracing frame (displacementOriginWorld).
+			// Then, we can connect marker dot in previous raytracing frame with its current position and obtain transformDisplacement vector
+			// Dividing transformDisplacement by time elapsed from the previous raytracing frame yields velocity vector.
+			Vec3f displacementOriginWorld = entityData.prevFrameLocalToWorld * hitObject;
+			transformDisplacement = hitWorld - displacementOriginWorld;
+		}
+
+		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
+		bool wasSkinned = entityData.vertexDisplacementSincePrevFrame != nullptr;
+		if (wasSkinned) {
+			Mat3x4f objectToWorld;
+			optixGetObjectToWorldTransformMatrix(reinterpret_cast<float*>(objectToWorld.rc));
+			const Vec3f& vA = entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
+			const Vec3f& vB = entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
+			const Vec3f& vC = entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
+
+			skinningDisplacement = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
+		}
+
+		velocity = (transformDisplacement + skinningDisplacement) / static_cast<float>(ctx.sceneDeltaTime);
 	}
 
 	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);

@@ -22,6 +22,8 @@ struct EntitySBTData
 	// Info about the previous frame:
 	Mat3x4f prevFrameLocalToWorld; // Must not be used if !hasPrevFrameLocalToWorld
 	bool hasPrevFrameLocalToWorld; // False, if the previous frame pose is not available
+
+	const Vec3f* vertexDisplacementSincePrevFrame; // May be nullptr;
 };
 static_assert(std::is_trivially_copyable<EntitySBTData>::value);
 static_assert(std::is_trivially_constructible<EntitySBTData>::value);
