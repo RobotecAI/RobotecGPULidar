@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.16.1] 13 November 2023
+
+### Fixed
+
+- Fixed a bug introduced in v0.16.0 with field set modification
+  - Compact and Downsample nodes clear internal cache when fields in the graph changed
+
+### Removed
+
+- Remove internal usage of multiple scenes
+  - API calls haven't changed yet
+
 ## [0.16.0] 10 November 2023
 
 ### Added
@@ -18,6 +30,10 @@
   - The Entity ID is now held in a 28-bit integer (OptiX limit) instead of a 32-bit integer
 - Renamed XYZ field name to be more precise and compatible with future features
   - `RGL_FIELD_XYZ_F32` -> `RGL_FIELD_XYZ_VEC3_F32`
+
+### Known Issues
+
+- Modifying fields between graph's runs (consisted of Compact or Downsample nodes) may cause a segmentation fault
 
 ## [0.15.0] 23 September 2023
 
