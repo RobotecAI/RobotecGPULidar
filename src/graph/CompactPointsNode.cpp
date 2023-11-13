@@ -18,6 +18,14 @@
 #include <repr.hpp>
 #include <graph/GraphRunCtx.hpp>
 
+void CompactPointsNode::validateImpl()
+{
+	IPointsNodeSingleInput::validateImpl();
+	// Needed to clear cache because fields in the pipeline may have changed
+	// In fact, the cache manager is no longer useful here
+	// To be kept/removed in some future refactor (when resolving comment in the `enqueueExecImpl`)
+	cacheManager.clear();
+}
 
 void CompactPointsNode::enqueueExecImpl()
 {

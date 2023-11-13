@@ -415,6 +415,48 @@ TEST_F(GraphCase, NoInputNodesDoNotRequireInput)
 	EXPECT_RGL_SUCCESS(rgl_graph_run(pointsFromArray));
 }
 
+TEST_F(GraphCase, ChangingRequiredFieldsBetweenRuns)
+{
+	spawnCubeOnScene(Mat3x4f::identity());
+
+	rgl_node_t useRays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr;
+
+	std::vector<std::vector<rgl_field_t>> subsequentFormatFields = {
+	    {RGL_FIELD_XYZ_VEC3_F32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32, RGL_FIELD_ENTITY_ID_I32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_IS_HIT_I32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32},
+	};
+
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
+
+	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	ASSERT_RGL_SUCCESS(rgl_node_points_format(&format, subsequentFormatFields[0].data(), subsequentFormatFields[0].size()));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compact, format));
+
+	// 1st method of changing required fields: update node with fields as a parameter
+	for (auto&& formatFields : subsequentFormatFields) {
+		ASSERT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace)); // Run with dirty nodes
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace)); // Run with valid nodes
+	}
+
+	// 2nd method of changing required fields: remove child node with user-defined fields requirements
+	for (auto&& formatFields : subsequentFormatFields) {
+		ASSERT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(compact, format)); // Remove node with extra fields in the pipeline
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(compact, format)); // Restore connection for the next loop iteration
+	}
+}
+
 // Test for rgl_node_points_visualize. May not work inside docker (graphical environment needed). Uncomment to use.
 //#if RGL_BUILD_PCL_EXTENSION
 //#include <rgl/api/extensions/pcl.h>

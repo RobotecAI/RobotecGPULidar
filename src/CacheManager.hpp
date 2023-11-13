@@ -58,6 +58,12 @@ struct CacheManager
 		return result;
 	}
 
+	void clear()
+	{
+		cache.clear();
+		cacheAge.clear();
+	}
+
 	void setUpdated(Key key) { cacheAge.at(key) = 0; }
 	bool isLatest(Key key) const { return cacheAge.at(key) == 0; }
 	bool contains(Key key) const { return cache.contains(key); }
