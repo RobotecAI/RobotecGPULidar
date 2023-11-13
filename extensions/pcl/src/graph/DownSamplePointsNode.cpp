@@ -28,6 +28,10 @@ void DownSamplePointsNode::validateImpl()
 		auto msg = fmt::format("{} requires XYZ to be present", getName());
 		throw InvalidPipeline(msg);
 	}
+	// Needed to clear cache because fields in the pipeline may have changed
+	// In fact, the cache manager is no longer useful here
+	// To be kept/removed in some future refactor (when resolving comment in the `enqueueExecImpl`)
+	cacheManager.clear();
 }
 
 void DownSamplePointsNode::enqueueExecImpl()

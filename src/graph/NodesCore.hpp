@@ -74,6 +74,7 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	void setParameters() {}
 
 	// Node
+	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Node requirements
