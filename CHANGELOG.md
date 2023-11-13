@@ -4,13 +4,7 @@
 
 ### Fixed
 
-- Fixed a bug introduced in v0.16.0 with field set modification
-  - Compact and Downsample nodes clear internal cache when fields in the graph changed
-
-### Removed
-
-- Remove internal usage of multiple scenes
-  - API calls haven't changed yet
+- Fixed a bug introduced in v0.16.0 causing RGL to crash in Compact and Downsample Node when some field was removed from the graph.
 
 ## [0.16.0] 10 November 2023
 
@@ -33,7 +27,7 @@
 
 ### Known Issues
 
-- Modifying fields between graph's runs (consisted of Compact or Downsample nodes) may cause a segmentation fault
+- Modifying fields between graph's runs (consisted of Compact or Downsample nodes) may cause a segmentation fault. Fixed in v0.16.1.
 
 ## [0.15.0] 23 September 2023
 
