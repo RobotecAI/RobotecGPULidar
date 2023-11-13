@@ -422,12 +422,12 @@ TEST_F(GraphCase, ChangingRequiredFieldsBetweenRuns)
 	rgl_node_t useRays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr;
 
 	std::vector<std::vector<rgl_field_t>> subsequentFormatFields = {
-	    {RGL_FIELD_XYZ_VEC3_F32 },
-	    { RGL_FIELD_XYZ_VEC3_F32,RGL_FIELD_INTENSITY_F32, RGL_FIELD_ENTITY_ID_I32},
-	    { RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32},
-	    { RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_IS_HIT_I32},
-	    { RGL_FIELD_XYZ_VEC3_F32,  RGL_FIELD_DISTANCE_F32}
-    };
+	    {RGL_FIELD_XYZ_VEC3_F32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32, RGL_FIELD_ENTITY_ID_I32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_INTENSITY_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_IS_HIT_I32},
+	    {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32},
+	};
 
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 
