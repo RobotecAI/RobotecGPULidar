@@ -183,22 +183,26 @@ public:
 	 */
 	void removeNonHitPoints()
 	{
-		std::vector<char> newData;
-		newData.reserve(data.size());
+		if (std::find(fields.begin(), fields.end(), IS_HIT_I32) == fields.end()) {
+			throw std::invalid_argument("TestPointCloud::removeNonHitPoints: TestPointCloud does not contain IS_HIT field");
+		}
+
+		std::vector<char> filteredData;
+		filteredData.reserve(data.size());
 
 		for (int i = 0; i < fields.size(); ++i) {
 			if (fields.at(i) == IS_HIT_I32) {
 				for (int j = 0; j < getPointCount(); ++j) {
-					if (*reinterpret_cast<int*>(data.data() + j * getPointByteSize() + offsets.at(i)) == 0) {
-						continue;
+					char isHitValue = *reinterpret_cast<char*>(data.data() + j * getPointByteSize() + offsets.at(i));
+					if (isHitValue != 0) {
+						std::move(data.begin() + j * getPointByteSize(), data.begin() + (j + 1) * getPointByteSize(),
+						          std::back_inserter(filteredData));
 					}
-					std::move(data.begin() + j * getPointByteSize(), data.begin() + (j + 1) * getPointByteSize(),
-					          std::back_inserter(newData));
 				}
 				break;
 			}
 		}
-		data = newData;
+		data = std::move(filteredData);
 	}
 
 	std::size_t getPointCount() const { return data.size() / getPointByteSize(); }
