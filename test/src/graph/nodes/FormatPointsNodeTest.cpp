@@ -173,23 +173,30 @@ TEST_P(FormatPointsNodeTest, multiple_changing_format_should_not_change_data)
 	EXPECT_EQ(pointCloud, outPointCloud);
 }
 
-TEST_P(FormatPointsNodeTest, paddings_alone)
+TEST_F(FormatPointsNodeTest, paddings_alone)
 {
-	int pointsCount = std::get<0>(GetParam());
+	int pointsCount = maxGPUCoresTestCount;
 
 	TestPointCloud pointCloud = TestPointCloud(availablePaddings, pointsCount);
 	rgl_node_t inNode = pointCloud.createUsePointsNode();
 
 	runGraphWithAssertions(inNode, availablePaddings);
 
+	// When creating outPointCloud, the createFromFormatNode method checks that the outSize matches the field size
 	TestPointCloud outPointCloud = TestPointCloud::createFromFormatNode(formatNode, availablePaddings);
 	EXPECT_EQ(outPointCloud.getPointCount(), pointsCount);
 }
 
-TEST_P(FormatPointsNodeTest, duplicated_fields)
+TEST_F(FormatPointsNodeTest, duplicated_fields)
 {
-	int pointsCount = std::get<0>(GetParam());
-	std::vector<rgl_field_t> fieldsToFormat = {XYZ_VEC3_F32, XYZ_VEC3_F32, XYZ_VEC3_F32, DISTANCE_F32, DISTANCE_F32};
+	int pointsCount = maxGPUCoresTestCount;
+
+	// Duplicate every not dummy field
+	std::vector<rgl_field_t> fieldsToFormat;
+	for (auto field : allNotDummyFields) {
+		fieldsToFormat.emplace_back(field);
+		fieldsToFormat.emplace_back(field);
+	}
 
 	TestPointCloud inPointCloud = TestPointCloud(fieldsToFormat, pointsCount);
 	rgl_node_t inNode = inPointCloud.createUsePointsNode();
@@ -201,11 +208,10 @@ TEST_P(FormatPointsNodeTest, duplicated_fields)
 	EXPECT_EQ(outPointCloud, inPointCloud);
 }
 
-TEST_P(FormatPointsNodeTest, request_for_field_that_points_do_not_have)
+TEST_F(FormatPointsNodeTest, request_for_field_that_points_do_not_have)
 {
-	int pointsCount = std::get<0>(GetParam());
+	int pointsCount = maxGPUCoresTestCount;
 
-	// Removing first field from allNotDummyFields
 	std::vector<rgl_field_t> pointFields = allNotDummyFields;
 	rgl_node_t inNode = nullptr;
 

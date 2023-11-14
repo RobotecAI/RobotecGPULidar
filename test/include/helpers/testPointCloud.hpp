@@ -36,8 +36,8 @@ static std::vector<FieldType> generateFieldValues(std::size_t count, std::functi
 }
 
 /**
- * Collection of generator functions for various RGL PointCloud Fields.
- * These can be passed as the 'generator' argument to the `generate` function.
+ * Collection of generator functions for various RGL TestPointCloud Fields.
+ * These can be passed as the 'generator' argument to the `generateFieldValues` function.
 */
 static std::function<Field<XYZ_VEC3_F32>::type(int)> genCoord = [](int i) {
 	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
@@ -75,7 +75,7 @@ static std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
  * Each point's data is a continuous byte block, structured by the cloud's defined fields. Users should be mindful of these fields,
  * especially when invoking operations that rely on a specific field, like transformations depending on XYZ_VEC3_F32.
  * Additionally, this class provides functionality to instantiate a point cloud from a node and to create a node from the point cloud.
- * By default, all fields are initialized to dummy values, and all paddings are initialized to 0.
+ * By default, all fields in the test point cloud are initialized to dummy values; paddings are initialized to 0.
  *
  * @example
  * std::vector<rgl_field_t> fields = { ... }; // Define your fields here
@@ -93,20 +93,17 @@ class TestPointCloud
 public:
 	explicit TestPointCloud(const std::vector<rgl_field_t>& declaredFields, std::size_t pointCount) : fields(declaredFields)
 	{
-		resize(pointCount);
-		initializeFieldValueGenerators(pointCount);
-
-		std::size_t offset = 0;
+		int offset = 0;
 		for (auto& field : fields) {
 			offsets.emplace_back(offset);
 			offset += getFieldSize(field);
 		}
 
+		resize(pointCount);
+		initializeFieldValueGenerators(pointCount);
+
 		// Initialize all fields to dummy values; paddings are initialized to 0
 		for (const auto& field : fields) {
-			if (isDummy(field)) {
-				continue;
-			}
 			auto gen = fieldGenerators.find(field);
 			if (gen != fieldGenerators.end()) {
 				gen->second(pointCount);
@@ -128,8 +125,8 @@ public:
 		for (int i = 0; i < fields.size(); i++) {
 			int32_t currentCount, currentSize;
 			EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(outputNode, fields.at(i), &currentCount, &currentSize));
+			EXPECT_EQ(currentCount, outCount);
 			EXPECT_EQ(currentSize, getFieldSize(fields.at(i)));
-			EXPECT_EQ(outCount, currentCount);
 
 			if (isDummy(fields.at(i))) {
 				continue;
@@ -143,7 +140,6 @@ public:
 				          pointCloud.data.data() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i));
 			}
 		}
-
 		return pointCloud;
 	}
 
@@ -152,10 +148,9 @@ public:
 		int32_t outCount, outSize;
 		EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(formatNode, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSize));
 
-		std::size_t expectedSize = 0;
-		for (const auto& field : fields) {
-			expectedSize += getFieldSize(field);
-		}
+		std::size_t expectedSize = std::accumulate(
+		    fields.begin(), fields.end(), 0, [](std::size_t sum, rgl_field_t field) { return sum + getFieldSize(field); });
+
 		if (outSize != expectedSize) {
 			throw std::invalid_argument("TestPointCloud::createFromFormatNode: formatNode does not match the expected size");
 		}
@@ -168,11 +163,10 @@ public:
 
 		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(formatNode, RGL_FIELD_DYNAMIC_FORMAT, pointCloud.data.data()));
 
-		// If paddings are present, make their values 0, it will make the comparison easier
+		// If paddings are present, they are initialized to 0 in order to be able to compare the point clouds
 		for (int i = 0; i < fields.size(); ++i) {
 			if (isDummy(fields.at(i))) {
 				for (int j = 0; j < outCount; ++j) {
-					// Pading bytes as 0
 					std::fill(pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i),
 					          pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i) +
 					              getFieldSize(fields.at(i)),
@@ -180,7 +174,6 @@ public:
 				}
 			}
 		}
-
 		return pointCloud;
 	}
 
@@ -229,7 +222,6 @@ public:
 		rgl_node_t node = nullptr;
 		EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&node, data.data(), getPointCount(), fields.data(), fields.size()));
 		EXPECT_THAT(node, testing::NotNull());
-
 		return node;
 	}
 
@@ -255,16 +247,16 @@ public:
 		}
 
 		// There may be multiple fields of the same type, so we need to find all of them
-		std::vector<std::size_t> fieldIndices;
-		for (int i = 0; i < fields.size(); i++) {
+		std::vector<int> fieldIndices;
+		for (int i = 0; i < fields.size(); ++i) {
 			if (fields.at(i) == T) {
 				fieldIndices.emplace_back(i);
 			}
 		}
 
-		for (std::size_t fieldIndex : fieldIndices) {
-			std::size_t offset = offsets.at(fieldIndex);
-			for (std::size_t i = 0; i < getPointCount(); i++) {
+		for (auto fieldIndex : fieldIndices) {
+			int offset = offsets.at(fieldIndex);
+			for (int i = 0; i < getPointCount(); i++) {
 				std::move(reinterpret_cast<char*>(fieldValues.data() + i), reinterpret_cast<char*>(fieldValues.data() + i + 1),
 				          data.data() + i * getPointByteSize() + offset);
 			}
@@ -274,22 +266,14 @@ public:
 	template<rgl_field_t T>
 	std::vector<typename Field<T>::type> getFieldValues()
 	{
-		// There may be multiple fields of the same type, we need to find just one
-		std::size_t fieldIndex = 0;
-
-		for (std::size_t i = 0; i < fields.size(); i++) {
-			if (fields.at(i) == T) {
-				fieldIndex = i;
-				break;
-			}
-		}
+		int fieldIndex = std::find(fields.begin(), fields.end(), T) - fields.begin();
 
 		std::vector<typename Field<T>::type> fieldValues;
 		fieldValues.reserve(getPointCount());
 
-		std::size_t offset = offsets.at(fieldIndex);
+		int offset = offsets.at(fieldIndex);
 
-		for (std::size_t i = 0; i < getPointCount(); i++) {
+		for (int i = 0; i < getPointCount(); i++) {
 			fieldValues.emplace_back(
 			    *reinterpret_cast<typename Field<T>::type*>(data.data() + i * getPointByteSize() + offset));
 		}
@@ -299,11 +283,8 @@ public:
 
 	std::size_t getPointByteSize() const
 	{
-		std::size_t pointByteSize = 0;
-		for (const auto& field : fields) {
-			pointByteSize += getFieldSize(field);
-		}
-		return pointByteSize;
+		return std::accumulate(fields.begin(), fields.end(), 0,
+		                       [](std::size_t sum, rgl_field_t field) { return sum + getFieldSize(field); });
 	}
 
 	char* getData() { return data.data(); }
@@ -313,14 +294,12 @@ public:
 	~TestPointCloud() = default;
 
 private:
-	void resize(std::size_t newCount) { data.resize(newCount * getPointByteSize()); }
-
 	std::vector<char> data;
-
 	std::vector<rgl_field_t> fields;
 	std::vector<int> offsets;
-
 	std::map<rgl_field_t, std::function<void(std::size_t)>> fieldGenerators;
+
+	void resize(std::size_t newCount) { data.resize(newCount * getPointByteSize()); }
 
 	void initializeFieldValueGenerators(std::size_t pointCount)
 	{
@@ -353,15 +332,9 @@ static std::vector<rgl_field_t> generateRandomStaticFieldsVector(std::size_t num
 
 	std::sample(allNotDummyFields.begin(), allNotDummyFields.end(), std::back_inserter(fields), allNotDummyFields.size(),
 	            randomGenerator);
-
-	// Insert paddings at random positions
-	for (int i = 0; i < numberOfPaddings; ++i) {
-		std::uniform_int_distribution<> posDis(0, fields.size());
-		int position = posDis(randomGenerator);
-		// Random padding from availablePaddings
-		fields.insert(fields.begin() + position,
-		              availablePaddings[std::uniform_int_distribution<>(0, availablePaddings.size() - 1)(randomGenerator)]);
-	}
+	std::sample(availablePaddings.begin(), availablePaddings.end(), std::back_inserter(fields), numberOfPaddings,
+	            randomGenerator);
+	std::shuffle(fields.begin(), fields.end(), randomGenerator);
 
 	return fields;
 }
