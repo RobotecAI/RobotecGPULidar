@@ -87,7 +87,6 @@ static std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
  * TestPointCloud fromNode = TestPointCloud::createFromNode(transformNode, fields); // Create a point cloud from a node
  * EXPECT_EQ(pointCloud, fromNode); // Compare point clouds
  */
-
 class TestPointCloud
 {
 public:
@@ -328,7 +327,6 @@ private:
  * @brief Function to generate a vector of fields; returns a vector of all not dummy fields with the specified number of paddings.
  * Paddings types and positions are chosen randomly.
  */
-
 static std::vector<rgl_field_t> generateRandomStaticFieldsVector(std::size_t numberOfPaddings)
 {
 	std::vector<rgl_field_t> fields;
@@ -346,7 +344,6 @@ static std::vector<rgl_field_t> generateRandomStaticFieldsVector(std::size_t num
 /**
  * Functions for validating Field values.
  */
-
 template<typename FieldType>
 static void checkIfNearEqual(const std::vector<FieldType>& expected, const std::vector<FieldType>& actual,
                              const float epsilon = 1e-5)
