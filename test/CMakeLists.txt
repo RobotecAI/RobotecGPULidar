@@ -6,11 +6,14 @@ set(RGL_TEST_FILES
     src/asyncStressTest.cpp
     src/DistanceFieldTest.cpp
     src/externalLibraryTest.cpp
-    src/features/loggingTests.cpp
     src/gaussianStressTest.cpp
     src/gaussianPoseIndependentTest.cpp
+    src/testMat3x4f.cpp
+    src/VelocityDistortionTest.cpp
+    src/features/loggingTests.cpp
     src/graph/addChildTest.cpp
     src/graph/graphCaseTest.cpp
+    src/graph/setPriorityTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
@@ -27,20 +30,18 @@ set(RGL_TEST_FILES
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/TransformRaysNodeTest.cpp
     src/graph/nodes/YieldPointsNodeTest.cpp
-    src/graph/setPriorityTest.cpp
     src/helpers/pointsTest.cpp
     src/memory/arrayChangeStreamTest.cpp
     src/memory/arrayOpsTest.cpp
     src/memory/arrayTypingTest.cpp
     src/scene/entityIdTest.cpp
     src/scene/textureTest.cpp
+    src/scene/entityVelocityTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/graphThreadSynchronization.cpp
     src/synchronization/testKernel.cu
-    src/testMat3x4f.cpp
-    src/VelocityDistortionTest.cpp
-    src/scene/entityVelocityTest.cpp
 )
+
 
 # Only Linux
 if ((NOT WIN32))
