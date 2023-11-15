@@ -34,7 +34,8 @@ set(RGL_TEST_FILES
     src/memory/arrayChangeStreamTest.cpp
     src/memory/arrayOpsTest.cpp
     src/memory/arrayTypingTest.cpp
-    src/scene/entityIdTest.cpp
+    src/scene/entityTest.cpp
+    src/scene/meshTest.cpp
     src/scene/textureTest.cpp
     src/scene/entityVelocityTest.cpp
     src/synchronization/graphAndCopyStream.cpp
