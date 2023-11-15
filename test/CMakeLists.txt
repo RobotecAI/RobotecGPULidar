@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
     src/apiReadmeExample.cpp
-    src/apiSurfaceTests.cpp
+    src/apiInfoMethodsTest.cpp
     src/asyncStressTest.cpp
     src/DistanceFieldTest.cpp
     src/externalLibraryTest.cpp
