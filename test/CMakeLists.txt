@@ -8,6 +8,7 @@ set(RGL_TEST_FILES
     src/externalLibraryTest.cpp
     src/features/loggingTests.cpp
     src/gaussianStressTest.cpp
+    src/gaussianPoseIndependentTest.cpp
     src/graph/addChildTest.cpp
     src/graph/graphCaseTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
@@ -39,7 +40,6 @@ set(RGL_TEST_FILES
     src/testMat3x4f.cpp
     src/VelocityDistortionTest.cpp
 )
-
 
 # Only Linux
 if ((NOT WIN32))
