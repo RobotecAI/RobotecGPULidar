@@ -1,10 +1,13 @@
 #include <filesystem>
 
-#include <helpers/geometryData.hpp>
+#include <helpers/sceneHelpers.hpp>
 #include <helpers/commonHelpers.hpp>
+#include <helpers/geometryData.hpp>
 #include <helpers/textureHelpers.hpp>
 
+#include <RGLFields.hpp>
 #include <rgl/api/extensions/tape.h>
+#include <math/Mat3x4f.hpp>
 
 #if RGL_BUILD_PCL_EXTENSION
 #include <rgl/api/extensions/pcl.h>
@@ -14,13 +17,10 @@
 #include <rgl/api/extensions/ros2.h>
 #endif
 
-#include <RGLFields.hpp>
-#include <math/Mat3x4f.hpp>
-
-class TapeCase : public RGLTest
+class TapeTest : public RGLTest
 {};
 
-TEST_F(TapeCase, RecordPlayLoggingCall)
+TEST_F(TapeTest, RecordPlayLoggingCall)
 {
 	std::string loggingRecordPath{(std::filesystem::temp_directory_path() / std::filesystem::path("loggingRecord")).string()};
 	std::string logFilePath{
@@ -40,7 +40,7 @@ TEST_F(TapeCase, RecordPlayLoggingCall)
 	EXPECT_RGL_SUCCESS(rgl_tape_play(loggingRecordPath.c_str()));
 }
 
-TEST_F(TapeCase, RecordPlayAllCalls)
+TEST_F(TapeTest, RecordPlayAllCalls)
 {
 	std::string allCallsRecordPath{(std::filesystem::temp_directory_path() / std::filesystem::path("allCallsRecord")).string()};
 	EXPECT_RGL_SUCCESS(rgl_tape_record_begin(allCallsRecordPath.c_str()));
@@ -197,4 +197,67 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_FALSE(isTapeRecordActive);
 
 	EXPECT_RGL_SUCCESS(rgl_tape_play(allCallsRecordPath.c_str()));
+}
+
+void testCubeSceneOnGraph()
+{
+	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, format = nullptr;
+
+	std::vector<rgl_mat3x4f> rays = {Mat3x4f::TRS({0, 0, 0}).toRGL(), Mat3x4f::TRS({0.1, 0, 0}).toRGL(),
+	                                 Mat3x4f::TRS({0.2, 0, 0}).toRGL(), Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
+	                                 Mat3x4f::TRS({0.4, 0, 0}).toRGL()};
+	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
+	std::vector<rgl_field_t> formatFields = {XYZ_VEC3_F32, PADDING_32};
+
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, formatFields.data(), formatFields.size()));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarPose, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
+	int32_t outCount, outSizeOf;
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(format, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSizeOf));
+
+	struct FormatStruct
+	{
+		Field<XYZ_VEC3_F32>::type xyz;
+		Field<PADDING_32>::type padding;
+	} formatStruct;
+
+	EXPECT_EQ(outCount, rays.size());
+	EXPECT_EQ(outSizeOf, sizeof(formatStruct));
+
+	std::vector<FormatStruct> formatData{static_cast<long unsigned int>(outCount)};
+	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(format, RGL_FIELD_DYNAMIC_FORMAT, formatData.data()));
+
+	for (int i = 0; i < formatData.size(); ++i) {
+		EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], 1e-6);
+		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], 1e-6);
+		EXPECT_NEAR(formatData[i].xyz[2], 1, 1e-6);
+	}
+}
+
+TEST_F(TapeTest, SceneReconstruction)
+{
+	std::string cubeSceneRecordPath{
+	    (std::filesystem::temp_directory_path() / std::filesystem::path("cubeSceneRecord")).string()};
+	rgl_tape_record_begin(cubeSceneRecordPath.c_str());
+	auto mesh = makeCubeMesh();
+	auto entity = makeEntity(mesh);
+	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+	rgl_tape_record_end();
+
+	testCubeSceneOnGraph();
+
+	rgl_cleanup();
+
+	rgl_tape_play(cubeSceneRecordPath.c_str());
+
+	testCubeSceneOnGraph();
 }

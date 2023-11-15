@@ -55,7 +55,7 @@ endif()
 if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     list(APPEND RGL_TEST_FILES
         src/tapeSurfaceTest.cpp
-        src/features/tapeScene.cpp
+        src/features/tapeTests.cpp
     )
 endif()
 
