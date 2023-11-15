@@ -65,7 +65,7 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 		outDistances[tid] = distance + distanceError;
 	}
 
-	outPoints[tid] = inPoints[tid] + inPoints[tid].normalize() * distanceError;
+	outPoints[tid] = lookAtOriginTransform.inverse() * (originPoint + originPoint.normalize() * distanceError);
 }
 
 void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis,
