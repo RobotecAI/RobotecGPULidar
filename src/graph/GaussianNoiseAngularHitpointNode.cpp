@@ -26,7 +26,6 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 void GaussianNoiseAngularHitpointNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modify field DISTANCE_F32 if present.
 	// In the future: only one field should be modified.
@@ -42,6 +41,8 @@ void GaussianNoiseAngularHitpointNode::validateImpl()
 
 void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 {
+	lookAtOriginTransform = input->getLookAtOriginTransform();
+
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);
 

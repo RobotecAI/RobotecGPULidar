@@ -386,7 +386,6 @@ struct GaussianNoiseAngularRaysNode : IRaysNodeSingleInput
 	void setParameters(float mean, float stSev, rgl_axis_t rotationAxis);
 
 	// Node
-	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Data getters

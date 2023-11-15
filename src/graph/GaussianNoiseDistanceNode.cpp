@@ -26,7 +26,6 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 void GaussianNoiseDistanceNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modifty field DISTANCE_F32 if present.
 	// In the future: only one field should be modified.
@@ -42,6 +41,8 @@ void GaussianNoiseDistanceNode::validateImpl()
 
 void GaussianNoiseDistanceNode::enqueueExecImpl()
 {
+	lookAtOriginTransform = input->getLookAtOriginTransform();
+
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);
 

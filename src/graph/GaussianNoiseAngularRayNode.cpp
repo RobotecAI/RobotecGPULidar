@@ -23,11 +23,11 @@ void GaussianNoiseAngularRaysNode::setParameters(float mean, float stDev, rgl_ax
 	this->rotationAxis = rotationAxis;
 }
 
-void GaussianNoiseAngularRaysNode::validateImpl()
+void GaussianNoiseAngularRaysNode::enqueueExecImpl()
 {
-	IRaysNodeSingleInput::validateImpl();
 	lookAtOriginTransform = input->getCumulativeRayTransfrom().inverse();
 
+	// In case rays have changed
 	auto rayCount = input->getRayCount();
 	rays->resize(rayCount, false, false);
 
@@ -35,10 +35,7 @@ void GaussianNoiseAngularRaysNode::validateImpl()
 		randomizationStates->resize(rayCount, false, false);
 		gpuSetupRandomNumberGenerator(getStreamHandle(), rayCount, randomDevice(), randomizationStates->getWritePtr());
 	}
-}
 
-void GaussianNoiseAngularRaysNode::enqueueExecImpl()
-{
 	const auto* inRaysPtr = input->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outRaysPtr = rays->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
