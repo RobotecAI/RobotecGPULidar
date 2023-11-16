@@ -9,7 +9,7 @@
 // Gaussian noise is configured with zero standard deviation so there is no randomization.
 
 constexpr float MEAN = 0.1f;
-constexpr float EPSILON_DIFF = 1e-4;
+constexpr float EPSILON_DIFF = 1e-4f;
 
 const std::vector<rgl_mat3x4f> lidarRays = makeLidar3dRays(360, 180, 2, 1);
 const std::vector<Mat3x4f> cubePoses = {
