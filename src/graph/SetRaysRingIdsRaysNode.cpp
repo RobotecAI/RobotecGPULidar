@@ -19,10 +19,8 @@ void SetRingIdsRaysNode::setParameters(const int* ringIdsRaw, size_t ringIdsCoun
 	ringIds->copyFromExternal(ringIdsRaw, ringIdsCount);
 }
 
-void SetRingIdsRaysNode::validateImpl()
+void SetRingIdsRaysNode::enqueueExecImpl()
 {
-	IRaysNodeSingleInput::validateImpl();
-
 	if (input->getRayCount() % ringIds->getCount() != 0) {
 		auto msg = fmt::format("ring ids doesn't match number of rays. "
 		                       "RayCount({}) mod RingIdsCount({}) should be zero",

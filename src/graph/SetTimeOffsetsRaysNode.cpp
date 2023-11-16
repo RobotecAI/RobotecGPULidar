@@ -19,10 +19,8 @@ void SetTimeOffsetsRaysNode::setParameters(const float* raysTimeOffsetsRaw, size
 	timeOffsets->copyFromExternal(raysTimeOffsetsRaw, raysTimeOffsetsCount);
 }
 
-void SetTimeOffsetsRaysNode::validateImpl()
+void SetTimeOffsetsRaysNode::enqueueExecImpl()
 {
-	IRaysNodeSingleInput::validateImpl();
-
 	if (input->getRayCount() != timeOffsets->getCount()) {
 		auto msg = fmt::format("time offsets don't match number of rays. "
 		                       "RayCount({}) and TimeOffsetsCount({}) should be equal",

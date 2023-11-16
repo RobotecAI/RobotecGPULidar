@@ -215,8 +215,7 @@ struct SetRingIdsRaysNode : IRaysNodeSingleInput
 	void setParameters(const int* ringIdsRaw, size_t ringIdsCount);
 
 	// Node
-	void validateImpl() override;
-	void enqueueExecImpl() override {}
+	void enqueueExecImpl() override;
 
 	// Rays description
 	std::optional<size_t> getRingIdsCount() const override { return ringIds->getCount(); }
@@ -234,8 +233,7 @@ struct SetRangeRaysNode : IRaysNodeSingleInput
 	void setParameters(const Vec2f* rangesRaw, size_t rangesCount);
 
 	// Node
-	void validateImpl() override;
-	void enqueueExecImpl() override {}
+	void enqueueExecImpl() override;
 
 	// Rays description
 	std::optional<std::size_t> getRangesCount() const override { return ranges->getCount(); }
@@ -253,8 +251,7 @@ struct SetTimeOffsetsRaysNode : IRaysNodeSingleInput
 	void setParameters(const float* raysTimeOffsets, size_t timeOffsetsCount);
 
 	// Node
-	void validateImpl() override;
-	void enqueueExecImpl() override {}
+	void enqueueExecImpl() override;
 
 	// Rays description
 	std::optional<size_t> getTimeOffsetsCount() const override { return timeOffsets->getCount(); }

@@ -24,10 +24,7 @@ using PCLPoint = pcl::PointXYZL;
 void DownSamplePointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	if (!input->hasField(XYZ_VEC3_F32)) {
-		auto msg = fmt::format("{} requires XYZ to be present", getName());
-		throw InvalidPipeline(msg);
-	}
+
 	// Needed to clear cache because fields in the pipeline may have changed
 	// In fact, the cache manager is no longer useful here
 	// To be kept/removed in some future refactor (when resolving comment in the `enqueueExecImpl`)

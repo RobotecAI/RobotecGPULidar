@@ -34,11 +34,10 @@ void SetRangeRaysNode::setParameters(const Vec2f* rangesRaw, size_t rangesCount)
 	ranges->copyFromExternal(rangesRaw, rangesCount);
 }
 
-void SetRangeRaysNode::validateImpl()
+void SetRangeRaysNode::enqueueExecImpl()
 {
-	IRaysNodeSingleInput::validateImpl();
-
 	if (!(ranges->getCount() == 1 || ranges->getCount() == input->getRayCount())) {
+		RGL_ERROR("ranges doesn't match number of rays");
 		auto msg = fmt::format("ranges doesn't match number of rays. "
 		                       "RangesCount({}) should be one or equal to RayCount({})",
 		                       ranges->getCount(), input->getRayCount());
