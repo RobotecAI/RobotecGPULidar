@@ -7,6 +7,8 @@
 // The test will compare point clouds captured inside cubes.
 // Cubes are spawned in different locations. Raytrace will always be performed from the same pose in relation to the cube.
 // Gaussian noise is configured with zero standard deviation so there is no randomization.
+// The test checks that the noise is always applied correctly in ray coordinates.
+// There was a bug in the past where the point cloud transform was not updating correctly in the Gaussian noise nodes.
 
 constexpr float MEAN = 0.1f;
 constexpr float EPSILON_DIFF = 1e-4f;

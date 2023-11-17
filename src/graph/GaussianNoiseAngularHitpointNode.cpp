@@ -41,8 +41,6 @@ void GaussianNoiseAngularHitpointNode::validateImpl()
 
 void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 {
-	lookAtOriginTransform = input->getLookAtOriginTransform();
-
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);
 
@@ -60,8 +58,8 @@ void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outXyzPtr = outXyz->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
-	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randPtr,
-	                                   inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis,
+	                                   input->getLookAtOriginTransform(), randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 IAnyArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field)

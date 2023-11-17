@@ -396,7 +396,6 @@ private:
 	float stDev;
 	rgl_axis_t rotationAxis;
 	std::random_device randomDevice;
-	Mat3x4f lookAtOriginTransform;
 
 	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
@@ -424,7 +423,6 @@ private:
 	float stDev;
 	rgl_axis_t rotationAxis;
 	std::random_device randomDevice;
-	Mat3x4f lookAtOriginTransform;
 
 	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
@@ -453,7 +451,6 @@ private:
 	float stDevBase;
 	float stDevRisePerMeter;
 	std::random_device randomDevice;
-	Mat3x4f lookAtOriginTransform;
 
 	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);

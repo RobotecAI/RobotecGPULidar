@@ -25,8 +25,6 @@ void GaussianNoiseAngularRaysNode::setParameters(float mean, float stDev, rgl_ax
 
 void GaussianNoiseAngularRaysNode::enqueueExecImpl()
 {
-	lookAtOriginTransform = input->getCumulativeRayTransfrom().inverse();
-
 	// In case rays have changed
 	auto rayCount = input->getRayCount();
 	rays->resize(rayCount, false, false);
@@ -39,6 +37,6 @@ void GaussianNoiseAngularRaysNode::enqueueExecImpl()
 	const auto* inRaysPtr = input->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outRaysPtr = rays->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
-	gpuAddGaussianNoiseAngularRay(getStreamHandle(), getRayCount(), mean, stDev, rotationAxis, lookAtOriginTransform, randPtr,
-	                              inRaysPtr, outRaysPtr);
+	gpuAddGaussianNoiseAngularRay(getStreamHandle(), getRayCount(), mean, stDev, rotationAxis,
+	                              input->getCumulativeRayTransfrom().inverse(), randPtr, inRaysPtr, outRaysPtr);
 }
