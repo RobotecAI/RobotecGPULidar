@@ -33,15 +33,6 @@ void VisualizePointsNode::setParameters(const char* windowName, int windowWidth,
 	visualizeThread->visualizeNodes.push_back(std::dynamic_pointer_cast<VisualizePointsNode>(shared_from_this()));
 }
 
-void VisualizePointsNode::validateImpl()
-{
-	IPointsNodeSingleInput::validateImpl();
-	if (!input->hasField(XYZ_VEC3_F32)) {
-		auto msg = fmt::format("{} requires XYZ to be present", getName());
-		throw InvalidPipeline(msg);
-	}
-}
-
 // All calls to the viewers must be executed from the same thread
 void VisualizePointsNode::VisualizeThread::runVisualize()
 try {
