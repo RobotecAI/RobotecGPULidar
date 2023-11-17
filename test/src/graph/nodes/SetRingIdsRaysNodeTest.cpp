@@ -12,14 +12,14 @@ protected:
 	void initializeRingNodeAndIds(int idsCount)
 	{
 		setRingIdsNode = nullptr;
-		std::vector<int> ids(idsCount);
-		std::iota(ids.begin(), ids.end(), 0);
-		ringIds = ids;
+		ringIds.resize(idsCount);
+		std::iota(ringIds.begin(), ringIds.end(), 0);
 	}
 
 	void initializeRaysAndRaysNode(int rayCount)
 	{
 		rayNode = nullptr;
+		rays.clear();
 		rays.reserve(rayCount);
 		for (int i = 0; i < rayCount; i++) {
 			rays.emplace_back(
@@ -64,14 +64,28 @@ TEST_P(SetRingIdsNodeTest, invalid_pipeline_less_rays_than_ring_ids)
 	int32_t idsCount = GetParam();
 	if (idsCount / 2 == 0) {
 		return;
-	};
+	}
 
+	//// Incorrect number of ring ids passed to the rgl_node_rays_set_ring_ids ////
 	initializeRingNodeAndIds(idsCount);
 	initializeRaysAndRaysNode(idsCount / 2);
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rayNode, rays.data(), rays.size()));
 	ASSERT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIdsNode, ringIds.data(), ringIds.size()));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(rayNode, setRingIdsNode));
 
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(setRingIdsNode), "ring ids doesn't match number of rays");
+
+	//// Changed number of rays between graph runs ////
+	// Initialize and run valid pipeline
+	initializeRingNodeAndIds(idsCount);
+	initializeRaysAndRaysNode(idsCount);
+	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rayNode, rays.data(), rays.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIdsNode, ringIds.data(), ringIds.size()));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(rayNode, setRingIdsNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(setRingIdsNode));
+
+	// Make pipeline invalid
+	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rayNode, rays.data(), rays.size() / 2));
 	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(setRingIdsNode), "ring ids doesn't match number of rays");
 }
 
