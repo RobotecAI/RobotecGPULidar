@@ -113,12 +113,15 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	} else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
 	}
-	// TODO: The magic below detects calls changing rgl_field_t* (e.g. FormatPointsNode)
-	// TODO: Such changes may require recomputing required fields in RaytraceNode.
+	// TODO: The magic below detects calls changing rgl_field_t* (e.g. FormatPointsNode) or changing rays definition
+	// TODO: Such changes may require recomputing required fields in RaytraceNode
+	// TODO: or performing validation in nodes dependent on ray count (e.g. SetRingIdsRaysNode)
 	// TODO: However, taking care of this manually is very bug prone.
 	// TODO: There are other ways to automate this, however, for now this should be enough.
-	bool fieldsModified = ((std::is_same_v<Args, std::vector<rgl_field_t>> || ...));
-	if (fieldsModified && node->hasGraphRunCtx()) {
+	bool fieldsModified = (std::is_same_v<Args, std::vector<rgl_field_t>> || ...);
+	bool raysModified = std::is_same_v<NodeType, FromMat3x4fRaysNode>;
+	bool graphValidationNeeded = fieldsModified || raysModified;
+	if (graphValidationNeeded && node->hasGraphRunCtx()) {
 		node->getGraphRunCtx()->detachAndDestroy();
 	}
 
