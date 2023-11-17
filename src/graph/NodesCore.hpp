@@ -437,11 +437,10 @@ struct GaussianNoiseDistanceNode : IPointsNodeSingleInput
 	void setParameters(float mean, float stDevBase, float stDevRisePerMeter);
 
 	// Node
-	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32}; };
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32, DISTANCE_F32}; };
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
@@ -455,5 +454,6 @@ private:
 	DeviceAsyncArray<curandStatePhilox4_32_10_t>::Ptr randomizationStates =
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
 	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
-	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = nullptr;
+	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(
+	    arrayMgr);
 };

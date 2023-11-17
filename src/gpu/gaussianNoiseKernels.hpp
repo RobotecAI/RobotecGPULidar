@@ -27,5 +27,5 @@ void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, 
                                         Field<XYZ_VEC3_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances);
 void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter,
                                  Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
-                                 const Field<XYZ_VEC3_F32>::type* inPoints, Field<XYZ_VEC3_F32>::type* outPoints,
-                                 Field<DISTANCE_F32>::type* outDistances);
+                                 const Field<XYZ_VEC3_F32>::type* inPoints, const Field<DISTANCE_F32>::type* inDistances,
+                                 Field<XYZ_VEC3_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances);
