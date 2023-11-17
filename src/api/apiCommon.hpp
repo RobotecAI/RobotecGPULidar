@@ -113,6 +113,13 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	} else {
 		node = Node::validatePtr<NodeType>(*nodeRawPtr);
 	}
+
+	// As of now, there's no guarantee that changing node parameter won't influence other nodes
+	// Therefore, before changing them, we need to ensure all nodes are idle (not running in GraphRunCtx).
+	if (node->hasGraphRunCtx()) {
+		node->getGraphRunCtx()->synchronize();
+	}
+
 	// TODO: The magic below detects calls changing rgl_field_t* (e.g. FormatPointsNode) or changing rays definition
 	// TODO: Such changes may require recomputing required fields in RaytraceNode
 	// TODO: or performing validation in nodes dependent on ray count (e.g. SetRingIdsRaysNode)
@@ -125,11 +132,6 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 		node->getGraphRunCtx()->makeDirty();
 	}
 
-	// As of now, there's no guarantee that changing node parameter won't influence other nodes
-	// Therefore, before changing them, we need to ensure all nodes are idle (not running in GraphRunCtx).
-	if (node->hasGraphRunCtx()) {
-		node->getGraphRunCtx()->synchronize();
-	}
 	node->setParameters(std::forward<Args>(args)...);
 	node->dirty = true;
 	*nodeRawPtr = node.get();
