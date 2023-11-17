@@ -122,7 +122,7 @@ void createOrUpdateNode(rgl_node_t* nodeRawPtr, Args&&... args)
 	bool raysModified = std::is_same_v<NodeType, FromMat3x4fRaysNode>;
 	bool graphValidationNeeded = fieldsModified || raysModified;
 	if (graphValidationNeeded && node->hasGraphRunCtx()) {
-		node->getGraphRunCtx()->detachAndDestroy();
+		node->getGraphRunCtx()->makeDirty();
 	}
 
 	// As of now, there's no guarantee that changing node parameter won't influence other nodes

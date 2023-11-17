@@ -63,6 +63,16 @@ struct GraphRunCtx
 	 */
 	void synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize);
 
+	/**
+	 * Makes all nodes dirty.
+	 */
+	void makeDirty()
+	{
+		for (auto&& node : nodes) {
+			node->dirty = true;
+		}
+	}
+
 	bool isThisThreadGraphThread() const
 	{
 		return maybeThread.has_value() && maybeThread->get_id() == std::this_thread::get_id();
