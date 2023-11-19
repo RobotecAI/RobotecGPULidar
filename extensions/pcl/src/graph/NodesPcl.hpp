@@ -64,7 +64,6 @@ struct VisualizePointsNode : IPointsNodeSingleInput
 	void setParameters(const char* windowName, int windowWidth, int windowHeight, bool fullscreen);
 
 	// Node
-	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Node requirements
