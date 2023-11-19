@@ -64,9 +64,9 @@ struct GraphRunCtx
 	void synchronizeNodeCPU(Node::ConstPtr nodeToSynchronize);
 
 	/**
-	 * Makes all nodes dirty.
+	 * Marks all nodes dirty.
 	 */
-	void makeDirty()
+	void markNodesDirty()
 	{
 		for (auto&& node : nodes) {
 			node->dirty = true;
