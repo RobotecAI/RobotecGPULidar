@@ -26,7 +26,6 @@ void GaussianNoiseAngularHitpointNode::setParameters(float mean, float stDev, rg
 void GaussianNoiseAngularHitpointNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
-	lookAtOriginTransform = input->getLookAtOriginTransform();
 
 	// This node will modify field DISTANCE_F32 if present.
 	// In the future: only one field should be modified.
@@ -59,8 +58,8 @@ void GaussianNoiseAngularHitpointNode::enqueueExecImpl()
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outXyzPtr = outXyz->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
-	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis, lookAtOriginTransform, randPtr,
-	                                   inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseAngularHitpoint(getStreamHandle(), pointCount, mean, stDev, rotationAxis,
+	                                   input->getLookAtOriginTransform(), randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
 }
 
 IAnyArray::ConstPtr GaussianNoiseAngularHitpointNode::getFieldData(rgl_field_t field)

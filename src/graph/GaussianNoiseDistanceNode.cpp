@@ -23,33 +23,11 @@ void GaussianNoiseDistanceNode::setParameters(float mean, float stDevBase, float
 	this->stDevRisePerMeter = stDevRisePerMeter;
 }
 
-void GaussianNoiseDistanceNode::validateImpl()
-{
-	IPointsNodeSingleInput::validateImpl();
-	lookAtOriginTransform = input->getLookAtOriginTransform();
-
-	// This node will modifty field DISTANCE_F32 if present.
-	// In the future: only one field should be modified.
-	// Other fields that depend on the main field (for now, it's XYZ_VEC3_F32) should be calculated somewhere else (e.g., in data getters nodes).
-	if (input->hasField(DISTANCE_F32)) {
-		if (outDistance == nullptr) {
-			outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr);
-		}
-	} else {
-		outDistance.reset();
-	}
-}
-
 void GaussianNoiseDistanceNode::enqueueExecImpl()
 {
 	auto pointCount = input->getPointCount();
 	outXyz->resize(pointCount, false, false);
-
-	Field<DISTANCE_F32>::type* outDistancePtr = nullptr;
-	if (outDistance != nullptr) {
-		outDistance->resize(pointCount, false, false);
-		outDistancePtr = outDistance->getWritePtr();
-	}
+	outDistance->resize(pointCount, false, false);
 
 	if (randomizationStates->getCount() < pointCount) {
 		randomizationStates->resize(pointCount, false, false);
@@ -57,10 +35,12 @@ void GaussianNoiseDistanceNode::enqueueExecImpl()
 	}
 
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	const auto* inDistancePtr = input->getFieldDataTyped<DISTANCE_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto* outXyzPtr = outXyz->getWritePtr();
+	auto* outDistancePtr = outDistance->getWritePtr();
 	auto* randPtr = randomizationStates->getWritePtr();
-	gpuAddGaussianNoiseDistance(getStreamHandle(), pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform,
-	                            randPtr, inXyzPtr, outXyzPtr, outDistancePtr);
+	gpuAddGaussianNoiseDistance(getStreamHandle(), pointCount, mean, stDevBase, stDevRisePerMeter,
+	                            input->getLookAtOriginTransform(), randPtr, inXyzPtr, inDistancePtr, outXyzPtr, outDistancePtr);
 }
 
 IAnyArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field)
@@ -68,7 +48,7 @@ IAnyArray::ConstPtr GaussianNoiseDistanceNode::getFieldData(rgl_field_t field)
 	if (field == XYZ_VEC3_F32) {
 		return outXyz;
 	}
-	if (field == DISTANCE_F32 && outDistance != nullptr) {
+	if (field == DISTANCE_F32) {
 		return outDistance;
 	}
 	return input->getFieldData(field);

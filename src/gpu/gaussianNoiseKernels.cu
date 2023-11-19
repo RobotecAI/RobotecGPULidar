@@ -48,24 +48,21 @@ __global__ void kAddGaussianNoiseAngularHitpoint(size_t pointCount, float mean, 
 
 __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter,
                                           Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
-                                          const Field<XYZ_VEC3_F32>::type* inPoints, Field<XYZ_VEC3_F32>::type* outPoints,
+                                          const Field<XYZ_VEC3_F32>::type* inPoints,
+                                          const Field<DISTANCE_F32>::type* inDistances, Field<XYZ_VEC3_F32>::type* outPoints,
                                           Field<DISTANCE_F32>::type* outDistances)
 {
 	LIMIT(pointCount);
 
-	Field<XYZ_VEC3_F32>::type originPoint = lookAtOriginTransform * inPoints[tid];
-
-	float distance = originPoint.length();
-	float distanceInducedStDev = distance * stDevRisePerMeter;
+	float distanceInducedStDev = inDistances[tid] * stDevRisePerMeter;
 	float totalStDev = distanceInducedStDev + stDevBase;
-
 	float distanceError = mean + curand_normal(&randomStates[tid]) * totalStDev;
 
-	if (outDistances != nullptr) {
-		outDistances[tid] = distance + distanceError;
-	}
+	Field<XYZ_VEC3_F32>::type pointInRayOriginTransform = lookAtOriginTransform * inPoints[tid];
 
-	outPoints[tid] = inPoints[tid] + inPoints[tid].normalize() * distanceError;
+	outPoints[tid] = lookAtOriginTransform.inverse() *
+	                 (pointInRayOriginTransform + pointInRayOriginTransform.normalize() * distanceError);
+	outDistances[tid] = inDistances[tid] + distanceError;
 }
 
 void gpuAddGaussianNoiseAngularRay(cudaStream_t stream, size_t rayCount, float mean, float stDev, rgl_axis_t rotationAxis,
@@ -87,9 +84,9 @@ void gpuAddGaussianNoiseAngularHitpoint(cudaStream_t stream, size_t pointCount, 
 
 void gpuAddGaussianNoiseDistance(cudaStream_t stream, size_t pointCount, float mean, float stDevBase, float stDevRisePerMeter,
                                  Mat3x4f lookAtOriginTransform, curandStatePhilox4_32_10_t* randomStates,
-                                 const Field<XYZ_VEC3_F32>::type* inPoints, Field<XYZ_VEC3_F32>::type* outPoints,
-                                 Field<DISTANCE_F32>::type* outDistances)
+                                 const Field<XYZ_VEC3_F32>::type* inPoints, const Field<DISTANCE_F32>::type* inDistances,
+                                 Field<XYZ_VEC3_F32>::type* outPoints, Field<DISTANCE_F32>::type* outDistances)
 {
 	run(kAddGaussianNoiseDistance, stream, pointCount, mean, stDevBase, stDevRisePerMeter, lookAtOriginTransform, randomStates,
-	    inPoints, outPoints, outDistances);
+	    inPoints, inDistances, outPoints, outDistances);
 }
