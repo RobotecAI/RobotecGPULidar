@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.16.2] 19 November 2023
+
+### Fixed
+
+- Fixed Gaussian noise nodes to always perform in rays coordinates
+- Fixed distance Gaussian noise to apply error based on distance traveled by the ray (not distance to rays coordinates origin)
+- Fixed graph validation when rays definition is modified
+
 ## [0.16.1] 13 November 2023
 
 ### Fixed
@@ -28,6 +36,8 @@
 ### Known Issues
 
 - Modifying fields between graph's runs (consisted of Compact or Downsample nodes) may cause a segmentation fault. Fixed in v0.16.1.
+- Gaussian noise is not performed in rays coordinates. Fixed in v0.16.2.
+- Modifying rays definition between graph's runs may allow computations on invalid pipeline. Fixed in v0.16.2.
 
 ## [0.15.0] 23 September 2023
 
@@ -165,6 +175,10 @@
 ### Known Issues
 - `rclcpp` (`ROS2` package) is always initialized by `RGL`. It could cause a double initialization if the client's code also did it before `RGL`.
   - Fixed in v0.14.1
+- Distance Gaussian noise:
+  - Noise is added in wrong coordinate system.
+  - Error is calculated based on distance to rays coordinates origin (not distance traveled by the ray)
+  - All fixed in v0.16.2
 
 ## [0.12.0] 8 March 2023
 
