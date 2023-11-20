@@ -181,19 +181,19 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	Vec3f velocity{NAN};
-	Vec3f transformDisplacement = {0, 0, 0};
-	Vec3f skinningDisplacement = {0, 0, 0};
+	Vec3f displacementFromTransformChange = {0, 0, 0};
+	Vec3f displacementFromSkinning = {0, 0, 0};
 	if (ctx.sceneDeltaTime > 0) {
 		if (entityData.hasPrevFrameLocalToWorld) {
 			// Computing hit point velocity in simple words:
 			// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
 			// Think of it as a marker dot on the Entity.
 			// Having access to Entity's previous pose, we can compute (entityData.prevFrameLocalToWorld * hitObject),
-			// where the marker dot would be in the previous raytracing frame (displacementOriginWorld).
-			// Then, we can connect marker dot in previous raytracing frame with its current position and obtain transformDisplacement vector
-			// Dividing transformDisplacement by time elapsed from the previous raytracing frame yields velocity vector.
-			Vec3f displacementOriginWorld = entityData.prevFrameLocalToWorld * hitObject;
-			transformDisplacement = hitWorld - displacementOriginWorld;
+			// where the marker dot would be in the previous raytracing frame (displacementVectorOrigin).
+			// Then, we can connect marker dot in previous raytracing frame with its current position and obtain displacementFromTransformChange vector
+			// Dividing displacementFromTransformChange by time elapsed from the previous raytracing frame yields velocity vector.
+			Vec3f displacementVectorOrigin = entityData.prevFrameLocalToWorld * hitObject;
+			displacementFromTransformChange = hitWorld - displacementVectorOrigin;
 		}
 
 		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
@@ -204,11 +204,10 @@ extern "C" __global__ void __closesthit__()
 			const Vec3f& vA = entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
 			const Vec3f& vB = entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
 			const Vec3f& vC = entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
-
-			skinningDisplacement = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
+			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
 		}
 
-		velocity = (transformDisplacement + skinningDisplacement) / static_cast<float>(ctx.sceneDeltaTime);
+		velocity = (displacementFromTransformChange + displacementFromSkinning) / static_cast<float>(ctx.sceneDeltaTime);
 	}
 
 	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);

@@ -62,7 +62,7 @@ struct Entity : APIObject<Entity>
 	 * NOTE: It is assumed that (current) transform is always valid for the present scene time (even if it was set in the past).
 	 * @return Mat3x4f of the local-to-world transform from the previous frame if available.
 	 */
-	std::optional<Mat3x4f> getPreviousFrameTransform() const;
+	std::optional<Mat3x4f> getPreviousFrameLocalToWorldTransform() const;
 
 private:
 	/**

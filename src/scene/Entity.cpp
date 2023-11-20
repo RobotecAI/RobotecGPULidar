@@ -29,7 +29,7 @@ void Entity::setTransform(Mat3x4f newTransform)
 {
 	formerTransform = transform;
 	transform = {newTransform, Scene::instance().getTime()};
-	Scene::instance().requestASRebuild(); // Current transform
+	Scene::instance().requestASRebuild();  // Current transform
 	Scene::instance().requestSBTRebuild(); // Previous transform
 }
 
@@ -50,7 +50,7 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	Scene::instance().requestSBTRebuild();
 }
 
-std::optional<Mat3x4f> Entity::getPreviousFrameTransform() const
+std::optional<Mat3x4f> Entity::getPreviousFrameLocalToWorldTransform() const
 {
 	// At the moment of writing, setting Scene time (rgl_scene_set_time) is optional.
 	// Making it mandatory (e.g. refusing to raytrace without time set) would simplify the code below.
