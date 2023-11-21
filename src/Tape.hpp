@@ -181,6 +181,16 @@ public:
 
 struct TapePlayer
 {
+	struct TapeState
+	{
+		std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
+		std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
+		std::unordered_map<TapeAPIObjectID, rgl_texture_t> textures;
+		std::unordered_map<TapeAPIObjectID, rgl_node_t> nodes;
+		uint8_t* fileMmap{};
+		size_t mmapSize{};
+	};
+
 	using APICallIdx = int32_t;
 	explicit TapePlayer(const char* path);
 
@@ -195,7 +205,7 @@ struct TapePlayer
 
 	void rewindTo(APICallIdx nextCall = 0);
 
-	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return tapeNodes.at(key); }
+	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return tapeState.nodes.at(key); }
 
 	template<typename T>
 	T getCallArg(APICallIdx idx, int arg)
@@ -209,70 +219,65 @@ private:
 	YAML::Node yamlRoot{};
 	YAML::Node yamlRecording{};
 	APICallIdx nextCall{};
-	uint8_t* fileMmap{};
-	size_t mmapSize{};
 
-	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> tapeMeshes;
-	std::unordered_map<TapeAPIObjectID, rgl_entity_t> tapeEntities;
-	std::unordered_map<TapeAPIObjectID, rgl_texture_t> tapeTextures;
-	std::unordered_map<TapeAPIObjectID, rgl_node_t> tapeNodes;
+	TapeState tapeState;
 
-	std::map<std::string, std::function<void(const YAML::Node&)>> tapeFunctions;
+	std::map<std::string, std::function<void(const YAML::Node&, TapeState&)>> tapeFunctions;
 
 private:
 	void mmapInit(const char* path);
 
-	void tape_get_version_info(const YAML::Node& yamlNode);
-	void tape_get_extension_info(const YAML::Node& yamlNode);
-	void tape_configure_logging(const YAML::Node& yamlNode);
-	void tape_cleanup(const YAML::Node& yamlNode);
-	void tape_mesh_create(const YAML::Node& yamlNode);
-	void tape_mesh_destroy(const YAML::Node& yamlNode);
-	void tape_mesh_update_vertices(const YAML::Node& yamlNode);
-	void tape_mesh_set_texture_coords(const YAML::Node& yamlNode);
-	void tape_texture_create(const YAML::Node& yamlNode);
-	void tape_texture_destroy(const YAML::Node& yamlNode);
-	void tape_entity_create(const YAML::Node& yamlNode);
-	void tape_entity_destroy(const YAML::Node& yamlNode);
-	void tape_entity_set_pose(const YAML::Node& yamlNode);
-	void tape_entity_set_id(const YAML::Node& yamlNode);
-	void tape_entity_set_intensity_texture(const YAML::Node& yamlNode);
-	void tape_scene_set_time(const YAML::Node& yamlNode);
-	void tape_graph_run(const YAML::Node& yamlNode);
-	void tape_graph_destroy(const YAML::Node& yamlNode);
-	void tape_graph_get_result_size(const YAML::Node& yamlNode);
-	void tape_graph_get_result_data(const YAML::Node& yamlNode);
-	void tape_graph_node_add_child(const YAML::Node& yamlNode);
-	void tape_graph_node_remove_child(const YAML::Node& yamlNode);
-	void tape_graph_node_set_priority(const YAML::Node& yamlNode);
-	void tape_graph_node_get_priority(const YAML::Node& yamlNode);
-	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode);
-	void tape_node_rays_set_range(const YAML::Node& yamlNode);
-	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode);
-	void tape_node_rays_set_time_offsets(const YAML::Node& yamlNode);
-	void tape_node_rays_transform(const YAML::Node& yamlNode);
-	void tape_node_points_transform(const YAML::Node& yamlNode);
-	void tape_node_raytrace(const YAML::Node& yamlNode);
-	void tape_node_raytrace_with_distortion(const YAML::Node& yamlNode);
-	void tape_node_points_format(const YAML::Node& yamlNode);
-	void tape_node_points_yield(const YAML::Node& yamlNode);
-	void tape_node_points_compact(const YAML::Node& yamlNode);
-	void tape_node_points_spatial_merge(const YAML::Node& yamlNode);
-	void tape_node_points_temporal_merge(const YAML::Node& yamlNode);
-	void tape_node_points_from_array(const YAML::Node& yamlNode);
-	void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode);
-	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode);
-	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode);
+	void tape_get_version_info(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_get_extension_info(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_configure_logging(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_cleanup(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_mesh_create(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_mesh_destroy(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_mesh_update_vertices(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_mesh_set_texture_coords(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_texture_create(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_texture_destroy(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_entity_create(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_entity_destroy(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_entity_set_pose(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_entity_set_id(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_entity_set_intensity_texture(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_scene_set_time(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_run(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_destroy(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_get_result_size(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_get_result_data(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_node_add_child(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_node_remove_child(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_node_set_priority(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_graph_node_get_priority(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_rays_set_range(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_rays_set_ring_ids(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_rays_set_time_offsets(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_rays_transform(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_transform(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_raytrace(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_raytrace_with_distortion(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_format(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_yield(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_compact(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_spatial_merge(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_temporal_merge(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_from_array(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, TapeState& tapeState);
 
 #if RGL_BUILD_PCL_EXTENSION
-	void tape_graph_write_pcd_file(const YAML::Node& yamlNode);
-	void tape_node_points_downsample(const YAML::Node& yamlNode);
-	void tape_node_points_visualize(const YAML::Node& yamlNode);
+	void tape_graph_write_pcd_file(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_downsample(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_visualize(const YAML::Node& yamlNode, TapeState& tapeState);
 #endif
 
 #if RGL_BUILD_ROS2_EXTENSION
-	void tape_node_points_ros2_publish(const YAML::Node& yamlNode);
-	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode);
+	void tape_node_points_ros2_publish(const YAML::Node& yamlNode, TapeState& tapeState);
+	void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode, TapeState& tapeState);
 #endif
 };
 
