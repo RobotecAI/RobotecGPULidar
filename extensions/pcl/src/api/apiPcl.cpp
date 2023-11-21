@@ -22,6 +22,7 @@
 #include <api/apiCommon.hpp>
 #include <graph/NodesCore.hpp>
 #include <graph/NodesPcl.hpp>
+#include <TapePcl.hpp>
 
 #include <RGLExceptions.hpp>
 #include <RGLFields.hpp>
@@ -72,7 +73,7 @@ RGL_API rgl_status_t rgl_graph_write_pcd_file(rgl_node_t node, const char* file_
 	return status;
 }
 
-void TapePlayer::tape_graph_write_pcd_file(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapePcl::tape_graph_write_pcd_file(const YAML::Node& yamlNode, TapeState& tapeState)
 {
 	rgl_graph_write_pcd_file(tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<std::string>().c_str());
 }
@@ -89,7 +90,7 @@ RGL_API rgl_status_t rgl_node_points_downsample(rgl_node_t* node, float leaf_siz
 	return status;
 }
 
-void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapePcl::tape_node_points_downsample(const YAML::Node& yamlNode, TapeState& tapeState)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
@@ -114,7 +115,7 @@ RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* win
 	return status;
 }
 
-void TapePlayer::tape_node_points_visualize(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapePcl::tape_node_points_visualize(const YAML::Node& yamlNode, TapeState& tapeState)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;

@@ -17,6 +17,7 @@
 #include <rgl/api/extensions/ros2.h>
 
 #include <api/apiCommon.hpp>
+#include <TapeRos2.hpp>
 
 #include <graph/NodesRos2.hpp>
 
@@ -50,7 +51,7 @@ RGL_API rgl_status_t rgl_node_points_ros2_publish(rgl_node_t* node, const char* 
 	return status;
 }
 
-void TapePlayer::tape_node_points_ros2_publish(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeRos2::tape_node_points_ros2_publish(const YAML::Node& yamlNode, TapeState& tapeState)
 {
 	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes[nodeId] : nullptr;
@@ -80,7 +81,7 @@ RGL_API rgl_status_t rgl_node_points_ros2_publish_with_qos(rgl_node_t* node, con
 	return status;
 }
 
-void TapePlayer::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeRos2::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode, TapeState& tapeState)
 {
 	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes[nodeId] : nullptr;

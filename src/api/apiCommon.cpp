@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <api/apiCommon.hpp>
+#include <Tape.hpp>
 
 rgl_status_t lastStatusCode = RGL_SUCCESS;
 std::optional<std::string> lastStatusString = std::nullopt;
