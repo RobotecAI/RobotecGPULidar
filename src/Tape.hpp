@@ -14,7 +14,7 @@
 
 #pragma once
 
-// Hack to complete compilation on Windows. In runtime it is never used.
+// Hack to complete compilation on Windows. In runtime, it is never used.
 #ifdef _WIN32
 #include <io.h>
 #define PROT_READ 1
@@ -42,7 +42,6 @@ static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_
 #include <Logger.hpp>
 #include <RGLExceptions.hpp>
 #include <rgl/api/core.h>
-#include <rgl/api/extensions/ros2.h>
 
 #define BIN_EXTENSION ".bin"
 #define YAML_EXTENSION ".yaml"
@@ -96,9 +95,9 @@ class TapeRecorder
 			FWRITE(zeros, sizeof(uint8_t), bytesToAdd, fileBin);
 		}
 
-		size_t outBinOffest = currentBinOffset;
+		size_t outBinOffset = currentBinOffset;
 		currentBinOffset += elemSize * elemCount + bytesToAdd;
-		return outBinOffest;
+		return outBinOffset;
 	}
 
 	template<typename T, typename... Args>
@@ -113,10 +112,18 @@ class TapeRecorder
 	}
 
 	//// value to yaml converters
+	// Generic converter for non-enum types
 	template<typename T>
-	T valueToYaml(T value)
+	std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value)
 	{
 		return value;
+	}
+
+	// Generic converter for enum types
+	template<typename T>
+	std::enable_if_t<std::is_enum_v<T>, std::underlying_type_t<T>> valueToYaml(T value)
+	{
+		return static_cast<std::underlying_type_t<T>>(value);
 	}
 
 	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
@@ -137,14 +144,6 @@ class TapeRecorder
 	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
 
 	int valueToYaml(int32_t* value) { return *value; }
-	int valueToYaml(rgl_field_t value) { return (int) value; }
-	int valueToYaml(rgl_log_level_t value) { return (int) value; }
-	int valueToYaml(rgl_axis_t value) { return (int) value; }
-	int32_t valueToYaml(rgl_extension_t value) { return static_cast<int32_t>(value); }
-	int valueToYaml(rgl_qos_policy_reliability_t value) { return (int) value; }
-	int valueToYaml(rgl_qos_policy_durability_t value) { return (int) value; }
-	int valueToYaml(rgl_qos_policy_history_t value) { return (int) value; }
-
 	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
 	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
 
