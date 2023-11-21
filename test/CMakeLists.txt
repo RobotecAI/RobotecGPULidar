@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
     src/apiReadmeExample.cpp
-    src/apiInfoMethodsTest.cpp
+    src/apiGeneralCallsTest.cpp
     src/asyncStressTest.cpp
     src/DistanceFieldTest.cpp
     src/externalLibraryTest.cpp
@@ -10,7 +10,6 @@ set(RGL_TEST_FILES
     src/gaussianPoseIndependentTest.cpp
     src/testMat3x4f.cpp
     src/VelocityDistortionTest.cpp
-    src/features/loggingTests.cpp
     src/graph/addChildTest.cpp
     src/graph/graphCaseTest.cpp
     src/graph/setPriorityTest.cpp
@@ -43,7 +42,6 @@ set(RGL_TEST_FILES
     src/synchronization/testKernel.cu
 )
 
-
 # Only Linux
 if ((NOT WIN32))
 #    list(APPEND RGL_TEST_FILES
@@ -55,7 +53,6 @@ endif()
 # AutoTape interferes with tape tests (e.g. double rgl_tape_record_begin()) which is non-trivial to fix.
 if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     list(APPEND RGL_TEST_FILES
-        src/tapeSurfaceTest.cpp
         src/features/tapeTests.cpp
     )
 endif()
