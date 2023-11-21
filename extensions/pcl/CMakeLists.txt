@@ -12,5 +12,6 @@ target_link_directories(RobotecGPULidar PRIVATE ${PCL_LIBRARY_DIRS})
 target_link_libraries(RobotecGPULidar PRIVATE ${PCL_LIBRARIES})
 
 target_include_directories(RobotecGPULidar
+    PUBLIC include
     PRIVATE src
 )
