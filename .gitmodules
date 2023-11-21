@@ -2,4 +2,3 @@
 	path = extensions/udp
 	url = git@github.com:RobotecAI/RGL-extension-udp.git
 	branch = feature/init-extension
-	fetchRecurseSubmodules = true
