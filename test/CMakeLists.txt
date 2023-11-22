@@ -11,7 +11,12 @@ set(RGL_TEST_FILES
     src/testMat3x4f.cpp
     src/VelocityDistortionTest.cpp
     src/graph/addChildTest.cpp
-    src/graph/graphCaseTest.cpp
+    src/graph/fullLinearTest.cpp
+    src/graph/getResultTest.cpp
+    src/graph/nodeInputImpactTest.cpp
+    src/graph/nodeRemovalTest.cpp
+    src/graph/spatialMergeTest.cpp
+    src/graph/temporalMergeTest.cpp
     src/graph/setPriorityTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
@@ -28,6 +33,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/TransformRaysNodeTest.cpp
+    src/graph/nodes/VisualizePointsNodeTest.cpp
     src/graph/nodes/YieldPointsNodeTest.cpp
     src/helpers/pointsTest.cpp
     src/memory/arrayChangeStreamTest.cpp
