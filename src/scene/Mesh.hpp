@@ -27,6 +27,7 @@
 
 #include <filesystem>
 #include <memory/Array.hpp>
+#include <Time.hpp>
 
 /**
  * Represents mesh data (at the moment vertices and indices) stored on the GPU.
@@ -42,6 +43,13 @@ struct Mesh : APIObject<Mesh>
 	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
 	 */
 	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
+
+	/**
+	 * Returns an array describing displacement of each vertex between current and previous state, due to skinning.
+	 * If vertices were not skinned in the previous frame, returns NULL (equivalent to an array of zero vectors).
+	 * @return Pointer do GPU-accessible array, same size as vertexCount. May be NULL.
+	 */
+	const Vec3f* getSkinningDisplacementSinceLastFrame() const;
 
 	/**
 	 * Sets textures coordinates to the mesh. Vertex count and texture coordinates count must be equal.
@@ -67,8 +75,11 @@ private:
 	bool gasNeedsUpdate;
 	std::optional<OptixTraversableHandle> cachedGAS;
 
+	std::optional<Time> verticesCurrentUpdateTime;
+	std::optional<Time> verticesFormerUpdateTime;
 	DeviceSyncArray<Vec3f>::Ptr dVertices = DeviceSyncArray<Vec3f>::create();
 	DeviceSyncArray<Vec3i>::Ptr dIndices = DeviceSyncArray<Vec3i>::create();
+	DeviceSyncArray<Vec3f>::Ptr dVertexSkinningDisplacement = DeviceSyncArray<Vec3f>::create();
 	std::optional<DeviceSyncArray<Vec2f>::Ptr> dTextureCoords;
 
 	// Shared between buildGAS() and updateGAS()

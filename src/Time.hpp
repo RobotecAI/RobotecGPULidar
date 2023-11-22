@@ -22,6 +22,9 @@
 
 struct Time
 {
+	friend Time operator-(const Time& lhs, const Time& rhs);
+	std::strong_ordering operator<=>(const Time& rhs) const = default;
+
 	static Time zero() { return Time(0); }
 	static Time seconds(double seconds) { return Time(static_cast<uint64_t>(seconds * 1.0e9)); }
 	static Time nanoseconds(uint64_t nanoseconds) { return Time(nanoseconds); }
@@ -30,7 +33,7 @@ struct Time
 	HostDevFn uint64_t asNanoseconds() const { return timeNs; }
 
 #if RGL_BUILD_ROS2_EXTENSION
-	builtin_interfaces::msg::Time asRos2Msg()
+	builtin_interfaces::msg::Time asRos2Msg() const
 	{
 		auto msg = builtin_interfaces::msg::Time();
 		msg.sec = timeNs / static_cast<uint64_t>(1e9);
@@ -44,3 +47,5 @@ private:
 
 	uint64_t timeNs;
 };
+
+inline Time operator-(const Time& lhs, const Time& rhs) { return Time::nanoseconds(lhs.timeNs - rhs.timeNs); }

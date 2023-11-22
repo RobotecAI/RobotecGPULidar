@@ -21,14 +21,13 @@ using namespace std::chrono_literals;
 #include "helpers/sceneHelpers.hpp"
 TEST(EntityVelocity, Interactive)
 {
-	GTEST_SKIP();
+	GTEST_SKIP(); // Comment to run the test
 	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
 
 	// Published fields
 	std::vector<rgl_field_t> fields = {
-	    RGL_FIELD_XYZ_VEC3_F32,
-	    //	    RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
+	    RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 	    //	    RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32,
 	    //	    RGL_FIELD_RADIAL_SPEED_F32
 	};
@@ -47,72 +46,97 @@ TEST(EntityVelocity, Interactive)
 	// Helper struct
 	struct DynamicCube
 	{
-		DynamicCube(Mat3x4f startPose) : startPose(startPose)
+		DynamicCube(std::function<void(DynamicCube&, float)> updateFn)
 		{
-			auto startPoseRGL = startPose.toRGL();
 			EXPECT_RGL_SUCCESS(
 			    rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
 			EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &startPoseRGL));
-		}
-		void setUpdate(std::function<void(DynamicCube&, double)> fn)
-		{
-			update = [=, this](double t) { fn(*this, t); };
+			update = [=, this](float t) { updateFn(*this, t); };
 		}
 
-		Mat3x4f startPose;
 		rgl_mesh_t mesh{};
 		rgl_entity_t entity{};
 		std::function<void(double)> update;
 	};
 
+
 	// Setup scene
-	constexpr float CUBE_DIST = 5.0f;
-	DynamicCube translatingCube{Mat3x4f::translation({CUBE_DIST, 0, 0})};
-	DynamicCube rotatingCube{Mat3x4f::translation(-CUBE_DIST, 0, 0)};
-	DynamicCube scalingCube{Mat3x4f::translation(0, CUBE_DIST, 0)};
-	DynamicCube morphingCube{Mat3x4f::translation(0, -CUBE_DIST, 0)};
+	constexpr float DIST = 5.0f;
 
-	// Setup behavior
-	translatingCube.setUpdate([](DynamicCube& cube, double t) {
-		auto change = Mat3x4f::translation(Vec3f{std::sin(t), 0, 0});
-		auto newPose = (cube.startPose * change).toRGL();
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &newPose));
+	// +X, moves +/- 1 from initial position
+	DynamicCube translatingCube([](DynamicCube& cube, float t) {
+		auto pose = Mat3x4f::translation(Vec3f{DIST + std::sin(t), 0, 0}).toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
 	});
 
-	rotatingCube.setUpdate([](DynamicCube& cube, double t) {
-		auto change = Mat3x4f::rotationRad(0, 0, t);
-		auto newPose = (cube.startPose * change).toRGL();
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &newPose));
+	// -X, rotates around Z, ccw
+	DynamicCube rotatingCube([](DynamicCube& cube, float t) {
+		auto pose = (Mat3x4f::translation(-DIST, 0, 0) * Mat3x4f::rotationRad(0, 0, t)).toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
 	});
 
-	scalingCube.setUpdate([](DynamicCube& cube, double t) {
-		auto ds = 1.0f + sin(t) / 2.0f;
-		auto change = Mat3x4f::scale(ds, ds, ds);
-		auto newPose = (cube.startPose * change).toRGL();
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &newPose));
+	// +Y, scales between 0.5 and 1.5
+	DynamicCube scalingCube([](DynamicCube& cube, float t) {
+		float s = 1.0f + std::sin(t) / 2.0f;
+		auto pose = (Mat3x4f::translation(0, DIST, 0) * Mat3x4f::scale(s, s, s)).toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
 	});
 
-	morphingCube.setUpdate([](DynamicCube& cube, double t) {
+	// -Y, oscillates between cube and pyramid by collapsing frontal face into cube's center point
+	DynamicCube morphingCube([](DynamicCube& cube, float t) {
+		auto tt = t / 2.0f;
+		auto pose = Mat3x4f::translation(Vec3f{0, -DIST, 0}).toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+
 		rgl_vec3f changed[ARRAY_SIZE(cubeVertices)];
 		for (int i = 0; i < ARRAY_SIZE(cubeVertices); ++i) {
 			changed[i] = cubeVertices[i];
 		}
-		// Oscillate between cube and pyramid by collapsing frontal face into cube's center point
-		changed[2].value[0] += sin(t);
-		changed[2].value[1] += sin(t);
-		changed[2].value[2] -= sin(t);
-		changed[3].value[0] -= sin(t);
-		changed[3].value[1] += sin(t);
-		changed[3].value[2] -= sin(t);
-		changed[6].value[0] += sin(t);
-		changed[6].value[1] += sin(t);
-		changed[6].value[2] += sin(t);
-		changed[7].value[0] -= sin(t);
-		changed[7].value[1] += sin(t);
-		changed[7].value[2] += sin(t);
+
+		changed[2].value[0] += -abs(sin(tt));
+		changed[2].value[1] += -abs(sin(tt));
+		changed[2].value[2] -= -abs(sin(tt));
+		changed[3].value[0] -= -abs(sin(tt));
+		changed[3].value[1] += -abs(sin(tt));
+		changed[3].value[2] -= -abs(sin(tt));
+		changed[6].value[0] += -abs(sin(tt));
+		changed[6].value[1] += -abs(sin(tt));
+		changed[6].value[2] += -abs(sin(tt));
+		changed[7].value[0] -= -abs(sin(tt));
+		changed[7].value[1] += -abs(sin(tt));
+		changed[7].value[2] += -abs(sin(tt));
 		EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(cube.mesh, changed, ARRAY_SIZE(changed)));
 	});
+
+	// -Z; moved around a circle on XY plane, rotating around Z, so that it always points to the center
+	DynamicCube rotateTranslateCube([](DynamicCube& cube, float t) {
+		constexpr float R = 1.0f;
+		constexpr float s = 0.33f;
+		auto translation = Mat3x4f::translation(R * std::sin(t), -R * std::cos(t), -CUBE_HALF_EDGE);
+		auto rotation = Mat3x4f::rotationRad(0, 0, t);
+		auto scale = Mat3x4f::scale(s, s, s);
+		auto pose = (translation * rotation * scale).toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+	});
+
+	// +Z, translated +-Z and morphed (-Z wall oscillates along Z), effects should cancel out
+	DynamicCube morphTranslateCube([](DynamicCube& cube, float t) {
+		constexpr float S = 2.0f; // scale
+		auto pose = (Mat3x4f::translation({-DIST, -DIST, DIST + -sin(t)}) * Mat3x4f::scale(S, S, S)).toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+
+		// Note: vertices are changed in local space, so they are not affected by the entity's pose
+		rgl_vec3f changed[ARRAY_SIZE(cubeVertices)];
+		for (int i = 0; i < ARRAY_SIZE(cubeVertices); ++i) {
+			changed[i] = cubeVertices[i];
+		}
+		changed[0].value[2] += sin(t) / S;
+		changed[1].value[2] += sin(t) / S;
+		changed[2].value[2] += sin(t) / S;
+		changed[3].value[2] += sin(t) / S;
+		EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(cube.mesh, changed, ARRAY_SIZE(changed)));
+	});
+
 
 	// Main loop
 	uint64_t frameId = 0;
@@ -120,13 +144,15 @@ TEST(EntityVelocity, Interactive)
 	while (true) {
 		auto currentTime = frameId * nsPerFrame;
 		auto currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
+		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
 
 		translatingCube.update(currentTimeSeconds);
 		rotatingCube.update(currentTimeSeconds);
 		scalingCube.update(currentTimeSeconds);
 		morphingCube.update(currentTimeSeconds);
+		rotateTranslateCube.update(currentTimeSeconds);
+		morphTranslateCube.update(currentTimeSeconds);
 
-		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
 		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 		std::this_thread::sleep_for(10ms);
 		frameId += 1;

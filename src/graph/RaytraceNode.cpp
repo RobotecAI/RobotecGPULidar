@@ -94,6 +94,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .scene = sceneAS,
 	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
+	    .sceneDeltaTime = static_cast<float>(Scene::instance().getDeltaTime().value_or(Time::zero()).asSeconds()),
 	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
@@ -102,7 +103,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .intensity = getPtrTo<INTENSITY_F32>(),
 	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
 	    .entityId = getPtrTo<ENTITY_ID_I32>(),
-	};
+	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>()};
 
 	requestCtxDev->copyFrom(requestCtxHst);
 	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();

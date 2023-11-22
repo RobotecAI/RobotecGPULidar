@@ -133,6 +133,15 @@ struct Mat3x4f
 		return {rc[0][0], rc[0][1], rc[0][2], 0.0f, rc[1][0], rc[1][1], rc[1][2], 0.0f, rc[2][0], rc[2][1], rc[2][2], 0.0f};
 	}
 
+	HostDevFn inline Vec3f scaleVec() const
+	{
+		return {
+		    sqrtf(rc[0][0] * rc[0][0] + rc[1][0] * rc[1][0] + rc[2][0] * rc[2][0]),
+		    sqrtf(rc[0][1] * rc[0][1] + rc[1][1] * rc[1][1] + rc[2][1] * rc[2][1]),
+		    sqrtf(rc[0][2] * rc[0][2] + rc[1][2] * rc[1][2] + rc[2][2] * rc[2][2]),
+		};
+	}
+
 	// Converts to Matrix 4x4 and performs inverse operation.
 	// If determinant is zero (cannot inverse) it returns Matrix filled with zeros.
 	HostDevFn inline Mat3x4f inverse() const noexcept

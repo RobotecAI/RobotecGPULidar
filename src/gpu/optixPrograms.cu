@@ -55,7 +55,7 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float distance = NON_HIT_VALUE, float intensity = 0,
-                                              const int objectID = RGL_ENTITY_INVALID_ID)
+                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& velocity = Vec3f{NAN})
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -82,6 +82,9 @@ __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float 
 	}
 	if (ctx.entityId != nullptr) {
 		ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
+	}
+	if (ctx.pointAbsVelocity != nullptr) {
+		ctx.pointAbsVelocity[rayIdx] = velocity;
 	}
 }
 
@@ -120,21 +123,21 @@ extern "C" __global__ void __raygen__()
 
 extern "C" __global__ void __closesthit__()
 {
-	const TriangleMeshSBTData& sbtData = *(const TriangleMeshSBTData*) optixGetSbtDataPointer();
+	const EntitySBTData& entityData = *(const EntitySBTData*) optixGetSbtDataPointer();
 
 	const int primID = optixGetPrimitiveIndex();
-	assert(primID < sbtData.indexCount);
-	const Vec3i index = sbtData.index[primID];
+	assert(primID < entityData.indexCount);
+	const Vec3i triangleIndices = entityData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
 	const float v = optixGetTriangleBarycentrics().y;
 
-	assert(index.x() < sbtData.vertexCount);
-	assert(index.y() < sbtData.vertexCount);
-	assert(index.z() < sbtData.vertexCount);
+	assert(triangleIndices.x() < entityData.vertexCount);
+	assert(triangleIndices.y() < entityData.vertexCount);
+	assert(triangleIndices.z() < entityData.vertexCount);
 
-	const Vec3f& A = sbtData.vertex[index.x()];
-	const Vec3f& B = sbtData.vertex[index.y()];
-	const Vec3f& C = sbtData.vertex[index.z()];
+	const Vec3f& A = entityData.vertex[triangleIndices.x()];
+	const Vec3f& B = entityData.vertex[triangleIndices.y()];
+	const Vec3f& C = entityData.vertex[triangleIndices.z()];
 
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
@@ -163,21 +166,51 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	float intensity = 0;
-	if (sbtData.textureCoords != nullptr && sbtData.texture != 0) {
-		assert(index.x() < sbtData.textureCoordsCount);
-		assert(index.y() < sbtData.textureCoordsCount);
-		assert(index.z() < sbtData.textureCoordsCount);
+	if (entityData.textureCoords != nullptr && entityData.texture != 0) {
+		assert(triangleIndices.x() < entityData.textureCoordsCount);
+		assert(triangleIndices.y() < entityData.textureCoordsCount);
+		assert(triangleIndices.z() < entityData.textureCoordsCount);
 
-		const Vec2f& uvA = sbtData.textureCoords[index.x()];
-		const Vec2f& uvB = sbtData.textureCoords[index.y()];
-		const Vec2f& uvC = sbtData.textureCoords[index.z()];
+		const Vec2f& uvA = entityData.textureCoords[triangleIndices.x()];
+		const Vec2f& uvB = entityData.textureCoords[triangleIndices.y()];
+		const Vec2f& uvC = entityData.textureCoords[triangleIndices.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		intensity = tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
+		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
 
-	saveRayResult<true>(&hitWorld, distance, intensity, objectID);
+	Vec3f velocity{NAN};
+	Vec3f displacementFromTransformChange = {0, 0, 0};
+	Vec3f displacementFromSkinning = {0, 0, 0};
+	if (ctx.sceneDeltaTime > 0) {
+		if (entityData.hasPrevFrameLocalToWorld) {
+			// Computing hit point velocity in simple words:
+			// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
+			// Think of it as a marker dot on the Entity.
+			// Having access to Entity's previous pose, we can compute (entityData.prevFrameLocalToWorld * hitObject),
+			// where the marker dot would be in the previous raytracing frame (displacementVectorOrigin).
+			// Then, we can connect marker dot in previous raytracing frame with its current position and obtain displacementFromTransformChange vector
+			// Dividing displacementFromTransformChange by time elapsed from the previous raytracing frame yields velocity vector.
+			Vec3f displacementVectorOrigin = entityData.prevFrameLocalToWorld * hitObject;
+			displacementFromTransformChange = hitWorld - displacementVectorOrigin;
+		}
+
+		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
+		bool wasSkinned = entityData.vertexDisplacementSincePrevFrame != nullptr;
+		if (wasSkinned) {
+			Mat3x4f objectToWorld;
+			optixGetObjectToWorldTransformMatrix(reinterpret_cast<float*>(objectToWorld.rc));
+			const Vec3f& vA = entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
+			const Vec3f& vB = entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
+			const Vec3f& vC = entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
+			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
+		}
+
+		velocity = (displacementFromTransformChange + displacementFromSkinning) / static_cast<float>(ctx.sceneDeltaTime);
+	}
+
+	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);
 }
 
 extern "C" __global__ void __miss__() { saveRayResult<false>(); }
