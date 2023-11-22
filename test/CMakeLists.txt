@@ -40,7 +40,7 @@ set(RGL_TEST_FILES
     src/scene/entityAPITest.cpp
     src/scene/entityIdTest.cpp
     src/scene/entityVelocityTest.cpp
-    src/scene/meshTest.cpp
+    src/scene/meshAPITest.cpp
     src/scene/textureTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/graphThreadSynchronization.cpp
