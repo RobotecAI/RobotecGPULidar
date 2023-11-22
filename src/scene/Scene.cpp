@@ -32,6 +32,8 @@ void Scene::clear()
 	entities.clear();
 	requestASRebuild();
 	requestSBTRebuild();
+	time.reset();
+	prevTime.reset();
 }
 
 void Scene::addEntity(std::shared_ptr<Entity> entity)
@@ -135,7 +137,7 @@ OptixTraversableHandle Scene::buildAS()
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		    .traversableHandle = entity->mesh->getGAS(getStream()),
 		};
-		entity->transform.matrix.toRaw(instance.transform);
+		entity->transformInfo.matrix.toRaw(instance.transform);
 		instances->append(instance);
 	}
 

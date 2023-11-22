@@ -80,8 +80,8 @@ private:
 		Mat3x4f matrix;
 		std::optional<Time> time;
 	};
-	TransformWithTime transform{Mat3x4f::identity(), std::nullopt};
-	TransformWithTime formerTransform{Mat3x4f::identity(), std::nullopt};
+	TransformWithTime transformInfo{Mat3x4f::identity(), std::nullopt};
+	TransformWithTime formerTransformInfo{Mat3x4f::identity(), std::nullopt};
 
 	Field<ENTITY_ID_I32>::type id{RGL_DEFAULT_ENTITY_ID};
 

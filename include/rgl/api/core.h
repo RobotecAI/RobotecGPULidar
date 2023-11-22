@@ -371,6 +371,7 @@ RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
 /**
  * Updates Mesh vertex data. The number of vertices must not change.
  * This function is intended to update animated Meshes.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
  * @param mesh Mesh to modify
  * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
  * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
@@ -397,6 +398,7 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity);
 
 /**
  * Changes transform (position, rotation, scaling) of the given Entity.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
  * @param entity Entity to modify
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (Entity -> world) coordinate system transform.
  */
@@ -440,7 +442,8 @@ RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
 /**
  * Sets time for the given Scene.
  * Time indicates a specific point when the ray trace is performed in the simulation timeline.
- * Timestamp is used to fill field RGL_FIELD_TIME_STAMP_F64 or for ROS2 publishing.
+ * Calling this function before updating entities/meshes is required to compute velocity of the hit points.
+ * Timestamp may be also used to fill field RGL_FIELD_TIME_STAMP_F64 or for ROS2 publishing.
  * @param scene Scene where time will be set. Pass NULL to use the default Scene.
  * @param nanoseconds Timestamp in nanoseconds.
  */
