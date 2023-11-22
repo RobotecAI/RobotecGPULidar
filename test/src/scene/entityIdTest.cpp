@@ -1,7 +1,6 @@
-#include <helpers/commonHelpers.hpp>
-#include <helpers/sceneHelpers.hpp>
-#include <helpers/mathHelpers.hpp>
 #include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/commonHelpers.hpp>
 
 #include <RGLFields.hpp>
 
@@ -9,62 +8,8 @@
 #include <rgl/api/extensions/ros2.h>
 #endif
 
-using namespace ::testing;
-
-class EntityTest : public RGLTest
+class EntityIdTest : public RGLTest
 {};
-
-TEST_F(EntityTest, rgl_entity_create_destroy)
-{
-	rgl_mesh_t mesh = makeCubeMesh();
-	rgl_entity_t entity = nullptr;
-
-	// Invalid args, note: scene can be nullptr here.
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(nullptr, nullptr, nullptr), "entity != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(&entity, nullptr, nullptr), "mesh != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_create(&entity, (rgl_scene_t) 0x1234, mesh), "scene == nullptr");
-	EXPECT_RGL_INVALID_OBJECT(rgl_entity_create(&entity, nullptr, (rgl_mesh_t) 0x1234), "Mesh 0x1234");
-
-	// Correct create
-	ASSERT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-	ASSERT_THAT(entity, NotNull());
-
-	// Correct destroy
-	ASSERT_RGL_SUCCESS(rgl_entity_destroy(entity));
-
-	// Double destroy
-	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy(entity), "Entity");
-
-	// Invalid destroy
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_destroy(nullptr), "entity != nullptr");
-	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy((rgl_entity_t) 0x1234), "Entity 0x1234");
-}
-
-TEST_F(EntityTest, rgl_entity_set_pose)
-{
-	rgl_entity_t entity = makeEntity();
-
-	// Invalid args
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(nullptr, nullptr), "entity != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity, nullptr), "transform != nullptr");
-	EXPECT_RGL_INVALID_OBJECT(rgl_entity_set_pose((rgl_entity_t) 0x1234, &identityTestTransform), "Entity 0x1234");
-
-	// Correct set_pose
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTestTransform));
-}
-
-TEST_F(EntityTest, rgl_entity_set_id)
-{
-	rgl_entity_t entity = makeEntity();
-	int validID = 1;
-
-	// Invalid args
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_id(nullptr, validID), "entity != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_id(entity, RGL_ENTITY_INVALID_ID), "id != RGL_ENTITY_INVALID_ID");
-
-	// Correct set_id
-	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, validID));
-}
 
 // Test spawns 3 boxes along Y axis:
 // box1 and box2 with specific entity ID assigned, box3 with no entity ID (RGL should assign default ID in that case).
@@ -80,7 +25,7 @@ TEST_F(EntityTest, rgl_entity_set_id)
 //
 //                 xx
 //                LIDAR
-TEST_F(EntityTest, entity_id_use_case)
+TEST_F(EntityIdTest, BaseTest)
 {
 	constexpr int BOX1_ID = 1;
 	constexpr int BOX2_ID = 2;
@@ -92,6 +37,10 @@ TEST_F(EntityTest, entity_id_use_case)
 
 	constexpr float BOX1_BOX2_BORDER = (BOX1_Y_POS + BOX2_Y_POS) / 2.0f;
 	constexpr float BOX2_BOX3_BORDER = (BOX2_Y_POS + BOX3_Y_POS) / 2.0f;
+
+	auto box1 = spawnCubeOnScene(Mat3x4f::TRS({6, BOX1_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX1_ID);
+	auto box2 = spawnCubeOnScene(Mat3x4f::TRS({6, BOX2_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}), BOX2_ID);
+	auto box3 = spawnCubeOnScene(Mat3x4f::TRS({6, BOX3_Y_POS, 0}, {0, 0, 0}, {1, 1, 1}));
 
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, yieldNode = nullptr;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.72, 0.36);
