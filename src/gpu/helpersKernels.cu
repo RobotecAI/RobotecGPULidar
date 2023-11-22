@@ -38,12 +38,12 @@ __global__ void kUpdateVertices(size_t vertexCount, Vec3f* newVerticesToDisplace
 {
 	LIMIT(vertexCount);
 	// See Mesh::updateVertices to understand the logic here.
-	Vec3f newVertex = newVerticesToVelocity[tid];
-	newVerticesToVelocity[tid] -= oldToNewVertices[tid];
+	Vec3f newVertex = newVerticesToDisplacement[tid];
+	newVerticesToDisplacement[tid] -= oldToNewVertices[tid];
 	oldToNewVertices[tid] = newVertex;
 }
 
-void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToVelocity, Vec3f* oldToNewVertices)
+void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement, Vec3f* oldToNewVertices)
 {
-	run(kUpdateVertices, stream, vertexCount, newVerticesToVelocity, oldToNewVertices);
+	run(kUpdateVertices, stream, vertexCount, newVerticesToDisplacement, oldToNewVertices);
 }
