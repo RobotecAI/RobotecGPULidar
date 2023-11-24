@@ -23,6 +23,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <Ros2InitGuard.hpp>
+
 
 struct Ros2PublishPointsNode : IPointsNodeSingleInput
 {
@@ -37,21 +39,15 @@ struct Ros2PublishPointsNode : IPointsNodeSingleInput
 	void validateImpl() override;
 	void enqueueExecImpl() override;
 
-	~Ros2PublishPointsNode();
+	~Ros2PublishPointsNode() override = default;
 
 private:
 	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
 
-	std::string topicName{};
-	std::string frameId{};
-
+	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
 	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ros2Publisher;
 	sensor_msgs::msg::PointCloud2 ros2Message;
 
-	static bool isRclcppInitializedByRGL;
-	static rclcpp::Node::SharedPtr ros2Node;
-	static std::string ros2NodeName;
-	static std::set<std::string> ros2TopicNames;
 
 	void updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense);
 };
