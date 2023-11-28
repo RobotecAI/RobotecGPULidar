@@ -46,7 +46,7 @@ struct TapePlayer
 
 	void rewindTo(APICallIdx nextCall = 0);
 
-	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return playbackState.nodes.at(key); }
+	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return playbackState->nodes.at(key); }
 
 	template<typename T>
 	T getCallArg(APICallIdx idx, int arg)
@@ -54,16 +54,11 @@ struct TapePlayer
 		return yamlRecording[idx][arg].as<T>();
 	}
 
-	~TapePlayer();
-
 private:
 	YAML::Node yamlRoot{};
 	YAML::Node yamlRecording{};
 	APICallIdx nextCall{};
-	PlaybackState playbackState;
+	std::unique_ptr<PlaybackState> playbackState;
 
 	static inline std::map<std::string, TapeFunction> tapeFunctions = {};
-
-private:
-	void mmapInit(const char* path);
 };

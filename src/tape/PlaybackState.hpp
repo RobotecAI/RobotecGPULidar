@@ -23,6 +23,8 @@ using TapeAPIObjectID = size_t;
 
 struct PlaybackState
 {
+	explicit PlaybackState(const char* binaryFilePath);
+
 	void clear();
 
 	template<typename T>
@@ -36,6 +38,8 @@ struct PlaybackState
 		return reinterpret_cast<T*>(fileMmap + offset);
 	}
 
+	~PlaybackState();
+
 	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
 	std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
 	std::unordered_map<TapeAPIObjectID, rgl_texture_t> textures;
@@ -45,5 +49,5 @@ private:
 	uint8_t* fileMmap{nullptr};
 	size_t mmapSize{0};
 
-	friend struct TapePlayer; // To access private members
+	void mmapInit(const char* path);
 };
