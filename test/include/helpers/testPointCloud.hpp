@@ -9,9 +9,9 @@
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
 
-inline std::vector<rgl_field_t>& getAllNotDummyFieldsVector()
+inline std::vector<rgl_field_t>& getAllRealFieldsVector()
 {
-	static std::vector<rgl_field_t> allNotDummyFieldsVector(getAllNotDummyFields().begin(), getAllNotDummyFields().end());
+	static std::vector<rgl_field_t> allNotDummyFieldsVector(getAllRealFields().begin(), getAllRealFields().end());
 	return allNotDummyFieldsVector;
 }
 
@@ -91,7 +91,7 @@ public:
 			EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(outputNode, fields.at(i), dataFromNode.data()));
 			for (int j = 0; j < currentCount; j++) {
 				std::move(dataFromNode.begin() + j * currentSize, dataFromNode.begin() + (j + 1) * currentSize,
-				          pointCloud.data.data() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i));
+				          pointCloud.data.data() + pointCloud.getIndexForField(j, i));
 			}
 		}
 		return pointCloud;
@@ -125,10 +125,8 @@ public:
 				continue;
 			}
 			for (int j = 0; j < outCount; ++j) {
-				std::fill(pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i),
-				          pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i) +
-				              getFieldSize(fields.at(i)),
-				          0);
+				std::fill(pointCloud.data.begin() + pointCloud.getIndexForField(j, i),
+				          pointCloud.data.begin() + pointCloud.getIndexForField(j, i) + getFieldSize(fields.at(i)), 0);
 			}
 		}
 
@@ -155,7 +153,6 @@ public:
 			for (int j = 0; j < getPointCount(); ++j) {
 				char isHitValue = *reinterpret_cast<char*>(data.data() + j * getPointByteSize() + offsets.at(i));
 				if (isHitValue != 0) {
-					// TODO: function for calculate index of point
 					std::move(data.begin() + j * getPointByteSize(), data.begin() + (j + 1) * getPointByteSize(),
 					          std::back_inserter(filteredData));
 				}
@@ -210,11 +207,9 @@ public:
 		}
 
 		for (auto fieldIndex : fieldIndices) {
-			int offset = offsets.at(fieldIndex);
 			for (int i = 0; i < getPointCount(); i++) {
-				// TODO function for calculate index of point
 				std::move(reinterpret_cast<char*>(fieldValues.data() + i), reinterpret_cast<char*>(fieldValues.data() + i + 1),
-				          data.data() + i * getPointByteSize() + offset);
+				          data.data() + getIndexForField(i, fieldIndex));
 			}
 		}
 	}
@@ -270,21 +265,33 @@ private:
 	// clang-format on
 
 	void resize(std::size_t newCount) { data.resize(newCount * getPointByteSize()); }
+
+	std::size_t getIndexForField(std::size_t pointIndex, std::size_t fieldIndex) const
+	{
+		if (pointIndex >= getPointCount() || fieldIndex >= fields.size()) {
+			throw std::out_of_range("getIndexForField: Invalid field or point indices");
+		}
+		return pointIndex * getPointByteSize() + offsets[fieldIndex];
+	}
 };
 
 /**
- * @brief Function to generate a vector of fields; returns a vector of all not dummy fields with the specified number of paddings.
+ * @brief Function to generate a vector of fields; returns a vector of all real fields with the specified number of paddings.
  * Paddings types and positions are chosen randomly.
  */
-static std::vector<rgl_field_t> generateRandomStaticFieldsVector(std::size_t numberOfPaddings)
+static std::vector<rgl_field_t> generateRandomFieldsVector(std::size_t numberOfPaddings)
 {
 	std::vector<rgl_field_t> fields;
-	fields.reserve(getAllNotDummyFieldsVector().size() + numberOfPaddings);
+	fields.reserve(getAllRealFieldsVector().size() + numberOfPaddings);
 
-	std::sample(getAllNotDummyFieldsVector().begin(), getAllNotDummyFieldsVector().end(), std::back_inserter(fields),
-	            getAllNotDummyFieldsVector().size(), randomGenerator);
-	std::sample(getAllPaddingsVector().begin(), getAllPaddingsVector().end(), std::back_inserter(fields), numberOfPaddings,
-	            randomGenerator);
+	std::sample(getAllRealFieldsVector().begin(), getAllRealFieldsVector().end(), std::back_inserter(fields),
+	            getAllRealFieldsVector().size(), randomGenerator);
+
+	for (int i = 0; i < numberOfPaddings; ++i) {
+		std::uniform_int_distribution<std::size_t> dist(0, getAllPaddingsVector().size() - 1);
+		fields.push_back(getAllPaddingsVector().at(dist(randomGenerator)));
+	}
+
 	std::shuffle(fields.begin(), fields.end(), randomGenerator);
 
 	return fields;

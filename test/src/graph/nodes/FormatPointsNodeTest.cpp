@@ -22,7 +22,7 @@ public:
 protected:
 	rgl_node_t formatNode = nullptr;
 
-	const std::vector<rgl_field_t> allNotDummyFields = getAllNotDummyFieldsVector();
+	const std::vector<rgl_field_t> allRealFields = getAllRealFieldsVector();
 	const std::vector<rgl_field_t> allPaddings = getAllPaddingsVector();
 
 	void runGraphWithAssertions(rgl_node_t inNode, const std::vector<rgl_field_t>& fieldsToFormat)
@@ -53,16 +53,16 @@ TEST_F(FormatPointsNodeTest, invalid_argument_fields)
 
 TEST_F(FormatPointsNodeTest, invalid_argument_field_count)
 {
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(&formatNode, allNotDummyFields.data(), 0), "field_count > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_points_format(&formatNode, allRealFields.data(), 0), "field_count > 0");
 }
 
 TEST_F(FormatPointsNodeTest, valid_arguments)
 {
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allNotDummyFields.data(), allNotDummyFields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allRealFields.data(), allRealFields.size()));
 	ASSERT_THAT(formatNode, testing::NotNull());
 
 	// If (*formatNode) != nullptr
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allNotDummyFields.data(), allNotDummyFields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allRealFields.data(), allRealFields.size()));
 }
 
 TEST_F(FormatPointsNodeTest, error_when_invalid_field_request)
@@ -77,12 +77,12 @@ TEST_F(FormatPointsNodeTest, should_format_empty_input)
 	rgl_node_t emptyPointCloudOutputNode = nullptr;
 	createOrUpdateNode<EmptyNode>(&emptyPointCloudOutputNode);
 
-	ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allNotDummyFields.data(), allNotDummyFields.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allRealFields.data(), allRealFields.size()));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(emptyPointCloudOutputNode, formatNode));
 	ASSERT_RGL_SUCCESS(rgl_graph_run(formatNode));
 
 	// When creating outPointCloud, the createFromFormatNode method checks that the outSize matches the field size
-	TestPointCloud outPointCloud = TestPointCloud::createFromFormatNode(formatNode, allNotDummyFields);
+	TestPointCloud outPointCloud = TestPointCloud::createFromFormatNode(formatNode, allRealFields);
 	EXPECT_EQ(outPointCloud.getPointCount(), 0);
 
 	// Check if the contents of outData have changed (they should not have)
@@ -103,12 +103,12 @@ TEST_F(FormatPointsNodeTest, should_format_empty_input)
 	}
 }
 
-TEST_P(FormatPointsNodeTest, should_properly_align_output_size_and_not_change_data)
+TEST_P(FormatPointsNodeTest, should_format_and_not_change_data)
 {
 	int pointsCount = std::get<0>(GetParam());
 	int numberOfPaddings = std::get<1>(GetParam());
 
-	auto fieldsToFormat = generateRandomStaticFieldsVector(numberOfPaddings);
+	auto fieldsToFormat = generateRandomFieldsVector(numberOfPaddings);
 	TestPointCloud inPointCloud = TestPointCloud(fieldsToFormat, pointsCount);
 	rgl_node_t inNode = inPointCloud.createUsePointsNode();
 
@@ -119,31 +119,6 @@ TEST_P(FormatPointsNodeTest, should_properly_align_output_size_and_not_change_da
 	EXPECT_EQ(outPointCloud, inPointCloud);
 }
 
-TEST_P(FormatPointsNodeTest, multiple_format_should_not_change_data)
-{
-	int pointsCount = std::get<0>(GetParam());
-	int numberOfPaddings = std::get<1>(GetParam());
-
-	auto fieldsToFormat = generateRandomStaticFieldsVector(numberOfPaddings);
-	TestPointCloud pointCloud = TestPointCloud(fieldsToFormat, pointsCount);
-	rgl_node_t inNode = pointCloud.createUsePointsNode();
-
-	std::vector<rgl_node_t> formatNodes(MULTIPLE_FORMATS_COUNT);
-	ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(0), fieldsToFormat.data(), fieldsToFormat.size()));
-	ASSERT_THAT(formatNodes.at(0), testing::NotNull());
-
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(inNode, formatNodes.at(0)));
-	for (int i = 1; i < MULTIPLE_FORMATS_COUNT; ++i) {
-		ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNodes.at(i), fieldsToFormat.data(), fieldsToFormat.size()));
-		ASSERT_THAT(formatNodes.at(i), testing::NotNull());
-		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(formatNodes.at(i - 1), formatNodes.at(i)));
-	}
-	ASSERT_RGL_SUCCESS(rgl_graph_run(inNode));
-
-	auto outPointCloud = TestPointCloud::createFromFormatNode(formatNodes.at(MULTIPLE_FORMATS_COUNT - 1), fieldsToFormat);
-	EXPECT_EQ(pointCloud, outPointCloud);
-}
-
 TEST_P(FormatPointsNodeTest, multiple_changing_format_should_not_change_data)
 {
 	int pointsCount = std::get<0>(GetParam());
@@ -151,7 +126,7 @@ TEST_P(FormatPointsNodeTest, multiple_changing_format_should_not_change_data)
 
 	std::vector<std::vector<rgl_field_t>> fieldsToFormat(MULTIPLE_FORMATS_COUNT);
 	for (int i = 0; i < MULTIPLE_FORMATS_COUNT; ++i) {
-		fieldsToFormat.at(i) = generateRandomStaticFieldsVector(numberOfPaddings);
+		fieldsToFormat.at(i) = generateRandomFieldsVector(numberOfPaddings);
 	}
 
 	TestPointCloud pointCloud = TestPointCloud(fieldsToFormat.at(MULTIPLE_FORMATS_COUNT - 1), pointsCount);
@@ -194,9 +169,9 @@ TEST_F(FormatPointsNodeTest, duplicated_fields)
 {
 	int pointsCount = maxGPUCoresTestCount;
 
-	// Duplicate every not dummy field
+	// Duplicate every real field
 	std::vector<rgl_field_t> fieldsToFormat;
-	for (auto field : allNotDummyFields) {
+	for (auto field : allRealFields) {
 		fieldsToFormat.emplace_back(field);
 		fieldsToFormat.emplace_back(field);
 	}
@@ -215,17 +190,17 @@ TEST_F(FormatPointsNodeTest, request_for_field_that_points_do_not_have)
 {
 	int pointsCount = maxGPUCoresTestCount;
 
-	std::vector<rgl_field_t> pointFields = allNotDummyFields;
+	std::vector<rgl_field_t> pointFields = allRealFields;
 	rgl_node_t inNode = nullptr;
 
-	for (int i = 0; i < allNotDummyFields.size(); ++i) {
-		rgl_field_t fieldToRemove = allNotDummyFields[i];
+	for (int i = 0; i < allRealFields.size(); ++i) {
+		rgl_field_t fieldToRemove = allRealFields[i];
 		pointFields.erase(std::find(pointFields.begin(), pointFields.end(), fieldToRemove));
 
 		TestPointCloud pointCloud = TestPointCloud(pointFields, pointsCount);
 		inNode = pointCloud.createUsePointsNode();
 
-		ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allNotDummyFields.data(), allNotDummyFields.size()));
+		ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNode, allRealFields.data(), allRealFields.size()));
 		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(inNode, formatNode));
 		EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(inNode), fmt::format("requires {} to be present", toString(fieldToRemove)));
 
