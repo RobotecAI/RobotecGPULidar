@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <ranges>
 
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
@@ -33,12 +34,8 @@ inline std::vector<rgl_field_t>& getAllPaddingsVector()
 template<typename FieldType>
 static std::vector<FieldType> generateFieldValues(std::size_t count, std::function<FieldType(int)> generator)
 {
-	std::vector<FieldType> values;
-	values.reserve(count);
-	for (int i = 0; i < count; i++) {
-		values.emplace_back(generator(i));
-	}
-	return values;
+	auto view = std::views::iota(0UL, count) | std::views::transform(generator);
+	return std::vector<FieldType>(view.begin(), view.end());
 }
 
 /**
