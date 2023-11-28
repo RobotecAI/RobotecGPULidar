@@ -18,16 +18,16 @@
 
 class TapePcl
 {
-	static void tape_graph_write_pcd_file(const YAML::Node& yamlNode, TapeState& tapeState);
-	static void tape_node_points_downsample(const YAML::Node& yamlNode, TapeState& tapeState);
-	static void tape_node_points_visualize(const YAML::Node& yamlNode, TapeState& tapeState);
+	static void tape_graph_write_pcd_file(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_points_downsample(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_points_visualize(const YAML::Node& yamlNode, PlaybackState& state);
 
 	// Called once in the translation unit
 	static inline bool autoExtendTapeFunctions = std::invoke([]() {
 		std::map<std::string, TapeFunction> tapeFunctions = {
-		    MAKE_TAPE_FUNCTION_MAPPING("rgl_graph_write_pcd_file", TapePcl::tape_graph_write_pcd_file),
-		    MAKE_TAPE_FUNCTION_MAPPING("rgl_node_points_downsample", TapePcl::tape_node_points_downsample),
-		    MAKE_TAPE_FUNCTION_MAPPING("rgl_node_points_visualize", TapePcl::tape_node_points_visualize),
+		    TAPE_CALL_MAPPING("rgl_graph_write_pcd_file", TapePcl::tape_graph_write_pcd_file),
+		    TAPE_CALL_MAPPING("rgl_node_points_downsample", TapePcl::tape_node_points_downsample),
+		    TAPE_CALL_MAPPING("rgl_node_points_visualize", TapePcl::tape_node_points_visualize),
 		};
 		TapePlayer::extendTapeFunctions(tapeFunctions);
 		return true;

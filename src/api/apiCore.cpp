@@ -64,7 +64,7 @@ RGL_API rgl_status_t rgl_get_version_info(int32_t* out_major, int32_t* out_minor
 	return status;
 }
 
-void TapeCore::tape_get_version_info(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_get_version_info(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	int32_t out_major, out_minor, out_patch;
 	rgl_get_version_info(&out_major, &out_minor, &out_patch);
@@ -95,7 +95,7 @@ RGL_API rgl_status_t rgl_get_extension_info(rgl_extension_t extension, int32_t* 
 	return status;
 }
 
-void TapeCore::tape_get_extension_info(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_get_extension_info(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	int32_t out_available;
 	int32_t recorded_available = yamlNode[1].as<int32_t>();
@@ -117,7 +117,7 @@ RGL_API rgl_status_t rgl_configure_logging(rgl_log_level_t log_level, const char
 	return status;
 }
 
-void TapeCore::tape_configure_logging(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_configure_logging(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_configure_logging((rgl_log_level_t) yamlNode[0].as<int>(), yamlNode[1].as<std::string>().c_str(),
 	                      yamlNode[2].as<bool>());
@@ -155,13 +155,13 @@ RGL_API rgl_status_t rgl_cleanup(void)
 	return status;
 }
 
-void TapeCore::tape_cleanup(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_cleanup(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_cleanup();
-	tapeState.meshes.clear();
-	tapeState.entities.clear();
-	tapeState.nodes.clear();
-	tapeState.textures.clear();
+	state.meshes.clear();
+	state.entities.clear();
+	state.nodes.clear();
+	state.textures.clear();
 }
 
 RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_count,
@@ -184,13 +184,13 @@ RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vert
 	return status;
 }
 
-void TapeCore::tape_mesh_create(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_mesh_create(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_mesh_t mesh = nullptr;
-	rgl_mesh_create(
-	    &mesh, reinterpret_cast<const rgl_vec3f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()), yamlNode[2].as<int32_t>(),
-	    reinterpret_cast<const rgl_vec3i*>(tapeState.fileMmap + yamlNode[3].as<size_t>()), yamlNode[4].as<int32_t>());
-	tapeState.meshes.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), mesh));
+	rgl_mesh_create(&mesh, reinterpret_cast<const rgl_vec3f*>(state.fileMmap + yamlNode[1].as<size_t>()),
+	                yamlNode[2].as<int32_t>(), reinterpret_cast<const rgl_vec3i*>(state.fileMmap + yamlNode[3].as<size_t>()),
+	                yamlNode[4].as<int32_t>());
+	state.meshes.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), mesh));
 }
 
 RGL_API rgl_status_t rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_count)
@@ -207,10 +207,10 @@ RGL_API rgl_status_t rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2
 	return status;
 }
 
-void TapeCore::tape_mesh_set_texture_coords(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_mesh_set_texture_coords(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_mesh_set_texture_coords(tapeState.meshes.at(yamlNode[0].as<TapeAPIObjectID>()),
-	                            reinterpret_cast<const rgl_vec2f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_mesh_set_texture_coords(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                            reinterpret_cast<const rgl_vec2f*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                            yamlNode[2].as<int32_t>());
 }
 
@@ -226,11 +226,11 @@ RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh)
 	return status;
 }
 
-void TapeCore::tape_mesh_destroy(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_mesh_destroy(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto meshId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_mesh_destroy(tapeState.meshes.at(meshId));
-	tapeState.meshes.erase(meshId);
+	rgl_mesh_destroy(state.meshes.at(meshId));
+	state.meshes.erase(meshId);
 }
 
 RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count)
@@ -247,10 +247,10 @@ RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* 
 	return status;
 }
 
-void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_mesh_update_vertices(tapeState.meshes.at(yamlNode[0].as<TapeAPIObjectID>()),
-	                         reinterpret_cast<const rgl_vec3f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_mesh_update_vertices(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                         reinterpret_cast<const rgl_vec3f*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                         yamlNode[2].as<int32_t>());
 }
 
@@ -268,11 +268,11 @@ RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t sce
 	return status;
 }
 
-void TapeCore::tape_entity_create(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_entity_create(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_entity_t entity = nullptr;
-	rgl_entity_create(&entity, nullptr, tapeState.meshes.at(yamlNode[2].as<TapeAPIObjectID>()));
-	tapeState.entities.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), entity));
+	rgl_entity_create(&entity, nullptr, state.meshes.at(yamlNode[2].as<TapeAPIObjectID>()));
+	state.entities.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), entity));
 }
 
 RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity)
@@ -289,11 +289,11 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity)
 	return status;
 }
 
-void TapeCore::tape_entity_destroy(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_entity_destroy(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto entityId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_entity_destroy(tapeState.entities.at(entityId));
-	tapeState.entities.erase(entityId);
+	rgl_entity_destroy(state.entities.at(entityId));
+	state.entities.erase(entityId);
 }
 
 RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
@@ -310,10 +310,10 @@ RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f*
 	return status;
 }
 
-void TapeCore::tape_entity_set_pose(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_entity_set_pose(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_entity_set_pose(tapeState.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
-	                    reinterpret_cast<const rgl_mat3x4f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()));
+	rgl_entity_set_pose(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                    reinterpret_cast<const rgl_mat3x4f*>(state.fileMmap + yamlNode[1].as<size_t>()));
 }
 
 RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id)
@@ -329,9 +329,9 @@ RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 	return status;
 }
 
-void TapeCore::tape_entity_set_id(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_entity_set_id(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_entity_set_id(tapeState.entities.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
+	rgl_entity_set_id(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
 }
 
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture)
@@ -348,10 +348,10 @@ RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_t
 	return status;
 }
 
-void TapeCore::tape_entity_set_intensity_texture(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_entity_set_intensity_texture(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_entity_set_intensity_texture(tapeState.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
-	                                 tapeState.textures.at(yamlNode[1].as<TapeAPIObjectID>()));
+	rgl_entity_set_intensity_texture(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                                 state.textures.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
 RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height)
@@ -369,14 +369,14 @@ RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* 
 	return status;
 }
 
-void TapeCore::tape_texture_create(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_texture_create(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_texture_t texture = nullptr;
 
-	rgl_texture_create(&texture, reinterpret_cast<const void*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_texture_create(&texture, reinterpret_cast<const void*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                   yamlNode[2].as<int32_t>(), yamlNode[3].as<int32_t>());
 
-	tapeState.textures.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), texture));
+	state.textures.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), texture));
 }
 
 RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture)
@@ -391,11 +391,11 @@ RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture)
 	return status;
 }
 
-void TapeCore::tape_texture_destroy(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_texture_destroy(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto textureId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_texture_destroy(tapeState.textures.at(textureId));
-	tapeState.textures.erase(textureId);
+	rgl_texture_destroy(state.textures.at(textureId));
+	state.textures.erase(textureId);
 }
 
 RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
@@ -411,7 +411,7 @@ RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
 	return status;
 }
 
-void TapeCore::tape_scene_set_time(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_scene_set_time(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_scene_set_time(nullptr, yamlNode[1].as<uint64_t>());
 }
@@ -432,9 +432,9 @@ RGL_API rgl_status_t rgl_graph_run(rgl_node_t raw_node)
 	return status;
 }
 
-void TapeCore::tape_graph_run(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_run(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_graph_run(tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>()));
+	rgl_graph_run(state.nodes.at(yamlNode[0].as<TapeAPIObjectID>()));
 }
 
 RGL_API rgl_status_t rgl_graph_destroy(rgl_node_t raw_node)
@@ -455,14 +455,14 @@ RGL_API rgl_status_t rgl_graph_destroy(rgl_node_t raw_node)
 	return status;
 }
 
-void TapeCore::tape_graph_destroy(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_destroy(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_node_t userNode = tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>());
+	rgl_node_t userNode = state.nodes.at(yamlNode[0].as<TapeAPIObjectID>());
 	std::set<Node::Ptr> graph = Node::validatePtr(userNode)->getConnectedComponentNodes();
 	std::set<TapeAPIObjectID> graphNodeIds;
 
 	for (auto const& graphNode : graph) {
-		for (auto const& [key, val] : tapeState.nodes) {
+		for (auto const& [key, val] : state.nodes) {
 			auto tapeNodePtr = Node::validatePtr(val).get();
 			if (graphNode.get() == tapeNodePtr) {
 				graphNodeIds.insert(key);
@@ -475,7 +475,7 @@ void TapeCore::tape_graph_destroy(const YAML::Node& yamlNode, TapeState& tapeSta
 
 	while (!graphNodeIds.empty()) {
 		TapeAPIObjectID nodeId = *graphNodeIds.begin();
-		tapeState.nodes.erase(nodeId);
+		state.nodes.erase(nodeId);
 		graphNodeIds.erase(nodeId);
 	}
 }
@@ -504,10 +504,10 @@ RGL_API rgl_status_t rgl_graph_get_result_size(rgl_node_t node, rgl_field_t fiel
 	return status;
 }
 
-void TapeCore::tape_graph_get_result_size(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_get_result_size(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	int32_t out_count, out_size_of;
-	rgl_graph_get_result_size(tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>()), (rgl_field_t) yamlNode[1].as<int>(),
+	rgl_graph_get_result_size(state.nodes.at(yamlNode[0].as<TapeAPIObjectID>()), (rgl_field_t) yamlNode[1].as<int>(),
 	                          &out_count, &out_size_of);
 
 	auto tape_count = yamlNode[2].as<int32_t>();
@@ -575,9 +575,9 @@ RGL_API rgl_status_t rgl_graph_get_result_data(rgl_node_t node, rgl_field_t fiel
 	return status;
 }
 
-void TapeCore::tape_graph_get_result_data(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_get_result_data(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_node_t node = tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>());
+	rgl_node_t node = state.nodes.at(yamlNode[0].as<TapeAPIObjectID>());
 	rgl_field_t field = (rgl_field_t) yamlNode[1].as<int>();
 	int32_t out_count, out_size_of;
 	rgl_graph_get_result_size(node, field, &out_count, &out_size_of);
@@ -600,10 +600,10 @@ RGL_API rgl_status_t rgl_graph_node_add_child(rgl_node_t parent, rgl_node_t chil
 	return status;
 }
 
-void TapeCore::tape_graph_node_add_child(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_node_add_child(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_graph_node_add_child(tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>()),
-	                         tapeState.nodes.at(yamlNode[1].as<TapeAPIObjectID>()));
+	rgl_graph_node_add_child(state.nodes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                         state.nodes.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
 RGL_API rgl_status_t rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t child)
@@ -619,10 +619,10 @@ RGL_API rgl_status_t rgl_graph_node_remove_child(rgl_node_t parent, rgl_node_t c
 	return status;
 }
 
-void TapeCore::tape_graph_node_remove_child(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_node_remove_child(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_graph_node_remove_child(tapeState.nodes.at(yamlNode[0].as<TapeAPIObjectID>()),
-	                            tapeState.nodes.at(yamlNode[1].as<TapeAPIObjectID>()));
+	rgl_graph_node_remove_child(state.nodes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                            state.nodes.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
 RGL_API rgl_status_t rgl_graph_node_set_priority(rgl_node_t node, int32_t priority)
@@ -641,10 +641,10 @@ RGL_API rgl_status_t rgl_graph_node_set_priority(rgl_node_t node, int32_t priori
 	return status;
 }
 
-void TapeCore::tape_graph_node_set_priority(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_node_set_priority(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.at(nodeId);
+	rgl_node_t node = state.nodes.at(nodeId);
 	auto priority = yamlNode[1].as<int32_t>();
 	rgl_graph_node_set_priority(node, priority);
 }
@@ -664,10 +664,10 @@ RGL_API rgl_status_t rgl_graph_node_get_priority(rgl_node_t node, int32_t* out_p
 	return status;
 }
 
-void TapeCore::tape_graph_node_get_priority(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_graph_node_get_priority(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.at(nodeId);
+	rgl_node_t node = state.nodes.at(nodeId);
 	auto tape_priority = yamlNode[1].as<int32_t>();
 	int32_t out_priority;
 	rgl_graph_node_get_priority(node, &out_priority);
@@ -690,13 +690,13 @@ RGL_API rgl_status_t rgl_node_rays_from_mat3x4f(rgl_node_t* node, const rgl_mat3
 	return status;
 }
 
-void TapeCore::tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_rays_from_mat3x4f(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_rays_from_mat3x4f(&node, reinterpret_cast<const rgl_mat3x4f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_rays_from_mat3x4f(&node, reinterpret_cast<const rgl_mat3x4f*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                           yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t* ring_ids, int32_t ring_ids_count)
@@ -712,13 +712,13 @@ RGL_API rgl_status_t rgl_node_rays_set_ring_ids(rgl_node_t* node, const int32_t*
 	return status;
 }
 
-void TapeCore::tape_node_rays_set_ring_ids(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_rays_set_ring_ids(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_rays_set_ring_ids(&node, reinterpret_cast<const int32_t*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_rays_set_ring_ids(&node, reinterpret_cast<const int32_t*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                           yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* ranges, int32_t ranges_count)
@@ -734,13 +734,13 @@ RGL_API rgl_status_t rgl_node_rays_set_range(rgl_node_t* node, const rgl_vec2f* 
 	return status;
 }
 
-void TapeCore::tape_node_rays_set_range(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_rays_set_range(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_rays_set_range(&node, reinterpret_cast<const rgl_vec2f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_rays_set_range(&node, reinterpret_cast<const rgl_vec2f*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                        yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_rays_set_time_offsets(rgl_node_t* node, const float* offsets, int32_t offsets_count)
@@ -756,13 +756,13 @@ RGL_API rgl_status_t rgl_node_rays_set_time_offsets(rgl_node_t* node, const floa
 	return status;
 }
 
-void TapeCore::tape_node_rays_set_time_offsets(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_rays_set_time_offsets(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_rays_set_time_offsets(&node, reinterpret_cast<const float*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_rays_set_time_offsets(&node, reinterpret_cast<const float*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                               yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
@@ -778,12 +778,12 @@ RGL_API rgl_status_t rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f
 	return status;
 }
 
-void TapeCore::tape_node_rays_transform(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_rays_transform(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_rays_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()));
-	tapeState.nodes.insert({nodeId, node});
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_rays_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(state.fileMmap + yamlNode[1].as<size_t>()));
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform)
@@ -799,12 +799,12 @@ RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x
 	return status;
 }
 
-void TapeCore::tape_node_points_transform(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_transform(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_points_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(tapeState.fileMmap + yamlNode[1].as<size_t>()));
-	tapeState.nodes.insert({nodeId, node});
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_transform(&node, reinterpret_cast<const rgl_mat3x4f*>(state.fileMmap + yamlNode[1].as<size_t>()));
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene)
@@ -822,12 +822,12 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene)
 	return status;
 }
 
-void TapeCore::tape_node_raytrace(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_raytrace(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_raytrace(&node, nullptr);
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
@@ -849,14 +849,14 @@ RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_sce
 	return status;
 }
 
-void TapeCore::tape_node_raytrace_with_distortion(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_raytrace_with_distortion(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_raytrace_with_distortion(&node, nullptr,
-	                                  reinterpret_cast<const rgl_vec3f*>(tapeState.fileMmap + yamlNode[2].as<size_t>()),
-	                                  reinterpret_cast<const rgl_vec3f*>(tapeState.fileMmap + yamlNode[3].as<size_t>()));
-	tapeState.nodes.insert({nodeId, node});
+	                                  reinterpret_cast<const rgl_vec3f*>(state.fileMmap + yamlNode[2].as<size_t>()),
+	                                  reinterpret_cast<const rgl_vec3f*>(state.fileMmap + yamlNode[3].as<size_t>()));
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
@@ -873,13 +873,13 @@ RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t*
 	return status;
 }
 
-void TapeCore::tape_node_points_format(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_format(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_points_format(&node, reinterpret_cast<const rgl_field_t*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_format(&node, reinterpret_cast<const rgl_field_t*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                       yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
@@ -896,13 +896,13 @@ RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* 
 	return status;
 }
 
-void TapeCore::tape_node_points_yield(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_yield(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
-	rgl_node_points_yield(&node, reinterpret_cast<const rgl_field_t*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_yield(&node, reinterpret_cast<const rgl_field_t*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                      yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node)
@@ -917,12 +917,12 @@ RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node)
 	return status;
 }
 
-void TapeCore::tape_node_points_compact(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_compact(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_compact(&node);
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
@@ -939,13 +939,13 @@ RGL_API rgl_status_t rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_f
 	return status;
 }
 
-void TapeCore::tape_node_points_spatial_merge(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_spatial_merge(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes[nodeId] : nullptr;
-	rgl_node_points_spatial_merge(&node, reinterpret_cast<const rgl_field_t*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
+	rgl_node_points_spatial_merge(&node, reinterpret_cast<const rgl_field_t*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                              yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
@@ -962,13 +962,13 @@ RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_
 	return status;
 }
 
-void TapeCore::tape_node_points_temporal_merge(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_temporal_merge(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes[nodeId] : nullptr;
-	rgl_node_points_temporal_merge(&node, reinterpret_cast<const rgl_field_t*>(tapeState.fileMmap + yamlNode[1].as<size_t>()),
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
+	rgl_node_points_temporal_merge(&node, reinterpret_cast<const rgl_field_t*>(state.fileMmap + yamlNode[1].as<size_t>()),
 	                               yamlNode[2].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count,
@@ -993,14 +993,14 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
 	return status;
 }
 
-void TapeCore::tape_node_points_from_array(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_points_from_array(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_from_array(
-	    &node, reinterpret_cast<const void*>(tapeState.fileMmap + yamlNode[1].as<size_t>()), yamlNode[2].as<int32_t>(),
-	    reinterpret_cast<const rgl_field_t*>(tapeState.fileMmap + yamlNode[3].as<size_t>()), yamlNode[4].as<int32_t>());
-	tapeState.nodes.insert({nodeId, node});
+	    &node, reinterpret_cast<const void*>(state.fileMmap + yamlNode[1].as<size_t>()), yamlNode[2].as<int32_t>(),
+	    reinterpret_cast<const rgl_field_t*>(state.fileMmap + yamlNode[3].as<size_t>()), yamlNode[4].as<int32_t>());
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis)
@@ -1018,13 +1018,13 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float
 	return status;
 }
 
-void TapeCore::tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_gaussian_noise_angular_ray(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(),
 	                                    (rgl_axis_t) yamlNode[3].as<size_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, float mean, float st_dev,
@@ -1043,13 +1043,13 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, 
 	return status;
 }
 
-void TapeCore::tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_gaussian_noise_angular_hitpoint(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(),
 	                                         (rgl_axis_t) yamlNode[3].as<size_t>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base,
@@ -1068,12 +1068,12 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float me
 	return status;
 }
 
-void TapeCore::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, TapeState& tapeState)
+void TapeCore::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeState.nodes.contains(nodeId) ? tapeState.nodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_gaussian_noise_distance(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>());
-	tapeState.nodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_tape_record_begin(const char* path)

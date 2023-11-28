@@ -142,7 +142,7 @@ void TapePlayer::playThis(APICallIdx idx)
 		throw RecordError(fmt::format("unknown function to play: {}", functionName));
 	}
 
-	tapeFunctions[functionName](node, tapeState);
+	tapeFunctions[functionName](node, playbackState);
 }
 
 #include <thread>
@@ -159,7 +159,7 @@ void TapePlayer::playRealtime()
 
 TapePlayer::~TapePlayer()
 {
-	if (munmap(tapeState.fileMmap, tapeState.mmapSize) == -1) {
+	if (munmap(playbackState.fileMmap, playbackState.mmapSize) == -1) {
 		RGL_WARN("rgl_tape_play: failed to remove binary mappings due to {}", std::strerror(errno));
 	}
 }
@@ -180,9 +180,9 @@ void TapePlayer::mmapInit(const char* path)
 		throw RecordError("rgl_tape_play: couldn't read bin file length");
 	}
 
-	tapeState.fileMmap = (uint8_t*) mmap(nullptr, staticBuffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	tapeState.mmapSize = staticBuffer.st_size;
-	if (tapeState.fileMmap == MAP_FAILED) {
+	playbackState.fileMmap = (uint8_t*) mmap(nullptr, staticBuffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	playbackState.mmapSize = staticBuffer.st_size;
+	if (playbackState.fileMmap == MAP_FAILED) {
 		throw InvalidFilePath(fmt::format("rgl_tape_play: could not mmap binary file: {}", path));
 	}
 	if (close(fd)) {

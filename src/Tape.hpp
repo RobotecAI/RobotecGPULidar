@@ -67,7 +67,7 @@ static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_
 	while (0)
 
 // Helper macro to define tape function mapping entry
-#define MAKE_TAPE_FUNCTION_MAPPING(API_CALL_STRING, TAPE_CALL)                                                                 \
+#define TAPE_CALL_MAPPING(API_CALL_STRING, TAPE_CALL)                                                                          \
 	{                                                                                                                          \
 		API_CALL_STRING, [](const auto& yamlNode, auto& tapeState) { TAPE_CALL(yamlNode, tapeState); }                         \
 	}
@@ -185,7 +185,7 @@ public:
 	}
 };
 
-struct TapeState
+struct PlaybackState
 {
 	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
 	std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
@@ -196,7 +196,7 @@ struct TapeState
 };
 
 // Signature of tape function corresponding to the API function
-using TapeFunction = std::function<void(const YAML::Node&, TapeState&)>;
+using TapeFunction = std::function<void(const YAML::Node&, PlaybackState&)>;
 
 struct TapePlayer
 {
@@ -216,7 +216,7 @@ struct TapePlayer
 
 	void rewindTo(APICallIdx nextCall = 0);
 
-	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return tapeState.nodes.at(key); }
+	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return playbackState.nodes.at(key); }
 
 	template<typename T>
 	T getCallArg(APICallIdx idx, int arg)
@@ -230,7 +230,7 @@ private:
 	YAML::Node yamlRoot{};
 	YAML::Node yamlRecording{};
 	APICallIdx nextCall{};
-	TapeState tapeState;
+	PlaybackState playbackState;
 
 	static inline std::map<std::string, TapeFunction> tapeFunctions = {};
 
