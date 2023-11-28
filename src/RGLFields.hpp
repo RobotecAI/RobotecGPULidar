@@ -25,9 +25,9 @@
  * Definition of RGL PointCloud Fields is in the API header.
  * This file defines some internal properties, such as byte sizes and C++ types.
  *
- * Important: If you change available fields, you must also update test/include/helpers/testPointCloud.hpp:
- * - add/delete generator function for the field
- * - add/delete fieldGenerator inside initializeFieldValueGenerators()
+ * Important: If you change available fields, you must also update:
+ * - test/include/helpers/fieldGenerators.hpp: add/delete fieldGenerator
+ * - test/include/helpers/testPointCloud.hpp: add/delete fieldGenerator inside fieldGenerators
  */
 
 #define NON_HIT_VALUE FLT_MAX

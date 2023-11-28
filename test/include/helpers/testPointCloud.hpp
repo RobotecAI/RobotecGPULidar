@@ -3,13 +3,11 @@
 #include <random>
 #include <ranges>
 
+#include <helpers/commonHelpers.hpp>
+#include <helpers/fieldGenerators.hpp>
+
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
-#include <helpers/commonHelpers.hpp>
-
-static std::random_device randomDevice;
-static unsigned randomSeed = randomDevice();
-static std::mt19937 randomGenerator{randomSeed};
 
 inline std::vector<rgl_field_t>& getAllNotDummyFieldsVector()
 {
@@ -22,64 +20,6 @@ inline std::vector<rgl_field_t>& getAllPaddingsVector()
 	static std::vector<rgl_field_t> allPaddingsVector(getAllPaddings().begin(), getAllPaddings().end());
 	return allPaddingsVector;
 }
-
-/**
- * @brief Generates a vector of values of the specified RGL PointCloud Field.
- *
- * @tparam FieldType The RGL Field type of data to generate.
- * @param count The number of elements to generate.
- * @param generator A user-specified function that defines how to generate each value based on its index.
- * @return A vector of generated values.
- */
-template<typename FieldType>
-static std::vector<FieldType> generateFieldValues(std::size_t count, std::function<FieldType(int)> generator)
-{
-	auto view = std::views::iota(0UL, count) | std::views::transform(generator);
-	return std::vector<FieldType>(view.begin(), view.end());
-}
-
-/**
- * Collection of generator functions for various RGL TestPointCloud Fields.
- * These can be passed as the 'generator' argument to the `generateFieldValues` function.
-*/
-static std::function<Field<XYZ_VEC3_F32>::type(int)> genCoord = [](int i) {
-	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
-	             static_cast<float>(i) / (static_cast<float>(i) + 3));
-};
-static std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) {
-	return static_cast<float>(i) / (static_cast<float>(i + 1));
-};
-static std::function<Field<AZIMUTH_F32>::type(int)> genAzimuth = [](int i) {
-	return static_cast<float>(i) / (static_cast<float>(i + 1));
-};
-static std::function<Field<DISTANCE_F32>::type(int)> genDistance = [](int i) {
-	return static_cast<float>(i) / (static_cast<float>(i + 1));
-};
-static std::function<Field<TIME_STAMP_F64>::type(int)> genTimeStamp = [](int i) {
-	return static_cast<float>(i) / (static_cast<float>(i + 1));
-};
-static std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { return i; };
-static std::function<Field<ENTITY_ID_I32>::type(int)> genEntityId = [](int i) { return i; };
-static std::function<Field<RETURN_TYPE_U8>::type(int)> genReturnType = [](int i) { return i % 3; };
-static std::function<Field<RING_ID_U16>::type(int)> genRingId = [](int i) { return i; };
-static std::function<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type(int)> genAbsoluteVelocity = [](int i) {
-	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
-	             static_cast<float>(i) / (static_cast<float>(i) + 3));
-};
-static std::function<Field<RELATIVE_VELOCITY_VEC3_F32>::type(int)> genRelativeVelocity = [](int i) {
-	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
-	             static_cast<float>(i) / (static_cast<float>(i) + 3));
-};
-static std::function<Field<RADIAL_SPEED_F32>::type(int)> genRadialSpeed = [](int i) {
-	return static_cast<float>(i) / (static_cast<float>(i + 1));
-};
-
-static std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };
-static std::function<Field<IS_HIT_I32>::type(int)> genAllNonHit = [](int i) { return 0; };
-static std::function<Field<IS_HIT_I32>::type(int)> genAllHit = [](int i) { return 1; };
-static std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
-	return std::uniform_int_distribution<int>(0, 1)(randomGenerator);
-};
 
 /**
  * @brief A utility for managing point clouds using RGL fields.
@@ -106,14 +46,13 @@ class TestPointCloud
 public:
 	explicit TestPointCloud(const std::vector<rgl_field_t>& declaredFields, std::size_t pointCount) : fields(declaredFields)
 	{
-		int offset = 0;
+		std::size_t offset = 0;
 		for (auto& field : fields) {
 			offsets.emplace_back(offset);
 			offset += getFieldSize(field);
 		}
 
 		resize(pointCount);
-		initializeFieldValueGenerators(pointCount);
 
 		// Initialize all fields to dummy values; paddings are initialized to 0
 		for (const auto& field : fields) {
@@ -314,30 +253,27 @@ private:
 	std::vector<char> data;
 	std::vector<rgl_field_t> fields;
 	std::vector<int> offsets;
-	std::map<rgl_field_t, std::function<void(std::size_t)>> fieldGenerators;
+
+	// clang-format off
+	std::map<rgl_field_t, std::function<void(std::size_t)>> fieldGenerators =
+	{
+		{XYZ_VEC3_F32, [&](std::size_t count) {setFieldValues<XYZ_VEC3_F32>(generateFieldValues(count, genCoord));}},
+		{IS_HIT_I32, [&](std::size_t count) {setFieldValues<IS_HIT_I32>(generateFieldValues(count, genRandHit));}},
+		{RAY_IDX_U32, [&](std::size_t count) {setFieldValues<RAY_IDX_U32>(generateFieldValues(count, genRayIdx));}},
+		{ENTITY_ID_I32, [&](std::size_t count) {setFieldValues<ENTITY_ID_I32>(generateFieldValues(count, genEntityId));}},
+		{INTENSITY_F32, [&](std::size_t count) {setFieldValues<INTENSITY_F32>(generateFieldValues(count, genIntensity));}},
+		{RING_ID_U16, [&](std::size_t count) {setFieldValues<RING_ID_U16>(generateFieldValues(count, genRingId));}},
+		{AZIMUTH_F32, [&](std::size_t count) {setFieldValues<AZIMUTH_F32>(generateFieldValues(count, genAzimuth));}},
+		{DISTANCE_F32, [&](std::size_t count) {setFieldValues<DISTANCE_F32>(generateFieldValues(count, genDistance));}},
+		{RETURN_TYPE_U8, [&](std::size_t count) {setFieldValues<RETURN_TYPE_U8>(generateFieldValues(count, genReturnType));}},
+		{TIME_STAMP_F64, [&](std::size_t count) {setFieldValues<TIME_STAMP_F64>(generateFieldValues(count, genTimeStamp));}},
+		{RADIAL_SPEED_F32, [&](std::size_t count) {setFieldValues<RADIAL_SPEED_F32>(generateFieldValues(count, genRadialSpeed));}},
+		{ABSOLUTE_VELOCITY_VEC3_F32, [&](std::size_t count) {setFieldValues<ABSOLUTE_VELOCITY_VEC3_F32>(generateFieldValues(count, genAbsoluteVelocity));}},
+		{RELATIVE_VELOCITY_VEC3_F32, [&](std::size_t count) {setFieldValues<RELATIVE_VELOCITY_VEC3_F32>(generateFieldValues(count, genRelativeVelocity));}}
+	};
+	// clang-format on
 
 	void resize(std::size_t newCount) { data.resize(newCount * getPointByteSize()); }
-
-	void initializeFieldValueGenerators(std::size_t pointCount)
-	{
-		// clang-format off
-		fieldGenerators = {
-		    {  XYZ_VEC3_F32, [&](std::size_t count) { setFieldValues<XYZ_VEC3_F32>(generateFieldValues(count, genCoord)); }},
-		    {    IS_HIT_I32, [&](std::size_t count) { setFieldValues<IS_HIT_I32>(generateFieldValues(count, genRandHit)); }},
-		    {   RAY_IDX_U32, [&](std::size_t count) { setFieldValues<RAY_IDX_U32>(generateFieldValues(count, genRayIdx)); }},
-		    { ENTITY_ID_I32, [&](std::size_t count) { setFieldValues<ENTITY_ID_I32>(generateFieldValues(count, genEntityId)); }},
-		    { INTENSITY_F32, [&](std::size_t count) { setFieldValues<INTENSITY_F32>(generateFieldValues(count, genIntensity)); }},
-		    {   RING_ID_U16, [&](std::size_t count) { setFieldValues<RING_ID_U16>(generateFieldValues(count, genRingId)); }},
-		    {   AZIMUTH_F32, [&](std::size_t count) { setFieldValues<AZIMUTH_F32>(generateFieldValues(count, genAzimuth)); }},
-		    {  DISTANCE_F32, [&](std::size_t count) { setFieldValues<DISTANCE_F32>(generateFieldValues(count, genDistance)); }},
-		    {RETURN_TYPE_U8, [&](std::size_t count) { setFieldValues<RETURN_TYPE_U8>(generateFieldValues(count, genReturnType)); }},
-		    {TIME_STAMP_F64, [&](std::size_t count) { setFieldValues<TIME_STAMP_F64>(generateFieldValues(count, genTimeStamp)); }},
-		    {RADIAL_SPEED_F32, [&](std::size_t count) { setFieldValues<RADIAL_SPEED_F32>(generateFieldValues(count, genRadialSpeed)); }},
-		    {ABSOLUTE_VELOCITY_VEC3_F32, [&](std::size_t count) { setFieldValues<ABSOLUTE_VELOCITY_VEC3_F32>(generateFieldValues(count, genAbsoluteVelocity)); }},
-		    {RELATIVE_VELOCITY_VEC3_F32, [&](std::size_t count) { setFieldValues<RELATIVE_VELOCITY_VEC3_F32>(generateFieldValues(count, genRelativeVelocity)); }}
-        };
-		// clang-format on
-	}
 };
 
 /**
