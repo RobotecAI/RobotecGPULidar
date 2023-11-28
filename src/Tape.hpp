@@ -187,6 +187,14 @@ public:
 
 struct PlaybackState
 {
+	void clear()
+	{
+		meshes.clear();
+		entities.clear();
+		textures.clear();
+		nodes.clear();
+	}
+
 	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
 	std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
 	std::unordered_map<TapeAPIObjectID, rgl_texture_t> textures;

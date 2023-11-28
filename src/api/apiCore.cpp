@@ -158,10 +158,7 @@ RGL_API rgl_status_t rgl_cleanup(void)
 void TapeCore::tape_cleanup(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	rgl_cleanup();
-	state.meshes.clear();
-	state.entities.clear();
-	state.nodes.clear();
-	state.textures.clear();
+	state.clear();
 }
 
 RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vertices, int32_t vertex_count,
