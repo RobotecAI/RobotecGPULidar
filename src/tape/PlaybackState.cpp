@@ -16,6 +16,7 @@
 
 #include <tape/PlaybackState.hpp>
 #include <RGLExceptions.hpp>
+#include <macros/handleDestructorException.hpp>
 
 // Hack to complete compilation on Windows. In runtime, it is never used.
 #ifdef _WIN32
@@ -42,36 +43,44 @@ void PlaybackState::clear()
 }
 
 PlaybackState::~PlaybackState()
-{
+try {
+	if (fileMmap == nullptr) {
+		return;
+	}
 	if (munmap(fileMmap, mmapSize) == -1) {
-		RGL_WARN("rgl_tape_play: failed to remove binary mappings due to {}", std::strerror(errno));
+		throw std::runtime_error(fmt::format("TAPE: failed to remove binary mappings due to {}", std::strerror(errno)));
 	}
 }
+HANDLE_DESTRUCTOR_EXCEPTION
 
 void PlaybackState::mmapInit(const char* path)
 {
 	int fd = open(path, O_RDONLY);
 	if (fd < 0) {
-		throw InvalidFilePath(fmt::format("rgl_tape_play: could not open binary file: '{}' "
+		throw InvalidFilePath(fmt::format("TAPE: could not open binary file: '{}' "
 		                                  " due to the error: {}",
 		                                  path, std::strerror(errno)));
 	}
 
-	struct stat staticBuffer
-	{};
-	int err = fstat(fd, &staticBuffer);
-	if (err < 0) {
-		throw RecordError("rgl_tape_play: couldn't read bin file length");
-	}
+	try {
+		struct stat staticBuffer
+		{};
+		int err = fstat(fd, &staticBuffer);
+		if (err < 0) {
+			throw InvalidFilePath("TAPE: couldn't read binary file length");
+		}
 
-	fileMmap = (uint8_t*) mmap(nullptr, staticBuffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	mmapSize = staticBuffer.st_size;
-	if (fileMmap == MAP_FAILED) {
-		throw InvalidFilePath(fmt::format("rgl_tape_play: could not mmap binary file: {}", path));
+		mmapSize = staticBuffer.st_size;
+
+		if (staticBuffer.st_size > 0) {
+			fileMmap = (uint8_t*) mmap(nullptr, staticBuffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+			if (fileMmap == MAP_FAILED) {
+				throw InvalidFilePath(fmt::format("TAPE: could not mmap binary file: {}", path));
+			}
+		}
 	}
-	if (close(fd)) {
-		RGL_WARN("rgl_tape_play: failed to close binary file: '{}' "
-		         "due to the error: {}",
-		         path, std::strerror(errno));
+	catch (...) {
+		close(fd);
+		throw;
 	}
 }
