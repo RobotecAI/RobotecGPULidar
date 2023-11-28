@@ -66,7 +66,7 @@ void Ros2PublishPointsNode::enqueueExecImpl()
 
 void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense)
 {
-	ros2Message = sensor_msgs::msg::PointCloud2();
+	ros2Message.fields.clear();
 	int offset = 0;
 	for (const auto& field : fields) {
 		auto ros2fields = toRos2Fields(field);
