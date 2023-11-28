@@ -22,6 +22,9 @@ public:
 protected:
 	rgl_node_t formatNode = nullptr;
 
+	const std::vector<rgl_field_t> allNotDummyFields = getAllNotDummyFieldsVector();
+	const std::vector<rgl_field_t> allPaddings = getAllPaddingsVector();
+
 	void runGraphWithAssertions(rgl_node_t& inNode, const std::vector<rgl_field_t>& fieldsToFormat)
 	{
 		ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNode, fieldsToFormat.data(), fieldsToFormat.size()));
@@ -177,13 +180,13 @@ TEST_F(FormatPointsNodeTest, paddings_alone)
 {
 	int pointsCount = maxGPUCoresTestCount;
 
-	TestPointCloud pointCloud = TestPointCloud(availablePaddings, pointsCount);
+	TestPointCloud pointCloud = TestPointCloud(allPaddings, pointsCount);
 	rgl_node_t inNode = pointCloud.createUsePointsNode();
 
-	runGraphWithAssertions(inNode, availablePaddings);
+	runGraphWithAssertions(inNode, allPaddings);
 
 	// When creating outPointCloud, the createFromFormatNode method checks that the outSize matches the field size
-	TestPointCloud outPointCloud = TestPointCloud::createFromFormatNode(formatNode, availablePaddings);
+	TestPointCloud outPointCloud = TestPointCloud::createFromFormatNode(formatNode, allPaddings);
 	EXPECT_EQ(outPointCloud.getPointCount(), pointsCount);
 }
 

@@ -10,11 +10,17 @@ static std::random_device randomDevice;
 static unsigned randomSeed = randomDevice();
 static std::mt19937 randomGenerator{randomSeed};
 
-static const std::vector<rgl_field_t> allNotDummyFields = {XYZ_VEC3_F32,   INTENSITY_F32, IS_HIT_I32,  RAY_IDX_U32,
-                                                           ENTITY_ID_I32,  RING_ID_U16,   AZIMUTH_F32, DISTANCE_F32,
-                                                           RETURN_TYPE_U8, TIME_STAMP_F64};
+inline std::vector<rgl_field_t>& getAllNotDummyFieldsVector()
+{
+	static std::vector<rgl_field_t> allNotDummyFieldsVector(getAllNotDummyFields().begin(), getAllNotDummyFields().end());
+	return allNotDummyFieldsVector;
+}
 
-static const std::vector<rgl_field_t> availablePaddings = {PADDING_8, PADDING_16, PADDING_32};
+inline std::vector<rgl_field_t>& getAllPaddingsVector()
+{
+	static std::vector<rgl_field_t> allPaddingsVector(getAllPaddings().begin(), getAllPaddings().end());
+	return allPaddingsVector;
+}
 
 /**
  * @brief Generates a vector of values of the specified RGL PointCloud Field.
@@ -59,6 +65,17 @@ static std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { retu
 static std::function<Field<ENTITY_ID_I32>::type(int)> genEntityId = [](int i) { return i; };
 static std::function<Field<RETURN_TYPE_U8>::type(int)> genReturnType = [](int i) { return i % 3; };
 static std::function<Field<RING_ID_U16>::type(int)> genRingId = [](int i) { return i; };
+static std::function<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type(int)> genAbsoluteVelocity = [](int i) {
+	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
+	             static_cast<float>(i) / (static_cast<float>(i) + 3));
+};
+static std::function<Field<RELATIVE_VELOCITY_VEC3_F32>::type(int)> genRelativeVelocity = [](int i) {
+	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
+	             static_cast<float>(i) / (static_cast<float>(i) + 3));
+};
+static std::function<Field<RADIAL_SPEED_F32>::type(int)> genRadialSpeed = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
 
 static std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };
 static std::function<Field<IS_HIT_I32>::type(int)> genAllNonHit = [](int i) { return 0; };
@@ -317,7 +334,10 @@ private:
 		    {   AZIMUTH_F32, [&](std::size_t count) { setFieldValues<AZIMUTH_F32>(generateFieldValues(count, genAzimuth)); }},
 		    {  DISTANCE_F32, [&](std::size_t count) { setFieldValues<DISTANCE_F32>(generateFieldValues(count, genDistance)); }},
 		    {RETURN_TYPE_U8, [&](std::size_t count) { setFieldValues<RETURN_TYPE_U8>(generateFieldValues(count, genReturnType)); }},
-		    {TIME_STAMP_F64, [&](std::size_t count) { setFieldValues<TIME_STAMP_F64>(generateFieldValues(count, genTimeStamp)); }}
+		    {TIME_STAMP_F64, [&](std::size_t count) { setFieldValues<TIME_STAMP_F64>(generateFieldValues(count, genTimeStamp)); }},
+		    {RADIAL_SPEED_F32, [&](std::size_t count) { setFieldValues<RADIAL_SPEED_F32>(generateFieldValues(count, genRadialSpeed)); }},
+		    {ABSOLUTE_VELOCITY_VEC3_F32, [&](std::size_t count) { setFieldValues<ABSOLUTE_VELOCITY_VEC3_F32>(generateFieldValues(count, genAbsoluteVelocity)); }},
+		    {RELATIVE_VELOCITY_VEC3_F32, [&](std::size_t count) { setFieldValues<RELATIVE_VELOCITY_VEC3_F32>(generateFieldValues(count, genRelativeVelocity)); }}
         };
 		// clang-format on
 	}
@@ -330,11 +350,11 @@ private:
 static std::vector<rgl_field_t> generateRandomStaticFieldsVector(std::size_t numberOfPaddings)
 {
 	std::vector<rgl_field_t> fields;
-	fields.reserve(allNotDummyFields.size() + numberOfPaddings);
+	fields.reserve(getAllNotDummyFieldsVector().size() + numberOfPaddings);
 
-	std::sample(allNotDummyFields.begin(), allNotDummyFields.end(), std::back_inserter(fields), allNotDummyFields.size(),
-	            randomGenerator);
-	std::sample(availablePaddings.begin(), availablePaddings.end(), std::back_inserter(fields), numberOfPaddings,
+	std::sample(getAllNotDummyFieldsVector().begin(), getAllNotDummyFieldsVector().end(), std::back_inserter(fields),
+	            getAllNotDummyFieldsVector().size(), randomGenerator);
+	std::sample(getAllPaddingsVector().begin(), getAllPaddingsVector().end(), std::back_inserter(fields), numberOfPaddings,
 	            randomGenerator);
 	std::shuffle(fields.begin(), fields.end(), randomGenerator);
 
