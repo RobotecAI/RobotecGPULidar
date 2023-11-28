@@ -47,7 +47,7 @@ public:
 	explicit TestPointCloud(const std::vector<rgl_field_t>& declaredFields, std::size_t pointCount) : fields(declaredFields)
 	{
 		std::size_t offset = 0;
-		for (auto& field : fields) {
+		for (auto&& field : fields) {
 			offsets.emplace_back(offset);
 			offset += getFieldSize(field);
 		}
@@ -56,13 +56,15 @@ public:
 
 		// Initialize all fields to dummy values; paddings are initialized to 0
 		for (const auto& field : fields) {
-			auto gen = fieldGenerators.find(field);
-			if (gen != fieldGenerators.end()) {
-				gen->second(pointCount);
+			if (!isDummy(field)) {
+				fieldGenerators.at(field)(pointCount);
 			}
 		}
 	}
 
+	/** @note The caller must ensure the `fields` match those in `outputNode`. This function
+	 *       does not verify field consistency. Inaccurate field matching may lead to errors.
+	 */
 	static TestPointCloud createFromNode(rgl_node_t outputNode, const std::vector<rgl_field_t>& fields)
 	{
 		int32_t outCount;
@@ -95,13 +97,15 @@ public:
 		return pointCloud;
 	}
 
+	/** @note The caller must ensure the `fields` match those in `formatNode`. This function
+	 *       does not verify field consistency. Inaccurate field matching may lead to errors.
+	 */
 	static TestPointCloud createFromFormatNode(rgl_node_t formatNode, const std::vector<rgl_field_t>& fields)
 	{
 		int32_t outCount, outSize;
 		EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(formatNode, RGL_FIELD_DYNAMIC_FORMAT, &outCount, &outSize));
 
-		std::size_t expectedSize = std::accumulate(
-		    fields.begin(), fields.end(), 0, [](std::size_t sum, rgl_field_t field) { return sum + getFieldSize(field); });
+		std::size_t expectedSize = getPointSize(fields);
 
 		if (outSize != expectedSize) {
 			throw std::invalid_argument("TestPointCloud::createFromFormatNode: formatNode does not match the expected size");
@@ -117,15 +121,17 @@ public:
 
 		// If paddings are present, they are initialized to 0 in order to be able to compare the point clouds
 		for (int i = 0; i < fields.size(); ++i) {
-			if (isDummy(fields.at(i))) {
-				for (int j = 0; j < outCount; ++j) {
-					std::fill(pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i),
-					          pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i) +
-					              getFieldSize(fields.at(i)),
-					          0);
-				}
+			if (!isDummy(fields.at(i))) {
+				continue;
+			}
+			for (int j = 0; j < outCount; ++j) {
+				std::fill(pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i),
+				          pointCloud.data.begin() + j * pointCloud.getPointByteSize() + pointCloud.offsets.at(i) +
+				              getFieldSize(fields.at(i)),
+				          0);
 			}
 		}
+
 		return pointCloud;
 	}
 
@@ -143,16 +149,18 @@ public:
 		filteredData.reserve(data.size());
 
 		for (int i = 0; i < fields.size(); ++i) {
-			if (fields.at(i) == IS_HIT_I32) {
-				for (int j = 0; j < getPointCount(); ++j) {
-					char isHitValue = *reinterpret_cast<char*>(data.data() + j * getPointByteSize() + offsets.at(i));
-					if (isHitValue != 0) {
-						std::move(data.begin() + j * getPointByteSize(), data.begin() + (j + 1) * getPointByteSize(),
-						          std::back_inserter(filteredData));
-					}
-				}
-				break;
+			if (fields.at(i) != IS_HIT_I32) {
+				continue;
 			}
+			for (int j = 0; j < getPointCount(); ++j) {
+				char isHitValue = *reinterpret_cast<char*>(data.data() + j * getPointByteSize() + offsets.at(i));
+				if (isHitValue != 0) {
+					// TODO: function for calculate index of point
+					std::move(data.begin() + j * getPointByteSize(), data.begin() + (j + 1) * getPointByteSize(),
+					          std::back_inserter(filteredData));
+				}
+			}
+			break;
 		}
 		data = std::move(filteredData);
 	}
@@ -183,16 +191,7 @@ public:
 
 	bool operator==(const TestPointCloud& other) const
 	{
-		if (getPointCount() != other.getPointCount()) {
-			return false;
-		}
-		if (fields != other.fields) {
-			return false;
-		}
-		if (data != other.data) {
-			return false;
-		}
-		return true;
+		return getPointCount() == other.getPointCount() && fields == other.fields && data == other.data;
 	}
 
 	template<rgl_field_t T>
@@ -213,6 +212,7 @@ public:
 		for (auto fieldIndex : fieldIndices) {
 			int offset = offsets.at(fieldIndex);
 			for (int i = 0; i < getPointCount(); i++) {
+				// TODO function for calculate index of point
 				std::move(reinterpret_cast<char*>(fieldValues.data() + i), reinterpret_cast<char*>(fieldValues.data() + i + 1),
 				          data.data() + i * getPointByteSize() + offset);
 			}
@@ -237,11 +237,7 @@ public:
 		return fieldValues;
 	}
 
-	std::size_t getPointByteSize() const
-	{
-		return std::accumulate(fields.begin(), fields.end(), 0,
-		                       [](std::size_t sum, rgl_field_t field) { return sum + getFieldSize(field); });
-	}
+	std::size_t getPointByteSize() const { return getPointSize(fields); }
 
 	char* getData() { return data.data(); }
 

@@ -25,7 +25,7 @@ protected:
 	const std::vector<rgl_field_t> allNotDummyFields = getAllNotDummyFieldsVector();
 	const std::vector<rgl_field_t> allPaddings = getAllPaddingsVector();
 
-	void runGraphWithAssertions(rgl_node_t& inNode, const std::vector<rgl_field_t>& fieldsToFormat)
+	void runGraphWithAssertions(rgl_node_t inNode, const std::vector<rgl_field_t>& fieldsToFormat)
 	{
 		ASSERT_RGL_SUCCESS(rgl_node_points_format(&formatNode, fieldsToFormat.data(), fieldsToFormat.size()));
 		ASSERT_THAT(formatNode, testing::NotNull());
@@ -72,7 +72,7 @@ TEST_F(FormatPointsNodeTest, error_when_invalid_field_request)
 	                            "cannot format field 'RGL_FIELD_DYNAMIC_FORMAT'");
 }
 
-TEST_F(FormatPointsNodeTest, format_when_empty_point_cloud_input)
+TEST_F(FormatPointsNodeTest, should_format_empty_input)
 {
 	rgl_node_t emptyPointCloudOutputNode = nullptr;
 	createOrUpdateNode<EmptyNode>(&emptyPointCloudOutputNode);
@@ -88,9 +88,9 @@ TEST_F(FormatPointsNodeTest, format_when_empty_point_cloud_input)
 	// Check if the contents of outData have changed (they should not have)
 	std::vector<::Field<XYZ_VEC3_F32>::type> outData{
 	    { 2.0f,  3.0f,  5.0f},
-        { 7.0f, 11.0f, 13.0f},
-        {17.0f, 19.0f, 23.0f}
-    };
+	    { 7.0f, 11.0f, 13.0f},
+	    {17.0f, 19.0f, 23.0f},
+	};
 	auto outDataCopy = outData;
 
 	// Verify that the data is unchanged; this is a sanity check to make sure that the data is not overwritten
