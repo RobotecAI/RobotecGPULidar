@@ -15,7 +15,7 @@
 #include "rgl/api/extensions/tape.h"
 #include "rgl/api/extensions/pcl.h"
 #include "spdlog/fmt/fmt.h"
-#include "Tape.hpp"
+#include "tape/TapePlayer.hpp"
 #include "macros/checkRGL.hpp"
 
 constexpr std::string_view INTERCEPTED_NODE_CALL = "rgl_node_points_compact";

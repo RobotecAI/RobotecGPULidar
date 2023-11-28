@@ -14,7 +14,8 @@
 
 #pragma once
 
-#include <Tape.hpp>
+#include <tape/PlaybackState.hpp>
+#include <tape/TapePlayer.hpp>
 
 class TapePcl
 {

@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,57 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "Tape.hpp"
+#include <filesystem>
+#include <fstream>
+#include <cassert>
+#include <fcntl.h>
 
-using namespace std::placeholders;
+#include <tape/TapePlayer.hpp>
+#include <tape/tapeDefinitions.hpp>
+#include <RGLExceptions.hpp>
+
+// Hack to complete compilation on Windows. In runtime, it is never used.
+#ifdef _WIN32
+#include <io.h>
+#define PROT_READ 1
+#define MAP_PRIVATE 1
+#define MAP_FAILED nullptr
+static int munmap(void* addr, size_t length) { return -1; }
+static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
+#else
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif // _WIN32
+
 namespace fs = std::filesystem;
-
-std::optional<TapeRecorder> tapeRecorder;
-
-TapeRecorder::TapeRecorder(const fs::path& path)
-{
-	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
-	std::string pathBin = fs::path(path).concat(BIN_EXTENSION).string();
-
-	fileBin = fopen(pathBin.c_str(), "wb");
-	if (nullptr == fileBin) {
-		throw InvalidFilePath(fmt::format("rgl_tape_record_begin: could not open binary file '{}' "
-		                                  "due to the error: {}",
-		                                  pathBin, std::strerror(errno)));
-	}
-	fileYaml.open(pathYaml);
-	if (fileYaml.fail()) {
-		throw InvalidFilePath(fmt::format("rgl_tape_record_begin: could not open yaml file '{}' "
-		                                  "due to the error: {}",
-		                                  pathYaml, std::strerror(errno)));
-	}
-	TapeRecorder::recordRGLVersion(yamlRoot);
-	yamlRecording = yamlRoot["recording"];
-	beginTimestamp = std::chrono::steady_clock::now();
-}
-
-TapeRecorder::~TapeRecorder()
-{
-	// TODO(prybicki): SIOF with Logger !!!
-	fileYaml << yamlRoot;
-	fileYaml.close();
-	if (fileYaml.fail()) {
-		RGL_WARN("rgl_tape_record_end: failed to close yaml file due to the error: {}", std::strerror(errno));
-	}
-	if (fclose(fileBin)) {
-		RGL_WARN("rgl_tape_record_end: failed to close binary file due to the error: {}", std::strerror(errno));
-	}
-}
-
-void TapeRecorder::recordRGLVersion(YAML::Node& node)
-{
-	YAML::Node rglVersion;
-	rglVersion["major"] = RGL_VERSION_MAJOR;
-	rglVersion["minor"] = RGL_VERSION_MINOR;
-	rglVersion["patch"] = RGL_VERSION_PATCH;
-	node[RGL_VERSION] = rglVersion;
-}
-
 
 TapePlayer::TapePlayer(const char* path)
 {

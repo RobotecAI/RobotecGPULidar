@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,38 +14,15 @@
 
 #pragma once
 
-// Hack to complete compilation on Windows. In runtime, it is never used.
-#ifdef _WIN32
-#include <io.h>
-#define PROT_READ 1
-#define MAP_PRIVATE 1
-#define MAP_FAILED nullptr
-static int munmap(void* addr, size_t length) { return -1; }
-static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_t offset) { return nullptr; }
-#else
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#endif // _WIN32
-
-#include <fcntl.h>
-#include <filesystem>
-#include <fstream>
 #include <string>
 #include <optional>
-#include <unordered_map>
-#include <map>
+#include <fstream>
 
-#include <spdlog/fmt/bundled/format.h>
 #include <yaml-cpp/yaml.h>
 
-#include <Logger.hpp>
-#include <RGLExceptions.hpp>
 #include <rgl/api/core.h>
-
-#define BIN_EXTENSION ".bin"
-#define YAML_EXTENSION ".yaml"
-#define RGL_VERSION "rgl_version"
+#include <RGLExceptions.hpp>
+#include <Logger.hpp>
 
 #ifdef _WIN32
 #define TAPE_HOOK(...)
@@ -59,21 +36,13 @@ static void* mmap(void* start, size_t length, int prot, int flags, int fd, size_
 #endif // _WIN32
 
 #define TAPE_ARRAY(data, count) std::make_pair(data, count)
+
 #define FWRITE(source, elemSize, elemCount, file)                                                                              \
 	do                                                                                                                         \
 		if (fwrite(source, elemSize, elemCount, file) != elemCount) {                                                          \
 			throw RecordError(fmt::format("Failed to write data to binary file"));                                             \
 		}                                                                                                                      \
 	while (0)
-
-// Helper macro to define tape function mapping entry
-#define TAPE_CALL_MAPPING(API_CALL_STRING, TAPE_CALL)                                                                          \
-	{                                                                                                                          \
-		API_CALL_STRING, [](const auto& yamlNode, auto& tapeState) { TAPE_CALL(yamlNode, tapeState); }                         \
-	}
-
-// Type used as a key in TapePlayer object registry
-using TapeAPIObjectID = size_t;
 
 class TapeRecorder
 {
@@ -183,82 +152,6 @@ public:
 		}
 		yamlRecording.push_back(apiCallNode);
 	}
-};
-
-struct PlaybackState
-{
-	void clear()
-	{
-		meshes.clear();
-		entities.clear();
-		textures.clear();
-		nodes.clear();
-	}
-
-	template<typename T>
-	T* getPtr(const YAML::Node& offsetYamlNode)
-	{
-		assert(fileMmap != nullptr);
-		auto offset = offsetYamlNode.as<size_t>();
-		if (offset > mmapSize) {
-			throw std::runtime_error(fmt::format("Tape binary offset ({}) out of range ({})", offset, mmapSize));
-		}
-		return reinterpret_cast<T*>(fileMmap + offset);
-	}
-
-	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
-	std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
-	std::unordered_map<TapeAPIObjectID, rgl_texture_t> textures;
-	std::unordered_map<TapeAPIObjectID, rgl_node_t> nodes;
-
-private:
-	uint8_t* fileMmap{nullptr};
-	size_t mmapSize{0};
-
-	friend struct TapePlayer; // To access private members
-};
-
-// Signature of tape function corresponding to the API function
-using TapeFunction = std::function<void(const YAML::Node&, PlaybackState&)>;
-
-struct TapePlayer
-{
-	using APICallIdx = int32_t;
-	explicit TapePlayer(const char* path);
-
-	static void extendTapeFunctions(std::map<std::string, TapeFunction> map) { tapeFunctions.insert(map.begin(), map.end()); }
-
-	std::optional<APICallIdx> findFirst(std::set<std::string_view> fnNames);
-	std::optional<APICallIdx> findLast(std::set<std::string_view> fnNames);
-	std::vector<APICallIdx> findAll(std::set<std::string_view> fnNames);
-
-	void playThis(APICallIdx idx);
-	void playThrough(APICallIdx last);
-	void playUntil(std::optional<APICallIdx> breakpoint = std::nullopt);
-	void playRealtime();
-
-	void rewindTo(APICallIdx nextCall = 0);
-
-	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return playbackState.nodes.at(key); }
-
-	template<typename T>
-	T getCallArg(APICallIdx idx, int arg)
-	{
-		return yamlRecording[idx][arg].as<T>();
-	}
-
-	~TapePlayer();
-
-private:
-	YAML::Node yamlRoot{};
-	YAML::Node yamlRecording{};
-	APICallIdx nextCall{};
-	PlaybackState playbackState;
-
-	static inline std::map<std::string, TapeFunction> tapeFunctions = {};
-
-private:
-	void mmapInit(const char* path);
 };
 
 extern std::optional<TapeRecorder> tapeRecorder;

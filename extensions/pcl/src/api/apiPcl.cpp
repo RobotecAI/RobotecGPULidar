@@ -22,7 +22,7 @@
 #include <api/apiCommon.hpp>
 #include <graph/NodesCore.hpp>
 #include <graph/NodesPcl.hpp>
-#include <TapePcl.hpp>
+#include <tape/TapePcl.hpp>
 
 #include <RGLExceptions.hpp>
 #include <RGLFields.hpp>

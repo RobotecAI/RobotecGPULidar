@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "spdlog/fmt/fmt.h"
-#include "tape/TapePlayer.hpp"
+#include <tape/PlaybackState.hpp>
 
-int main(int argc, char** argv)
+void PlaybackState::clear()
 {
-	if (argc != 2) {
-		fmt::print(stderr, "USAGE: {} <path-to-tape-without-suffix>\n", argv[0]);
-		return 1;
-	}
-	TapePlayer player{argv[1]};
-	player.playUntil();
-	return 0;
+	meshes.clear();
+	entities.clear();
+	textures.clear();
+	nodes.clear();
 }

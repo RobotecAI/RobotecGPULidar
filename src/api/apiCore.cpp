@@ -17,7 +17,7 @@
 
 #include <api/apiCommon.hpp>
 
-#include <TapeCore.hpp>
+#include <tape/TapeCore.hpp>
 
 #include <scene/Scene.hpp>
 #include <scene/Entity.hpp>
