@@ -30,12 +30,18 @@ struct PlaybackState
 	template<typename T>
 	T* getPtr(const YAML::Node& offsetYamlNode)
 	{
+		size_t sizeOfType = 1;
+		if constexpr (!std::is_same_v<std::remove_const_t<T>, void>) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			sizeOfType = sizeof(T);
+		}
 		if (fileMmap == nullptr) {
 			throw std::runtime_error("Trying to get tape binary data but it is empty");
 		}
 		auto offset = offsetYamlNode.as<size_t>();
-		if (offset > mmapSize) {
-			throw std::runtime_error(fmt::format("Tape binary offset ({}) out of range ({})", offset, mmapSize));
+		if (offset + sizeOfType > mmapSize) {
+			throw std::runtime_error(fmt::format("Tape binary offset with size of requested type ({}+{}) out of range ({})",
+			                                     offset, sizeOfType, mmapSize));
 		}
 		return reinterpret_cast<T*>(fileMmap + offset);
 	}
