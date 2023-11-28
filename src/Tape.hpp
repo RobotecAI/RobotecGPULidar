@@ -195,12 +195,27 @@ struct PlaybackState
 		nodes.clear();
 	}
 
+	template<typename T>
+	T* getPtr(const YAML::Node& offsetYamlNode)
+	{
+		assert(fileMmap != nullptr);
+		auto offset = offsetYamlNode.as<size_t>();
+		if (offset > mmapSize) {
+			throw std::runtime_error(fmt::format("Tape binary offset ({}) out of range ({})", offset, mmapSize));
+		}
+		return reinterpret_cast<T*>(fileMmap + offset);
+	}
+
 	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
 	std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
 	std::unordered_map<TapeAPIObjectID, rgl_texture_t> textures;
 	std::unordered_map<TapeAPIObjectID, rgl_node_t> nodes;
-	uint8_t* fileMmap{};
-	size_t mmapSize{};
+
+private:
+	uint8_t* fileMmap{nullptr};
+	size_t mmapSize{0};
+
+	friend struct TapePlayer; // To access private members
 };
 
 // Signature of tape function corresponding to the API function
