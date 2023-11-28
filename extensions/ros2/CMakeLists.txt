@@ -18,9 +18,13 @@ target_include_directories(RobotecGPULidar PUBLIC
     ${sensor_msgs_INCLUDE_DIRS}
     ${visualization_msgs_INCLUDE_DIRS}
 )
+
 target_link_libraries(RobotecGPULidar PRIVATE
     ${rclcpp_LIBRARIES}
-    ${sensor_msgs_LIBRARIES}
+    # Here we would add both sensor_msgs and visualization_msgs, but Windows.
+    # These variables contain many duplicates and are very lengthy, which results in LNK1170.
+    # Luckily, it seems sufficient to link only visualization_msgs - most likely it contains sensor_msgs.
+    # ${sensor_msgs_LIBRARIES}
     ${visualization_msgs_LIBRARIES}
 )
 
