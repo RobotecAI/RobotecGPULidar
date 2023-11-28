@@ -22,6 +22,7 @@
 #include <api/apiCommon.hpp>
 #include <graph/NodesCore.hpp>
 #include <graph/NodesPcl.hpp>
+#include <tape/TapePcl.hpp>
 
 #include <RGLExceptions.hpp>
 #include <RGLFields.hpp>
@@ -72,9 +73,9 @@ RGL_API rgl_status_t rgl_graph_write_pcd_file(rgl_node_t node, const char* file_
 	return status;
 }
 
-void TapePlayer::tape_graph_write_pcd_file(const YAML::Node& yamlNode)
+void TapePcl::tape_graph_write_pcd_file(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_graph_write_pcd_file(tapeNodes.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<std::string>().c_str());
+	rgl_graph_write_pcd_file(state.nodes.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<std::string>().c_str());
 }
 
 RGL_API rgl_status_t rgl_node_points_downsample(rgl_node_t* node, float leaf_size_x, float leaf_size_y, float leaf_size_z)
@@ -89,12 +90,12 @@ RGL_API rgl_status_t rgl_node_points_downsample(rgl_node_t* node, float leaf_siz
 	return status;
 }
 
-void TapePlayer::tape_node_points_downsample(const YAML::Node& yamlNode)
+void TapePcl::tape_node_points_downsample(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_downsample(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>());
-	tapeNodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 
 RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int32_t window_width,
@@ -114,12 +115,12 @@ RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* win
 	return status;
 }
 
-void TapePlayer::tape_node_points_visualize(const YAML::Node& yamlNode)
+void TapePcl::tape_node_points_visualize(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	rgl_node_t node = tapeNodes.contains(nodeId) ? tapeNodes.at(nodeId) : nullptr;
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_visualize(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<int32_t>(),
 	                          yamlNode[3].as<int32_t>(), yamlNode[4].as<bool>());
-	tapeNodes.insert({nodeId, node});
+	state.nodes.insert({nodeId, node});
 }
 }

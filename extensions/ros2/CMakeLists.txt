@@ -15,5 +15,6 @@ target_include_directories(RobotecGPULidar PUBLIC ${rclcpp_INCLUDE_DIRS} ${senso
 target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
 
 target_include_directories(RobotecGPULidar
+    PUBLIC include
     PRIVATE src
 )

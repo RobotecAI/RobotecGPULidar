@@ -79,7 +79,9 @@ add_library(optixPrograms optixProgramsPtx.c)
 add_library(RobotecGPULidar SHARED
     src/api/apiCommon.cpp
     src/api/apiCore.cpp
-    src/Tape.cpp
+    src/tape/TapePlayer.cpp
+    src/tape/TapeRecorder.cpp
+    src/tape/PlaybackState.cpp
     src/Logger.cpp
     src/Optix.cpp
     src/gpu/helpersKernels.cu

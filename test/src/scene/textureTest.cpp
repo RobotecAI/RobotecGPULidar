@@ -6,7 +6,7 @@
 
 #include <RGLFields.hpp>
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
 #endif
 

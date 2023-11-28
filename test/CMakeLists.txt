@@ -60,7 +60,7 @@ endif()
 
 add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
-target_link_libraries(RobotecGPULidar_test
+target_link_libraries(RobotecGPULidar_test PRIVATE
     gtest_main
     gmock_main
     RobotecGPULidar
@@ -72,6 +72,10 @@ target_include_directories(RobotecGPULidar_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src/synchronization
 )
+
+if (RGL_BUILD_UDP_EXTENSION)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/udp/test ${CMAKE_CURRENT_BINARY_DIR}/udp)
+endif()
 
 include(GoogleTest)
 

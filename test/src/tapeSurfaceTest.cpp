@@ -37,8 +37,7 @@ TEST_F(TapeCase, RecordPlayLoggingCall)
 	EXPECT_RGL_SUCCESS(rgl_tape_record_end());
 	EXPECT_RGL_SUCCESS(rgl_tape_record_is_active(&isTapeRecordActive));
 	EXPECT_FALSE(isTapeRecordActive);
-	// TODO(nebraszka): As the bin file is empty, the tape fails to play
-	// EXPECT_RGL_SUCCESS(rgl_tape_play(loggingRecordPath.c_str()));
+	EXPECT_RGL_SUCCESS(rgl_tape_play(loggingRecordPath.c_str()));
 }
 
 TEST_F(TapeCase, RecordPlayAllCalls)
