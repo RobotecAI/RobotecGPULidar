@@ -22,8 +22,9 @@
 
 struct Time
 {
-	friend Time operator-(const Time& lhs, const Time& rhs);
-	std::strong_ordering operator<=>(const Time& rhs) const = default;
+	friend Time operator-(const Time& lhs, const Time& rhs) noexcept;
+	// TODO: We can use std::strong_ordering if we upgrade to CUDA 12
+	friend bool operator==(const Time& lhs, const Time& rhs) noexcept;
 
 	static Time zero() { return Time(0); }
 	static Time seconds(double seconds) { return Time(static_cast<uint64_t>(seconds * 1.0e9)); }
@@ -48,4 +49,5 @@ private:
 	uint64_t timeNs;
 };
 
-inline Time operator-(const Time& lhs, const Time& rhs) { return Time::nanoseconds(lhs.timeNs - rhs.timeNs); }
+inline Time operator-(const Time& lhs, const Time& rhs) noexcept { return Time::nanoseconds(lhs.timeNs - rhs.timeNs); }
+inline bool operator==(const Time& lhs, const Time& rhs) noexcept { return lhs.timeNs == rhs.timeNs; }
