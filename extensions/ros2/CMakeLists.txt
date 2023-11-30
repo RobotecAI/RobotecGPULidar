@@ -5,14 +5,28 @@ endif()
 
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 target_sources(RobotecGPULidar PRIVATE
     src/api/apiRos2.cpp
     src/graph/Ros2PublishPointsNode.cpp
+    src/graph/Ros2PublishPointVelocityMarkersNode.cpp
 )
 
-target_include_directories(RobotecGPULidar PUBLIC ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS})
-target_link_libraries(RobotecGPULidar PRIVATE ${rclcpp_LIBRARIES} ${sensor_msgs_LIBRARIES})
+target_include_directories(RobotecGPULidar PUBLIC
+    ${rclcpp_INCLUDE_DIRS}
+    ${sensor_msgs_INCLUDE_DIRS}
+    ${visualization_msgs_INCLUDE_DIRS}
+)
+
+target_link_libraries(RobotecGPULidar PRIVATE
+    ${rclcpp_LIBRARIES}
+    # Here we would add both sensor_msgs and visualization_msgs, but Windows.
+    # These variables contain many duplicates and are very lengthy, which results in LNK1170.
+    # Luckily, it seems sufficient to link only visualization_msgs - most likely it contains sensor_msgs.
+    # ${sensor_msgs_LIBRARIES}
+    ${visualization_msgs_LIBRARIES}
+)
 
 target_include_directories(RobotecGPULidar
     PUBLIC include
