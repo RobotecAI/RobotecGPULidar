@@ -52,8 +52,9 @@ void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
 
 const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::makeLinesMarker()
 {
-	static visualization_msgs::msg::Marker marker;
-	marker.header.stamp = Scene::instance().getTime().value().asRos2Msg();
+	marker.header.stamp = Scene::instance().getTime().has_value() ?
+	                          Scene::instance().getTime().value().asRos2Msg() :
+	                          static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
 	marker.header.frame_id = this->frameId;
 	marker.action = visualization_msgs::msg::Marker::ADD;
 	marker.color.r = 1.0;
@@ -62,8 +63,7 @@ const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::make
 	marker.color.a = 0.32;
 	marker.type = visualization_msgs::msg::Marker::LINE_LIST;
 	marker.scale.x = 0.02; // Line width diameter
-	marker.points.clear();
-	marker.points.reserve(pos->getCount() * 2);
+	marker.points.resize(pos->getCount() * 2);
 	geometry_msgs::msg::Point origin, end;
 	for (int i = 0; i < pos->getCount(); i++) {
 		origin.x = pos->at(i).x();
@@ -72,8 +72,8 @@ const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::make
 		end.x = origin.x + vel->at(i).x();
 		end.y = origin.y + vel->at(i).y();
 		end.z = origin.z + vel->at(i).z();
-		marker.points.emplace_back(origin);
-		marker.points.emplace_back(end);
+		marker.points[2 * i] = origin;
+		marker.points[2 * i + 1] = end;
 	}
 	return marker;
 }

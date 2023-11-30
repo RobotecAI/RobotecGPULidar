@@ -74,6 +74,7 @@ private:
 	rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr linesPublisher;
 	HostPinnedArray<Vec3f>::Ptr pos = HostPinnedArray<Vec3f>::create();
 	HostPinnedArray<Vec3f>::Ptr vel = HostPinnedArray<Vec3f>::create();
+	visualization_msgs::msg::Marker marker;
 
 	const visualization_msgs::msg::Marker& makeLinesMarker();
 };
