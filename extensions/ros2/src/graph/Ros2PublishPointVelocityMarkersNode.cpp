@@ -20,7 +20,7 @@ void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, c
 	this->frameId = frameId;
 	ros2InitGuard = Ros2InitGuard::acquire();
 	auto qos = rclcpp::QoS(10); // Use system default QoS
-	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::MarkerArray>(topicName, qos);
+	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::Marker>(topicName, qos);
 }
 
 void Ros2PublishPointVelocityMarkersNode::validateImpl()
@@ -35,19 +35,11 @@ void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
 	pos->copyFrom(input->getFieldData(RGL_FIELD_XYZ_VEC3_F32));
 	vel->copyFrom(input->getFieldData(RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32));
 
-	// Add special marker to delete previous markers
-	auto cancelMsg = visualization_msgs::msg::Marker();
-	cancelMsg.action = visualization_msgs::msg::Marker::DELETEALL;
-	cancelMsg.id = -1; // Avoid collision with lines id, RViz2 would complain
-
-	visualization_msgs::msg::MarkerArray lines;
-	lines.markers.emplace_back(cancelMsg);
-	lines.markers.emplace_back(makeLinesMarker());
 	if (!rclcpp::ok()) {
 		// TODO: This should be handled by the Graph.
 		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
 	}
-	linesPublisher->publish(lines);
+	linesPublisher->publish(makeLinesMarker());
 }
 
 const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::makeLinesMarker()

@@ -71,7 +71,7 @@ struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
 private:
 	std::string frameId;
 	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
-	rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr linesPublisher;
+	rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr linesPublisher;
 	HostPinnedArray<Vec3f>::Ptr pos = HostPinnedArray<Vec3f>::create();
 	HostPinnedArray<Vec3f>::Ptr vel = HostPinnedArray<Vec3f>::create();
 	visualization_msgs::msg::Marker marker;
