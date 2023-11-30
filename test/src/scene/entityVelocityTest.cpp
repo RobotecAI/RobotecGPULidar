@@ -147,7 +147,7 @@ TEST(EntityVelocity, Interactive)
 	while (true) {
 		auto currentTime = frameId * nsPerFrame;
 		auto currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
-		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
+		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
 
 		translatingCube.update(currentTimeSeconds);
 		rotatingCube.update(currentTimeSeconds);
@@ -156,7 +156,7 @@ TEST(EntityVelocity, Interactive)
 		rotateTranslateCube.update(currentTimeSeconds);
 		morphTranslateCube.update(currentTimeSeconds);
 
-		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
 		std::this_thread::sleep_for(10ms);
 		frameId += 1;
 	}
