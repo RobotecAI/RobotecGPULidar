@@ -24,7 +24,7 @@
  */
 struct Ros2InitGuard
 {
-	rclcpp::Node::SharedPtr node;
+	rclcpp::Node& getNode() const { return *node; }
 
 	static inline std::shared_ptr<Ros2InitGuard> acquire()
 	{
@@ -43,7 +43,8 @@ struct Ros2InitGuard
 	rclcpp::Publisher<T>::SharedPtr createUniquePublisher(const std::string& topicName, const rclcpp::QoS& qos)
 	{
 		if (hasTopic(topicName)) {
-			throw InvalidAPIArgument("ROS2 publisher with the same topic name already exist!");
+			auto msg = fmt::format("ROS2 publisher with the same topic name ({}) already exist!", topicName);
+			throw InvalidAPIArgument(msg);
 		}
 		auto publisher = node->create_publisher<T>(topicName, qos);
 		publishers.insert({topicName, publisher});
@@ -69,15 +70,16 @@ private:
 		node = std::make_shared<rclcpp::Node>(nodeName);
 	}
 
-	bool hasTopic(std::optional<std::string> query = std::nullopt)
+	bool hasTopic(const std::string& query)
 	{
 		for (auto it = publishers.begin(); it != publishers.end();) {
 			it = it->second.expired() ? publishers.erase(it) : ++it;
 		}
-		return query.has_value() ? publishers.contains(*query) : !publishers.empty();
+		return publishers.contains(query);
 	}
 
 private:
+	rclcpp::Node::SharedPtr node;
 	bool isRclcppInitializedByRGL{false};
 	std::map<std::string, std::weak_ptr<rclcpp::PublisherBase>> publishers;
 	inline static std::string nodeName = "RobotecGPULidar";

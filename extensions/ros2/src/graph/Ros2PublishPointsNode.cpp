@@ -25,7 +25,7 @@ void Ros2PublishPointsNode::setParameters(const char* topicName, const char* fra
 
 	ros2Message.header.frame_id = frameId;
 
-	rclcpp::QoS qos = rclcpp::QoS(qosHistoryDepth);
+	auto qos = rclcpp::QoS(qosHistoryDepth);
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
 	qos.history(static_cast<rmw_qos_history_policy_t>(qosHistory));
@@ -56,8 +56,9 @@ void Ros2PublishPointsNode::enqueueExecImpl()
 	// For now, only default scene is supported.
 	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
 	                               Scene::instance().getTime()->asRos2Msg() :
-	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->node->get_clock()->now());
+	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
 	if (!rclcpp::ok()) {
+		// TODO: This should be handled by the Graph.
 		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
 	}
 	ros2Publisher->publish(ros2Message);

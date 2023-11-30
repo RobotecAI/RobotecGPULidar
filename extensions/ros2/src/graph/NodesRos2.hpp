@@ -56,7 +56,7 @@ struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointVelocityMarkersNode>;
 
-	void setParameters(const char* topicName);
+	void setParameters(const char* topicName, const char* frameId);
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
 		return {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32};
@@ -69,10 +69,11 @@ struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
 	~Ros2PublishPointVelocityMarkersNode() override = default;
 
 private:
+	std::string frameId;
 	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
 	rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr linesPublisher;
 	HostPinnedArray<Vec3f>::Ptr pos = HostPinnedArray<Vec3f>::create();
 	HostPinnedArray<Vec3f>::Ptr vel = HostPinnedArray<Vec3f>::create();
 
-	visualization_msgs::msg::Marker makeLinesMarker();
+	const visualization_msgs::msg::Marker& makeLinesMarker();
 };

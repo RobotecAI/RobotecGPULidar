@@ -39,7 +39,7 @@ TEST(EntityVelocity, Interactive)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "EntityVelocityTest", "world"));
-	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markers, "EntityVelocityTestMarkers");
+	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markers, "EntityVelocityTestMarkers", "world");
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, format));

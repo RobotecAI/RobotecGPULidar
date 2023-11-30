@@ -15,22 +15,19 @@
 #include <graph/NodesRos2.hpp>
 #include <scene/Scene.hpp>
 
-void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName)
+void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, const char* frameId)
 {
+	this->frameId = frameId;
 	ros2InitGuard = Ros2InitGuard::acquire();
-	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::MarkerArray>(topicName, 8);
+	auto qos = rclcpp::QoS(10); // Use system default QoS
+	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::MarkerArray>(topicName, qos);
 }
 
 void Ros2PublishPointVelocityMarkersNode::validateImpl()
 {
-
 	IPointsNodeSingleInput::validateImpl();
-	bool acceptableInput = input->isDense();
-	for (auto&& field : getRequiredFieldList()) {
-		acceptableInput &= input->hasField(field);
-	}
-	if (!acceptableInput) {
-		throw InvalidPipeline("Ros2PublishPointVelocityMarkersNode: invalid input");
+	if (!input->isDense()) {
+		throw InvalidPipeline(fmt::format("{} requires a compacted point cloud (dense)", getName()));
 	}
 }
 void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
@@ -41,29 +38,33 @@ void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
 	// Add special marker to delete previous markers
 	auto cancelMsg = visualization_msgs::msg::Marker();
 	cancelMsg.action = visualization_msgs::msg::Marker::DELETEALL;
-	cancelMsg.id = -1;
+	cancelMsg.id = -1; // Avoid collision with lines id, RViz2 would complain
 
 	visualization_msgs::msg::MarkerArray lines;
 	lines.markers.emplace_back(cancelMsg);
-	lines.markers.emplace_back(std::move(makeLinesMarker()));
+	lines.markers.emplace_back(makeLinesMarker());
+	if (!rclcpp::ok()) {
+		// TODO: This should be handled by the Graph.
+		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
+	}
 	linesPublisher->publish(lines);
 }
 
-visualization_msgs::msg::Marker Ros2PublishPointVelocityMarkersNode::makeLinesMarker()
+const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::makeLinesMarker()
 {
-	visualization_msgs::msg::Marker marker;
-	marker.header.frame_id = "world";
+	static visualization_msgs::msg::Marker marker;
+	marker.header.stamp = Scene::instance().getTime().value().asRos2Msg();
+	marker.header.frame_id = this->frameId;
 	marker.action = visualization_msgs::msg::Marker::ADD;
 	marker.color.r = 1.0;
 	marker.color.g = 1.0;
 	marker.color.b = 1.0;
-	marker.color.a = 0.16;
+	marker.color.a = 0.32;
 	marker.type = visualization_msgs::msg::Marker::LINE_LIST;
 	marker.scale.x = 0.02; // Line width diameter
-	marker.id = 0;
-	marker.header.stamp = Scene::instance().getTime().value().asRos2Msg();
-	geometry_msgs::msg::Point origin, end;
+	marker.points.clear();
 	marker.points.reserve(pos->getCount() * 2);
+	geometry_msgs::msg::Point origin, end;
 	for (int i = 0; i < pos->getCount(); i++) {
 		origin.x = pos->at(i).x();
 		origin.y = pos->at(i).y();
