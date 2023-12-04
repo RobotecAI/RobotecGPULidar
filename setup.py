@@ -52,6 +52,8 @@ def main():
                         help="Build RGL with ROS2 extension and install all dependent ROS2 libraries additionally")
     parser.add_argument("--with-udp", action='store_true',
                         help="Build RGL with UDP extension (closed-source extension)")
+    parser.add_argument("--with-snow", action='store_true',
+                        help="Build RGL with snow simulation extension (closed-source extension)")
     parser.add_argument("--cmake", type=str, default="",
                         help="Pass arguments to cmake. Usage: --cmake=\"args...\"")
     if on_linux():
@@ -131,6 +133,7 @@ def main():
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_UDP_EXTENSION={'ON' if args.with_udp else 'OFF'}",
+        f"-DRGL_BUILD_SNOW_EXTENSION={'ON' if args.with_snow else 'OFF'}",
     ]
 
     if on_linux():
