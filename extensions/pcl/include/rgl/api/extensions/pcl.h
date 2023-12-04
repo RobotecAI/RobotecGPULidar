@@ -51,3 +51,11 @@ RGL_API rgl_status_t rgl_node_points_downsample(rgl_node_t* node, float leaf_siz
  */
 RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* window_name, int window_width = 1280,
                                                int window_height = 1024, bool fullscreen = false);
+
+/**
+ * Creates or modifies RemoveGroundNode.
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ */
+RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node);

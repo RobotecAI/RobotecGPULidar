@@ -56,6 +56,28 @@ private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
+struct RemoveGroundPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RemoveGroundPointsNode>;
+	void setParameters() {}
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Point cloud description
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+};
+
 struct VisualizePointsNode : IPointsNodeSingleInput
 {
 	static const int FRAME_RATE = 60;

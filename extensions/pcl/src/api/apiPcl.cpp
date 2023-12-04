@@ -123,4 +123,15 @@ void TapePcl::tape_node_points_visualize(const YAML::Node& yamlNode, PlaybackSta
 	                          yamlNode[3].as<int32_t>(), yamlNode[4].as<bool>());
 	state.nodes.insert({nodeId, node});
 }
+
+RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_remove_ground(node={})", repr(node));
+
+		createOrUpdateNode<RemoveGroundPointsNode>(node);
+	});
+	// TAPE_HOOK(node); // TODO: implement tape
+	return status;
+}
 }

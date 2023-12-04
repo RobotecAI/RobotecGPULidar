@@ -5,6 +5,7 @@ target_sources(RobotecGPULidar PRIVATE
     src/api/apiPcl.cpp
     src/graph/DownSamplePointsNode.cpp
     src/graph/VisualizePointsNode.cpp
+    src/graph/RemoveGroundPointsNode.cpp
 )
 
 target_include_directories(RobotecGPULidar PUBLIC ${PCL_INCLUDE_DIRS})
