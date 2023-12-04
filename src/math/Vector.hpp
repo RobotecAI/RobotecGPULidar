@@ -139,7 +139,7 @@ struct Vector
 
 	HostDevFn V half() const { return *this / V{static_cast<T>(2)}; }
 
-	HostDevFn V normalize() const { return *this / length(); }
+	HostDevFn V normalized() const { return *this / length(); }
 
 	HostDevFn T min() const
 	{
