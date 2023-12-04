@@ -159,6 +159,15 @@ struct Vector
 		return value;
 	}
 
+	HostDevFn T dot(const V& other) const
+	{
+		T value = static_cast<T>(0);
+		for (int i = 0; i < dim; ++i) {
+			value += row[i] * other.row[i];
+		}
+		return value;
+	}
+
 private:
 	T row[dim];
 };

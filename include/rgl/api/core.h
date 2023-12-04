@@ -553,6 +553,11 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
 RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
                                                        const rgl_vec3f* angular_velocity);
 
+// TODO: write doc once API call is accepted - this call is supposed to replace rgl_node_raytrace_with_distortion
+// TODO: remove scene parameter
+RGL_API rgl_status_t rgl_node_raytrace_in_motion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
+                                                 const rgl_vec3f* angular_velocity, bool apply_ray_distortion);
+
 /**
  * Creates or modifies FormatPointsNode.
  * The Node converts internal representation into a binary format defined by the `fields` array.

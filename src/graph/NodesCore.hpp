@@ -119,15 +119,16 @@ struct RaytraceNode : IPointsNode
 	}
 
 	// RaytraceNode specific
-	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
+	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
+	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 
 private:
 	IRaysNode::Ptr raysNode;
 
 	DeviceAsyncArray<Vec2f>::Ptr defaultRange = DeviceAsyncArray<Vec2f>::create(arrayMgr);
 	bool doApplyDistortion{false};
-	Vec3f sensorLinearVelocityXYZ;
-	Vec3f sensorAngularVelocityRPY;
+	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
+	Vec3f sensorAngularVelocityRPY{0, 0, 0};
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);

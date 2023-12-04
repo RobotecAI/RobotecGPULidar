@@ -822,23 +822,37 @@ void TapeCore::tape_node_raytrace(const YAML::Node& yamlNode, PlaybackState& sta
 RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
                                                        const rgl_vec3f* angular_velocity)
 {
+	return rgl_node_raytrace_in_motion(node, scene, linear_velocity, angular_velocity, true);
+}
+
+void TapeCore::tape_node_raytrace_with_distortion(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	return tape_node_raytrace_in_motion(yamlNode, state);
+}
+
+RGL_API rgl_status_t rgl_node_raytrace_in_motion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
+                                                 const rgl_vec3f* angular_velocity, bool apply_ray_distortion)
+{
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_with_distortion(node={}, scene={}, linear_velocity={}, angular_velocity={})", repr(node),
-		            (void*) scene, repr(linear_velocity), repr(angular_velocity));
+		RGL_API_LOG(
+		    "rgl_node_raytrace_in_motion(node={}, scene={}, linear_velocity={}, angular_velocity={}, apply_ray_distortion={})",
+		    repr(node), (void*) scene, repr(linear_velocity), repr(angular_velocity), apply_ray_distortion);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(linear_velocity != nullptr);
 		CHECK_ARG(angular_velocity != nullptr);
 		CHECK_ARG(scene == nullptr);
 
 		createOrUpdateNode<RaytraceNode>(node);
-		Node::validatePtr<RaytraceNode>(*node)->setVelocity(reinterpret_cast<const Vec3f*>(linear_velocity),
-		                                                    reinterpret_cast<const Vec3f*>(angular_velocity));
+		auto raytraceNode = Node::validatePtr<RaytraceNode>(*node);
+		raytraceNode->setVelocity(*reinterpret_cast<const Vec3f*>(linear_velocity),
+		                          *reinterpret_cast<const Vec3f*>(angular_velocity));
+		raytraceNode->enableRayDistortion(apply_ray_distortion);
 	});
 	TAPE_HOOK(node, scene, linear_velocity, angular_velocity);
 	return status;
 }
 
-void TapeCore::tape_node_raytrace_with_distortion(const YAML::Node& yamlNode, PlaybackState& state)
+void TapeCore::tape_node_raytrace_in_motion(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
