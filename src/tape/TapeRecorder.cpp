@@ -40,7 +40,6 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 		                                  pathYaml, std::strerror(errno)));
 	}
 	TapeRecorder::recordRGLVersion(yamlRoot);
-	yamlRecording = yamlRoot["recording"];
 	beginTimestamp = std::chrono::steady_clock::now();
 }
 

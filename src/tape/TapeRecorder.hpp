@@ -46,8 +46,7 @@
 
 class TapeRecorder
 {
-	YAML::Node yamlRoot;      // Represents the whole yaml file
-	YAML::Node yamlRecording; // The sequence of API calls
+	YAML::Node yamlRoot; // Represents the whole yaml file
 
 	FILE* fileBin;
 	std::ofstream fileYaml;
@@ -144,13 +143,13 @@ public:
 	void recordApiCall(std::string fnName, Args... args)
 	{
 		YAML::Node apiCallNode;
-		apiCallNode["name"] = fnName;
-		apiCallNode["timestamp"] =
+		apiCallNode = yamlRoot[fnName];
+
+		apiCallNode["t"] =
 		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
 		if constexpr (sizeof...(args) > 0) {
 			recordApiArguments(apiCallNode, 0, args...);
 		}
-		yamlRecording.push_back(apiCallNode);
 	}
 };
 
