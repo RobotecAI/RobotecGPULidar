@@ -16,6 +16,6 @@
 
 // TODO(msz-rai): Consider removing this header
 
-#define RGL_VERSION "rgl_version"
+#define RGL_VERSION "rgl_get_version_info"
 #define BIN_EXTENSION ".bin"
 #define YAML_EXTENSION ".yaml"
