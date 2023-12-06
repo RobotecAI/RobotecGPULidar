@@ -58,9 +58,7 @@ TapeRecorder::~TapeRecorder()
 
 void TapeRecorder::recordRGLVersion(YAML::Node& node)
 {
-	YAML::Node rglVersion;
-	rglVersion["major"] = RGL_VERSION_MAJOR;
-	rglVersion["minor"] = RGL_VERSION_MINOR;
-	rglVersion["patch"] = RGL_VERSION_PATCH;
-	node[RGL_VERSION] = rglVersion;
+	int32_t major, minor, patch;
+	rgl_get_version_info(&major, &minor, &patch);
+	tapeRecorder->recordApiCall("rgl_get_version_info", major, minor, patch);
 }

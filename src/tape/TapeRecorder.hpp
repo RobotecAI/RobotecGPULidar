@@ -23,6 +23,7 @@
 #include <rgl/api/core.h>
 #include <RGLExceptions.hpp>
 #include <Logger.hpp>
+#include <tape/tapeDefinitions.hpp>
 
 #ifdef _WIN32
 #define TAPE_HOOK(...)
@@ -145,7 +146,7 @@ public:
 		YAML::Node apiCallNode;
 		apiCallNode = yamlRoot[fnName];
 
-		apiCallNode["t"] =
+		apiCallNode[TIMESTAMP] =
 		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
 		if constexpr (sizeof...(args) > 0) {
 			recordApiArguments(apiCallNode, 0, args...);

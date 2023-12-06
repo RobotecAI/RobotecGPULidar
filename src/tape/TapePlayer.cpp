@@ -31,8 +31,7 @@ TapePlayer::TapePlayer(const char* path)
 
 	yamlRoot = YAML::LoadFile(pathYaml);
 
-	if (yamlRoot[RGL_VERSION]["major"].as<int>() != RGL_VERSION_MAJOR ||
-	    yamlRoot[RGL_VERSION]["minor"].as<int>() != RGL_VERSION_MINOR) {
+	if (yamlRoot[RGL_VERSION][0].as<int>() != RGL_VERSION_MAJOR || yamlRoot[RGL_VERSION][1].as<int>() != RGL_VERSION_MINOR) {
 		throw RecordError("recording version does not match rgl version");
 	}
 
@@ -93,10 +92,10 @@ void TapePlayer::rewindTo(APICallIdx nextCall) { this->nextCall = nextCall; }
 
 void TapePlayer::playThis(APICallIdx idx)
 {
-	const YAML::Node& node = yamlRoot[idx];
 	auto it = yamlRoot.begin();
 	std::advance(it, idx);
 	auto functionName = it->first.as<std::string>();
+	const YAML::Node& node = yamlRoot[functionName];
 
 	if (!tapeFunctions.contains(functionName)) {
 		throw RecordError(fmt::format("unknown function to play: {}", functionName));
@@ -110,11 +109,10 @@ void TapePlayer::playRealtime()
 {
 	auto beginTimestamp = std::chrono::steady_clock::now();
 	auto it = yamlRoot.begin();
-	auto end = yamlRoot.end();
 	std::advance(it, nextCall);
 
-	for (; it != end; ++it, ++nextCall) {
-		auto nextCallNs = std::chrono::nanoseconds(it->second["t"].as<int64_t>());
+	for (; it != yamlRoot.end(); ++it) {
+		auto nextCallNs = std::chrono::nanoseconds(it->second[TIMESTAMP].as<int64_t>());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
 		playThis(nextCall);
