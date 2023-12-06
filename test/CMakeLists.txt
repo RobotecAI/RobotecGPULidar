@@ -81,6 +81,19 @@ if (RGL_BUILD_SNOW_EXTENSION)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/snow/test ${CMAKE_CURRENT_BINARY_DIR}/snow)
 endif()
 
+if (RGL_BUILD_ROS2_EXTENSION)
+    # This allows accessing Nodes directly (as opposed to through RGL-API)
+    # It is needed by EntityVelocity test, which makes a use of non-public Ros2 node.
+    find_package(rclcpp REQUIRED)
+    target_include_directories(RobotecGPULidar_test PRIVATE
+            ${CMAKE_SOURCE_DIR}/extensions/ros2/src
+            ${rclcpp_INCLUDE_DIRS}
+    )
+    target_link_libraries(RobotecGPULidar_test PRIVATE
+            ${rclcpp_LIBRARIES}
+    )
+endif()
+
 include(GoogleTest)
 
 gtest_discover_tests(RobotecGPULidar_test)
