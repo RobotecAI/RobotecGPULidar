@@ -1,6 +1,7 @@
-#include "helpers/commonHelpers.hpp"
-#include "helpers/lidarHelpers.hpp"
-#include "helpers/sceneHelpers.hpp"
+#include <helpers/commonHelpers.hpp>
+#include <helpers/lidarHelpers.hpp>
+#include <helpers/sceneHelpers.hpp>
+#include <api/apiCommon.hpp>
 
 #include <thread>
 #include <ranges>
@@ -17,12 +18,12 @@ using namespace std::chrono_literals;
  * *) outputs = {RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, RGL_FIELD_RADIAL_SPEED_F32}
  */
 #if RGL_BUILD_ROS2_EXTENSION
-#include "rgl/api/extensions/ros2.h"
-#include "helpers/sceneHelpers.hpp"
+#include <rgl/api/extensions/ros2.h>
+#include <graph/NodesRos2.hpp>
 TEST(EntityVelocity, Interactive)
 {
 	GTEST_SKIP(); // Comment to run the test
-	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr;
+	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr, markers = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
 
 	// Published fields
@@ -38,9 +39,11 @@ TEST(EntityVelocity, Interactive)
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "EntityVelocityTest", "world"));
+	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markers, "EntityVelocityTestMarkers", "world");
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, format));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, markers));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
 
 	// Helper struct
@@ -144,7 +147,7 @@ TEST(EntityVelocity, Interactive)
 	while (true) {
 		auto currentTime = frameId * nsPerFrame;
 		auto currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
-		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
+		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
 
 		translatingCube.update(currentTimeSeconds);
 		rotatingCube.update(currentTimeSeconds);
@@ -153,7 +156,7 @@ TEST(EntityVelocity, Interactive)
 		rotateTranslateCube.update(currentTimeSeconds);
 		morphTranslateCube.update(currentTimeSeconds);
 
-		EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
 		std::this_thread::sleep_for(10ms);
 		frameId += 1;
 	}

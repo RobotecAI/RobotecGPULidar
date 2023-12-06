@@ -86,11 +86,11 @@ if (RGL_BUILD_ROS2_EXTENSION)
     # It is needed by EntityVelocity test, which makes a use of non-public Ros2 node.
     find_package(rclcpp REQUIRED)
     target_include_directories(RobotecGPULidar_test PRIVATE
-            ${CMAKE_SOURCE_DIR}/extensions/ros2/src
-            ${rclcpp_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/extensions/ros2/src
+        ${rclcpp_INCLUDE_DIRS}
     )
     target_link_libraries(RobotecGPULidar_test PRIVATE
-            ${rclcpp_LIBRARIES}
+        ${rclcpp_LIBRARIES}
     )
 endif()
 
