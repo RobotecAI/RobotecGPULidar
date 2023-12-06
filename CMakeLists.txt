@@ -32,6 +32,9 @@ set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
 set(RGL_BUILD_UDP_EXTENSION OFF CACHE BOOL
     "Enables building UDP extension.")
+set(RGL_BUILD_SNOW_EXTENSION OFF CACHE BOOL
+    "Enables building snow simulation extension.")
+
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -117,6 +120,7 @@ set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=$<BOOL:${RGL_BUILD_UDP_EXTENSION}>)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_SNOW_EXTENSION=$<BOOL:${RGL_BUILD_SNOW_EXTENSION}>)
 
 if (RGL_BUILD_PCL_EXTENSION)
     add_subdirectory(extensions/pcl)
@@ -128,6 +132,10 @@ endif()
 
 if (RGL_BUILD_UDP_EXTENSION)
     add_subdirectory(extensions/udp)
+endif()
+
+if (RGL_BUILD_SNOW_EXTENSION)
+    add_subdirectory(extensions/snow)
 endif()
 
 target_include_directories(RobotecGPULidar
