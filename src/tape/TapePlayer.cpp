@@ -109,11 +109,12 @@ void TapePlayer::playThis(APICallIdx idx)
 void TapePlayer::playRealtime()
 {
 	auto beginTimestamp = std::chrono::steady_clock::now();
-	for (; nextCall < yamlRoot.size(); ++nextCall) {
-		auto it = yamlRoot.begin();
-		std::advance(it, nextCall);
-		auto functionName = it->first.as<std::string>();
-		auto nextCallNs = std::chrono::nanoseconds(yamlRoot[functionName]["t"].as<int64_t>());
+	auto it = yamlRoot.begin();
+	auto end = yamlRoot.end();
+	std::advance(it, nextCall);
+
+	for (; it != end; ++it, ++nextCall) {
+		auto nextCallNs = std::chrono::nanoseconds(it->second["t"].as<int64_t>());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
 		playThis(nextCall);
