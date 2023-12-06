@@ -136,47 +136,84 @@ struct TestScene
 #include <graph/NodesRos2.hpp>
 TEST(EntityVelocity, Interactive)
 {
-	GTEST_SKIP(); // Comment to run the test
-	rgl_node_t rays = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr, publish = nullptr, markers = nullptr;
+	//	GTEST_SKIP(); // Comment to run the test
+	rgl_node_t rays = nullptr, rayTransform = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr,
+	           publish = nullptr, markers = nullptr, transformPoints = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
+	raysTf.resize(1);
+	rgl_mat3x4f lidarPoseRGL = Mat3x4f::identity().toRGL(), lidarIndicatorPoseRGL;
 
 	// Published fields
-	std::vector<rgl_field_t> fields = {
-	    RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
-	    //	    RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32,
-	    //	    RGL_FIELD_RADIAL_SPEED_F32
-	};
+	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
+	                                   RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, RGL_FIELD_RADIAL_SPEED_F32};
 
-	// Construct graph: rays -> raytrace -> compact -> format -> publish
+	// Construct graph: rays -> transform ->  raytrace -> compact -> format -> publish
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidarPoseRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &lidarPoseRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "EntityVelocityTest", "world"));
 	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markers, "EntityVelocityTestMarkers", "world");
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, rayTransform));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rayTransform, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, format));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, markers));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPoints));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPoints, format));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPoints, markers));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
 
-	// Helper struct
+	// Test Scene
 	TestScene scene = TestScene::build();
+	rgl_entity_t lidarIndicator = makeEntity();
 
 	// Main loop
 	uint64_t frameId = 0;
 	uint64_t nsPerFrame = 10 * 1000 * 1000; // 10 ms per frame
+	scene.update(0);
 	while (true) {
-		auto currentTime = frameId * nsPerFrame;
-		auto currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
+		uint64_t currentTime = frameId * nsPerFrame;
+		float currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
+		float deltaTime = static_cast<float>(nsPerFrame) / 1E9f;
+		Vec3f sensorLinearVelocityXYZ = Vec3f{0, 0, sin(currentTimeSeconds)}; // units
+		Vec3f sensorAngularVelocityXYZ = Vec3f{0, 0, 0};                      // degrees
+
+		Mat3x4f diff = Mat3x4f::TRS(sensorLinearVelocityXYZ * deltaTime, sensorAngularVelocityXYZ * deltaTime);
+		Mat3x4f lidarPose = diff * Mat3x4f::fromRGL(lidarPoseRGL);
+		Mat3x4f lidarIndicatorPose = Mat3x4f::translation(lidarPose.translation() + Vec3f{0, 0, -0.2f}) * lidarPose.rotation() *
+		                             Mat3x4f::scale(0.01f, 0.01f, 0.01f);
+		lidarPoseRGL = lidarPose.toRGL();
+		lidarIndicatorPoseRGL = lidarIndicatorPose.toRGL();
+
 		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(lidarIndicator, &lidarIndicatorPoseRGL));
 
-		scene.update(currentTimeSeconds);
-
+		auto pointsTransform = Mat3x4f::identity().toRGL();
+		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidarPoseRGL));
+		EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &pointsTransform));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace_in_motion(&raytrace, nullptr,
+		                                               reinterpret_cast<const rgl_vec3f*>(&sensorLinearVelocityXYZ),
+		                                               reinterpret_cast<const rgl_vec3f*>(&sensorAngularVelocityXYZ), false));
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
+
 		std::this_thread::sleep_for(10ms);
 		frameId += 1;
+
+		int32_t count = 0, size = 0;
+		EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(compact, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32, &count, &size));
+		std::vector<Vec3f> xyz(count), absVelocities(count), relVelocities(count), radialSpeeds(count);
+		if (count == 0) {
+			continue;
+		}
+		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_XYZ_VEC3_F32, xyz.data()));
+		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32, absVelocities.data()));
+		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, relVelocities.data()));
+		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_RADIAL_SPEED_F32, radialSpeeds.data()));
+		//		fmt::print("xyz: {}\n", repr(xyz.data(), xyz.size()));
+		//		fmt::print("absVelocity: {}\n", repr(absVelocities.data(), absVelocities.size()));
+		//		fmt::print("relVelocities: {}\n", repr(relVelocities.data(), relVelocities.size()));
 	}
 }
 #endif

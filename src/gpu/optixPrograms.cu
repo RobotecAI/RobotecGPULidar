@@ -59,7 +59,7 @@ template<bool isFinite>
 __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE},
                                               float distance = NON_HIT_VALUE, float intensity = 0,
                                               const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& absVelocity = Vec3f{NAN},
-                                              const Vec3f& relVelocity = Vec3f{NAN})
+                                              const Vec3f& relVelocity = Vec3f{NAN}, const float radialSpeed = NAN)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -94,8 +94,7 @@ __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_V
 		ctx.pointRelVelocity[rayIdx] = relVelocity;
 	}
 	if (ctx.radialSpeed != nullptr && isFinite) {
-		Vec3f unit = xyz.normalized();
-		ctx.radialSpeed[rayIdx] = unit.dot(relVelocity);
+		ctx.radialSpeed[rayIdx] = radialSpeed;
 	}
 }
 
@@ -202,6 +201,7 @@ extern "C" __global__ void __closesthit__()
 
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
+	float radialSpeed{NAN};
 	if (ctx.sceneDeltaTime > 0) {
 		Vec3f displacementFromTransformChange = {0, 0, 0};
 		if (entityData.hasPrevFrameLocalToWorld) {
@@ -228,21 +228,27 @@ extern "C" __global__ void __closesthit__()
 			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
 		}
 
-		// Compute displacement from sensor
-		Vec3f displacementFromSensorVelocity = {0, 0, 0};
-		auto prevRayOriginToCurrRayOrigin = Mat3x4f::TRS(ctx.sensorLinearVelocityXYZ, ctx.sensorAngularVelocityRPY * toDeg);
-		auto hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;                             // Hit point in current ray frame
-		auto displacementVectorOriginRays = prevRayOriginToCurrRayOrigin.inverse() * hitRays; // Hit point in previous ray frame
-		displacementFromSensorVelocity = ctx.rayOriginToWorld * prevRayOriginToCurrRayOrigin *
-		                                 (hitRays - displacementVectorOriginRays);
+		// Apparent velocity due to sensor movement
+		Mat3x4f currRayToSecAgoRays = Mat3x4f::TRS(ctx.sensorLinearVelocityXYZ, ctx.sensorAngularVelocityRPY * toDeg);
+		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld; // Hit point in current ray frame
+		Vec3f hitRaysSecAgo = currRayToSecAgoRays * hitRays;       // Hit point in previous ray frame
+		Vec3f relToSensorPointVelocity = hitRays - hitRaysSecAgo;  // Seen from sensor, in sensor's frame
+
+		printf("linearSpeed: %f %f %f\n", ctx.sensorLinearVelocityXYZ[0], ctx.sensorLinearVelocityXYZ[1],
+		       ctx.sensorLinearVelocityXYZ[2]);
+		printf("hitRays: %f %f %f\n", hitRays[0], hitRays[1], hitRays[2]);
+		printf("hitRaysSecAgo: %f %f %f\n", hitRaysSecAgo[0], hitRaysSecAgo[1], hitRaysSecAgo[2]);
+		printf("deltaTime: %f\n", ctx.sceneDeltaTime);
 
 		absPointVelocity = (displacementFromTransformChange + displacementFromSkinning) /
 		                   static_cast<float>(ctx.sceneDeltaTime);
-		relPointVelocity = (displacementFromTransformChange + displacementFromSkinning + displacementFromSensorVelocity) /
-		                   static_cast<float>(ctx.sceneDeltaTime);
+		auto worldVelocityToRayVelocity = ctx.rayOriginToWorld.inverse().rotation();
+		relPointVelocity = relToSensorPointVelocity;
+		//		relPointVelocity = worldVelocityToRayVelocity * absPointVelocity + relToSensorPointVelocity;
+		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
 
-	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity);
+	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed);
 }
 
 extern "C" __global__ void __miss__() { saveRayResult<false>(); }

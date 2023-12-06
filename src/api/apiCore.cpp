@@ -805,7 +805,7 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene)
 
 		createOrUpdateNode<RaytraceNode>(node);
 		// Clear velocity that could be set by rgl_node_raytrace_with_distortion
-		Node::validatePtr<RaytraceNode>(*node)->setVelocity(nullptr, nullptr);
+		Node::validatePtr<RaytraceNode>(*node)->setVelocity(Vec3f{0, 0, 0}, Vec3f{0, 0, 0});
 	});
 	TAPE_HOOK(node, scene);
 	return status;

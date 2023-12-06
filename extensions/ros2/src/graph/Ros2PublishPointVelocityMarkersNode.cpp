@@ -33,7 +33,7 @@ void Ros2PublishPointVelocityMarkersNode::validateImpl()
 void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
 {
 	pos->copyFrom(input->getFieldData(RGL_FIELD_XYZ_VEC3_F32));
-	vel->copyFrom(input->getFieldData(RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32));
+	vel->copyFrom(input->getFieldData(RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32));
 
 	if (!rclcpp::ok()) {
 		// TODO: This should be handled by the Graph.

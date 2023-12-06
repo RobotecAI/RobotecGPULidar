@@ -78,6 +78,7 @@ void RaytraceNode::enqueueExecImpl()
 
 	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
 	requestCtxHst->resize(1, true, false);
+	// Print linear velocity:
 	requestCtxHst->at(0) = RaytraceRequestContext{
 	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
 	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
@@ -105,6 +106,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .entityId = getPtrTo<ENTITY_ID_I32>(),
 	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>(),
 	    .pointRelVelocity = getPtrTo<RELATIVE_VELOCITY_VEC3_F32>(),
+	    .radialSpeed = getPtrTo<RADIAL_SPEED_F32>(),
 	    .azimuth = getPtrTo<AZIMUTH_F32>(),
 	    .elevation = getPtrTo<ELEVATION_F32>()
 	};

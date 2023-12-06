@@ -59,7 +59,7 @@ struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
 	void setParameters(const char* topicName, const char* frameId);
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
-		return {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32};
+		return {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32};
 	}
 
 	// Node
