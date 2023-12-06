@@ -129,6 +129,7 @@ typedef enum : int32_t
 	RGL_EXTENSION_PCL = 0,
 	RGL_EXTENSION_ROS2 = 1,
 	RGL_EXTENSION_UDP = 2,
+	RGL_EXTENSION_SNOW = 3,
 	RGL_EXTENSION_COUNT
 } rgl_extension_t;
 
