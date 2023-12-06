@@ -18,18 +18,121 @@
 
 #include <pcl/impl/point_types.hpp>
 
-using PCLPoint = pcl::PointXYZL;
+void RemoveGroundPointsNode::setParameters(rgl_axis_t sensorUpAxis, float groundAngleThreshold, float groundDistanceThreshold)
+{
+	planeCoefficients = pcl::ModelCoefficients(); // Reset coefficients (they are optimized every run)
 
-void RemoveGroundPointsNode::validateImpl() { IPointsNodeSingleInput::validateImpl(); }
+	// Setup segmentation options
+	segmentation.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
+	segmentation.setAxis(Eigen::Vector3f(sensorUpAxis == RGL_AXIS_X ? 1.0 : 0.0, sensorUpAxis == RGL_AXIS_Y ? 1.0 : 0.0,
+	                                     sensorUpAxis == RGL_AXIS_Z ? 1.0 : 0.0));
+	segmentation.setEpsAngle(groundAngleThreshold);
+	segmentation.setOptimizeCoefficients(true);
+	segmentation.setMethodType(pcl::SAC_RANSAC);
+	segmentation.setDistanceThreshold(groundDistanceThreshold);
+	segmentation.setInputCloud(toFilterPointCloud);
+	static const int maxIterations = 500;
+	segmentation.setMaxIterations(maxIterations);
+}
 
-void RemoveGroundPointsNode::enqueueExecImpl() {}
+void RemoveGroundPointsNode::validateImpl()
+{
+	IPointsNodeSingleInput::validateImpl();
 
-size_t RemoveGroundPointsNode::getWidth() const { return input->getWidth(); }
+	// Needed to clear cache because fields in the pipeline may have changed
+	// In fact, the cache manager is no longer useful here
+	// To be kept/removed in some future refactor (when resolving comment in the `enqueueExecImpl`)
+	cacheManager.clear();
+}
 
-IAnyArray::ConstPtr RemoveGroundPointsNode::getFieldData(rgl_field_t field) { return input->getFieldData(field); }
+void RemoveGroundPointsNode::enqueueExecImpl()
+{
+	cacheManager.trigger();
+
+	if (input->getPointCount() == 0) {
+		filteredIndices->resize(0, false, false);
+		return;
+	}
+
+	// Get formatted input data (SSE2-aligned XYZ)
+	FormatPointsNode::formatAsync(formattedInput, input, getRequiredFieldList(), gpuFieldDescBuilder);
+	formattedInputHost->copyFrom(formattedInput);
+
+	// Copy data into pcl::PointCloud
+	auto pointCount = input->getPointCount();
+	toFilterPointCloud->resize(pointCount);
+	const pcl::PointXYZ* begin = reinterpret_cast<const pcl::PointXYZ*>(formattedInputHost->getReadPtr());
+	const pcl::PointXYZ* end = begin + pointCount;
+	toFilterPointCloud->assign(begin, end, pointCount);
+
+	// Segment ground and receive ground indices
+	segmentation.segment(*groundIndices, planeCoefficients);
+
+	// Compute non-ground indices. To be optimized (GPU?)
+	filteredIndicesHost.resize(pointCount - groundIndices->indices.size());
+	int currentGroundIdx = 0;
+	int currentNonGroundIdx = 0;
+	for (int i = 0; i < pointCount; ++i) {
+		if (i == groundIndices->indices[currentGroundIdx]) {
+			++currentGroundIdx;
+			continue;
+		}
+		filteredIndicesHost[currentNonGroundIdx] = i;
+		++currentNonGroundIdx;
+	}
+
+	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
+
+	// getFieldData may be called in client's thread from rgl_graph_get_result_data
+	// Doing job there would be:
+	// - unexpected (job was supposed to be done asynchronously)
+	// - hard to implement:
+	//     - to avoid blocking on yet-running graph stream, we would need do it in copy stream, which would require
+	//       temporary rebinding DAAs to copy stream, which seems like nightmarish idea
+	// Therefore, once we know what fields are requested, we compute them eagerly
+	// This is supposed to be removed in some future refactor (e.g. when introducing LayeredSoA)
+	for (auto&& field : cacheManager.getKeys()) {
+		getFieldData(field);
+	}
+}
+
+size_t RemoveGroundPointsNode::getWidth() const
+{
+	this->synchronize();
+	return filteredIndices->getCount();
+}
+
+IAnyArray::ConstPtr RemoveGroundPointsNode::getFieldData(rgl_field_t field)
+{
+	std::lock_guard lock{getFieldDataMutex};
+
+	if (!cacheManager.contains(field)) {
+		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);
+		fieldData->resize(filteredIndices->getCount(), false, false);
+		cacheManager.insert(field, fieldData, true);
+	}
+
+	if (!cacheManager.isLatest(field)) {
+		auto fieldData = cacheManager.getValue(field);
+		fieldData->resize(filteredIndices->getCount(), false, false);
+		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
+		auto fieldArray = input->getFieldData(field);
+		if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
+			auto msg = fmt::format("RemoveGround requires its input to be device-accessible, {} is not", field);
+			throw InvalidPipeline(msg);
+		}
+		const char* inputPtr = static_cast<const char*>(fieldArray->getRawReadPtr());
+		gpuFilter(getStreamHandle(), filteredIndices->getCount(), filteredIndices->getReadPtr(), outPtr, inputPtr,
+		          getFieldSize(field));
+		CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+		cacheManager.setUpdated(field);
+	}
+
+	return cacheManager.getValue(field);
+}
 
 std::vector<rgl_field_t> RemoveGroundPointsNode::getRequiredFieldList() const
 {
-	// pcl::PointXYZL is aligned to 32 bytes for SSE2 ¯\_(ツ)_/¯
-	return {XYZ_VEC3_F32, PADDING_32, PADDING_32, PADDING_32, PADDING_32, PADDING_32};
+	// SSE2-aligned XYZ
+	return {XYZ_VEC3_F32, PADDING_32};
 }

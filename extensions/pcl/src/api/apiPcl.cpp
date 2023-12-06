@@ -124,14 +124,30 @@ void TapePcl::tape_node_points_visualize(const YAML::Node& yamlNode, PlaybackSta
 	state.nodes.insert({nodeId, node});
 }
 
-RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node)
+RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
+                                                   float ground_distance_threshold)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_points_remove_ground(node={})", repr(node));
+		RGL_API_LOG("rgl_node_points_remove_ground(node={}, sensor_up_axis={}, ground_angle_threshold={}, "
+		            "ground_distance_threshold={})",
+		            repr(node), sensor_up_axis, ground_angle_threshold, ground_distance_threshold);
 
-		createOrUpdateNode<RemoveGroundPointsNode>(node);
+		CHECK_ARG((sensor_up_axis == RGL_AXIS_X) || (sensor_up_axis == RGL_AXIS_Y) || (sensor_up_axis == RGL_AXIS_Z));
+		CHECK_ARG(ground_angle_threshold > 0);
+		CHECK_ARG(ground_distance_threshold > 0);
+
+		createOrUpdateNode<RemoveGroundPointsNode>(node, sensor_up_axis, ground_angle_threshold, ground_distance_threshold);
 	});
-	// TAPE_HOOK(node); // TODO: implement tape
+	TAPE_HOOK(node, sensor_up_axis, ground_angle_threshold, ground_distance_threshold);
 	return status;
+}
+
+void TapePcl::tape_node_points_remove_ground(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_remove_ground(&node, (rgl_axis_t) yamlNode[1].as<std::underlying_type_t<rgl_axis_t>>(),
+	                              yamlNode[2].as<float>(), yamlNode[3].as<float>());
+	state.nodes.insert({nodeId, node});
 }
 }

@@ -1,5 +1,5 @@
 
-find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters visualization)
+find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters segmentation visualization)
 
 target_sources(RobotecGPULidar PRIVATE
     src/api/apiPcl.cpp

@@ -54,8 +54,15 @@ RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* win
 
 /**
  * Creates or modifies RemoveGroundNode.
+ * The node removes points belonging to the ground by approximating the ground to a plane.
+ * It uses RANSAC method to fit the plane model to the point cloud (with additional angular constraints to improve robustness).
+ * The plane must be perpendicular to a user-specified axis (sensor_up_axis), up to a user-specified angle threshold (ground_angle_threshold)
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param sensor_up_axis Axis of the sensor that directs up. It is assumed that the ground is perpendicular to that axis.
+ * @param ground_angle_threshold The maximum allowed difference between the plane normal and the given axis (in radians).
+ * @param ground_distance_threshold The maximum distance to the approximated plane to consider a point as belonging to the ground (in distance units).
  */
-RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node);
+RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
+                                                   float ground_distance_threshold);
