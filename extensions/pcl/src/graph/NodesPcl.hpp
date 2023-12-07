@@ -19,6 +19,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
@@ -60,7 +61,8 @@ private:
 struct RemoveGroundPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RemoveGroundPointsNode>;
-	void setParameters(rgl_axis_t sensorUpAxis, float groundAngleThreshold, float groundDistanceThreshold);
+	void setParameters(rgl_axis_t sensorUpAxis, float groundAngleThreshold, float groundDistanceThreshold,
+	                   float groundFilterDistance);
 
 	// Node
 	void validateImpl() override;
@@ -89,6 +91,8 @@ private:
 	pcl::PointIndices::Ptr groundIndices = std::make_shared<pcl::PointIndices>();
 	pcl::ModelCoefficients planeCoefficients;
 	pcl::SACSegmentation<pcl::PointXYZ> segmentation;
+	pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ>::Ptr planeModel;
+	float groundFilterDistance;
 
 	// RGL related members
 	GPUFieldDescBuilder gpuFieldDescBuilder;

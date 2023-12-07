@@ -18,8 +18,11 @@
 
 #include <pcl/impl/point_types.hpp>
 
-void RemoveGroundPointsNode::setParameters(rgl_axis_t sensorUpAxis, float groundAngleThreshold, float groundDistanceThreshold)
+void RemoveGroundPointsNode::setParameters(rgl_axis_t sensorUpAxis, float groundAngleThreshold, float groundDistanceThreshold,
+                                           float groundFilterDistance)
 {
+	this->groundFilterDistance = groundFilterDistance;
+
 	planeCoefficients = pcl::ModelCoefficients(); // Reset coefficients (they are optimized every run)
 
 	// Setup segmentation options
@@ -33,6 +36,8 @@ void RemoveGroundPointsNode::setParameters(rgl_axis_t sensorUpAxis, float ground
 	segmentation.setInputCloud(toFilterPointCloud);
 	static const int maxIterations = 500;
 	segmentation.setMaxIterations(maxIterations);
+
+	planeModel = std::make_shared<pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ>>(toFilterPointCloud);
 }
 
 void RemoveGroundPointsNode::validateImpl()
@@ -65,10 +70,15 @@ void RemoveGroundPointsNode::enqueueExecImpl()
 	const pcl::PointXYZ* end = begin + pointCount;
 	toFilterPointCloud->assign(begin, end, pointCount);
 
-	// Segment ground and receive ground indices
+	// Segment ground and approximate plane coefficients
 	segmentation.segment(*groundIndices, planeCoefficients);
 
-	// Compute non-ground indices. To be optimized (GPU?)
+	// Select ground indices (points within given distance to approximate plane model). Can be optimized (GPU?)
+	auto planeCoefficientsEigen = Eigen::Vector4f(planeCoefficients.values[0], planeCoefficients.values[1],
+	                                              planeCoefficients.values[2], planeCoefficients.values[3]);
+	planeModel->selectWithinDistance(planeCoefficientsEigen, groundFilterDistance, groundIndices->indices);
+
+	// Compute non-ground indices. Can be optimized (GPU?)
 	filteredIndicesHost.resize(pointCount - groundIndices->indices.size());
 	int currentGroundIdx = 0;
 	int currentNonGroundIdx = 0;

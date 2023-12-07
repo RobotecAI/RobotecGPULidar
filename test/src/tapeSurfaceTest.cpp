@@ -169,7 +169,7 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_graph_write_pcd_file(raytrace, "Tape.RecordPlayAllCalls.pcd"));
 
 	rgl_node_t removeGround = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_remove_ground(&removeGround, RGL_AXIS_X, 1.0f, 1.0f));
+	EXPECT_RGL_SUCCESS(rgl_node_points_remove_ground(&removeGround, RGL_AXIS_X, 1.0f, 1.0f, 0.5f));
 
 	// Skipping rgl_node_points_visualize (user interaction needed)
 #endif

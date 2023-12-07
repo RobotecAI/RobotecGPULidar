@@ -61,8 +61,9 @@ RGL_API rgl_status_t rgl_node_points_visualize(rgl_node_t* node, const char* win
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
  * @param sensor_up_axis Axis of the sensor that directs up. It is assumed that the ground is perpendicular to that axis.
- * @param ground_angle_threshold The maximum allowed difference between the plane normal and the given axis (in radians).
- * @param ground_distance_threshold The maximum distance to the approximated plane to consider a point as belonging to the ground (in distance units).
+ * @param ground_angle_threshold The maximum allowed difference between the plane normal and the given axis (in radians). This is used when fitting plane model.
+ * @param ground_distance_threshold The maximum point's distance to the plane to consider that point as belonging to the ground (in distance units). This is used when fitting plane model.
+ * @param ground_filter_distance The maximum point's distance to the ground to filter out that point (in distance units). This is used when plane model is approximated.
  */
 RGL_API rgl_status_t rgl_node_points_remove_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
-                                                   float ground_distance_threshold);
+                                                   float ground_distance_threshold, float ground_filter_distance);
