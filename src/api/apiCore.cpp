@@ -507,10 +507,10 @@ void TapeCore::tape_graph_get_result_size(const YAML::Node& yamlNode, PlaybackSt
 	auto tape_size_of = yamlNode[3].as<int32_t>();
 	// These warnings may be caused e.g. by gaussian noise (different seed -> different hits)
 	if (out_count != tape_count) {
-		//		RGL_WARN("tape_graph_get_result_size: actual count ({}) differs from tape count ({})", out_count, tape_count);
+		RGL_WARN("tape_graph_get_result_size: actual count ({}) differs from tape count ({})", out_count, tape_count);
 	}
 	if (out_size_of != tape_size_of) {
-		//		RGL_WARN("tape_graph_get_result_size: actual sizeof ({}) differs from tape sizeof ({})", out_size_of, tape_size_of);
+		RGL_WARN("tape_graph_get_result_size: actual sizeof ({}) differs from tape sizeof ({})", out_size_of, tape_size_of);
 	}
 }
 
