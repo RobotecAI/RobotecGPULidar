@@ -36,8 +36,6 @@ void RemoveGroundPointsNode::setParameters(rgl_axis_t sensorUpAxis, float ground
 	segmentation.setInputCloud(toFilterPointCloud);
 	static const int maxIterations = 500;
 	segmentation.setMaxIterations(maxIterations);
-
-	planeModel = std::make_shared<pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ>>(toFilterPointCloud);
 }
 
 void RemoveGroundPointsNode::validateImpl()
@@ -76,19 +74,26 @@ void RemoveGroundPointsNode::enqueueExecImpl()
 	// Select ground indices (points within given distance to approximate plane model). Can be optimized (GPU?)
 	auto planeCoefficientsEigen = Eigen::Vector4f(planeCoefficients.values[0], planeCoefficients.values[1],
 	                                              planeCoefficients.values[2], planeCoefficients.values[3]);
-	planeModel->selectWithinDistance(planeCoefficientsEigen, groundFilterDistance, groundIndices->indices);
+	auto planeModel = pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ>(toFilterPointCloud);
+	planeModel.selectWithinDistance(planeCoefficientsEigen, groundFilterDistance, groundIndices->indices);
 
 	// Compute non-ground indices. Can be optimized (GPU?)
-	filteredIndicesHost.resize(pointCount - groundIndices->indices.size());
-	int currentGroundIdx = 0;
-	int currentNonGroundIdx = 0;
-	for (int i = 0; i < pointCount; ++i) {
-		if (i == groundIndices->indices[currentGroundIdx]) {
-			++currentGroundIdx;
-			continue;
+	if (groundIndices->indices.empty()) {
+		filteredIndicesHost.resize(pointCount);
+		std::iota(filteredIndicesHost.begin(), filteredIndicesHost.end(), 0);
+		filteredIndices->resize(0, false, false);
+	} else {
+		filteredIndicesHost.resize(pointCount - groundIndices->indices.size());
+		int currentGroundIdx = 0;
+		int currentNonGroundIdx = 0;
+		for (int i = 0; i < pointCount; ++i) {
+			if (i == groundIndices->indices[currentGroundIdx]) {
+				++currentGroundIdx;
+				continue;
+			}
+			filteredIndicesHost[currentNonGroundIdx] = i;
+			++currentNonGroundIdx;
 		}
-		filteredIndicesHost[currentNonGroundIdx] = i;
-		++currentNonGroundIdx;
 	}
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());

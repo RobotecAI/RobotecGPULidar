@@ -91,7 +91,6 @@ private:
 	pcl::PointIndices::Ptr groundIndices = std::make_shared<pcl::PointIndices>();
 	pcl::ModelCoefficients planeCoefficients;
 	pcl::SACSegmentation<pcl::PointXYZ> segmentation;
-	pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ>::Ptr planeModel;
 	float groundFilterDistance;
 
 	// RGL related members
