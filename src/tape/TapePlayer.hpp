@@ -51,13 +51,12 @@ struct TapePlayer
 	template<typename T>
 	T getCallArg(APICallIdx idx, int arg)
 	{
-		return yamlRecording[idx][arg].as<T>();
+		return yamlRoot[idx].begin()->second[arg + 1].as<T>(); // +1 for timestamp
 	}
 
 private:
 	YAML::Node yamlRoot{};
-	YAML::Node yamlRecording{};
-	APICallIdx nextCall{};
+	APICallIdx callIdx{};
 	std::unique_ptr<PlaybackState> playbackState;
 
 	static inline std::map<std::string, TapeFunction> tapeFunctions = {};

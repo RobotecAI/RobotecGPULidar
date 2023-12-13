@@ -39,15 +39,16 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 		                                  "due to the error: {}",
 		                                  pathYaml, std::strerror(errno)));
 	}
-	TapeRecorder::recordRGLVersion(yamlRoot);
-	yamlRecording = yamlRoot["recording"];
 	beginTimestamp = std::chrono::steady_clock::now();
+	yamlEmitter << YAML::BeginSeq;
+	TapeRecorder::recordRGLVersion();
 }
 
 TapeRecorder::~TapeRecorder()
 {
 	// TODO(prybicki): SIOF with Logger !!!
-	fileYaml << yamlRoot;
+	yamlEmitter << YAML::EndSeq;
+	fileYaml << yamlEmitter.c_str();
 	fileYaml.close();
 	if (fileYaml.fail()) {
 		RGL_WARN("rgl_tape_record_end: failed to close yaml file due to the error: {}", std::strerror(errno));
@@ -57,11 +58,9 @@ TapeRecorder::~TapeRecorder()
 	}
 }
 
-void TapeRecorder::recordRGLVersion(YAML::Node& node)
+void TapeRecorder::recordRGLVersion()
 {
-	YAML::Node rglVersion;
-	rglVersion["major"] = RGL_VERSION_MAJOR;
-	rglVersion["minor"] = RGL_VERSION_MINOR;
-	rglVersion["patch"] = RGL_VERSION_PATCH;
-	node[RGL_VERSION] = rglVersion;
+	int32_t major, minor, patch;
+	rgl_get_version_info(&major, &minor, &patch);
+	tapeRecorder->recordApiCall("rgl_get_version_info", major, minor, patch);
 }

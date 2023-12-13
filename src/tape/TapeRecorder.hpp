@@ -46,8 +46,8 @@
 
 class TapeRecorder
 {
-	YAML::Node yamlRoot;      // Represents the whole yaml file
-	YAML::Node yamlRecording; // The sequence of API calls
+	YAML::Emitter yamlEmitter;
+	std::vector<std::string> funcArgs;
 
 	FILE* fileBin;
 	std::ofstream fileYaml;
@@ -55,7 +55,7 @@ class TapeRecorder
 	size_t currentBinOffset = 0;
 	std::chrono::time_point<std::chrono::steady_clock> beginTimestamp;
 
-	static void recordRGLVersion(YAML::Node& node);
+	static void recordRGLVersion();
 
 	template<typename T>
 	size_t writeToBin(const T* source, size_t elemCount)
@@ -75,13 +75,25 @@ class TapeRecorder
 		return outBinOffset;
 	}
 
-	template<typename T, typename... Args>
-	void recordApiArguments(YAML::Node& node, int currentArgIdx, T currentArg, Args... remainingArgs)
+	template<typename T>
+	std::string toString(T value)
 	{
-		node[currentArgIdx] = valueToYaml(currentArg);
+		return std::to_string(value);
+	}
 
+	template<typename T>
+	std::string toString(T* value)
+	{
+		return std::to_string(reinterpret_cast<uintptr_t>(value));
+	}
+
+
+	template<typename T, typename... Args>
+	void recordApiArguments(int currentArgIdx, T currentArg, Args... remainingArgs)
+	{
+		funcArgs.at(currentArgIdx + 1) = toString(valueToYaml(currentArg)); // IT MAY BE WRONG
 		if constexpr (sizeof...(remainingArgs) > 0) {
-			recordApiArguments(node, ++currentArgIdx, remainingArgs...);
+			recordApiArguments(++currentArgIdx, remainingArgs...);
 			return;
 		}
 	}
@@ -143,14 +155,15 @@ public:
 	template<typename... Args>
 	void recordApiCall(std::string fnName, Args... args)
 	{
-		YAML::Node apiCallNode;
-		apiCallNode["name"] = fnName;
-		apiCallNode["timestamp"] =
-		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
+		funcArgs.clear();
+		funcArgs.resize(sizeof...(args) + 1); // +1 for timestamp
+		funcArgs.at(0) = std::to_string(
+		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count());
+		yamlEmitter << YAML::BeginMap << YAML::Key << fnName << YAML::Value << YAML::Flow;
 		if constexpr (sizeof...(args) > 0) {
-			recordApiArguments(apiCallNode, 0, args...);
+			recordApiArguments(0, args...);
 		}
-		yamlRecording.push_back(apiCallNode);
+		yamlEmitter << funcArgs << YAML::EndMap;
 	}
 };
 
