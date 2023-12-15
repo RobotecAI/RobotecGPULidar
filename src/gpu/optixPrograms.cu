@@ -55,7 +55,8 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float distance = NON_HIT_VALUE, float intensity = 0,
-                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& velocity = Vec3f{NAN})
+                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& velocity = Vec3f{NAN},
+                                              const float azimuth = NAN)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -85,6 +86,9 @@ __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float 
 	}
 	if (ctx.pointAbsVelocity != nullptr) {
 		ctx.pointAbsVelocity[rayIdx] = velocity;
+	}
+	if (ctx.azimuth != nullptr) {
+		ctx.azimuth[rayIdx] = azimuth;
 	}
 }
 
@@ -210,7 +214,12 @@ extern "C" __global__ void __closesthit__()
 		velocity = (displacementFromTransformChange + displacementFromSkinning) / static_cast<float>(ctx.sceneDeltaTime);
 	}
 
-	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);
+	// Assuming up vector is Y (true for Unity).
+	// TODO(msz-rai): allow to define up and forward vectors in RGL.
+	// TODO(msz-rai): assign azimuth for non-hits (at the moment, it is NAN).
+	float azimuth = atan2(hitWorld.x() - origin.x(), hitWorld.z() - origin.z());
+
+	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity, azimuth);
 }
 
 extern "C" __global__ void __miss__() { saveRayResult<false>(); }

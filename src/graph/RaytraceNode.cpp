@@ -103,7 +103,8 @@ void RaytraceNode::enqueueExecImpl()
 	    .intensity = getPtrTo<INTENSITY_F32>(),
 	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
 	    .entityId = getPtrTo<ENTITY_ID_I32>(),
-	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>()};
+	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>(),
+	    .azimuth = getPtrTo<AZIMUTH_F32>()};
 
 	requestCtxDev->copyFrom(requestCtxHst);
 	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
