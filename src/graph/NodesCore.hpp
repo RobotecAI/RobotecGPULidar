@@ -457,3 +457,49 @@ private:
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(
 	    arrayMgr);
 };
+
+struct RadarPostprocessPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
+	void setParameters(float inDistanceSeparation, float inAzimuthSeparation);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Point cloud description
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	// Data containers
+	std::vector<Field<RAY_IDX_U32>::type> filteredIndicesHost;
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
+	    arrayMgr);
+	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
+	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
+	std::vector<Field<DISTANCE_F32>::type> distanceSorted;
+	std::vector<Field<AZIMUTH_F32>::type> azimuthSorted;
+
+	float distanceSeparation;
+	float azimuthSeparation;
+
+	// RGL related members
+	std::mutex getFieldDataMutex;
+	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+
+	struct RadarCluster
+	{
+		std::vector<Field<RAY_IDX_U32>::type> indices;
+		float minDistance;
+		float maxDistance;
+		float minAzimuth;
+		float maxAzimuth;
+	};
+};

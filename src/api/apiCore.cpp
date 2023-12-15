@@ -986,6 +986,29 @@ void TapeCore::tape_node_points_from_array(const YAML::Node& yamlNode, PlaybackS
 	state.nodes.insert({nodeId, node});
 }
 
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_radar_postprocess(node={}, distance_separation={}, azimuth_separation={})", repr(node),
+		            distance_separation, azimuth_separation);
+
+		CHECK_ARG(distance_separation > 0);
+		CHECK_ARG(azimuth_separation > 0);
+
+		createOrUpdateNode<RadarPostprocessPointsNode>(node, distance_separation, azimuth_separation);
+	});
+	TAPE_HOOK(node, distance_separation, azimuth_separation);
+	return status;
+}
+
+void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_radar_postprocess(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_gaussian_noise_angular_ray(rgl_node_t* node, float mean, float st_dev, rgl_axis_t rotation_axis)
 {
 	auto status = rglSafeCall([&]() {

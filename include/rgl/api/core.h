@@ -635,6 +635,8 @@ RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_
 RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count,
                                                 const rgl_field_t* fields, int32_t field_count);
 
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
+
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.
  * Applies angular noise to the rays before raycasting.
