@@ -461,7 +461,7 @@ private:
 struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
-	void setParameters(float inDistanceSeparation, float inAzimuthSeparation);
+	void setParameters(float distanceSeparation, float azimuthSeparation);
 
 	// Node
 	void validateImpl() override;
@@ -496,10 +496,16 @@ private:
 
 	struct RadarCluster
 	{
+		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth);
+		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth);
+		inline bool isCandidate(float distance, float azimuth, float distanceSeparation, float azimuthSeparation) const;
+		inline bool canMergeWith(const RadarCluster& other, float distanceSeparation, float azimuthSeparation) const;
+		void mergeWith(RadarCluster other);
+		Field<RAY_IDX_U32>::type getMiddleIndex() const { return indices[indices.size() / 2]; }
+
+	private:
 		std::vector<Field<RAY_IDX_U32>::type> indices;
-		float minDistance;
-		float maxDistance;
-		float minAzimuth;
-		float maxAzimuth;
+		Vec2f minMaxDistance;
+		Vec2f minMaxAzimuth;
 	};
 };

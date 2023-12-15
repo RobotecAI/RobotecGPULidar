@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include <graph/NodesCore.hpp>
 #include <graph/NodesPcl.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void RadarPostprocessPointsNode::setParameters(float inDistanceSeparation, float inAzimuthSeparation)
+void RadarPostprocessPointsNode::setParameters(float distanceSeparation, float azimuthSeparation)
 {
-	this->distanceSeparation = inDistanceSeparation;
-	this->azimuthSeparation = inAzimuthSeparation;
+	this->distanceSeparation = distanceSeparation;
+	this->azimuthSeparation = azimuthSeparation;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -41,95 +43,53 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		return;
 	}
 
-	size_t pointCount = input->getPointCount();
-
 	distanceInputHost->copyFrom(input->getFieldData(DISTANCE_F32));
 	azimuthInputHost->copyFrom(input->getFieldData(AZIMUTH_F32));
 
 	std::vector<RadarCluster> clusters;
-	clusters.emplace_back();
-	clusters[0].minDistance = distanceInputHost->getReadPtr()[0];
-	clusters[0].maxDistance = distanceInputHost->getReadPtr()[0];
-	clusters[0].minAzimuth = azimuthInputHost->getReadPtr()[0];
-	clusters[0].maxAzimuth = azimuthInputHost->getReadPtr()[0];
-	clusters[0].indices.emplace_back(0);
+	// Create first cluster with the first point
+	clusters.emplace_back(0, distanceInputHost->getReadPtr()[0], azimuthInputHost->getReadPtr()[0]);
 
-	for (int i = 1; i < pointCount; ++i) {
-		auto thisDistance = distanceInputHost->getReadPtr()[i];
-		auto thisAzimuth = azimuthInputHost->getReadPtr()[i];
-		bool pointDone = false;
+	for (int i = 1; i < input->getPointCount(); ++i) {
+		auto distance = distanceInputHost->getReadPtr()[i];
+		auto azimuth = azimuthInputHost->getReadPtr()[i];
+		bool isPointClustered = false;
 		for (auto&& cluster : clusters) {
-			bool distanceInside = thisDistance >= cluster.minDistance && thisDistance <= cluster.maxDistance;
-			bool azimuthInside = thisAzimuth >= cluster.minAzimuth && thisAzimuth <= cluster.maxAzimuth;
-
-			if ((azimuthInside || std::abs(thisAzimuth - cluster.minAzimuth) < azimuthSeparation ||
-			     std::abs(thisAzimuth - cluster.maxAzimuth) < azimuthSeparation) &&
-			    (distanceInside || std::abs(thisDistance - cluster.minDistance) < distanceSeparation ||
-			     std::abs(thisDistance - cluster.maxDistance) < distanceSeparation)) {
-				cluster.minDistance = std::min(cluster.minDistance, thisDistance);
-				cluster.minAzimuth = std::min(cluster.minAzimuth, thisAzimuth);
-				cluster.maxDistance = std::max(cluster.maxDistance, thisDistance);
-				cluster.maxAzimuth = std::max(cluster.maxAzimuth, thisAzimuth);
-				cluster.indices.emplace_back(i);
-				pointDone = true;
+			if (cluster.isCandidate(distance, azimuth, distanceSeparation, azimuthSeparation)) {
+				cluster.addPoint(i, distance, azimuth);
+				isPointClustered = true;
 				break;
 			}
 		}
 
-		if (pointDone) {
-			continue;
+		if (!isPointClustered) {
+			// Create a new cluster
+			clusters.emplace_back(i, distance, azimuth);
 		}
-
-		clusters.emplace_back();
-		clusters.back().minDistance = thisDistance;
-		clusters.back().maxDistance = thisDistance;
-		clusters.back().minAzimuth = thisAzimuth;
-		clusters.back().maxAzimuth = thisAzimuth;
-		clusters.back().indices.emplace_back(i);
 	}
 
-	while (1) {
-		if (clusters.size() < 2) {
-			break;
-		}
-
-		bool done = true;
-
+	// Merge clusters if are close enough
+	bool allClustersGood = false;
+	while (clusters.size() < 2 || !allClustersGood) {
+		allClustersGood = true;
 		for (int i = 0; i < clusters.size(); ++i) {
-			for (int j = 0; j < clusters.size(); ++j) {
-				if (i == j) {
-					continue;
-				}
-				bool distanceInside2 = std::abs(clusters[i].minDistance - clusters[j].maxDistance) <= distanceSeparation &&
-				                       std::abs(clusters[i].maxDistance - clusters[j].minDistance) <= distanceSeparation;
-
-				bool azimuthInside2 = std::abs(clusters[i].minAzimuth - clusters[j].maxAzimuth) <= azimuthSeparation &&
-				                      std::abs(clusters[i].maxAzimuth - clusters[j].minAzimuth) <= azimuthSeparation;
-
-				if (distanceInside2 && azimuthInside2) {
-					clusters[i].minDistance = std::min(clusters[i].minDistance, clusters[j].minDistance);
-					clusters[i].minAzimuth = std::min(clusters[i].minAzimuth, clusters[j].minAzimuth);
-					clusters[i].maxDistance = std::max(clusters[i].maxDistance, clusters[j].maxDistance);
-					clusters[i].maxAzimuth = std::max(clusters[i].maxAzimuth, clusters[j].maxAzimuth);
-					clusters[i].indices.insert(clusters[i].indices.begin(), clusters[j].indices.begin(),
-					                           clusters[j].indices.end());
+			for (int j = i + 1; j < clusters.size(); ++j) {
+				if (clusters[i].canMergeWith(clusters[j], distanceSeparation, azimuthSeparation)) {
+					clusters[i].mergeWith(clusters[j]);
 					clusters.erase(clusters.begin() + j);
-					done = false;
+					allClustersGood = false;
 					break;
 				}
 			}
-			if (!done) {
+			if (!allClustersGood) {
 				break;
 			}
-		}
-		if (done) {
-			break;
 		}
 	}
 
 	filteredIndicesHost.clear();
 	for (auto&& cluster : clusters) {
-		filteredIndicesHost.push_back(cluster.indices[cluster.indices.size() / 2]);
+		filteredIndicesHost.push_back(cluster.getMiddleIndex());
 	}
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
@@ -169,7 +129,7 @@ IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 		char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
 		auto fieldArray = input->getFieldData(field);
 		if (!isDeviceAccessible(fieldArray->getMemoryKind())) {
-			auto msg = fmt::format("SeparateRadarPoints requires its input to be device-accessible, {} is not", field);
+			auto msg = fmt::format("RadarPostprocessPoints requires its input to be device-accessible, {} is not", field);
 			throw InvalidPipeline(msg);
 		}
 		const char* inputPtr = static_cast<const char*>(fieldArray->getRawReadPtr());
@@ -183,3 +143,53 @@ IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 }
 
 std::vector<rgl_field_t> RadarPostprocessPointsNode::getRequiredFieldList() const { return {DISTANCE_F32, AZIMUTH_F32}; }
+
+// RadarCluster methods implementation
+
+RadarPostprocessPointsNode::RadarCluster::RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth)
+{
+	indices.emplace_back(index);
+	minMaxDistance = {distance, distance};
+	minMaxAzimuth = {azimuth, azimuth};
+}
+
+void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth)
+{
+	indices.emplace_back(index);
+	minMaxDistance[0] = std::min(minMaxDistance[0], distance);
+	minMaxDistance[1] = std::max(minMaxDistance[1], distance);
+	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], azimuth);
+	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], azimuth);
+}
+
+inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance, float azimuth, float distanceSeparation,
+                                                                  float azimuthSeparation) const
+{
+	return (distance >= minMaxDistance[0] - distanceSeparation && distance <= minMaxDistance[1] + distanceSeparation) &&
+	       (azimuth >= minMaxAzimuth[0] - azimuthSeparation && azimuth <= minMaxAzimuth[1] + azimuthSeparation);
+}
+
+inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(const RadarCluster& other, float distanceSeparation,
+                                                                   float azimuthSeparation) const
+{
+	bool isDistanceGood = std::abs(minMaxDistance[0] - other.minMaxDistance[1]) <= distanceSeparation &&
+	                      std::abs(minMaxDistance[1] - other.minMaxDistance[0]) <= distanceSeparation;
+
+	bool isAzimuthGood = std::abs(minMaxAzimuth[0] - other.minMaxAzimuth[1]) <= azimuthSeparation &&
+	                     std::abs(minMaxAzimuth[1] - other.minMaxAzimuth[0]) <= azimuthSeparation;
+
+	return isDistanceGood && isAzimuthGood;
+}
+
+void RadarPostprocessPointsNode::RadarCluster::mergeWith(RadarCluster other)
+{
+	minMaxDistance[0] = std::min(minMaxDistance[0], other.minMaxDistance[0]);
+	minMaxDistance[1] = std::max(minMaxDistance[1], other.minMaxDistance[1]);
+	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], other.minMaxAzimuth[0]);
+	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], other.minMaxAzimuth[1]);
+
+	// Move indices
+	std::size_t n = indices.size();
+	indices.resize(indices.size() + other.indices.size());
+	std::move(other.indices.begin(), other.indices.end(), indices.begin() + n);
+}
