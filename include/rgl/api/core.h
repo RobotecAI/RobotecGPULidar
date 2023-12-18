@@ -636,6 +636,17 @@ RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_
 RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* points, int32_t points_count,
                                                 const rgl_field_t* fields, int32_t field_count);
 
+/**
+ * Creates or modifies RadarPostprocessPointsNode.
+ * The Node processes point cloud to create radar-like output.
+ * The point cloud is reduced by clustering input based on hit-point distance and hit-point azimuth.
+ * The output consists of the collection of one point per cluster (the closest to the azimuth and elevation center).
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param distance_separation The maximum distance difference to create a new radar cluster.
+ * @param azimuth_separation The maximum azimuth difference to create a new radar cluster.
+ */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
 
 /**
