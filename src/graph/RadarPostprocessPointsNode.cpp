@@ -45,18 +45,21 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	distanceInputHost->copyFrom(input->getFieldData(DISTANCE_F32));
 	azimuthInputHost->copyFrom(input->getFieldData(AZIMUTH_F32));
+	elevationInputHost->copyFrom(input->getFieldData(ELEVATION_F32));
 
 	std::vector<RadarCluster> clusters;
 	// Create first cluster with the first point
-	clusters.emplace_back(0, distanceInputHost->getReadPtr()[0], azimuthInputHost->getReadPtr()[0]);
+	clusters.emplace_back(0, distanceInputHost->getReadPtr()[0], azimuthInputHost->getReadPtr()[0],
+	                      elevationInputHost->getReadPtr()[0]);
 
 	for (int i = 1; i < input->getPointCount(); ++i) {
 		auto distance = distanceInputHost->getReadPtr()[i];
 		auto azimuth = azimuthInputHost->getReadPtr()[i];
+		auto elevation = elevationInputHost->getReadPtr()[i];
 		bool isPointClustered = false;
 		for (auto&& cluster : clusters) {
 			if (cluster.isCandidate(distance, azimuth, distanceSeparation, azimuthSeparation)) {
-				cluster.addPoint(i, distance, azimuth);
+				cluster.addPoint(i, distance, azimuth, elevation);
 				isPointClustered = true;
 				break;
 			}
@@ -64,7 +67,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 		if (!isPointClustered) {
 			// Create a new cluster
-			clusters.emplace_back(i, distance, azimuth);
+			clusters.emplace_back(i, distance, azimuth, elevation);
 		}
 	}
 
@@ -89,7 +92,8 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	filteredIndicesHost.clear();
 	for (auto&& cluster : clusters) {
-		filteredIndicesHost.push_back(cluster.getMiddleIndex());
+		filteredIndicesHost.push_back(
+		    cluster.findDirectionalCenterIndex(azimuthInputHost->getReadPtr(), elevationInputHost->getReadPtr()));
 	}
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
@@ -142,24 +146,32 @@ IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 	return cacheManager.getValue(field);
 }
 
-std::vector<rgl_field_t> RadarPostprocessPointsNode::getRequiredFieldList() const { return {DISTANCE_F32, AZIMUTH_F32}; }
+std::vector<rgl_field_t> RadarPostprocessPointsNode::getRequiredFieldList() const
+{
+	return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32};
+}
 
 // RadarCluster methods implementation
 
-RadarPostprocessPointsNode::RadarCluster::RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth)
+RadarPostprocessPointsNode::RadarCluster::RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth,
+                                                       float elevation)
 {
 	indices.emplace_back(index);
 	minMaxDistance = {distance, distance};
 	minMaxAzimuth = {azimuth, azimuth};
+	minMaxElevation = {elevation, elevation};
 }
 
-void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth)
+void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth,
+                                                        float elevation)
 {
 	indices.emplace_back(index);
 	minMaxDistance[0] = std::min(minMaxDistance[0], distance);
 	minMaxDistance[1] = std::max(minMaxDistance[1], distance);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], azimuth);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], azimuth);
+	minMaxElevation[0] = std::min(minMaxElevation[0], elevation);
+	minMaxElevation[1] = std::max(minMaxElevation[1], elevation);
 }
 
 inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance, float azimuth, float distanceSeparation,
@@ -187,9 +199,30 @@ void RadarPostprocessPointsNode::RadarCluster::mergeWith(RadarCluster other)
 	minMaxDistance[1] = std::max(minMaxDistance[1], other.minMaxDistance[1]);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], other.minMaxAzimuth[0]);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], other.minMaxAzimuth[1]);
+	minMaxElevation[0] = std::min(minMaxElevation[0], other.minMaxElevation[0]);
+	minMaxElevation[1] = std::max(minMaxElevation[1], other.minMaxElevation[1]);
 
 	// Move indices
 	std::size_t n = indices.size();
 	indices.resize(indices.size() + other.indices.size());
 	std::move(other.indices.begin(), other.indices.end(), indices.begin() + n);
+}
+
+Field<RAY_IDX_U32>::type RadarPostprocessPointsNode::RadarCluster::findDirectionalCenterIndex(
+    const Field<AZIMUTH_F32>::type* azimuths, const Field<ELEVATION_F32>::type* elevations) const
+{
+	auto meanAzimuth = (minMaxAzimuth[0] + minMaxAzimuth[1]) / 2.0f;
+	auto meanElevation = (minMaxElevation[0] + minMaxElevation[1]) / 2.0f;
+
+	float minDistance = FLT_MAX;
+	uint32_t minIndex = indices.front();
+
+	for (auto&& i : indices) {
+		float distance = std::abs(azimuths[i] - meanAzimuth) + std::abs(elevations[i] - meanElevation);
+		if (distance < minDistance) {
+			minDistance = distance;
+			minIndex = i;
+		}
+	}
+	return minIndex;
 }

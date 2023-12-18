@@ -42,6 +42,7 @@ typedef unsigned char TextureTexelFormat;
 #define INTENSITY_F32 RGL_FIELD_INTENSITY_F32
 #define RING_ID_U16 RGL_FIELD_RING_ID_U16
 #define AZIMUTH_F32 RGL_FIELD_AZIMUTH_F32
+#define ELEVATION_F32 RGL_FIELD_ELEVATION_F32
 #define DISTANCE_F32 RGL_FIELD_DISTANCE_F32
 #define RETURN_TYPE_U8 RGL_FIELD_RETURN_TYPE_U8
 #define TIME_STAMP_F64 RGL_FIELD_TIME_STAMP_F64
@@ -101,6 +102,7 @@ FIELD(INTENSITY_F32, float);
 FIELD(IS_HIT_I32, int32_t); // Signed may be faster
 FIELD(DISTANCE_F32, float);
 FIELD(AZIMUTH_F32, float);
+FIELD(ELEVATION_F32, float);
 FIELD(RING_ID_U16, uint16_t);
 FIELD(RETURN_TYPE_U8, uint8_t);
 FIELD(TIME_STAMP_F64, double);
@@ -121,6 +123,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case INTENSITY_F32: return Field<INTENSITY_F32>::size;
 		case RING_ID_U16: return Field<RING_ID_U16>::size;
 		case AZIMUTH_F32: return Field<AZIMUTH_F32>::size;
+		case ELEVATION_F32: return Field<ELEVATION_F32>::size;
 		case DISTANCE_F32: return Field<DISTANCE_F32>::size;
 		case RETURN_TYPE_U8: return Field<RETURN_TYPE_U8>::size;
 		case TIME_STAMP_F64: return Field<TIME_STAMP_F64>::size;
@@ -169,6 +172,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(std::forward<Args>(args)...);
 		case RING_ID_U16: return Subclass<Field<RING_ID_U16>::type>::create(std::forward<Args>(args)...);
 		case AZIMUTH_F32: return Subclass<Field<AZIMUTH_F32>::type>::create(std::forward<Args>(args)...);
+		case ELEVATION_F32: return Subclass<Field<ELEVATION_F32>::type>::create(std::forward<Args>(args)...);
 		case DISTANCE_F32: return Subclass<Field<DISTANCE_F32>::type>::create(std::forward<Args>(args)...);
 		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(std::forward<Args>(args)...);
 		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(std::forward<Args>(args)...);
@@ -192,6 +196,7 @@ inline std::string toString(rgl_field_t type)
 		case INTENSITY_F32: return "INTENSITY_F32";
 		case RING_ID_U16: return "RING_ID_U16";
 		case AZIMUTH_F32: return "AZIMUTH_F32";
+		case ELEVATION_F32: return "ELEVATION_F32";
 		case DISTANCE_F32: return "DISTANCE_F32";
 		case RETURN_TYPE_U8: return "RETURN_TYPE_U8";
 		case TIME_STAMP_F64: return "TIME_STAMP_F64";
@@ -220,6 +225,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 		case INTENSITY_F32: return {sensor_msgs::msg::PointField::FLOAT32};
 		case RING_ID_U16: return {sensor_msgs::msg::PointField::UINT16};
 		case AZIMUTH_F32: return {sensor_msgs::msg::PointField::FLOAT32};
+		case ELEVATION_F32: return {sensor_msgs::msg::PointField::FLOAT32};
 		case DISTANCE_F32: return {sensor_msgs::msg::PointField::FLOAT32};
 		case RETURN_TYPE_U8: return {sensor_msgs::msg::PointField::UINT8};
 		case TIME_STAMP_F64: return {sensor_msgs::msg::PointField::FLOAT64};
@@ -247,6 +253,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		case INTENSITY_F32: return {"intensity"};
 		case RING_ID_U16: return {"ring"};
 		case AZIMUTH_F32: return {"azimuth"};
+		case ELEVATION_F32: return {"elevation"};
 		case DISTANCE_F32: return {"distance"};
 		case RETURN_TYPE_U8: return {"return_type"};
 		case TIME_STAMP_F64: return {"time_stamp"};

@@ -133,6 +133,14 @@ struct Mat3x4f
 		return {rc[0][0], rc[0][1], rc[0][2], 0.0f, rc[1][0], rc[1][1], rc[1][2], 0.0f, rc[2][0], rc[2][1], rc[2][2], 0.0f};
 	}
 
+	HostDevFn inline float toRotationXRad() const { return atan2f(rc[2][1], rc[2][2]); }
+
+	HostDevFn inline float toRotationYRad() const { return atan2f(-rc[2][0], sqrtf(powf(rc[2][1], 2) + powf(rc[2][2], 2))); }
+
+	HostDevFn inline float toRotationZRad() const { return atan2f(rc[1][0], rc[0][0]); }
+
+	HostDevFn inline Vec3f toRotationRad() const { return {toRotationXRad(), toRotationYRad(), toRotationZRad()}; }
+
 	HostDevFn inline Vec3f scaleVec() const
 	{
 		return {

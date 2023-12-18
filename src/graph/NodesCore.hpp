@@ -484,8 +484,7 @@ private:
 	    arrayMgr);
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
 	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
-	std::vector<Field<DISTANCE_F32>::type> distanceSorted;
-	std::vector<Field<AZIMUTH_F32>::type> azimuthSorted;
+	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationInputHost = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
 
 	float distanceSeparation;
 	float azimuthSeparation;
@@ -496,16 +495,18 @@ private:
 
 	struct RadarCluster
 	{
-		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth);
-		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth);
+		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
+		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
 		inline bool isCandidate(float distance, float azimuth, float distanceSeparation, float azimuthSeparation) const;
 		inline bool canMergeWith(const RadarCluster& other, float distanceSeparation, float azimuthSeparation) const;
 		void mergeWith(RadarCluster other);
-		Field<RAY_IDX_U32>::type getMiddleIndex() const { return indices[indices.size() / 2]; }
+		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
+		                                                    const Field<ELEVATION_F32>::type* elevations) const;
 
 	private:
 		std::vector<Field<RAY_IDX_U32>::type> indices;
-		Vec2f minMaxDistance;
-		Vec2f minMaxAzimuth;
+		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
+		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
+		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
 	};
 };

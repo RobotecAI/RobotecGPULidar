@@ -53,5 +53,6 @@ struct RaytraceRequestContext
 	Field<ENTITY_ID_I32>::type* entityId;
 	Field<ABSOLUTE_VELOCITY_VEC3_F32>::type* pointAbsVelocity;
 	Field<AZIMUTH_F32>::type* azimuth;
+	Field<ELEVATION_F32>::type* elevation;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

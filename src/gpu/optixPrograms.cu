@@ -55,8 +55,7 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 
 template<bool isFinite>
 __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float distance = NON_HIT_VALUE, float intensity = 0,
-                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& velocity = Vec3f{NAN},
-                                              const float azimuth = NAN)
+                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& velocity = Vec3f{NAN})
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -87,9 +86,6 @@ __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float 
 	if (ctx.pointAbsVelocity != nullptr) {
 		ctx.pointAbsVelocity[rayIdx] = velocity;
 	}
-	if (ctx.azimuth != nullptr) {
-		ctx.azimuth[rayIdx] = azimuth;
-	}
 }
 
 extern "C" __global__ void __raygen__()
@@ -101,16 +97,25 @@ extern "C" __global__ void __raygen__()
 
 	const int rayIdx = optixGetLaunchIndex().x;
 	Mat3x4f ray = ctx.rays[rayIdx];
+	const Mat3x4f rayLocal = ctx.rayOriginToWorld.inverse() * ray;
+
+	// Assuming up vector is Y, forward vector is Z (true for Unity).
+	// TODO(msz-rai): allow to define up and forward vectors in RGL
+	if (ctx.azimuth != nullptr) {
+		ctx.azimuth[rayIdx] = rayLocal.toRotationYRad();
+	}
+	if (ctx.elevation != nullptr) {
+		ctx.elevation[rayIdx] = rayLocal.toRotationXRad();
+	}
 
 	if (ctx.doApplyDistortion) {
 		static const float toDeg = (180.0f / M_PI);
-		// Velocities are in the local frame. Need to transform rays.
-		ray = ctx.rayOriginToWorld.inverse() * ray;
+		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
 		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
 		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f) *
-		      ray;
+		      rayLocal;
 		// Back to the global frame.
 		ray = ctx.rayOriginToWorld * ray;
 	}
@@ -214,12 +219,7 @@ extern "C" __global__ void __closesthit__()
 		velocity = (displacementFromTransformChange + displacementFromSkinning) / static_cast<float>(ctx.sceneDeltaTime);
 	}
 
-	// Assuming up vector is Y (true for Unity).
-	// TODO(msz-rai): allow to define up and forward vectors in RGL.
-	// TODO(msz-rai): assign azimuth for non-hits (at the moment, it is NAN).
-	float azimuth = atan2(hitWorld.x() - origin.x(), hitWorld.z() - origin.z());
-
-	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity, azimuth);
+	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);
 }
 
 extern "C" __global__ void __miss__() { saveRayResult<false>(); }
