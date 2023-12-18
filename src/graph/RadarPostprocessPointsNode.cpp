@@ -73,12 +73,12 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	// Merge clusters if are close enough
 	bool allClustersGood = false;
-	while (clusters.size() < 2 || !allClustersGood) {
+	while (clusters.size() > 1 && !allClustersGood) {
 		allClustersGood = true;
 		for (int i = 0; i < clusters.size(); ++i) {
 			for (int j = i + 1; j < clusters.size(); ++j) {
 				if (clusters[i].canMergeWith(clusters[j], distanceSeparation, azimuthSeparation)) {
-					clusters[i].mergeWith(clusters[j]);
+					clusters[i].takeIndicesFrom(std::move(clusters[j]));
 					clusters.erase(clusters.begin() + j);
 					allClustersGood = false;
 					break;
@@ -193,7 +193,7 @@ inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(const RadarCl
 	return isDistanceGood && isAzimuthGood;
 }
 
-void RadarPostprocessPointsNode::RadarCluster::mergeWith(RadarCluster other)
+void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& other)
 {
 	minMaxDistance[0] = std::min(minMaxDistance[0], other.minMaxDistance[0]);
 	minMaxDistance[1] = std::max(minMaxDistance[1], other.minMaxDistance[1]);

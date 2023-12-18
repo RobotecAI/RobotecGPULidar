@@ -496,10 +496,13 @@ private:
 	struct RadarCluster
 	{
 		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
+		RadarCluster(RadarCluster&& other) = default;
+		RadarCluster& operator=(RadarCluster&& other) = default;
+
 		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
 		inline bool isCandidate(float distance, float azimuth, float distanceSeparation, float azimuthSeparation) const;
 		inline bool canMergeWith(const RadarCluster& other, float distanceSeparation, float azimuthSeparation) const;
-		void mergeWith(RadarCluster other);
+		void takeIndicesFrom(RadarCluster&& other);
 		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
 		                                                    const Field<ELEVATION_F32>::type* elevations) const;
 
