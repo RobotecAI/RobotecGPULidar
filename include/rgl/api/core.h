@@ -275,6 +275,14 @@ typedef enum : int32_t
 	 */
 	RGL_FIELD_RADIAL_SPEED_F32,
 
+	/**
+	 * Radar-specific fields. At the moment, placeholders only to implement in the future.
+	 */
+	RGL_FIELD_POWER_F32,
+	RGL_FIELD_RCS_F32, // Radar cross-section
+	RGL_FIELD_NOISE_F32,
+	RGL_FIELD_SNR_F32, // Signal-to-noise ratio
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,

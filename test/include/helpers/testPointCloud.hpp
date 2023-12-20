@@ -255,12 +255,17 @@ private:
 		{INTENSITY_F32, [&](std::size_t count) {setFieldValues<INTENSITY_F32>(generateFieldValues(count, genIntensity));}},
 		{RING_ID_U16, [&](std::size_t count) {setFieldValues<RING_ID_U16>(generateFieldValues(count, genRingId));}},
 		{AZIMUTH_F32, [&](std::size_t count) {setFieldValues<AZIMUTH_F32>(generateFieldValues(count, genAzimuth));}},
+		{ELEVATION_F32, [&](std::size_t count) {setFieldValues<ELEVATION_F32>(generateFieldValues(count, genElevation));}},
 		{DISTANCE_F32, [&](std::size_t count) {setFieldValues<DISTANCE_F32>(generateFieldValues(count, genDistance));}},
 		{RETURN_TYPE_U8, [&](std::size_t count) {setFieldValues<RETURN_TYPE_U8>(generateFieldValues(count, genReturnType));}},
 		{TIME_STAMP_F64, [&](std::size_t count) {setFieldValues<TIME_STAMP_F64>(generateFieldValues(count, genTimeStamp));}},
 		{RADIAL_SPEED_F32, [&](std::size_t count) {setFieldValues<RADIAL_SPEED_F32>(generateFieldValues(count, genRadialSpeed));}},
 		{ABSOLUTE_VELOCITY_VEC3_F32, [&](std::size_t count) {setFieldValues<ABSOLUTE_VELOCITY_VEC3_F32>(generateFieldValues(count, genAbsoluteVelocity));}},
-		{RELATIVE_VELOCITY_VEC3_F32, [&](std::size_t count) {setFieldValues<RELATIVE_VELOCITY_VEC3_F32>(generateFieldValues(count, genRelativeVelocity));}}
+		{RELATIVE_VELOCITY_VEC3_F32, [&](std::size_t count) {setFieldValues<RELATIVE_VELOCITY_VEC3_F32>(generateFieldValues(count, genRelativeVelocity));}},
+		{POWER_F32, [&](std::size_t count) {setFieldValues<POWER_F32>(generateFieldValues(count, genPower));}},
+		{RCS_F32, [&](std::size_t count) {setFieldValues<RCS_F32>(generateFieldValues(count, genRcs));}},
+		{NOISE_F32, [&](std::size_t count) {setFieldValues<NOISE_F32>(generateFieldValues(count, genNoise));}},
+		{SNR_F32, [&](std::size_t count) {setFieldValues<SNR_F32>(generateFieldValues(count, genSnr));}},
 	};
 	// clang-format on
 

@@ -35,6 +35,9 @@ static std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) {
 static std::function<Field<AZIMUTH_F32>::type(int)> genAzimuth = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
+static std::function<Field<ELEVATION_F32>::type(int)> genElevation = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
 static std::function<Field<DISTANCE_F32>::type(int)> genDistance = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
@@ -54,6 +57,18 @@ static std::function<Field<RELATIVE_VELOCITY_VEC3_F32>::type(int)> genRelativeVe
 	             static_cast<float>(i) / (static_cast<float>(i) + 3));
 };
 static std::function<Field<RADIAL_SPEED_F32>::type(int)> genRadialSpeed = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<POWER_F32>::type(int)> genPower = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<RCS_F32>::type(int)> genRcs = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<NOISE_F32>::type(int)> genNoise = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<SNR_F32>::type(int)> genSnr = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
 
