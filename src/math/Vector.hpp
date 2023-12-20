@@ -139,7 +139,7 @@ struct Vector
 
 	HostDevFn V half() const { return *this / V{static_cast<T>(2)}; }
 
-	HostDevFn V normalize() const { return *this / length(); }
+	HostDevFn V normalized() const { return *this / length(); }
 
 	HostDevFn T min() const
 	{
@@ -156,6 +156,26 @@ struct Vector
 		for (auto&& v : *this) {
 			value *= v;
 		}
+		return value;
+	}
+
+	HostDevFn T dot(const V& other) const
+	{
+		T value = static_cast<T>(0);
+		for (int i = 0; i < dim; ++i) {
+			value += row[i] * other.row[i];
+		}
+		return value;
+	}
+
+	// Only for Vector with dim == 3
+	template<int D = dim, typename std::enable_if_t<D == 3, int> = 0>
+	HostDevFn V cross(const V& other) const
+	{
+		V value = V(static_cast<T>(0));
+		value[0] = row[1] * other.row[2] - row[2] * other.row[1];
+		value[1] = row[2] * other.row[0] - row[0] * other.row[2];
+		value[2] = row[0] * other.row[1] - row[1] * other.row[0];
 		return value;
 	}
 

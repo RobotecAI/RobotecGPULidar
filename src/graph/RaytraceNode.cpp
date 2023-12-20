@@ -104,8 +104,11 @@ void RaytraceNode::enqueueExecImpl()
 	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
 	    .entityId = getPtrTo<ENTITY_ID_I32>(),
 	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>(),
+	    .pointRelVelocity = getPtrTo<RELATIVE_VELOCITY_VEC3_F32>(),
+	    .radialSpeed = getPtrTo<RADIAL_SPEED_F32>(),
 	    .azimuth = getPtrTo<AZIMUTH_F32>(),
-	    .elevation = getPtrTo<ELEVATION_F32>()};
+	    .elevation = getPtrTo<ELEVATION_F32>()
+	};
 
 	requestCtxDev->copyFrom(requestCtxHst);
 	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
@@ -159,14 +162,8 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	return outFields;
 }
 
-void RaytraceNode::setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
+void RaytraceNode::setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity)
 {
-	doApplyDistortion = linearVelocity != nullptr && angularVelocity != nullptr;
-
-	if (!doApplyDistortion) {
-		return;
-	}
-
-	sensorLinearVelocityXYZ = *linearVelocity;
-	sensorAngularVelocityRPY = *angularVelocity;
+	sensorLinearVelocityXYZ = linearVelocity;
+	sensorAngularVelocityRPY = angularVelocity;
 }

@@ -61,7 +61,7 @@ __global__ void kAddGaussianNoiseDistance(size_t pointCount, float mean, float s
 	Field<XYZ_VEC3_F32>::type pointInRayOriginTransform = lookAtOriginTransform * inPoints[tid];
 
 	outPoints[tid] = lookAtOriginTransform.inverse() *
-	                 (pointInRayOriginTransform + pointInRayOriginTransform.normalize() * distanceError);
+	                 (pointInRayOriginTransform + pointInRayOriginTransform.normalized() * distanceError);
 	outDistances[tid] = inDistances[tid] + distanceError;
 }
 

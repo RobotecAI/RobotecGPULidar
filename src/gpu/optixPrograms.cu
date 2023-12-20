@@ -26,6 +26,8 @@
 
 #include <rgl/api/core.h>
 
+static constexpr float toDeg = (180.0f / M_PI);
+
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
 struct Vec3fPayload
@@ -54,13 +56,15 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 }
 
 template<bool isFinite>
-__forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float distance = NON_HIT_VALUE, float intensity = 0,
-                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& velocity = Vec3f{NAN})
+__forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE},
+                                              float distance = NON_HIT_VALUE, float intensity = 0,
+                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& absVelocity = Vec3f{NAN},
+                                              const Vec3f& relVelocity = Vec3f{NAN}, const float radialSpeed = NAN)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
 		// Return actual XYZ of the hit point or infinity vector.
-		ctx.xyz[rayIdx] = isFinite ? *xyz : Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE};
+		ctx.xyz[rayIdx] = xyz;
 	}
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = isFinite;
@@ -84,7 +88,13 @@ __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float 
 		ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
 	}
 	if (ctx.pointAbsVelocity != nullptr) {
-		ctx.pointAbsVelocity[rayIdx] = velocity;
+		ctx.pointAbsVelocity[rayIdx] = absVelocity;
+	}
+	if (ctx.pointRelVelocity != nullptr) {
+		ctx.pointRelVelocity[rayIdx] = relVelocity;
+	}
+	if (ctx.radialSpeed != nullptr) {
+		ctx.radialSpeed[rayIdx] = radialSpeed;
 	}
 }
 
@@ -109,7 +119,6 @@ extern "C" __global__ void __raygen__()
 	}
 
 	if (ctx.doApplyDistortion) {
-		static const float toDeg = (180.0f / M_PI);
 		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
@@ -175,7 +184,8 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	float intensity = 0;
-	if (entityData.textureCoords != nullptr && entityData.texture != 0) {
+	bool isIntensityRequested = ctx.intensity != nullptr;
+	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
 		assert(triangleIndices.x() < entityData.textureCoordsCount);
 		assert(triangleIndices.y() < entityData.textureCoordsCount);
 		assert(triangleIndices.z() < entityData.textureCoordsCount);
@@ -189,10 +199,12 @@ extern "C" __global__ void __closesthit__()
 		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
 
-	Vec3f velocity{NAN};
-	Vec3f displacementFromTransformChange = {0, 0, 0};
-	Vec3f displacementFromSkinning = {0, 0, 0};
-	if (ctx.sceneDeltaTime > 0) {
+	Vec3f absPointVelocity{NAN};
+	Vec3f relPointVelocity{NAN};
+	float radialSpeed{NAN};
+	bool isVelocityRequested = ctx.pointAbsVelocity != nullptr || ctx.pointRelVelocity != nullptr || ctx.radialSpeed != nullptr;
+	if (ctx.sceneDeltaTime > 0 && isVelocityRequested) {
+		Vec3f displacementFromTransformChange = {0, 0, 0};
 		if (entityData.hasPrevFrameLocalToWorld) {
 			// Computing hit point velocity in simple words:
 			// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
@@ -206,6 +218,7 @@ extern "C" __global__ void __closesthit__()
 		}
 
 		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
+		Vec3f displacementFromSkinning = {0, 0, 0};
 		bool wasSkinned = entityData.vertexDisplacementSincePrevFrame != nullptr;
 		if (wasSkinned) {
 			Mat3x4f objectToWorld;
@@ -216,10 +229,23 @@ extern "C" __global__ void __closesthit__()
 			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
 		}
 
-		velocity = (displacementFromTransformChange + displacementFromSkinning) / static_cast<float>(ctx.sceneDeltaTime);
+		absPointVelocity = (displacementFromTransformChange + displacementFromSkinning) /
+		                   static_cast<float>(ctx.sceneDeltaTime);
+
+		// Relative point velocity is a sum of linear velocities difference (between sensor and hit-point)
+		// and impact of sensor angular velocity
+		Vec3f absPointVelocityInSensorFrame = ctx.rayOriginToWorld.rotation().inverse() * absPointVelocity;
+		Vec3f relPointVelocityBasedOnSensorLinearVelocity = absPointVelocityInSensorFrame - ctx.sensorLinearVelocityXYZ;
+
+		Vec3f distanceOnAxisXYZ = hitWorld - origin;
+		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(distanceOnAxisXYZ);
+		relPointVelocity = relPointVelocityBasedOnSensorLinearVelocity + relPointVelocityBasedOnSensorAngularVelocity;
+
+		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;
+		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
 
-	saveRayResult<true>(&hitWorld, distance, intensity, objectID, velocity);
+	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed);
 }
 
 extern "C" __global__ void __miss__() { saveRayResult<false>(); }
