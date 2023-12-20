@@ -119,7 +119,6 @@ extern "C" __global__ void __raygen__()
 	}
 
 	if (ctx.doApplyDistortion) {
-		static const float toDeg = (180.0f / M_PI);
 		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
