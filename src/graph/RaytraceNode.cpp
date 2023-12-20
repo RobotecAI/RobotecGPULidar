@@ -78,7 +78,6 @@ void RaytraceNode::enqueueExecImpl()
 
 	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
 	requestCtxHst->resize(1, true, false);
-	// Print linear velocity:
 	requestCtxHst->at(0) = RaytraceRequestContext{
 	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
 	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
