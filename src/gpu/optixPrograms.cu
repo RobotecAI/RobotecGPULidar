@@ -233,9 +233,8 @@ extern "C" __global__ void __closesthit__()
 
 		// Relative point velocity is a sum of linear velocities difference (between sensor and hit-point)
 		// and impact of sensor angular velocity
-		Vec3f absSensorLinearVelocityXYZ = ctx.rayOriginToWorld.rotation() * ctx.sensorLinearVelocityXYZ;
-		Vec3f relPointVelocityBasedOnSensorLinearVelocity = ctx.rayOriginToWorld.rotation().inverse() *
-		                                                    (absPointVelocity - absSensorLinearVelocityXYZ);
+		Vec3f absPointVelocityInSensorFrame = ctx.rayOriginToWorld.rotation().inverse() * absPointVelocity;
+		Vec3f relPointVelocityBasedOnSensorLinearVelocity = absPointVelocityInSensorFrame - ctx.sensorLinearVelocityXYZ;
 
 		Vec3f distanceOnAxisXYZ = hitWorld - origin;
 		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(distanceOnAxisXYZ);
