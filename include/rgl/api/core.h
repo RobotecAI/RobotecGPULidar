@@ -249,8 +249,8 @@ typedef enum : int32_t
 	RGL_FIELD_RAY_IDX_U32,
 	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
-	RGL_FIELD_AZIMUTH_F32,   // Assuming up vector is Y, forward vector is Z
-	RGL_FIELD_ELEVATION_F32, // Assuming up vector is Y, forward vector is Z
+	RGL_FIELD_AZIMUTH_F32,   // In radians. Assuming up vector is Y, forward vector is Z.
+	RGL_FIELD_ELEVATION_F32, // In radians. Assuming up vector is Y, forward vector is Z.
 	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
 	RGL_FIELD_TIME_STAMP_F64,
@@ -644,8 +644,8 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param distance_separation The maximum distance difference to create a new radar cluster.
- * @param azimuth_separation The maximum azimuth difference to create a new radar cluster.
+ * @param distance_separation The maximum distance difference to create a new radar cluster (in simulation units).
+ * @param azimuth_separation The maximum azimuth difference to create a new radar cluster (in radians).
  */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
 

@@ -496,8 +496,8 @@ private:
 	struct RadarCluster
 	{
 		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
-		RadarCluster(RadarCluster&& other) = default;
-		RadarCluster& operator=(RadarCluster&& other) = default;
+		RadarCluster(RadarCluster&& other) noexcept = default;
+		RadarCluster& operator=(RadarCluster&& other) noexcept = default;
 
 		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
 		inline bool isCandidate(float distance, float azimuth, float distanceSeparation, float azimuthSeparation) const;
