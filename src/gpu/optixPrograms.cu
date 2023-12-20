@@ -87,13 +87,13 @@ __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_V
 	if (ctx.entityId != nullptr) {
 		ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
 	}
-	if (ctx.pointAbsVelocity != nullptr && isFinite) {
+	if (ctx.pointAbsVelocity != nullptr) {
 		ctx.pointAbsVelocity[rayIdx] = absVelocity;
 	}
-	if (ctx.pointRelVelocity != nullptr && isFinite) {
+	if (ctx.pointRelVelocity != nullptr) {
 		ctx.pointRelVelocity[rayIdx] = relVelocity;
 	}
-	if (ctx.radialSpeed != nullptr && isFinite) {
+	if (ctx.radialSpeed != nullptr) {
 		ctx.radialSpeed[rayIdx] = radialSpeed;
 	}
 }
