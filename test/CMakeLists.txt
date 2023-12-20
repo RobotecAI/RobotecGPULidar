@@ -3,13 +3,13 @@ cmake_minimum_required(VERSION 3.16)
 set(RGL_TEST_FILES
     src/apiReadmeExample.cpp
     src/apiGeneralCallsTest.cpp
-        src/graph/asyncStressTest.cpp
-        src/graph/DistanceFieldTest.cpp
+    src/graph/asyncStressTest.cpp
+    src/graph/DistanceFieldTest.cpp
     src/externalLibraryTest.cpp
-        src/graph/gaussianStressTest.cpp
-        src/graph/gaussianPoseIndependentTest.cpp
+    src/graph/gaussianStressTest.cpp
+    src/graph/gaussianPoseIndependentTest.cpp
     src/testMat3x4f.cpp
-        src/graph/VelocityDistortionTest.cpp
+    src/graph/VelocityDistortionTest.cpp
     src/graph/addChildTest.cpp
     src/graph/fullLinearTest.cpp
     src/graph/getResultTest.cpp
