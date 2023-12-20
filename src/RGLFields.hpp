@@ -54,7 +54,7 @@ typedef unsigned char TextureTexelFormat;
 
 inline const std::set<rgl_field_t>& getAllRealFields()
 {
-	static std::set<rgl_field_t> allNotDummyFields = {
+	static std::set<rgl_field_t> allRealFields = {
 	    XYZ_VEC3_F32,
 	    IS_HIT_I32,
 	    RAY_IDX_U32,
@@ -69,7 +69,7 @@ inline const std::set<rgl_field_t>& getAllRealFields()
 	    RELATIVE_VELOCITY_VEC3_F32,
 	    RADIAL_SPEED_F32,
 	};
-	return allNotDummyFields;
+	return allRealFields;
 }
 
 inline const std::set<rgl_field_t>& getAllPaddings()
