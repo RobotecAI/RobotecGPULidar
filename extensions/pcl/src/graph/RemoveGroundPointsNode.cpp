@@ -34,7 +34,7 @@ void RemoveGroundPointsNode::setParameters(rgl_axis_t sensorUpAxis, float ground
 	segmentation.setMethodType(pcl::SAC_RANSAC);
 	segmentation.setDistanceThreshold(groundDistanceThreshold);
 	segmentation.setInputCloud(toFilterPointCloud);
-	static const int maxIterations = 500;
+	constexpr int maxIterations = 500;
 	segmentation.setMaxIterations(maxIterations);
 }
 
