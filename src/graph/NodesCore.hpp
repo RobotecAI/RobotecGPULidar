@@ -457,3 +457,59 @@ private:
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(
 	    arrayMgr);
 };
+
+struct RadarPostprocessPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
+	void setParameters(float distanceSeparation, float azimuthSeparation);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Point cloud description
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	// Data containers
+	std::vector<Field<RAY_IDX_U32>::type> filteredIndicesHost;
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
+	    arrayMgr);
+	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
+	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
+	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationInputHost = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
+
+	float distanceSeparation;
+	float azimuthSeparation;
+
+	// RGL related members
+	std::mutex getFieldDataMutex;
+	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+
+	struct RadarCluster
+	{
+		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
+		RadarCluster(RadarCluster&& other) noexcept = default;
+		RadarCluster& operator=(RadarCluster&& other) noexcept = default;
+
+		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float elevation);
+		inline bool isCandidate(float distance, float azimuth, float distanceSeparation, float azimuthSeparation) const;
+		inline bool canMergeWith(const RadarCluster& other, float distanceSeparation, float azimuthSeparation) const;
+		void takeIndicesFrom(RadarCluster&& other);
+		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
+		                                                    const Field<ELEVATION_F32>::type* elevations) const;
+
+	private:
+		std::vector<Field<RAY_IDX_U32>::type> indices;
+		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
+		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
+		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
+	};
+};

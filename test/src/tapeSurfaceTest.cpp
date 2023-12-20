@@ -132,6 +132,9 @@ TEST_F(TapeCase, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_from_array(&usePoints, usePointsData.data(), usePointsData.size(),
 	                                              usePointsFields.data(), usePointsFields.size()));
 
+	rgl_node_t radarPostprocess = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostprocess, 1.0f, 0.5f));
+
 #if RGL_BUILD_ROS2_EXTENSION
 	rgl_node_t ros2pub = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rgl"));

@@ -97,16 +97,25 @@ extern "C" __global__ void __raygen__()
 
 	const int rayIdx = optixGetLaunchIndex().x;
 	Mat3x4f ray = ctx.rays[rayIdx];
+	const Mat3x4f rayLocal = ctx.rayOriginToWorld.inverse() * ray;
+
+	// Assuming up vector is Y, forward vector is Z (true for Unity).
+	// TODO(msz-rai): allow to define up and forward vectors in RGL
+	if (ctx.azimuth != nullptr) {
+		ctx.azimuth[rayIdx] = rayLocal.toRotationYRad();
+	}
+	if (ctx.elevation != nullptr) {
+		ctx.elevation[rayIdx] = rayLocal.toRotationXRad();
+	}
 
 	if (ctx.doApplyDistortion) {
 		static const float toDeg = (180.0f / M_PI);
-		// Velocities are in the local frame. Need to transform rays.
-		ray = ctx.rayOriginToWorld.inverse() * ray;
+		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
 		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
 		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f) *
-		      ray;
+		      rayLocal;
 		// Back to the global frame.
 		ray = ctx.rayOriginToWorld * ray;
 	}
