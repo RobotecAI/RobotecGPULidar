@@ -1,7 +1,7 @@
-#include <RGLFields.hpp>
-#include <graph/Node.hpp>
+#include "RGLFields.hpp"
+#include "graph/Node.hpp"
 #include <gtest/gtest.h>
-#include <helpers/sceneHelpers.hpp>
+#include "helpers/sceneHelpers.hpp"
 
 using namespace ::testing;
 
