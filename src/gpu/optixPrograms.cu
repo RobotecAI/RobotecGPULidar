@@ -185,7 +185,8 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	float intensity = 0;
-	if (entityData.textureCoords != nullptr && entityData.texture != 0) {
+	bool isIntensityRequested = ctx.intensity != nullptr;
+	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
 		assert(triangleIndices.x() < entityData.textureCoordsCount);
 		assert(triangleIndices.y() < entityData.textureCoordsCount);
 		assert(triangleIndices.z() < entityData.textureCoordsCount);
