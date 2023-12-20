@@ -52,7 +52,7 @@ typedef unsigned char TextureTexelFormat;
 #define PADDING_16 RGL_FIELD_PADDING_16
 #define PADDING_32 RGL_FIELD_PADDING_32
 
-inline std::set<rgl_field_t>& getAllRealFields()
+inline const std::set<rgl_field_t>& getAllRealFields()
 {
 	static std::set<rgl_field_t> allNotDummyFields = {
 	    XYZ_VEC3_F32,
@@ -72,7 +72,7 @@ inline std::set<rgl_field_t>& getAllRealFields()
 	return allNotDummyFields;
 }
 
-inline std::set<rgl_field_t>& getAllPaddings()
+inline const std::set<rgl_field_t>& getAllPaddings()
 {
 	static std::set<rgl_field_t> allPaddings = {
 	    PADDING_8,
