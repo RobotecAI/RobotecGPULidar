@@ -31,12 +31,12 @@ TapePlayer::TapePlayer(const char* path)
 
 	yamlRoot = YAML::LoadFile(pathYaml);
 
-	if (yamlRoot[0]["rgl_get_version_info"][1].as<int>() != RGL_VERSION_MAJOR ||
-	    yamlRoot[0]["rgl_get_version_info"][2].as<int>() != RGL_VERSION_MINOR) {
+	if (yamlRoot[0][RGL_VERSION][1].as<int>() != RGL_VERSION_MAJOR ||
+	    yamlRoot[0][RGL_VERSION][2].as<int>() != RGL_VERSION_MINOR) {
 		throw RecordError("recording version does not match rgl version");
 	}
 
-	callIdx = 0;
+	nextCallIdx = 0;
 }
 
 std::optional<TapePlayer::APICallIdx> TapePlayer::findFirst(std::set<std::string_view> fnNames)
@@ -74,22 +74,22 @@ std::vector<TapePlayer::APICallIdx> TapePlayer::findAll(std::set<std::string_vie
 void TapePlayer::playThrough(APICallIdx last)
 {
 	assert(last < yamlRoot.size());
-	for (; callIdx <= last; ++callIdx) {
-		playThis(callIdx);
+	for (; nextCallIdx <= last; ++nextCallIdx) {
+		playThis(nextCallIdx);
 	}
 }
 
 void TapePlayer::playUntil(std::optional<APICallIdx> breakpoint)
 {
-	assert(!breakpoint.has_value() || callIdx < breakpoint.value());
+	assert(!breakpoint.has_value() || nextCallIdx < breakpoint.value());
 	auto end = breakpoint.value_or(yamlRoot.size());
 	assert(end <= yamlRoot.size());
-	for (; callIdx < end; ++callIdx) {
-		playThis(callIdx);
+	for (; nextCallIdx < end; ++nextCallIdx) {
+		playThis(nextCallIdx);
 	}
 }
 
-void TapePlayer::rewindTo(APICallIdx nextCall) { this->callIdx = nextCall; }
+void TapePlayer::rewindTo(APICallIdx nextCall) { this->nextCallIdx = nextCall; }
 
 void TapePlayer::playThis(APICallIdx idx)
 {
@@ -98,23 +98,25 @@ void TapePlayer::playThis(APICallIdx idx)
 	if (!tapeFunctions.contains(functionName)) {
 		throw RecordError(fmt::format("unknown function to play: {}", functionName));
 	}
-	const YAML::Node& apiCallParams = node.begin()->second;
-	YAML::Node apiCallArgs;
-	for (size_t i = 1; i < apiCallParams.size(); ++i) {
-		apiCallArgs.push_back(apiCallParams[i]);
+	const YAML::Node& callParams = node.begin()->second;
+
+	// Remove timestamp from callParams
+	YAML::Node callArgs;
+	for (size_t i = 1; i < callParams.size(); ++i) {
+		callArgs.push_back(callParams[i]);
 	}
-	tapeFunctions[functionName](apiCallArgs, *playbackState);
+	tapeFunctions[functionName](callArgs, *playbackState);
 }
 
 #include <thread>
 void TapePlayer::playRealtime()
 {
 	auto beginTimestamp = std::chrono::steady_clock::now();
-	YAML::Node nextApiCall = yamlRoot[callIdx];
-	for (; callIdx < yamlRoot.size(); ++callIdx) {
-		auto nextCallNs = std::chrono::nanoseconds(nextApiCall.begin()->second[0].as<int64_t>());
+	YAML::Node nextCall = yamlRoot[nextCallIdx];
+	for (; nextCallIdx < yamlRoot.size(); ++nextCallIdx) {
+		auto nextCallNs = std::chrono::nanoseconds(nextCall.begin()->second[0].as<int64_t>());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
-		playThis(callIdx);
+		playThis(nextCallIdx);
 	}
 }

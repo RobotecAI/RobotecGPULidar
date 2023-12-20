@@ -39,8 +39,9 @@ TapeRecorder::TapeRecorder(const fs::path& path)
 		                                  "due to the error: {}",
 		                                  pathYaml, std::strerror(errno)));
 	}
-	beginTimestamp = std::chrono::steady_clock::now();
+
 	yamlEmitter << YAML::BeginSeq;
+	beginTimestamp = std::chrono::steady_clock::now();
 	TapeRecorder::recordRGLVersion();
 }
 

@@ -56,7 +56,7 @@ struct TapePlayer
 
 private:
 	YAML::Node yamlRoot{};
-	APICallIdx callIdx{};
+	APICallIdx nextCallIdx{};
 	std::unique_ptr<PlaybackState> playbackState;
 
 	static inline std::map<std::string, TapeFunction> tapeFunctions = {};
