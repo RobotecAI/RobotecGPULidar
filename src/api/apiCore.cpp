@@ -804,8 +804,11 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene)
 		CHECK_ARG(scene == nullptr); // TODO: remove once rgl_scene_t param is removed
 
 		createOrUpdateNode<RaytraceNode>(node);
-		// Clear velocity that could be set by rgl_node_raytrace_with_distortion
-		Node::validatePtr<RaytraceNode>(*node)->setVelocity(Vec3f{0, 0, 0}, Vec3f{0, 0, 0});
+		auto raytraceNode = Node::validatePtr<RaytraceNode>(*node);
+		// Clear velocity that could be set by rgl_node_raytrace_in_motion
+		raytraceNode->setVelocity(Vec3f{0, 0, 0}, Vec3f{0, 0, 0});
+		// Disable ray distortion that could be set by rgl_node_raytrace_in_motion
+		raytraceNode->enableRayDistortion(false);
 	});
 	TAPE_HOOK(node, scene);
 	return status;
