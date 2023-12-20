@@ -9,7 +9,7 @@
 
 using namespace std::chrono_literals;
 
-constexpr float RadToDeg = (180.0f / M_PI);
+constexpr float RadToDeg = (180.0f / std::numbers::pi_v<float>);
 
 struct TestScene
 {
