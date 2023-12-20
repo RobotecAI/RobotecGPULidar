@@ -2,15 +2,20 @@ cmake_minimum_required(VERSION 3.16)
 
 set(RGL_TEST_FILES
     src/apiReadmeExample.cpp
-    src/apiSurfaceTests.cpp
-    src/asyncStressTest.cpp
-    src/DistanceFieldTest.cpp
+    src/apiGeneralCallsTest.cpp
+    src/graph/asyncStressTest.cpp
+    src/graph/DistanceFieldTest.cpp
     src/externalLibraryTest.cpp
-    src/features/loggingTests.cpp
-    src/gaussianStressTest.cpp
-    src/gaussianPoseIndependentTest.cpp
+    src/graph/gaussianStressTest.cpp
+    src/graph/gaussianPoseIndependentTest.cpp
+    src/testMat3x4f.cpp
+    src/graph/VelocityDistortionTest.cpp
     src/graph/addChildTest.cpp
-    src/graph/graphCaseTest.cpp
+    src/graph/fullLinearTest.cpp
+    src/graph/getResultTest.cpp
+    src/graph/nodeInputImpactTest.cpp
+    src/graph/nodeRemovalTest.cpp
+    src/graph/setPriorityTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
@@ -26,20 +31,20 @@ set(RGL_TEST_FILES
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/TransformPointsNodeTest.cpp
     src/graph/nodes/TransformRaysNodeTest.cpp
+    src/graph/nodes/VisualizePointsNodeTest.cpp
     src/graph/nodes/YieldPointsNodeTest.cpp
-    src/graph/setPriorityTest.cpp
     src/helpers/pointsTest.cpp
     src/memory/arrayChangeStreamTest.cpp
     src/memory/arrayOpsTest.cpp
     src/memory/arrayTypingTest.cpp
+    src/scene/entityAPITest.cpp
     src/scene/entityIdTest.cpp
+    src/scene/entityVelocityTest.cpp
+    src/scene/meshAPITest.cpp
     src/scene/textureTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/graphThreadSynchronization.cpp
     src/synchronization/testKernel.cu
-    src/testMat3x4f.cpp
-    src/VelocityDistortionTest.cpp
-    src/scene/entityVelocityTest.cpp
 )
 
 # Only Linux
@@ -53,8 +58,7 @@ endif()
 # AutoTape interferes with tape tests (e.g. double rgl_tape_record_begin()) which is non-trivial to fix.
 if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     list(APPEND RGL_TEST_FILES
-        src/tapeSurfaceTest.cpp
-        src/features/tapeScene.cpp
+            src/TapeTest.cpp
     )
 endif()
 
