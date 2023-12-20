@@ -202,7 +202,8 @@ extern "C" __global__ void __closesthit__()
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
 	float radialSpeed{NAN};
-	if (ctx.sceneDeltaTime > 0) {
+	bool isVelocityRequested = ctx.pointAbsVelocity != nullptr || ctx.pointRelVelocity != nullptr || ctx.radialSpeed != nullptr;
+	if (ctx.sceneDeltaTime > 0 && isVelocityRequested) {
 		Vec3f displacementFromTransformChange = {0, 0, 0};
 		if (entityData.hasPrevFrameLocalToWorld) {
 			// Computing hit point velocity in simple words:
