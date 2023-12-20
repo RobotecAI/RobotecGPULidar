@@ -168,6 +168,17 @@ struct Vector
 		return value;
 	}
 
+	// Only for Vector with dim == 3
+	template<int D = dim, typename std::enable_if_t<D == 3, int> = 0>
+	HostDevFn V cross(const V& other) const
+	{
+		V value = V(static_cast<T>(0));
+		value[0] = row[1] * other.row[2] - row[2] * other.row[1];
+		value[1] = row[2] * other.row[0] - row[0] * other.row[2];
+		value[2] = row[0] * other.row[1] - row[1] * other.row[0];
+		return value;
+	}
+
 private:
 	T row[dim];
 };

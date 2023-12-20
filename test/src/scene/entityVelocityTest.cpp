@@ -9,6 +9,8 @@
 
 using namespace std::chrono_literals;
 
+constexpr float RadToDeg = (180.0f / M_PI);
+
 struct TestScene
 {
 	struct DynamicCube
@@ -136,11 +138,10 @@ struct TestScene
 #include <graph/NodesRos2.hpp>
 TEST(EntityVelocity, Interactive)
 {
-	//	GTEST_SKIP(); // Comment to run the test
+	GTEST_SKIP(); // Comment to run the test
 	rgl_node_t rays = nullptr, rayTransform = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr,
-	           publish = nullptr, markers = nullptr, transformPoints = nullptr;
+	           publish = nullptr, markersRelVel = nullptr, markersAbsVel = nullptr, transformPoints = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
-	raysTf.resize(1);
 	rgl_mat3x4f lidarPoseRGL = Mat3x4f::identity().toRGL(), lidarIndicatorPoseRGL;
 
 	// Published fields
@@ -155,13 +156,17 @@ TEST(EntityVelocity, Interactive)
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &lidarPoseRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "EntityVelocityTest", "world"));
-	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markers, "EntityVelocityTestMarkers", "world");
+	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markersRelVel, "EntityRelVelocityTestMarkers", "world",
+	                                                        RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32);
+	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markersAbsVel, "EntityAbsVelocityTestMarkers", "world",
+	                                                        RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32);
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, rayTransform));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rayTransform, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, transformPoints));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPoints, format));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPoints, markers));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPoints, markersRelVel));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformPoints, markersAbsVel));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
 
 	// Test Scene
@@ -176,10 +181,10 @@ TEST(EntityVelocity, Interactive)
 		uint64_t currentTime = frameId * nsPerFrame;
 		float currentTimeSeconds = static_cast<double>(currentTime) / 1E9;
 		float deltaTime = static_cast<float>(nsPerFrame) / 1E9f;
-		Vec3f sensorLinearVelocityXYZ = Vec3f{0, 0, sin(currentTimeSeconds)}; // units
-		Vec3f sensorAngularVelocityXYZ = Vec3f{0, 0, 0};                      // degrees
+		Vec3f sensorLinearVelocityXYZ = Vec3f{0, cos(currentTimeSeconds), sin(currentTimeSeconds)}; // units
+		Vec3f sensorAngularVelocityXYZ = Vec3f{0, 0, 0};                                            // radians
 
-		Mat3x4f diff = Mat3x4f::TRS(sensorLinearVelocityXYZ * deltaTime, sensorAngularVelocityXYZ * deltaTime);
+		Mat3x4f diff = Mat3x4f::TRS(sensorLinearVelocityXYZ * deltaTime, sensorAngularVelocityXYZ * RadToDeg * deltaTime);
 		Mat3x4f lidarPose = diff * Mat3x4f::fromRGL(lidarPoseRGL);
 		Mat3x4f lidarIndicatorPose = Mat3x4f::translation(lidarPose.translation() + Vec3f{0, 0, -0.2f}) * lidarPose.rotation() *
 		                             Mat3x4f::scale(0.01f, 0.01f, 0.01f);
@@ -200,20 +205,6 @@ TEST(EntityVelocity, Interactive)
 
 		std::this_thread::sleep_for(10ms);
 		frameId += 1;
-
-		int32_t count = 0, size = 0;
-		EXPECT_RGL_SUCCESS(rgl_graph_get_result_size(compact, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32, &count, &size));
-		std::vector<Vec3f> xyz(count), absVelocities(count), relVelocities(count), radialSpeeds(count);
-		if (count == 0) {
-			continue;
-		}
-		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_XYZ_VEC3_F32, xyz.data()));
-		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32, absVelocities.data()));
-		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32, relVelocities.data()));
-		EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(compact, RGL_FIELD_RADIAL_SPEED_F32, radialSpeeds.data()));
-		//		fmt::print("xyz: {}\n", repr(xyz.data(), xyz.size()));
-		//		fmt::print("absVelocity: {}\n", repr(absVelocities.data(), absVelocities.size()));
-		//		fmt::print("relVelocities: {}\n", repr(relVelocities.data(), relVelocities.size()));
 	}
 }
 #endif

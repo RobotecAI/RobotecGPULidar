@@ -228,23 +228,20 @@ extern "C" __global__ void __closesthit__()
 			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
 		}
 
-		// Apparent velocity due to sensor movement
-		Mat3x4f currRayToSecAgoRays = Mat3x4f::TRS(ctx.sensorLinearVelocityXYZ, ctx.sensorAngularVelocityRPY * toDeg);
-		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld; // Hit point in current ray frame
-		Vec3f hitRaysSecAgo = currRayToSecAgoRays * hitRays;       // Hit point in previous ray frame
-		Vec3f relToSensorPointVelocity = hitRays - hitRaysSecAgo;  // Seen from sensor, in sensor's frame
-
-		printf("linearSpeed: %f %f %f\n", ctx.sensorLinearVelocityXYZ[0], ctx.sensorLinearVelocityXYZ[1],
-		       ctx.sensorLinearVelocityXYZ[2]);
-		printf("hitRays: %f %f %f\n", hitRays[0], hitRays[1], hitRays[2]);
-		printf("hitRaysSecAgo: %f %f %f\n", hitRaysSecAgo[0], hitRaysSecAgo[1], hitRaysSecAgo[2]);
-		printf("deltaTime: %f\n", ctx.sceneDeltaTime);
-
 		absPointVelocity = (displacementFromTransformChange + displacementFromSkinning) /
 		                   static_cast<float>(ctx.sceneDeltaTime);
-		auto worldVelocityToRayVelocity = ctx.rayOriginToWorld.inverse().rotation();
-		relPointVelocity = relToSensorPointVelocity;
-		//		relPointVelocity = worldVelocityToRayVelocity * absPointVelocity + relToSensorPointVelocity;
+
+		// Relative point velocity is a sum of linear velocities difference (between sensor and hit-point)
+		// and impact of sensor angular velocity
+		Vec3f absSensorLinearVelocityXYZ = ctx.rayOriginToWorld.rotation() * ctx.sensorLinearVelocityXYZ;
+		Vec3f relPointVelocityBasedOnSensorLinearVelocity = ctx.rayOriginToWorld.rotation().inverse() *
+		                                                    (absPointVelocity - absSensorLinearVelocityXYZ);
+
+		Vec3f distanceOnAxisXYZ = hitWorld - origin;
+		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(distanceOnAxisXYZ);
+		relPointVelocity = relPointVelocityBasedOnSensorLinearVelocity + relPointVelocityBasedOnSensorAngularVelocity;
+
+		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;
 		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
 
