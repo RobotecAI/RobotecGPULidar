@@ -15,12 +15,19 @@
 #include <graph/NodesRos2.hpp>
 #include <scene/Scene.hpp>
 
-void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, const char* frameId)
+void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, const char* frameId, rgl_field_t velocityField)
 {
+	if (velocityField != RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 && velocityField != RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32) {
+		auto msg = fmt::format("{} cannot publish fields other than `RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32` and "
+		                       "`RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32` (`{}` was requested)",
+		                       getName(), toString(velocityField));
+		throw InvalidAPIArgument(msg);
+	}
 	this->frameId = frameId;
 	ros2InitGuard = Ros2InitGuard::acquire();
 	auto qos = rclcpp::QoS(10); // Use system default QoS
 	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::Marker>(topicName, qos);
+	this->velocityField = velocityField;
 }
 
 void Ros2PublishPointVelocityMarkersNode::validateImpl()
@@ -33,7 +40,7 @@ void Ros2PublishPointVelocityMarkersNode::validateImpl()
 void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
 {
 	pos->copyFrom(input->getFieldData(RGL_FIELD_XYZ_VEC3_F32));
-	vel->copyFrom(input->getFieldData(RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32));
+	vel->copyFrom(input->getFieldData(velocityField));
 
 	if (!rclcpp::ok()) {
 		// TODO: This should be handled by the Graph.
