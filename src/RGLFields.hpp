@@ -24,6 +24,10 @@
 /*
  * Definition of RGL PointCloud Fields is in the API header.
  * This file defines some internal properties, such as byte sizes and C++ types.
+ *
+ * Important: If you change available fields, you must also update:
+ * - test/include/helpers/fieldGenerators.hpp: add/delete fieldGenerator
+ * - test/include/helpers/testPointCloud.hpp: add/delete fieldGenerator inside fieldGenerators
  */
 
 #define NON_HIT_VALUE FLT_MAX
@@ -47,6 +51,36 @@ typedef unsigned char TextureTexelFormat;
 #define PADDING_8 RGL_FIELD_PADDING_8
 #define PADDING_16 RGL_FIELD_PADDING_16
 #define PADDING_32 RGL_FIELD_PADDING_32
+
+inline const std::set<rgl_field_t>& getAllRealFields()
+{
+	static std::set<rgl_field_t> allRealFields = {
+	    XYZ_VEC3_F32,
+	    IS_HIT_I32,
+	    RAY_IDX_U32,
+	    ENTITY_ID_I32,
+	    INTENSITY_F32,
+	    RING_ID_U16,
+	    AZIMUTH_F32,
+	    DISTANCE_F32,
+	    RETURN_TYPE_U8,
+	    TIME_STAMP_F64,
+	    ABSOLUTE_VELOCITY_VEC3_F32,
+	    RELATIVE_VELOCITY_VEC3_F32,
+	    RADIAL_SPEED_F32,
+	};
+	return allRealFields;
+}
+
+inline const std::set<rgl_field_t>& getAllPaddings()
+{
+	static std::set<rgl_field_t> allPaddings = {
+	    PADDING_8,
+	    PADDING_16,
+	    PADDING_32,
+	};
+	return allPaddings;
+}
 
 template<rgl_field_t>
 struct Field
