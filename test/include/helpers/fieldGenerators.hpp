@@ -17,7 +17,7 @@ static std::mt19937 randomGenerator{randomSeed};
 template<typename FieldType>
 static std::vector<FieldType> generateFieldValues(std::size_t count, std::function<FieldType(int)> generator)
 {
-	auto view = std::views::iota(0UL, count) | std::views::transform(generator);
+	auto view = std::views::iota(0, static_cast<int>(count)) | std::views::transform(generator);
 	return std::vector<FieldType>(view.begin(), view.end());
 }
 

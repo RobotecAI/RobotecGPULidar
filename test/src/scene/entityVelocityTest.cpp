@@ -6,6 +6,7 @@
 #include <thread>
 #include <ranges>
 #include <chrono>
+#include <numbers>
 
 using namespace std::chrono_literals;
 
