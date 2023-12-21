@@ -15,7 +15,6 @@
 #include <algorithm>
 
 #include <graph/NodesCore.hpp>
-#include <graph/NodesPcl.hpp>
 #include <gpu/nodeKernels.hpp>
 
 void RadarPostprocessPointsNode::setParameters(float distanceSeparation, float azimuthSeparation)
