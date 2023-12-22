@@ -5,9 +5,6 @@
 
 #include "RGLFields.hpp"
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
-#include "rgl/api/extensions/ros2.h"
-#endif
 
 using namespace ::testing;
 
