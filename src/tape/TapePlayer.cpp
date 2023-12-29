@@ -19,6 +19,7 @@
 #include <tape/TapePlayer.hpp>
 #include <tape/tapeDefinitions.hpp>
 #include <RGLExceptions.hpp>
+#include <tape/TapeCall.hpp>
 
 namespace fs = std::filesystem;
 
@@ -31,9 +32,11 @@ TapePlayer::TapePlayer(const char* path)
 
 	yamlRoot = YAML::LoadFile(pathYaml);
 
-	if (yamlRoot[0][RGL_VERSION][1].as<int>() != RGL_VERSION_MAJOR ||
-	    yamlRoot[0][RGL_VERSION][2].as<int>() != RGL_VERSION_MINOR) {
-		throw RecordError("recording version does not match rgl version");
+	auto version = getTapeCall(findFirst({RGL_VERSION}).value()).getArgsNode();
+	int versionLinear = 1'000'000 * version[0].as<int>() + 1'000 * version[1].as<int>() + version[2].as<int>();
+	int lastTapeUpdate = 16 * 1'000 + 3;
+	if (versionLinear < lastTapeUpdate) {
+		throw RecordError("Unsupported (outdated) Tape format");
 	}
 
 	nextCallIdx = 0;
@@ -93,28 +96,20 @@ void TapePlayer::rewindTo(APICallIdx nextCall) { this->nextCallIdx = nextCall; }
 
 void TapePlayer::playThis(APICallIdx idx)
 {
-	const YAML::Node& node = yamlRoot[idx];
-	auto functionName = node.begin()->first.as<std::string>();
-	if (!tapeFunctions.contains(functionName)) {
-		throw RecordError(fmt::format("unknown function to play: {}", functionName));
+	const TapeCall& call = getTapeCall(idx);
+	if (!tapeFunctions.contains(call.getFnName())) {
+		throw RecordError(fmt::format("unknown function to play: {}", call.getFnName()));
 	}
-	const YAML::Node& callParams = node.begin()->second;
-
-	// Remove timestamp from callParams
-	YAML::Node callArgs;
-	for (size_t i = 1; i < callParams.size(); ++i) {
-		callArgs.push_back(callParams[i]);
-	}
-	tapeFunctions[functionName](callArgs, *playbackState);
+	tapeFunctions[call.getFnName()](call.getArgsNode(), *playbackState);
 }
 
 #include <thread>
 void TapePlayer::playRealtime()
 {
 	auto beginTimestamp = std::chrono::steady_clock::now();
-	YAML::Node nextCall = yamlRoot[nextCallIdx];
+	TapeCall nextCall = getTapeCall(nextCallIdx);
 	for (; nextCallIdx < yamlRoot.size(); ++nextCallIdx) {
-		auto nextCallNs = std::chrono::nanoseconds(nextCall.begin()->second[0].as<int64_t>());
+		auto nextCallNs = std::chrono::nanoseconds(nextCall.getTimestampNs());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
 		playThis(nextCallIdx);

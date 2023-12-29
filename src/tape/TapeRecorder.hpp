@@ -44,18 +44,64 @@
 		}                                                                                                                      \
 	while (0)
 
-class TapeRecorder
+struct TapeRecorder
 {
-	YAML::Emitter yamlEmitter;
-	std::vector<std::string> funcArgs;
+	explicit TapeRecorder(const std::filesystem::path& path);
+	~TapeRecorder();
 
-	FILE* fileBin;
-	std::ofstream fileYaml;
-
-	size_t currentBinOffset = 0;
-	std::chrono::time_point<std::chrono::steady_clock> beginTimestamp;
+	/**
+	 * Emits lines like: "rgl_get_version_info: {t: 61323, a: [0, 16, 2]}"
+	 */
+	template<typename... Args>
+	void recordApiCall(std::string fnName, Args&&... args)
+	{
+		auto timestamp =
+		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
+		// clang-format off
+		yamlEmitter << YAML::BeginMap << YAML::Key << fnName << YAML::Flow
+		                << YAML::BeginMap
+		                    << YAML::Key << "t" << YAML::Value << timestamp
+		                    << YAML::Key << "a" << YAML::Value << YAML::BeginSeq << emitArgs(args...) << YAML::EndSeq
+		                << YAML::EndMap
+		            << YAML::EndMap;
+		// clang-format on
+	}
 
 	static void recordRGLVersion();
+
+private: // Methods
+	/**
+	 * Appends all arguments to the yaml file via template recursion.
+	 * Returns nil-potent YAML::EMITTER_MANIP to allow chaining << operator.
+	 */
+	template<typename T, typename... Args>
+	YAML::EMITTER_MANIP emitArgs(T&& head, Args&&... tail)
+	{
+		yamlEmitter << valueToYaml(head);
+		return emitArgs(tail...);
+	}
+	YAML::EMITTER_MANIP emitArgs() { return YAML::Auto; }
+
+	// clang-format off
+	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
+	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
+	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
+	template<typename T> std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value) { return value; }
+	template<typename T, typename N> size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
+	template<typename N> size_t valueToYaml(std::pair<const void*, N> value) { return writeToBin(static_cast<const char*>(value.first), value.second); }
+	template<typename T> std::enable_if_t<std::is_enum_v<T>, std::string> valueToYaml(T value) { return std::to_string(static_cast<std::underlying_type_t<T>>(value)); }
+	int valueToYaml(int32_t* value) { return *value; }
+	// clang-format on
 
 	template<typename T>
 	size_t writeToBin(const T* source, size_t elemCount)
@@ -75,146 +121,12 @@ class TapeRecorder
 		return outBinOffset;
 	}
 
-	//	template<typename T>
-	//	std::string toString(T value)
-	//	{
-	//		return std::to_string(value);
-	//	}
-	//
-	//	template<typename T>
-	//	std::string toString(T* value)
-	//	{
-	//		return std::to_string(reinterpret_cast<uintptr_t>(value));
-	//	}
-	//
-	//	std::string toString(const char* value) {
-	//		return std::string(value);
-	//	}
-	//
-	//	std::string toString(bool value) {
-	//		return value ? "true" : "false";
-	//	}
-
-	template<typename T, typename... Args>
-	void recordApiArguments(int currentArgIdx, T currentArg, Args... remainingArgs)
-	{
-		funcArgs.at(currentArgIdx + 1) = valueToYaml(currentArg);
-		if constexpr (sizeof...(remainingArgs) > 0) {
-			recordApiArguments(++currentArgIdx, remainingArgs...);
-			return;
-		}
-	}
-
-	//// value to yaml converters
-	// Generic converter for non-enum types
-	//	template<typename T>
-	//	std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value)
-	//	{
-	//		return value;
-	//	}
-	template<typename T>
-	std::enable_if_t<!std::is_enum_v<T>, std::string> valueToYaml(T value)
-	{
-		// Special handling for bools, to return "true" or "false" instead of "1" or "0"
-		if constexpr (std::is_same_v<T, bool>) {
-			return value ? "true" : "false";
-		} else {
-			return std::to_string(value);
-		}
-	}
-
-	// Generic converter for enum types
-	//	template<typename T>
-	//	std::enable_if_t<std::is_enum_v<T>, std::underlying_type_t<T>> valueToYaml(T value)
-	//	{
-	//		return static_cast<std::underlying_type_t<T>>(value);
-	//	}
-	template<typename T>
-	std::enable_if_t<std::is_enum_v<T>, std::string> valueToYaml(T value)
-	{
-		return std::to_string(static_cast<std::underlying_type_t<T>>(value));
-	}
-
-	//	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
-	//	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
-	std::string valueToYaml(rgl_node_t value) { return std::to_string(reinterpret_cast<uintptr_t>(value)); }
-	std::string valueToYaml(rgl_node_t* value) { return std::to_string(reinterpret_cast<uintptr_t>(*value)); }
-
-	//	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
-	//	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t) *value; }
-	std::string valueToYaml(rgl_entity_t value) { return std::to_string(reinterpret_cast<uintptr_t>(value)); }
-	std::string valueToYaml(rgl_entity_t* value) { return std::to_string(reinterpret_cast<uintptr_t>(*value)); }
-
-	//	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
-	//	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
-	std::string valueToYaml(rgl_mesh_t value) { return std::to_string(reinterpret_cast<uintptr_t>(value)); }
-	std::string valueToYaml(rgl_mesh_t* value) { return std::to_string(reinterpret_cast<uintptr_t>(*value)); }
-
-	//	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
-	//	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
-	std::string valueToYaml(rgl_texture_t value) { return std::to_string(reinterpret_cast<uintptr_t>(value)); }
-	std::string valueToYaml(rgl_texture_t* value) { return std::to_string(reinterpret_cast<uintptr_t>(*value)); }
-
-	//	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
-	//	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
-	std::string valueToYaml(rgl_scene_t value) { return std::to_string(reinterpret_cast<uintptr_t>(value)); }
-	std::string valueToYaml(rgl_scene_t* value) { return std::to_string(reinterpret_cast<uintptr_t>(*value)); }
-
-	//	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
-	std::string valueToYaml(void* value) { return std::to_string(reinterpret_cast<uintptr_t>(value)); }
-
-
-	//	int valueToYaml(int32_t* value) { return *value; }
-	std::string valueToYaml(int32_t* value) { return std::to_string(*value); }
-
-	// New one
-	std::string valueToYaml(const char* value) { return std::string(value); }
-
-	//	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
-	//	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
-	std::string valueToYaml(const rgl_mat3x4f* value) { return std::to_string(writeToBin(value, 1)); }
-	std::string valueToYaml(const rgl_vec3f* value) { return std::to_string(writeToBin(value, 1)); }
-
-	// TAPE_ARRAY
-	//	template<typename T, typename N>
-	//	size_t valueToYaml(std::pair<T, N> value)
-	//	{
-	//		return writeToBin(value.first, value.second);
-	//	}
-	template<typename T, typename N>
-	std::string valueToYaml(std::pair<T, N> value)
-	{
-		return std::to_string(writeToBin(value.first, value.second));
-	}
-
-	//	template<typename N>
-	//	size_t valueToYaml(std::pair<const void*, N> value)
-	//	{
-	//		return writeToBin(static_cast<const char*>(value.first), value.second);
-	//	}
-	template<typename N>
-	std::string valueToYaml(std::pair<const void*, N> value)
-	{
-		return std::to_string(writeToBin(static_cast<const char*>(value.first), value.second));
-	}
-
-public:
-	explicit TapeRecorder(const std::filesystem::path& path);
-
-	~TapeRecorder();
-
-	template<typename... Args>
-	void recordApiCall(std::string fnName, Args... args)
-	{
-		funcArgs.clear();
-		funcArgs.resize(sizeof...(args) + 1); // +1 for timestamp
-		funcArgs.at(0) = std::to_string(
-		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count());
-		if constexpr (sizeof...(args) > 0) {
-			recordApiArguments(0, args...);
-		}
-		yamlEmitter << YAML::BeginMap << YAML::Key << fnName << YAML::Value << YAML::Flow << funcArgs << YAML::EndMap;
-	}
+private: // Fields
+	std::ofstream fileYaml;
+	YAML::Emitter yamlEmitter;
+	FILE* fileBin;
+	size_t currentBinOffset = 0;
+	std::chrono::time_point<std::chrono::steady_clock> beginTimestamp;
 };
 
 extern std::optional<TapeRecorder> tapeRecorder;

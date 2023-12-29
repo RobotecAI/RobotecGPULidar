@@ -18,6 +18,7 @@
 
 #include <rgl/api/core.h>
 #include <tape/PlaybackState.hpp>
+#include <tape/TapeCall.hpp>
 
 // Helper macro to define tape function mapping entry
 #define TAPE_CALL_MAPPING(API_CALL_STRING, TAPE_CALL)                                                                          \
@@ -32,8 +33,9 @@ struct TapePlayer
 {
 	using APICallIdx = int32_t;
 	explicit TapePlayer(const char* path);
-
 	static void extendTapeFunctions(std::map<std::string, TapeFunction> map) { tapeFunctions.insert(map.begin(), map.end()); }
+
+	TapeCall getTapeCall(APICallIdx idx) const { return TapeCall(yamlRoot[idx]); }
 
 	std::optional<APICallIdx> findFirst(std::set<std::string_view> fnNames);
 	std::optional<APICallIdx> findLast(std::set<std::string_view> fnNames);
@@ -43,16 +45,9 @@ struct TapePlayer
 	void playThrough(APICallIdx last);
 	void playUntil(std::optional<APICallIdx> breakpoint = std::nullopt);
 	void playRealtime();
-
 	void rewindTo(APICallIdx nextCall = 0);
 
 	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return playbackState->nodes.at(key); }
-
-	template<typename T>
-	T getCallArg(APICallIdx idx, int arg)
-	{
-		return yamlRoot[idx].begin()->second[arg + 1].as<T>(); // +1 for timestamp
-	}
 
 private:
 	YAML::Node yamlRoot{};
