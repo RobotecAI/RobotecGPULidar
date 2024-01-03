@@ -8,6 +8,7 @@
 #include "RGLFields.hpp"
 #include "rgl/api/extensions/tape.h"
 #include "math/Mat3x4f.hpp"
+#include "tape/tapeDefinitions.hpp"
 
 #if RGL_BUILD_PCL_EXTENSION
 #include "rgl/api/extensions/pcl.h"
@@ -17,8 +18,130 @@
 #include "rgl/api/extensions/ros2.h"
 #endif
 
+#include <fstream>
+#include <yaml-cpp/emitter.h>
+
+const std::string YAML_EXT = ".yaml";
+const std::string BIN_EXT = ".bin";
+
 class TapeTest : public RGLTest
-{};
+{
+protected:
+	std::string createTempFilePath(const std::string& baseName, const std::string& extension)
+	{
+		return (std::filesystem::temp_directory_path() / std::filesystem::path(baseName).concat(extension)).string();
+	}
+
+	void createEmptyFile(const std::string& path)
+	{
+		std::ofstream fileStream(path);
+		if (!fileStream) {
+			throw std::runtime_error("Failed to create file: " + path);
+		}
+		fileStream.close();
+	}
+
+	void createYAMLFile(const std::string& path, const YAML::Emitter& out)
+	{
+		std::ofstream fileYAMLStream(path);
+		if (!fileYAMLStream) {
+			throw std::runtime_error("Failed to create YAML file: " + path);
+		}
+		fileYAMLStream << out.c_str();
+		fileYAMLStream.close();
+	}
+};
+
+TEST_F(TapeTest, EmptyYAML)
+{
+	std::string yamlPath = createTempFilePath("empty", YAML_EXT);
+	std::string binPath = createTempFilePath("empty", BIN_EXT);
+	std::string recordPath = createTempFilePath("empty", "");
+
+	createEmptyFile(yamlPath);
+	createEmptyFile(binPath);
+
+	EXPECT_RGL_TAPE_ERROR(rgl_tape_play(recordPath.c_str()), "Invalid Tape: Empty YAML file detected");
+}
+
+TEST_F(TapeTest, WithoutVersionYAML)
+{
+	std::string yamlPath = createTempFilePath("withoutVersion", YAML_EXT);
+	std::string binPath = createTempFilePath("withoutVersion", BIN_EXT);
+	std::string recordPath = createTempFilePath("withoutVersion", "");
+
+	YAML::Emitter out;
+	// clang-format off
+	out << YAML::BeginSeq
+	    	<< YAML::BeginMap << YAML::Key << "rgl_mesh_create" << YAML::Flow
+	    		<< YAML::BeginMap
+					<< YAML::Key << "t" << YAML::Value << 0
+					<< YAML::Key << "a" << YAML::Value << YAML::Flow << YAML::BeginSeq << 0 << YAML::EndSeq
+				<< YAML::EndMap
+			<< YAML::EndMap
+	    << YAML::EndSeq;
+	// clang-format on
+
+	createYAMLFile(yamlPath, out);
+	createEmptyFile(binPath);
+
+	EXPECT_RGL_TAPE_ERROR(rgl_tape_play(recordPath.c_str()), "Unsupported Tape format: Missing version record in the Tape");
+}
+
+TEST_F(TapeTest, OutdatedVersionYAML)
+{
+	std::string yamlPath = createTempFilePath("outdatedVersion", YAML_EXT);
+	std::string binPath = createTempFilePath("outdatedVersion", BIN_EXT);
+	std::string recordPath = createTempFilePath("outdatedVersion", "");
+
+	YAML::Emitter out;
+	// clang-format off
+	out << YAML::BeginSeq
+			<< YAML::BeginMap << YAML::Key << "rgl_get_version_info" << YAML::Flow
+				<< YAML::BeginMap
+					<< YAML::Key << "t" << YAML::Value << 0
+					<< YAML::Key << "a" << YAML::Value << YAML::Flow
+						<< YAML::BeginSeq
+							<< RGL_TAPE_FORMAT_VERSION_MAJOR
+							<< RGL_TAPE_FORMAT_VERSION_MINOR
+							<< RGL_TAPE_FORMAT_VERSION_PATCH - 1
+						<< YAML::EndSeq
+				<< YAML::EndMap
+			<< YAML::EndMap
+		<< YAML::EndSeq;
+	// clang-format on
+
+	createYAMLFile(yamlPath, out);
+	createEmptyFile(binPath);
+
+	EXPECT_RGL_TAPE_ERROR(
+	    rgl_tape_play(recordPath.c_str()),
+	    "Unsupported Tape Format: Tape version is too old. Required version: " + std::to_string(RGL_TAPE_FORMAT_VERSION_MAJOR) +
+	        "." + std::to_string(RGL_TAPE_FORMAT_VERSION_MINOR) + "." + std::to_string(RGL_TAPE_FORMAT_VERSION_PATCH) + ".");
+}
+
+TEST_F(TapeTest, OutdatedStructureYAML)
+{
+	std::string yamlPath = createTempFilePath("outdatedStructure", YAML_EXT);
+	std::string binPath = createTempFilePath("outdatedStructure", BIN_EXT);
+	std::string recordPath = createTempFilePath("outdatedStructure", "");
+
+	YAML::Emitter out;
+	// clang-format off
+	out << YAML::BeginMap << YAML::Key << "rgl_version" << YAML::Value
+	    	<< YAML::BeginMap
+	    		<< YAML::Key << "major" << YAML::Value << 0
+	    		<< YAML::Key << "minor" << YAML::Value << 16
+	    		<< YAML::Key << "patch" << YAML::Value << 2
+	    	<< YAML::EndMap
+		<< YAML::EndMap;
+	// clang-format on
+
+	createYAMLFile(yamlPath, out);
+	createEmptyFile(binPath);
+
+	EXPECT_RGL_TAPE_ERROR(rgl_tape_play(recordPath.c_str()), "Unsupported Tape format: Detected outdated format");
+}
 
 TEST_F(TapeTest, RecordPlayLoggingCall)
 {

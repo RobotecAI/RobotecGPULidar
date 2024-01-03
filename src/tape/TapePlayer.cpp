@@ -31,6 +31,12 @@ TapePlayer::TapePlayer(const char* path)
 	playbackState = std::make_unique<PlaybackState>(pathBin.c_str());
 
 	yamlRoot = YAML::LoadFile(pathYaml);
+	if (yamlRoot.IsNull()) {
+		throw RecordError("Invalid Tape: Empty YAML file detected");
+	}
+	if (yamlRoot.IsMap()) {
+		throw RecordError("Unsupported Tape format: Detected outdated format");
+	}
 
 	checkTapeVersion();
 
@@ -40,15 +46,17 @@ TapePlayer::TapePlayer(const char* path)
 void TapePlayer::checkTapeVersion()
 {
 	auto versionCallIdx = findFirst({RGL_VERSION});
-	if (!versionCallIdx.has_value() || versionCallIdx.value() != 0) {
-		throw RecordError("Inavlid Tape format: The first record must be the version call.");
+	if (!versionCallIdx.has_value()) {
+		throw RecordError("Unsupported Tape format: Missing version record in the Tape");
 	}
 	auto versionCall = getTapeCall(versionCallIdx.value()).getArgsNode();
 	int versionLinear = 1'000'000 * versionCall[0].as<int>() + 1'000 * versionCall[1].as<int>() + versionCall[2].as<int>();
 	int lastTapeUpdate = 1'000'000 * RGL_TAPE_FORMAT_VERSION_MAJOR + 1'000 * RGL_TAPE_FORMAT_VERSION_MINOR +
 	                     RGL_TAPE_FORMAT_VERSION_PATCH;
 	if (versionLinear < lastTapeUpdate) {
-		throw RecordError("Unsupported Tape format: The tape format is outdated");
+		throw RecordError("Unsupported Tape Format: Tape version is too old. Required version: " +
+		                  std::to_string(RGL_TAPE_FORMAT_VERSION_MAJOR) + "." + std::to_string(RGL_TAPE_FORMAT_VERSION_MINOR) +
+		                  "." + std::to_string(RGL_TAPE_FORMAT_VERSION_PATCH) + ".");
 	}
 }
 
