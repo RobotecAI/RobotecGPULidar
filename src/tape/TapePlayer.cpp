@@ -32,14 +32,24 @@ TapePlayer::TapePlayer(const char* path)
 
 	yamlRoot = YAML::LoadFile(pathYaml);
 
-	auto version = getTapeCall(findFirst({RGL_VERSION}).value()).getArgsNode();
-	int versionLinear = 1'000'000 * version[0].as<int>() + 1'000 * version[1].as<int>() + version[2].as<int>();
-	int lastTapeUpdate = 16 * 1'000 + 3;
-	if (versionLinear < lastTapeUpdate) {
-		throw RecordError("Unsupported (outdated) Tape format");
-	}
+	checkTapeVersion();
 
 	nextCallIdx = 0;
+}
+
+void TapePlayer::checkTapeVersion()
+{
+	auto versionCallIdx = findFirst({RGL_VERSION});
+	if (!versionCallIdx.has_value() || versionCallIdx.value() != 0) {
+		throw RecordError("Inavlid Tape format: The first record must be the version call.");
+	}
+	auto versionCall = getTapeCall(versionCallIdx.value()).getArgsNode();
+	int versionLinear = 1'000'000 * versionCall[0].as<int>() + 1'000 * versionCall[1].as<int>() + versionCall[2].as<int>();
+	int lastTapeUpdate = 1'000'000 * RGL_TAPE_FORMAT_VERSION_MAJOR + 1'000 * RGL_TAPE_FORMAT_VERSION_MINOR +
+	                     RGL_TAPE_FORMAT_VERSION_PATCH;
+	if (versionLinear < lastTapeUpdate) {
+		throw RecordError("Unsupported Tape format: The tape format is outdated");
+	}
 }
 
 std::optional<TapePlayer::APICallIdx> TapePlayer::findFirst(std::set<std::string_view> fnNames)
@@ -109,7 +119,7 @@ void TapePlayer::playRealtime()
 	auto beginTimestamp = std::chrono::steady_clock::now();
 	TapeCall nextCall = getTapeCall(nextCallIdx);
 	for (; nextCallIdx < yamlRoot.size(); ++nextCallIdx) {
-		auto nextCallNs = std::chrono::nanoseconds(nextCall.getTimestampNs());
+		auto nextCallNs = std::chrono::nanoseconds(nextCall.getTimestamp().asNanoseconds());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
 		playThis(nextCallIdx);

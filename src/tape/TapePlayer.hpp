@@ -37,6 +37,8 @@ struct TapePlayer
 
 	TapeCall getTapeCall(APICallIdx idx) const { return TapeCall(yamlRoot[idx]); }
 
+	void checkTapeVersion();
+
 	std::optional<APICallIdx> findFirst(std::set<std::string_view> fnNames);
 	std::optional<APICallIdx> findLast(std::set<std::string_view> fnNames);
 	std::vector<APICallIdx> findAll(std::set<std::string_view> fnNames);

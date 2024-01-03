@@ -82,7 +82,6 @@ private: // Methods
 	}
 	YAML::EMITTER_MANIP emitArgs() { return YAML::Auto; }
 
-	// clang-format off
 	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
@@ -96,12 +95,32 @@ private: // Methods
 	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
 	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
 	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
-	template<typename T> std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value) { return value; }
-	template<typename T, typename N> size_t valueToYaml(std::pair<T, N> value) { return writeToBin(value.first, value.second); }
-	template<typename N> size_t valueToYaml(std::pair<const void*, N> value) { return writeToBin(static_cast<const char*>(value.first), value.second); }
-	template<typename T> std::enable_if_t<std::is_enum_v<T>, std::string> valueToYaml(T value) { return std::to_string(static_cast<std::underlying_type_t<T>>(value)); }
+
+	template<typename T>
+	std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value)
+	{
+		return value;
+	}
+
+	template<typename T, typename N>
+	size_t valueToYaml(std::pair<T, N> value)
+	{
+		return writeToBin(value.first, value.second);
+	}
+
+	template<typename N>
+	size_t valueToYaml(std::pair<const void*, N> value)
+	{
+		return writeToBin(static_cast<const char*>(value.first), value.second);
+	}
+
+	template<typename T>
+	std::enable_if_t<std::is_enum_v<T>, std::string> valueToYaml(T value)
+	{
+		return std::to_string(static_cast<std::underlying_type_t<T>>(value));
+	}
+
 	int valueToYaml(int32_t* value) { return *value; }
-	// clang-format on
 
 	template<typename T>
 	size_t writeToBin(const T* source, size_t elemCount)
