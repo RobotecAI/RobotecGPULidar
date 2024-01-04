@@ -1,0 +1,21 @@
+name: load-env-subworkflow
+
+on:
+  workflow_call:
+    outputs:
+      optix-install-dir:
+        value: ${{ jobs.load-env.outputs.optix-install-dir }}
+      user-id:
+        value: ${{ jobs.load-env.outputs.user-id }}
+
+jobs:
+  load-env:
+    runs-on: self-hosted
+    outputs:
+      optix-install-dir: ${{ steps.set-env.outputs.optix-install-dir }}
+      user-id: ${{ steps.set-env.outputs.user-id }}
+    steps:
+      - id: set-env
+        run: |
+          echo "optix-install-dir=$OptiX_INSTALL_DIR" >> $GITHUB_OUTPUT
+          echo "user-id=$(id -u $USER)" >> $GITHUB_OUTPUT

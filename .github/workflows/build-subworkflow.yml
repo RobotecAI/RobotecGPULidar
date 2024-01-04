@@ -1,0 +1,43 @@
+name: build-subworkflow
+
+on:
+  workflow_call:
+    inputs:
+      build-command:
+        required: true
+        type: string
+      docker-image:
+        required: true
+        type: string
+      self-hosted-user-id:
+        required: true
+        type: string
+      optix-install-dir:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+    runs-on: self-hosted
+    container:
+      image: ${{ inputs.docker-image }}
+      env:
+        OptiX_INSTALL_DIR: /optix
+        NVIDIA_DRIVER_CAPABILITIES: all
+      volumes:
+        - ${{ inputs.optix-install-dir }}:/optix
+      options:
+        --rm
+        --gpus all
+        --user ${{ inputs.self-hosted-user-id }}
+    steps:
+      - name: fix git
+        run: git config --global --add safe.directory $PWD
+      - name: build
+        run: ${{ inputs.build-command }}
