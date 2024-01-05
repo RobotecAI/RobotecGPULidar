@@ -266,6 +266,8 @@ private:
 		{RCS_F32, [&](std::size_t count) {setFieldValues<RCS_F32>(generateFieldValues(count, genRcs));}},
 		{NOISE_F32, [&](std::size_t count) {setFieldValues<NOISE_F32>(generateFieldValues(count, genNoise));}},
 		{SNR_F32, [&](std::size_t count) {setFieldValues<SNR_F32>(generateFieldValues(count, genSnr));}},
+		{NORMAL_VEC3_F32, [&](std::size_t count) {setFieldValues<NORMAL_VEC3_F32>(generateFieldValues(count, genNormal));}},
+		{INCIDENT_ANGLE_F32, [&](std::size_t count) {setFieldValues<INCIDENT_ANGLE_F32>(generateFieldValues(count, genIncidentAngle));}},
 	};
 	// clang-format on
 
