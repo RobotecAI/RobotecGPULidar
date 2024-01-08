@@ -33,6 +33,8 @@ struct Mat3x4f
 
 	static HostDevFn inline Mat3x4f scale(float x, float y, float z) { return {x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0}; }
 
+	static HostDevFn inline Mat3x4f scale(Vec3f s) { return Mat3x4f::scale(s.x(), s.y(), s.z()); }
+
 	static HostDevFn inline Mat3x4f rotationRad(float x, float y, float z)
 	{
 		// Based on https://github.com/microsoft/DirectXMath/blob/main/Inc/DirectXMathMatrix.inl#L1697
@@ -57,6 +59,8 @@ struct Mat3x4f
 		return m;
 	}
 
+	static HostDevFn inline Mat3x4f rotationRad(Vec3f r) { return Mat3x4f::rotationRad(r.x(), r.y(), r.z()); }
+
 	static HostDevFn inline Mat3x4f rotationRad(rgl_axis_t axis, float angleRad)
 	{
 		float rotX = axis == RGL_AXIS_X ? angleRad : 0.0f;
@@ -67,8 +71,14 @@ struct Mat3x4f
 
 	static HostDevFn inline Mat3x4f rotationDeg(float x, float y, float z)
 	{
-		float toRad = (M_PI / 180.0f);
-		return rotationRad(x * toRad, y * toRad, z * toRad);
+		return rotationRad(Vec3f{x, y, z} * (M_PIf / 180.0f));
+	}
+
+	static HostDevFn inline Mat3x4f rotationDeg(Vec3f r) { return Mat3x4f::rotationDeg(r.x(), r.y(), r.z()); }
+
+	static HostDevFn inline Mat3x4f rotationDeg(rgl_axis_t axis, float angleDeg)
+	{
+		return Mat3x4f::rotationRad(axis, angleDeg * (M_PIf / 180.0f));
 	}
 
 	static HostDevFn inline Mat3x4f translation(float x, float y, float z) { return {1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z}; }
