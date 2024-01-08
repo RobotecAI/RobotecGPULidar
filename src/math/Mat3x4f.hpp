@@ -65,7 +65,7 @@ struct Mat3x4f
 		return rotationRad(rotX, rotY, rotZ);
 	}
 
-	static HostDevFn inline Mat3x4f rotation(float x, float y, float z)
+	static HostDevFn inline Mat3x4f rotationDeg(float x, float y, float z)
 	{
 		float toRad = (M_PI / 180.0f);
 		return rotationRad(x * toRad, y * toRad, z * toRad);
@@ -81,7 +81,7 @@ struct Mat3x4f
 	static HostDevFn inline Mat3x4f TRS(Vec3f t, Vec3f r = {0, 0, 0}, Vec3f s = {1, 1, 1})
 	{
 		auto T = Mat3x4f::translation(t.x(), t.y(), t.z());
-		auto R = Mat3x4f::rotation(r.x(), r.y(), r.z());
+		auto R = Mat3x4f::rotationDeg(r.x(), r.y(), r.z());
 		auto S = Mat3x4f::scale(s.x(), s.y(), s.z());
 		return T * R * S;
 	}
