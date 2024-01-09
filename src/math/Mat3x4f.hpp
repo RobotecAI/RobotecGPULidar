@@ -71,14 +71,14 @@ struct Mat3x4f
 
 	static HostDevFn inline Mat3x4f rotationDeg(float x, float y, float z)
 	{
-		return rotationRad(Vec3f{x, y, z} * (M_PIf / 180.0f));
+		return rotationRad(Vec3f{x, y, z} * (static_cast<float>(M_PI) / 180.0f));
 	}
 
 	static HostDevFn inline Mat3x4f rotationDeg(Vec3f r) { return Mat3x4f::rotationDeg(r.x(), r.y(), r.z()); }
 
 	static HostDevFn inline Mat3x4f rotationDeg(rgl_axis_t axis, float angleDeg)
 	{
-		return Mat3x4f::rotationRad(axis, angleDeg * (M_PIf / 180.0f));
+		return Mat3x4f::rotationRad(axis, angleDeg * (static_cast<float>(M_PI) / 180.0f));
 	}
 
 	static HostDevFn inline Mat3x4f translation(float x, float y, float z) { return {1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z}; }

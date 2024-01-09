@@ -1,6 +1,7 @@
 #include <RGLFields.hpp>
 #include <ranges>
 #include <random>
+#include <numbers>
 
 static std::random_device randomDevice;
 static unsigned randomSeed = randomDevice();
