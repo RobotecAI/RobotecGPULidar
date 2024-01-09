@@ -16,6 +16,9 @@
 
 // TODO(msz-rai): Consider removing this header
 
-#define RGL_VERSION "rgl_version"
+#define RGL_TAPE_FORMAT_VERSION_MAJOR 0
+#define RGL_TAPE_FORMAT_VERSION_MINOR 16
+#define RGL_TAPE_FORMAT_VERSION_PATCH 3
+#define RGL_VERSION "rgl_get_version_info"
 #define BIN_EXTENSION ".bin"
 #define YAML_EXTENSION ".yaml"

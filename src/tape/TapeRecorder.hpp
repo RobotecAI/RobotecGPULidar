@@ -44,18 +44,83 @@
 		}                                                                                                                      \
 	while (0)
 
-class TapeRecorder
+struct TapeRecorder
 {
-	YAML::Node yamlRoot;      // Represents the whole yaml file
-	YAML::Node yamlRecording; // The sequence of API calls
+	explicit TapeRecorder(const std::filesystem::path& path);
+	~TapeRecorder();
 
-	FILE* fileBin;
-	std::ofstream fileYaml;
+	/**
+	 * Emits lines like: "rgl_get_version_info: {t: 61323, a: [0, 16, 2]}"
+	 */
+	template<typename... Args>
+	void recordApiCall(std::string fnName, Args&&... args)
+	{
+		auto timestamp =
+		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
+		// clang-format off
+		yamlEmitter << YAML::BeginMap << YAML::Key << fnName << YAML::Flow
+		                << YAML::BeginMap
+		                    << YAML::Key << "t" << YAML::Value << timestamp
+		                    << YAML::Key << "a" << YAML::Value << YAML::BeginSeq << emitArgs(args...) << YAML::EndSeq
+		                << YAML::EndMap
+		            << YAML::EndMap;
+		// clang-format on
+	}
 
-	size_t currentBinOffset = 0;
-	std::chrono::time_point<std::chrono::steady_clock> beginTimestamp;
+	static void recordRGLVersion();
 
-	static void recordRGLVersion(YAML::Node& node);
+private: // Methods
+	/**
+	 * Appends all arguments to the yaml file via template recursion.
+	 * Returns nil-potent YAML::EMITTER_MANIP to allow chaining << operator.
+	 */
+	template<typename T, typename... Args>
+	YAML::EMITTER_MANIP emitArgs(T&& head, Args&&... tail)
+	{
+		yamlEmitter << valueToYaml(head);
+		return emitArgs(tail...);
+	}
+	YAML::EMITTER_MANIP emitArgs() { return YAML::Auto; }
+
+	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
+	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
+	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
+
+	template<typename T>
+	std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value)
+	{
+		return value;
+	}
+
+	template<typename T, typename N>
+	size_t valueToYaml(std::pair<T, N> value)
+	{
+		return writeToBin(value.first, value.second);
+	}
+
+	template<typename N>
+	size_t valueToYaml(std::pair<const void*, N> value)
+	{
+		return writeToBin(static_cast<const char*>(value.first), value.second);
+	}
+
+	template<typename T>
+	std::enable_if_t<std::is_enum_v<T>, std::string> valueToYaml(T value)
+	{
+		return std::to_string(static_cast<std::underlying_type_t<T>>(value));
+	}
+
+	int valueToYaml(int32_t* value) { return *value; }
 
 	template<typename T>
 	size_t writeToBin(const T* source, size_t elemCount)
@@ -75,83 +140,12 @@ class TapeRecorder
 		return outBinOffset;
 	}
 
-	template<typename T, typename... Args>
-	void recordApiArguments(YAML::Node& node, int currentArgIdx, T currentArg, Args... remainingArgs)
-	{
-		node[currentArgIdx] = valueToYaml(currentArg);
-
-		if constexpr (sizeof...(remainingArgs) > 0) {
-			recordApiArguments(node, ++currentArgIdx, remainingArgs...);
-			return;
-		}
-	}
-
-	//// value to yaml converters
-	// Generic converter for non-enum types
-	template<typename T>
-	std::enable_if_t<!std::is_enum_v<T>, T> valueToYaml(T value)
-	{
-		return value;
-	}
-
-	// Generic converter for enum types
-	template<typename T>
-	std::enable_if_t<std::is_enum_v<T>, std::underlying_type_t<T>> valueToYaml(T value)
-	{
-		return static_cast<std::underlying_type_t<T>>(value);
-	}
-
-	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
-
-	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t) *value; }
-
-	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
-
-	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
-
-	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
-
-	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
-
-	int valueToYaml(int32_t* value) { return *value; }
-	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
-	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
-
-	// TAPE_ARRAY
-	template<typename T, typename N>
-	size_t valueToYaml(std::pair<T, N> value)
-	{
-		return writeToBin(value.first, value.second);
-	}
-
-	template<typename N>
-	size_t valueToYaml(std::pair<const void*, N> value)
-	{
-		return writeToBin(static_cast<const char*>(value.first), value.second);
-	}
-
-public:
-	explicit TapeRecorder(const std::filesystem::path& path);
-
-	~TapeRecorder();
-
-	template<typename... Args>
-	void recordApiCall(std::string fnName, Args... args)
-	{
-		YAML::Node apiCallNode;
-		apiCallNode["name"] = fnName;
-		apiCallNode["timestamp"] =
-		    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - beginTimestamp).count();
-		if constexpr (sizeof...(args) > 0) {
-			recordApiArguments(apiCallNode, 0, args...);
-		}
-		yamlRecording.push_back(apiCallNode);
-	}
+private: // Fields
+	std::ofstream fileYaml;
+	YAML::Emitter yamlEmitter;
+	FILE* fileBin;
+	size_t currentBinOffset = 0;
+	std::chrono::time_point<std::chrono::steady_clock> beginTimestamp;
 };
 
 extern std::optional<TapeRecorder> tapeRecorder;

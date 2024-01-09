@@ -43,7 +43,7 @@
 
 #define RGL_VERSION_MAJOR 0
 #define RGL_VERSION_MINOR 16
-#define RGL_VERSION_PATCH 2
+#define RGL_VERSION_PATCH 3
 
 // Invalid Entity ID is assign to rays that does not hit any Entity.
 // Cannot be assigned to Mesh manually. It is reserved for internal raytracing use.
