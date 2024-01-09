@@ -283,8 +283,17 @@ typedef enum : int32_t
 	RGL_FIELD_NOISE_F32,
 	RGL_FIELD_SNR_F32, // Signal-to-noise ratio
 
-	RGL_FIELD_NORMAL_VEC3_F32,    // Assumes right-hand rule of vertices ordering
-	RGL_FIELD_INCIDENT_ANGLE_F32, // In range [0, PI/2] rad, where 0 means the ray hit the triangle perpendicularly.
+	/**
+	 * Normal vector of the mesh triangle where the hit-point is located.
+	 * Assumes right-hand rule of vertices ordering.
+	 */
+	RGL_FIELD_NORMAL_VEC3_F32,
+
+	/**
+	 * Incident angle of the ray hitting the mesh triangle in radians.
+	 * In range [0, PI/2) rad, where 0 means the ray hit the triangle perpendicularly.
+	 */
+	RGL_FIELD_INCIDENT_ANGLE_F32,
 
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
