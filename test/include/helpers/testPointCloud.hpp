@@ -232,6 +232,14 @@ public:
 		return fieldValues;
 	}
 
+	template<rgl_field_t T>
+	typename Field<T>::type getFieldValue(std::size_t pointIndex)
+	{
+		int fieldIndex = std::find(fields.begin(), fields.end(), T) - fields.begin();
+		int offset = offsets.at(fieldIndex);
+		return *reinterpret_cast<typename Field<T>::type*>(data.data() + pointIndex * getPointByteSize() + offset);
+	}
+
 	std::size_t getPointByteSize() const { return getPointSize(fields); }
 
 	char* getData() { return data.data(); }
