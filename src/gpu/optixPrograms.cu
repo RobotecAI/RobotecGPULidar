@@ -59,7 +59,8 @@ template<bool isFinite>
 __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE},
                                               float distance = NON_HIT_VALUE, float intensity = 0,
                                               const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& absVelocity = Vec3f{NAN},
-                                              const Vec3f& relVelocity = Vec3f{NAN}, const float radialSpeed = NAN)
+                                              const Vec3f& relVelocity = Vec3f{NAN}, float radialSpeed = NAN,
+                                              const Vec3f& normal = Vec3f{NAN}, float incidentAngle = NAN)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -95,6 +96,12 @@ __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_V
 	}
 	if (ctx.radialSpeed != nullptr) {
 		ctx.radialSpeed[rayIdx] = radialSpeed;
+	}
+	if (ctx.normal != nullptr) {
+		ctx.normal[rayIdx] = normal;
+	}
+	if (ctx.incidentAngle != nullptr) {
+		ctx.incidentAngle[rayIdx] = incidentAngle;
 	}
 }
 
@@ -183,6 +190,16 @@ extern "C" __global__ void __closesthit__()
 		hitWorld = undistortedOrigin + undistortedDir * distance;
 	}
 
+	// Normal vector and incident angle
+	Vec3f rayDir = (hitWorld - origin).normalized();
+	const Vec3f wA = optixTransformPointFromObjectToWorldSpace(A);
+	const Vec3f wB = optixTransformPointFromObjectToWorldSpace(B);
+	const Vec3f wC = optixTransformPointFromObjectToWorldSpace(C);
+	const Vec3f wAB = wB - wA;
+	const Vec3f wCA = wC - wA;
+	const Vec3f wNormal = wAB.cross(wCA).normalized();
+	const float incidentAngle = acosf(fabs(wNormal.dot(rayDir)));
+
 	float intensity = 0;
 	bool isIntensityRequested = ctx.intensity != nullptr;
 	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
@@ -245,7 +262,8 @@ extern "C" __global__ void __closesthit__()
 		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
 
-	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed);
+	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed, wNormal,
+	                    incidentAngle);
 }
 
 extern "C" __global__ void __miss__() { saveRayResult<false>(); }

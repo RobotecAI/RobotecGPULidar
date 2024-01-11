@@ -45,6 +45,7 @@ set(RGL_TEST_FILES
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/graphThreadSynchronization.cpp
     src/synchronization/testKernel.cu
+    src/scene/incidentAngleTest.cpp
 )
 
 # Only Linux

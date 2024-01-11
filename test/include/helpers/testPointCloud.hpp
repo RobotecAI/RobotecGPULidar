@@ -232,6 +232,14 @@ public:
 		return fieldValues;
 	}
 
+	template<rgl_field_t T>
+	typename Field<T>::type getFieldValue(std::size_t pointIndex)
+	{
+		int fieldIndex = std::find(fields.begin(), fields.end(), T) - fields.begin();
+		int offset = offsets.at(fieldIndex);
+		return *reinterpret_cast<typename Field<T>::type*>(data.data() + pointIndex * getPointByteSize() + offset);
+	}
+
 	std::size_t getPointByteSize() const { return getPointSize(fields); }
 
 	char* getData() { return data.data(); }
@@ -266,6 +274,8 @@ private:
 		{RCS_F32, [&](std::size_t count) {setFieldValues<RCS_F32>(generateFieldValues(count, genRcs));}},
 		{NOISE_F32, [&](std::size_t count) {setFieldValues<NOISE_F32>(generateFieldValues(count, genNoise));}},
 		{SNR_F32, [&](std::size_t count) {setFieldValues<SNR_F32>(generateFieldValues(count, genSnr));}},
+		{NORMAL_VEC3_F32, [&](std::size_t count) {setFieldValues<NORMAL_VEC3_F32>(generateFieldValues(count, genNormal));}},
+		{INCIDENT_ANGLE_F32, [&](std::size_t count) {setFieldValues<INCIDENT_ANGLE_F32>(generateFieldValues(count, genIncidentAngle));}},
 	};
 	// clang-format on
 

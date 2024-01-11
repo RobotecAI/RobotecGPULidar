@@ -56,5 +56,7 @@ struct RaytraceRequestContext
 	Field<RADIAL_SPEED_F32>::type* radialSpeed;
 	Field<AZIMUTH_F32>::type* azimuth;
 	Field<ELEVATION_F32>::type* elevation;
+	Field<NORMAL_VEC3_F32>::type* normal;
+	Field<INCIDENT_ANGLE_F32>::type* incidentAngle;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

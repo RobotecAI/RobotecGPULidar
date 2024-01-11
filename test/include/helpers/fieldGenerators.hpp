@@ -1,6 +1,7 @@
 #include <RGLFields.hpp>
 #include <ranges>
 #include <random>
+#include <numbers>
 
 static std::random_device randomDevice;
 static unsigned randomSeed = randomDevice();
@@ -70,6 +71,13 @@ static std::function<Field<NOISE_F32>::type(int)> genNoise = [](int i) {
 };
 static std::function<Field<SNR_F32>::type(int)> genSnr = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<INCIDENT_ANGLE_F32>::type(int)> genIncidentAngle = [](int i) {
+	return std::uniform_real_distribution<float>(0, std::numbers::pi / 2.0f)(randomGenerator);
+};
+static std::function<Field<NORMAL_VEC3_F32>::type(int)> genNormal = [](int i) {
+	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
+	             static_cast<float>(i) / (static_cast<float>(i) + 3));
 };
 
 static std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };

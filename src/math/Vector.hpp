@@ -77,7 +77,7 @@ struct Vector
 	{}
 
 	template<typename TT = T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
-	DevFn operator float3()
+	DevFn operator float3() const
 	{
 		return float3{row[0], row[1], row[2]};
 	}

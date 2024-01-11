@@ -107,7 +107,9 @@ void RaytraceNode::enqueueExecImpl()
 	    .pointRelVelocity = getPtrTo<RELATIVE_VELOCITY_VEC3_F32>(),
 	    .radialSpeed = getPtrTo<RADIAL_SPEED_F32>(),
 	    .azimuth = getPtrTo<AZIMUTH_F32>(),
-	    .elevation = getPtrTo<ELEVATION_F32>()
+	    .elevation = getPtrTo<ELEVATION_F32>(),
+	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
+	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
 	};
 
 	requestCtxDev->copyFrom(requestCtxHst);
