@@ -9,7 +9,7 @@
 
 /**
  * This test instantiates a large thin wall (100x100x0.1) at Z=10 and shoots parallel rays from different sensor positions and orientations.
- * The wall is expected to be hit by all rays, and the incident angle is expected to be combination of sensor and box orientations.
+ * The wall is expected to be hit by all rays, and the incident angle is expected to be combination of sensor and wall orientations.
  * Slight variations of the sensor and wall position are expected to have no effect on the incident angle.
  */
 
@@ -37,8 +37,9 @@ TEST_P(IncidentAngleTest, wall)
 	Vec3f wallRotRad = wallRotDeg * Vec3f(std::numbers::pi_v<float> / 180.0f);
 
 	// Expectations
-	Vec3f expectedNormal = Mat3x4f::rotationRad(wallRotRad) * Vec3f{0, 0, -1};
-	Vec3f rayDir = Mat3x4f::rotationRad(sensorRotRad) * Vec3f{0, 0, 1};
+	Vec3f rayDir = Mat3x4f::rotationRad(sensorRotRad) * Vec3f{0, 0, 1}; // 0, 0, 1 is the default sensor direction
+	Vec3f expectedNormal = Mat3x4f::rotationRad(wallRotRad) *
+	                       Vec3f{0, 0, -1}; // 0, 0, -1 is where the sensor-side wall is facing
 	float expectedIncidentAngleRad = acos(-expectedNormal.dot(rayDir));
 
 	// Scene
@@ -66,7 +67,7 @@ TEST_P(IncidentAngleTest, wall)
 
 	// Check results
 	TestPointCloud pc = TestPointCloud::createFromNode(yieldNode, yieldFields);
-	EXPECT_EQ(pc.getPointCount(), rays.size()); // All rays are expected to hit the wall
+	EXPECT_EQ(pc.getPointCount(), rays.size()); // No rays are discarded
 	for (int i = 0; i < pc.getPointCount(); ++i) {
 		EXPECT_TRUE(pc.getFieldValue<IS_HIT_I32>(i)); // All rays are expected to hit the wall
 
@@ -75,7 +76,7 @@ TEST_P(IncidentAngleTest, wall)
 		EXPECT_NEAR(pc.getFieldValue<NORMAL_VEC3_F32>(i).y(), expectedNormal.y(), EPSILON_F);
 		EXPECT_NEAR(pc.getFieldValue<NORMAL_VEC3_F32>(i).z(), expectedNormal.z(), EPSILON_F);
 
-		// Incident angle as expected
+		// Incident angle as expected, with empirically determined tolerance
 		EXPECT_NEAR(pc.getFieldValue<INCIDENT_ANGLE_F32>(i), expectedIncidentAngleRad, 4 * EPSILON_F);
 	}
 }

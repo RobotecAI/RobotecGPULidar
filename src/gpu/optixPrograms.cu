@@ -196,8 +196,8 @@ extern "C" __global__ void __closesthit__()
 	const Vec3f wB = optixTransformPointFromObjectToWorldSpace(B);
 	const Vec3f wC = optixTransformPointFromObjectToWorldSpace(C);
 	const Vec3f wAB = wB - wA;
-	const Vec3f wBC = wC - wB;
-	const Vec3f wNormal = wAB.cross(wBC).normalized();
+	const Vec3f wCA = wC - wA;
+	const Vec3f wNormal = wAB.cross(wCA).normalized();
 	const float incidentAngle = acosf(fabs(wNormal.dot(rayDir)));
 
 	float intensity = 0;
