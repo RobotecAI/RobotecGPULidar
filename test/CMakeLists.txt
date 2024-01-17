@@ -17,9 +17,11 @@ set(RGL_TEST_FILES
     src/graph/nodeRemovalTest.cpp
     src/graph/setPriorityTest.cpp
     src/graph/nodes/CompactPointsNodeTest.cpp
+    src/graph/nodes/CompactByFieldPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
+    src/graph/nodes/FilterGroundPointsNodeTest.cpp
     src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
     src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
     src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
