@@ -101,12 +101,14 @@ add_library(RobotecGPULidar SHARED
     src/graph/GaussianNoiseAngularRayNode.cpp
     src/graph/GaussianNoiseDistanceNode.cpp
     src/graph/CompactPointsNode.cpp
+    src/graph/CompactByFieldPointsNode.cpp
     src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
     src/graph/FromArrayPointsNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
+    src/graph/FilterGroundPointsNode.cpp
     src/graph/RadarPostprocessPointsNode.cpp
     src/graph/SetRangeRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp

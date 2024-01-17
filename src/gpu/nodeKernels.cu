@@ -54,7 +54,7 @@ __global__ void kTransformPoints(size_t pointCount, const Field<XYZ_VEC3_F32>::t
 	outPoints[tid] = transform * inPoints[tid];
 }
 
-__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite,
+__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, int const* shouldWrite,
                                  const CompactionIndexType* writeIndex, char* dst, const char* src)
 {
 	LIMIT(pointCount);
@@ -78,12 +78,36 @@ __global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, c
 	memcpy(dst + tid * fieldSize, src + indices[tid] * fieldSize, fieldSize);
 }
 
-void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const Field<IS_HIT_I32>::type* isHit,
+__global__ void kFilterGroundPoints(size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
+                                    const Field<XYZ_VEC3_F32>::type* inPoints,
+                                    const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
+                                    Field<IS_GROUND_I32>::type* outIsGround, Mat3x4f lidarTransform)
+{
+	LIMIT(pointCount);
+	Vec3f point = inPoints[tid];
+
+	auto lidarPosition = lidarTransform.translation();
+	float lidarElevation = lidarPosition[sensor_up_axis - 1];
+	float pointElevation = point[sensor_up_axis - 1];
+
+	if (pointElevation > lidarElevation) {
+		outIsGround[tid] = false;
+		return;
+	} else {
+		if (inIncidentAngles[tid] > ground_angle_threshold) {
+			outIsGround[tid] = false;
+			return;
+		}
+	}
+	outIsGround[tid] = true;
+}
+
+void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {
 	// beg and end could be used as const pointers, however thrust does not support it
-	auto beg = thrust::device_ptr<const int32_t>(isHit);
-	auto end = thrust::device_ptr<const int32_t>(isHit + pointCount);
+	auto beg = thrust::device_ptr<const int32_t>(shouldCompact);
+	auto end = thrust::device_ptr<const int32_t>(shouldCompact + pointCount);
 	auto dst = thrust::device_ptr<int32_t>(hitCountInclusive);
 
 	// Note: this will compile only in a .cu file
@@ -109,7 +133,7 @@ void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRay
 	run(kTransformRays, stream, rayCount, inRays, outRays, transform);
 };
 
-void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite,
+void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, int const* shouldWrite,
                         const CompactionIndexType* writeIndex, char* dst, const char* src)
 {
 	run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src);
@@ -131,4 +155,12 @@ void gpuFilter(cudaStream_t stream, size_t count, const Field<RAY_IDX_U32>::type
                size_t fieldSize)
 {
 	run(kFilter, stream, count, indices, dst, src, fieldSize);
+}
+
+void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
+                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
+                           Field<IS_GROUND_I32>::type* outIsGround, Mat3x4f lidarTransform)
+{
+	run(kFilterGroundPoints, stream, pointCount, sensor_up_axis, ground_angle_threshold, inPoints, inIncidentAngles,
+	    outIsGround, lidarTransform);
 }

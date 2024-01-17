@@ -76,7 +76,7 @@ IAnyArray::ConstPtr CompactPointsNode::getFieldData(rgl_field_t field)
 			bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
 			if (!calledFromEnqueue) {
 				// This is a special case, where API calls getFieldData for this field for the first time
-				// We did not enqueued compcation in enqueueExecImpl, yet, we are asked for results.
+				// We did not enqueued compaction in enqueueExecImpl, yet, we are asked for results.
 				// This operation was enqueued in the graph stream, but API won't wait for whole graph stream.
 				// Therefore, we need a manual sync here.
 				// TODO: remove this cancer.

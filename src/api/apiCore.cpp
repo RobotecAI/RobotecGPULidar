@@ -928,6 +928,28 @@ void TapeCore::tape_node_points_compact(const YAML::Node& yamlNode, PlaybackStat
 	state.nodes.insert({nodeId, node});
 }
 
+RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_compact_by_field(node={}, field={})", repr(node), field);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(field == IS_HIT_I32 || field == IS_GROUND_I32);
+
+		createOrUpdateNode<CompactByFieldPointsNode>(node, field);
+	});
+	TAPE_HOOK(node, field);
+	return status;
+}
+
+void TapeCore::tape_node_points_compact_by_field(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_field_t field = (rgl_field_t) yamlNode[1].as<int>();
+	rgl_node_points_compact_by_field(&node, field);
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_spatial_merge(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	auto status = rglSafeCall([&]() {
@@ -1015,6 +1037,20 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float d
 		createOrUpdateNode<RadarPostprocessPointsNode>(node, distance_separation, azimuth_separation);
 	});
 	TAPE_HOOK(node, distance_separation, azimuth_separation);
+	return status;
+}
+
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_remove_ground2(node={}, sensor_up_axis={}, ground_angle_threshold={})", repr(node),
+		            sensor_up_axis, ground_angle_threshold);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(ground_angle_threshold >= 0);
+
+		createOrUpdateNode<FilterGroundPointsNode>(node, sensor_up_axis, ground_angle_threshold);
+	});
+	TAPE_HOOK(node, sensor_up_axis, ground_angle_threshold);
 	return status;
 }
 
