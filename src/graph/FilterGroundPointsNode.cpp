@@ -25,20 +25,20 @@ void FilterGroundPointsNode::validateImpl() { IPointsNodeSingleInput::validateIm
 void FilterGroundPointsNode::enqueueExecImpl()
 {
 	auto pointCount = input->getPointCount();
-	outIsGround->resize(pointCount, false, false);
+	ouNonGround->resize(pointCount, false, false);
 
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	const auto* inIncidentAnglesPtr = input->getFieldDataTyped<INCIDENT_ANGLE_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto lidarTransform = input->getLookAtOriginTransform();
 
 	gpuFilterGroundPoints(getStreamHandle(), pointCount, sensor_up_axis, ground_angle_threshold, inXyzPtr, inIncidentAnglesPtr,
-	                      outIsGround->getWritePtr(), lidarTransform);
+	                      ouNonGround->getWritePtr(), lidarTransform);
 }
 
 IAnyArray::ConstPtr FilterGroundPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == IS_GROUND_I32) {
-		return outIsGround;
+		return ouNonGround;
 	}
 
 	return input->getFieldData(field);

@@ -81,7 +81,7 @@ __global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, c
 __global__ void kFilterGroundPoints(size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
                                     const Field<XYZ_VEC3_F32>::type* inPoints,
                                     const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
-                                    Field<IS_GROUND_I32>::type* outIsGround, Mat3x4f lidarTransform)
+                                    Field<IS_GROUND_I32>::type* ouNonGround, Mat3x4f lidarTransform)
 {
 	LIMIT(pointCount);
 	Vec3f point = inPoints[tid];
@@ -91,15 +91,16 @@ __global__ void kFilterGroundPoints(size_t pointCount, rgl_axis_t sensor_up_axis
 	float pointElevation = point[sensor_up_axis - 1];
 
 	if (pointElevation > lidarElevation) {
-		outIsGround[tid] = false;
+		ouNonGround[tid] = true;
 		return;
 	} else {
 		if (inIncidentAngles[tid] > ground_angle_threshold) {
-			outIsGround[tid] = false;
+			printf("inIncidentAngles[tid]: %f > ground_angle_threshold: %f\n", inIncidentAngles[tid], ground_angle_threshold);
+			ouNonGround[tid] = true;
 			return;
 		}
 	}
-	outIsGround[tid] = true;
+	ouNonGround[tid] = false;
 }
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
@@ -159,8 +160,8 @@ void gpuFilter(cudaStream_t stream, size_t count, const Field<RAY_IDX_U32>::type
 
 void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
                            const Field<XYZ_VEC3_F32>::type* inPoints, const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
-                           Field<IS_GROUND_I32>::type* outIsGround, Mat3x4f lidarTransform)
+                           Field<IS_GROUND_I32>::type* ouNonGround, Mat3x4f lidarTransform)
 {
 	run(kFilterGroundPoints, stream, pointCount, sensor_up_axis, ground_angle_threshold, inPoints, inIncidentAngles,
-	    outIsGround, lidarTransform);
+	    ouNonGround, lidarTransform);
 }

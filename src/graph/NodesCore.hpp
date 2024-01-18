@@ -561,5 +561,5 @@ struct FilterGroundPointsNode : IPointsNodeSingleInput
 private:
 	rgl_axis_t sensor_up_axis;
 	float ground_angle_threshold;
-	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outIsGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr ouNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
 };
