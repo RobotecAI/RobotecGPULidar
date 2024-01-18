@@ -712,9 +712,18 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
 
-//TODO mrozikp
+/**
+ * Creates or modifies FilterGroundPointsNode.
+ * The Node filters out points that are on the ground.
+ * The Node calculate RGL_FIELD_IS_GROUND_I32 field as a determinant if a point is on the ground.
+ * The output point cloud contains field RGL_FIELD_IS_GROUND_I32 witch indicates if a point is on the ground.
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param sensor_up_axis Axis that is pointing up in the sensor's coordinate frame.
+ * @param ground_angle_threshold The maximum angle between the sensor's ray and the normal vector of the hit point in radians.
+ */
 RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold);
-
 
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.
