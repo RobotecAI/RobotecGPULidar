@@ -48,6 +48,12 @@ set(RGL_TEST_FILES
     src/scene/incidentAngleTest.cpp
 )
 
+if (RGL_BUILD_ROS2_EXTENSION)
+    list(APPEND RGL_TEST_FILES
+        src/graph/nodes/Ros2PublishRadarScanNodeTest.cpp
+    )
+endif()
+
 # Only Linux
 if ((NOT WIN32))
 #    list(APPEND RGL_TEST_FILES
@@ -90,12 +96,15 @@ if (RGL_BUILD_ROS2_EXTENSION)
     # This allows accessing Nodes directly (as opposed to through RGL-API)
     # It is needed by EntityVelocity test, which makes a use of non-public Ros2 node.
     find_package(rclcpp REQUIRED)
+    find_package(radar_msgs REQUIRED)
+    list(REMOVE_DUPLICATES radar_msgs_LIBRARIES)
     target_include_directories(RobotecGPULidar_test PRIVATE
         ${CMAKE_SOURCE_DIR}/extensions/ros2/src
         ${rclcpp_INCLUDE_DIRS}
     )
     target_link_libraries(RobotecGPULidar_test PRIVATE
         ${rclcpp_LIBRARIES}
+        ${radar_msgs_LIBRARIES}
     )
 endif()
 

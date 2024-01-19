@@ -86,7 +86,7 @@ struct Ros2PublishRadarScanNode : IPointsNodeSingleInput
 	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10);
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
-		return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
+		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
 	}
 	void validateImpl() override;
 	void enqueueExecImpl() override;
@@ -94,7 +94,7 @@ struct Ros2PublishRadarScanNode : IPointsNodeSingleInput
 private:
 	radar_msgs::msg::RadarScan ros2Message;
 	rclcpp::Publisher<radar_msgs::msg::RadarScan>::SharedPtr ros2Publisher;
-	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
+	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
 	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
 	GPUFieldDescBuilder fieldDescBuilder;
 };

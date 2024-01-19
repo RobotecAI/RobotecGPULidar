@@ -37,9 +37,6 @@ void Ros2PublishRadarScanNode::validateImpl()
 	if (input->getHeight() != 1) {
 		throw InvalidPipeline("ROS2 radar publish supports unorganized pointclouds only");
 	}
-	if (!input->isDense()) {
-		throw InvalidPipeline("ROS2 radar publish supports dense pointclouds only");
-	}
 }
 
 void Ros2PublishRadarScanNode::enqueueExecImpl()
@@ -49,10 +46,11 @@ void Ros2PublishRadarScanNode::enqueueExecImpl()
 	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
 	std::vector<rgl_field_t> fields = this->getRequiredFieldList();
 	fields.push_back(PADDING_32); // Placeholder for amplitude
-	FormatPointsNode::formatAsync(inputFmtData, input, fields, fieldDescBuilder);
+	FormatPointsNode::formatAsync(formattedData, input, fields, fieldDescBuilder);
 	ros2Message.returns.resize(input->getPointCount());
-	CHECK_CUDA(cudaMemcpyAsync(ros2Message.returns.data(), inputFmtData->getReadPtr(), input->getPointCount() * sizeof(float),
-	                           cudaMemcpyDeviceToHost, inputFmtData->getStream()->getHandle()));
-	CHECK_CUDA(cudaStreamSynchronize(inputFmtData->getStream()->getHandle()));
+	CHECK_CUDA(cudaMemcpyAsync(ros2Message.returns.data(), formattedData->getReadPtr(),
+	                           formattedData->getSizeOf() * formattedData->getCount(), cudaMemcpyDeviceToHost,
+	                           formattedData->getStream()->getHandle()));
+	CHECK_CUDA(cudaStreamSynchronize(formattedData->getStream()->getHandle()));
 	ros2Publisher->publish(ros2Message);
 }
