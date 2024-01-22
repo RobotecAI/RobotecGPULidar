@@ -36,7 +36,7 @@ void Ros2PublishPointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
 	if (input->getHeight() != 1) {
-		throw InvalidPipeline("ROS2 publish support unorganized pointclouds only");
+		throw InvalidPipeline("ROS2 publish supports unorganized pointclouds only");
 	}
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }

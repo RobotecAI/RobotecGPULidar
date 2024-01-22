@@ -39,6 +39,6 @@ Testing/*
 cmake-build-debug
 cmake-build-release
 build
-external/vcpkg
+external/*
 extensions/udp
 extensions/snow

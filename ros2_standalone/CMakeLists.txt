@@ -199,6 +199,7 @@ set(ros2_standalone_libs
   rclcpp
   sensor_msgs
   visualization_msgs
+  radar_msgs
   rmw_implementation
   rmw_dds_common
   FastRTPS
