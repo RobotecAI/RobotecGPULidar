@@ -714,9 +714,9 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float d
 
 /**
  * Creates or modifies FilterGroundPointsNode.
- * The Node filters out points that are on the ground.
- * The Node calculate RGL_FIELD_IS_GROUND_I32 field as a determinant if a point is on the ground.
+ * The Node filters out points that are on the ground and marke them with RGL_FIELD_IS_GROUND_I32 field.
  * The output point cloud contains field RGL_FIELD_IS_GROUND_I32 witch indicates if a point is on the ground.
+ * As a ground points are considered points that are below the sensor and have a normal vector pointing up with an angle smaller than the threshold.
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.

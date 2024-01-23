@@ -29,8 +29,6 @@ TEST_F(FilterGroundPointsNodeTest, valid_argument_node)
 
 TEST_F(FilterGroundPointsNodeTest, floor_test)
 {
-
-
 	// Scene
 	rgl_entity_t wall = makeEntity(makeCubeMesh());
 	rgl_mat3x4f wallPose = Mat3x4f::TRS(WALL_POS , Vec3f(0, 0, 0), WALL_DIMS).toRGL();
@@ -45,6 +43,7 @@ TEST_F(FilterGroundPointsNodeTest, floor_test)
 	rgl_node_t raytraceNode = nullptr;
 	rgl_node_t yieldNode = nullptr;
 
+	// Prepare graph without filtering
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transformRaysNode, &identityTestTransform));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
@@ -54,7 +53,6 @@ TEST_F(FilterGroundPointsNodeTest, floor_test)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transformRaysNode, raytraceNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
 
-	// Prepare graph without filtering
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 	TestPointCloud outputPointCloud = TestPointCloud::createFromNode(yieldNode, basicFields);
 	auto fullCloudSize = outputPointCloud.getPointCount();
@@ -90,6 +88,4 @@ TEST_F(FilterGroundPointsNodeTest, floor_test)
 
 	// All points which were hit should be ground hits. In that case compacted cloud should be empty.
 	EXPECT_EQ(nonGroundCloudSize, 0);
-
-
 }

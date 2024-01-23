@@ -1040,10 +1040,18 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float d
 	return status;
 }
 
+void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_radar_postprocess(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_points_remove_ground2(node={}, sensor_up_axis={}, ground_angle_threshold={})", repr(node),
+		RGL_API_LOG("rgl_node_points_filter_ground(node={}, sensor_up_axis={}, ground_angle_threshold={})", repr(node),
 		            sensor_up_axis, ground_angle_threshold);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(ground_angle_threshold >= 0);
@@ -1054,11 +1062,13 @@ RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, rgl_axis_t 
 	return status;
 }
 
-void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, PlaybackState& state)
+void TapeCore::tape_node_points_filter_ground(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto sensor_up_axis = (rgl_axis_t) yamlNode[1].as<size_t>();
+	auto ground_angle_threshold = yamlNode[2].as<float>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
-	rgl_node_points_radar_postprocess(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
+	rgl_node_points_filter_ground(&node, sensor_up_axis, ground_angle_threshold);
 	state.nodes.insert({nodeId, node});
 }
 
