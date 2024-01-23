@@ -83,21 +83,13 @@ __global__ void kFilterGroundPoints(size_t pointCount, rgl_axis_t sensor_up_axis
                                     Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform)
 {
 	LIMIT(pointCount);
-	// Map point to local frame of lidar.
-	Vec3f pointLocal = lidarTransform * inPoints[tid];
 
-	int axisIndex = static_cast<int>(sensor_up_axis);
-	Vec3f upVector = Vec3f(0, 0, 0);
-	upVector[axisIndex] = 1;
-
-	auto lidarPosition = lidarTransform.translation();
-	float lidarElevation = lidarPosition[axisIndex];
-	float pointElevation = pointLocal[axisIndex];
-
-	// Point above lidar cannot be ground.
-	if (pointElevation > lidarElevation) {
-		outNonGround[tid] = true;
-		return;
+	Vec3f upVector = Vec3f(0.0f, 0.0f, 0.0f);
+	switch (sensor_up_axis) {
+		case RGL_AXIS_X: upVector = Vec3f(1.0f, 0.0f, 0.0f); break;
+		case RGL_AXIS_Y: upVector = Vec3f(0.0f, 1.0f, 0.0f); break;
+		case RGL_AXIS_Z: upVector = Vec3f(0.0f, 0.0f, 1.0f); break;
+		default: break;
 	}
 
 	// Check if normal is pointing up within given threshold.
