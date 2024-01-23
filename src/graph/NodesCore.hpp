@@ -553,7 +553,7 @@ struct FilterGroundPointsNode : IPointsNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32, INCIDENT_ANGLE_F32}; };
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32, NORMAL_VEC3_F32}; };
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;

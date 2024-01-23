@@ -28,10 +28,10 @@ void FilterGroundPointsNode::enqueueExecImpl()
 	ouNonGround->resize(pointCount, false, false);
 
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	const auto* inIncidentAnglesPtr = input->getFieldDataTyped<INCIDENT_ANGLE_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	const auto* inNormalsPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto lidarTransform = input->getLookAtOriginTransform();
 
-	gpuFilterGroundPoints(getStreamHandle(), pointCount, sensor_up_axis, ground_angle_threshold, inXyzPtr, inIncidentAnglesPtr,
+	gpuFilterGroundPoints(getStreamHandle(), pointCount, sensor_up_axis, ground_angle_threshold, inXyzPtr, inNormalsPtr,
 	                      ouNonGround->getWritePtr(), lidarTransform);
 }
 

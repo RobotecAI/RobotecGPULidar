@@ -79,28 +79,35 @@ __global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, c
 }
 
 __global__ void kFilterGroundPoints(size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
-                                    const Field<XYZ_VEC3_F32>::type* inPoints,
-                                    const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
-                                    Field<IS_GROUND_I32>::type* ouNonGround, Mat3x4f lidarTransform)
+                                    const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
+                                    Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform)
 {
 	LIMIT(pointCount);
-	Vec3f point = inPoints[tid];
+	// Map point to local frame of lidar.
+	Vec3f pointLocal = lidarTransform * inPoints[tid];
+
+	int axisIndex = static_cast<int>(sensor_up_axis);
+	Vec3f upVector = Vec3f(0, 0, 0);
+	upVector[axisIndex] = 1;
 
 	auto lidarPosition = lidarTransform.translation();
-	float lidarElevation = lidarPosition[sensor_up_axis - 1];
-	float pointElevation = point[sensor_up_axis - 1];
+	float lidarElevation = lidarPosition[axisIndex];
+	float pointElevation = pointLocal[axisIndex];
 
+	// Point above lidar cannot be ground.
 	if (pointElevation > lidarElevation) {
-		ouNonGround[tid] = true;
+		outNonGround[tid] = true;
 		return;
-	} else {
-		if (inIncidentAngles[tid] > ground_angle_threshold) {
-			printf("inIncidentAngles[tid]: %f > ground_angle_threshold: %f\n", inIncidentAngles[tid], ground_angle_threshold);
-			ouNonGround[tid] = true;
-			return;
-		}
 	}
-	ouNonGround[tid] = false;
+
+	// Check if normal is pointing up within given threshold.
+	const float normalUpAngle = acosf(fabs(inNormalsPtr[tid].dot(upVector)));
+	if (normalUpAngle > ground_angle_threshold) {
+		outNonGround[tid] = true;
+		return;
+	}
+
+	outNonGround[tid] = false;
 }
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
@@ -159,9 +166,9 @@ void gpuFilter(cudaStream_t stream, size_t count, const Field<RAY_IDX_U32>::type
 }
 
 void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
-                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
-                           Field<IS_GROUND_I32>::type* ouNonGround, Mat3x4f lidarTransform)
+                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
+                           Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform)
 {
-	run(kFilterGroundPoints, stream, pointCount, sensor_up_axis, ground_angle_threshold, inPoints, inIncidentAngles,
-	    ouNonGround, lidarTransform);
+	run(kFilterGroundPoints, stream, pointCount, sensor_up_axis, ground_angle_threshold, inPoints, inNormalsPtr, outNonGround,
+	    lidarTransform);
 }

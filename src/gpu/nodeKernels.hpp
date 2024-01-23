@@ -44,5 +44,5 @@ void gpuCutField(cudaStream_t, size_t pointCount, char* dst, const char* src, si
 void gpuFilter(cudaStream_t, size_t count, const Field<RAY_IDX_U32>::type* indices, char* dst, const char* src,
                size_t fieldSize);
 void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
-                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<INCIDENT_ANGLE_F32>::type* inIncidentAngles,
-                           Field<IS_GROUND_I32>::type* outIsGround, Mat3x4f lidarTransform);
+                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
+                           Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform);
