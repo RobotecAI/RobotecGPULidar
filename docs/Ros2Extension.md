@@ -16,6 +16,8 @@ RGL ROS2 extension can be built in two flavors:
 - **standalone** - ROS2 installation is not required on the target machine. RGL build will include all required ROS2 dependencies.
 - **overlay** - Assumes the existence of supported ROS2 installation on the target machine. RGL will try to use the existing installation of ROS2 dependencies.
 
+Before building RGL PCL extension, it is necessary to get the required dependencies.
+For some, the process has been automated - run `setup.py --install-ros2-deps` to get them.
 
 ### Ubuntu 22
 

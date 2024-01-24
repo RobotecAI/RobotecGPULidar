@@ -123,6 +123,10 @@ def main():
     if args.with_ros2:
         # Source environment for additional packages
         # ROS2 itself must be sourced by the user, because its location is unknown to this script
+        if "ROS_DISTRO" not in os.environ:
+            raise RuntimeError("ROS2 environment not found! Make sure you have sourced ROS2 setup file")
+        if os.environ["ROS_DISTRO"] != "humble":
+            raise RuntimeError(f"RGL requires ROS2 humble, found {os.environ['ROS_DISTRO']}")
         setup = "setup.bat" if on_windows() else "setup.sh"
         source_environment(os.path.join(os.getcwd(), cfg.RADAR_MSGS_INSTALL_DIR, setup))
 
@@ -259,7 +263,7 @@ def install_ros2_deps(cfg):
 
 # Returns a dict with env variables visible for a command after running in a system shell
 # Used to capture effects of sourcing file such as ros2 setup
-def capture_environment(command):
+def capture_environment(command="cd ."):
     env = "set" if on_windows() else "env"
     command = f"{command} && {env}"
 
@@ -276,7 +280,7 @@ def source_environment(filepath):
     print(f"Sourcing {filepath}")
     # Store the original environment variables
     source = "call" if on_windows() else "."
-    original_env = capture_environment("cd .")  # No-op working on both Windows and Linux
+    original_env = capture_environment()  # No-op working on both Windows and Linux
     new_env = capture_environment(f"{source} {filepath}")
 
     for new_key, new_value in new_env.items():
