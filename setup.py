@@ -94,6 +94,7 @@ def main():
 
     # Install dependencies for ROS2 extension
     if args.install_ros2_deps:
+        check_ros2_version()
         install_ros2_deps(cfg)
         print('Installed ROS2 deps, exiting...')
         return 0
@@ -123,10 +124,7 @@ def main():
     if args.with_ros2:
         # Source environment for additional packages
         # ROS2 itself must be sourced by the user, because its location is unknown to this script
-        if "ROS_DISTRO" not in os.environ:
-            raise RuntimeError("ROS2 environment not found! Make sure you have sourced ROS2 setup file")
-        if os.environ["ROS_DISTRO"] != "humble":
-            raise RuntimeError(f"RGL requires ROS2 humble, found {os.environ['ROS_DISTRO']}")
+        check_ros2_version()
         setup = "setup.bat" if on_windows() else "setup.sh"
         source_environment(os.path.join(os.getcwd(), cfg.RADAR_MSGS_INSTALL_DIR, setup))
 
@@ -289,6 +287,13 @@ def source_environment(filepath):
         if new_key in original_env and original_env[new_key] != new_value:
             print(f"Modified environment variable: {new_key}={new_env[new_key]}")
         os.environ[new_key] = new_env[new_key]
+
+
+def check_ros2_version():
+    if "ROS_DISTRO" not in os.environ:
+        raise RuntimeError("ROS2 environment not found! Make sure you have sourced ROS2 setup file")
+    if os.environ["ROS_DISTRO"] != "humble":
+        raise RuntimeError(f"RGL requires ROS2 humble, found {os.environ['ROS_DISTRO']}")
 
 
 if __name__ == "__main__":
