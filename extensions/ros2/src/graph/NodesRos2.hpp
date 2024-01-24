@@ -25,6 +25,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <Ros2InitGuard.hpp>
+#include <radar_msgs/msg/radar_scan.hpp>
 
 struct Ros2PublishPointsNode : IPointsNodeSingleInput
 {
@@ -57,10 +58,7 @@ struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
 	using Ptr = std::shared_ptr<Ros2PublishPointVelocityMarkersNode>;
 
 	void setParameters(const char* topicName, const char* frameId, rgl_field_t velocityField);
-	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{
-		return {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32};
-	}
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32, velocityField}; }
 
 	// Node
 	void validateImpl() override;
@@ -78,4 +76,24 @@ private:
 	rgl_field_t velocityField;
 
 	const visualization_msgs::msg::Marker& makeLinesMarker();
+};
+
+struct Ros2PublishRadarScanNode : IPointsNodeSingleInput
+{
+	void setParameters(const char* topicName, const char* frameId,
+	                   rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10)
+	{}
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{
+		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
+	}
+	void validateImpl() override {}
+	void enqueueExecImpl() override {}
+
+private:
+	radar_msgs::msg::RadarScan ros2Message;
+	rclcpp::Publisher<radar_msgs::msg::RadarScan>::SharedPtr ros2Publisher;
+	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
 };
