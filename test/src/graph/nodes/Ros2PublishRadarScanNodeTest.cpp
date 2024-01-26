@@ -22,7 +22,9 @@ TEST(Ros2PublishRadarScanNodeTest, should_receive_sent_data)
 
 	// Create nodes
 	rgl_node_t inputNode = input.createUsePointsNode(), radarScanNode = nullptr;
-	createOrUpdateNode<Ros2PublishRadarScanNode>(&radarScanNode, TOPIC_NAME, FRAME_ID);
+	ASSERT_RGL_SUCCESS(
+	    rgl_node_publish_ros2_radarscan(&radarScanNode, TOPIC_NAME, FRAME_ID, QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+	                                    QOS_POLICY_DURABILITY_SYSTEM_DEFAULT, QOS_POLICY_HISTORY_SYSTEM_DEFAULT, 0));
 
 	// Connect nodes
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(inputNode, radarScanNode));

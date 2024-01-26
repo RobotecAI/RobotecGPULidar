@@ -87,3 +87,23 @@ RGL_API rgl_status_t rgl_node_points_ros2_publish_with_qos(rgl_node_t* node, con
                                                            rgl_qos_policy_reliability_t qos_reliability,
                                                            rgl_qos_policy_durability_t qos_durability,
                                                            rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);
+
+/**
+ * Creates or modifies Ros2PublishRadarScanNode.
+ * The node publishes a RadarScan message to the ROS2 topic using specified Quality of Service settings.
+ * The message header stamp gets time from the raytraced scene. If the scene has no time, header will get the actual time.
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param topic_name Topic name to publish on.
+ * @param frame_id Frame this data is associated with.
+ * @param qos_reliability QoS reliability policy.
+ * @param qos_durability QoS durability policy.
+ * @param qos_history QoS history policy.
+ * @param qos_history_depth QoS history depth. If history policy is KEEP_ALL, depth is ignored but must always be non-negative.
+ *
+ */
+RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const char* topic_name, const char* frame_id,
+                                                     rgl_qos_policy_reliability_t qos_reliability,
+                                                     rgl_qos_policy_durability_t qos_durability,
+                                                     rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);
