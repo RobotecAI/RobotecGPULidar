@@ -36,7 +36,7 @@ void gpuFormatSoaToAos(cudaStream_t, size_t pointCount, size_t pointSize, size_t
 void gpuFormatAosToSoa(cudaStream_t, size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData,
                        const GPUFieldDesc* soaOutData);
 void gpuTransformRays(cudaStream_t, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform);
-void gpuApplyCompaction(cudaStream_t, size_t pointCount, size_t fieldSize, int const* shouldWrite,
+void gpuApplyCompaction(cudaStream_t, size_t pointCount, size_t fieldSize, const int* shouldWrite,
                         const CompactionIndexType* writeIndex, char* dst, const char* src);
 void gpuTransformPoints(cudaStream_t, size_t pointCount, const Field<XYZ_VEC3_F32>::type* inPoints,
                         Field<XYZ_VEC3_F32>::type* outPoints, Mat3x4f transform);

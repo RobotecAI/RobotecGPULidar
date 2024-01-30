@@ -238,8 +238,8 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_node_t yield = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&yield, fields.data(), fields.size()));
 
-	rgl_node_t compact = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	rgl_node_t compactByField = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactByField, IS_HIT_I32));
 
 	rgl_node_t spatialMerge = nullptr;
 	std::vector<rgl_field_t> sMergeFields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32, RGL_FIELD_PADDING_32};
@@ -260,6 +260,13 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 
 	rgl_node_t radarPostprocess = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostprocess, 1.0f, 0.5f));
+
+	rgl_node_t filterGround = nullptr;
+	rgl_vec3f sensorUpVector = {0.0f, 1.0f, 0.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_points_filter_ground(&filterGround, &sensorUpVector, 0.1f));
+
+	rgl_node_t compactByFieldGround = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactByFieldGround, IS_GROUND_I32));
 
 #if RGL_BUILD_ROS2_EXTENSION
 	rgl_node_t ros2pub = nullptr;
@@ -284,9 +291,12 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compactByField));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(raytrace, compact));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_remove_child(raytrace, compactByField));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, filterGround));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(filterGround, compactByFieldGround));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
