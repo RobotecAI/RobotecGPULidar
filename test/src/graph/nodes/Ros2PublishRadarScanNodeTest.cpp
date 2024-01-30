@@ -3,14 +3,13 @@
 #include <helpers/graphHelpers.hpp>
 #include <helpers/testPointCloud.hpp>
 
-#include <graph/NodesRos2.hpp>
+#include <rgl/api/extensions/ros2.h>
 
 #include <rclcpp/rclcpp.hpp>
+#include <radar_msgs/msg/radar_scan.hpp>
+class Ros2PublishRadarScanNodeTest : public RGLTest {};
 
-// TODO: replace with API calls
-#include <api/apiCommon.hpp>
-
-TEST(Ros2PublishRadarScanNodeTest, should_receive_sent_data)
+TEST_F(Ros2PublishRadarScanNodeTest, should_receive_sent_data)
 {
 	const auto POINT_COUNT = 5;
 	const auto TOPIC_NAME = "rgl_test_radar_scan";
@@ -39,7 +38,7 @@ TEST(Ros2PublishRadarScanNodeTest, should_receive_sent_data)
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(QOS_POLICY_DURABILITY_SYSTEM_DEFAULT));
 	qos.history(static_cast<rmw_qos_history_policy_t>(QOS_POLICY_HISTORY_SYSTEM_DEFAULT));
 	auto subscriber = node->create_subscription<radar_msgs::msg::RadarScan>(
-	    TOPIC_NAME, qos, [&](const radar_msgs::msg::RadarScan::SharedPtr msg) {
+	    TOPIC_NAME, qos, [&](const radar_msgs::msg::RadarScan::ConstSharedPtr msg) {
 		    EXPECT_EQ(msg->returns.size(), POINT_COUNT);
 		    EXPECT_EQ(msg->header.frame_id, FRAME_ID);
 		    EXPECT_NE(msg->header.stamp.sec + msg->header.stamp.nanosec, 0);

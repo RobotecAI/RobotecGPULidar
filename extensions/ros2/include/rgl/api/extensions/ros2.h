@@ -101,7 +101,6 @@ RGL_API rgl_status_t rgl_node_points_ros2_publish_with_qos(rgl_node_t* node, con
  * @param qos_durability QoS durability policy.
  * @param qos_history QoS history policy.
  * @param qos_history_depth QoS history depth. If history policy is KEEP_ALL, depth is ignored but must always be non-negative.
- *
  */
 RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const char* topic_name, const char* frame_id,
                                                      rgl_qos_policy_reliability_t qos_reliability,
