@@ -263,6 +263,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
 			        sensor_msgs::msg::PointField::FLOAT32};
 		case IS_HIT_I32: return {sensor_msgs::msg::PointField::INT32};
+		case IS_GROUND_I32: return {sensor_msgs::msg::PointField::INT32};
 		case RAY_IDX_U32: return {sensor_msgs::msg::PointField::UINT32};
 		case ENTITY_ID_I32: return {sensor_msgs::msg::PointField::INT32};
 		case INTENSITY_F32: return {sensor_msgs::msg::PointField::FLOAT32};
@@ -299,6 +300,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 	switch (type) {
 		case XYZ_VEC3_F32: return {"x", "y", "z"};
 		case IS_HIT_I32: return {"is_hit"};
+		case IS_GROUND_I32: return {"is_ground"};
 		case ENTITY_ID_I32: return {"entity_id"};
 		case RAY_IDX_U32: return {"ray_idx"};
 		case INTENSITY_F32: return {"intensity"};

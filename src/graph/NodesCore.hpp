@@ -546,7 +546,7 @@ private:
 struct FilterGroundPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FilterGroundPointsNode>;
-	void setParameters(rgl_axis_t sensor_up_axis, float ground_angle_threshold);
+	void setParameters(const rgl_vec3f* sensor_up_vector, float ground_angle_threshold);
 
 	// Node
 	void validateImpl() override;
@@ -559,7 +559,7 @@ struct FilterGroundPointsNode : IPointsNodeSingleInput
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
-	rgl_axis_t sensor_up_axis;
+	const rgl_vec3f* sensor_up_vector;
 	float ground_angle_threshold;
-	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr ouNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
 };

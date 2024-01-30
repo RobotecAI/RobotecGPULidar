@@ -35,20 +35,12 @@ void CompactByFieldPointsNode::enqueueExecImpl()
 	cacheManager.trigger();
 	inclusivePrefixSum->resize(input->getHeight() * input->getWidth(), false, false);
 	size_t pointCount = input->getWidth() * input->getHeight();
-	//TODO
-	int const* fieldToCompact = nullptr;
-	switch (fieldToCompactBy) {
-		case RGL_FIELD_IS_HIT_I32:
-			fieldToCompact = input->getFieldDataTyped<RGL_FIELD_IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-			break;
-		case RGL_FIELD_IS_GROUND_I32:
-			fieldToCompact = input->getFieldDataTyped<RGL_FIELD_IS_GROUND_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-			break;
-		default: throw InvalidAPIArgument("CompactByFieldPointsNode requires its input to be IS_HIT_I32 or IS_GROUND_I32");
-	}
+
+	auto requestedFieldData = input->getFieldData(fieldToCompactBy);
+	auto typedRequestedFieldDataPtr = requestedFieldData->asTyped<int32_t>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 
 	if (pointCount > 0) {
-		gpuFindCompaction(getStreamHandle(), pointCount, fieldToCompact, inclusivePrefixSum->getWritePtr(), &width);
+		gpuFindCompaction(getStreamHandle(), pointCount, typedRequestedFieldDataPtr, inclusivePrefixSum->getWritePtr(), &width);
 	}
 
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data

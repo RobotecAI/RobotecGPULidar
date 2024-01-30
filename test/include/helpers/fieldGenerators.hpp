@@ -88,7 +88,7 @@ static std::function<Field<IS_HIT_I32>::type(int)> genRandHit = [](int i) {
 };
 static std::function<Field<IS_GROUND_I32>::type(int)> genAllGround = [](int i) { return 0; };
 static std::function<Field<IS_GROUND_I32>::type(int)> genAllNonGround = [](int i) { return 1; };
-static std::function<Field<IS_HIT_I32>::type(int)> genRandGround = [](int i) {
+static std::function<Field<IS_GROUND_I32>::type(int)> genRandGround = [](int i) {
 	return std::uniform_int_distribution<int>(0, 1)(randomGenerator);
 
 };

@@ -54,7 +54,7 @@ __global__ void kTransformPoints(size_t pointCount, const Field<XYZ_VEC3_F32>::t
 	outPoints[tid] = transform * inPoints[tid];
 }
 
-__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, int const* shouldWrite,
+__global__ void kApplyCompaction(size_t pointCount, size_t fieldSize, const int32_t* shouldWrite,
                                  const CompactionIndexType* writeIndex, char* dst, const char* src)
 {
 	LIMIT(pointCount);
@@ -78,28 +78,16 @@ __global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, c
 	memcpy(dst + tid * fieldSize, src + indices[tid] * fieldSize, fieldSize);
 }
 
-__global__ void kFilterGroundPoints(size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
+__global__ void kFilterGroundPoints(size_t pointCount, const Vec3f& sensor_up_vector, float ground_angle_threshold,
                                     const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
                                     Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform)
 {
 	LIMIT(pointCount);
 
-	Vec3f upVector = Vec3f(0.0f, 0.0f, 0.0f);
-	switch (sensor_up_axis) {
-		case RGL_AXIS_X: upVector = Vec3f(1.0f, 0.0f, 0.0f); break;
-		case RGL_AXIS_Y: upVector = Vec3f(0.0f, 1.0f, 0.0f); break;
-		case RGL_AXIS_Z: upVector = Vec3f(0.0f, 0.0f, 1.0f); break;
-		default: break;
-	}
-
 	// Check if normal is pointing up within given threshold.
-	const float normalUpAngle = acosf(fabs(inNormalsPtr[tid].dot(upVector)));
-	if (normalUpAngle > ground_angle_threshold) {
-		outNonGround[tid] = true;
-		return;
-	}
+	const float normalUpAngle = acosf(fabs(inNormalsPtr[tid].dot(sensor_up_vector)));
 
-	outNonGround[tid] = false;
+	outNonGround[tid] = normalUpAngle > ground_angle_threshold;
 }
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
@@ -133,7 +121,7 @@ void gpuTransformRays(cudaStream_t stream, size_t rayCount, const Mat3x4f* inRay
 	run(kTransformRays, stream, rayCount, inRays, outRays, transform);
 };
 
-void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, int const* shouldWrite,
+void gpuApplyCompaction(cudaStream_t stream, size_t pointCount, size_t fieldSize, const int* shouldWrite,
                         const CompactionIndexType* writeIndex, char* dst, const char* src)
 {
 	run(kApplyCompaction, stream, pointCount, fieldSize, shouldWrite, writeIndex, dst, src);
@@ -157,10 +145,11 @@ void gpuFilter(cudaStream_t stream, size_t count, const Field<RAY_IDX_U32>::type
 	run(kFilter, stream, count, indices, dst, src, fieldSize);
 }
 
-void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, rgl_axis_t sensor_up_axis, float ground_angle_threshold,
-                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
-                           Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform)
+void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const rgl_vec3f* sensor_up_vector,
+                           float ground_angle_threshold, const Field<XYZ_VEC3_F32>::type* inPoints,
+                           const Field<NORMAL_VEC3_F32>::type* inNormalsPtr, Field<IS_GROUND_I32>::type* outNonGround,
+                           Mat3x4f lidarTransform)
 {
-	run(kFilterGroundPoints, stream, pointCount, sensor_up_axis, ground_angle_threshold, inPoints, inNormalsPtr, outNonGround,
+	run(kFilterGroundPoints, stream, pointCount, sensor_up_vector, ground_angle_threshold, inPoints, inNormalsPtr, outNonGround,
 	    lidarTransform);
 }

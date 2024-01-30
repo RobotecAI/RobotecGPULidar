@@ -634,12 +634,13 @@ RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* 
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  */
-RGL_API [[ deprecated("Use gl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.") ]] rgl_status_t
+RGL_API [[ deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.") ]] rgl_status_t
 rgl_node_points_compact(rgl_node_t* node);
 
 /**
  * Creates or modifies CompactPointsByFieldNode.
- * The Node removes points by given field. Currently supported fields are RGL_FIELD_IS_HIT_I32 and RGL_FIELD_IS_GROUND_I32.
+ * The Node removes points if the given field is set to a non-zero value.
+ * Currently supported fields are RGL_FIELD_IS_HIT_I32 and RGL_FIELD_IS_GROUND_I32.
  * In other words, it converts a point cloud into a dense one.
  * Graph input: point cloud
  * Graph output: point cloud (compacted)
@@ -714,16 +715,15 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float d
 
 /**
  * Creates or modifies FilterGroundPointsNode.
- * The Node filters out points that are on the ground and marke them with RGL_FIELD_IS_GROUND_I32 field.
- * The output point cloud contains field RGL_FIELD_IS_GROUND_I32 witch indicates if a point is on the ground.
- * As a ground points are considered points that are below the sensor and have a normal vector pointing up with an angle smaller than the threshold.
+ * The Node adds RGL_FIELD_IS_GROUND_I32 which indicates the point is on the ground. Points are not removed.
+ * Ground points are defined as those located below the sensor with a normal vector pointing upwards at an angle smaller than the threshold.
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param sensor_up_axis Axis that is pointing up in the sensor's coordinate frame.
+ * @param sensor_up_vector Pointer to single Vec3 describing up vector of depended frame.
  * @param ground_angle_threshold The maximum angle between the sensor's ray and the normal vector of the hit point in radians.
  */
-RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, rgl_axis_t sensor_up_axis, float ground_angle_threshold);
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector, float ground_angle_threshold);
 
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.

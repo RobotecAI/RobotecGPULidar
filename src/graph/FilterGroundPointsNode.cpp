@@ -14,9 +14,9 @@
 
 #include <graph/NodesCore.hpp>
 
-void FilterGroundPointsNode::setParameters(rgl_axis_t sensor_up_axis, float ground_angle_threshold)
+void FilterGroundPointsNode::setParameters(const rgl_vec3f* sensor_up_vector, float ground_angle_threshold)
 {
-	this->sensor_up_axis = sensor_up_axis;
+	this->sensor_up_vector = sensor_up_vector;
 	this->ground_angle_threshold = ground_angle_threshold;
 }
 
@@ -31,8 +31,8 @@ void FilterGroundPointsNode::enqueueExecImpl()
 	const auto* inNormalsPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto lidarTransform = input->getLookAtOriginTransform();
 
-	gpuFilterGroundPoints(getStreamHandle(), pointCount, sensor_up_axis, ground_angle_threshold, inXyzPtr, inNormalsPtr,
-	                      ouNonGround->getWritePtr(), lidarTransform);
+	gpuFilterGroundPoints(getStreamHandle(), pointCount, sensor_up_vector, ground_angle_threshold, inXyzPtr, inNormalsPtr,
+	                      outNonGround->getWritePtr(), lidarTransform);
 }
 
 IAnyArray::ConstPtr FilterGroundPointsNode::getFieldData(rgl_field_t field)
