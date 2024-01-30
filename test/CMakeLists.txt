@@ -16,7 +16,7 @@ set(RGL_TEST_FILES
     src/graph/nodeInputImpactTest.cpp
     src/graph/nodeRemovalTest.cpp
     src/graph/setPriorityTest.cpp
-        src/graph/nodes/CompactByFieldPointsNodeTest.cpp
+    src/graph/nodes/CompactByFieldPointsNodeTest.cpp
     src/graph/nodes/FormatPointsNodeTest.cpp
     src/graph/nodes/FromArrayPointsNodeTest.cpp
     src/graph/nodes/FromMat3x4fRaysNodeTest.cpp
