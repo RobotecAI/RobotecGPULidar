@@ -53,7 +53,7 @@ RGL_API rgl_status_t rgl_node_points_ros2_publish(rgl_node_t* node, const char* 
 
 void TapeRos2::tape_node_points_ros2_publish(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
 	rgl_node_points_ros2_publish(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<std::string>().c_str());
 	state.nodes.insert(std::make_pair(nodeId, node));
@@ -83,12 +83,46 @@ RGL_API rgl_status_t rgl_node_points_ros2_publish_with_qos(rgl_node_t* node, con
 
 void TapeRos2::tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	size_t nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
 	rgl_node_points_ros2_publish_with_qos(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<std::string>().c_str(),
 	                                      (rgl_qos_policy_reliability_t) yamlNode[3].as<int>(),
 	                                      (rgl_qos_policy_durability_t) yamlNode[4].as<int>(),
 	                                      (rgl_qos_policy_history_t) yamlNode[5].as<int>(), yamlNode[6].as<int32_t>());
+	state.nodes.insert(std::make_pair(nodeId, node));
+}
+
+RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const char* topic_name, const char* frame_id,
+                                                     rgl_qos_policy_reliability_t qos_reliability,
+                                                     rgl_qos_policy_durability_t qos_durability,
+                                                     rgl_qos_policy_history_t qos_history, int32_t qos_history_depth)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_DEBUG(
+		    "tape_node_publish_ros2_radarscan(node={}, topic_name={}, frame_id={}, qos_reliability={}, qos_durability={}, "
+		    "qos_history={}, qos_history_depth={})",
+		    repr(node), topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
+		CHECK_ARG(topic_name != nullptr);
+		CHECK_ARG(topic_name[0] != '\0');
+		CHECK_ARG(frame_id != nullptr);
+		CHECK_ARG(frame_id[0] != '\0');
+		CHECK_ARG(qos_history_depth >= 0);
+
+		createOrUpdateNode<Ros2PublishRadarScanNode>(node, topic_name, frame_id, qos_reliability, qos_durability, qos_history,
+		                                             qos_history_depth);
+	});
+	TAPE_HOOK(node, topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
+	return status;
+}
+
+void TapeRos2::tape_node_publish_ros2_radarscan(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
+	rgl_node_publish_ros2_radarscan(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<std::string>().c_str(),
+	                                (rgl_qos_policy_reliability_t) yamlNode[3].as<int>(),
+	                                (rgl_qos_policy_durability_t) yamlNode[4].as<int>(),
+	                                (rgl_qos_policy_history_t) yamlNode[5].as<int>(), yamlNode[6].as<int32_t>());
 	state.nodes.insert(std::make_pair(nodeId, node));
 }
 }
