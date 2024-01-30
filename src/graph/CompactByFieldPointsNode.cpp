@@ -76,19 +76,11 @@ IAnyArray::ConstPtr CompactByFieldPointsNode::getFieldData(rgl_field_t field)
 			}
 			const char* inputPtr = static_cast<const char*>(input->getFieldData(field)->getRawReadPtr());
 
-			int const* indicatorPtr = nullptr;
-			switch (fieldToCompactBy) {
-				case RGL_FIELD_IS_HIT_I32:
-					indicatorPtr = input->getFieldDataTyped<RGL_FIELD_IS_HIT_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-					break;
-				case RGL_FIELD_IS_GROUND_I32:
-					indicatorPtr = input->getFieldDataTyped<RGL_FIELD_IS_GROUND_I32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-					break;
-				default: throw InvalidAPIArgument("CompactByFieldPointsNode requires its input to be IS_HIT_I32 or IS_GROUND_I32");
-			}
+			auto requestedFieldData = input->getFieldData(fieldToCompactBy);
+			auto typedRequestedFieldDataPtr = requestedFieldData->asTyped<int32_t>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 
 			const CompactionIndexType* indices = inclusivePrefixSum->getReadPtr();
-			gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), indicatorPtr, indices, outPtr,
+			gpuApplyCompaction(getStreamHandle(), input->getPointCount(), getFieldSize(field), typedRequestedFieldDataPtr, indices, outPtr,
 			                   inputPtr);
 			bool calledFromEnqueue = graphRunCtx.value()->isThisThreadGraphThread();
 			if (!calledFromEnqueue) {
