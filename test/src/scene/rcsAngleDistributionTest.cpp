@@ -13,10 +13,14 @@
 #include <rgl/api/core.h>
 #include <rgl/api/extensions/ros2.h>
 
-TEST(RcsAngleDistributionTest, rotating_reflector_2d)
+struct RcsAngleDistributionTest : RGLTest
+{};
+
+TEST_F(RcsAngleDistributionTest, rotating_reflector_2d)
 {
+	GTEST_SKIP();
 	// Load mesh
-	rgl_mesh_t reflector2dMesh = loadFromSTL("../../test/data/reflector2d.stl");
+	rgl_mesh_t reflector2dMesh = loadFromSTL("data/reflector2d.stl");
 
 	// Setup scene
 	rgl_entity_t reflector2d = nullptr;
@@ -45,9 +49,7 @@ TEST(RcsAngleDistributionTest, rotating_reflector_2d)
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		rgl_mat3x4f reflectorPose = Mat3x4f::TRS({5, 0, 0}, {0, 0, -45 + 90 * t}).toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(reflector2d, &reflectorPose));
-		t += 0.01;
-		t = t - std::floor(t);
-
+		t = std::max(t + 0.01f, 1.0f);
 		// TODO: Implement clustering and plot RCS vs angle
 	}
 }

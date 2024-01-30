@@ -61,6 +61,8 @@ static inline rgl_mesh_t loadFromSTL(const char* path)
 	std::vector<rgl_vec3f> rgl_vertices;
 	std::vector<rgl_vec3i> rgl_indices;
 	stl_reader::ReadStlFile(path, vertices, _normals, indices, _solids);
+	assert(vertices.size() % 3 == 0);
+	assert(indices.size() % 3 == 0);
 	for (size_t i = 0; i < vertices.size(); i += 3) {
 		rgl_vertices.push_back({vertices[i], vertices[i + 1], vertices[i + 2]});
 	}
