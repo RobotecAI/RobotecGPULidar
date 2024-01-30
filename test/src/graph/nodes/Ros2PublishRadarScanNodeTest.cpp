@@ -7,7 +7,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
-class Ros2PublishRadarScanNodeTest : public RGLTest {};
+class Ros2PublishRadarScanNodeTest : public RGLTest
+{};
 
 TEST_F(Ros2PublishRadarScanNodeTest, should_receive_sent_data)
 {
@@ -67,6 +68,4 @@ TEST_F(Ros2PublishRadarScanNodeTest, should_receive_sent_data)
 		         std::chrono::steady_clock::now() - start < std::chrono::seconds(WAIT_TIME_SECS));
 		ASSERT_EQ(messageCount, MESSAGE_REPEATS);
 	}
-
-	rclcpp::shutdown();
 }

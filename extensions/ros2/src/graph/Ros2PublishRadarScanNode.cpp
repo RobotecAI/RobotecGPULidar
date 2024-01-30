@@ -45,7 +45,6 @@ void Ros2PublishRadarScanNode::enqueueExecImpl()
 	                               Scene::instance().getTime().value().asRos2Msg() :
 	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
 	std::vector<rgl_field_t> fields = this->getRequiredFieldList();
-	fields.push_back(PADDING_32); // Placeholder for amplitude
 	FormatPointsNode::formatAsync(formattedData, input, fields, fieldDescBuilder);
 	ros2Message.returns.resize(input->getPointCount());
 	CHECK_CUDA(cudaMemcpyAsync(ros2Message.returns.data(), formattedData->getReadPtr(),

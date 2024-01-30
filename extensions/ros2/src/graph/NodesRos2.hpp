@@ -80,13 +80,11 @@ private:
 
 struct Ros2PublishRadarScanNode : IPointsNodeSingleInput
 {
-	void setParameters(const char* topicName, const char* frameId,
-	                   rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
-	                   rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
-	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10);
+	void setParameters(const char* topicName, const char* frameId, rgl_qos_policy_reliability_t qosReliability,
+	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
-		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
+		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, /* placeholder for amplitude */ PADDING_32};
 	}
 	void validateImpl() override;
 	void enqueueExecImpl() override;
