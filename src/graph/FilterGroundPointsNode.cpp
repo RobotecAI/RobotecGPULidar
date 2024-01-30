@@ -14,7 +14,7 @@
 
 #include <graph/NodesCore.hpp>
 
-void FilterGroundPointsNode::setParameters(const rgl_vec3f* sensor_up_vector, float ground_angle_threshold)
+void FilterGroundPointsNode::setParameters(const Vec3f& sensor_up_vector, float ground_angle_threshold)
 {
 	this->sensor_up_vector = sensor_up_vector;
 	this->ground_angle_threshold = ground_angle_threshold;
@@ -25,7 +25,7 @@ void FilterGroundPointsNode::validateImpl() { IPointsNodeSingleInput::validateIm
 void FilterGroundPointsNode::enqueueExecImpl()
 {
 	auto pointCount = input->getPointCount();
-	ouNonGround->resize(pointCount, false, false);
+	outNonGround->resize(pointCount, false, false);
 
 	const auto* inXyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	const auto* inNormalsPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
@@ -38,7 +38,7 @@ void FilterGroundPointsNode::enqueueExecImpl()
 IAnyArray::ConstPtr FilterGroundPointsNode::getFieldData(rgl_field_t field)
 {
 	if (field == IS_GROUND_I32) {
-		return ouNonGround;
+		return outNonGround;
 	}
 
 	return input->getFieldData(field);

@@ -71,7 +71,7 @@ IAnyArray::ConstPtr CompactByFieldPointsNode::getFieldData(rgl_field_t field)
 		if (width > 0) {
 			char* outPtr = static_cast<char*>(fieldData->getRawWritePtr());
 			if (!isDeviceAccessible(input->getFieldData(field)->getMemoryKind())) {
-				auto msg = fmt::format("CompactPointsNode requires its input to be device-accessible, {} is not", field);
+				auto msg = fmt::format("CompactByFieldPointsNode requires its input to be device-accessible, {} is not", field);
 				throw InvalidPipeline(msg);
 			}
 			const char* inputPtr = static_cast<const char*>(input->getFieldData(field)->getRawReadPtr());

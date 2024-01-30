@@ -68,33 +68,6 @@ private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
-struct CompactPointsNode : IPointsNodeSingleInput
-{
-	using Ptr = std::shared_ptr<CompactPointsNode>;
-	void setParameters() {}
-
-	// Node
-	void validateImpl() override;
-	void enqueueExecImpl() override;
-
-	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
-
-	// Point cloud description
-	bool isDense() const override { return true; }
-	size_t getWidth() const override;
-	size_t getHeight() const override { return 1; }
-
-	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
-
-private:
-	size_t width = {0};
-	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
-	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
-	std::mutex getFieldDataMutex;
-};
-
 struct CompactByFieldPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<CompactByFieldPointsNode>;
@@ -546,7 +519,7 @@ private:
 struct FilterGroundPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FilterGroundPointsNode>;
-	void setParameters(const rgl_vec3f* sensor_up_vector, float ground_angle_threshold);
+	void setParameters(const Vec3f& sensor_up_vector, float ground_angle_threshold);
 
 	// Node
 	void validateImpl() override;
@@ -559,7 +532,7 @@ struct FilterGroundPointsNode : IPointsNodeSingleInput
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
-	const rgl_vec3f* sensor_up_vector;
+	Vec3f sensor_up_vector;
 	float ground_angle_threshold;
 	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
 };

@@ -78,7 +78,7 @@ __global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, c
 	memcpy(dst + tid * fieldSize, src + indices[tid] * fieldSize, fieldSize);
 }
 
-__global__ void kFilterGroundPoints(size_t pointCount, const Vec3f& sensor_up_vector, float ground_angle_threshold,
+__global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vector, float ground_angle_threshold,
                                     const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
                                     Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform)
 {
@@ -145,7 +145,7 @@ void gpuFilter(cudaStream_t stream, size_t count, const Field<RAY_IDX_U32>::type
 	run(kFilter, stream, count, indices, dst, src, fieldSize);
 }
 
-void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const rgl_vec3f* sensor_up_vector,
+void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f sensor_up_vector,
                            float ground_angle_threshold, const Field<XYZ_VEC3_F32>::type* inPoints,
                            const Field<NORMAL_VEC3_F32>::type* inNormalsPtr, Field<IS_GROUND_I32>::type* outNonGround,
                            Mat3x4f lidarTransform)
