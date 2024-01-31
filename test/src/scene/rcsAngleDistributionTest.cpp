@@ -49,7 +49,8 @@ TEST_F(RcsAngleDistributionTest, rotating_reflector_2d)
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		rgl_mat3x4f reflectorPose = Mat3x4f::TRS({5, 0, 0}, {0, 0, -45 + 90 * t}).toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(reflector2d, &reflectorPose));
-		t = std::max(t + 0.01f, 1.0f);
+		t += 0.01;
+		t = t - std::floor(t);
 		// TODO: Implement clustering and plot RCS vs angle
 	}
 }
