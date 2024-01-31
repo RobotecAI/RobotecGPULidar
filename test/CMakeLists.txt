@@ -51,6 +51,7 @@ set(RGL_TEST_FILES
 if (RGL_BUILD_ROS2_EXTENSION)
     list(APPEND RGL_TEST_FILES
         src/graph/nodes/Ros2PublishRadarScanNodeTest.cpp
+        src/scene/rcsAngleDistributionTest.cpp
     )
 endif()
 
@@ -68,6 +69,8 @@ if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
             src/TapeTest.cpp
     )
 endif()
+
+file(COPY ${CMAKE_SOURCE_DIR}/test/data/ DESTINATION ${CMAKE_BINARY_DIR}/data/)
 
 add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
