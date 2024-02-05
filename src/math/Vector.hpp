@@ -55,7 +55,7 @@ struct Vector
 	HostDevFn Vector(const Vector<dim, U>& other)
 	{
 		for (int i = 0; i < dim; ++i) {
-			row[i] = static_cast<T>(other.row[i]);
+			row[i] = static_cast<T>(other[i]);
 		}
 	}
 
@@ -125,6 +125,15 @@ struct Vector
 	PIECEWISE_OPERATOR(*, *=)
 	PIECEWISE_OPERATOR(/, /=)
 #undef PIECEWISE_OPERATOR
+
+	HostDevFn V operator-()
+	{
+		V v;
+		for (int i = 0; i < dim; ++i) {
+			v.row[i] = -this->row[i];
+		}
+		return v;
+	}
 
 	HostDevFn T lengthSquared() const
 	{
