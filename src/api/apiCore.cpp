@@ -920,6 +920,14 @@ RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node)
 	return status;
 }
 
+void TapeCore::tape_node_points_compact(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_compact(&node);
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field)
 {
 	auto status = rglSafeCall([&]() {
