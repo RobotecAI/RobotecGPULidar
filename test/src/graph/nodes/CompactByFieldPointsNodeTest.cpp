@@ -41,7 +41,8 @@ protected:
 	}
 };
 
-INSTANTIATE_TEST_SUITE_P(CompactByFieldPointsNodeTest, CompactByFieldPointsNodeTest, testing::Values(1, 100, maxGPUCoresTestCount),
+INSTANTIATE_TEST_SUITE_P(CompactByFieldPointsNodeTest, CompactByFieldPointsNodeTest,
+                         testing::Values(1, 100, maxGPUCoresTestCount),
                          [](const auto& info) { return "pointsCount_" + std::to_string(info.param); });
 
 TEST_F(CompactByFieldPointsNodeTest, invalid_argument_node)
@@ -90,15 +91,16 @@ TEST_P(CompactByFieldPointsNodeTest, points_all_non_hit)
 
 	runGraphWithAssertions(inNode);
 
-	auto&& outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactByFieldPointsNode, pointFields));
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(
+	    TestPointCloud::createFromNode(compactByFieldPointsNode, pointFields));
 	EXPECT_EQ(outPointCloud->getPointCount(), 0);
 
 	// Check if the contents of outData have changed (they should not have)
 	std::vector<::Field<XYZ_VEC3_F32>::type> outData{
 	    { 2.0f,  3.0f,  5.0f},
-	    { 7.0f, 11.0f, 13.0f},
-	    {17.0f, 19.0f, 23.0f}
-	};
+        { 7.0f, 11.0f, 13.0f},
+        {17.0f, 19.0f, 23.0f}
+    };
 	auto outDataCopy = outData;
 
 	int32_t outCount, outSize;
@@ -124,7 +126,8 @@ TEST_P(CompactByFieldPointsNodeTest, points_all_hit)
 
 	runGraphWithAssertions(inNode);
 
-	auto&& outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactByFieldPointsNode, pointFields));
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(
+	    TestPointCloud::createFromNode(compactByFieldPointsNode, pointFields));
 
 	EXPECT_EQ(*outPointCloud, *inPointCloud);
 }
@@ -140,7 +143,8 @@ TEST_P(CompactByFieldPointsNodeTest, points_random_hit)
 	auto&& inPointCloudWithoutNonHits = inPointCloud;
 	inPointCloudWithoutNonHits->removeNonHitPoints();
 
-	auto&& outPointCloud = std::make_unique<TestPointCloud>(TestPointCloud::createFromNode(compactByFieldPointsNode, pointFields));
+	auto&& outPointCloud = std::make_unique<TestPointCloud>(
+	    TestPointCloud::createFromNode(compactByFieldPointsNode, pointFields));
 
 	EXPECT_EQ(*outPointCloud, *inPointCloudWithoutNonHits);
 }
@@ -172,7 +176,7 @@ TEST_P(CompactByFieldPointsNodeTest, multiple_compactions_applied_to_same_data)
 	EXPECT_EQ(*outPointCloud, *inPointCloudWithoutNonHits);
 }
 
-TEST_F(CompactByFieldPointsNodeTest, should_warn_when_empty_point_cloud)
+TEST_F(CompactByFieldPointsNodeTest, should_work_when_empty_point_cloud)
 {
 	rgl_node_t emptyPointCloudOutputNode = nullptr;
 	createOrUpdateNode<EmptyNode>(&emptyPointCloudOutputNode);
