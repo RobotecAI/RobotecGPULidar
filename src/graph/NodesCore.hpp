@@ -68,17 +68,17 @@ private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
-struct CompactPointsNode : IPointsNodeSingleInput
+struct CompactByFieldPointsNode : IPointsNodeSingleInput
 {
-	using Ptr = std::shared_ptr<CompactPointsNode>;
-	void setParameters() {}
+	using Ptr = std::shared_ptr<CompactByFieldPointsNode>;
+	void setParameters(rgl_field_t field);
 
 	// Node
 	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32, IS_GROUND_I32}; }
 
 	// Point cloud description
 	bool isDense() const override { return true; }
@@ -89,6 +89,7 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
+	rgl_field_t fieldToCompactBy;
 	size_t width = {0};
 	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
 	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
@@ -513,4 +514,25 @@ private:
 		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
 		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
 	};
+};
+
+struct FilterGroundPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<FilterGroundPointsNode>;
+	void setParameters(const Vec3f& sensor_up_vector, float ground_angle_threshold);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32, NORMAL_VEC3_F32}; };
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	Vec3f sensor_up_vector;
+	float ground_angle_threshold;
+	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
 };

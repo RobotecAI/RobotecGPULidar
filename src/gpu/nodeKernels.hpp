@@ -29,17 +29,20 @@
 // This could be defined in CompactNode, however such include here causes mess because nvcc does not support C++20.
 using CompactionIndexType = int32_t;
 
-void gpuFindCompaction(cudaStream_t, size_t pointCount, const Field<IS_HIT_I32>::type* isHit,
+void gpuFindCompaction(cudaStream_t, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount);
 void gpuFormatSoaToAos(cudaStream_t, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* soaInData,
                        char* aosOutData);
 void gpuFormatAosToSoa(cudaStream_t, size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData,
                        const GPUFieldDesc* soaOutData);
 void gpuTransformRays(cudaStream_t, size_t rayCount, const Mat3x4f* inRays, Mat3x4f* outRays, Mat3x4f transform);
-void gpuApplyCompaction(cudaStream_t, size_t pointCount, size_t fieldSize, const Field<IS_HIT_I32>::type* shouldWrite,
+void gpuApplyCompaction(cudaStream_t, size_t pointCount, size_t fieldSize, const int* shouldWrite,
                         const CompactionIndexType* writeIndex, char* dst, const char* src);
 void gpuTransformPoints(cudaStream_t, size_t pointCount, const Field<XYZ_VEC3_F32>::type* inPoints,
                         Field<XYZ_VEC3_F32>::type* outPoints, Mat3x4f transform);
 void gpuCutField(cudaStream_t, size_t pointCount, char* dst, const char* src, size_t offset, size_t stride, size_t fieldSize);
 void gpuFilter(cudaStream_t, size_t count, const Field<RAY_IDX_U32>::type* indices, char* dst, const char* src,
                size_t fieldSize);
+void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f sensor_up_axis, float ground_angle_threshold,
+                           const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
+                           Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform);

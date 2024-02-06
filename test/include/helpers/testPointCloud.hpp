@@ -258,6 +258,7 @@ private:
 	{
 		{XYZ_VEC3_F32, [&](std::size_t count) {setFieldValues<XYZ_VEC3_F32>(generateFieldValues(count, genCoord));}},
 		{IS_HIT_I32, [&](std::size_t count) {setFieldValues<IS_HIT_I32>(generateFieldValues(count, genRandHit));}},
+		{IS_GROUND_I32, [&](std::size_t count) {setFieldValues<IS_GROUND_I32>(generateFieldValues(count, genRandGround));}},
 		{RAY_IDX_U32, [&](std::size_t count) {setFieldValues<RAY_IDX_U32>(generateFieldValues(count, genRayIdx));}},
 		{ENTITY_ID_I32, [&](std::size_t count) {setFieldValues<ENTITY_ID_I32>(generateFieldValues(count, genEntityId));}},
 		{INTENSITY_F32, [&](std::size_t count) {setFieldValues<INTENSITY_F32>(generateFieldValues(count, genIntensity));}},

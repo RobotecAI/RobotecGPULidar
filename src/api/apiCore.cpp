@@ -914,7 +914,7 @@ RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node)
 		RGL_API_LOG("rgl_node_points_compact(node={})", repr(node));
 		CHECK_ARG(node != nullptr);
 
-		createOrUpdateNode<CompactPointsNode>(node);
+		createOrUpdateNode<CompactByFieldPointsNode>(node, RGL_FIELD_IS_HIT_I32);
 	});
 	TAPE_HOOK(node);
 	return status;
@@ -925,6 +925,28 @@ void TapeCore::tape_node_points_compact(const YAML::Node& yamlNode, PlaybackStat
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_compact(&node);
+	state.nodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_compact_by_field(node={}, field={})", repr(node), field);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(field == IS_HIT_I32 || field == IS_GROUND_I32);
+
+		createOrUpdateNode<CompactByFieldPointsNode>(node, field);
+	});
+	TAPE_HOOK(node, field);
+	return status;
+}
+
+void TapeCore::tape_node_points_compact_by_field(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_field_t field = (rgl_field_t) yamlNode[1].as<int>();
+	rgl_node_points_compact_by_field(&node, field);
 	state.nodes.insert({nodeId, node});
 }
 
@@ -1023,6 +1045,32 @@ void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, Pl
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_radar_postprocess(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
+	state.nodes.insert({nodeId, node});
+}
+
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
+                                                   float ground_angle_threshold)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_filter_ground(node={}, sensor_up_vector={}, ground_angle_threshold={})", repr(node),
+		            repr(sensor_up_vector, 1), ground_angle_threshold);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(ground_angle_threshold >= 0);
+
+		createOrUpdateNode<FilterGroundPointsNode>(node, *reinterpret_cast<const Vec3f*>(sensor_up_vector),
+		                                           ground_angle_threshold);
+	});
+	TAPE_HOOK(node, sensor_up_vector, ground_angle_threshold);
+	return status;
+}
+
+void TapeCore::tape_node_points_filter_ground(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto sensor_up_vector = state.getPtr<const rgl_vec3f>(yamlNode[1]);
+	auto ground_angle_threshold = yamlNode[2].as<float>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_filter_ground(&node, sensor_up_vector, ground_angle_threshold);
 	state.nodes.insert({nodeId, node});
 }
 

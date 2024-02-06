@@ -246,6 +246,7 @@ typedef enum : int32_t
 	RGL_FIELD_XYZ_VEC3_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
+	RGL_FIELD_IS_GROUND_I32,
 	RGL_FIELD_RAY_IDX_U32,
 	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
@@ -633,7 +634,20 @@ RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* 
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  */
-RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node);
+RGL_API [[ deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.") ]] rgl_status_t
+rgl_node_points_compact(rgl_node_t* node);
+
+/**
+ * Creates or modifies CompactPointsByFieldNode.
+ * The Node removes points if the given field is set to a non-zero value.
+ * Currently supported fields are RGL_FIELD_IS_HIT_I32 and RGL_FIELD_IS_GROUND_I32.
+ * In other words, it converts a point cloud into a dense one.
+ * Graph input: point cloud
+ * Graph output: point cloud (compacted)
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param field Field by which points will be removed. Has to be RGL_FIELD_IS_HIT_I32 or RGL_FIELD_IS_GROUND_I32.
+ */
+RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field);
 
 /**
  * Creates or modifies SpatialMergePointsNode.
@@ -698,6 +712,18 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * @param azimuth_separation The maximum azimuth difference to create a new radar cluster (in radians).
  */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
+
+/**
+ * Creates or modifies FilterGroundPointsNode.
+ * The Node adds RGL_FIELD_IS_GROUND_I32 which indicates the point is on the ground. Points are not removed.
+ * Ground points are defined as those located below the sensor with a normal vector pointing upwards at an angle smaller than the threshold.
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param sensor_up_vector Pointer to single Vec3 describing up vector of depended frame.
+ * @param ground_angle_threshold The maximum angle between the sensor's ray and the normal vector of the hit point in radians.
+ */
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector, float ground_angle_threshold);
 
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.

@@ -37,6 +37,7 @@ typedef unsigned char TextureTexelFormat;
 // Shorter versions to avoid long type names
 #define XYZ_VEC3_F32 RGL_FIELD_XYZ_VEC3_F32
 #define IS_HIT_I32 RGL_FIELD_IS_HIT_I32
+#define IS_GROUND_I32 RGL_FIELD_IS_GROUND_I32
 #define RAY_IDX_U32 RGL_FIELD_RAY_IDX_U32
 #define ENTITY_ID_I32 RGL_FIELD_ENTITY_ID_I32
 #define INTENSITY_F32 RGL_FIELD_INTENSITY_F32
@@ -64,6 +65,7 @@ inline const std::set<rgl_field_t>& getAllRealFields()
 	static std::set<rgl_field_t> allRealFields = {
 	    XYZ_VEC3_F32,
 	    IS_HIT_I32,
+	    IS_GROUND_I32,
 	    RAY_IDX_U32,
 	    ENTITY_ID_I32,
 	    INTENSITY_F32,
@@ -113,6 +115,7 @@ FIELD(RAY_IDX_U32, uint32_t); // PCL uses uint32_t
 FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
 FIELD(IS_HIT_I32, int32_t); // Signed may be faster
+FIELD(IS_GROUND_I32, int32_t); // Signed may be faster
 FIELD(DISTANCE_F32, float);
 FIELD(AZIMUTH_F32, float);
 FIELD(ELEVATION_F32, float);
@@ -139,6 +142,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case RAY_IDX_U32: return Field<RAY_IDX_U32>::size;
 		case ENTITY_ID_I32: return Field<ENTITY_ID_I32>::size;
 		case IS_HIT_I32: return Field<IS_HIT_I32>::size;
+		case IS_GROUND_I32: return Field<IS_GROUND_I32>::size;
 		case INTENSITY_F32: return Field<INTENSITY_F32>::size;
 		case RING_ID_U16: return Field<RING_ID_U16>::size;
 		case AZIMUTH_F32: return Field<AZIMUTH_F32>::size;
@@ -202,6 +206,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(std::forward<Args>(args)...);
 		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(std::forward<Args>(args)...);
 		case IS_HIT_I32: return Subclass<Field<IS_HIT_I32>::type>::create(std::forward<Args>(args)...);
+		case IS_GROUND_I32: return Subclass<Field<IS_GROUND_I32>::type>::create(std::forward<Args>(args)...);
 		case ABSOLUTE_VELOCITY_VEC3_F32:
 			return Subclass<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create(std::forward<Args>(args)...);
 		case RELATIVE_VELOCITY_VEC3_F32:
@@ -222,6 +227,7 @@ inline std::string toString(rgl_field_t type)
 	switch (type) {
 		case XYZ_VEC3_F32: return "XYZ_VEC3_F32";
 		case IS_HIT_I32: return "IS_HIT_I32";
+		case IS_GROUND_I32: return "IS_GROUND_I32";
 		case RAY_IDX_U32: return "RAY_IDX_U32";
 		case ENTITY_ID_I32: return "ENTITY_ID_I32";
 		case INTENSITY_F32: return "INTENSITY_F32";
@@ -257,6 +263,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
 			        sensor_msgs::msg::PointField::FLOAT32};
 		case IS_HIT_I32: return {sensor_msgs::msg::PointField::INT32};
+		case IS_GROUND_I32: return {sensor_msgs::msg::PointField::INT32};
 		case RAY_IDX_U32: return {sensor_msgs::msg::PointField::UINT32};
 		case ENTITY_ID_I32: return {sensor_msgs::msg::PointField::INT32};
 		case INTENSITY_F32: return {sensor_msgs::msg::PointField::FLOAT32};
@@ -293,6 +300,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 	switch (type) {
 		case XYZ_VEC3_F32: return {"x", "y", "z"};
 		case IS_HIT_I32: return {"is_hit"};
+		case IS_GROUND_I32: return {"is_ground"};
 		case ENTITY_ID_I32: return {"entity_id"};
 		case RAY_IDX_U32: return {"ray_idx"};
 		case INTENSITY_F32: return {"intensity"};
