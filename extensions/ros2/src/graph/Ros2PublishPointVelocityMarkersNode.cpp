@@ -37,7 +37,7 @@ void Ros2PublishPointVelocityMarkersNode::validateImpl()
 		throw InvalidPipeline(fmt::format("{} requires a compacted point cloud (dense)", getName()));
 	}
 }
-void Ros2PublishPointVelocityMarkersNode::enqueueExecImpl()
+void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 {
 	pos->copyFrom(input->getFieldData(RGL_FIELD_XYZ_VEC3_F32));
 	vel->copyFrom(input->getFieldData(velocityField));

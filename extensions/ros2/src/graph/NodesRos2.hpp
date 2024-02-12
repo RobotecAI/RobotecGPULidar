@@ -27,7 +27,21 @@
 #include <Ros2InitGuard.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
 
-struct Ros2PublishPointsNode : IPointsNodeSingleInput
+struct IRos2Node : virtual Node
+{
+	virtual void enqueueExecImpl() override
+	{
+		if (!rclcpp::ok()) {
+			throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
+		}
+		ros2EnqueueExecImpl();
+	}
+
+protected:
+	virtual void ros2EnqueueExecImpl() = 0;
+};
+
+struct Ros2PublishPointsNode : IRos2Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 
@@ -38,7 +52,8 @@ struct Ros2PublishPointsNode : IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	void enqueueExecImpl() override;
+	// IRos2Node
+	void ros2EnqueueExecImpl() override;
 
 	~Ros2PublishPointsNode() override = default;
 
@@ -53,7 +68,7 @@ private:
 };
 
 
-struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
+struct Ros2PublishPointVelocityMarkersNode : IRos2Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointVelocityMarkersNode>;
 
@@ -62,7 +77,8 @@ struct Ros2PublishPointVelocityMarkersNode : IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	void enqueueExecImpl() override;
+	// IRos2Node
+	void ros2EnqueueExecImpl() override;
 
 	~Ros2PublishPointVelocityMarkersNode() override = default;
 
@@ -78,7 +94,7 @@ private:
 	const visualization_msgs::msg::Marker& makeLinesMarker();
 };
 
-struct Ros2PublishRadarScanNode : IPointsNodeSingleInput
+struct Ros2PublishRadarScanNode : IRos2Node, IPointsNodeSingleInput
 {
 	void setParameters(const char* topicName, const char* frameId, rgl_qos_policy_reliability_t qosReliability,
 	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
@@ -86,8 +102,11 @@ struct Ros2PublishRadarScanNode : IPointsNodeSingleInput
 	{
 		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, /* placeholder for amplitude */ PADDING_32};
 	}
+
+	// Node
 	void validateImpl() override;
-	void enqueueExecImpl() override;
+	// IRos2Node
+	void ros2EnqueueExecImpl() override;
 
 private:
 	radar_msgs::msg::RadarScan ros2Message;

@@ -39,7 +39,7 @@ void Ros2PublishRadarScanNode::validateImpl()
 	}
 }
 
-void Ros2PublishRadarScanNode::enqueueExecImpl()
+void Ros2PublishRadarScanNode::ros2EnqueueExecImpl()
 {
 	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
 	                               Scene::instance().getTime().value().asRos2Msg() :
