@@ -41,7 +41,7 @@ void Ros2PublishPointsNode::validateImpl()
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
-void Ros2PublishPointsNode::enqueueExecImpl()
+void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 {
 	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT)->asTyped<char>()->asSubclass<HostArray>();
 	int count = input->getPointCount();
