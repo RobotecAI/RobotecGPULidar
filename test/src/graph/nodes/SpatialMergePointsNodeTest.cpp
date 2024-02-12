@@ -68,7 +68,7 @@ TEST_F(SpatialMergePointsNodeTest, spatial_merge_from_transforms)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsZero, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPtsY, &translateYTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_spatial_merge(&spatialMerge, sMergeFields.data(), sMergeFields.size()));

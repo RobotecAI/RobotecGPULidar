@@ -239,7 +239,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&yield, fields.data(), fields.size()));
 
 	rgl_node_t compact = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 
 	rgl_node_t compactByField = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactByField, IS_HIT_I32));

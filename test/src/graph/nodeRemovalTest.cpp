@@ -34,7 +34,7 @@ TEST_F(GraphNodeRemovalTest, NodeRemoval)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
 	EXPECT_RGL_SUCCESS(rgl_node_points_temporal_merge(&temporalMerge, tMergeFields.data(), tMergeFields.size()));
 
