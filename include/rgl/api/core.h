@@ -110,7 +110,7 @@ typedef struct Texture* rgl_texture_t;
 
 /**
  * Opaque handle for a computational graph node in RGL.
- * Represents various computational steps like raytracing or downsampling.
+ * Represents a single computational step, e.g. introducing gaussian noise, raytracing or downsampling.
  * Nodes form a directed acyclic graph, dictating execution order.
  */
 typedef struct Node* rgl_node_t;
