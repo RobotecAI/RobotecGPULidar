@@ -8,6 +8,7 @@
 
 #include <RGLFields.hpp>
 #include <math/Mat3x4f.hpp>
+#include <Logger.hpp>
 
 inline std::vector<rgl_field_t>& getAllRealFieldsVector()
 {
@@ -188,7 +189,32 @@ public:
 
 	bool operator==(const TestPointCloud& other) const
 	{
-		return getPointCount() == other.getPointCount() && fields == other.fields && data == other.data;
+		if (getPointCount() != other.getPointCount() || fields != other.fields || data != other.data) {
+			return false;
+		}
+
+		// If all values for a field (which is not a padding) are equal to zero then warn about this
+		for (size_t fieldIndex = 0; fieldIndex < fields.size(); ++fieldIndex) {
+			const auto& field = fields[fieldIndex];
+
+			if (isDummy(field)) {
+				continue;
+			}
+
+			int fieldOffset = offsets.at(fieldIndex);
+			bool allZeros = true;
+			for (int i = 0; i < getPointCount(); ++i) {
+				if (std::memcmp(data.data() + i * getPointByteSize() + fieldOffset, std::vector<char>(getFieldSize(field), 0).data(),
+				                getFieldSize(field)) != 0) {
+					allZeros = false;
+					break;
+				}
+			}
+			if (allZeros) {
+				RGL_WARN(fmt::format("TestPointCloud::operator==: all field values are 0.0 for field {}", toString(field)));
+			}
+		}
+		return true;
 	}
 
 	template<rgl_field_t T>
