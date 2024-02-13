@@ -27,21 +27,27 @@
 #include <Ros2InitGuard.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
 
-struct IRos2Node : virtual Node
+struct Ros2Node : virtual Node
 {
-	virtual void enqueueExecImpl() override
+	void enqueueExecImpl() override
 	{
 		if (!rclcpp::ok()) {
-			throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
+			throw InvalidPipeline("Unable to execute Ros2Node because ROS2 has been shut down.");
 		}
 		ros2EnqueueExecImpl();
 	}
 
+	//	virtual void validateImpl() override
+	//	{
+	//		ros2InitGuard = Ros2InitGuard::acquire();
+	//	}
+
 protected:
 	virtual void ros2EnqueueExecImpl() = 0;
+	//	std::shared_ptr<Ros2InitGuard> ros2InitGuard; // why not private
 };
 
-struct Ros2PublishPointsNode : IRos2Node, IPointsNodeSingleInput
+struct Ros2PublishPointsNode : Ros2Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 
@@ -52,7 +58,7 @@ struct Ros2PublishPointsNode : IRos2Node, IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	// IRos2Node
+	// Ros2Node
 	void ros2EnqueueExecImpl() override;
 
 	~Ros2PublishPointsNode() override = default;
@@ -68,7 +74,7 @@ private:
 };
 
 
-struct Ros2PublishPointVelocityMarkersNode : IRos2Node, IPointsNodeSingleInput
+struct Ros2PublishPointVelocityMarkersNode : Ros2Node, IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointVelocityMarkersNode>;
 
@@ -77,7 +83,7 @@ struct Ros2PublishPointVelocityMarkersNode : IRos2Node, IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	// IRos2Node
+	// Ros2Node
 	void ros2EnqueueExecImpl() override;
 
 	~Ros2PublishPointVelocityMarkersNode() override = default;
@@ -94,7 +100,7 @@ private:
 	const visualization_msgs::msg::Marker& makeLinesMarker();
 };
 
-struct Ros2PublishRadarScanNode : IRos2Node, IPointsNodeSingleInput
+struct Ros2PublishRadarScanNode : Ros2Node, IPointsNodeSingleInput
 {
 	void setParameters(const char* topicName, const char* frameId, rgl_qos_policy_reliability_t qosReliability,
 	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
@@ -105,7 +111,7 @@ struct Ros2PublishRadarScanNode : IRos2Node, IPointsNodeSingleInput
 
 	// Node
 	void validateImpl() override;
-	// IRos2Node
+	// Ros2Node
 	void ros2EnqueueExecImpl() override;
 
 private:

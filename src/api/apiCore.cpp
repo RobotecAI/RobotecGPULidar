@@ -140,7 +140,12 @@ RGL_API rgl_status_t rgl_cleanup(void)
 		while (!Node::instances.empty()) {
 			auto node = Node::instances.begin()->second;
 			if (node->hasGraphRunCtx()) {
-				node->getGraphRunCtx()->detachAndDestroy();
+				try {
+					node->getGraphRunCtx()->detachAndDestroy();
+				}
+				catch (InvalidPipeline& e) {
+					RGL_WARN("rgl_cleanup caught InvalidPipeline: {}", e.what());
+				}
 			}
 			auto connectedNodes = node->disconnectConnectedNodes();
 			for (auto&& nodeToRelease : connectedNodes) {
