@@ -316,7 +316,7 @@ TEST_F(FormatPointsNodeTest, changing_required_fields_between_runs)
 
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 	ASSERT_RGL_SUCCESS(rgl_node_points_format(&format, subsequentFormatFields[0].data(), subsequentFormatFields[0].size()));
 
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, raytrace));
