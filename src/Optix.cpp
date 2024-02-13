@@ -52,8 +52,6 @@ static CUcontext getCurrentDeviceContext()
 	const char* error = nullptr;
 	CUresult status;
 
-	cudaFree(nullptr); // Force CUDA runtime initialization
-
 	CUdevice device;
 	status = cuDeviceGet(&device, 0);
 	if (status != CUDA_SUCCESS) {
@@ -156,6 +154,13 @@ Optix::Optix()
 
 Optix::~Optix()
 {
+	// On Windows, when program is terminated, CUDA gets unloaded before OptiX.
+	// If that happens, OptiX fails to de-initialize and crashes program with an error 0xc0000409 STATUS_STACK_BUFFER_OVERRUN
+	// Therefore, if we that CUDA is unloaded, we give up de-initializing OptiX, hoping that CUDA de-initialization did it.
+	if (cudaFree(nullptr) == cudaErrorCudartUnloading) {
+		return;
+	}
+
 	if (pipeline) {
 		optixPipelineDestroy(pipeline);
 	}
