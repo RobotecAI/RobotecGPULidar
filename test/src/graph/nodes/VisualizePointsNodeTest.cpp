@@ -34,7 +34,7 @@
 //	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 //	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
 //	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
-//	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+//	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 //	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPts, &zeroTf));
 //	EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize,  "aaa", 800, 600, false));
 //	EXPECT_RGL_SUCCESS(rgl_node_points_visualize(&visualize2,  "bbb", 800, 600, false));

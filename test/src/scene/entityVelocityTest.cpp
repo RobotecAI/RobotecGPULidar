@@ -153,7 +153,7 @@ TEST(EntityVelocity, Interactive)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidarPoseRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &lidarPoseRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "EntityVelocityTest", "world"));

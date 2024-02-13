@@ -12,7 +12,7 @@ class GraphNodeInputImpactTest : public RGLTest
 TEST_F(GraphNodeInputImpactTest, DetectMissingInput)
 {
 	rgl_node_t compact = nullptr; // Simplest to construct Node requiring Input
-	ASSERT_RGL_SUCCESS(rgl_node_points_compact(&compact));
+	ASSERT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 	EXPECT_RGL_STATUS(rgl_graph_run(compact), RGL_INVALID_PIPELINE);
 }
 
