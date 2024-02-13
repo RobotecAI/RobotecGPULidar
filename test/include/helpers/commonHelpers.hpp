@@ -32,7 +32,7 @@ static constexpr int maxGPUCoresTestCount = 20000;
 struct RGLTest : public ::testing::Test
 {
 protected:
-	RGLTest() { rgl_configure_logging(RGL_LOG_LEVEL_OFF, nullptr, false); }
+	RGLTest() { rgl_configure_logging(RGL_LOG_LEVEL_ALL, nullptr, true); }
 
 	~RGLTest() override { EXPECT_RGL_SUCCESS(rgl_cleanup()); }
 };
