@@ -11,9 +11,7 @@
 class ExternalLibraryTest : public RGLTest
 {};
 
-// TODO (msz-rai): Make it work on Windows.
-//  Currently, there is a bug when destroying Optix on Windows which causes non-zero exit code.
-#if RGL_BUILD_ROS2_EXTENSION && __GNUC__
+#if RGL_BUILD_ROS2_EXTENSION
 /**
  * rclcpp library (part of the ROS2 extension) depends on spdlog library.
  * RGL also uses spdlog for logging purposes.
