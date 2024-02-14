@@ -15,6 +15,14 @@
 #include <complex>
 #include "helpers/testPointCloud.hpp"
 
+struct numpunct : std::numpunct<char> {
+protected:
+	char do_decimal_point() const override
+	{
+		return ',';
+	}
+};
+
 struct RcsAngleDistributionTest : RGLTest
 {};
 
@@ -82,7 +90,7 @@ float computeRCSOfCluster(int hitCount, const std::vector<uint32_t>& hitRayIdx, 
 		std::complex<float> kr = {waveNum * hitDist[hitIdx], 0.0f};
 
 		Vec3f rayDir = rayDirCts.normalized();
-		Vec3f rayPol = Mat3x4f::fromRGL(rayPose[hitRayIdx[hitIdx]]) * Vec3f{0, 0, 1}; // UP, perpendicular to ray
+		Vec3f rayPol = Mat3x4f::fromRGL(rayPose[hitRayIdx[hitIdx]]) * Vec3f{-1, 0, 0}; // UP, perpendicular to ray
 		Vec3f reflectedPol = reflectPolarization(rayPol, hitNorm[hitIdx], rayDir);
 
 		Vector<3, std::complex<float>> rayPolCplx = {reflectedPol.x(), reflectedPol.y(), reflectedPol.z()};
@@ -113,8 +121,11 @@ std::vector<rgl_mat3x4f> genRadarRays()
 			// By default, the rays are directed along the Z-axis
 			// So first, we rotate them around the Y-axis to point towards the X-axis (to be RVIZ2 compatible)
 			// Then, rotation around Z is azimuth, around Y is elevation
-			auto ray = Mat3x4f::rotationDeg(0, e, a) * Mat3x4f::rotationDeg(0, 90, 0);
+			auto ray = Mat3x4f::rotationDeg(0, e + 90, -a);
 			rays.emplace_back(ray.toRGL());
+
+			// The above will have to be modified again - we assume that target is farther in X axis when in fact
+			// we use Z as RGL LiDAR front. Remember to update.
 		}
 	}
 
@@ -150,7 +161,7 @@ TEST_F(RcsAngleDistributionTest, rotating_reflector_2d)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactNode, formatNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(formatNode, ros2Node));
 
-
+	std::locale loc(std::locale(), new numpunct());
 	fmt::print("pointCount,angle,rcs\n");
 	for (float angle = -45; angle <= 45; angle += 0.1f) {
 		//		Vec3f scale = {0.2, 0.2, 0.2};
@@ -164,7 +175,7 @@ TEST_F(RcsAngleDistributionTest, rotating_reflector_2d)
 		auto rcs = computeRCSOfCluster(pointCloud.getPointCount(), pointCloud.getFieldValues<RAY_IDX_U32>(),
 		                               pointCloud.getFieldValues<DISTANCE_F32>(), pointCloud.getFieldValues<XYZ_VEC3_F32>(),
 		                               pointCloud.getFieldValues<NORMAL_VEC3_F32>(), rays.size(), rays);
-		fmt::print("{},{},{}\n", pointCloud.getPointCount(), angle, rcs);
+		std::cout << fmt::format(loc, "{0};{1:L};{2:L}", pointCloud.getPointCount(), angle, rcs) << std::endl;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
