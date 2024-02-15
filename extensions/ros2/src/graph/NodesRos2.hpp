@@ -45,6 +45,8 @@ struct Ros2Node : IPointsNodeSingleInput
 		ros2ValidateImpl();
 	}
 
+	virtual ~Ros2Node() = default;
+
 protected:
 	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
 

@@ -36,7 +36,7 @@ void Ros2PublishPointsNode::ros2ValidateImpl()
 	}
 
 	if (!input->hasField(RGL_FIELD_DYNAMIC_FORMAT)) {
-		auto msg = fmt::format("{} requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present", getName());
+		auto msg = fmt::format("{} requires a formatted point cloud", getName());
 		throw InvalidPipeline(msg);
 	}
 

@@ -152,8 +152,7 @@ TEST_F(ExternalLibraryTest, NodeROS2PublishRequiresDynamicFormat)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(points, ros2pub));
 
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(ros2pub),
-	                            "Ros2PublishPointsNode requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present");
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(ros2pub), "requires a formatted point cloud");
 
 	rgl_node_t ros2pubWithQos = nullptr;
 	rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
@@ -165,8 +164,7 @@ TEST_F(ExternalLibraryTest, NodeROS2PublishRequiresDynamicFormat)
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(points, ros2pubWithQos));
 
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(ros2pubWithQos),
-	                            "Ros2PublishPointsNode requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present");
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(ros2pubWithQos), "requires a formatted point cloud");
 }
 
 #endif
