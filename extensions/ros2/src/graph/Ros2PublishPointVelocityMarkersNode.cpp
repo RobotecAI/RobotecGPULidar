@@ -24,28 +24,26 @@ void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, c
 		throw InvalidAPIArgument(msg);
 	}
 	this->frameId = frameId;
-	ros2InitGuard = Ros2InitGuard::acquire();
 	auto qos = rclcpp::QoS(10); // Use system default QoS
 	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::Marker>(topicName, qos);
 	this->velocityField = velocityField;
 }
 
-void Ros2PublishPointVelocityMarkersNode::validateImpl()
+void Ros2PublishPointVelocityMarkersNode::ros2ValidateImpl()
 {
-	IPointsNodeSingleInput::validateImpl();
 	if (!input->isDense()) {
 		throw InvalidPipeline(fmt::format("{} requires a compacted point cloud (dense)", getName()));
+	}
+
+	if (!input->hasField(RGL_FIELD_DYNAMIC_FORMAT)) {
+		auto msg = fmt::format("{} requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present", getName());
+		throw InvalidPipeline(msg);
 	}
 }
 void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 {
 	pos->copyFrom(input->getFieldData(RGL_FIELD_XYZ_VEC3_F32));
 	vel->copyFrom(input->getFieldData(velocityField));
-
-	if (!rclcpp::ok()) {
-		// TODO: This should be handled by the Graph.
-		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
-	}
 	linesPublisher->publish(makeLinesMarker());
 }
 

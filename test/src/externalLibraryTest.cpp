@@ -140,4 +140,33 @@ TEST_F(ExternalLibraryTest, ValidateAllNodesROS2BehaviorsWhenROS2Shutdown)
 
 	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(points), "Unable to execute Ros2Node because ROS2 has been shut down.");
 }
+
+TEST_F(ExternalLibraryTest, NodeROS2PublishRequiresDynamicFormat)
+{
+	std::vector<rgl_field_t> fields{XYZ_VEC3_F32};
+	TestPointCloud pointCloud(fields, 10);
+	rgl_node_t points = pointCloud.createUsePointsNode();
+
+	rgl_node_t ros2pub = nullptr;
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2pub, "pointcloud", "rglFrame"));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(points, ros2pub));
+
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(ros2pub),
+	                            "Ros2PublishPointsNode requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present");
+
+	rgl_node_t ros2pubWithQos = nullptr;
+	rgl_qos_policy_reliability_t qos_r = QOS_POLICY_RELIABILITY_BEST_EFFORT;
+	rgl_qos_policy_durability_t qos_d = QOS_POLICY_DURABILITY_VOLATILE;
+	rgl_qos_policy_history_t qos_h = QOS_POLICY_HISTORY_KEEP_LAST;
+
+	EXPECT_RGL_SUCCESS(
+	    rgl_node_points_ros2_publish_with_qos(&ros2pubWithQos, "pointcloud_ex", "rglFrame", qos_r, qos_d, qos_h, 10));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(points, ros2pubWithQos));
+
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(ros2pubWithQos),
+	                            "Ros2PublishPointsNode requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present");
+}
+
 #endif
