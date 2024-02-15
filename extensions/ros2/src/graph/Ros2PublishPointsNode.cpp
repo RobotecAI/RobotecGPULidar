@@ -21,10 +21,7 @@ void Ros2PublishPointsNode::setParameters(const char* topicName, const char* fra
                                           rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory,
                                           int32_t qosHistoryDepth)
 {
-	ros2InitGuard = Ros2InitGuard::acquire();
-
 	ros2Message.header.frame_id = frameId;
-
 	auto qos = rclcpp::QoS(qosHistoryDepth);
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
@@ -32,12 +29,17 @@ void Ros2PublishPointsNode::setParameters(const char* topicName, const char* fra
 	ros2Publisher = ros2InitGuard->createUniquePublisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
-void Ros2PublishPointsNode::validateImpl()
+void Ros2PublishPointsNode::ros2ValidateImpl()
 {
-	IPointsNodeSingleInput::validateImpl();
 	if (input->getHeight() != 1) {
 		throw InvalidPipeline("ROS2 publish supports unorganized pointclouds only");
 	}
+
+	if (!input->hasField(RGL_FIELD_DYNAMIC_FORMAT)) {
+		auto msg = fmt::format("{} requires 'RGL_FIELD_DYNAMIC_FORMAT' field to be present", getName());
+		throw InvalidPipeline(msg);
+	}
+
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
@@ -57,10 +59,6 @@ void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
 	                               Scene::instance().getTime()->asRos2Msg() :
 	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
-	if (!rclcpp::ok()) {
-		// TODO: This should be handled by the Graph.
-		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
-	}
 	ros2Publisher->publish(ros2Message);
 }
 
