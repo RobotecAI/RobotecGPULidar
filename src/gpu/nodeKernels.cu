@@ -20,6 +20,7 @@
 
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
+#include <thrust/complex.h>
 
 __global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* soaInData,
                                 char* aosOutData)
@@ -76,6 +77,75 @@ __global__ void kFilter(size_t count, const Field<RAY_IDX_U32>::type* indices, c
 {
 	LIMIT(count);
 	memcpy(dst + tid * fieldSize, src + indices[tid] * fieldSize, fieldSize);
+}
+
+__device__ Vec3f reflectPolarization(const Vec3f& pol, const Vec3f& hitNormal, const Vec3f& rayDir)
+{
+	const auto diffCrossNormal = rayDir.cross(hitNormal);
+	const auto polU = diffCrossNormal.normalized();
+	const auto polR = rayDir.cross(polU).normalized();
+
+	const auto refDir = (rayDir - hitNormal * (2 * rayDir.dot(hitNormal))).normalized();
+	const auto refPolU = -1.0f * polU;
+	const auto refPolR = rayDir.cross(refPolU);
+
+	const auto polCompU = pol.dot(polU);
+	const auto polCompR = pol.dot(polR);
+
+	return -polCompR * refPolR + polCompU * refPolU;
+}
+
+
+__global__ void kRadarComputeEnergy(size_t count, float azimuthRangeRad, float elevationRangeRad,
+                                    const Field<RAY_POSE_MAT3x4_F32>::type* rayPose, const Field<DISTANCE_F32>::type* hitDist,
+                                    const Field<NORMAL_VEC3_F32>::type* hitNorm, const Field<XYZ_VEC3_F32>::type* hitPos,
+                                    thrust::complex<float>* outBR, thrust::complex<float>* outBU,
+                                    thrust::complex<float>* outFactor)
+{
+	LIMIT(count);
+
+	constexpr float c0 = 299792458.0f;
+	constexpr float freq = 79E9f;
+	constexpr float waveLen = c0 / freq;
+	constexpr float waveNum = 2.0f * M_PIf / waveLen;
+	constexpr float reflectionCoef = 1.0f; // TODO
+	const thrust::complex<float> i = {0, 1.0};
+	const Vec3f dirX = {1, 0, 0};
+	const Vec3f dirY = {0, 1, 0};
+	const Vec3f dirZ = {0, 0, 1};
+
+	Vec3f rayDirCts = rayPose[tid] * Vec3f{0, 0, 1};
+	Vec3f rayDirSph = {rayDirCts.length(), rayDirCts[0] == 0 && rayDirCts[1] == 0 ? 0 : atan2(rayDirCts.y(), rayDirCts.x()),
+	                   std::acos(rayDirCts.z() / rayDirCts.length())};
+	float phi = rayDirSph[1]; // azimuth, 0 = X-axis, positive = CCW
+	float the = rayDirSph[2]; // elevation, 0 = Z-axis, 90 = XY-plane, -180 = negative Z-axis
+
+	// Consider unit vector of the ray direction, these are its projections:
+	float cp = cosf(phi); // X-dir component
+	float sp = sinf(phi); // Y-dir component
+	float ct = cosf(the); // Z-dir component
+	float st = sinf(the); // XY-plane component
+
+	Vec3f dirP = {-sp, cp, 0};
+	Vec3f dirT = {cp * ct, sp * ct, -st};
+
+	thrust::complex<float> kr = {waveNum * hitDist[tid], 0.0f};
+
+	Vec3f rayDir = rayDirCts.normalized();
+	Vec3f rayPol = rayPose[tid] * Vec3f{-1, 0, 0}; // UP, perpendicular to ray
+	Vec3f reflectedPol = reflectPolarization(rayPol, hitNorm[tid], rayDir);
+
+	Vector<3, thrust::complex<float>> rayPolCplx = {reflectedPol.x(), reflectedPol.y(), reflectedPol.z()};
+
+	Vector<3, thrust::complex<float>> apE = reflectionCoef * exp(i * kr) * rayPolCplx;
+	Vector<3, thrust::complex<float>> apH = -apE.cross(rayDir);
+
+	Vec3f vecK = waveNum * ((dirX * cp + dirY * sp) * st + dirZ * ct);
+
+	float rayArea = hitDist[tid] * hitDist[tid] * std::sin(elevationRangeRad) * azimuthRangeRad;
+	outBU[tid] = (-(apE.cross(-dirP) + apH.cross(dirT))).dot(rayDir);
+	outBR[tid] = (-(apE.cross(dirT) + apH.cross(dirP))).dot(rayDir);
+	outFactor[tid] = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) * exp(-i * vecK.dot(hitPos[tid]));
 }
 
 __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vector, float ground_angle_threshold,
