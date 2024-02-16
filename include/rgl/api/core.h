@@ -298,6 +298,11 @@ typedef enum : int32_t
 	 */
 	RGL_FIELD_INCIDENT_ANGLE_F32,
 
+	/**
+	 * 3x4 matrix describing pose of the ray in the TODO coordinate system.
+	 */
+	RGL_FIELD_RAY_POSE_MAT3x4_F32,
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
