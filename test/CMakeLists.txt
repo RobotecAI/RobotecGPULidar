@@ -51,7 +51,9 @@ set(RGL_TEST_FILES
 
 if (RGL_BUILD_ROS2_EXTENSION)
     list(APPEND RGL_TEST_FILES
+        src/graph/Ros2NodesTest.cpp
         src/graph/nodes/Ros2PublishRadarScanNodeTest.cpp
+        src/graph/nodes/Ros2PublishPointsNodeTest.cpp
         src/scene/rcsAngleDistributionTest.cpp
     )
 endif()
