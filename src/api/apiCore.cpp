@@ -141,10 +141,12 @@ RGL_API rgl_status_t rgl_cleanup(void)
 			auto node = Node::instances.begin()->second;
 			if (node->hasGraphRunCtx()) {
 				try {
+					// This iterates over all nodes and may trigger pending exceptions
 					node->getGraphRunCtx()->detachAndDestroy();
 				}
-				catch (InvalidPipeline& e) {
-					RGL_WARN("rgl_cleanup caught InvalidPipeline: {}", e.what());
+				catch (std::exception& e) {
+					RGL_WARN("rgl_cleanup: caught pending exception in Node {}: {}", node->getName(), e.what());
+					continue; // Some node has thrown exception so this graph has not been detached, try again
 				}
 			}
 			auto connectedNodes = node->disconnectConnectedNodes();
