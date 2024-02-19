@@ -50,6 +50,7 @@ class TapeCore
 	static void tape_node_rays_transform(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_transform(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_raytrace(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_raytrace_configure_velocity(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_raytrace_with_distortion(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_raytrace_in_motion(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_format(const YAML::Node& yamlNode, PlaybackState& state);
@@ -100,6 +101,7 @@ class TapeCore
 		    TAPE_CALL_MAPPING("rgl_node_rays_transform", TapeCore::tape_node_rays_transform),
 		    TAPE_CALL_MAPPING("rgl_node_points_transform", TapeCore::tape_node_points_transform),
 		    TAPE_CALL_MAPPING("rgl_node_raytrace", TapeCore::tape_node_raytrace),
+		    TAPE_CALL_MAPPING("rgl_node_raytrace_configure_velocity", TapeCore::tape_node_raytrace_configure_velocity),
 		    TAPE_CALL_MAPPING("rgl_node_raytrace_with_distortion", TapeCore::tape_node_raytrace_with_distortion),
 		    TAPE_CALL_MAPPING("rgl_node_raytrace_in_motion", TapeCore::tape_node_raytrace_in_motion),
 		    TAPE_CALL_MAPPING("rgl_node_points_format", TapeCore::tape_node_points_format),

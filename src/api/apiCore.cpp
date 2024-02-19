@@ -842,7 +842,16 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const
 		raytraceNode->setVelocity(*reinterpret_cast<const Vec3f*>(linear_velocity),
 		                          *reinterpret_cast<const Vec3f*>(angular_velocity));
 	});
+	TAPE_HOOK(node, linear_velocity, angular_velocity);
 	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_velocity(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_velocity(state.nodes.at(nodeId), state.getPtr<const rgl_vec3f>(yamlNode[1]),
+	                                     state.getPtr<const rgl_vec3f>(yamlNode[2]));
 }
 
 RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,

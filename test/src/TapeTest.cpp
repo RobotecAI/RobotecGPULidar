@@ -226,8 +226,11 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_node_t raytraceWithDistortion = nullptr;
 	rgl_vec3f linearVelocity{1.0f, 2.0f, 3.0f};
 	rgl_vec3f angularVelocity{1.0f, 2.0f, 3.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_velocity(raytrace, &linearVelocity, &angularVelocity));
+	// TODO(nebraszka) to be removed
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_with_distortion(&raytraceWithDistortion, nullptr, &linearVelocity, &angularVelocity));
 
+	// TODO(nebraszka) to be removed
 	rgl_node_t raytraceInMotion = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_in_motion(&raytraceInMotion, nullptr, &linearVelocity, &angularVelocity, false));
 
