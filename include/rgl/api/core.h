@@ -559,63 +559,32 @@ RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x
 RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
 
 /**
- * TODO(nebraszka): Add documentation
+ * Modifies RaytraceNode.
+ * Applies velocity to the sensor.
+ * It is required to perform velocity distortion or calculate fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32
+ * Relative velocity calculation:
+ * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
+ * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_mesh_update_vertices`
+ * @param node RaytraceNode to modify
+ * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
+ *                        The velocity is in units per second.
+ * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
+ *                         The velocity is in radians per second.
  */
 RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const rgl_vec3f* linear_velocity,
                                                           const rgl_vec3f* angular_velocity);
 
 /**
- * TODO(nebraszka): Add documentation
+ * Modifies RaytraceNode.
+ * Applies velocity distortion to the sensor.
+ * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
+ * NOTE:
+ * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
+ * To provide sensor's velocity use rgl_node_raytrace_configure_velocity.
+ * @param node RaytraceNode to modify
+ * @param enable If true, velocity distortion feature will be enabled.
  */
 RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable);
-
-// TODO: Remove this API call on a new release. It is replaced by `rgl_node_raytrace_in_motion`.
-/**
- * Creates or modifies RaytraceNode.
- * The same as rgl_node_raytrace, but it applies velocity distortion additionally.
- * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
- * The velocities passed to that node must be in the local coordinate frame in which rays are described.
- * NOTE:
- * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
- * Graph input: rays
- * Graph output: point cloud (sparse)
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
- * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
- *                        The velocity is in units per second.
- * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
- *                         The velocity is in radians per second.
- */
-RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
-                                                       const rgl_vec3f* angular_velocity);
-
-/**
- * Creates or modifies RaytraceNode.
- * The same as rgl_node_raytrace, but it provides sensor's velocity to the pipeline.
- * It is required to perform velocity distortion or calculate fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32
- *
- * Velocity distortion:
- * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
- * The velocities passed to that node must be in the local coordinate frame in which rays are described.
- * NOTE:
- * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
- *
- * Relative velocity calculation:
- * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
- * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_mesh_update_vertices`
- *
- * Graph input: rays
- * Graph output: point cloud (sparse)
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
- * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
- *                        The velocity is in units per second.
- * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
- *                         The velocity is in radians per second.
- * @param apply_ray_distortion If true, velocity distortion feature will be enabled.
- */
-RGL_API rgl_status_t rgl_node_raytrace_in_motion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
-                                                 const rgl_vec3f* angular_velocity, bool apply_ray_distortion);
 
 /**
  * Creates or modifies FormatPointsNode.
