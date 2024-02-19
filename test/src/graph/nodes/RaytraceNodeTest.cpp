@@ -48,6 +48,14 @@ TEST_F(RaytraceNodeTest, config_invalid_argument_angular_velocity)
 	                            "angular_velocity != nullptr");
 }
 
+TEST_F(RaytraceNodeTest, config_invalid_node_object)
+{
+	const rgl_vec3f linearVelocity = {1.0f, 2.0f, 3.0f};
+	const rgl_vec3f angularVelocity = {4.0f, 5.0f, 6.0f};
+	EXPECT_RGL_INVALID_OBJECT(rgl_node_raytrace_configure_velocity((rgl_node_t) 0x1234, &linearVelocity, &angularVelocity),
+	                          "Object does not exist: Node 0x1234");
+}
+
 TEST_F(RaytraceNodeTest, config_valid_arguments)
 {
 	rgl_node_t raytraceNode = nullptr;
