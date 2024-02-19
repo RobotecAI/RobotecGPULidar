@@ -564,6 +564,11 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
 RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const rgl_vec3f* linear_velocity,
                                                           const rgl_vec3f* angular_velocity);
 
+/**
+ * TODO(nebraszka): Add documentation
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable);
+
 // TODO: Remove this API call on a new release. It is replaced by `rgl_node_raytrace_in_motion`.
 /**
  * Creates or modifies RaytraceNode.

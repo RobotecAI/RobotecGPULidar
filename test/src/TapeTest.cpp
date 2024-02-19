@@ -207,7 +207,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_ring_ids(&setRingIds, rings.data(), rings.size()));
 
 	rgl_node_t setTimeOffsets = nullptr;
-	std::vector<float> timeOffsets = {0.0f, 1.0f, 2.0f};
+	std::vector<float> timeOffsets = {1.0f, 2.0f};
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&setTimeOffsets, timeOffsets.data(), timeOffsets.size()));
 
 	rgl_node_t setRange = nullptr;
@@ -223,16 +223,11 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_node_t raytrace = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 
-	rgl_node_t raytraceWithDistortion = nullptr;
 	rgl_vec3f linearVelocity{1.0f, 2.0f, 3.0f};
 	rgl_vec3f angularVelocity{1.0f, 2.0f, 3.0f};
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_velocity(raytrace, &linearVelocity, &angularVelocity));
-	// TODO(nebraszka) to be removed
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_with_distortion(&raytraceWithDistortion, nullptr, &linearVelocity, &angularVelocity));
 
-	// TODO(nebraszka) to be removed
-	rgl_node_t raytraceInMotion = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_in_motion(&raytraceInMotion, nullptr, &linearVelocity, &angularVelocity, false));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_distortion(raytrace, true));
 
 	rgl_node_t format = nullptr;
 	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};
@@ -295,7 +290,8 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_node_t noiseDistance = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_distance(&noiseDistance, 0.1f, 0.1f, 0.01f));
 
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setRange));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, setTimeOffsets));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setTimeOffsets, setRange));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(setRange, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compactByField));

@@ -854,6 +854,25 @@ void TapeCore::tape_node_raytrace_configure_velocity(const YAML::Node& yamlNode,
 	                                     state.getPtr<const rgl_vec3f>(yamlNode[2]));
 }
 
+RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_distortion(node={}, enable={})", repr(node), enable);
+		CHECK_ARG(node != nullptr);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->enableRayDistortion(enable);
+	});
+	TAPE_HOOK(node, enable);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_distortion(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_distortion(node, yamlNode[1].as<bool>());
+}
+
 RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
                                                        const rgl_vec3f* angular_velocity)
 {
