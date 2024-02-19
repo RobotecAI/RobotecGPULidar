@@ -46,7 +46,9 @@ TEST_F(VelocityDistortionTest, smoke_test)
 	// Create nodes
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rayCount));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_set_time_offsets(&offsetsNode, timeOffsets.data(), rayCount));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_with_distortion(&raytrace, nullptr, &linearVelocity, &angularVelocity));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_velocity(raytrace, &linearVelocity, &angularVelocity));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_distortion(raytrace, true));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, offsetsNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(offsetsNode, raytrace));
