@@ -2,13 +2,12 @@ FROM nvidia/cuda:11.7.1-devel-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+ENV RGL_IS_BUILDING_DOCKER_IMAGE True
+
 RUN apt update
 RUN apt install -y \
     cmake \
     git
-
-WORKDIR /code
-RUN git config --system --add safe.directory /code
 
 ##### PCL extension #####
 
@@ -75,5 +74,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-velodyne-driver ros-${ROS_DISTRO}-velodyne-pointcloud \
     psmisc  # for `killall` command
+
+##### Post-build configuration #####
+
+WORKDIR /code
+RUN git config --system --add safe.directory /code
 
 CMD [ "/bin/bash" ]

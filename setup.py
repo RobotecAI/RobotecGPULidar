@@ -176,8 +176,9 @@ def on_windows():
 def inside_docker():
     path = "/proc/self/cgroup"
     return (
+        os.environ.get("RGL_IS_BUILDING_DOCKER_IMAGE", False) or
         os.path.exists("/.dockerenv") or
-        os.path.isfile(path) and any("docker" in line for line in open(path))
+        (os.path.isfile(path) and any("docker" in line for line in open(path)))
     )
 
 
