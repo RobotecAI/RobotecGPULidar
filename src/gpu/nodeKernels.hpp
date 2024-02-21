@@ -21,6 +21,7 @@
 #include <gpu/GPUFieldDesc.hpp>
 #include <math/Mat3x4f.hpp>
 #include <RGLFields.hpp>
+#include <thrust/complex.h>
 
 /*
  * The following functions are asynchronous!
@@ -46,3 +47,7 @@ void gpuFilter(cudaStream_t, size_t count, const Field<RAY_IDX_U32>::type* indic
 void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f sensor_up_axis, float ground_angle_threshold,
                            const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
                            Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform);
+void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad,
+                           const Field<RAY_POSE_MAT3x4_F32>::type* rayPose, const Field<DISTANCE_F32>::type* hitDist,
+                           const Field<NORMAL_VEC3_F32>::type* hitNorm, const Field<XYZ_VEC3_F32>::type* hitPos,
+                           Vector<3, thrust::complex<float>>* outBUBRFactor);

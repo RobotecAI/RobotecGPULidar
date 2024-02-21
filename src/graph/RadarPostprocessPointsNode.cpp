@@ -17,15 +17,22 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-void RadarPostprocessPointsNode::setParameters(float distanceSeparation, float azimuthSeparation)
+void RadarPostprocessPointsNode::setParameters(float distanceSeparation, float azimuthSeparation, float rayAzimuthStepRad,
+                                               float rayElevationStepRad)
 {
 	this->distanceSeparation = distanceSeparation;
 	this->azimuthSeparation = azimuthSeparation;
+	this->rayAzimuthStepRad = rayAzimuthStepRad;
+	this->rayElevationStepRad = rayElevationStepRad;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
 {
 	IPointsNodeSingleInput::validateImpl();
+
+	if (!input->isDense()) {
+		throw InvalidPipeline("RadarComputeEnergyPointsNode requires dense input");
+	}
 
 	// Needed to clear cache because fields in the pipeline may have changed
 	// In fact, the cache manager is no longer useful here
@@ -36,6 +43,16 @@ void RadarPostprocessPointsNode::validateImpl()
 void RadarPostprocessPointsNode::enqueueExecImpl()
 {
 	cacheManager.trigger();
+
+	auto rays = input->getFieldDataTyped<RAY_POSE_MAT3x4_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto distance = input->getFieldDataTyped<DISTANCE_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto normal = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto xyz = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	outBUBRFactorDev->resize(input->getPointCount(), false, false);
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, rays, distance,
+	                      normal, xyz, outBUBRFactorDev->getWritePtr());
+	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
+	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 
 	if (input->getPointCount() == 0) {
 		filteredIndices->resize(0, false, false);

@@ -717,8 +717,11 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param distance_separation The maximum distance difference to create a new radar cluster (in simulation units).
  * @param azimuth_separation The maximum azimuth difference to create a new radar cluster (in radians).
+ * @param ray_azimuth_step The azimuth step between rays (in radians).
+ * @param ray_elevation_step The elevation step between rays (in radians).
  */
-RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation,
+                                                       float ray_azimuth_step, float ray_elevation_step);
 
 /**
  * Creates or modifies FilterGroundPointsNode.

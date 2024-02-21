@@ -463,7 +463,7 @@ private:
 struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
-	void setParameters(float distanceSeparation, float azimuthSeparation);
+	void setParameters(float distanceSeparation, float azimuthSeparation, float rayAzimuthStepRad, float rayElevationStepRad);
 
 	// Node
 	void validateImpl() override;
@@ -487,9 +487,16 @@ private:
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
 	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
 	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationInputHost = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
+	DeviceAsyncArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorDev =
+	    DeviceAsyncArray<Vector<3, thrust::complex<float>>>::create(arrayMgr);
+	HostPinnedArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorHost =
+	    HostPinnedArray<Vector<3, thrust::complex<float>>>::create();
 
 	float distanceSeparation;
 	float azimuthSeparation;
+	float rayAzimuthStepRad;
+	float rayElevationStepRad;
+
 
 	// RGL related members
 	std::mutex getFieldDataMutex;

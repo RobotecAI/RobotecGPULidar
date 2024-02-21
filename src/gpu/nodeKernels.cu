@@ -96,7 +96,7 @@ __device__ Vec3f reflectPolarization(const Vec3f& pol, const Vec3f& hitNormal, c
 }
 
 
-__global__ void kRadarComputeEnergy(size_t count, float azimuthRangeRad, float elevationRangeRad,
+__global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float rayElevationStepRad,
                                     const Field<RAY_POSE_MAT3x4_F32>::type* rayPose, const Field<DISTANCE_F32>::type* hitDist,
                                     const Field<NORMAL_VEC3_F32>::type* hitNorm, const Field<XYZ_VEC3_F32>::type* hitPos,
                                     thrust::complex<float>* outBR, thrust::complex<float>* outBU,
@@ -142,10 +142,12 @@ __global__ void kRadarComputeEnergy(size_t count, float azimuthRangeRad, float e
 
 	Vec3f vecK = waveNum * ((dirX * cp + dirY * sp) * st + dirZ * ct);
 
-	float rayArea = hitDist[tid] * hitDist[tid] * std::sin(elevationRangeRad) * azimuthRangeRad;
-	outBU[tid] = (-(apE.cross(-dirP) + apH.cross(dirT))).dot(rayDir);
-	outBR[tid] = (-(apE.cross(dirT) + apH.cross(dirP))).dot(rayDir);
-	outFactor[tid] = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) * exp(-i * vecK.dot(hitPos[tid]));
+	float rayArea = hitDist[tid] * hitDist[tid] * std::sin(rayElevationStepRad) * rayAzimuthStepRad;
+	Vector<3, thrust::complex<float>> outBUBRFactor = {0, 0, 0};
+
+	outBUBRFactor[0] = (-(apE.cross(-dirP) + apH.cross(dirT))).dot(rayDir);
+	outBUBRFactor[1] = (-(apE.cross(dirT) + apH.cross(dirP))).dot(rayDir);
+	outBUBRFactor[2] = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) * exp(-i * vecK.dot(hitPos[tid]));
 }
 
 __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vector, float ground_angle_threshold,
@@ -159,6 +161,7 @@ __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vec
 
 	outNonGround[tid] = normalUpAngle > ground_angle_threshold;
 }
+
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount)
@@ -222,4 +225,13 @@ void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f s
 {
 	run(kFilterGroundPoints, stream, pointCount, sensor_up_vector, ground_angle_threshold, inPoints, inNormalsPtr, outNonGround,
 	    lidarTransform);
+}
+
+void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad,
+                           const Field<RAY_POSE_MAT3x4_F32>::type* rayPose, const Field<DISTANCE_F32>::type* hitDist,
+                           const Field<NORMAL_VEC3_F32>::type* hitNorm, const Field<XYZ_VEC3_F32>::type* hitPos,
+                           Vector<3, thrust::complex<float>>* outBUBRFactor)
+{
+	run(kRadarComputeEnergy, stream, count, rayAzimuthStepRad, rayElevationStepRad, rayPose, hitDist, hitNorm, hitPos,
+	    outBUBRFactor);
 }
