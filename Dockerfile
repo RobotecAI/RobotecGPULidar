@@ -60,7 +60,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-ros-core=0.10.0-1* \
     && rm -rf /var/lib/apt/lists/*
 
-# Install required packages for RGL ROS2 standalone build
+# Install RGL ROS2 dependencies (e.g. radar_msgs)
+COPY setup.py /
+RUN /setup.py --install-ros2-deps
+RUN rm /setup.py
+
+# Install required packages for RGL ROS2 standalone build (may be moved to setup.py in the future)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-cyclonedds ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
     ros-${ROS_DISTRO}-fastrtps ros-${ROS_DISTRO}-rmw-fastrtps-cpp \
