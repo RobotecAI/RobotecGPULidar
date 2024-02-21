@@ -243,7 +243,7 @@ def install_ros2_deps(cfg):
     if not has_colcon():
         if on_windows():
             run_system_command("pip install colcon-common-extensions")
-        else:
+        elif not inside_docker():  # Linux; Inside docker already installed
             run_system_command("sudo apt update")
             run_system_command("sudo apt install python3-colcon-common-extensions")
     # Clone radar msgs

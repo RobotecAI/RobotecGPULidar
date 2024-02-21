@@ -59,9 +59,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-ros-core=0.10.0-1* \
     && rm -rf /var/lib/apt/lists/*
 
+# Install packages for --install-ros2-deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-colcon-common-extensions
+
 # Install RGL ROS2 dependencies (e.g. radar_msgs)
 COPY setup.py /
-RUN /setup.py --install-ros2-deps
+RUN /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash; /setup.py --install-ros2-deps" # ROS2 must be sourced before installing deps
 RUN rm /setup.py
 
 # Install required packages for RGL ROS2 standalone build (may be moved to setup.py in the future)
