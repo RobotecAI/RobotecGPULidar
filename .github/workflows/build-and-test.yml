@@ -100,10 +100,11 @@ jobs:
     needs: [ build-ros2 ]
     uses: ./.github/workflows/test-subworkflow.yml
     with:
-      # Source ROS2, standalone build is tested in prod environment
+      # Source ROS2 and radar_msgs, standalone build is tested in prod environment
       # Run tests twice, each for different RMW implementation
       test-command: '
         source /opt/ros/humble/setup.bash &&
+        source /rgldep/radar_msgs/install/setup.bash &&
         cd build-ros2/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
@@ -127,11 +128,12 @@ jobs:
     needs: [ build-all ]
     uses: ./.github/workflows/test-subworkflow.yml
     with:
-      # Source ROS2, standalone build is tested in prod environment
+      # Source ROS2 and radar_msgs, standalone build is tested in prod environment
       # Set `RGL_TEST_VLP16_CALIB_FILE` for UDP-ROS2 integration test
       # Run tests twice, each for different RMW implementation
       test-command: '
         source /opt/ros/humble/setup.bash &&
+        source /rgldep/radar_msgs/install/setup.bash &&
         export RGL_TEST_VLP16_CALIB_FILE=$(pwd)/extensions/udp/test/resources/Ros2Vlp16Calib.yaml &&
         cd build-all/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
