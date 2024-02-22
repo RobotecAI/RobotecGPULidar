@@ -29,6 +29,7 @@ class Config:
         if inside_docker():
             self.VCPKG_DIR = os.path.join("/rgldep", "vcpkg")
             self.RADAR_MSGS_DIR = os.path.join("/rgldep", "radar_msgs")
+            self.RADAR_MSGS_INSTALL_DIR = os.path.join("/rgldep", "radar_msgs", "install")
 
         if on_windows():
             self.CUDA_MIN_VER_MINOR = 4
