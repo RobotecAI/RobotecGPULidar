@@ -12,10 +12,20 @@ jobs:
   load-env:
     runs-on: self-hosted
     outputs:
-      optix-install-dir: ${{ steps.set-env.outputs.optix-install-dir }}
-      user-id: ${{ steps.set-env.outputs.user-id }}
+      optix-install-dir: ${{ steps.set-envs.outputs.optix-install-dir }}
+      user-id: ${{ steps.set-envs.outputs.user-id }}
     steps:
-      - id: set-env
+      - id: check-envs
         run: |
-          echo "optix-install-dir=$OptiX_INSTALL_DIR" >> $GITHUB_OUTPUT
-          echo "user-id=$(id -u $USER)" >> $GITHUB_OUTPUT
+          if [[ -z "${OptiX_INSTALL_DIR}" ]]; then
+            echo "OptiX_INSTALL_DIR env is empty"
+            exit 1
+          fi
+          if [[ -z "$(id -u $USER)" ]]; then
+            echo "Cannot deduce id of the USER"
+            exit 1
+          fi
+      - id: set-envs
+        run: |
+          echo "optix-install-dir=$OptiX_INSTALL_DIR" | tee -a $GITHUB_OUTPUT
+          echo "user-id=$(id -u $USER)" | tee -a $GITHUB_OUTPUT
