@@ -18,12 +18,13 @@
 #include <gpu/nodeKernels.hpp>
 
 void RadarPostprocessPointsNode::setParameters(float distanceSeparation, float azimuthSeparation, float rayAzimuthStepRad,
-                                               float rayElevationStepRad)
+                                               float rayElevationStepRad, float frequency)
 {
 	this->distanceSeparation = distanceSeparation;
 	this->azimuthSeparation = azimuthSeparation;
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
+	this->frequency = frequency;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -49,10 +50,22 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	auto normal = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto xyz = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	outBUBRFactorDev->resize(input->getPointCount(), false, false);
-	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, rays, distance,
-	                      normal, xyz, outBUBRFactorDev->getWritePtr());
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency, rays,
+	                      distance, normal, xyz, outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+
+	// Computing RCS (example for all points)
+	//	std::complex<float> AU = 0;
+	//	std::complex<float> AR = 0;
+	//	for (int hitIdx = 0; hitIdx < outBUBRFactorHost->getCount(); ++hitIdx) {
+	//		std::complex<float> BU = {outBUBRFactorHost->at(hitIdx)[0].real(), outBUBRFactorHost->at(hitIdx)[0].imag()};
+	//		std::complex<float> BR = {outBUBRFactorHost->at(hitIdx)[1].real(), outBUBRFactorHost->at(hitIdx)[1].imag()};
+	//		std::complex<float> factor = {outBUBRFactorHost->at(hitIdx)[2].real(), outBUBRFactorHost->at(hitIdx)[2].imag()};
+	//		AU += BU * factor;
+	//		AR += BR * factor;
+	//	}
+	//	float rcs = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 
 	if (input->getPointCount() == 0) {
 		filteredIndices->resize(0, false, false);

@@ -116,6 +116,9 @@ struct RaytraceNode : IPointsNode
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
+		if (field == RAY_POSE_MAT3x4_F32) {
+			return raysNode->getRays();
+		}
 		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
 	}
 
@@ -463,7 +466,8 @@ private:
 struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
-	void setParameters(float distanceSeparation, float azimuthSeparation, float rayAzimuthStepRad, float rayElevationStepRad);
+	void setParameters(float distanceSeparation, float azimuthSeparation, float rayAzimuthStepRad, float rayElevationStepRad,
+	                   float frequency);
 
 	// Node
 	void validateImpl() override;
@@ -496,6 +500,7 @@ private:
 	float azimuthSeparation;
 	float rayAzimuthStepRad;
 	float rayElevationStepRad;
+	float frequency;
 
 
 	// RGL related members
