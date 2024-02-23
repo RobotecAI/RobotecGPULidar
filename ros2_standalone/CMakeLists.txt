@@ -104,6 +104,17 @@ macro(get_standalone_dependencies _library_name)
             endif()
         endif()
 
+        # If library is msgs, fetch all targets to get libraries for dynamic type support
+        # Those libraries are not listed in <XX>_LIBRARIES (which stands for libraries to link against to use <XX>)
+        if(${_library_name} MATCHES ".*\_msgs$")
+            foreach(entry ${${_library_name}_TARGETS})
+                fetch_target_lib(${entry})
+                string(REGEX REPLACE "::" "_" entry_normalized ${entry})
+                list(APPEND REQ_STANDALONE_LIBS
+                        ${${entry_normalized}_LIB_PATH})
+            endforeach()
+        endif()
+
         # Get spdlog and dependency
         if(UNIX AND "${_library_name}" STREQUAL "spdlog")
             include(${${_library_name}_CONFIG})
