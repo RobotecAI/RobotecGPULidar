@@ -159,8 +159,9 @@ macro(install_standalone_dependencies)
             string(REGEX REPLACE "\.lib$" ".dll" dll_path ${bin_path})
             list(APPEND REQ_STANDALONE_DLLS ${dll_path})
         endforeach()
+        list(REMOVE_DUPLICATES REQ_STANDALONE_DLLS)
         install(FILES ${REQ_STANDALONE_DLLS}
-                DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}
         )
     elseif(UNIX)
         set(_resolvedFiles "")
@@ -171,7 +172,7 @@ macro(install_standalone_dependencies)
         endforeach()
 
         install(FILES ${_resolvedFiles}
-                DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}
         )
 
         # Fix soversion files
