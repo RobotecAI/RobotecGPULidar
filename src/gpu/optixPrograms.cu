@@ -177,7 +177,11 @@ extern "C" __global__ void __closesthit__()
 
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		saveRayResult<false>();
+		Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+		Vec3f origin = ray * Vec3f{0, 0, 0};
+		Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+		Vec3f xyz = origin + dir * ctx.nearNonHitDistance;
+		saveRayResult<false>(xyz, ctx.nearNonHitDistance);
 		return;
 	}
 
@@ -266,6 +270,13 @@ extern "C" __global__ void __closesthit__()
 	                    incidentAngle);
 }
 
-extern "C" __global__ void __miss__() { saveRayResult<false>(); }
+extern "C" __global__ void __miss__()
+{
+	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	Vec3f origin = ray * Vec3f{0, 0, 0};
+	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	Vec3f xyz = origin + dir * ctx.farNonHitDistance;
+	saveRayResult<false>(xyz, ctx.farNonHitDistance);
+}
 
 extern "C" __global__ void __anyhit__() {}
