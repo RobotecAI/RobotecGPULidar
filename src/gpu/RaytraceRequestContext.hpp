@@ -23,6 +23,8 @@ struct RaytraceRequestContext
 	Vec3f sensorLinearVelocityXYZ;
 	Vec3f sensorAngularVelocityRPY;
 	bool doApplyDistortion;
+	float nearNonHitDistance;
+	float farNonHitDistance;
 
 	const Mat3x4f* rays;
 	size_t rayCount;

@@ -122,6 +122,7 @@ struct RaytraceNode : IPointsNode
 	// RaytraceNode specific
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
+	void setNonHitDistanceValues(float near, float far);
 
 private:
 	IRaysNode::Ptr raysNode;
@@ -130,6 +131,8 @@ private:
 	bool doApplyDistortion{false};
 	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
 	Vec3f sensorAngularVelocityRPY{0, 0, 0};
+	float nearNonHitDistance{NON_HIT_VALUE};
+	float farNonHitDistance{NON_HIT_VALUE};
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
@@ -534,5 +537,6 @@ struct FilterGroundPointsNode : IPointsNodeSingleInput
 private:
 	Vec3f sensor_up_vector;
 	float ground_angle_threshold;
-	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(
+	    arrayMgr);
 };

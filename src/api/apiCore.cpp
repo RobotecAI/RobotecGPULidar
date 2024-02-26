@@ -873,6 +873,25 @@ void TapeCore::tape_node_raytrace_configure_distortion(const YAML::Node& yamlNod
 	rgl_node_raytrace_configure_distortion(node, yamlNode[1].as<bool>());
 }
 
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hit_distance_values(rgl_node_t node, float near, float far)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_non_hit_distance_values(node={}, near={}, far={})", repr(node), near, far);
+		CHECK_ARG(node != nullptr);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setNonHitDistanceValues(near, far);
+	});
+	TAPE_HOOK(node);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_non_hit_distance_values(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_non_hit_distance_values(node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
+}
+
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	auto status = rglSafeCall([&]() {

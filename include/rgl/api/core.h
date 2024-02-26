@@ -572,7 +572,7 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const
                                                           const rgl_vec3f* angular_velocity);
 
 /**
- * Modifies RaytraceNode for velocity distortion.
+ * Modifies RaytraceNode to apply sensor distortion.
  * Requires time offsets set to rays using rgl_node_rays_set_time_offsets.
  * NOTE:
  * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
@@ -583,15 +583,16 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const
 RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable);
 
 /**
- * Configures non-hit distance values for a RaytraceNode.
- * Sets specific distance values for objects too close, within range, or too far.
- *
+ * Modifies RaytraceNode.
+ * Sets and differentiates non-hit values for the RGL_FIELD_DISTANCE_F32 field, specifically:
+ *  - for objects closer than a minimum range (`near`),
+ *  - for objects beyond a maximum range (`far`).
+ * Concurrently, it computes the RGL_FIELD_XYZ_VEC3_F32 field for these non-hit scenarios based on these distances, along with ray origin and direction.
  * @param node RaytraceNode to modify.
- * @param near Distance value for objects closer than the minimum range.
- * @param far Distance value for objects beyond the maximum range.
- * @param inf Distance value for objects within the range, but not hit.
+ * @param near Distance value for objects closer than minimum range.
+ * @param far Distance value for objects beyond maximum range.
  */
-RGL_API rgl_status_t rgl_node_raytrace_configure_non_hit_distance_values(rgl_node_t node, float near, float far, float inf);
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hit_distance_values(rgl_node_t node, float near, float far);
 
 /**
  * Creates or modifies FormatPointsNode.
