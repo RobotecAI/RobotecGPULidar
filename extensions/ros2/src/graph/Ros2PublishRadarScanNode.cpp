@@ -20,10 +20,7 @@ void Ros2PublishRadarScanNode::setParameters(const char* topicName, const char* 
                                              rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory,
                                              int32_t qosHistoryDepth)
 {
-	ros2InitGuard = Ros2InitGuard::acquire();
-
 	ros2Message.header.frame_id = frameId;
-
 	auto qos = rclcpp::QoS(qosHistoryDepth);
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
@@ -31,15 +28,14 @@ void Ros2PublishRadarScanNode::setParameters(const char* topicName, const char* 
 	ros2Publisher = ros2InitGuard->createUniquePublisher<radar_msgs::msg::RadarScan>(topicName, qos);
 }
 
-void Ros2PublishRadarScanNode::validateImpl()
+void Ros2PublishRadarScanNode::ros2ValidateImpl()
 {
-	IPointsNodeSingleInput::validateImpl();
 	if (input->getHeight() != 1) {
 		throw InvalidPipeline("ROS2 radar publish supports unorganized pointclouds only");
 	}
 }
 
-void Ros2PublishRadarScanNode::enqueueExecImpl()
+void Ros2PublishRadarScanNode::ros2EnqueueExecImpl()
 {
 	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
 	                               Scene::instance().getTime().value().asRos2Msg() :
