@@ -131,8 +131,10 @@ private:
 	bool doApplyDistortion{false};
 	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
 	Vec3f sensorAngularVelocityRPY{0, 0, 0};
-	float nearNonHitDistance{NON_HIT_VALUE};
-	float farNonHitDistance{NON_HIT_VALUE};
+
+	bool doCustomNonHitDistances{false};
+	float nearNonHitDistance;
+	float farNonHitDistance;
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);

@@ -108,6 +108,14 @@ __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_V
 extern "C" __global__ void __raygen__()
 {
 	if (ctx.scene == 0) {
+		if (ctx.doCustomNonHitDistances) {
+			Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+			Vec3f origin = ray * Vec3f{0, 0, 0};
+			Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+			Vec3f xyz = origin + dir.normalized() * ctx.farNonHitDistance;
+			saveRayResult<false>(xyz, ctx.farNonHitDistance);
+			return;
+		}
 		saveRayResult<false>();
 		return;
 	}
@@ -177,11 +185,15 @@ extern "C" __global__ void __closesthit__()
 
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
-		Vec3f origin = ray * Vec3f{0, 0, 0};
-		Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-		Vec3f xyz = origin + dir * ctx.nearNonHitDistance;
-		saveRayResult<false>(xyz, ctx.nearNonHitDistance);
+		if (ctx.doCustomNonHitDistances) {
+			Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+			Vec3f origin = ray * Vec3f{0, 0, 0};
+			Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+			Vec3f xyz = origin + dir.normalized() * ctx.nearNonHitDistance;
+			saveRayResult<false>(xyz, ctx.nearNonHitDistance);
+			return;
+		}
+		saveRayResult<false>();
 		return;
 	}
 
@@ -272,11 +284,15 @@ extern "C" __global__ void __closesthit__()
 
 extern "C" __global__ void __miss__()
 {
-	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
-	Vec3f origin = ray * Vec3f{0, 0, 0};
-	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-	Vec3f xyz = origin + dir * ctx.farNonHitDistance;
-	saveRayResult<false>(xyz, ctx.farNonHitDistance);
+	if (ctx.doCustomNonHitDistances) {
+		Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+		Vec3f origin = ray * Vec3f{0, 0, 0};
+		Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+		Vec3f xyz = origin + dir.normalized() * ctx.farNonHitDistance;
+		saveRayResult<false>(xyz, ctx.farNonHitDistance);
+		return;
+	}
+	saveRayResult<false>();
 }
 
 extern "C" __global__ void __anyhit__() {}
