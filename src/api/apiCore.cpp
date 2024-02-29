@@ -881,7 +881,7 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_non_hit_distance_values(rgl_nod
 		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
 		raytraceNode->setNonHitDistanceValues(near, far);
 	});
-	TAPE_HOOK(node);
+	TAPE_HOOK(node, near, far);
 	return status;
 }
 

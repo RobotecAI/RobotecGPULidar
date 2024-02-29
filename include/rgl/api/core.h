@@ -583,16 +583,16 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const
 RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable);
 
 /**
- * Modifies RaytraceNode.
+ * Modifies RaytraceNode to set non-hit values for distance.
  * Sets and differentiates non-hit values for the RGL_FIELD_DISTANCE_F32 field, specifically:
- *  - for objects closer than a minimum range (`near`),
- *  - for objects beyond a maximum range (`far`).
+ *  - for non-hits closer than a minimum range (`near`),
+ *  - for non-hits beyond a maximum range (`far`).
  * Concurrently, it computes the RGL_FIELD_XYZ_VEC3_F32 field for these non-hit scenarios based on these distances, along with ray origin and direction.
  * @param node RaytraceNode to modify.
- * @param near Distance value for objects closer than minimum range.
- * @param far Distance value for objects beyond maximum range.
+ * @param near Distance value for non-hits closer than minimum range.
+ * @param far Distance value for non-hits beyond maximum range.
  */
-RGL_API rgl_status_t rgl_node_raytrace_configure_non_hit_distance_values(rgl_node_t node, float near, float far);
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float near, float far);
 
 /**
  * Creates or modifies FormatPointsNode.
