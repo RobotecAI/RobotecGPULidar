@@ -29,6 +29,7 @@ class Config:
         if inside_docker():
             self.VCPKG_DIR = os.path.join("/rgldep", "vcpkg")
             self.RADAR_MSGS_DIR = os.path.join("/rgldep", "radar_msgs")
+            self.RADAR_MSGS_INSTALL_DIR = os.path.join("/rgldep", "radar_msgs", "install")
 
         if on_windows():
             self.CUDA_MIN_VER_MINOR = 4
@@ -176,8 +177,9 @@ def on_windows():
 def inside_docker():
     path = "/proc/self/cgroup"
     return (
+        os.environ.get("RGL_IS_BUILDING_DOCKER_IMAGE", False) or
         os.path.exists("/.dockerenv") or
-        os.path.isfile(path) and any("docker" in line for line in open(path))
+        (os.path.isfile(path) and any("docker" in line for line in open(path)))
     )
 
 
@@ -242,7 +244,7 @@ def install_ros2_deps(cfg):
     if not has_colcon():
         if on_windows():
             run_system_command("pip install colcon-common-extensions")
-        else:
+        elif not inside_docker():  # Linux; Inside docker already installed
             run_system_command("sudo apt update")
             run_system_command("sudo apt install python3-colcon-common-extensions")
     # Clone radar msgs
