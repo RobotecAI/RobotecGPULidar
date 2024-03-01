@@ -82,7 +82,6 @@ void RaytraceNode::enqueueExecImpl()
 	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
 	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
 	    .doApplyDistortion = doApplyDistortion,
-	    .doCustomNonHitDistances = doCustomNonHitDistances,
 	    .nearNonHitDistance = nearNonHitDistance,
 	    .farNonHitDistance = farNonHitDistance,
 	    .rays = raysPtr,
@@ -175,7 +174,6 @@ void RaytraceNode::setVelocity(const Vec3f& linearVelocity, const Vec3f& angular
 
 void RaytraceNode::setNonHitDistanceValues(float near, float far)
 {
-	doCustomNonHitDistances = true;
 	nearNonHitDistance = near;
 	farNonHitDistance = far;
 }

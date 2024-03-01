@@ -132,9 +132,8 @@ private:
 	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
 	Vec3f sensorAngularVelocityRPY{0, 0, 0};
 
-	bool doCustomNonHitDistances{false};
-	float nearNonHitDistance;
-	float farNonHitDistance;
+	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
+	float farNonHitDistance{std::numeric_limits<float>::infinity()};
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);

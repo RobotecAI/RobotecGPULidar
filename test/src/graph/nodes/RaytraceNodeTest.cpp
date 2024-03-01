@@ -90,13 +90,12 @@ TEST_F(RaytraceNodeTest, config_distortion_valid_arguments)
 
 TEST_F(RaytraceNodeTest, config_non_hit_distance_invalid_argument_node)
 {
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace_configure_non_hit_distance_values(raytraceNode, 0.0f, 0.0f),
-	                            "node != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace_configure_non_hits(raytraceNode, 0.0f, 0.0f), "node != nullptr");
 }
 
 TEST_F(RaytraceNodeTest, config_non_hit_distance_invalid_node_object)
 {
-	EXPECT_RGL_INVALID_OBJECT(rgl_node_raytrace_configure_non_hit_distance_values((rgl_node_t) 0x1234, 0.0f, 0.0f),
+	EXPECT_RGL_INVALID_OBJECT(rgl_node_raytrace_configure_non_hits((rgl_node_t) 0x1234, 0.0f, 0.0f),
 	                          "Object does not exist: Node 0x1234");
 }
 
@@ -104,32 +103,81 @@ TEST_F(RaytraceNodeTest, config_non_hit_distance_valid_arguments)
 {
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hit_distance_values(raytraceNode, 0.0f, 0.0f));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytraceNode, 0.0f, 0.0f));
+}
+
+TEST_F(RaytraceNodeTest, config_non_hits_should_not_impact_hits)
+{
+	spawnCubeOnScene(Mat3x4f::identity());
+
+	float fovX = 360.0f;
+	float fovY = 180.0f;
+	float resolution = 30.0f;
+	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(fovX, fovY, resolution, resolution);
+
+	std::vector<rgl_field_t> outFields{XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32};
+
+	/**
+	 * Hits with no raytrace non hits configuration scenario
+	 */
+
+	rgl_node_t raysNode = nullptr;
+	rgl_node_t yieldNode = nullptr;
+
+	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysNode, rays.data(), rays.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
+	ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, outFields.data(), outFields.size()));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, raytraceNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_run(raysNode));
+
+	TestPointCloud expectedPointCloud = TestPointCloud::createFromNode(yieldNode, outFields);
+
+	std::vector<Field<XYZ_VEC3_F32>::type> expectedCoords = expectedPointCloud.getFieldValues<XYZ_VEC3_F32>();
+	std::vector<Field<DISTANCE_F32>::type> expectedDistances = expectedPointCloud.getFieldValues<DISTANCE_F32>();
+	std::vector<Field<IS_HIT_I32>::type> expectedIsHits = expectedPointCloud.getFieldValues<IS_HIT_I32>();
+
+	/**
+	 * Hits with raytrace non hits configuration scenario
+	 */
+
+	rgl_node_t rangeRaysNode = nullptr;
+	std::vector<rgl_vec2f> ranges{
+	    rgl_vec2f{0.0f, CUBE_HALF_EDGE + 1.0f}  // Ray should hit the cube
+	};
+
+	ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&rangeRaysNode, ranges.data(), ranges.size()));
+
+	const float nearNonHitDistance = 123.0f;
+	const float farNonHitDistance = 321.0f;
+
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytraceNode, nearNonHitDistance, farNonHitDistance));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raysNode, raytraceNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, rangeRaysNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(rangeRaysNode, raytraceNode));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_run(raysNode));
+
+	TestPointCloud outPointCloud = TestPointCloud::createFromNode(yieldNode, outFields);
+	std::vector<Field<XYZ_VEC3_F32>::type> outCoords = outPointCloud.getFieldValues<XYZ_VEC3_F32>();
+	std::vector<Field<DISTANCE_F32>::type> outDistances = outPointCloud.getFieldValues<DISTANCE_F32>();
+	std::vector<Field<IS_HIT_I32>::type> outIsHits = outPointCloud.getFieldValues<IS_HIT_I32>();
+
+	for (size_t i = 0; i < outCoords.size(); ++i) {
+		EXPECT_EQ(outCoords.at(i).x(), expectedCoords.at(i).x());
+		EXPECT_EQ(outCoords.at(i).y(), expectedCoords.at(i).y());
+		EXPECT_EQ(outCoords.at(i).z(), expectedCoords.at(i).z());
+		EXPECT_EQ(outDistances.at(i), expectedDistances.at(i));
+		EXPECT_EQ(outIsHits.at(i), expectedIsHits.at(i));
+	}
 }
 
 TEST_F(RaytraceNodeTest, config_non_hit_near_distance_should_correctly_change_output)
 {
-	/**
-	 * Test spawns six cubes. They are arranged around the lidar's origin (0,0,0).
-	 * The cubes are placed in such a way that they completely surround the lidar without leaving any gaps.
-	 *
-	 * The centers of the cubes are positioned at:
-	 * 1. (2, 0, 0),
-	 * 2. (-2, 0, 0),
-     * 3. (0, 2, 0),
-     * 4. (0, -2, 0),
-	 * 5. (0, 0, 2),
-	 * 6. (0, 0, -2)
-	 */
-	float cubeCenterDistance = 2.0f;
-
-	const std::vector<Vec3f> cubePositions = {Vec3f(cubeCenterDistance, 0.0f, 0.0f), Vec3f(-cubeCenterDistance, 0.0f, 0.0f),
-	                                          Vec3f(0.0f, cubeCenterDistance, 0.0f), Vec3f(0.0f, -cubeCenterDistance, 0.0f),
-	                                          Vec3f(0.0f, 0.0f, cubeCenterDistance), Vec3f(0.0f, 0.0f, -cubeCenterDistance)};
-
-	for (const auto& position : cubePositions) {
-		spawnCubeOnScene(Mat3x4f::translation(position.x(), position.y(), position.z()));
-	}
+	spawnCubeOnScene(Mat3x4f::identity());
 
 	float fovX = 360.0f;
 	float fovY = 180.0f;
@@ -138,8 +186,9 @@ TEST_F(RaytraceNodeTest, config_non_hit_near_distance_should_correctly_change_ou
 	float nearNonHitDistance = 12.34f;
 
 	std::vector<rgl_vec2f> ranges{
-	    rgl_vec2f{cubeCenterDistance, cubeCenterDistance + CUBE_HALF_EDGE}
+	    rgl_vec2f{CUBE_HALF_EDGE + 1.0f, CUBE_HALF_EDGE + 2.0f}
     };
+
 	std::vector<rgl_field_t> outFields{XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32};
 
 	rgl_node_t raysNode = nullptr;
@@ -149,7 +198,7 @@ TEST_F(RaytraceNodeTest, config_non_hit_near_distance_should_correctly_change_ou
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysNode, rays.data(), rays.size()));
 	ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&rangeRaysNode, ranges.data(), ranges.size()));
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
-	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hit_distance_values(raytraceNode, nearNonHitDistance, 0.0f));
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytraceNode, nearNonHitDistance, 0.0f));
 	ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, outFields.data(), outFields.size()));
 
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, rangeRaysNode));
@@ -196,7 +245,7 @@ TEST_F(RaytraceNodeTest, config_non_hit_far_distance_should_correctly_change_out
 
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysNode, rays.data(), rays.size()));
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
-	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hit_distance_values(raytraceNode, 0.0f, farNonHitDistance));
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytraceNode, 0.0f, farNonHitDistance));
 	ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, outFields.data(), outFields.size()));
 
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, raytraceNode));

@@ -24,7 +24,6 @@ struct RaytraceRequestContext
 	Vec3f sensorAngularVelocityRPY;
 	bool doApplyDistortion;
 
-	bool doCustomNonHitDistances;
 	float nearNonHitDistance;
 	float farNonHitDistance;
 

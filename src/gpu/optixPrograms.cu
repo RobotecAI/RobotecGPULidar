@@ -56,11 +56,9 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 }
 
 template<bool isFinite>
-__forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE},
-                                              float distance = NON_HIT_VALUE, float intensity = 0,
-                                              const int objectID = RGL_ENTITY_INVALID_ID, const Vec3f& absVelocity = Vec3f{NAN},
-                                              const Vec3f& relVelocity = Vec3f{NAN}, float radialSpeed = NAN,
-                                              const Vec3f& normal = Vec3f{NAN}, float incidentAngle = NAN)
+__forceinline__ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID,
+                                              const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed,
+                                              const Vec3f& normal, float incidentAngle)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -105,18 +103,20 @@ __forceinline__ __device__ void saveRayResult(const Vec3f& xyz = Vec3f{NON_HIT_V
 	}
 }
 
+__forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
+{
+	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	Vec3f origin = ray * Vec3f{0, 0, 0};
+	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	Vec3f xyz = origin + dir.normalized() * nonHitDistance;
+	xyz = {isnan(xyz.x()) ? 0 : xyz.x(), isnan(xyz.y()) ? 0 : xyz.y(), isnan(xyz.z()) ? 0 : xyz.z()};
+	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, NAN, Vec3f{NAN}, NAN);
+}
+
 extern "C" __global__ void __raygen__()
 {
 	if (ctx.scene == 0) {
-		if (ctx.doCustomNonHitDistances) {
-			Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
-			Vec3f origin = ray * Vec3f{0, 0, 0};
-			Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-			Vec3f xyz = origin + dir.normalized() * ctx.farNonHitDistance;
-			saveRayResult<false>(xyz, ctx.farNonHitDistance);
-			return;
-		}
-		saveRayResult<false>();
+		saveNonHitRayResult(ctx.farNonHitDistance);
 		return;
 	}
 
@@ -185,15 +185,7 @@ extern "C" __global__ void __closesthit__()
 
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		if (ctx.doCustomNonHitDistances) {
-			Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
-			Vec3f origin = ray * Vec3f{0, 0, 0};
-			Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-			Vec3f xyz = origin + dir.normalized() * ctx.nearNonHitDistance;
-			saveRayResult<false>(xyz, ctx.nearNonHitDistance);
-			return;
-		}
-		saveRayResult<false>();
+		saveNonHitRayResult(ctx.nearNonHitDistance);
 		return;
 	}
 
@@ -282,17 +274,6 @@ extern "C" __global__ void __closesthit__()
 	                    incidentAngle);
 }
 
-extern "C" __global__ void __miss__()
-{
-	if (ctx.doCustomNonHitDistances) {
-		Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
-		Vec3f origin = ray * Vec3f{0, 0, 0};
-		Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-		Vec3f xyz = origin + dir.normalized() * ctx.farNonHitDistance;
-		saveRayResult<false>(xyz, ctx.farNonHitDistance);
-		return;
-	}
-	saveRayResult<false>();
-}
+extern "C" __global__ void __miss__() { saveNonHitRayResult(ctx.farNonHitDistance); }
 
 extern "C" __global__ void __anyhit__() {}
