@@ -262,8 +262,8 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	                                              usePointsFields.data(), usePointsFields.size()));
 
 	rgl_node_t radarPostprocess = nullptr;
-	rgl_vec3f rangedSeparations{1.0f, 2.0f, 3.0f};
-	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostprocess, &rangedSeparations, 1, 0.5f, 1.0f, 1.0f, 79E9f));
+	rgl_radar_separations_t radarSeparations{0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostprocess, &radarSeparations, 1, 1.0f, 1.0f, 79E9f));
 
 	rgl_node_t filterGround = nullptr;
 	rgl_vec3f sensorUpVector = {0.0f, 1.0f, 0.0f};
