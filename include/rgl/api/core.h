@@ -61,6 +61,12 @@ typedef struct
 	float value[2];
 } rgl_vec2f;
 
+#ifndef __cplusplus
+static_assert(sizeof(rgl_vec2f) == 2 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_vec2f>);
+static_assert(std::is_standard_layout_v<rgl_vec2f>);
+#endif
+
 /**
  * Three consecutive 32-bit floats.
  */
@@ -71,6 +77,8 @@ typedef struct
 
 #ifndef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_vec3f>);
+static_assert(std::is_standard_layout_v<rgl_vec3f>);
 #endif
 
 /**
@@ -81,6 +89,12 @@ typedef struct
 	int32_t value[3];
 } rgl_vec3i;
 
+#ifndef __cplusplus
+static_assert(sizeof(rgl_vec3i) == 3 * sizeof(int32_t));
+static_assert(std::is_trivial_v<rgl_vec3i>);
+static_assert(std::is_standard_layout_v<rgl_vec3i>);
+#endif
+
 /**
  * Row-major matrix with 3 rows and 4 columns of 32-bit floats.
  * Right-handed coordinate system.
@@ -89,6 +103,12 @@ typedef struct
 {
 	float value[3][4];
 } rgl_mat3x4f;
+
+#ifndef __cplusplus
+static_assert(sizeof(rgl_mat3x4f) == 3 * 4 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_mat3x4f>);
+static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
+#endif
 
 /**
  * Represents on-GPU Mesh that can be referenced by Entities on the Scene.

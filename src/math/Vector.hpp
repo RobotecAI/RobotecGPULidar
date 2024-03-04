@@ -233,10 +233,16 @@ using Vec2i = Vector<2, int>;
 using Vec3i = Vector<3, int>;
 using Vec4i = Vector<4, int>;
 
-static_assert(std::is_trivially_copyable<Vec2f>::value);
-static_assert(std::is_trivially_copyable<Vec3f>::value);
-static_assert(std::is_trivially_copyable<Vec4f>::value);
+static_assert(std::is_trivially_copyable_v<Vec2f>);
+static_assert(std::is_trivially_copyable_v<Vec3f>);
+static_assert(std::is_trivially_copyable_v<Vec4f>);
+static_assert(std::is_standard_layout_v<Vec2f>);
+static_assert(std::is_standard_layout_v<Vec3f>);
+static_assert(std::is_standard_layout_v<Vec4f>);
 
-static_assert(std::is_trivially_copyable<Vec2i>::value);
-static_assert(std::is_trivially_copyable<Vec3i>::value);
-static_assert(std::is_trivially_copyable<Vec4i>::value);
+static_assert(std::is_trivially_copyable_v<Vec2i>);
+static_assert(std::is_trivially_copyable_v<Vec3i>);
+static_assert(std::is_trivially_copyable_v<Vec4i>);
+static_assert(std::is_standard_layout_v<Vec2i>);
+static_assert(std::is_standard_layout_v<Vec3i>);
+static_assert(std::is_standard_layout_v<Vec4i>);
