@@ -1032,22 +1032,31 @@ void TapeCore::tape_node_points_from_array(const YAML::Node& yamlNode, PlaybackS
 	state.nodes.insert({nodeId, node});
 }
 
-RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation,
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_vec3f* ranged_separations,
+                                                       int32_t ranged_separations_count, float azimuth_separation,
                                                        float ray_azimuth_step, float ray_elevation_step, float frequency)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_points_radar_postprocess(node={}, distance_separation={}, azimuth_separation={})", repr(node),
-		            distance_separation, azimuth_separation);
+		RGL_API_LOG("rgl_node_points_radar_postprocess(node={}, ranged_separations={}, azimuth_separation={})", repr(node),
+		            repr(ranged_separations, ranged_separations_count), azimuth_separation);
 
-		CHECK_ARG(distance_separation > 0);
+		CHECK_ARG(ranged_separations != nullptr);
+		CHECK_ARG(ranged_separations_count > 0);
 		CHECK_ARG(azimuth_separation > 0);
 		CHECK_ARG(ray_azimuth_step > 0);
 		CHECK_ARG(ray_elevation_step > 0);
 
-		createOrUpdateNode<RadarPostprocessPointsNode>(node, distance_separation, azimuth_separation, ray_azimuth_step,
+		std::vector<Vec3f> rangedSeparations;
+		rangedSeparations.reserve(ranged_separations_count);
+		for (int i = 0; i < ranged_separations_count; ++i) {
+			const Vec3f& v = *reinterpret_cast<const Vec3f*>(ranged_separations + i);
+			rangedSeparations.push_back(v);
+		}
+		createOrUpdateNode<RadarPostprocessPointsNode>(node, rangedSeparations, azimuth_separation, ray_azimuth_step,
 		                                               ray_elevation_step, frequency);
 	});
-	TAPE_HOOK(node, distance_separation, azimuth_separation, ray_azimuth_step, ray_elevation_step, frequency);
+	TAPE_HOOK(node, TAPE_ARRAY(ranged_separations, ranged_separations_count), ranged_separations_count, azimuth_separation,
+	          ray_azimuth_step, ray_elevation_step, frequency);
 	return status;
 }
 
@@ -1055,8 +1064,9 @@ void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, Pl
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
-	rgl_node_points_radar_postprocess(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>(),
-	                                  yamlNode[4].as<float>(), yamlNode[5].as<float>());
+	rgl_node_points_radar_postprocess(&node, state.getPtr<const rgl_vec3f>(yamlNode[1]), yamlNode[2].as<int32_t>(),
+	                                  yamlNode[3].as<float>(), yamlNode[4].as<float>(), yamlNode[5].as<float>(),
+	                                  yamlNode[6].as<float>());
 	state.nodes.insert({nodeId, node});
 }
 

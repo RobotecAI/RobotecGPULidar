@@ -64,7 +64,8 @@ TEST_F(RcsAngleDistributionTest, rotating_reflector_2d)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactNode, RGL_FIELD_IS_HIT_I32));
-	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarNode, 0.2f, 0.2f, azimuthStep, elevationStep, 79E9f));
+	rgl_vec3f rangedSeparations{100.0f, 0.2f, 0.2f};
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarNode, &rangedSeparations, 1, 0.2f, azimuthStep, elevationStep, 79E9f));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&formatNode, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2Node, "rgl_test_topic", "rgl_test_frame_id"));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, fields.data(), fields.size()));

@@ -641,7 +641,7 @@ RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* 
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  */
-RGL_API [[ deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.") ]] rgl_status_t
+RGL_API [[deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.")]] rgl_status_t
 rgl_node_points_compact(rgl_node_t* node);
 
 /**
@@ -710,18 +710,27 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
 /**
  * Creates or modifies RadarPostprocessPointsNode.
  * The Node processes point cloud to create radar-like output.
- * The point cloud is reduced by clustering input based on hit-point distance and hit-point azimuth.
+ * The point cloud is reduced by clustering input based on hit-point attributes: distance, radial speed and azimuth.
+ * Separation for azimuth is fixed for all of the points since it is determined by the radar specification (the number of receivers).
+ * Separations for speed and distance may vary for different distance ranges, as radars may employ multiple frequency bands for different ranges.
  * The output consists of the collection of one point per cluster (the closest to the azimuth and elevation center).
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param distance_separation The maximum distance difference to create a new radar cluster (in simulation units).
+ * @param ranged_separations distance and speed separations that vary depending on the distance range. Packed as follows:
+ *   rgl_vec3f.value[0]: the upper distance range for separations (in simulation units)
+ *   rgl_vec3f.value[1]: distance separation - the maximum distance difference to create a new radar cluster (in simulation units)
+ *   rgl_vec3f.value[2]: radial speed separation - the maximum speed difference to create a new radar cluster (in simulation units)
+ *   e.g. for 2 distance ranges (0-10 and 10-100) in which distance separations are 1 and 2, and speed separations are 3 and 4 the parameter input should be:
+ *   [(10, 1, 2), (100, 3, 4)]
+ * @param ranged_separations_count Number of elements in the `ranged_separations` array.
  * @param azimuth_separation The maximum azimuth difference to create a new radar cluster (in radians).
  * @param ray_azimuth_step The azimuth step between rays (in radians).
  * @param ray_elevation_step The elevation step between rays (in radians).
  * @param frequency The frequency of the radar (in Hz).
  */
-RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation,
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_vec3f* ranged_separations,
+                                                       int32_t ranged_separations_count, float azimuth_separation,
                                                        float ray_azimuth_step, float ray_elevation_step, float frequency);
 
 /**
