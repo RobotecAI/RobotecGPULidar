@@ -108,8 +108,10 @@ __forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
 	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
 	Vec3f origin = ray * Vec3f{0, 0, 0};
 	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-	Vec3f xyz = origin + dir.normalized() * nonHitDistance;
-	xyz = {isnan(xyz.x()) ? 0 : xyz.x(), isnan(xyz.y()) ? 0 : xyz.y(), isnan(xyz.z()) ? 0 : xyz.z()};
+	Vec3f displacement = dir.normalized() * nonHitDistance;
+	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
+	                isnan(displacement.z()) ? 0 : displacement.z()};
+	Vec3f xyz = origin + displacement;
 	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, NAN, Vec3f{NAN}, NAN);
 }
 

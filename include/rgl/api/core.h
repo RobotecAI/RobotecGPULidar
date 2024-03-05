@@ -584,7 +584,8 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, boo
 
 /**
  * Modifies RaytraceNode to set non-hit values for distance.
- * Sets and differentiates non-hit values for the RGL_FIELD_DISTANCE_F32 field, specifically:
+ * Default non-hit value for the RGL_FIELD_DISTANCE_F32 field is set to infinity.
+ * This function allows to set custom values:
  *  - for non-hits closer than a minimum range (`near`),
  *  - for non-hits beyond a maximum range (`far`).
  * Concurrently, it computes the RGL_FIELD_XYZ_VEC3_F32 field for these non-hit scenarios based on these distances, along with ray origin and direction.

@@ -64,7 +64,6 @@ protected:
 		ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rayTf.data(), rayTf.size()));
 		ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&setRangeNode, &raytraceRange, 1));
 		ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytraceNode, INF, INF));
 		ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldPointsNode, fields.data(), fields.size()));
 	}
 
@@ -149,8 +148,8 @@ TEST_F(DistanceFieldTest, should_compute_nonhit_distance_for_object_off_ray_path
 	connectNodes(false);
 	getResults();
 
-	EXPECT_EQ(outDistances.at(0), INF);
-	EXPECT_EQ(outDistances.at(1), INF);
+	EXPECT_EQ(outDistances.at(0), std::numeric_limits<float>::infinity());
+	EXPECT_EQ(outDistances.at(1), std::numeric_limits<float>::infinity());
 }
 
 TEST_P(DistanceFieldTest, should_compute_nonhit_distance_for_object_out_of_max_range)
@@ -166,7 +165,7 @@ TEST_P(DistanceFieldTest, should_compute_nonhit_distance_for_object_out_of_max_r
 
 	getResults();
 
-	EXPECT_EQ(outDistances.at(0), INF);
+	EXPECT_EQ(outDistances.at(0), std::numeric_limits<float>::infinity());
 }
 
 TEST_P(DistanceFieldTest, should_compute_nonhit_distance_for_object_out_of_min_range)
@@ -182,7 +181,7 @@ TEST_P(DistanceFieldTest, should_compute_nonhit_distance_for_object_out_of_min_r
 
 	getResults();
 
-	EXPECT_EQ(outDistances.at(0), INF);
+	EXPECT_EQ(outDistances.at(0), std::numeric_limits<float>::infinity());
 }
 
 TEST_P(DistanceFieldTest, object_in_range_behind_object_out_of_min_range)
@@ -202,7 +201,7 @@ TEST_P(DistanceFieldTest, object_in_range_behind_object_out_of_min_range)
 
 	getResults();
 
-	EXPECT_EQ(outDistances.at(0), INF);
+	EXPECT_EQ(outDistances.at(0), std::numeric_limits<float>::infinity());
 }
 
 TEST_P(DistanceFieldTest, should_compute_correct_distances_for_various_ray_angles)

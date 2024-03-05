@@ -115,6 +115,11 @@ TEST_F(RaytraceNodeTest, config_non_hits_should_not_impact_hits)
 	float resolution = 30.0f;
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(fovX, fovY, resolution, resolution);
 
+	rgl_node_t rangeRaysNode = nullptr;
+	std::vector<rgl_vec2f> ranges{
+	    rgl_vec2f{0.0f, CUBE_HALF_EDGE + 1.0f}  // Ray should hit the cube
+	};
+
 	std::vector<rgl_field_t> outFields{XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32};
 
 	/**
@@ -125,10 +130,12 @@ TEST_F(RaytraceNodeTest, config_non_hits_should_not_impact_hits)
 	rgl_node_t yieldNode = nullptr;
 
 	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysNode, rays.data(), rays.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&rangeRaysNode, ranges.data(), ranges.size()));
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 	ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, outFields.data(), outFields.size()));
 
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, raytraceNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, rangeRaysNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(rangeRaysNode, raytraceNode));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
 
 	ASSERT_RGL_SUCCESS(rgl_graph_run(raysNode));
@@ -143,21 +150,10 @@ TEST_F(RaytraceNodeTest, config_non_hits_should_not_impact_hits)
 	 * Hits with raytrace non hits configuration scenario
 	 */
 
-	rgl_node_t rangeRaysNode = nullptr;
-	std::vector<rgl_vec2f> ranges{
-	    rgl_vec2f{0.0f, CUBE_HALF_EDGE + 1.0f}  // Ray should hit the cube
-	};
-
-	ASSERT_RGL_SUCCESS(rgl_node_rays_set_range(&rangeRaysNode, ranges.data(), ranges.size()));
-
 	const float nearNonHitDistance = 123.0f;
 	const float farNonHitDistance = 321.0f;
 
 	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytraceNode, nearNonHitDistance, farNonHitDistance));
-
-	ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(raysNode, raytraceNode));
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, rangeRaysNode));
-	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(rangeRaysNode, raytraceNode));
 
 	ASSERT_RGL_SUCCESS(rgl_graph_run(raysNode));
 

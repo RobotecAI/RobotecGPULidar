@@ -53,7 +53,6 @@ TEST_F(VelocityDistortionTest, smoke_test)
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_velocity(raytrace, &linearVelocity, &angularVelocity));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_distortion(raytrace, true));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytrace, INF, INF));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yield, outFields.data(), outFields.size()));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRays, offsetsNode));

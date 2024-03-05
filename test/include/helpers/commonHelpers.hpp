@@ -10,7 +10,6 @@
 
 static constexpr float EPSILON_F = 1e-6f;
 static constexpr int maxGPUCoresTestCount = 20000;
-static constexpr float INF = std::numeric_limits<float>::infinity();
 
 #define EXPECT_RGL_SUCCESS(status) EXPECT_EQ(status, rgl_status_t::RGL_SUCCESS)
 #define ASSERT_RGL_SUCCESS(status) ASSERT_EQ(status, rgl_status_t::RGL_SUCCESS)
