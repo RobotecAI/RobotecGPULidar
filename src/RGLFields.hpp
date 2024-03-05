@@ -31,8 +31,6 @@
  * - test/include/helpers/testPointCloud.hpp: add/delete fieldGenerator inside fieldGenerators
  */
 
-#define NON_HIT_VALUE FLT_MAX
-
 typedef unsigned char TextureTexelFormat;
 
 // Shorter versions to avoid long type names
@@ -117,7 +115,7 @@ FIELD(XYZ_VEC3_F32, Vec3f);
 FIELD(RAY_IDX_U32, uint32_t); // PCL uses uint32_t
 FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
-FIELD(IS_HIT_I32, int32_t); // Signed may be faster
+FIELD(IS_HIT_I32, int32_t);    // Signed may be faster
 FIELD(IS_GROUND_I32, int32_t); // Signed may be faster
 FIELD(DISTANCE_F32, float);
 FIELD(AZIMUTH_F32, float);

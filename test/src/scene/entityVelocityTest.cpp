@@ -198,9 +198,10 @@ TEST(EntityVelocity, Interactive)
 		auto pointsTransform = Mat3x4f::identity().toRGL();
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidarPoseRGL));
 		EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &pointsTransform));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace_in_motion(&raytrace, nullptr,
-		                                               reinterpret_cast<const rgl_vec3f*>(&sensorLinearVelocityXYZ),
-		                                               reinterpret_cast<const rgl_vec3f*>(&sensorAngularVelocityXYZ), false));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_velocity(raytrace,
+		                                                        reinterpret_cast<const rgl_vec3f*>(&sensorLinearVelocityXYZ),
+		                                                        reinterpret_cast<const rgl_vec3f*>(&sensorAngularVelocityXYZ)));
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
 

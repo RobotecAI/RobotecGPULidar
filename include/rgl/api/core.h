@@ -563,53 +563,42 @@ RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x
  */
 RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
 
-// TODO: Remove this API call on a new release. It is replaced by `rgl_node_raytrace_in_motion`.
 /**
- * Creates or modifies RaytraceNode.
- * The same as rgl_node_raytrace, but it applies velocity distortion additionally.
- * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
- * The velocities passed to that node must be in the local coordinate frame in which rays are described.
- * NOTE:
- * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
- * Graph input: rays
- * Graph output: point cloud (sparse)
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
- * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
- *                        The velocity is in units per second.
- * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
- *                         The velocity is in radians per second.
- */
-RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
-                                                       const rgl_vec3f* angular_velocity);
-
-/**
- * Creates or modifies RaytraceNode.
- * The same as rgl_node_raytrace, but it provides sensor's velocity to the pipeline.
- * It is required to perform velocity distortion or calculate fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32
- *
- * Velocity distortion:
- * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
- * The velocities passed to that node must be in the local coordinate frame in which rays are described.
- * NOTE:
- * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
- *
+ * Modifies RaytraceNode to apply sensor velocity.
+ * Necessary for velocity distortion or calculating fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32.
  * Relative velocity calculation:
  * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
  * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_mesh_update_vertices`
- *
- * Graph input: rays
- * Graph output: point cloud (sparse)
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
- * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
- *                        The velocity is in units per second.
- * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
- *                         The velocity is in radians per second.
- * @param apply_ray_distortion If true, velocity distortion feature will be enabled.
+ * @param node RaytraceNode to modify
+ * @param linear_velocity 3D vector for linear velocity in units per second.
+ * @param angular_velocity 3D vector for angular velocity in radians per second (roll, pitch, yaw).
  */
-RGL_API rgl_status_t rgl_node_raytrace_in_motion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
-                                                 const rgl_vec3f* angular_velocity, bool apply_ray_distortion);
+RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const rgl_vec3f* linear_velocity,
+                                                          const rgl_vec3f* angular_velocity);
+
+/**
+ * Modifies RaytraceNode to apply sensor distortion.
+ * Requires time offsets set to rays using rgl_node_rays_set_time_offsets.
+ * NOTE:
+ * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
+ * Use rgl_node_raytrace_configure_velocity to set sensor velocity.
+ * @param node RaytraceNode to modify
+ * @param enable If true, velocity distortion feature will be enabled.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable);
+
+/**
+ * Modifies RaytraceNode to set non-hit values for distance.
+ * Default non-hit value for the RGL_FIELD_DISTANCE_F32 field is set to infinity.
+ * This function allows to set custom values:
+ *  - for non-hits closer than a minimum range (`near`),
+ *  - for non-hits beyond a maximum range (`far`).
+ * Concurrently, it computes the RGL_FIELD_XYZ_VEC3_F32 field for these non-hit scenarios based on these distances, along with ray origin and direction.
+ * @param node RaytraceNode to modify.
+ * @param near Distance value for non-hits closer than minimum range.
+ * @param far Distance value for non-hits beyond maximum range.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float near, float far);
 
 /**
  * Creates or modifies FormatPointsNode.
@@ -641,7 +630,7 @@ RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* 
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  */
-RGL_API [[ deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.") ]] rgl_status_t
+RGL_API [[deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.")]] rgl_status_t
 rgl_node_points_compact(rgl_node_t* node);
 
 /**
@@ -734,7 +723,8 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float d
  * @param sensor_up_vector Pointer to single Vec3 describing up vector of depended frame.
  * @param ground_angle_threshold The maximum angle between the sensor's ray and the normal vector of the hit point in radians.
  */
-RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector, float ground_angle_threshold);
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
+                                                   float ground_angle_threshold);
 
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.
