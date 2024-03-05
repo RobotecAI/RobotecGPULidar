@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <math/Vector.hpp>
+#include <math/Mat3x4f.hpp>
 #include <rgl/api/core.h>
 
 /*
@@ -56,6 +57,7 @@ typedef unsigned char TextureTexelFormat;
 #define SNR_F32 RGL_FIELD_SNR_F32
 #define NORMAL_VEC3_F32 RGL_FIELD_NORMAL_VEC3_F32
 #define INCIDENT_ANGLE_F32 RGL_FIELD_INCIDENT_ANGLE_F32
+#define RAY_POSE_MAT3x4_F32 RGL_FIELD_RAY_POSE_MAT3x4_F32
 #define PADDING_8 RGL_FIELD_PADDING_8
 #define PADDING_16 RGL_FIELD_PADDING_16
 #define PADDING_32 RGL_FIELD_PADDING_32
@@ -84,6 +86,7 @@ inline const std::set<rgl_field_t>& getAllRealFields()
 	    SNR_F32,
 	    NORMAL_VEC3_F32,
 	    INCIDENT_ANGLE_F32,
+	    RAY_POSE_MAT3x4_F32,
 	};
 	return allRealFields;
 }
@@ -134,6 +137,7 @@ FIELD(NOISE_F32, float);
 FIELD(SNR_F32, float);
 FIELD(NORMAL_VEC3_F32, Vec3f);
 FIELD(INCIDENT_ANGLE_F32, float);
+FIELD(RAY_POSE_MAT3x4_F32, Mat3x4f);
 
 inline std::size_t getFieldSize(rgl_field_t type)
 {
@@ -159,6 +163,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case SNR_F32: return Field<SNR_F32>::size;
 		case NORMAL_VEC3_F32: return Field<NORMAL_VEC3_F32>::size;
 		case INCIDENT_ANGLE_F32: return Field<INCIDENT_ANGLE_F32>::size;
+		case RAY_POSE_MAT3x4_F32: return Field<RAY_POSE_MAT3x4_F32>::size;
 		case PADDING_8: return Field<PADDING_8>::size;
 		case PADDING_16: return Field<PADDING_16>::size;
 		case PADDING_32: return Field<PADDING_32>::size;
@@ -218,6 +223,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		case SNR_F32: return Subclass<Field<SNR_F32>::type>::create(std::forward<Args>(args)...);
 		case NORMAL_VEC3_F32: return Subclass<Field<NORMAL_VEC3_F32>::type>::create(std::forward<Args>(args)...);
 		case INCIDENT_ANGLE_F32: return Subclass<Field<INCIDENT_ANGLE_F32>::type>::create(std::forward<Args>(args)...);
+		case RAY_POSE_MAT3x4_F32: return Subclass<Field<RAY_POSE_MAT3x4_F32>::type>::create(std::forward<Args>(args)...);
 	}
 	throw std::invalid_argument(fmt::format("createArray: unknown RGL field {}", type));
 }
@@ -246,6 +252,7 @@ inline std::string toString(rgl_field_t type)
 		case SNR_F32: return "SNR_F32";
 		case NORMAL_VEC3_F32: return "NORMAL_VEC3_F32";
 		case INCIDENT_ANGLE_F32: return "INCIDENT_ANGLE_F32";
+		case RAY_POSE_MAT3x4_F32: return "RAY_POSE_MAT3x4_F32";
 		case PADDING_8: return "PADDING_8";
 		case PADDING_16: return "PADDING_16";
 		case PADDING_32: return "PADDING_32";
@@ -288,6 +295,15 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
 			        sensor_msgs::msg::PointField::FLOAT32};
 		case INCIDENT_ANGLE_F32: return {sensor_msgs::msg::PointField::FLOAT32};
+		case RAY_POSE_MAT3x4_F32:
+			return {
+			    sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			    sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			    sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			    sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			    sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			    sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
+			};
 		case PADDING_8: return {};
 		case PADDING_16: return {};
 		case PADDING_32: return {};
@@ -319,6 +335,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		case SNR_F32: return {"snr"};
 		case NORMAL_VEC3_F32: return {"nx", "ny", "nz"};
 		case INCIDENT_ANGLE_F32: return {"incident_angle"};
+		case RAY_POSE_MAT3x4_F32: return {"m00", "m01", "m02", "m03", "m10", "m11", "m12", "m13", "m20", "m21", "m22", "m23"};
 		case PADDING_8: return {};
 		case PADDING_16: return {};
 		case PADDING_32: return {};
@@ -334,6 +351,11 @@ inline std::vector<std::size_t> toRos2Sizes(rgl_field_t type)
 		case ABSOLUTE_VELOCITY_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
 		case RELATIVE_VELOCITY_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
 		case NORMAL_VEC3_F32: return {sizeof(float), sizeof(float), sizeof(float)};
+		case RAY_POSE_MAT3x4_F32:
+			return {
+			    sizeof(float), sizeof(float), sizeof(float), sizeof(float), sizeof(float), sizeof(float),
+			    sizeof(float), sizeof(float), sizeof(float), sizeof(float), sizeof(float), sizeof(float),
+			};
 		default: return {getFieldSize(type)};
 	}
 }

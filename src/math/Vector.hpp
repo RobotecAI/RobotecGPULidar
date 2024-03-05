@@ -55,7 +55,7 @@ struct Vector
 	HostDevFn Vector(const Vector<dim, U>& other)
 	{
 		for (int i = 0; i < dim; ++i) {
-			row[i] = static_cast<T>(other.row[i]);
+			row[i] = static_cast<T>(other[i]);
 		}
 	}
 
@@ -126,6 +126,15 @@ struct Vector
 	PIECEWISE_OPERATOR(/, /=)
 #undef PIECEWISE_OPERATOR
 
+	HostDevFn V operator-() const
+	{
+		V v;
+		for (int i = 0; i < dim; ++i) {
+			v.row[i] = -this->row[i];
+		}
+		return v;
+	}
+
 	HostDevFn T lengthSquared() const
 	{
 		auto sum = static_cast<T>(0);
@@ -177,6 +186,12 @@ struct Vector
 		value[1] = row[2] * other.row[0] - row[0] * other.row[2];
 		value[2] = row[0] * other.row[1] - row[1] * other.row[0];
 		return value;
+	}
+
+	template<int D = dim, typename std::enable_if_t<D == 3, int> = 0>
+	HostDevFn V toSpherical() const
+	{
+		return {length(), row[0] == 0 && row[1] == 0 ? 0 : atan2(row[1], row[0]), std::acos(row[2] / length())};
 	}
 
 private:

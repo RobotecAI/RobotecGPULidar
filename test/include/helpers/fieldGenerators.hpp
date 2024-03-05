@@ -79,6 +79,12 @@ static std::function<Field<NORMAL_VEC3_F32>::type(int)> genNormal = [](int i) {
 	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
 	             static_cast<float>(i) / (static_cast<float>(i) + 3));
 };
+static std::function<Field<RAY_POSE_MAT3x4_F32>::type(int)> genRayPose = [](int i) {
+	std::uniform_real_distribution<float> tr(-1, 1);
+	std::uniform_real_distribution<float> rotDeg(-2 * std::numbers::pi, 2 * std::numbers::pi);
+	return Mat3x4f::TRS(Vec3f(tr(randomGenerator), tr(randomGenerator), tr(randomGenerator)),
+	                    Vec3f(rotDeg(randomGenerator), rotDeg(randomGenerator), rotDeg(randomGenerator)));
+};
 
 static std::function<Field<IS_HIT_I32>::type(int)> genHalfHit = [](int i) { return i % 2; };
 static std::function<Field<IS_HIT_I32>::type(int)> genAllNonHit = [](int i) { return 0; };

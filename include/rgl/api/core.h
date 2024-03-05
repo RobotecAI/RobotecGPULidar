@@ -298,6 +298,11 @@ typedef enum : int32_t
 	 */
 	RGL_FIELD_INCIDENT_ANGLE_F32,
 
+	/**
+	 * 3x4 matrix describing pose of the ray in the world coordinate system.
+	 */
+	RGL_FIELD_RAY_POSE_MAT3x4_F32,
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
@@ -712,8 +717,12 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param distance_separation The maximum distance difference to create a new radar cluster (in simulation units).
  * @param azimuth_separation The maximum azimuth difference to create a new radar cluster (in radians).
+ * @param ray_azimuth_step The azimuth step between rays (in radians).
+ * @param ray_elevation_step The elevation step between rays (in radians).
+ * @param frequency The frequency of the radar (in Hz).
  */
-RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation);
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation,
+                                                       float ray_azimuth_step, float ray_elevation_step, float frequency);
 
 /**
  * Creates or modifies FilterGroundPointsNode.
