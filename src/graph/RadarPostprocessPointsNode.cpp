@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include <repr.hpp>
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
@@ -31,6 +32,19 @@ inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const
 void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad,
                                                float rayElevationStepRad, float frequency)
 {
+	// radarScopes validation
+	for (auto&& scope : radarScopes) {
+		if (scope.begin_distance < 0 || scope.end_distance < 0 || scope.distance_separation_threshold < 0 ||
+		    scope.radial_speed_separation_threshold < 0 || scope.azimuth_separation_threshold < 0) {
+			throw InvalidAPIArgument(fmt::format("radar scope parameters must be non-negative ('{}')", repr(&scope)));
+		}
+		if (scope.begin_distance > scope.end_distance) {
+			throw InvalidAPIArgument(
+			    fmt::format("radar scope the begin distance must be greater or equal to the end distance ('{}' <= '{}')",
+			                scope.begin_distance, scope.end_distance));
+		}
+	}
+
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
 	this->frequency = frequency;
