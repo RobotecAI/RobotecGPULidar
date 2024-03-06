@@ -102,7 +102,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	elevationInputHost->copyFrom(input->getFieldData(ELEVATION_F32));
 
 	std::vector<RadarCluster> clusters;
-	for (int i = 1; i < input->getPointCount(); ++i) {
+	for (int i = 0; i < input->getPointCount(); ++i) {
 		const auto distance = distanceInputHost->at(i);
 		const auto azimuth = azimuthInputHost->at(i);
 		const auto radialSpeed = radialSpeedInputHost->at(i);
@@ -203,7 +203,7 @@ IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 
 std::vector<rgl_field_t> RadarPostprocessPointsNode::getRequiredFieldList() const
 {
-	return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
+	return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, RAY_POSE_MAT3x4_F32, NORMAL_VEC3_F32, XYZ_VEC3_F32};
 }
 
 // RadarCluster methods implementation
