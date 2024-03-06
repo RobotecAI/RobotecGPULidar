@@ -21,7 +21,7 @@ inline static rgl_radar_separations_t getSeparationsWithinRange(const std::vecto
                                                                 Field<DISTANCE_F32>::type distance)
 {
 	for (auto&& separations : separationsList) {
-		if (distance >= separations.min_range && distance <= separations.max_range) {
+		if (separations.min_range <= distance && distance <= separations.max_range) {
 			return separations;
 		}
 	}
