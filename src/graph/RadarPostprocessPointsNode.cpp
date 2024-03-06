@@ -246,22 +246,33 @@ inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance
 inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(const RadarCluster& other,
                                                                    const std::vector<rgl_radar_scope_t>& radarScopes) const
 {
-	auto leftBound = getRadarScopeWithinDistance(radarScopes, std::max(minMaxDistance[0], other.minMaxDistance[1]));
-	auto rightBound = getRadarScopeWithinDistance(radarScopes, std::max(minMaxDistance[1], other.minMaxDistance[0]));
+	// Helper functions
+	auto areRangesOverlap = [](const Vec2f& a, const Vec2f& b) {
+		return (b[0] <= a[1] && b[1] >= a[0]) || (a[0] <= b[1] && a[1] >= b[0]);
+	};
+	auto areRangesWithinThreshold = [](const Vec2f& a, const Vec2f& b, float threshold) {
+		return std::abs(a[1] - b[0]) <= threshold || std::abs(b[1] - a[0]) <= threshold;
+	};
 
-	if (!leftBound.has_value() || !rightBound.has_value()) {
-		return false;
-	}
+	// Find distances that will be compared with each other:
+	// |---cluster1---|    |---cluster2---|
+	//                ^    ^
+	const float minDistanceToCompare = std::max(minMaxDistance[0], other.minMaxDistance[0]);
+	const float maxDistanceToCompare = std::min(minMaxDistance[1], other.minMaxDistance[1]);
+	const auto radarScope = getRadarScopeWithinDistance(radarScopes, std::max(minDistanceToCompare, maxDistanceToCompare));
 
-	bool isDistanceGood = std::abs(minMaxDistance[0] - other.minMaxDistance[1]) <= leftBound->distance_separation_threshold &&
-	                      std::abs(minMaxDistance[1] - other.minMaxDistance[0]) <= rightBound->distance_separation_threshold;
+	assert(radarScope.has_value()); // Must have value because it was already checked when creating clusters
 
-	bool isAzimuthGood = std::abs(minMaxAzimuth[0] - other.minMaxAzimuth[1]) <= leftBound->azimuth_separation_threshold &&
-	                     std::abs(minMaxAzimuth[1] - other.minMaxAzimuth[0]) <= rightBound->azimuth_separation_threshold;
+	bool isDistanceGood = areRangesOverlap(minMaxDistance, other.minMaxDistance) ||
+	                      areRangesWithinThreshold(minMaxDistance, other.minMaxDistance,
+	                                               radarScope->distance_separation_threshold);
 
-	bool isRadialSpeedGood =
-	    std::abs(minMaxRadialSpeed[0] - other.minMaxRadialSpeed[1]) <= leftBound->radial_speed_separation_threshold &&
-	    std::abs(minMaxRadialSpeed[1] - other.minMaxRadialSpeed[0]) <= rightBound->radial_speed_separation_threshold;
+	bool isAzimuthGood = areRangesOverlap(minMaxAzimuth, other.minMaxAzimuth) ||
+	                     areRangesWithinThreshold(minMaxAzimuth, other.minMaxAzimuth, radarScope->azimuth_separation_threshold);
+
+	bool isRadialSpeedGood = areRangesOverlap(minMaxRadialSpeed, other.minMaxRadialSpeed) ||
+	                         areRangesWithinThreshold(minMaxRadialSpeed, other.minMaxRadialSpeed,
+	                                                  radarScope->radial_speed_separation_threshold);
 
 	return isDistanceGood && isAzimuthGood && isRadialSpeedGood;
 }
