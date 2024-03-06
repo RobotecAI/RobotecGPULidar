@@ -141,7 +141,7 @@ static inline std::string repr(rgl_node_t* node)
 }
 
 template<>
-struct fmt::formatter<rgl_radar_separations_t>
+struct fmt::formatter<rgl_radar_scope_t>
 {
 	template<typename ParseContext>
 	constexpr auto parse(ParseContext& ctx)
@@ -150,9 +150,10 @@ struct fmt::formatter<rgl_radar_separations_t>
 	}
 
 	template<typename FormatContext>
-	auto format(const rgl_radar_separations_t& v, FormatContext& ctx)
+	auto format(const rgl_radar_scope_t& v, FormatContext& ctx)
 	{
-		return fmt::format_to(ctx.out(), "(min={}, max={}, distance={}, speed={}, azimuth={})", v.min_range, v.max_range,
-		                      v.distance_separation, v.speed_separation, v.azimuth_separation);
+		return fmt::format_to(ctx.out(), "(begin={}, end={}, separation_thresholds: [distance={}, speed={}, azimuth={}])",
+		                      v.begin_distance, v.end_distance, v.distance_separation_threshold,
+		                      v.radial_speed_separation_threshold, v.azimuth_separation_threshold);
 	}
 };

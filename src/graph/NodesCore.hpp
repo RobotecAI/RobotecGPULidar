@@ -467,8 +467,8 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
 
-	void setParameters(const std::vector<rgl_radar_separations_t>& separations, float rayAzimuthStepRad,
-	                   float rayElevationStepRad, float frequency);
+	void setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad, float rayElevationStepRad,
+	                   float frequency);
 
 	// Node
 	void validateImpl() override;
@@ -491,7 +491,7 @@ private:
 	    arrayMgr);
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
 	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
-	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr speedInputHost =
+	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedInputHost =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
 	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationInputHost = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
 	DeviceAsyncArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorDev =
@@ -503,7 +503,7 @@ private:
 	float rayElevationStepRad;
 	float frequency;
 
-	std::vector<rgl_radar_separations_t> separationsList;
+	std::vector<rgl_radar_scope_t> radarScopes;
 
 	// RGL related members
 	std::mutex getFieldDataMutex;
@@ -511,13 +511,13 @@ private:
 
 	struct RadarCluster
 	{
-		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float speed, float elevation);
+		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float radialSpeed, float elevation);
 		RadarCluster(RadarCluster&& other) noexcept = default;
 		RadarCluster& operator=(RadarCluster&& other) noexcept = default;
 
-		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float speed, float elevation);
-		inline bool isCandidate(float distance, float azimuth, float speed, const rgl_radar_separations_t& separations) const;
-		inline bool canMergeWith(const RadarCluster& other, const std::vector<rgl_radar_separations_t>& separationsList) const;
+		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float radialSpeed, float elevation);
+		inline bool isCandidate(float distance, float azimuth, float radialSpeed, const rgl_radar_scope_t& separations) const;
+		inline bool canMergeWith(const RadarCluster& other, const std::vector<rgl_radar_scope_t>& radarScopes) const;
 		void takeIndicesFrom(RadarCluster&& other);
 		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
 		                                                    const Field<ELEVATION_F32>::type* elevations) const;
@@ -526,7 +526,7 @@ private:
 		std::vector<Field<RAY_IDX_U32>::type> indices;
 		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
 		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
-		Vector<2, Field<RADIAL_SPEED_F32>::type> minMaxSpeed;
+		Vector<2, Field<RADIAL_SPEED_F32>::type> minMaxRadialSpeed;
 		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
 	};
 };

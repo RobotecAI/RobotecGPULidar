@@ -111,31 +111,31 @@ static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
 #endif
 
 /**
- * Radar separation settings with their operating range.
+ * Radar parameters applied at a given distance range.
  */
 typedef struct
 {
 	/**
-	 * The minimum distance range for the separations.
+	 * The beginning distance range for the parameters.
 	 */
-	float min_range;
+	float begin_distance;
 	/**
-	 * The maximum distance range for the separations.
+	 * The end range distance for the parameters.
 	 */
-	float max_range;
+	float end_distance;
 	/**
 	 * The maximum distance difference to create a new radar detection (in simulation units).
 	 */
-	float distance_separation;
+	float distance_separation_threshold;
 	/**
 	 * The maximum radial speed difference to create a new radar detection (in simulation units)
 	 */
-	float speed_separation;
+	float radial_speed_separation_threshold;
 	/**
 	 * The maximum azimuth difference to create a new radar detection (in radians).
 	 */
-	float azimuth_separation;
-} rgl_radar_separations_t;
+	float azimuth_separation_threshold;
+} rgl_radar_scope_t;
 
 #ifndef __cplusplus
 static_assert(sizeof(rgl_radar_separations_t) == 5 * sizeof(float));
@@ -764,21 +764,23 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * Creates or modifies RadarPostprocessPointsNode.
  * The Node processes point cloud to create radar-like output.
  * The point cloud is reduced by clustering input based on hit-point attributes: distance, radial speed and azimuth.
- * Separations may vary for different distance ranges, as radars may employ multiple frequency bands.
- * For this reason, the configuration allows the definition of multiple separation settings.
- * If the distance read is not within any of the separation ranges, then the separations will be zero.
+ * Some radar parameters may vary for different distance ranges, as radars may employ multiple frequency bands.
+ * For this reason, the configuration allows the definition of multiple radar scopes of parameters on the assumption that:
+ *   - in case of scopes that overlap, the first matching one will be used
+ *   - if the point is not within any of the radar scopes, it will be rejected
  * The output consists of the collection of one point per cluster (the closest to the azimuth and elevation center).
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param separations Array of radar separation settings. See `rgl_radar_separations_t` for more details.
- * @param separations_count Number of elements in the `separations` array.
+ * @param radar_scopes Array of radar scopes of parameters. See `rgl_radar_scope_t` for more details.
+ * @param radar_scopes_count Number of elements in the `radar_scopes` array.
  * @param ray_azimuth_step The azimuth step between rays (in radians).
  * @param ray_elevation_step The elevation step between rays (in radians).
  * @param frequency The frequency of the radar (in Hz).
  */
-RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_separations_t* separations,
-                                                       int32_t separations_count, float ray_azimuth_step, float ray_elevation_step, float frequency);
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
+                                                       int32_t radar_scopes_count, float ray_azimuth_step,
+                                                       float ray_elevation_step, float frequency);
 
 /**
  * Creates or modifies FilterGroundPointsNode.
@@ -790,7 +792,8 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * @param sensor_up_vector Pointer to single Vec3 describing up vector of depended frame.
  * @param ground_angle_threshold The maximum angle between the sensor's ray and the normal vector of the hit point in radians.
  */
-RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector, float ground_angle_threshold);
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
+                                                   float ground_angle_threshold);
 
 /**
  * Creates or modifies GaussianNoiseAngularRaysNode.

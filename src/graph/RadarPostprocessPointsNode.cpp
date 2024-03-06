@@ -17,28 +17,24 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-inline static rgl_radar_separations_t getSeparationsWithinRange(const std::vector<rgl_radar_separations_t>& separationsList,
-                                                                Field<DISTANCE_F32>::type distance)
+inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
+                                                                           Field<DISTANCE_F32>::type distance)
 {
-	for (auto&& separations : separationsList) {
-		if (separations.min_range <= distance && distance <= separations.max_range) {
-			return separations;
+	for (auto&& scope : radarScopes) {
+		if (scope.begin_distance <= distance && distance <= scope.end_distance) {
+			return scope;
 		}
 	}
-	return {.min_range = 0.0f,
-	        .max_range = 0.0f,
-	        .distance_separation = 0.0f,
-	        .speed_separation = 0.0f,
-	        .azimuth_separation = 0.0f};
+	return std::nullopt;
 }
 
-void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_separations_t>& separationsList,
-                                               float rayAzimuthStepRad, float rayElevationStepRad, float frequency)
+void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad,
+                                               float rayElevationStepRad, float frequency)
 {
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
 	this->frequency = frequency;
-	this->separationsList = separationsList;
+	this->radarScopes = radarScopes;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -59,13 +55,13 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 {
 	cacheManager.trigger();
 
-	auto rays = input->getFieldDataTyped<RAY_POSE_MAT3x4_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	auto distance = input->getFieldDataTyped<DISTANCE_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	auto normal = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
-	auto xyz = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto raysPtr = input->getFieldDataTyped<RAY_POSE_MAT3x4_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto distancePtr = input->getFieldDataTyped<DISTANCE_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto normalPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
+	auto xyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	outBUBRFactorDev->resize(input->getPointCount(), false, false);
-	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency, rays,
-	                      distance, normal, xyz, outBUBRFactorDev->getWritePtr());
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency, raysPtr,
+	                      distancePtr, normalPtr, xyzPtr, outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 
@@ -88,24 +84,23 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	distanceInputHost->copyFrom(input->getFieldData(DISTANCE_F32));
 	azimuthInputHost->copyFrom(input->getFieldData(AZIMUTH_F32));
-	speedInputHost->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
+	radialSpeedInputHost->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
 	elevationInputHost->copyFrom(input->getFieldData(ELEVATION_F32));
 
 	std::vector<RadarCluster> clusters;
-	// Create first cluster with the first point
-	clusters.emplace_back(0, distanceInputHost->getReadPtr()[0], azimuthInputHost->getReadPtr()[0],
-	                      speedInputHost->getReadPtr()[0], elevationInputHost->getReadPtr()[0]);
-
 	for (int i = 1; i < input->getPointCount(); ++i) {
-		auto distance = distanceInputHost->getReadPtr()[i];
-		auto azimuth = azimuthInputHost->getReadPtr()[i];
-		auto speed = speedInputHost->getReadPtr()[i];
-		auto elevation = elevationInputHost->getReadPtr()[i];
+		const auto distance = distanceInputHost->at(i);
+		const auto azimuth = azimuthInputHost->at(i);
+		const auto radialSpeed = radialSpeedInputHost->at(i);
+		const auto elevation = elevationInputHost->at(i);
 		bool isPointClustered = false;
-		auto separations = getSeparationsWithinRange(separationsList, distance);
+		const auto radarScope = getRadarScopeWithinDistance(radarScopes, distance);
+		if (!radarScope.has_value()) {
+			continue;
+		}
 		for (auto&& cluster : clusters) {
-			if (cluster.isCandidate(distance, azimuth, speed, separations)) {
-				cluster.addPoint(i, distance, azimuth, speed, elevation);
+			if (cluster.isCandidate(distance, azimuth, radialSpeed, radarScope.value())) {
+				cluster.addPoint(i, distance, azimuth, radialSpeed, elevation);
 				isPointClustered = true;
 				break;
 			}
@@ -113,7 +108,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 		if (!isPointClustered) {
 			// Create a new cluster
-			clusters.emplace_back(i, distance, azimuth, speed, elevation);
+			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
 		}
 	}
 
@@ -123,7 +118,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		allClustersGood = true;
 		for (int i = 0; i < clusters.size(); ++i) {
 			for (int j = i + 1; j < clusters.size(); ++j) {
-				if (clusters[i].canMergeWith(clusters[j], separationsList)) {
+				if (clusters[i].canMergeWith(clusters[j], radarScopes)) {
 					clusters[i].takeIndicesFrom(std::move(clusters[j]));
 					clusters.erase(clusters.begin() + j);
 					allClustersGood = false;
@@ -200,56 +195,61 @@ std::vector<rgl_field_t> RadarPostprocessPointsNode::getRequiredFieldList() cons
 // RadarCluster methods implementation
 
 RadarPostprocessPointsNode::RadarCluster::RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth,
-                                                       float speed, float elevation)
+                                                       float radialSpeed, float elevation)
 {
 	indices.emplace_back(index);
 	minMaxDistance = {distance, distance};
 	minMaxAzimuth = {azimuth, azimuth};
-	minMaxSpeed = {speed, speed};
+	minMaxRadialSpeed = {radialSpeed, radialSpeed};
 	minMaxElevation = {elevation, elevation};
 }
 
 void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth,
-                                                        float velocity, float elevation)
+                                                        float radialSpeed, float elevation)
 {
 	indices.emplace_back(index);
 	minMaxDistance[0] = std::min(minMaxDistance[0], distance);
 	minMaxDistance[1] = std::max(minMaxDistance[1], distance);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], azimuth);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], azimuth);
-	minMaxSpeed[0] = std::min(minMaxSpeed[0], velocity);
-	minMaxSpeed[1] = std::max(minMaxSpeed[1], velocity);
+	minMaxRadialSpeed[0] = std::min(minMaxRadialSpeed[0], radialSpeed);
+	minMaxRadialSpeed[1] = std::max(minMaxRadialSpeed[1], radialSpeed);
 	minMaxElevation[0] = std::min(minMaxElevation[0], elevation);
 	minMaxElevation[1] = std::max(minMaxElevation[1], elevation);
 }
 
-inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance, float azimuth, float velocity,
-                                                                  const rgl_radar_separations_t& separations) const
+inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance, float azimuth, float radialSpeed,
+                                                                  const rgl_radar_scope_t& radarScope) const
 {
-	return (distance >= minMaxDistance[0] - separations.distance_separation &&
-	        distance <= minMaxDistance[1] + separations.distance_separation) &&
-	       (azimuth >= minMaxAzimuth[0] - separations.azimuth_separation &&
-	        azimuth <= minMaxAzimuth[1] + separations.azimuth_separation) &&
-	       (velocity >= minMaxSpeed[0] - separations.speed_separation &&
-	        velocity <= minMaxSpeed[1] + separations.speed_separation);
+	return (distance >= minMaxDistance[0] - radarScope.distance_separation_threshold &&
+	        distance <= minMaxDistance[1] + radarScope.distance_separation_threshold) &&
+	       (azimuth >= minMaxAzimuth[0] - radarScope.azimuth_separation_threshold &&
+	        azimuth <= minMaxAzimuth[1] + radarScope.azimuth_separation_threshold) &&
+	       (radialSpeed >= minMaxRadialSpeed[0] - radarScope.radial_speed_separation_threshold &&
+	        radialSpeed <= minMaxRadialSpeed[1] + radarScope.radial_speed_separation_threshold);
 }
 
-inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(
-    const RadarCluster& other, const std::vector<rgl_radar_separations_t>& separations) const
+inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(const RadarCluster& other,
+                                                                   const std::vector<rgl_radar_scope_t>& radarScopes) const
 {
-	auto leftBound = getSeparationsWithinRange(separations, std::max(minMaxDistance[0], other.minMaxDistance[1]));
-	auto rightBound = getSeparationsWithinRange(separations, std::max(minMaxDistance[1], other.minMaxDistance[0]));
+	auto leftBound = getRadarScopeWithinDistance(radarScopes, std::max(minMaxDistance[0], other.minMaxDistance[1]));
+	auto rightBound = getRadarScopeWithinDistance(radarScopes, std::max(minMaxDistance[1], other.minMaxDistance[0]));
 
-	bool isDistanceGood = std::abs(minMaxDistance[0] - other.minMaxDistance[1]) <= leftBound.distance_separation &&
-	                      std::abs(minMaxDistance[1] - other.minMaxDistance[0]) <= rightBound.distance_separation;
+	if (!leftBound.has_value() || !rightBound.has_value()) {
+		return false;
+	}
 
-	bool isAzimuthGood = std::abs(minMaxAzimuth[0] - other.minMaxAzimuth[1]) <= leftBound.azimuth_separation &&
-	                     std::abs(minMaxAzimuth[1] - other.minMaxAzimuth[0]) <= rightBound.azimuth_separation;
+	bool isDistanceGood = std::abs(minMaxDistance[0] - other.minMaxDistance[1]) <= leftBound->distance_separation_threshold &&
+	                      std::abs(minMaxDistance[1] - other.minMaxDistance[0]) <= rightBound->distance_separation_threshold;
 
-	bool isVelocityGood = std::abs(minMaxSpeed[0] - other.minMaxSpeed[1]) <= leftBound.speed_separation &&
-	                      std::abs(minMaxSpeed[1] - other.minMaxSpeed[0]) <= rightBound.speed_separation;
+	bool isAzimuthGood = std::abs(minMaxAzimuth[0] - other.minMaxAzimuth[1]) <= leftBound->azimuth_separation_threshold &&
+	                     std::abs(minMaxAzimuth[1] - other.minMaxAzimuth[0]) <= rightBound->azimuth_separation_threshold;
 
-	return isDistanceGood && isAzimuthGood && isVelocityGood;
+	bool isRadialSpeedGood =
+	    std::abs(minMaxRadialSpeed[0] - other.minMaxRadialSpeed[1]) <= leftBound->radial_speed_separation_threshold &&
+	    std::abs(minMaxRadialSpeed[1] - other.minMaxRadialSpeed[0]) <= rightBound->radial_speed_separation_threshold;
+
+	return isDistanceGood && isAzimuthGood && isRadialSpeedGood;
 }
 
 void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& other)
@@ -258,8 +258,8 @@ void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& ot
 	minMaxDistance[1] = std::max(minMaxDistance[1], other.minMaxDistance[1]);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], other.minMaxAzimuth[0]);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], other.minMaxAzimuth[1]);
-	minMaxSpeed[0] = std::min(minMaxSpeed[0], other.minMaxSpeed[0]);
-	minMaxSpeed[1] = std::max(minMaxSpeed[1], other.minMaxSpeed[1]);
+	minMaxRadialSpeed[0] = std::min(minMaxRadialSpeed[0], other.minMaxRadialSpeed[0]);
+	minMaxRadialSpeed[1] = std::max(minMaxRadialSpeed[1], other.minMaxRadialSpeed[1]);
 	minMaxElevation[0] = std::min(minMaxElevation[0], other.minMaxElevation[0]);
 	minMaxElevation[1] = std::max(minMaxElevation[1], other.minMaxElevation[1]);
 
