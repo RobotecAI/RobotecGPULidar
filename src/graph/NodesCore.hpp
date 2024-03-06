@@ -365,7 +365,11 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	void enqueueExecImpl() override {}
 
 	// Point cloud description
-	bool isDense() const override { return false; }
+	bool isDense() const override
+	{
+		// If point cloud doesn't contain IS_HIT field we assume all points are hits.
+		return !fieldData.contains(RGL_FIELD_IS_HIT_I32);
+	}
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return width; }
 	size_t getHeight() const override { return 1; }
