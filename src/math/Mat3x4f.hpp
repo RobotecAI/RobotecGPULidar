@@ -270,7 +270,7 @@ struct fmt::formatter<Mat3x4f>
 };
 #endif // __CUDACC__
 
-static_assert(std::is_trivially_copyable<Mat3x4f>::value);
-static_assert(std::is_trivially_constructible<Mat3x4f>::value);
+static_assert(std::is_trivially_copyable_v<Mat3x4f>);
+static_assert(std::is_standard_layout_v<Mat3x4f>);
 static_assert(sizeof(Mat3x4f) == 12 * sizeof(float));
 static_assert(alignof(Mat3x4f) == 4);

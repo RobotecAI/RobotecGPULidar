@@ -61,6 +61,12 @@ typedef struct
 	float value[2];
 } rgl_vec2f;
 
+#ifndef __cplusplus
+static_assert(sizeof(rgl_vec2f) == 2 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_vec2f>);
+static_assert(std::is_standard_layout_v<rgl_vec2f>);
+#endif
+
 /**
  * Three consecutive 32-bit floats.
  */
@@ -71,6 +77,8 @@ typedef struct
 
 #ifndef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_vec3f>);
+static_assert(std::is_standard_layout_v<rgl_vec3f>);
 #endif
 
 /**
@@ -81,6 +89,12 @@ typedef struct
 	int32_t value[3];
 } rgl_vec3i;
 
+#ifndef __cplusplus
+static_assert(sizeof(rgl_vec3i) == 3 * sizeof(int32_t));
+static_assert(std::is_trivial_v<rgl_vec3i>);
+static_assert(std::is_standard_layout_v<rgl_vec3i>);
+#endif
+
 /**
  * Row-major matrix with 3 rows and 4 columns of 32-bit floats.
  * Right-handed coordinate system.
@@ -89,6 +103,45 @@ typedef struct
 {
 	float value[3][4];
 } rgl_mat3x4f;
+
+#ifndef __cplusplus
+static_assert(sizeof(rgl_mat3x4f) == 3 * 4 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_mat3x4f>);
+static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
+#endif
+
+/**
+ * Radar parameters applied at a given distance range.
+ */
+typedef struct
+{
+	/**
+	 * The beginning distance range for the parameters.
+	 */
+	float begin_distance;
+	/**
+	 * The end range distance for the parameters.
+	 */
+	float end_distance;
+	/**
+	 * The maximum distance difference to create a new radar detection (in simulation units).
+	 */
+	float distance_separation_threshold;
+	/**
+	 * The maximum radial speed difference to create a new radar detection (in simulation units)
+	 */
+	float radial_speed_separation_threshold;
+	/**
+	 * The maximum azimuth difference to create a new radar detection (in radians).
+	 */
+	float azimuth_separation_threshold;
+} rgl_radar_scope_t;
+
+#ifndef __cplusplus
+static_assert(sizeof(rgl_radar_separations_t) == 5 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_radar_separations_t>);
+static_assert(std::is_standard_layout_v<rgl_radar_separations_t>);
+#endif
 
 /**
  * Represents on-GPU Mesh that can be referenced by Entities on the Scene.
@@ -699,19 +752,24 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
 /**
  * Creates or modifies RadarPostprocessPointsNode.
  * The Node processes point cloud to create radar-like output.
- * The point cloud is reduced by clustering input based on hit-point distance and hit-point azimuth.
+ * The point cloud is reduced by clustering input based on hit-point attributes: distance, radial speed and azimuth.
+ * Some radar parameters may vary for different distance ranges, as radars may employ multiple frequency bands.
+ * For this reason, the configuration allows the definition of multiple radar scopes of parameters on the assumption that:
+ *   - in case of scopes that overlap, the first matching one will be used
+ *   - if the point is not within any of the radar scopes, it will be rejected
  * The output consists of the collection of one point per cluster (the closest to the azimuth and elevation center).
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param distance_separation The maximum distance difference to create a new radar cluster (in simulation units).
- * @param azimuth_separation The maximum azimuth difference to create a new radar cluster (in radians).
+ * @param radar_scopes Array of radar scopes of parameters. See `rgl_radar_scope_t` for more details.
+ * @param radar_scopes_count Number of elements in the `radar_scopes` array.
  * @param ray_azimuth_step The azimuth step between rays (in radians).
  * @param ray_elevation_step The elevation step between rays (in radians).
  * @param frequency The frequency of the radar (in Hz).
  */
-RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, float distance_separation, float azimuth_separation,
-                                                       float ray_azimuth_step, float ray_elevation_step, float frequency);
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
+                                                       int32_t radar_scopes_count, float ray_azimuth_step,
+                                                       float ray_elevation_step, float frequency);
 
 /**
  * Creates or modifies FilterGroundPointsNode.
