@@ -1,8 +1,14 @@
 name: build-and-test
 
-run-name: Build & test for PR '${{ github.event.pull_request.title }}'
+run-name: Build & test for ${{ github.ref_name }} on ${{ github.sha }}
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - 'main'
+      - 'develop'
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 # Cancel previous runs if new changes on PR/branch
 concurrency:
