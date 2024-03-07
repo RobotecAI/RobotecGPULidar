@@ -19,6 +19,10 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+#include <type_traits>
+#endif
+
+#ifdef __cplusplus
 #define NO_MANGLING extern "C"
 #else // NOT __cplusplus
 #define NO_MANGLING
@@ -61,7 +65,7 @@ typedef struct
 	float value[2];
 } rgl_vec2f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec2f) == 2 * sizeof(float));
 static_assert(std::is_trivial_v<rgl_vec2f>);
 static_assert(std::is_standard_layout_v<rgl_vec2f>);
@@ -75,7 +79,7 @@ typedef struct
 	float value[3];
 } rgl_vec3f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
 static_assert(std::is_trivial_v<rgl_vec3f>);
 static_assert(std::is_standard_layout_v<rgl_vec3f>);
@@ -89,7 +93,7 @@ typedef struct
 	int32_t value[3];
 } rgl_vec3i;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec3i) == 3 * sizeof(int32_t));
 static_assert(std::is_trivial_v<rgl_vec3i>);
 static_assert(std::is_standard_layout_v<rgl_vec3i>);
@@ -104,7 +108,7 @@ typedef struct
 	float value[3][4];
 } rgl_mat3x4f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_mat3x4f) == 3 * 4 * sizeof(float));
 static_assert(std::is_trivial_v<rgl_mat3x4f>);
 static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
@@ -137,10 +141,10 @@ typedef struct
 	float azimuth_separation_threshold;
 } rgl_radar_scope_t;
 
-#ifndef __cplusplus
-static_assert(sizeof(rgl_radar_separations_t) == 5 * sizeof(float));
-static_assert(std::is_trivial_v<rgl_radar_separations_t>);
-static_assert(std::is_standard_layout_v<rgl_radar_separations_t>);
+#ifdef __cplusplus
+static_assert(sizeof(rgl_radar_scope_t) == 5 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_radar_scope_t>);
+static_assert(std::is_standard_layout_v<rgl_radar_scope_t>);
 #endif
 
 /**
