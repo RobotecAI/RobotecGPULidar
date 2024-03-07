@@ -506,6 +506,10 @@ private:
 	    DeviceAsyncArray<Vector<3, thrust::complex<float>>>::create(arrayMgr);
 	HostPinnedArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorHost =
 	    HostPinnedArray<Vector<3, thrust::complex<float>>>::create();
+	std::vector<Field<RCS_F32>::type> clusterRcsHost;
+	std::vector<Field<POWER_F32>::type> clusterPowerHost;
+	std::vector<Field<NOISE_F32>::type> clusterNoiseHost;
+	std::vector<Field<SNR_F32>::type> clusterSnrHost;
 
 	float rayAzimuthStepRad;
 	float rayElevationStepRad;
@@ -530,7 +534,6 @@ private:
 		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
 		                                                    const Field<ELEVATION_F32>::type* elevations) const;
 
-	private:
 		std::vector<Field<RAY_IDX_U32>::type> indices;
 		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
 		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;

@@ -18,6 +18,11 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
+// For now, values are hardcoded for the target radar. Everything in SI units.
+constexpr auto POWER_TRANSMITTER = std::numbers::pi_v<float>;
+constexpr auto ANTENNA_GAIN = 27.0f;
+constexpr auto ANTENNA_EFFECTIVE_AREA = std::numbers::e_v<float>;
+
 inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
                                                                            Field<DISTANCE_F32>::type distance)
 {
@@ -65,18 +70,6 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	                      distancePtr, normalPtr, xyzPtr, outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
-
-	// Computing RCS (example for all points)
-	//	std::complex<float> AU = 0;
-	//	std::complex<float> AR = 0;
-	//	for (int hitIdx = 0; hitIdx < outBUBRFactorHost->getCount(); ++hitIdx) {
-	//		std::complex<float> BU = {outBUBRFactorHost->at(hitIdx)[0].real(), outBUBRFactorHost->at(hitIdx)[0].imag()};
-	//		std::complex<float> BR = {outBUBRFactorHost->at(hitIdx)[1].real(), outBUBRFactorHost->at(hitIdx)[1].imag()};
-	//		std::complex<float> factor = {outBUBRFactorHost->at(hitIdx)[2].real(), outBUBRFactorHost->at(hitIdx)[2].imag()};
-	//		AU += BU * factor;
-	//		AR += BR * factor;
-	//	}
-	//	float rcs = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 
 	if (input->getPointCount() == 0) {
 		filteredIndices->resize(0, false, false);
@@ -139,6 +132,35 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	}
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
+
+	// Compute per-cluster properties
+	clusterRcsHost.resize(filteredIndicesHost.size());
+	clusterPowerHost.resize(filteredIndicesHost.size());
+	clusterNoiseHost.resize(filteredIndicesHost.size());
+	clusterSnrHost.resize(filteredIndicesHost.size());
+	for (int clusterIdx = 0; clusterIdx < filteredIndicesHost.size(); ++clusterIdx) {
+		std::complex<float> AU = 0;
+		std::complex<float> AR = 0;
+		auto&& cluster = clusters[clusterIdx];
+		for (int pointInCluster = 0; pointInCluster < outBUBRFactorHost->getCount(); ++pointInCluster) {
+			std::complex<float> BU = {outBUBRFactorHost->at(pointInCluster)[0].real(),
+			                          outBUBRFactorHost->at(pointInCluster)[0].imag()};
+			std::complex<float> BR = {outBUBRFactorHost->at(pointInCluster)[1].real(),
+			                          outBUBRFactorHost->at(pointInCluster)[1].imag()};
+			std::complex<float> factor = {outBUBRFactorHost->at(pointInCluster)[2].real(),
+			                              outBUBRFactorHost->at(pointInCluster)[2].imag()};
+			AU += BU * factor;
+			AR += BR * factor;
+		}
+		clusterRcsHost[clusterIdx] = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
+		auto distance = (cluster.minMaxDistance[0] + cluster.minMaxDistance[1]) / 2.0f;
+		auto sphereArea = 4.0f * std::numbers::pi_v<float> * pow(distance, 2.0f);
+		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
+		clusterPowerHost[clusterIdx] = POWER_TRANSMITTER * ANTENNA_GAIN * ANTENNA_EFFECTIVE_AREA * clusterRcsHost[clusterIdx] /
+		                               pow(sphereArea, 2.0f);
+		clusterNoiseHost[clusterIdx] = 1.0f;
+		clusterSnrHost[clusterIdx] = clusterPowerHost[clusterIdx] - clusterNoiseHost[clusterIdx];
+	}
 
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data
 	// Doing job there would be:
