@@ -1046,6 +1046,15 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
 		CHECK_ARG(ray_elevation_step > 0);
 		CHECK_ARG(frequency > 0);
 
+		for (int i = 0; i < radar_scopes_count; ++i) {
+			CHECK_ARG(radar_scopes[i].begin_distance >= 0);
+			CHECK_ARG(radar_scopes[i].end_distance >= 0);
+			CHECK_ARG(radar_scopes[i].distance_separation_threshold >= 0);
+			CHECK_ARG(radar_scopes[i].radial_speed_separation_threshold >= 0);
+			CHECK_ARG(radar_scopes[i].azimuth_separation_threshold >= 0);
+			CHECK_ARG(radar_scopes[i].end_distance >= radar_scopes[i].begin_distance);
+		}
+
 		createOrUpdateNode<RadarPostprocessPointsNode>(
 		    node, std::vector<rgl_radar_scope_t>{radar_scopes, radar_scopes + radar_scopes_count}, ray_azimuth_step,
 		    ray_elevation_step, frequency);
