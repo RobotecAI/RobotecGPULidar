@@ -506,10 +506,16 @@ private:
 	    DeviceAsyncArray<Vector<3, thrust::complex<float>>>::create(arrayMgr);
 	HostPinnedArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorHost =
 	    HostPinnedArray<Vector<3, thrust::complex<float>>>::create();
-	std::vector<Field<RCS_F32>::type> clusterRcsHost;
-	std::vector<Field<POWER_F32>::type> clusterPowerHost;
-	std::vector<Field<NOISE_F32>::type> clusterNoiseHost;
-	std::vector<Field<SNR_F32>::type> clusterSnrHost;
+
+	HostPageableArray<Field<RCS_F32>::type>::Ptr clusterRcsHost = HostPageableArray<Field<RCS_F32>::type>::create();
+	HostPageableArray<Field<POWER_F32>::type>::Ptr clusterPowerHost = HostPageableArray<Field<POWER_F32>::type>::create();
+	HostPageableArray<Field<NOISE_F32>::type>::Ptr clusterNoiseHost = HostPageableArray<Field<NOISE_F32>::type>::create();
+	HostPageableArray<Field<SNR_F32>::type>::Ptr clusterSnrHost = HostPageableArray<Field<SNR_F32>::type>::create();
+
+	DeviceAsyncArray<Field<RCS_F32>::type>::Ptr clusterRcsDev = DeviceAsyncArray<Field<RCS_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<POWER_F32>::type>::Ptr clusterPowerDev = DeviceAsyncArray<Field<POWER_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<NOISE_F32>::type>::Ptr clusterNoiseDev = DeviceAsyncArray<Field<NOISE_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<SNR_F32>::type>::Ptr clusterSnrDev = DeviceAsyncArray<Field<SNR_F32>::type>::create(arrayMgr);
 
 	float rayAzimuthStepRad;
 	float rayElevationStepRad;

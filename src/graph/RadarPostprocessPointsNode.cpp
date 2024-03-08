@@ -21,7 +21,7 @@
 // For now, values are hardcoded for the target radar. Everything in SI units.
 constexpr auto POWER_TRANSMITTER = std::numbers::pi_v<float>;
 constexpr auto ANTENNA_GAIN = 27.0f;
-constexpr auto ANTENNA_EFFECTIVE_AREA = std::numbers::e_v<float>;
+constexpr auto ANTENNA_EFFECTIVE_AREA = std::numbers::e_v<float> / 10'000; // A few cm2
 
 inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
                                                                            Field<DISTANCE_F32>::type distance)
@@ -134,10 +134,10 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
 
 	// Compute per-cluster properties
-	clusterRcsHost.resize(filteredIndicesHost.size());
-	clusterPowerHost.resize(filteredIndicesHost.size());
-	clusterNoiseHost.resize(filteredIndicesHost.size());
-	clusterSnrHost.resize(filteredIndicesHost.size());
+	clusterRcsHost->resize(filteredIndicesHost.size(), false, false);
+	clusterPowerHost->resize(filteredIndicesHost.size(), false, false);
+	clusterNoiseHost->resize(filteredIndicesHost.size(), false, false);
+	clusterSnrHost->resize(filteredIndicesHost.size(), false, false);
 	for (int clusterIdx = 0; clusterIdx < filteredIndicesHost.size(); ++clusterIdx) {
 		std::complex<float> AU = 0;
 		std::complex<float> AR = 0;
@@ -152,15 +152,21 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 			AU += BU * factor;
 			AR += BR * factor;
 		}
-		clusterRcsHost[clusterIdx] = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
+		clusterRcsHost->at(clusterIdx) = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
+		//		clusterRcsHost->at(clusterIdx) /= 3.0f; // TODO
 		auto distance = (cluster.minMaxDistance[0] + cluster.minMaxDistance[1]) / 2.0f;
-		auto sphereArea = 4.0f * std::numbers::pi_v<float> * pow(distance, 2.0f);
+		auto sphereArea = 4.0f * std::numbers::pi_v<float> * powf(distance, 2.0f);
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
-		clusterPowerHost[clusterIdx] = POWER_TRANSMITTER * ANTENNA_GAIN * ANTENNA_EFFECTIVE_AREA * clusterRcsHost[clusterIdx] /
-		                               pow(sphereArea, 2.0f);
-		clusterNoiseHost[clusterIdx] = 1.0f;
-		clusterSnrHost[clusterIdx] = clusterPowerHost[clusterIdx] - clusterNoiseHost[clusterIdx];
+		clusterPowerHost->at(clusterIdx) = 10 * std::log10(ANTENNA_GAIN * ANTENNA_EFFECTIVE_AREA *
+		                                                   powf(10, clusterRcsHost->at(clusterIdx) / 10.0f) /
+		                                                   powf(sphereArea, 2.0f));
+		clusterNoiseHost->at(clusterIdx) = 1.0f;
+		clusterSnrHost->at(clusterIdx) = clusterPowerHost->at(clusterIdx) - clusterNoiseHost->at(clusterIdx);
 	}
+	clusterPowerDev->copyFrom(clusterPowerHost);
+	clusterRcsDev->copyFrom(clusterRcsHost);
+	clusterNoiseDev->copyFrom(clusterNoiseHost);
+	clusterSnrDev->copyFrom(clusterSnrHost);
 
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data
 	// Doing job there would be:
@@ -184,6 +190,19 @@ size_t RadarPostprocessPointsNode::getWidth() const
 IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 {
 	std::lock_guard lock{getFieldDataMutex};
+
+	if (field == POWER_F32) {
+		return clusterPowerDev->asAny();
+	}
+	if (field == RCS_F32) {
+		return clusterRcsDev->asAny();
+	}
+	if (field == NOISE_F32) {
+		return clusterNoiseDev->asAny();
+	}
+	if (field == SNR_F32) {
+		return clusterSnrDev->asAny();
+	}
 
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);

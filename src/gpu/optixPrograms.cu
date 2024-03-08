@@ -112,7 +112,7 @@ __forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
 	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
 	                isnan(displacement.z()) ? 0 : displacement.z()};
 	Vec3f xyz = origin + displacement;
-	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, NAN, Vec3f{NAN}, NAN);
+	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.001f, Vec3f{NAN}, NAN);
 }
 
 extern "C" __global__ void __raygen__()
@@ -228,7 +228,7 @@ extern "C" __global__ void __closesthit__()
 
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
-	float radialSpeed{NAN};
+	float radialSpeed{0.014};
 	bool isVelocityRequested = ctx.pointAbsVelocity != nullptr || ctx.pointRelVelocity != nullptr || ctx.radialSpeed != nullptr;
 	if (ctx.sceneDeltaTime > 0 && isVelocityRequested) {
 		Vec3f displacementFromTransformChange = {0, 0, 0};
