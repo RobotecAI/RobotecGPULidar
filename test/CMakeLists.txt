@@ -118,3 +118,38 @@ endif()
 include(GoogleTest)
 
 gtest_discover_tests(RobotecGPULidar_test)
+
+include(FetchContent)
+
+if (RGL_BUILD_INTEGRATION_TEST)
+    FetchContent_Declare(
+        rgltest
+        GIT_REPOSITORY git@github.com:RobotecAI/RGL-blobs.git
+        GIT_TAG test/integration-using-tape
+    )
+
+    FetchContent_GetProperties(rgltest)
+    if (NOT rgltest_POPULATED)
+        FetchContent_Populate(rgltest)
+    endif()
+
+    set(RGL_INTEGRATION_TEST_FILES
+        ${rgltest_SOURCE_DIR}/test/TapeIntegrationTest.cpp
+    )
+
+    add_executable(RobotecGPULidar_integration_test ${RGL_INTEGRATION_TEST_FILES})
+
+    target_link_libraries(RobotecGPULidar_integration_test PRIVATE
+        gtest_main
+        gmock_main
+        RobotecGPULidar
+    )
+
+    target_include_directories(RobotecGPULidar_integration_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    gtest_discover_tests(RobotecGPULidar_integration_test)
+
+endif ()

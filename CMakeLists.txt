@@ -21,6 +21,8 @@ set(RGL_AUTO_TAPE_PATH "" CACHE STRING  # STRING prevents from expanding relativ
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
     "Enables building test. GTest will be automatically downloaded")
+set(RGL_BUILD_INTEGRATION_TEST OFF CACHE BOOL
+    "Enables building integration test using Tape. Benchmark data will be automatically downloaded from RGL-blobs repository")
 
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
@@ -46,7 +48,7 @@ if (WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)  # https://www.kitware.com//create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
 endif()
 
-if (WIN32 AND RGL_BUILD_TESTS)
+if (WIN32 AND (RGL_BUILD_TESTS OR RGL_BUILD_INTEGRATION_TEST))
     # Sometimes, for convenience, tests reference non-public symbols from the library
     # By default, those symbols are not visible and not annotated with __declspec(dllexport)
     # However, there's a CMake workaround for such scenarios, described further at
@@ -176,7 +178,7 @@ if (NOT ("RGL_LOG_LEVEL_${RGL_LOG_LEVEL}" IN_LIST RGL_AVAILABLE_LOG_LEVELS))
     message(FATAL_ERROR "Incorrect RGL_LOG_LEVEL value: ${RGL_LOG_LEVEL}")
 endif()
 
-if (WIN32 AND RGL_AUTO_TAPE_PATH)
+if (WIN32 AND (RGL_AUTO_TAPE_PATH OR RGL_BUILD_INTEGRATION_TEST))
     message(FATAL_ERROR "(Auto)Tape not supported on Windows")
 endif()
 
@@ -190,7 +192,7 @@ target_compile_definitions(RobotecGPULidar
 )
 
 # Include tests
-if (RGL_BUILD_TESTS)
+if (RGL_BUILD_TESTS OR RGL_BUILD_INTEGRATION_TEST)
     enable_testing()
     add_subdirectory(test)
 endif()
