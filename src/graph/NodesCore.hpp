@@ -476,7 +476,7 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
 
 	void setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad, float rayElevationStepRad,
-	                   float frequency);
+	                   float frequency, float powerTransmittedDbm, float antennaGainDbi);
 
 	// Node
 	void validateImpl() override;
@@ -520,6 +520,8 @@ private:
 	float rayAzimuthStepRad;
 	float rayElevationStepRad;
 	float frequency;
+	float powerTransmittedDbm;
+	float antennaGainDbi;
 
 	std::vector<rgl_radar_scope_t> radarScopes;
 
