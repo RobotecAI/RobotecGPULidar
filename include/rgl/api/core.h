@@ -460,6 +460,14 @@ RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
  */
 RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
 
+/**
+ * Assigns value true to out_valid if the given mesh is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param mesh Mesh to check for validity
+ * @param out_valid Boolean set to indicate validity
+ */
+RGL_API rgl_status_t rgl_is_mesh_valid(rgl_mesh_t mesh, bool* out_valid);
+
 /******************************** ENTITY ********************************/
 
 /**
@@ -496,9 +504,17 @@ RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 /**
  * Assign intensity texture to the given Entity. The assumption is that the Entity can hold only one intensity texture.
  * @param entity Entity to modify.
- * @apram texture Texture to assign.
+ * @param texture Texture to assign.
  */
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+
+/**
+ * Assigns value true to out_valid if the given entity is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param entity Entity to check for validity
+ * @param out_valid Boolean set to indicate validity
+ */
+RGL_API rgl_status_t rgl_is_entity_valid(rgl_entity_t entity, bool* out_valid);
 
 /******************************* TEXTURE *******************************/
 
@@ -515,9 +531,17 @@ RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* 
 /**
  * Informs that the given texture will be no longer used.
  * The texture will be destroyed after all referring Entities are destroyed.
- * @param mesh Texture to be marked as no longer needed
+ * @param texture Texture to be marked as no longer needed
  */
 RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
+
+/**
+ * Assigns value true to out_valid if the given texture is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param texture Texture to check for validity
+ * @param out_valid Boolean set to indicate validity
+ */
+RGL_API rgl_status_t rgl_is_texture_valid(rgl_texture_t texture, bool* out_valid);
 
 /******************************** SCENE ********************************/
 

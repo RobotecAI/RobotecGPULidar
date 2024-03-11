@@ -256,6 +256,15 @@ void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackSta
 	                         yamlNode[2].as<int32_t>());
 }
 
+rgl_status_t rgl_is_mesh_valid(rgl_mesh_t mesh, bool* out_valid)
+{
+	auto status = rglSafeCall([&]() {
+		*out_valid = Mesh::instances.find(mesh) != Mesh::instances.end();
+	});
+	TAPE_HOOK();
+	return status;
+}
+
 RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {
@@ -355,6 +364,15 @@ void TapeCore::tape_entity_set_intensity_texture(const YAML::Node& yamlNode, Pla
 	                                 state.textures.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
+rgl_status_t rgl_is_entity_valid(rgl_entity_t entity, bool* out_valid)
+{
+	auto status = rglSafeCall([&]() {
+		*out_valid = Entity::instances.find(entity) != Entity::instances.end();
+	});
+	TAPE_HOOK();
+	return status;
+}
+
 RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height)
 {
 	auto status = rglSafeCall([&]() {
@@ -396,6 +414,15 @@ void TapeCore::tape_texture_destroy(const YAML::Node& yamlNode, PlaybackState& s
 	auto textureId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_texture_destroy(state.textures.at(textureId));
 	state.textures.erase(textureId);
+}
+
+rgl_status_t rgl_is_texture_valid(rgl_texture_t texture, bool* out_valid)
+{
+	auto status = rglSafeCall([&]() {
+		*out_valid = Texture::instances.find(texture) != Texture::instances.end();
+	});
+	TAPE_HOOK();
+	return status;
 }
 
 RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
