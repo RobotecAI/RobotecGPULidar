@@ -134,8 +134,10 @@ if (RGL_BUILD_INTEGRATION_TEST)
     endif()
 
     set(RGL_INTEGRATION_TEST_FILES
-        ${rgltest_SOURCE_DIR}/test/TapeIntegrationTest.cpp
+        ${rgltest_SOURCE_DIR}/test/IntegrationTest.cpp
     )
+
+    file(COPY ${rgltest_SOURCE_DIR}/tapes DESTINATION ${CMAKE_BINARY_DIR}/data)
 
     add_executable(RobotecGPULidar_integration_test ${RGL_INTEGRATION_TEST_FILES})
 
