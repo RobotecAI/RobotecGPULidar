@@ -770,10 +770,13 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * @param ray_azimuth_step The azimuth step between rays (in radians).
  * @param ray_elevation_step The elevation step between rays (in radians).
  * @param frequency The frequency of the radar (in Hz).
+ * @param powerTransmittedDbm The power transmitted by the radar (in dBm).
+ * @param antennaGainDbi The gain of the radar's antenna (in dBi).
  */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
                                                        int32_t radar_scopes_count, float ray_azimuth_step,
-                                                       float ray_elevation_step, float frequency);
+                                                       float ray_elevation_step, float frequency, float powerTransmittedDbm,
+                                                       float antennaGainDbi);
 
 /**
  * Creates or modifies FilterGroundPointsNode.

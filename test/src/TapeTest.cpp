@@ -265,7 +265,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 
 	rgl_node_t radarPostprocess = nullptr;
 	rgl_radar_scope_t radarScope{0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostprocess, &radarScope, 1, 1.0f, 1.0f, 79E9f));
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostprocess, &radarScope, 1, 1.0f, 1.0f, 79E9f, 31.0f, 27.0f));
 
 	rgl_node_t filterGround = nullptr;
 	rgl_vec3f sensorUpVector = {0.0f, 1.0f, 0.0f};

@@ -26,7 +26,8 @@ TEST_F(RadarPostprocessPointsNodeTest, clustering_test)
 	                      .radial_speed_separation_threshold = 1.0f,
 	                      .azimuth_separation_threshold = 1.0f},
 	};
-	ASSERT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarNode, radarScopes.data(), radarScopes.size(), 1.0f, 1.0f, 1.0f));
+	ASSERT_RGL_SUCCESS(
+	    rgl_node_points_radar_postprocess(&radarNode, radarScopes.data(), radarScopes.size(), 1.0f, 1.0f, 1.0f, 1.0f, 1.0f));
 
 	auto runAndReturnNumberOfClusters = [&radarNode](const TestPointCloud& inPointCloud) -> int32_t {
 		rgl_node_t usePointsNode = inPointCloud.createUsePointsNode();

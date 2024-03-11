@@ -18,11 +18,6 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-// For now, values are hardcoded for the target radar. Everything in SI units.
-constexpr auto POWER_TRANSMITTED = std::numbers::pi_v<float>;
-constexpr auto ANTENNA_GAIN = 27.0f;
-constexpr auto ANTENNA_EFFECTIVE_AREA = std::numbers::e_v<float> / 10'000; // A few cm2
-
 inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
                                                                            Field<DISTANCE_F32>::type distance)
 {
@@ -35,12 +30,15 @@ inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const
 }
 
 void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad,
-                                               float rayElevationStepRad, float frequency)
+                                               float rayElevationStepRad, float frequency, float powerTransmittedDbm,
+                                               float antennaGainDbi)
 {
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
 	this->frequency = frequency;
 	this->radarScopes = radarScopes;
+	this->powerTransmittedDbm = powerTransmittedDbm;
+	this->antennaGainDbi = antennaGainDbi;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -133,11 +131,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
 
-	// Become radar parameters
-	const auto powerTransmittedDbm = 31.0f; // According to manual.
-	const auto antennaGainDbi = 27.0f; // both transmitter and receiver antenna.
-
-	const auto lambda = 0.00379484; // TODO: Calculate from frequency.
+	const auto lambda = 299'792'458.0f / frequency;
 	const auto lambdaSqrtDbsm = 10.0f * log10f(lambda * lambda);
 
 	// Compute per-cluster properties
@@ -164,11 +158,11 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
 
 		// TODO: Handle nans in RCS.
-		const auto rcsDbsm =  10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
+		const auto rcsDbsm = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 		clusterRcsHost->at(clusterIdx) = rcsDbsm;
 
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
-		const auto multiplier =  10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
+		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
 
 		const auto outputPower = powerTransmittedDbm + antennaGainDbi + antennaGainDbi + rcsDbsm + lambdaSqrtDbsm - multiplier;
 
