@@ -121,38 +121,38 @@ gtest_discover_tests(RobotecGPULidar_test)
 
 include(FetchContent)
 
-if (RGL_BUILD_INTEGRATION_TEST)
+if (RGL_BUILD_TAPED_TEST)
     FetchContent_Declare(
-        rgltest
+        tapedtest
         GIT_REPOSITORY git@github.com:RobotecAI/RGL-blobs.git
         GIT_TAG test/integration-using-tape
     )
 
-    FetchContent_GetProperties(rgltest)
-    if (NOT rgltest_POPULATED)
-        FetchContent_Populate(rgltest)
+    FetchContent_GetProperties(tapedtest)
+    if (NOT tapedtest_POPULATED)
+        FetchContent_Populate(tapedtest)
     endif()
 
     set(RGL_INTEGRATION_TEST_FILES
-        ${rgltest_SOURCE_DIR}/test/IntegrationTest.cpp
+        src/TapedTest.cpp
     )
 
-    file(COPY ${rgltest_SOURCE_DIR}/tapes DESTINATION ${CMAKE_BINARY_DIR}/data)
+    file(COPY ${tapedtest_SOURCE_DIR}/tapes DESTINATION ${CMAKE_BINARY_DIR}/data)
 
-    add_executable(RobotecGPULidar_integration_test ${RGL_INTEGRATION_TEST_FILES})
+    add_executable(RobotecGPULidar_taped_test ${RGL_INTEGRATION_TEST_FILES})
 
-    target_link_libraries(RobotecGPULidar_integration_test PRIVATE
+    target_link_libraries(RobotecGPULidar_taped_test PRIVATE
         gtest_main
         gmock_main
         RobotecGPULidar
     )
 
-    target_include_directories(RobotecGPULidar_integration_test PRIVATE
+    target_include_directories(RobotecGPULidar_taped_test PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../src
     )
 
-    gtest_discover_tests(RobotecGPULidar_integration_test)
+    gtest_discover_tests(RobotecGPULidar_taped_test)
 
 endif ()

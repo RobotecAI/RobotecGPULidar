@@ -21,8 +21,8 @@ set(RGL_AUTO_TAPE_PATH "" CACHE STRING  # STRING prevents from expanding relativ
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
     "Enables building test. GTest will be automatically downloaded")
-set(RGL_BUILD_INTEGRATION_TEST OFF CACHE BOOL
-    "Enables building integration test using Tape. Benchmark data will be automatically downloaded from RGL-blobs repository")
+set(RGL_BUILD_TAPED_TEST OFF CACHE BOOL
+    "Enables building taped test. Benchmark data will be automatically downloaded from RGL-blobs repository")
 
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
