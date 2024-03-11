@@ -150,6 +150,7 @@ if (RGL_BUILD_INTEGRATION_TEST)
     target_include_directories(RobotecGPULidar_integration_test PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src
     )
 
     gtest_discover_tests(RobotecGPULidar_integration_test)
