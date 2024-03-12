@@ -31,7 +31,7 @@ inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const
 
 void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad,
                                                float rayElevationStepRad, float frequency, float powerTransmittedDbm,
-                                               float antennaGainDbi)
+                                               float antennaGainDbi, float receivedNoiseMean, float receivedNoiseStdDev)
 {
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
@@ -39,6 +39,8 @@ void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope
 	this->radarScopes = radarScopes;
 	this->powerTransmittedDbm = powerTransmittedDbm;
 	this->antennaGainDbi = antennaGainDbi;
+	this->receivedNoiseMeanDb = receivedNoiseMean;
+	this->receivedNoiseStDevDb = receivedNoiseStdDev;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -139,6 +141,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	clusterPowerHost->resize(filteredIndicesHost.size(), false, false);
 	clusterNoiseHost->resize(filteredIndicesHost.size(), false, false);
 	clusterSnrHost->resize(filteredIndicesHost.size(), false, false);
+	std::normal_distribution<float> gaussianNoise(receivedNoiseMeanDb, receivedNoiseStDevDb);
 	for (int clusterIdx = 0; clusterIdx < filteredIndicesHost.size(); ++clusterIdx) {
 		std::complex<float> AU = 0;
 		std::complex<float> AR = 0;
@@ -159,15 +162,16 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 		// TODO: Handle nans in RCS.
 		const auto rcsDbsm = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
-		clusterRcsHost->at(clusterIdx) = rcsDbsm;
-
+		if (std::isnan(rcsDbsm)) {
+			throw InvalidPipeline("RCS is NaN");
+		}
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
 		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
-
 		const auto outputPower = powerTransmittedDbm + antennaGainDbi + antennaGainDbi + rcsDbsm + lambdaSqrtDbsm - multiplier;
 
+		clusterRcsHost->at(clusterIdx) = rcsDbsm;
 		clusterPowerHost->at(clusterIdx) = outputPower;
-		clusterNoiseHost->at(clusterIdx) = 1.0f;
+		clusterNoiseHost->at(clusterIdx) = gaussianNoise(randomDevice);
 		clusterSnrHost->at(clusterIdx) = clusterPowerHost->at(clusterIdx) - clusterNoiseHost->at(clusterIdx);
 	}
 	clusterPowerDev->copyFrom(clusterPowerHost);

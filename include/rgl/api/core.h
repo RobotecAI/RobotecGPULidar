@@ -772,11 +772,14 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * @param frequency The frequency of the radar (in Hz).
  * @param powerTransmittedDbm The power transmitted by the radar (in dBm).
  * @param antennaGainDbi The gain of the radar's antenna (in dBi).
+ * @param received_noise_mean_db The mean of the received noise (in dB).
+ * @param received_noise_std_dev_db The standard deviation of the received noise (in dB).
  */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
                                                        int32_t radar_scopes_count, float ray_azimuth_step,
                                                        float ray_elevation_step, float frequency, float powerTransmittedDbm,
-                                                       float antennaGainDbi);
+                                                       float antennaGainDbi, float received_noise_mean_dbm,
+                                                       float received_noise_st_dev_dbm);
 
 /**
  * Creates or modifies FilterGroundPointsNode.
