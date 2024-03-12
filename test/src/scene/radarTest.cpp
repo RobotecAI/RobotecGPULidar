@@ -80,8 +80,8 @@ TEST_F(RadarTest, rotating_reflector_2d)
 
 	// Radar postprocessing and publishing
 	rgl_node_t radarPostProcess = nullptr, radarFormat = nullptr, radarPublish = nullptr;
-	EXPECT_RGL_SUCCESS(
-	    rgl_node_points_radar_postprocess(&radarPostProcess, &radarScope, 1, azimuthStep, elevationStep, 79E9f, 31.0f, 27.0f));
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostProcess, &radarScope, 1, azimuthStep, elevationStep, 79E9f,
+	                                                     31.0f, 27.0f, 60.0f, 1.0f));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&radarFormat, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&radarPublish, "rgl_radar", "world"));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, radarPostProcess));
@@ -110,9 +110,7 @@ TEST_F(RadarTest, rotating_reflector_2d)
 			offset += Vec3f{0, 3, 0};
 		}
 
-		fmt::print("Angle: {}\n", angle);
 		EXPECT_RGL_SUCCESS(rgl_graph_run(rays));
-		std::this_thread::sleep_for(100ms);
 		time += 10'000'000; // 10 ms
 	}
 }
