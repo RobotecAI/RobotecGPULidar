@@ -259,9 +259,10 @@ void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackSta
 rgl_status_t rgl_is_mesh_valid(rgl_mesh_t mesh, bool* out_valid)
 {
 	auto status = rglSafeCall([&]() {
-		*out_valid = Mesh::instances.find(mesh) != Mesh::instances.end();
+		CHECK_ARG(out_valid != nullptr);
+		*out_valid = Mesh::instances.contains(mesh);
 	});
-	TAPE_HOOK();
+	TAPE_HOOK(mesh, out_valid);
 	return status;
 }
 
