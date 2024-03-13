@@ -1219,6 +1219,16 @@ void TapeCore::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, Pla
 	state.nodes.insert({nodeId, node});
 }
 
+rgl_status_t rgl_node_is_alive(rgl_node_t node, bool* out_alive)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(out_alive != nullptr);
+		*out_alive = Node::instances.contains(node);
+	});
+	TAPE_HOOK(node, out_alive);
+	return status;
+}
+
 RGL_API rgl_status_t rgl_tape_record_begin(const char* path)
 {
 /**

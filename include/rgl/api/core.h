@@ -855,6 +855,14 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, 
 RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base,
                                                       float st_dev_rise_per_meter);
 
+/**
+ * Assigns value true to out_alive if the given node is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param node Node to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_node_is_alive(rgl_node_t node, bool* out_alive);
+
 /******************************** GRAPH ********************************/
 
 /**
