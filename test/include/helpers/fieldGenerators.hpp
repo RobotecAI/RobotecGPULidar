@@ -76,8 +76,10 @@ static std::function<Field<INCIDENT_ANGLE_F32>::type(int)> genIncidentAngle = []
 	return std::uniform_real_distribution<float>(0, std::numbers::pi / 2.0f)(randomGenerator);
 };
 static std::function<Field<NORMAL_VEC3_F32>::type(int)> genNormal = [](int i) {
-	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
-	             static_cast<float>(i) / (static_cast<float>(i) + 3));
+	std::mt19937 gen(i);
+	std::uniform_real_distribution<> dis(0, 2 * M_PI);
+	double theta = dis(gen), phi = dis(gen);
+	return Vec3f{std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)};
 };
 static std::function<Field<RAY_POSE_MAT3x4_F32>::type(int)> genRayPose = [](int i) {
 	std::uniform_real_distribution<float> tr(-1, 1);
@@ -96,5 +98,4 @@ static std::function<Field<IS_GROUND_I32>::type(int)> genAllGround = [](int i) {
 static std::function<Field<IS_GROUND_I32>::type(int)> genAllNonGround = [](int i) { return 1; };
 static std::function<Field<IS_GROUND_I32>::type(int)> genRandGround = [](int i) {
 	return std::uniform_int_distribution<int>(0, 1)(randomGenerator);
-
 };
