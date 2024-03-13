@@ -1258,7 +1258,7 @@ RGL_API rgl_status_t rgl_tape_play(const char* path)
 			throw RecordError("rgl_tape_play: recording active");
 		} else {
 			TapePlayer player(path);
-			player.playRealtime();
+			player.playApproximatelyRealtime();
 		}
 	});
 #endif //_WIN32

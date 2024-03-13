@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <cassert>
+#include <thread>
 
 #include <tape/TapePlayer.hpp>
 #include <tape/tapeDefinitions.hpp>
@@ -23,14 +24,11 @@
 
 namespace fs = std::filesystem;
 
-TapePlayer::TapePlayer(const char* path)
+TapePlayer::TapePlayer(const char* path) : path(path)
 {
-	std::string pathYaml = fs::path(path).concat(YAML_EXTENSION).string();
-	std::string pathBin = fs::path(path).concat(BIN_EXTENSION).string();
+	playbackState = std::make_unique<PlaybackState>(getBinPath().c_str());
 
-	playbackState = std::make_unique<PlaybackState>(pathBin.c_str());
-
-	yamlRoot = YAML::LoadFile(pathYaml);
+	yamlRoot = YAML::LoadFile(getYamlPath());
 	if (yamlRoot.IsNull()) {
 		throw RecordError("Invalid Tape: Empty YAML file detected");
 	}
@@ -42,6 +40,10 @@ TapePlayer::TapePlayer(const char* path)
 
 	nextCallIdx = 0;
 }
+
+std::string TapePlayer::getBinPath() const { return fs::path(path).concat(BIN_EXTENSION).string(); }
+
+std::string TapePlayer::getYamlPath() const { return fs::path(path).concat(YAML_EXTENSION).string(); }
 
 void TapePlayer::checkTapeVersion()
 {
@@ -110,8 +112,6 @@ void TapePlayer::playUntil(std::optional<APICallIdx> breakpoint)
 	}
 }
 
-void TapePlayer::rewindTo(APICallIdx nextCall) { this->nextCallIdx = nextCall; }
-
 void TapePlayer::playThis(APICallIdx idx)
 {
 	const TapeCall& call = getTapeCall(idx);
@@ -121,15 +121,30 @@ void TapePlayer::playThis(APICallIdx idx)
 	tapeFunctions[call.getFnName()](call.getArgsNode(), *playbackState);
 }
 
-#include <thread>
-void TapePlayer::playRealtime()
+
+void TapePlayer::playApproximatelyRealtime()
 {
+	// Approximation comes from the fact that we don't account for the time it takes to execute the function
+	// This could be fixed by moving TAPE_HOOK to the beginning of the API call
+	// It might be a good idea to do so, because it would record failed calls.
 	auto beginTimestamp = std::chrono::steady_clock::now();
-	TapeCall nextCall = getTapeCall(nextCallIdx);
 	for (; nextCallIdx < yamlRoot.size(); ++nextCallIdx) {
+		TapeCall nextCall = getTapeCall(nextCallIdx);
 		auto nextCallNs = std::chrono::nanoseconds(nextCall.getTimestamp().asNanoseconds());
 		auto elapsed = std::chrono::steady_clock::now() - beginTimestamp;
 		std::this_thread::sleep_for(nextCallNs - elapsed);
 		playThis(nextCallIdx);
 	}
+}
+
+void TapePlayer::reset()
+{
+	auto status = rgl_cleanup();
+	if (status != RGL_SUCCESS) {
+		const char* error = nullptr;
+		rgl_get_last_error_string(&error);
+		throw RecordError(fmt::format("Failed to reset playback state: {}", error));
+	}
+	nextCallIdx = 0;
+	playbackState = std::make_unique<PlaybackState>(getBinPath().c_str());
 }

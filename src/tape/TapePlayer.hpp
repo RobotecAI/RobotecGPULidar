@@ -46,8 +46,8 @@ struct TapePlayer
 	void playThis(APICallIdx idx);
 	void playThrough(APICallIdx last);
 	void playUntil(std::optional<APICallIdx> breakpoint = std::nullopt);
-	void playRealtime();
-	void rewindTo(APICallIdx nextCall = 0);
+	void playApproximatelyRealtime();
+	void reset();
 
 	rgl_node_t getNodeHandle(TapeAPIObjectID key) { return playbackState->nodes.at(key); }
 
@@ -55,6 +55,9 @@ private:
 	YAML::Node yamlRoot{};
 	APICallIdx nextCallIdx{};
 	std::unique_ptr<PlaybackState> playbackState;
+	std::string path;
 
 	static inline std::map<std::string, TapeFunction> tapeFunctions = {};
+	std::string getBinPath() const;
+	std::string getYamlPath() const;
 };
