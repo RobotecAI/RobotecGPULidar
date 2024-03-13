@@ -461,12 +461,12 @@ RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
 RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
 
 /**
- * Assigns value true to out_valid if the given mesh is known and has not been destroyed,
+ * Assigns value true to out_alive if the given mesh is known and has not been destroyed,
  * assigns value false otherwise.
- * @param mesh Mesh to check for validity
- * @param out_valid Boolean set to indicate validity
+ * @param mesh Mesh to check if alive
+ * @param out_alive Boolean set to indicate if alive
  */
-RGL_API rgl_status_t rgl_is_mesh_valid(rgl_mesh_t mesh, bool* out_valid);
+RGL_API rgl_status_t rgl_mesh_is_alive(rgl_mesh_t mesh, bool* out_alive);
 
 /******************************** ENTITY ********************************/
 
@@ -509,12 +509,12 @@ RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
 
 /**
- * Assigns value true to out_valid if the given entity is known and has not been destroyed,
+ * Assigns value true to out_alive if the given entity is known and has not been destroyed,
  * assigns value false otherwise.
- * @param entity Entity to check for validity
- * @param out_valid Boolean set to indicate validity
+ * @param entity Entity to check if alive
+ * @param out_alive Boolean set to indicate if alive
  */
-RGL_API rgl_status_t rgl_is_entity_valid(rgl_entity_t entity, bool* out_valid);
+RGL_API rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive);
 
 /******************************* TEXTURE *******************************/
 
@@ -536,12 +536,12 @@ RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* 
 RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
 
 /**
- * Assigns value true to out_valid if the given texture is known and has not been destroyed,
+ * Assigns value true to out_alive if the given texture is known and has not been destroyed,
  * assigns value false otherwise.
- * @param texture Texture to check for validity
- * @param out_valid Boolean set to indicate validity
+ * @param texture Texture to check if alive
+ * @param out_alive Boolean set to indicate if alive
  */
-RGL_API rgl_status_t rgl_is_texture_valid(rgl_texture_t texture, bool* out_valid);
+RGL_API rgl_status_t rgl_texture_is_alive(rgl_texture_t texture, bool* out_alive);
 
 /******************************** SCENE ********************************/
 
