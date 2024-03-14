@@ -130,18 +130,20 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const Vec3f rayDir = rayDirCts.normalized();
 	const Vec3f rayPol = rayPose[tid] * Vec3f{-1, 0, 0}; // UP, perpendicular to ray
 	const Vec3f reflectedPol = reflectPolarization(rayPol, hitNorm[tid], rayDir);
+	const Vec3f reflectedDir = (rayDir - hitNorm[tid] * (2 * rayDir.dot(hitNorm[tid]))).normalized();
 
 	const Vector<3, thrust::complex<float>> rayPolCplx = {reflectedPol.x(), reflectedPol.y(), reflectedPol.z()};
 
 	const Vector<3, thrust::complex<float>> apE = reflectionCoef * exp(i * kr) * rayPolCplx;
-	const Vector<3, thrust::complex<float>> apH = -apE.cross(rayDir);
+	const Vector<3, thrust::complex<float>> apH = -apE.cross(reflectedDir);
 
 	const Vec3f vecK = waveNum * ((dirX * cp + dirY * sp) * st + dirZ * ct);
 
-	const float rayArea = hitDist[tid] * hitDist[tid] * std::sin(rayElevationStepRad) * rayAzimuthStepRad;
+	const float rayArea = hitDist[tid] * hitDist[tid] * sinf(rayElevationStepRad) * rayAzimuthStepRad;
+	//printf("ele rad: %.6f azi rad: %.6f area: %.6f distance: %0.2f\n",  rayElevationStepRad, rayAzimuthStepRad, rayArea, hitDist[tid]);
 
-	thrust::complex<float> BU = (-(apE.cross(-dirP) + apH.cross(dirT))).dot(rayDir);
-	thrust::complex<float> BR = (-(apE.cross(dirT) + apH.cross(dirP))).dot(rayDir);
+	thrust::complex<float> BU = (-(apE.cross(-dirP) + apH.cross(dirT))).dot(reflectedDir);
+	thrust::complex<float> BR = (-(apE.cross(dirT) + apH.cross(dirP))).dot(reflectedDir);
 	thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
 	                                exp(-i * vecK.dot(hitPos[tid]));
 
