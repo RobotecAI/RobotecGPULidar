@@ -22,6 +22,9 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	TapePlayer player{argv[1]};
-	player.playUntil();
+	while (true) {
+		player.playApproximatelyRealtime();
+		player.reset();
+	}
 	return 0;
 }
