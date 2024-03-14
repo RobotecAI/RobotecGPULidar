@@ -125,7 +125,7 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const Vec3f dirP = {-sp, cp, 0};
 	const Vec3f dirT = {cp * ct, sp * ct, -st};
 
-	const thrust::complex<float> kr = {waveNum * hitDist[tid], 0.0f};
+	const float kr = waveNum * hitDist[tid];
 
 	const Vec3f rayDir = rayDirCts.normalized();
 	const Vec3f rayPol = rayPose[tid] * Vec3f{-1, 0, 0}; // UP, perpendicular to ray
