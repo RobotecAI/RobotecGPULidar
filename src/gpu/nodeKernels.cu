@@ -87,7 +87,7 @@ __device__ Vec3f reflectPolarization(const Vec3f& pol, const Vec3f& hitNormal, c
 
 	const auto refDir = (rayDir - hitNormal * (2 * rayDir.dot(hitNormal))).normalized();
 	const auto refPolU = -1.0f * polU;
-	const auto refPolR = rayDir.cross(refPolU);
+	const auto refPolR = refDir.cross(refPolU);
 
 	const auto polCompU = pol.dot(polU);
 	const auto polCompR = pol.dot(polR);
