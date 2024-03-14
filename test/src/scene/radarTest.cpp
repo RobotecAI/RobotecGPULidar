@@ -34,7 +34,7 @@ std::vector<rgl_mat3x4f> genRadarRays()
 			// By default, the rays are directed along the Z-axis
 			// So first, we rotate them around the Y-axis to point towards the X-axis (to be RVIZ2 compatible)
 			// Then, rotation around Z is azimuth, around Y is elevation
-			auto ray = Mat3x4f::rotationDeg(0, e + 90, -a);
+			const auto ray = Mat3x4f::rotationDeg(a, e, 0);
 			rays.emplace_back(ray.toRGL());
 
 			// The above will have to be modified again - we assume that target is farther in X axis when in fact
@@ -66,22 +66,34 @@ TEST_F(RadarTest, rotating_reflector_2d)
 	// LiDAR
 	rgl_node_t rays = nullptr, noise = nullptr, raytrace = nullptr, compact = nullptr, lidarFormat = nullptr,
 	           lidarPublish = nullptr;
+
+	rgl_node_t raysTransform = nullptr;
+	const auto raycasterTransform = Mat3x4f::rotationDeg(0.0f, 90.0f, 0.0f).toRGL();
+
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysData.data(), raysData.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&raysTransform, &raycasterTransform));
 	EXPECT_RGL_SUCCESS(rgl_node_gaussian_noise_angular_ray(&noise, 0, 2, RGL_AXIS_Z));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&lidarFormat, fields.data(), 1)); // Publish only XYZ
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&lidarPublish, "rgl_lidar", "world"));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, noise));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(noise, raytrace));
+
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, raysTransform));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raysTransform, raytrace));
+	//EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(noise, raytrace));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, lidarFormat));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(lidarFormat, lidarPublish));
 
+	const float azimuthStepRad = azimuthStep * (std::numbers::pi_v<float> / 180.0f);
+	const float elevationStepRad = elevationStep * (std::numbers::pi_v<float> / 180.0f);
+	const float powerTransmittedDdm = 31.0f;
+	const float antennaGainDbi = 27.0f;
+
 	// Radar postprocessing and publishing
 	rgl_node_t radarPostProcess = nullptr, radarFormat = nullptr, radarPublish = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostProcess, &radarScope, 1, azimuthStep, elevationStep, 79E9f,
-	                                                     31.0f, 27.0f, 60.0f, 1.0f));
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_postprocess(&radarPostProcess, &radarScope, 1, azimuthStepRad, elevationStepRad, 79E9f,
+	                                                     powerTransmittedDdm, antennaGainDbi, 60.0f, 1.0f));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&radarFormat, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&radarPublish, "rgl_radar", "world"));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, radarPostProcess));
