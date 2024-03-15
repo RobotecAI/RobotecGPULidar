@@ -145,7 +145,7 @@ target_include_directories(RobotecGPULidar
 )
 
 target_link_libraries(RobotecGPULidar PRIVATE
-    spdlog
+    spdlog_header_only
     yaml-cpp
     optixPrograms
     cmake_git_version_tracking
