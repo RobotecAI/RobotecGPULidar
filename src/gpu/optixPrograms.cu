@@ -264,11 +264,10 @@ extern "C" __global__ void __closesthit__()
 		Vec3f absPointVelocityInSensorFrame = ctx.rayOriginToWorld.rotation().inverse() * absPointVelocity;
 		Vec3f relPointVelocityBasedOnSensorLinearVelocity = absPointVelocityInSensorFrame - ctx.sensorLinearVelocityXYZ;
 
-		Vec3f distanceOnAxisXYZ = hitWorld - origin;
-		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(distanceOnAxisXYZ);
+		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;
+		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(hitRays);
 		relPointVelocity = relPointVelocityBasedOnSensorLinearVelocity + relPointVelocityBasedOnSensorAngularVelocity;
 
-		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;
 		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
 
