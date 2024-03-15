@@ -18,6 +18,10 @@ set(RGL_LOG_FILE "" CACHE STRING  # STRING prevents from expanding relative path
 set(RGL_AUTO_TAPE_PATH "" CACHE STRING  # STRING prevents from expanding relative paths
     "If non-empty, defines a path for the automatic tape (started on the first API call)")
 
+# Library configuration
+set(RGL_BUILD_STATIC OFF CACHE BOOL
+    "Builds RobotecGPULidar as a statically linkable library instead of a shared one")
+
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
     "Enables building test. GTest will be automatically downloaded")
@@ -76,7 +80,7 @@ add_custom_command(
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
-add_library(RobotecGPULidar SHARED
+set(RobotecGPULidarSources
     src/api/apiCommon.cpp
     src/api/apiCore.cpp
     src/Tape.cpp
@@ -109,6 +113,13 @@ add_library(RobotecGPULidar SHARED
     src/graph/TemporalMergePointsNode.cpp
     src/graph/YieldPointsNode.cpp
 )
+
+if (RGL_BUILD_STATIC)
+    add_library(RobotecGPULidar STATIC ${RobotecGPULidarSources})
+    target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC_BUILD)
+else ()
+    add_library(RobotecGPULidar SHARED ${RobotecGPULidarSources})
+endif ()
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
