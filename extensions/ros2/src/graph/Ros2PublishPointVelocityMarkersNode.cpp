@@ -34,11 +34,6 @@ void Ros2PublishPointVelocityMarkersNode::ros2ValidateImpl()
 	if (!input->isDense()) {
 		throw InvalidPipeline(fmt::format("{} requires a compacted point cloud (dense)", getName()));
 	}
-
-	if (!input->hasField(RGL_FIELD_DYNAMIC_FORMAT)) {
-		auto msg = fmt::format("{} requires a formatted point cloud", getName());
-		throw InvalidPipeline(msg);
-	}
 }
 void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 {
