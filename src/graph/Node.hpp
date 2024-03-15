@@ -201,7 +201,7 @@ public: // Static methods
 		return typedNodes[0];
 	}
 
-protected:
+	//protected:
 	std::vector<Node::Ptr> inputs{};
 	std::vector<Node::Ptr> outputs{}; // Always sorted by priority (descending)
 	int32_t priority{0};              // Must be >= than children priorities

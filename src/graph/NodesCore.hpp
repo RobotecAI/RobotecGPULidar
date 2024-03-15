@@ -30,6 +30,8 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
+#include <rclcpp/publisher.hpp>
+#include "Ros2InitGuard.hpp"
 
 
 struct FormatPointsNode : IPointsNodeSingleInput
@@ -533,6 +535,21 @@ private:
 	// RGL related members
 	std::mutex getFieldDataMutex;
 	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+
+	// Debug stuff
+
+	std::shared_ptr<Ros2InitGuard> ros2InitGuard;
+	sensor_msgs::msg::PointCloud2 ros2Message;
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+	DeviceAsyncArray<char>::Ptr formattedDebugDataDev = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedDebugDataHst = HostPinnedArray<char>::create();
+	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ros2Publisher;
+
+	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr ros2XYZ = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
+	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr clusterIdHost = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
+	DeviceAsyncArray<Field<ENTITY_ID_I32>::type>::Ptr clusterIdDev = DeviceAsyncArray<Field<ENTITY_ID_I32>::type>::create(
+	    arrayMgr);
+	void publishDebugData();
 
 	struct RadarCluster
 	{

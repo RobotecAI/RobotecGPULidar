@@ -17,6 +17,9 @@
 #include <repr.hpp>
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
+#include "Ros2InitGuard.hpp"
+#include "rgl/api/extensions/ros2.h"
+#include <scene/Scene.hpp>
 
 inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
                                                                            Field<DISTANCE_F32>::type distance)
@@ -41,6 +44,14 @@ void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope
 	this->antennaGainDbi = antennaGainDbi;
 	this->receivedNoiseMeanDb = receivedNoiseMean;
 	this->receivedNoiseStDevDb = receivedNoiseStdDev;
+
+	ros2InitGuard = Ros2InitGuard::acquire();
+	ros2Message.header.frame_id = "world";
+	auto qos = rclcpp::QoS(10);
+	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT));
+	qos.durability(static_cast<rmw_qos_durability_policy_t>(QOS_POLICY_DURABILITY_SYSTEM_DEFAULT));
+	qos.history(static_cast<rmw_qos_history_policy_t>(QOS_POLICY_HISTORY_SYSTEM_DEFAULT));
+	ros2Publisher = ros2InitGuard->createUniquePublisher<sensor_msgs::msg::PointCloud2>("/radar/clustering", qos);
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -125,11 +136,21 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		}
 	}
 
+	int clusterId = 0;
+	clusterIdHost->resize(input->getPointCount(), false, false);
 	filteredIndicesHost.clear();
 	for (auto&& cluster : clusters) {
 		filteredIndicesHost.push_back(
 		    cluster.findDirectionalCenterIndex(azimuthInputHost->getReadPtr(), elevationInputHost->getReadPtr()));
+		for (auto&& pointInCluster : cluster.indices) {
+			clusterIdHost->at(pointInCluster) = clusterId;
+		}
+		clusterId += 1;
 	}
+
+	clusterIdDev->copyFrom(clusterIdHost);
+	publishDebugData();
+
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
 
@@ -213,6 +234,9 @@ IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 	}
 	if (field == SNR_F32) {
 		return clusterSnrDev->asAny();
+	}
+	if (field == ENTITY_ID_I32) {
+		return clusterIdDev->asAny();
 	}
 
 	if (!cacheManager.contains(field)) {
@@ -354,4 +378,89 @@ Field<RAY_IDX_U32>::type RadarPostprocessPointsNode::RadarCluster::findDirection
 		}
 	}
 	return minIndex;
+}
+
+void RadarPostprocessPointsNode::publishDebugData()
+{
+	std::size_t pointCount = input->getPointCount();
+
+	// Transform to ROS2 coordinate system
+	ros2XYZ->resize(pointCount, false, false);
+	const auto inputField = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>();
+	const auto* inputPtr = inputField->getReadPtr();
+	auto* outPtr = ros2XYZ->getWritePtr();
+	//	Mat3x4f transform = {
+	//	    .rc = {
+	//	           {0.0000, 0.0000, 1.0000, 0.0000},
+	//	           {-1.0000, 0.0000, 0.0000, 0.0000},
+	//	           {0.0000, 1.0000, 0.0000, 0.0000},
+	//	           }
+	//    };
+	auto childTf = std::dynamic_pointer_cast<TransformPointsNode>(this->outputs[1])->getTransform();
+	auto grandChildTf = std::dynamic_pointer_cast<TransformPointsNode>((this->outputs[1])->outputs[0])->getTransform();
+	Mat3x4f transform = grandChildTf * childTf;
+	gpuTransformPoints(getStreamHandle(), pointCount, inputPtr, outPtr, transform);
+
+
+	// Format config
+	std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, ENTITY_ID_I32};
+	std::size_t pointSize = getPointSize(fields);
+	formattedDebugDataDev->resize(pointCount * pointSize, false, false);
+
+	std::vector<std::pair<rgl_field_t, const void*>> fieldToPointerMapping = {
+	    { XYZ_VEC3_F32,      ros2XYZ->getRawReadPtr()},
+	    {ENTITY_ID_I32, clusterIdDev->getRawReadPtr()},
+	};
+
+	// Formatting
+	const GPUFieldDesc* gpuFieldsPtr =
+	    gpuFieldDescBuilder.buildReadableAsync(formattedDebugDataDev->getStream(), fieldToPointerMapping).getReadPtr();
+	char* outputPtr = formattedDebugDataDev->getWritePtr();
+	gpuFormatSoaToAos(formattedDebugDataDev->getStream()->getHandle(), pointCount, pointSize, fields.size(), gpuFieldsPtr,
+	                  outputPtr);
+	formattedDebugDataHst->copyFrom(formattedDebugDataDev);
+
+
+	// Prepare ROS2 message
+	ros2Message.fields.clear();
+	int offset = 0;
+	for (const auto& field : fields) {
+		auto ros2fields = toRos2Fields(field);
+		auto ros2names = toRos2Names(field);
+		auto ros2sizes = toRos2Sizes(field);
+
+		for (int i = 0; i < ros2sizes.size(); ++i) {
+			if (ros2fields.size() > i && ros2names.size() > i) {
+				ros2Message.fields.push_back([&] {
+					auto ret = sensor_msgs::msg::PointField();
+					ret.name = ros2names[i];
+					ret.datatype = ros2fields[i];
+					ret.offset = offset;
+					ret.count = 1;
+					return ret;
+				}());
+			}
+			offset += ros2sizes[i];
+		}
+	}
+	ros2Message.height = 1;
+	ros2Message.point_step = offset;
+	ros2Message.is_dense = true;
+	ros2Message.is_bigendian = false;
+
+
+	// Publish to ROS2
+	ros2Message.data.resize(ros2Message.point_step * pointCount);
+	const void* src = formattedDebugDataHst->getRawReadPtr();
+	size_t size = formattedDebugDataHst->getCount() * formattedDebugDataHst->getSizeOf();
+	CHECK_CUDA(cudaMemcpyAsync(ros2Message.data.data(), src, size, cudaMemcpyDefault, getStreamHandle()));
+	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+	ros2Message.width = pointCount;
+	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
+	// TODO(msz-rai): Assign scene to the Graph.
+	// For now, only default scene is supported.
+	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
+	                               Scene::instance().getTime()->asRos2Msg() :
+	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
+	ros2Publisher->publish(ros2Message);
 }

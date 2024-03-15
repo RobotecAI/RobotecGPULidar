@@ -108,12 +108,16 @@ std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std:
 {
 	// Nodes already present in this vector need to be executed after the ones that are added later.
 	std::vector<std::shared_ptr<Node>> reverseOrder{};
-	std::function<void(std::shared_ptr<Node>)> dfsRec = [&](std::shared_ptr<Node> current) {
+	std::function<void(std::shared_ptr<Node>, int)> dfsRec = [&](std::shared_ptr<Node> current, int depth) {
 		nodes.erase(current);
+		for (int i = 0; i < depth; i++) {
+			fmt::print("  ");
+		}
+		fmt::print("dfsRec: {}\n", current->getName());
 		for (auto it = current->getOutputs().rbegin(); it != current->getOutputs().rend(); ++it) {
 			const auto& outputNode = *it;
 			if (nodes.contains(outputNode)) {
-				dfsRec(outputNode);
+				dfsRec(outputNode, depth + 1);
 			}
 		}
 		reverseOrder.push_back(current);
@@ -131,7 +135,7 @@ std::vector<std::shared_ptr<Node>> GraphRunCtx::findExecutionOrder(std::set<std:
 
 	// Iterate in ascending order of entry priorities
 	for (auto&& node : entryNode) {
-		dfsRec(node);
+		dfsRec(node, 0);
 	}
 
 	if (!nodes.empty()) {
