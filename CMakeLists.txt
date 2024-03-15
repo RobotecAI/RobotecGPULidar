@@ -80,7 +80,7 @@ add_custom_command(
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
-set(RobotecGPULidarSources
+set(RGL_SOURCE_FILES
     src/api/apiCommon.cpp
     src/api/apiCore.cpp
     src/Tape.cpp
@@ -115,10 +115,10 @@ set(RobotecGPULidarSources
 )
 
 if (RGL_BUILD_STATIC)
-    add_library(RobotecGPULidar STATIC ${RobotecGPULidarSources})
+    add_library(RobotecGPULidar STATIC ${RGL_SOURCE_FILES})
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC_BUILD)
 else ()
-    add_library(RobotecGPULidar SHARED ${RobotecGPULidarSources})
+    add_library(RobotecGPULidar SHARED ${RGL_SOURCE_FILES})
 endif ()
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
