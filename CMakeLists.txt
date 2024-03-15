@@ -116,7 +116,7 @@ set(RGL_SOURCE_FILES
 
 if (RGL_BUILD_STATIC)
     add_library(RobotecGPULidar STATIC ${RGL_SOURCE_FILES})
-    target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC_BUILD)
+    target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC)
 else ()
     add_library(RobotecGPULidar SHARED ${RGL_SOURCE_FILES})
 endif ()
