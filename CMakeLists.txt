@@ -117,8 +117,10 @@ set(RGL_SOURCE_FILES
 if (RGL_BUILD_STATIC)
     add_library(RobotecGPULidar STATIC ${RGL_SOURCE_FILES})
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC)
+    set(RGL_SPDLOG_VARIANT spdlog_header_only)
 else ()
     add_library(RobotecGPULidar SHARED ${RGL_SOURCE_FILES})
+    set(RGL_SPDLOG_VARIANT spdlog)
 endif ()
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -145,7 +147,7 @@ target_include_directories(RobotecGPULidar
 )
 
 target_link_libraries(RobotecGPULidar PRIVATE
-    spdlog_header_only
+    ${RGL_SPDLOG_VARIANT}
     yaml-cpp
     optixPrograms
     cmake_git_version_tracking
