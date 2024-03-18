@@ -69,6 +69,9 @@ def main():
                             help="Pass arguments to make. Usage: --make=\"args...\". Defaults to \"-j <cpu count>\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
                             help="Add run-time search path(s) for RGL library. $ORIGIN (actual library path) is added by default.")
+        parser.add_argument("--build-taped-test", action='store_true',
+                            help = "Build taped test")
+    # TODO(nebraszka) where to put the information that it is closed-source?
     if on_windows():
         parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
@@ -137,6 +140,7 @@ def main():
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_UDP_EXTENSION={'ON' if args.with_udp else 'OFF'}",
         f"-DRGL_BUILD_SNOW_EXTENSION={'ON' if args.with_snow else 'OFF'}",
+        f"-DRGL_BUILD_TAPED_TEST={'ON' if args.build_taped_test else 'OFF'}"
     ]
 
     if on_linux():

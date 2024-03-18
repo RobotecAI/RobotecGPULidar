@@ -122,22 +122,10 @@ gtest_discover_tests(RobotecGPULidar_test)
 include(FetchContent)
 
 if (RGL_BUILD_TAPED_TEST)
-    FetchContent_Declare(
-        tapedtest
-        GIT_REPOSITORY git@github.com:RobotecAI/RGL-blobs.git
-        GIT_TAG test/integration-using-tape
-    )
-
-    FetchContent_GetProperties(tapedtest)
-    if (NOT tapedtest_POPULATED)
-        FetchContent_Populate(tapedtest)
-    endif()
 
     set(RGL_INTEGRATION_TEST_FILES
         src/TapedTest.cpp
     )
-
-    file(COPY ${tapedtest_SOURCE_DIR}/tapes DESTINATION ${CMAKE_BINARY_DIR}/data)
 
     add_executable(RobotecGPULidar_taped_test ${RGL_INTEGRATION_TEST_FILES})
 
