@@ -119,15 +119,9 @@ include(GoogleTest)
 
 gtest_discover_tests(RobotecGPULidar_test)
 
-include(FetchContent)
+if (RGL_BUILD_TAPED_TEST AND (NOT WIN32))
 
-if (RGL_BUILD_TAPED_TEST)
-
-    set(RGL_INTEGRATION_TEST_FILES
-        src/TapedTest.cpp
-    )
-
-    add_executable(RobotecGPULidar_taped_test ${RGL_INTEGRATION_TEST_FILES})
+    add_executable(RobotecGPULidar_taped_test src/TapedTest.cpp)
 
     target_link_libraries(RobotecGPULidar_taped_test PRIVATE
         gtest_main

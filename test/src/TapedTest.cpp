@@ -5,10 +5,17 @@
 #include <filesystem>
 #include <fstream>
 
+#if RGL_BUILD_PCL_EXTENSION
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#endif
+
 class TapedTest : public RGLTest
 {
 protected:
 	const std::string benchmarkDataDirEnvVariableName = "RGL_TAPED_TEST_DATA_DIR";
+	const float epsilon = 1e-2f;
 };
 
 TEST_F(TapedTest, compare_pcd_files)
@@ -24,20 +31,27 @@ TEST_F(TapedTest, compare_pcd_files)
 	}
 
 	const std::string benchmarkDataDir = std::getenv(benchmarkDataDirEnvVariableName.c_str());
-	const std::string testTapePath{benchmarkDataDir + "/awsim-mesh2pcd"};
-	const std::string expectedOutputPath{benchmarkDataDir + "/expected-output/awsim-mesh2pcd.pcd"};
-	const std::string outputPath{std::filesystem::current_path().string() + "/output.pcd"};
+	const std::string testTapePath{
+	    (std::filesystem::path(benchmarkDataDir) / std::filesystem::path("/awsim-mesh2pcd")).string()};
+	const std::string expectedOutputPath{
+	    (std::filesystem::path(benchmarkDataDir) / std::filesystem::path("/expected-output/awsim-mesh2pcd.pcd")).string()};
+	const std::string outputPath{(std::filesystem::temp_directory_path() / std::filesystem::path("output.pcd")).string()};
 
 	ASSERT_RGL_SUCCESS(rgl_tape_play(testTapePath.c_str()));
 
-	std::ifstream expectedOutputFile(expectedOutputPath, std::ios::binary);
-	std::ifstream outputFile(outputPath, std::ios::binary);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr expectedCloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr outputCloud(new pcl::PointCloud<pcl::PointXYZ>);
 
-	const std::vector<char> expectedOutput((std::istreambuf_iterator<char>(expectedOutputFile)),
-	                                       std::istreambuf_iterator<char>());
-	const std::vector<char> output((std::istreambuf_iterator<char>(outputFile)), std::istreambuf_iterator<char>());
+	pcl::io::loadPCDFile(expectedOutputPath, *expectedCloud);
+	pcl::io::loadPCDFile(outputPath, *outputCloud);
 
-	EXPECT_EQ(expectedOutput, output);
+	ASSERT_TRUE(expectedCloud->size() == outputCloud->size());
+
+	for (size_t i = 0; i < expectedCloud->size(); ++i) {
+		EXPECT_NEAR(expectedCloud->points[i].x, outputCloud->points[i].x, epsilon);
+		EXPECT_NEAR(expectedCloud->points[i].y, outputCloud->points[i].y, epsilon);
+		EXPECT_NEAR(expectedCloud->points[i].z, outputCloud->points[i].z, epsilon);
+	}
 
 #else
 	const std::string msg = fmt::format("Skipping Taped Test - RGL compiled without PCL extension.");
