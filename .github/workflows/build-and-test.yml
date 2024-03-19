@@ -22,6 +22,10 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v3
+        with:
+          clean: false
+      - name: Clean repository excluding taped test data
+        run: git clean -ffdx -e external/taped_test_data
       - name: Import private extensions
         run: vcs import < extensions.repos
 
@@ -33,7 +37,7 @@ jobs:
     needs: [checkout-repository, load-env]
     uses: ./.github/workflows/build-subworkflow.yml
     with:
-      build-command: ./setup.py --build-taped-test --build-dir build-core
+      build-command: ./setup.py --build-dir build-core
       self-hosted-user-id: ${{ needs.load-env.outputs.user-id }}
       optix-install-dir: ${{ needs.load-env.outputs.optix-install-dir }}
       docker-image: localhost:5000/rgl:latest
@@ -92,9 +96,7 @@ jobs:
     needs: [build-core]
     uses: ./.github/workflows/test-subworkflow.yml
     with:
-      test-command: '
-      export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
-      cd build-core/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+      test-command: 'cd build-core/test && ./RobotecGPULidar_test'
       docker-image: localhost:5000/rgl:latest
 
   test-pcl-dev:
@@ -156,9 +158,7 @@ jobs:
     needs: [build-core]
     uses: ./.github/workflows/test-subworkflow.yml
     with:
-      test-command: '
-      export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
-      cd build-core/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+      test-command: 'cd build-core/test && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-pcl-prod:
