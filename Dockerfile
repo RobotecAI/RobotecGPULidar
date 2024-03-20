@@ -79,6 +79,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-velodyne-driver ros-${ROS_DISTRO}-velodyne-pointcloud \
     psmisc  # for `killall` command
 
+##### Taped test #####
+# Install git-lfs required for taped test data repository
+RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
+    apt-get install -y git-lfs
+
 ##### Post-build configuration #####
 
 WORKDIR /code
