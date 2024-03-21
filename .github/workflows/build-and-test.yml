@@ -210,9 +210,9 @@ jobs:
       # Run tests twice, each for different RMW implementation
       test-command: '
         apt update && apt install -y libxcursor1 libgl1 &&
+        export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
         cd build-all/test &&
         cp -r ../ros2_standalone/*.so* ../ &&
-        export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04

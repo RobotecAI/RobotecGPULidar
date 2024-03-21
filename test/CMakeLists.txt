@@ -126,13 +126,14 @@ if (RGL_BUILD_TAPED_TEST AND (NOT WIN32))
     target_link_libraries(RobotecGPULidar_taped_test PRIVATE
         gtest_main
         gmock_main
+        fmt::fmt
         RobotecGPULidar
     )
 
     target_include_directories(RobotecGPULidar_taped_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src
     )
 
     gtest_discover_tests(RobotecGPULidar_taped_test)
