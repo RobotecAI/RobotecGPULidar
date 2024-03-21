@@ -36,6 +36,8 @@ TEST_F(TapedTest, compare_pcd_files)
 	    (std::filesystem::path(benchmarkDataDir) / "expected-output" / "awsim-mesh2pcd.pcd").string()};
 	const std::string outputPath{(std::filesystem::current_path() / "output.pcd").string()};
 
+	std::cout << "testTapePath: " << testTapePath << std::endl;
+
 	ASSERT_RGL_SUCCESS(rgl_tape_play(testTapePath.c_str()));
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr expectedCloud(new pcl::PointCloud<pcl::PointXYZ>);
