@@ -126,7 +126,7 @@ if (RGL_BUILD_TAPED_TEST AND (NOT WIN32))
     target_link_libraries(RobotecGPULidar_taped_test PRIVATE
         gtest_main
         gmock_main
-        fmt::fmt
+        spdlog
         RobotecGPULidar
     )
 

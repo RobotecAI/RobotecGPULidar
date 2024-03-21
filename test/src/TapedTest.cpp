@@ -2,7 +2,7 @@
 #include <rgl/api/extensions/tape.h>
 
 #include <filesystem>
-#include <fmt/core.h>
+#include <spdlog/fmt/ostr.h>
 
 #if RGL_BUILD_PCL_EXTENSION
 #include <pcl/point_cloud.h>
