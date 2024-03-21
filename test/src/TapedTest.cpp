@@ -31,11 +31,10 @@ TEST_F(TapedTest, compare_pcd_files)
 	}
 
 	const std::string benchmarkDataDir = std::getenv(benchmarkDataDirEnvVariableName.c_str());
-	const std::string testTapePath{
-	    (std::filesystem::path(benchmarkDataDir) / std::filesystem::path("/awsim-mesh2pcd")).string()};
+	const std::string testTapePath{(std::filesystem::path(benchmarkDataDir) / "awsim-mesh2pcd").string()};
 	const std::string expectedOutputPath{
-	    (std::filesystem::path(benchmarkDataDir) / std::filesystem::path("/expected-output/awsim-mesh2pcd.pcd")).string()};
-	const std::string outputPath{(std::filesystem::temp_directory_path() / std::filesystem::path("output.pcd")).string()};
+	    (std::filesystem::path(benchmarkDataDir) / "expected-output" / "awsim-mesh2pcd.pcd").string()};
+	const std::string outputPath{(std::filesystem::current_path() / "output.pcd").string()};
 
 	ASSERT_RGL_SUCCESS(rgl_tape_play(testTapePath.c_str()));
 

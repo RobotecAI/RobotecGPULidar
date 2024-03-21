@@ -28,6 +28,8 @@ jobs:
         run: git clean -ffdx -e external/taped_test_data
       - name: Import private extensions
         run: vcs import < extensions.repos
+      - name: Install taped test dependencies
+        run: ./setup.py --install-taped-test-deps
 
   load-env:
     uses: ./.github/workflows/load-env-subworkflow.yml

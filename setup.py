@@ -72,8 +72,10 @@ def main():
                             help="Pass arguments to make. Usage: --make=\"args...\". Defaults to \"-j <cpu count>\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
                             help="Add run-time search path(s) for RGL library. $ORIGIN (actual library path) is added by default.")
+        parser.add_argument("--install-taped-test-deps", action='store_true',
+                            help="Install dependencies for taped test and exit (closed-source dependencies)")
         parser.add_argument("--build-taped-test", action='store_true',
-                            help="Install benchmark data (closed-source) for taped test and build the test")
+                            help="Build taped test")
     if on_windows():
         parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
@@ -110,10 +112,10 @@ def main():
         raise RuntimeError(
             "Taped test requires PCL extension to be built: run this script with --with-pcl flag")
 
-    # Install benchmark data for taped test
-    if args.build_taped_test:
-        install_taped_test_benchmark_data(cfg)
-        print('Installed benchmark data for taped test, exiting...')
+    # Install taped test dependencies
+    if args.install_taped_test_deps:
+        install_taped_test_deps(cfg)
+        print('Installed dependencies for taped test, exiting...')
         return 0
 
     # Check CUDA
@@ -313,7 +315,7 @@ def update_taped_test_data_repo():
         run_subprocess_command("git pull && git-lfs pull")
 
 
-def install_taped_test_benchmark_data(cfg):
+def install_taped_test_deps(cfg):
     # Cloning and updating taped test benchmark data repo requires git-lfs to be installed
     ensure_git_lfs_installed()
     if not os.path.isdir(cfg.TAPED_TEST_DATA_DIR):
