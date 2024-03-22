@@ -190,9 +190,9 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 			throw InvalidPipeline("RCS is NaN");
 		}
 
-		std::locale loc(std::locale(), new numpunct());
-		std::cout << fmt::format(loc, "{0:L}", rcsDbsm) << std::endl;
-		//printf("%.2f\n", rcsDbsm);
+		//std::locale loc(std::locale(), new numpunct());
+		//std::cout << fmt::format(loc, "{0:L}", rcsDbsm) << std::endl;
+		printf("%.2f\n", rcsDbsm);
 
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
 		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));

@@ -132,9 +132,10 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 
 	bool log = false;
 
-	const float phi = rayDirSph[1]; // azimuth, 0 = X-axis, positive = CCW
-	const float the = rayDirSph[2]; // elevation, 0 = Z-axis, 90 = XY-plane, -180 = negative Z-axis
-	if (log) printf("phi: %.2f theta: %.2f\n", phi, the);
+//	const float phi = rayDirSph[1]; // azimuth, 0 = X-axis, positive = CCW
+//	const float the = rayDirSph[2]; // elevation, 0 = Z-axis, 90 = XY-plane, -180 = negative Z-axis
+	const float phi = atan2(rayDirCts[1], rayDirCts[2]);
+	const float the = acos(rayDirCts[0] / rayDirCts.length());
 
 	// Consider unit vector of the ray direction, these are its projections:
 	const float cp = cosf(phi); // X-dir component
@@ -142,9 +143,14 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const float ct = cosf(the); // Z-dir component
 	const float st = sinf(the); // XY-plane component
 
-	const Vec3f dirP = {-sp, cp, 0};
-	const Vec3f dirT = {cp * ct, sp * ct, -st};
-	if (log) printf("dirP: (%.2f %.2f %.2f) dirT: (%.2f %.2f %.2f)\n", dirP.x(), dirP.y(), dirP.z(), dirT.x(), dirT.y(), dirT.z());
+//	const Vec3f dirP = {-sp, cp, 0};
+//	const Vec3f dirT = {cp * ct, sp * ct, -st};
+	const Vec3f dirP = {0, cp, -sp};
+	const Vec3f dirT = {-st, sp * ct, cp * ct};
+	if (log) printf("phi: %.2f theta: %.2f\ndirP: (%.4f %.4f %.4f) dirT: (%.4f %.4f %.4f)\n",
+		       phi, the,
+		       dirP.x(), dirP.y(), dirP.z(),
+		       dirT.x(), dirT.y(), dirT.z());
 
 	const float kr = waveNum * hitDist[tid];
 
@@ -156,8 +162,8 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const Vec3f reflectedPol = reflectPolarization(rayPol, hitNorm[tid], rayDir);
 	const Vec3f reflectedDir = (rayDir - hitNorm[tid] * (2 * rayDir.dot(hitNorm[tid]))).normalized();
 	if (log) printf("rayDir: (%.4f %.4f %.4f) rayPol: (%.4f %.4f %.4f)\n", rayDir.x(), rayDir.y(), rayDir.z(), rayPol.x(), rayPol.y(), rayPol.z());
-	if (log) printf("hitNormal: (%.2f %.2f %.2f)\n", hitNorm[tid].x(), hitNorm[tid].y(), hitNorm[tid].z());
-	if (log) printf("reflectedDir: (%.2f %.2f %.2f) reflectedPol: (%.2f %.2f %.2f)\n",
+	if (log) printf("hitNormal: (%.4f %.4f %.4f)\n", hitNorm[tid].x(), hitNorm[tid].y(), hitNorm[tid].z());
+	if (log) printf("reflectedDir: (%.4f %.4f %.4f) reflectedPol: (%.4f %.4f %.4f)\n",
 	       reflectedDir.x(), reflectedDir.y(), reflectedDir.z(),
 	       reflectedPol.x(), reflectedPol.y(), reflectedPol.z());
 
@@ -171,17 +177,21 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	if (log) printf("apE: [(%.2f + %.2fi) (%.2f + %.2fi) (%.2f + %.2fi)]\n", apE.x().real(), apE.x().imag(), apE.y().real(), apE.y().imag(), apE.z().real(), apE.z().imag());
 	if (log) printf("apH: [(%.2f + %.2fi) (%.2f + %.2fi) (%.2f + %.2fi)]\n", apH.x().real(), apH.x().imag(), apH.y().real(), apH.y().imag(), apH.z().real(), apH.z().imag());
 
-	const Vec3f vecK = waveNum * ((dirX * cp + dirY * sp) * st + dirZ * ct);
+	//const Vec3f vecK = waveNum * ((dirX * cp + dirY * sp) * st + dirZ * ct);
+	const Vec3f vecK = waveNum * ((dirZ * cp + dirY * sp) * st + dirX * ct);
 	if (log) printf("vecK=(%.2f, %.2f, %.2f) hitPos: (%.2f %.2f %.2f)\n",
 	       vecK.x(), vecK.y(), vecK.z(),
 	       hitPos[tid].x(), hitPos[tid].y(), hitPos[tid].z());
 
+	//const float rayArea = hitDist[tid] * hitDist[tid] * sinf(rayElevationStepRad) * rayAzimuthStepRad;
 	const float rayArea = hitDist[tid] * hitDist[tid] * sinf(rayElevationStepRad) * rayAzimuthStepRad;
 	//printf("ele rad: %.6f azi rad: %.6f area: %.6f distance: %0.2f\n",  rayElevationStepRad, rayAzimuthStepRad, rayArea, hitDist[tid]);
 
 	//thrust::complex<float> BU1 = (-(apE.cross(-dirP) + apH.cross(dirT)));
 
 	// TODO(Pawel): reflectedDir should be replaced with hit normal?
+
+	// TODOTODOTODO: cross these with observation??
 
 	const Vector<3, thrust::complex<float>> BU1 = apE.cross(-dirP);
 	const Vector<3, thrust::complex<float>> BU2 = apH.cross(dirT);
@@ -203,9 +213,17 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	thrust::complex<float> BR = refField2.dot(reflectedDir);
 	thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
 	                                exp(-i * vecK.dot(hitPos[tid]));
+	//thrust::complex<float> factor =
 
-	if (log) printf("BU: (%.2f + %.2fi) BR: (%.2f + %.2fi)\n", BU.real(), BU.imag(), BR.real(), BR.imag());
-	if (log) printf("factor: (%.2f + %.2fi)\n", factor.real(), factor.imag());
+	if (log) printf("BU: (%.2f + %.2fi) BR: (%.2f + %.2fi) factor: (%.2f + %.2fi)\n",
+		       BU.real(), BU.imag(),
+		       BR.real(), BR.imag(),
+		       factor.real(), factor.imag());
+
+	thrust::complex<float> BUf = BU * factor;
+	thrust::complex<float> BRf = BR * factor;
+
+	if (log) printf("BUf: (%.2f + %.2fi) BRf: (%.2f + %.2fi)\n", BUf.real(), BUf.imag(), BRf.real(), BRf.imag());
 
 	outBUBRFactor[tid] = {BU, BR, factor};
 }

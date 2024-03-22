@@ -16,6 +16,15 @@
 #include <rgl/api/extensions/ros2.h>
 #include "helpers/testPointCloud.hpp"
 
+#include <iostream>
+struct numpunct : std::numpunct<char> {
+protected:
+	char do_decimal_point() const override
+	{
+		return ',';
+	}
+};
+
 struct RadarTest : RGLTest
 {};
 
@@ -133,6 +142,10 @@ TEST_F(RadarTest, rotating_reflector_2d)
 	std::vector<rgl_mat3x4f> raysData = genRadarRays();
 //	std::vector<rgl_mat3x4f> raysData = {
 //	    Mat3x4f::rotationDeg(0, 0, 0).toRGL(),
+////	    Mat3x4f::rotationDeg(2.5, 0, 0).toRGL(),
+////	    Mat3x4f::rotationDeg(5, 0, 0).toRGL(),
+////	    Mat3x4f::rotationDeg(-2.5, 0, 0).toRGL(),
+////	    Mat3x4f::rotationDeg(-5, 0, 0).toRGL(),
 //	};
 	rgl_radar_scope_t radarScope{
 	    .begin_distance = 1.3f,
@@ -186,8 +199,10 @@ TEST_F(RadarTest, rotating_reflector_2d)
 	//rgl_mesh_t reflector2dMesh = loadFromSTL("/home/pawel/Pawel/Documentation/RGL/2024Q1/Lexus.stl");
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&reflector2D, nullptr, reflector2dMesh));
 
-	float angle = -50.0f;
-	for (; angle <= 50; angle += 0.1f) {
+	const float initialAngle = -80.0f;
+	const float finalAngle = 80.0f;
+	float angle = initialAngle;
+	for (int index = 0; index <= 1000; ++index, angle = initialAngle + 0.001f * index * (finalAngle - initialAngle)) {
 		//auto position = Vec3f{15 + angle / 5, 0, 0};
 		auto position = Vec3f{0, 0, 5};
 		auto rotation = Vec3f{0, -90, 0};
@@ -195,7 +210,9 @@ TEST_F(RadarTest, rotating_reflector_2d)
 		rgl_mat3x4f reflectorPose = (Mat3x4f::TRS(position, {angle, 0, 0}, scale) * Mat3x4f::TRS({0, 0, 0}, rotation, scale)).toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(reflector2D, &reflectorPose));
 
-		//printf("Angle: %.2f\n", angle);
+//		std::locale loc(std::locale(), new numpunct());
+//		std::cout << fmt::format(loc, "{0:L} ", angle);
+		//printf("%.2f;", angle);
 
 		EXPECT_RGL_SUCCESS(rgl_graph_run(rays));
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
