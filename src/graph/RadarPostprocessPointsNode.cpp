@@ -20,12 +20,10 @@
 
 
 #include <iostream>
-struct numpunct : std::numpunct<char> {
+struct numpunct : std::numpunct<char>
+{
 protected:
-	char do_decimal_point() const override
-	{
-		return ',';
-	}
+	char do_decimal_point() const override { return ','; }
 };
 
 inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
@@ -76,8 +74,9 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	auto normalPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto xyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	outBUBRFactorDev->resize(input->getPointCount(), false, false);
-	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency, raysPtr,
-	                      distancePtr, normalPtr, xyzPtr, outBUBRFactorDev->getWritePtr());
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency,
+	                      input->getLookAtOriginTransform(), raysPtr, distancePtr, normalPtr, xyzPtr,
+	                      outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 
@@ -98,51 +97,50 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		const auto radialSpeed = radialSpeedInputHost->at(i);
 		const auto elevation = elevationInputHost->at(i);
 
-		if (clusters.empty())
-		{
+		if (clusters.empty()) {
 			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
 			continue;
 		}
 
 		clusters.back().addPoint(i, distance, azimuth, radialSpeed, elevation);
 
-//		bool isPointClustered = false;
-//		const auto radarScope = getRadarScopeWithinDistance(radarScopes, distance);
-//		if (!radarScope.has_value()) {
-//			continue;
-//		}
-//		for (auto&& cluster : clusters) {
-//			if (cluster.isCandidate(distance, azimuth, radialSpeed, radarScope.value())) {
-//				cluster.addPoint(i, distance, azimuth, radialSpeed, elevation);
-//				isPointClustered = true;
-//				break;
-//			}
-//		}
-//
-//		if (!isPointClustered) {
-//			// Create a new cluster
-//			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
-//		}
+		//		bool isPointClustered = false;
+		//		const auto radarScope = getRadarScopeWithinDistance(radarScopes, distance);
+		//		if (!radarScope.has_value()) {
+		//			continue;
+		//		}
+		//		for (auto&& cluster : clusters) {
+		//			if (cluster.isCandidate(distance, azimuth, radialSpeed, radarScope.value())) {
+		//				cluster.addPoint(i, distance, azimuth, radialSpeed, elevation);
+		//				isPointClustered = true;
+		//				break;
+		//			}
+		//		}
+		//
+		//		if (!isPointClustered) {
+		//			// Create a new cluster
+		//			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
+		//		}
 	}
 
 	// Merge clusters if are close enough
-//	bool allClustersGood = false;
-//	while (clusters.size() > 1 && !allClustersGood) {
-//		allClustersGood = true;
-//		for (int i = 0; i < clusters.size(); ++i) {
-//			for (int j = i + 1; j < clusters.size(); ++j) {
-//				if (clusters[i].canMergeWith(clusters[j], radarScopes)) {
-//					clusters[i].takeIndicesFrom(std::move(clusters[j]));
-//					clusters.erase(clusters.begin() + j);
-//					allClustersGood = false;
-//					break;
-//				}
-//			}
-//			if (!allClustersGood) {
-//				break;
-//			}
-//		}
-//	}
+	//	bool allClustersGood = false;
+	//	while (clusters.size() > 1 && !allClustersGood) {
+	//		allClustersGood = true;
+	//		for (int i = 0; i < clusters.size(); ++i) {
+	//			for (int j = i + 1; j < clusters.size(); ++j) {
+	//				if (clusters[i].canMergeWith(clusters[j], radarScopes)) {
+	//					clusters[i].takeIndicesFrom(std::move(clusters[j]));
+	//					clusters.erase(clusters.begin() + j);
+	//					allClustersGood = false;
+	//					break;
+	//				}
+	//			}
+	//			if (!allClustersGood) {
+	//				break;
+	//			}
+	//		}
+	//	}
 
 	filteredIndicesHost.clear();
 	for (auto&& cluster : clusters) {

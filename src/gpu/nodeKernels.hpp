@@ -30,8 +30,8 @@
 // This could be defined in CompactNode, however such include here causes mess because nvcc does not support C++20.
 using CompactionIndexType = int32_t;
 
-void gpuFindCompaction(cudaStream_t, size_t pointCount, const int32_t* shouldCompact,
-                       CompactionIndexType* hitCountInclusive, size_t* outHitCount);
+void gpuFindCompaction(cudaStream_t, size_t pointCount, const int32_t* shouldCompact, CompactionIndexType* hitCountInclusive,
+                       size_t* outHitCount);
 void gpuFormatSoaToAos(cudaStream_t, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* soaInData,
                        char* aosOutData);
 void gpuFormatAosToSoa(cudaStream_t, size_t pointCount, size_t pointSize, size_t fieldCount, const char* aosInData,
@@ -48,6 +48,6 @@ void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f s
                            const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
                            Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform);
 void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
-                           const Field<RAY_POSE_MAT3x4_F32>::type* rayPose, const Field<DISTANCE_F32>::type* hitDist,
-                           const Field<NORMAL_VEC3_F32>::type* hitNorm, const Field<XYZ_VEC3_F32>::type* hitPos,
-                           Vector<3, thrust::complex<float>>* outBUBRFactor);
+                           Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
+                           const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
+                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor);
