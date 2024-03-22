@@ -122,7 +122,6 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const Vec3f rayDir = (rayPose[tid] * Vec3f{0, 0, 1}).normalized();
 	const Vec3f rayPol = rayPose[tid] * Vec3f{1, 0, 0}; // UP, perpendicular to ray
 	const Vec3f hitNormal = hitNorm[tid];
-	const Vec3f hitPosition = hitPos[tid];
 	const float hitDistance = hitDist[tid];
 	const float rayArea = hitDistance * hitDistance * sinf(rayElevationStepRad) * rayAzimuthStepRad;
 
