@@ -28,18 +28,6 @@
 #include <graph/GraphRunCtx.hpp>
 #include <NvtxWrappers.hpp>
 
-#ifdef _WIN32
-// near defined in minwindef.h causing compile error on Windows.
-#if defined(near)
-#undef near
-#endif
-
-// far defined in minwindef.h causing compile error on Windows.
-#if defined(far)
-#undef far
-#endif
-#endif // _WIN32
-
 extern "C" {
 
 RGL_API rgl_status_t rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)
@@ -881,15 +869,17 @@ void TapeCore::tape_node_raytrace_configure_distortion(const YAML::Node& yamlNod
 	rgl_node_raytrace_configure_distortion(node, yamlNode[1].as<bool>());
 }
 
-RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float near, float far)
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float nearDistance,
+	float farDistance)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_non_hits(node={}, near={}, far={})", repr(node), near, far);
+		RGL_API_LOG("rgl_node_raytrace_configure_non_hits(node={}, nearDistance={}, farDistance={})",
+			repr(node), nearDistance, farDistance);
 		CHECK_ARG(node != nullptr);
 		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
-		raytraceNode->setNonHitDistanceValues(near, far);
+		raytraceNode->setNonHitDistanceValues(nearDistance, farDistance);
 	});
-	TAPE_HOOK(node, near, far);
+	TAPE_HOOK(node, nearDistance, farDistance);
 	return status;
 }
 
