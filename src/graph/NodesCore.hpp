@@ -125,7 +125,7 @@ struct RaytraceNode : IPointsNode
 	// RaytraceNode specific
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
-	void setNonHitDistanceValues(float near, float far);
+	void setNonHitDistanceValues(float nearDistance, float farDistance);
 
 private:
 	IRaysNode::Ptr raysNode;

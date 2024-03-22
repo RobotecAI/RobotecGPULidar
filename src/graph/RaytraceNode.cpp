@@ -172,8 +172,8 @@ void RaytraceNode::setVelocity(const Vec3f& linearVelocity, const Vec3f& angular
 	sensorAngularVelocityRPY = angularVelocity;
 }
 
-void RaytraceNode::setNonHitDistanceValues(float near, float far)
+void RaytraceNode::setNonHitDistanceValues(float nearDistance, float farDistance)
 {
-	nearNonHitDistance = near;
-	farNonHitDistance = far;
+	nearNonHitDistance = nearDistance;
+	farNonHitDistance = farDistance;
 }
