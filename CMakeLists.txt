@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
+
 # Build Release by default; CMAKE_BUILD_TYPE needs to be set before project(...)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
         "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
+
+# Use debug postfix 'd' by default.
+if(NOT CMAKE_DEBUG_POSTFIX)
+  set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING
+      "Choose the debug postfix used when building Debug configuration")
+endif()
+
 project(RobotecGPULidar C CXX CUDA)
 
 # Logging default settings (can be changed via API call)
