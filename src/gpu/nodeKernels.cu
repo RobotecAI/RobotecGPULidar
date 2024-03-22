@@ -187,12 +187,14 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const thrust::complex<float> BU = refField1.dot(reflectedDir);
 	const thrust::complex<float> BR = refField2.dot(reflectedDir);
 	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
-	                                exp(-i * vecK.dot(hitPos[tid]));
+	                                exp(-i * waveNum * hitDistance);
 
-	if (log) printf("BU: (%.2f + %.2fi) BR: (%.2f + %.2fi) factor: (%.2f + %.2fi)\n",
-		       BU.real(), BU.imag(),
-		       BR.real(), BR.imag(),
-		       factor.real(), factor.imag());
+	const auto BUf = BU * factor;
+	const auto BRf = BR * factor;
+
+	if (log) printf("BU: (%.2f + %.2fi) BR: (%.2f + %.2fi) factor: (%.2f + %.2fi) [BUf: (%.2f + %.2fi) BRf: %.2f + %.2fi]\n",
+		       BU.real(), BU.imag(), BR.real(), BR.imag(), factor.real(), factor.imag(),
+		       BUf.real(), BUf.imag(), BRf.real(), BRf.imag());
 
 	outBUBRFactor[tid] = {BU, BR, factor};
 }
