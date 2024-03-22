@@ -28,6 +28,18 @@
 #include <graph/GraphRunCtx.hpp>
 #include <NvtxWrappers.hpp>
 
+#ifdef _WIN32
+// near defined in minwindef.h causing compile error on Windows.
+#if defined(near)
+#undef near
+#endif
+
+// far defined in minwindef.h causing compile error on Windows.
+#if defined(far)
+#undef far
+#endif
+#endif // _WIN32
+
 extern "C" {
 
 RGL_API rgl_status_t rgl_get_version_info(int32_t* out_major, int32_t* out_minor, int32_t* out_patch)

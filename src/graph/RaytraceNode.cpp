@@ -20,6 +20,18 @@
 #include <macros/optix.hpp>
 #include <RGLFields.hpp>
 
+#ifdef _WIN32
+// near defined in minwindef.h causing compile error on Windows.
+#if defined(near)
+#undef near
+#endif
+
+// far defined in minwindef.h causing compile error on Windows.
+#if defined(far)
+#undef far
+#endif
+#endif // _WIN32
+
 void RaytraceNode::setParameters()
 {
 	const static Vec2f defaultRangeValue = Vec2f(0.0f, FLT_MAX);
