@@ -150,7 +150,7 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const Vec3f reflectedDir = (rayDir - hitNormalLocal * (2 * rayDir.dot(hitNormalLocal))).normalized();
 	const Vec3f reflectedPol = reflectPolarization(rayPol, hitNormalLocal, rayDir);
 	const Vector<3, thrust::complex<float>> reflectedPolCplx = {reflectedPol.x(), reflectedPol.y(), reflectedPol.z()};
-	const float kr = waveNum * hitDist[tid];
+	const float kr = waveNum * hitDistance;
 
 	if (log)
 		printf("reflectedDir: (%.4f %.4f %.4f) reflectedPol: (%.4f %.4f %.4f)\n", reflectedDir.x(), reflectedDir.y(),
@@ -192,7 +192,9 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 
 	const thrust::complex<float> BU = refField1.dot(reflectedDir);
 	const thrust::complex<float> BR = refField2.dot(reflectedDir);
-	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
+//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
+//	                                      exp(-i * waveNum * hitDistance);
+	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) / (4.0f * M_PIf))) *
 	                                      exp(-i * waveNum * hitDistance);
 	//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
 	//	                                      exp(-i * vecK.dot(hitPosLocal));
