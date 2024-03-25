@@ -105,7 +105,7 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	constexpr float c0 = 299792458.0f;
 	constexpr float reflectionCoef = 1.0f; // TODO
 	const float waveLen = c0 / freq;
-	const float waveNum = 2.0f * M_PIf / waveLen;
+	const float waveNum = 2.0f * static_cast<float>(M_PI) / waveLen;
 	const thrust::complex<float> i = {0, 1.0};
 	const Vec3f dirX = {1, 0, 0};
 	const Vec3f dirY = {0, 1, 0};
@@ -142,7 +142,7 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 
 	thrust::complex<float> BU = (-(apE.cross(-dirP) + apH.cross(dirT))).dot(rayDir);
 	thrust::complex<float> BR = (-(apE.cross(dirT) + apH.cross(dirP))).dot(rayDir);
-	thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
+	thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
 	                                exp(-i * vecK.dot(hitPos[tid]));
 
 	//	printf("GPU: point=%d ray=??: dist=%f, pos=(%.2f, %.2f, %.2f), norm=(%.2f, %.2f, %.2f), BU=(%.2f+%.2fi), BR=(%.2f+%.2fi), factor=(%.2f+%.2fi)\n", tid, hitDist[tid],

@@ -24,8 +24,8 @@ const auto minElevation = -7.5f;
 const auto maxElevation = 7.5f;
 const auto azimuthStep = 0.05f;
 const auto elevationStep = 0.05f;
-const auto azimuthRad = (maxAzimuth - minAzimuth) * M_PIf / 180.0f;
-const auto elevationRad = (maxElevation - minElevation) * M_PIf / 180.0f;
+const auto azimuthRad = (maxAzimuth - minAzimuth) * static_cast<float>(M_PI) / 180.0f;
+const auto elevationRad = (maxElevation - minElevation) * static_cast<float>(M_PI) / 180.0f;
 
 std::vector<rgl_mat3x4f> genRadarRays()
 {
