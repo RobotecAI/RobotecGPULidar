@@ -160,7 +160,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		}
 
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
-		const auto rcsDbsm = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
+		const auto rcsDbsm = 10.0f * log10f(4.0f * std::numbers::pi_v<float> * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 
 		// TODO: Handle nans in RCS.
 		if (std::isnan(rcsDbsm)) {
