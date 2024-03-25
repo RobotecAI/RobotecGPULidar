@@ -18,14 +18,6 @@
 #include <graph/NodesCore.hpp>
 #include <gpu/nodeKernels.hpp>
 
-
-#include <iostream>
-struct numpunct : std::numpunct<char>
-{
-protected:
-	char do_decimal_point() const override { return ','; }
-};
-
 inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const std::vector<rgl_radar_scope_t>& radarScopes,
                                                                            Field<DISTANCE_F32>::type distance)
 {
@@ -96,51 +88,43 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		const auto azimuth = azimuthInputHost->at(i);
 		const auto radialSpeed = radialSpeedInputHost->at(i);
 		const auto elevation = elevationInputHost->at(i);
-
-		if (clusters.empty()) {
-			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
+		bool isPointClustered = false;
+		const auto radarScope = getRadarScopeWithinDistance(radarScopes, distance);
+		if (!radarScope.has_value()) {
 			continue;
 		}
+		for (auto&& cluster : clusters) {
+			if (cluster.isCandidate(distance, azimuth, radialSpeed, radarScope.value())) {
+				cluster.addPoint(i, distance, azimuth, radialSpeed, elevation);
+				isPointClustered = true;
+				break;
+			}
+		}
 
-		clusters.back().addPoint(i, distance, azimuth, radialSpeed, elevation);
-
-		//		bool isPointClustered = false;
-		//		const auto radarScope = getRadarScopeWithinDistance(radarScopes, distance);
-		//		if (!radarScope.has_value()) {
-		//			continue;
-		//		}
-		//		for (auto&& cluster : clusters) {
-		//			if (cluster.isCandidate(distance, azimuth, radialSpeed, radarScope.value())) {
-		//				cluster.addPoint(i, distance, azimuth, radialSpeed, elevation);
-		//				isPointClustered = true;
-		//				break;
-		//			}
-		//		}
-		//
-		//		if (!isPointClustered) {
-		//			// Create a new cluster
-		//			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
-		//		}
+		if (!isPointClustered) {
+			// Create a new cluster
+			clusters.emplace_back(i, distance, azimuth, radialSpeed, elevation);
+		}
 	}
 
 	// Merge clusters if are close enough
-	//	bool allClustersGood = false;
-	//	while (clusters.size() > 1 && !allClustersGood) {
-	//		allClustersGood = true;
-	//		for (int i = 0; i < clusters.size(); ++i) {
-	//			for (int j = i + 1; j < clusters.size(); ++j) {
-	//				if (clusters[i].canMergeWith(clusters[j], radarScopes)) {
-	//					clusters[i].takeIndicesFrom(std::move(clusters[j]));
-	//					clusters.erase(clusters.begin() + j);
-	//					allClustersGood = false;
-	//					break;
-	//				}
-	//			}
-	//			if (!allClustersGood) {
-	//				break;
-	//			}
-	//		}
-	//	}
+	bool allClustersGood = false;
+	while (clusters.size() > 1 && !allClustersGood) {
+		allClustersGood = true;
+		for (int i = 0; i < clusters.size(); ++i) {
+			for (int j = i + 1; j < clusters.size(); ++j) {
+				if (clusters[i].canMergeWith(clusters[j], radarScopes)) {
+					clusters[i].takeIndicesFrom(std::move(clusters[j]));
+					clusters.erase(clusters.begin() + j);
+					allClustersGood = false;
+					break;
+				}
+			}
+			if (!allClustersGood) {
+				break;
+			}
+		}
+	}
 
 	filteredIndicesHost.clear();
 	for (auto&& cluster : clusters) {
@@ -152,8 +136,6 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	const auto lambda = 299'792'458.0f / frequency;
 	const auto lambdaSqrtDbsm = 10.0f * log10f(lambda * lambda);
-
-	const auto clusterCount = clusters.size();
 
 	// Compute per-cluster properties
 	clusterRcsHost->resize(filteredIndicesHost.size(), false, false);
@@ -178,19 +160,12 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		}
 
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
+		auto rcsDbsm = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 
 		// TODO: Handle nans in RCS.
-
-		const auto indicesCount = cluster.indices.size();
-
-		auto rcsDbsm = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 		if (std::isnan(rcsDbsm)) {
 			throw InvalidPipeline("RCS is NaN");
 		}
-
-		//std::locale loc(std::locale(), new numpunct());
-		//std::cout << fmt::format(loc, "{0:L}", rcsDbsm) << std::endl;
-		printf("%.2f\n", rcsDbsm);
 
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
 		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
