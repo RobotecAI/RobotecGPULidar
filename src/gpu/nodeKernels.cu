@@ -107,6 +107,8 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 {
 	LIMIT(count);
 
+	constexpr bool log = false;
+
 	constexpr float c0 = 299792458.0f;
 	constexpr float reflectionCoef = 1.0f; // TODO
 	const float waveLen = c0 / freq;
@@ -115,8 +117,6 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const Vec3f dirX = {1, 0, 0};
 	const Vec3f dirY = {0, 1, 0};
 	const Vec3f dirZ = {0, 0, 1};
-
-	bool log = false;
 
 	const Mat3x4f rayPoseLocal = lookAtOriginTransform * rayPose[tid];
 	//	const Vec3f hitPosLocal = lookAtOriginTransform * hitPos[tid];
@@ -192,9 +192,10 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 
 	const thrust::complex<float> BU = refField1.dot(reflectedDir);
 	const thrust::complex<float> BR = refField2.dot(reflectedDir);
-//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
-//	                                      exp(-i * waveNum * hitDistance);
-	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) / (4.0f * M_PIf))) *
+	//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
+	//	                                      exp(-i * waveNum * hitDistance);
+	const thrust::complex<float> factor = thrust::complex<float>(
+	                                          0.0, ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) / (4.0f * M_PIf))) *
 	                                      exp(-i * waveNum * hitDistance);
 	//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * M_PIf))) *
 	//	                                      exp(-i * vecK.dot(hitPosLocal));
