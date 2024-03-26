@@ -143,7 +143,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	clusterNoiseHost->resize(filteredIndicesHost.size(), false, false);
 	clusterSnrHost->resize(filteredIndicesHost.size(), false, false);
 	std::normal_distribution<float> gaussianNoise(receivedNoiseMeanDb, receivedNoiseStDevDb);
-	for (int clusterIdx = 0; clusterIdx < filteredIndicesHost.size(); ++clusterIdx) {
+	for (int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
 		std::complex<float> AU = 0;
 		std::complex<float> AR = 0;
 		auto&& cluster = clusters[clusterIdx];
@@ -160,7 +160,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		}
 
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
-		const auto rcsDbsm = 10.0f * log10f(4.0f * std::numbers::pi_v<float> * (pow(abs(AU), 2) + pow(abs(AR), 2)));
+		const auto rcsDbsm = 10.0f * log10f(4.0f * std::numbers::pi_v<float> * (powf(abs(AU), 2) + powf(abs(AR), 2)));
 
 		// TODO: Handle nans in RCS.
 		if (std::isnan(rcsDbsm)) {
@@ -170,17 +170,15 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
 		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
 
-		//TODO(Pawel): Power transmitted is in dBm, which is here summed up with dB - this is rather incorrect, because dB and dBm are different.
-		const auto outputPower = powerTransmittedDbm + antennaGainDbi + antennaGainDbi + rcsDbsm + lambdaSqrtDbsm - multiplier;
+		const auto powerReceived = powerTransmittedDbm + antennaGainDbi + antennaGainDbi + rcsDbsm + lambdaSqrtDbsm -
+		                           multiplier;
 
 		clusterRcsHost->at(clusterIdx) = rcsDbsm;
-
-		//TODO(Pawel): SmartMicro driver calculates SNR as Power - Noise. This means that their power contains this noise. Thus, it should
-		// be outputPower + noise below.
-		clusterPowerHost->at(clusterIdx) = outputPower;
 		clusterNoiseHost->at(clusterIdx) = gaussianNoise(randomDevice);
+		clusterPowerHost->at(clusterIdx) = powerReceived + clusterNoiseHost->at(clusterIdx); // power received + noise
 		clusterSnrHost->at(clusterIdx) = clusterPowerHost->at(clusterIdx) - clusterNoiseHost->at(clusterIdx);
 	}
+
 	clusterPowerDev->copyFrom(clusterPowerHost);
 	clusterRcsDev->copyFrom(clusterRcsHost);
 	clusterNoiseDev->copyFrom(clusterNoiseHost);
