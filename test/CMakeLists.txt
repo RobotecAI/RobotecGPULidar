@@ -74,6 +74,8 @@ if ((NOT WIN32) AND (NOT RGL_AUTO_TAPE_PATH))
     )
 endif()
 
+file(COPY ${CMAKE_SOURCE_DIR}/test/data/ DESTINATION ${CMAKE_BINARY_DIR}/data/)
+
 add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
 target_compile_definitions(RobotecGPULidar_test PRIVATE
