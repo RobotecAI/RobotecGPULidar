@@ -106,3 +106,27 @@ RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const cha
                                                      rgl_qos_policy_reliability_t qos_reliability,
                                                      rgl_qos_policy_durability_t qos_durability,
                                                      rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);
+
+/**
+ * Creates or modifies Ros2PublishLaserScanNode.
+ * The node publishes a LaserScan message to the ROS2 topic using default Quality of Service settings.
+ * TODO
+ * Graph input: FormatNode
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param topic_name Topic name to publish on.
+ * @param frame_id Frame this data is associated with.
+ */
+RGL_API rgl_status_t rgl_node_publish_ros2_laserscan(rgl_node_t* node, const char* topic_name, const char* frame_id);
+
+/**
+ * Creates or modifies Ros2PublishLaserScanNode.
+ * The node publishes a LaserScan message to the ROS2 topic using default Quality of Service settings.
+ * TODO
+ * Graph input: FormatNode
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
+ * @param topic_name Topic name to publish on.
+ * @param frame_id Frame this data is associated with.
+ */
+RGL_API rgl_status_t rgl_node_publish_ros2_laserscan(rgl_node_t* node, const char* topic_name, const char* frame_id);
