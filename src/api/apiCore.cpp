@@ -869,12 +869,11 @@ void TapeCore::tape_node_raytrace_configure_distortion(const YAML::Node& yamlNod
 	rgl_node_raytrace_configure_distortion(node, yamlNode[1].as<bool>());
 }
 
-RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float nearDistance,
-	float farDistance)
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float nearDistance, float farDistance)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_non_hits(node={}, nearDistance={}, farDistance={})",
-			repr(node), nearDistance, farDistance);
+		RGL_API_LOG("rgl_node_raytrace_configure_non_hits(node={}, nearDistance={}, farDistance={})", repr(node), nearDistance,
+		            farDistance);
 		CHECK_ARG(node != nullptr);
 		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
 		raytraceNode->setNonHitDistanceValues(nearDistance, farDistance);
@@ -1053,24 +1052,24 @@ void TapeCore::tape_node_points_from_array(const YAML::Node& yamlNode, PlaybackS
 
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
                                                        int32_t radar_scopes_count, float ray_azimuth_step,
-                                                       float ray_elevation_step, float frequency, float power_transmitted_dbm,
-                                                       float antenna_gain_dbi, float received_noise_mean_dbm,
-                                                       float received_noise_st_dev_dbm)
+                                                       float ray_elevation_step, float frequency, float power_transmitted,
+                                                       float cumulative_device_gain, float received_noise_mean,
+                                                       float received_noise_st_dev)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_radar_postprocess(node={}, radar_scopes={}, ray_azimuth_step={}, ray_elevation_step={}, "
-		            "frequency={}, power_transmitted_dbm={}, antenna_gain_dbi={}, received_noise_mean_db={}, "
-		            "received_noise_std_dev_db={})",
+		            "frequency={}, power_transmitted={}, cumulative_device_gain={}, received_noise_mean={}, "
+		            "received_noise_st_dev={})",
 		            repr(node), repr(radar_scopes, radar_scopes_count), ray_azimuth_step, ray_elevation_step, frequency,
-		            power_transmitted_dbm, antenna_gain_dbi, received_noise_mean_dbm, received_noise_st_dev_dbm);
+		            power_transmitted, cumulative_device_gain, received_noise_mean, received_noise_st_dev);
 		CHECK_ARG(radar_scopes != nullptr);
 		CHECK_ARG(radar_scopes_count > 0);
 		CHECK_ARG(ray_azimuth_step > 0);
 		CHECK_ARG(ray_elevation_step > 0);
 		CHECK_ARG(frequency > 0);
-		CHECK_ARG(power_transmitted_dbm > 0);
-		CHECK_ARG(antenna_gain_dbi > 0);
-		CHECK_ARG(received_noise_st_dev_dbm > 0);
+		CHECK_ARG(power_transmitted > 0);
+		CHECK_ARG(cumulative_device_gain > 0);
+		CHECK_ARG(received_noise_st_dev > 0);
 
 		for (int i = 0; i < radar_scopes_count; ++i) {
 			CHECK_ARG(radar_scopes[i].begin_distance >= 0);
@@ -1083,11 +1082,11 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
 
 		createOrUpdateNode<RadarPostprocessPointsNode>(
 		    node, std::vector<rgl_radar_scope_t>{radar_scopes, radar_scopes + radar_scopes_count}, ray_azimuth_step,
-		    ray_elevation_step, frequency, power_transmitted_dbm, antenna_gain_dbi, received_noise_mean_dbm,
-		    received_noise_st_dev_dbm);
+		    ray_elevation_step, frequency, power_transmitted, cumulative_device_gain, received_noise_mean,
+		    received_noise_st_dev);
 	});
 	TAPE_HOOK(node, TAPE_ARRAY(radar_scopes, radar_scopes_count), radar_scopes_count, ray_azimuth_step, ray_elevation_step,
-	          frequency, power_transmitted_dbm, antenna_gain_dbi, received_noise_mean_dbm, received_noise_st_dev_dbm);
+	          frequency, power_transmitted, cumulative_device_gain, received_noise_mean, received_noise_st_dev);
 	return status;
 }
 

@@ -30,17 +30,17 @@ inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const
 }
 
 void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad,
-                                               float rayElevationStepRad, float frequency, float powerTransmittedDbm,
-                                               float antennaGainDbi, float receivedNoiseMean, float receivedNoiseStdDev)
+                                               float rayElevationStepRad, float frequency, float powerTransmitted,
+                                               float cumulativeDeviceGain, float receivedNoiseMean, float receivedNoiseStDev)
 {
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
-	this->frequency = frequency;
+	this->frequencyHz = frequency;
 	this->radarScopes = radarScopes;
-	this->powerTransmittedDbm = powerTransmittedDbm;
-	this->antennaGainDbi = antennaGainDbi;
+	this->powerTransmittedDbm = powerTransmitted;
+	this->cumulativeDeviceGainDbi = cumulativeDeviceGain;
 	this->receivedNoiseMeanDb = receivedNoiseMean;
-	this->receivedNoiseStDevDb = receivedNoiseStdDev;
+	this->receivedNoiseStDevDb = receivedNoiseStDev;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -66,7 +66,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	auto normalPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto xyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	outBUBRFactorDev->resize(input->getPointCount(), false, false);
-	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency,
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequencyHz,
 	                      input->getLookAtOriginTransform(), raysPtr, distancePtr, normalPtr, xyzPtr,
 	                      outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
@@ -134,7 +134,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
 
-	const auto lambda = 299'792'458.0f / frequency;
+	const auto lambda = 299'792'458.0f / frequencyHz;
 	const auto lambdaSqrtDbsm = 10.0f * log10f(lambda * lambda);
 
 	// Compute per-cluster properties
@@ -170,8 +170,8 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
 		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
 
-		const auto powerReceived = powerTransmittedDbm + antennaGainDbi + antennaGainDbi + rcsDbsm + lambdaSqrtDbsm -
-		                           multiplier;
+		const auto powerReceived = powerTransmittedDbm + cumulativeDeviceGainDbi + cumulativeDeviceGainDbi + rcsDbsm +
+		                           lambdaSqrtDbsm - multiplier;
 
 		clusterRcsHost->at(clusterIdx) = rcsDbsm;
 		clusterNoiseHost->at(clusterIdx) = gaussianNoise(randomDevice);

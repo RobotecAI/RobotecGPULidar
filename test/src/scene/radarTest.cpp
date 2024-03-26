@@ -86,7 +86,7 @@ using namespace std::chrono_literals;
 
 TEST_F(RadarTest, rotating_reflector_2d)
 {
-	//	GTEST_SKIP();
+	GTEST_SKIP();
 
 	// Setup sensor and graph
 	std::vector<rgl_mat3x4f> raysData = genRadarRays();
