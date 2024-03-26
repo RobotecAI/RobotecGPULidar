@@ -66,8 +66,9 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	auto normalPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto xyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	outBUBRFactorDev->resize(input->getPointCount(), false, false);
-	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency, raysPtr,
-	                      distancePtr, normalPtr, xyzPtr, outBUBRFactorDev->getWritePtr());
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency,
+	                      input->getLookAtOriginTransform(), raysPtr, distancePtr, normalPtr, xyzPtr,
+	                      outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
 
@@ -159,17 +160,23 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		}
 
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
+		const auto rcsDbsm = 10.0f * log10f(4.0f * std::numbers::pi_v<float> * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 
 		// TODO: Handle nans in RCS.
-		const auto rcsDbsm = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 		if (std::isnan(rcsDbsm)) {
 			throw InvalidPipeline("RCS is NaN");
 		}
+
 		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
 		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
+
+		//TODO(Pawel): Power transmitted is in dBm, which is here summed up with dB - this is rather incorrect, because dB and dBm are different.
 		const auto outputPower = powerTransmittedDbm + antennaGainDbi + antennaGainDbi + rcsDbsm + lambdaSqrtDbsm - multiplier;
 
 		clusterRcsHost->at(clusterIdx) = rcsDbsm;
+
+		//TODO(Pawel): SmartMicro driver calculates SNR as Power - Noise. This means that their power contains this noise. Thus, it should
+		// be outputPower + noise below.
 		clusterPowerHost->at(clusterIdx) = outputPower;
 		clusterNoiseHost->at(clusterIdx) = gaussianNoise(randomDevice);
 		clusterSnrHost->at(clusterIdx) = clusterPowerHost->at(clusterIdx) - clusterNoiseHost->at(clusterIdx);
