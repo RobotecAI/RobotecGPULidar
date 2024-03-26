@@ -19,6 +19,10 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+#include <type_traits>
+#endif
+
+#ifdef __cplusplus
 #define NO_MANGLING extern "C"
 #else // NOT __cplusplus
 #define NO_MANGLING
@@ -61,7 +65,7 @@ typedef struct
 	float value[2];
 } rgl_vec2f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec2f) == 2 * sizeof(float));
 static_assert(std::is_trivial_v<rgl_vec2f>);
 static_assert(std::is_standard_layout_v<rgl_vec2f>);
@@ -75,7 +79,7 @@ typedef struct
 	float value[3];
 } rgl_vec3f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
 static_assert(std::is_trivial_v<rgl_vec3f>);
 static_assert(std::is_standard_layout_v<rgl_vec3f>);
@@ -89,7 +93,7 @@ typedef struct
 	int32_t value[3];
 } rgl_vec3i;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec3i) == 3 * sizeof(int32_t));
 static_assert(std::is_trivial_v<rgl_vec3i>);
 static_assert(std::is_standard_layout_v<rgl_vec3i>);
@@ -104,7 +108,7 @@ typedef struct
 	float value[3][4];
 } rgl_mat3x4f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_mat3x4f) == 3 * 4 * sizeof(float));
 static_assert(std::is_trivial_v<rgl_mat3x4f>);
 static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
@@ -137,10 +141,10 @@ typedef struct
 	float azimuth_separation_threshold;
 } rgl_radar_scope_t;
 
-#ifndef __cplusplus
-static_assert(sizeof(rgl_radar_separations_t) == 5 * sizeof(float));
-static_assert(std::is_trivial_v<rgl_radar_separations_t>);
-static_assert(std::is_standard_layout_v<rgl_radar_separations_t>);
+#ifdef __cplusplus
+static_assert(sizeof(rgl_radar_scope_t) == 5 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_radar_scope_t>);
+static_assert(std::is_standard_layout_v<rgl_radar_scope_t>);
 #endif
 
 /**
@@ -765,11 +769,17 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
  * @param radar_scopes_count Number of elements in the `radar_scopes` array.
  * @param ray_azimuth_step The azimuth step between rays (in radians).
  * @param ray_elevation_step The elevation step between rays (in radians).
- * @param frequency The frequency of the radar (in Hz).
+ * @param frequency The operating frequency of the radar (in Hz).
+ * @param power_transmitted The power transmitted by the radar (in dBm).
+ * @param cumulative_device_gain The gain of the radar's antennas and any other gains of the device (in dBi).
+ * @param received_noise_mean The mean of the received noise (in dB).
+ * @param received_noise_st_dev The standard deviation of the received noise (in dB).
  */
 RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
                                                        int32_t radar_scopes_count, float ray_azimuth_step,
-                                                       float ray_elevation_step, float frequency);
+                                                       float ray_elevation_step, float frequency, float power_transmitted,
+                                                       float cumulative_device_gain, float received_noise_mean,
+                                                       float received_noise_st_dev);
 
 /**
  * Creates or modifies FilterGroundPointsNode.

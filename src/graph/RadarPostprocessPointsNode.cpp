@@ -30,12 +30,17 @@ inline static std::optional<rgl_radar_scope_t> getRadarScopeWithinDistance(const
 }
 
 void RadarPostprocessPointsNode::setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad,
-                                               float rayElevationStepRad, float frequency)
+                                               float rayElevationStepRad, float frequency, float powerTransmitted,
+                                               float cumulativeDeviceGain, float receivedNoiseMean, float receivedNoiseStDev)
 {
 	this->rayAzimuthStepRad = rayAzimuthStepRad;
 	this->rayElevationStepRad = rayElevationStepRad;
-	this->frequency = frequency;
+	this->frequencyHz = frequency;
 	this->radarScopes = radarScopes;
+	this->powerTransmittedDbm = powerTransmitted;
+	this->cumulativeDeviceGainDbi = cumulativeDeviceGain;
+	this->receivedNoiseMeanDb = receivedNoiseMean;
+	this->receivedNoiseStDevDb = receivedNoiseStDev;
 }
 
 void RadarPostprocessPointsNode::validateImpl()
@@ -61,22 +66,11 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	auto normalPtr = input->getFieldDataTyped<NORMAL_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto xyzPtr = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	outBUBRFactorDev->resize(input->getPointCount(), false, false);
-	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequency, raysPtr,
-	                      distancePtr, normalPtr, xyzPtr, outBUBRFactorDev->getWritePtr());
+	gpuRadarComputeEnergy(getStreamHandle(), input->getPointCount(), rayAzimuthStepRad, rayElevationStepRad, frequencyHz,
+	                      input->getLookAtOriginTransform(), raysPtr, distancePtr, normalPtr, xyzPtr,
+	                      outBUBRFactorDev->getWritePtr());
 	outBUBRFactorHost->copyFrom(outBUBRFactorDev);
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
-
-	// Computing RCS (example for all points)
-	//	std::complex<float> AU = 0;
-	//	std::complex<float> AR = 0;
-	//	for (int hitIdx = 0; hitIdx < outBUBRFactorHost->getCount(); ++hitIdx) {
-	//		std::complex<float> BU = {outBUBRFactorHost->at(hitIdx)[0].real(), outBUBRFactorHost->at(hitIdx)[0].imag()};
-	//		std::complex<float> BR = {outBUBRFactorHost->at(hitIdx)[1].real(), outBUBRFactorHost->at(hitIdx)[1].imag()};
-	//		std::complex<float> factor = {outBUBRFactorHost->at(hitIdx)[2].real(), outBUBRFactorHost->at(hitIdx)[2].imag()};
-	//		AU += BU * factor;
-	//		AR += BR * factor;
-	//	}
-	//	float rcs = 10.0f * log10f(4.0f * M_PIf * (pow(abs(AU), 2) + pow(abs(AR), 2)));
 
 	if (input->getPointCount() == 0) {
 		filteredIndices->resize(0, false, false);
@@ -140,6 +134,56 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 
 	filteredIndices->copyFromExternal(filteredIndicesHost.data(), filteredIndicesHost.size());
 
+	const auto lambda = 299'792'458.0f / frequencyHz;
+	const auto lambdaSqrtDbsm = 10.0f * log10f(lambda * lambda);
+
+	// Compute per-cluster properties
+	clusterRcsHost->resize(filteredIndicesHost.size(), false, false);
+	clusterPowerHost->resize(filteredIndicesHost.size(), false, false);
+	clusterNoiseHost->resize(filteredIndicesHost.size(), false, false);
+	clusterSnrHost->resize(filteredIndicesHost.size(), false, false);
+	std::normal_distribution<float> gaussianNoise(receivedNoiseMeanDb, receivedNoiseStDevDb);
+	for (int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
+		std::complex<float> AU = 0;
+		std::complex<float> AR = 0;
+		auto&& cluster = clusters[clusterIdx];
+
+		for (const auto pointInCluster : cluster.indices) {
+			std::complex<float> BU = {outBUBRFactorHost->at(pointInCluster)[0].real(),
+			                          outBUBRFactorHost->at(pointInCluster)[0].imag()};
+			std::complex<float> BR = {outBUBRFactorHost->at(pointInCluster)[1].real(),
+			                          outBUBRFactorHost->at(pointInCluster)[1].imag()};
+			std::complex<float> factor = {outBUBRFactorHost->at(pointInCluster)[2].real(),
+			                              outBUBRFactorHost->at(pointInCluster)[2].imag()};
+			AU += BU * factor;
+			AR += BR * factor;
+		}
+
+		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
+		const auto rcsDbsm = 10.0f * log10f(4.0f * std::numbers::pi_v<float> * (powf(abs(AU), 2) + powf(abs(AR), 2)));
+
+		// TODO: Handle nans in RCS.
+		if (std::isnan(rcsDbsm)) {
+			throw InvalidPipeline("RCS is NaN");
+		}
+
+		const auto distance = distanceInputHost->at(filteredIndicesHost.at(clusterIdx));
+		const auto multiplier = 10.0f * log10f(powf(4 * std::numbers::pi_v<float>, 3)) + 10.0f * log10f(powf(distance, 4));
+
+		const auto powerReceived = powerTransmittedDbm + cumulativeDeviceGainDbi + cumulativeDeviceGainDbi + rcsDbsm +
+		                           lambdaSqrtDbsm - multiplier;
+
+		clusterRcsHost->at(clusterIdx) = rcsDbsm;
+		clusterNoiseHost->at(clusterIdx) = gaussianNoise(randomDevice);
+		clusterPowerHost->at(clusterIdx) = powerReceived + clusterNoiseHost->at(clusterIdx); // power received + noise
+		clusterSnrHost->at(clusterIdx) = clusterPowerHost->at(clusterIdx) - clusterNoiseHost->at(clusterIdx);
+	}
+
+	clusterPowerDev->copyFrom(clusterPowerHost);
+	clusterRcsDev->copyFrom(clusterRcsHost);
+	clusterNoiseDev->copyFrom(clusterNoiseHost);
+	clusterSnrDev->copyFrom(clusterSnrHost);
+
 	// getFieldData may be called in client's thread from rgl_graph_get_result_data
 	// Doing job there would be:
 	// - unexpected (job was supposed to be done asynchronously)
@@ -162,6 +206,19 @@ size_t RadarPostprocessPointsNode::getWidth() const
 IAnyArray::ConstPtr RadarPostprocessPointsNode::getFieldData(rgl_field_t field)
 {
 	std::lock_guard lock{getFieldDataMutex};
+
+	if (field == POWER_F32) {
+		return clusterPowerDev->asAny();
+	}
+	if (field == RCS_F32) {
+		return clusterRcsDev->asAny();
+	}
+	if (field == NOISE_F32) {
+		return clusterNoiseDev->asAny();
+	}
+	if (field == SNR_F32) {
+		return clusterSnrDev->asAny();
+	}
 
 	if (!cacheManager.contains(field)) {
 		auto fieldData = createArray<DeviceAsyncArray>(field, arrayMgr);

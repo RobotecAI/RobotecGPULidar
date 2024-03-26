@@ -476,7 +476,8 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
 
 	void setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad, float rayElevationStepRad,
-	                   float frequency);
+	                   float frequency, float powerTransmitted, float cumulativeDeviceGain, float receivedNoiseMean,
+	                   float receivedNoiseStDev);
 
 	// Node
 	void validateImpl() override;
@@ -507,11 +508,27 @@ private:
 	HostPinnedArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorHost =
 	    HostPinnedArray<Vector<3, thrust::complex<float>>>::create();
 
+	HostPageableArray<Field<RCS_F32>::type>::Ptr clusterRcsHost = HostPageableArray<Field<RCS_F32>::type>::create();
+	HostPageableArray<Field<POWER_F32>::type>::Ptr clusterPowerHost = HostPageableArray<Field<POWER_F32>::type>::create();
+	HostPageableArray<Field<NOISE_F32>::type>::Ptr clusterNoiseHost = HostPageableArray<Field<NOISE_F32>::type>::create();
+	HostPageableArray<Field<SNR_F32>::type>::Ptr clusterSnrHost = HostPageableArray<Field<SNR_F32>::type>::create();
+
+	DeviceAsyncArray<Field<RCS_F32>::type>::Ptr clusterRcsDev = DeviceAsyncArray<Field<RCS_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<POWER_F32>::type>::Ptr clusterPowerDev = DeviceAsyncArray<Field<POWER_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<NOISE_F32>::type>::Ptr clusterNoiseDev = DeviceAsyncArray<Field<NOISE_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<SNR_F32>::type>::Ptr clusterSnrDev = DeviceAsyncArray<Field<SNR_F32>::type>::create(arrayMgr);
+
 	float rayAzimuthStepRad;
 	float rayElevationStepRad;
-	float frequency;
+	float frequencyHz;
+	float powerTransmittedDbm;
+	float cumulativeDeviceGainDbi;
+	float receivedNoiseMeanDb;
+	float receivedNoiseStDevDb;
 
 	std::vector<rgl_radar_scope_t> radarScopes;
+
+	std::random_device randomDevice;
 
 	// RGL related members
 	std::mutex getFieldDataMutex;
@@ -530,7 +547,6 @@ private:
 		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
 		                                                    const Field<ELEVATION_F32>::type* elevations) const;
 
-	private:
 		std::vector<Field<RAY_IDX_U32>::type> indices;
 		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
 		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
