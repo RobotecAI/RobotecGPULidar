@@ -228,7 +228,7 @@ extern "C" __global__ void __closesthit__()
 
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
-	float radialSpeed{0.014};
+	float radialSpeed{NAN};
 	bool isVelocityRequested = ctx.pointAbsVelocity != nullptr || ctx.pointRelVelocity != nullptr || ctx.radialSpeed != nullptr;
 	if (ctx.sceneDeltaTime > 0 && isVelocityRequested) {
 		Vec3f displacementFromTransformChange = {0, 0, 0};

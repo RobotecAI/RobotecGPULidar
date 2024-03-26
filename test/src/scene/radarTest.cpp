@@ -176,30 +176,4 @@ TEST_F(RadarTest, rotating_reflector_2d)
 		//			//}
 		//		}
 	}
-
-	// Setup scene
-	//	std::vector<rgl_entity_t> reflectors2D;
-	//	reflectors2D.resize(3, nullptr);
-	//	rgl_mesh_t reflector2dMesh = loadFromSTL(fs::path(RGL_TEST_DATA_DIR) / "reflector2d.stl");
-	//	for (auto&& reflector2D : reflectors2D) {
-	//		EXPECT_RGL_SUCCESS(rgl_entity_create(&reflector2D, nullptr, reflector2dMesh));
-	//	}
-	//
-	//	uint64_t time = 0;
-	//	for (float angle = -45; angle <= 45; angle += 0.1f) {
-	//		EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, time));
-	//		auto position = Vec3f{5, 0, 0};
-	//		auto rotation = Vec3f{0, 0, angle};
-	//		auto scale = Vec3f{1, 1, 1};
-	//
-	//		auto offset = Vec3f{0, -3, 0};
-	//		for (auto&& reflector2D : reflectors2D) {
-	//			rgl_mat3x4f reflectorPose = Mat3x4f::TRS(position + offset, rotation, scale).toRGL();
-	//			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(reflector2D, &reflectorPose));
-	//			offset += Vec3f{0, 3, 0};
-	//		}
-	//
-	//		EXPECT_RGL_SUCCESS(rgl_graph_run(rays));
-	//		time += 10'000'000; // 10 ms
-	//	}
 }
