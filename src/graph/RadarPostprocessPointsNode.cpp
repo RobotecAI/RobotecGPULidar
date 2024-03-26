@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <numbers>
 
 #include <repr.hpp>
 #include <graph/NodesCore.hpp>
