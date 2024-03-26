@@ -68,7 +68,7 @@ TEST_F(CompactByFieldPointsNodeTest, valid_argument_node_is_not_nullptr)
 TEST_F(CompactByFieldPointsNodeTest, invalid_pipeline_when_no_input_node)
 {
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactByFieldPointsNode, IS_HIT_I32));
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactByFieldPointsNode), "looked for IPointsNode");
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactByFieldPointsNode), "looked for", "IPointsNode");
 }
 
 TEST_F(CompactByFieldPointsNodeTest, invalid_pipeline_when_incorrect_input_node)
@@ -80,7 +80,7 @@ TEST_F(CompactByFieldPointsNodeTest, invalid_pipeline_when_incorrect_input_node)
 
 	ASSERT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactByFieldPointsNode, IS_HIT_I32));
 	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, compactByFieldPointsNode));
-	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactByFieldPointsNode), "looked for IPointsNode");
+	EXPECT_RGL_INVALID_PIPELINE(rgl_graph_run(compactByFieldPointsNode), "looked for", "IPointsNode");
 }
 
 TEST_P(CompactByFieldPointsNodeTest, points_all_non_hit)

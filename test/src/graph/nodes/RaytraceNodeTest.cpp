@@ -58,7 +58,7 @@ TEST_F(RaytraceNodeTest, config_velocity_invalid_node_object)
 	const rgl_vec3f linearVelocity = {1.0f, 2.0f, 3.0f};
 	const rgl_vec3f angularVelocity = {4.0f, 5.0f, 6.0f};
 	EXPECT_RGL_INVALID_OBJECT(rgl_node_raytrace_configure_velocity((rgl_node_t) 0x1234, &linearVelocity, &angularVelocity),
-	                          "Object does not exist: Node 0x1234");
+	                          "Object does not exist: ", "Node 0x1234");
 }
 
 TEST_F(RaytraceNodeTest, config_velocity_valid_arguments)
@@ -78,7 +78,7 @@ TEST_F(RaytraceNodeTest, config_distortion_invalid_argument_node)
 TEST_F(RaytraceNodeTest, config_distortion_invalid_node_object)
 {
 	EXPECT_RGL_INVALID_OBJECT(rgl_node_raytrace_configure_distortion((rgl_node_t) 0x1234, false),
-	                          "Object does not exist: Node 0x1234");
+	                          "Object does not exist: ", "Node 0x1234");
 }
 
 TEST_F(RaytraceNodeTest, config_distortion_valid_arguments)
@@ -96,7 +96,7 @@ TEST_F(RaytraceNodeTest, config_non_hit_distance_invalid_argument_node)
 TEST_F(RaytraceNodeTest, config_non_hit_distance_invalid_node_object)
 {
 	EXPECT_RGL_INVALID_OBJECT(rgl_node_raytrace_configure_non_hits((rgl_node_t) 0x1234, 0.0f, 0.0f),
-	                          "Object does not exist: Node 0x1234");
+	                          "Object does not exist: ", "Node 0x1234");
 }
 
 TEST_F(RaytraceNodeTest, config_non_hit_distance_valid_arguments)
