@@ -25,7 +25,7 @@ jobs:
         with:
           clean: false
       - name: Clean repository excluding taped test data
-        run: git clean -ffdx -e external/taped_test_data && rm -rf external/taped_test_data
+        run: git clean -ffdx -e external/taped_test_data
       - name: Import private extensions
         run: vcs import < extensions.repos
       - name: Install taped test dependencies
