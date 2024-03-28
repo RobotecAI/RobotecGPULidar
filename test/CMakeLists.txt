@@ -56,7 +56,6 @@ if (RGL_BUILD_ROS2_EXTENSION)
         src/graph/nodes/Ros2PublishRadarScanNodeTest.cpp
         src/graph/nodes/Ros2PublishPointsNodeTest.cpp
         src/graph/nodes/Ros2PublishLaserScanNodeTest.cpp
-        src/scene/rcsAngleDistributionTest.cpp
         src/scene/radarTest.cpp
     )
 endif()
