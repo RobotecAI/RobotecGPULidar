@@ -12,15 +12,17 @@ include(GoogleTest)
 
 add_executable(RobotecGPULidar_taped_test ${RGL_TAPED_TEST_FILES})
 
+find_package(PCL 1.12 CONFIG REQUIRED COMPONENTS common io filters segmentation visualization)
+
 target_link_libraries(RobotecGPULidar_taped_test PRIVATE
         gtest_main
         gmock_main
         spdlog
         RobotecGPULidar
+        ${PCL_LIBRARIES}
 )
 
 target_include_directories(RobotecGPULidar_taped_test PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src

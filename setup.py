@@ -303,8 +303,8 @@ def is_taped_data_up_to_date(cfg):
     return f"[up to date]      {cfg.TAPED_TEST_DATA_BRANCH}" in stdout.decode()
 
 
-def update_taped_test_data_repo():
-    if not is_taped_data_up_to_date():
+def update_taped_test_data_repo(cfg):
+    if not is_taped_data_up_to_date(cfg):
         print("Updating taped test benchmark data repository...")
         run_subprocess_command("git pull && git-lfs pull")
 
@@ -318,7 +318,7 @@ def install_taped_test_deps(cfg):
     else:
         print("Checking for updates in taped test benchmark data repository...")
         os.chdir(cfg.TAPED_TEST_DATA_DIR)
-        update_taped_test_data_repo()
+        update_taped_test_data_repo(cfg)
 
 
 # Returns a dict with env variables visible for a command after running in a system shell
