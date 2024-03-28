@@ -80,6 +80,8 @@ void Ros2PublishLaserScanNode::ros2EnqueueExecImpl()
 			maxRange = ranges->at(i);
 		}
 	}
+	ros2Message.range_min = minRange;
+	ros2Message.range_max = maxRange;
 
 	intensities->copyFrom(input->getFieldDataTyped<INTENSITY_F32>());
 	ros2Message.intensities.resize(pointCount);
