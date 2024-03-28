@@ -21,7 +21,7 @@ set(RGL_AUTO_TAPE_PATH "" CACHE STRING  # STRING prevents from expanding relativ
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
     "Enables building test. GTest will be automatically downloaded")
-set(RGL_BUILD_TAPED_TEST OFF CACHE BOOL
+set(RGL_BUILD_TAPED_TESTS OFF CACHE BOOL
     "Enables building taped test.")
 
 # Tools configuration
@@ -178,7 +178,7 @@ if (NOT ("RGL_LOG_LEVEL_${RGL_LOG_LEVEL}" IN_LIST RGL_AVAILABLE_LOG_LEVELS))
     message(FATAL_ERROR "Incorrect RGL_LOG_LEVEL value: ${RGL_LOG_LEVEL}")
 endif()
 
-if (WIN32 AND (RGL_AUTO_TAPE_PATH OR RGL_BUILD_TAPED_TEST))
+if (WIN32 AND (RGL_AUTO_TAPE_PATH OR RGL_BUILD_TAPED_TESTS))
     message(FATAL_ERROR "(Auto)Tape not supported on Windows")
 endif()
 
@@ -192,10 +192,18 @@ target_compile_definitions(RobotecGPULidar
 )
 
 # Include tests
-if (RGL_BUILD_TESTS OR RGL_BUILD_TAPED_TEST)
+if (RGL_BUILD_TESTS OR RGL_BUILD_TAPED_TESTS)
     enable_testing()
-    add_subdirectory(test)
+
+    if (RGL_BUILD_TESTS)
+        add_subdirectory(test)
+    endif()
+
+    if (RGL_BUILD_TAPED_TESTS)
+        add_subdirectory(test/taped_test)
+    endif()
 endif()
+
 
 # Include tools
 if (RGL_BUILD_TOOLS)
