@@ -118,24 +118,3 @@ endif()
 include(GoogleTest)
 
 gtest_discover_tests(RobotecGPULidar_test)
-
-if (RGL_BUILD_TAPED_TEST AND (NOT WIN32))
-
-    add_executable(RobotecGPULidar_taped_test src/TapedTest.cpp)
-
-    target_link_libraries(RobotecGPULidar_taped_test PRIVATE
-        gtest_main
-        gmock_main
-        spdlog
-        RobotecGPULidar
-    )
-
-    target_include_directories(RobotecGPULidar_taped_test PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-    )
-
-    gtest_discover_tests(RobotecGPULidar_taped_test)
-
-endif ()

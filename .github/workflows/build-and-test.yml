@@ -107,7 +107,7 @@ jobs:
     with:
       test-command: '
       export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
-      cd build-pcl/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+      cd build-pcl/test && ./RobotecGPULidar_test && ./taped_test/RobotecGPULidar_taped_test'
       docker-image: localhost:5000/rgl:latest
 
   test-ros2-dev:
@@ -151,8 +151,8 @@ jobs:
         export RGL_TEST_VLP16_CALIB_FILE=$(pwd)/extensions/udp/test/resources/Ros2Vlp16Calib.yaml &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
         cd build-all/test &&
-        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
-        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./taped_test/RobotecGPULidar_taped_test &&
+        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./taped_test/RobotecGPULidar_taped_test'
       docker-image: localhost:5000/rgl:latest
 
 ###### TEST WITH CLEAN UBUNTU DOCKER IMAGE ######
@@ -171,7 +171,7 @@ jobs:
       test-command: '
         apt update && apt install -y libxcursor1 libgl1 &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
-        cd build-pcl/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+        cd build-pcl/test && ./RobotecGPULidar_test && ./taped_test/RobotecGPULidar_taped_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-ros2-prod:
@@ -213,6 +213,6 @@ jobs:
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/taped_test_data &&
         cd build-all/test &&
         cp -r ../ros2_standalone/*.so* ../ &&
-        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
-        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./taped_test/RobotecGPULidar_taped_test &&
+        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./taped_test/RobotecGPULidar_taped_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
