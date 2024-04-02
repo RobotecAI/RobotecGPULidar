@@ -23,6 +23,9 @@ class Config:
     VCPKG_EXEC = "vcpkg"
     VCPKG_BOOTSTRAP = "bootstrap-vcpkg.sh"
     VCPKG_TRIPLET = "x64-linux"
+    TAPED_TEST_DATA_DIR = os.path.join("external", "taped_test_data")
+    TAPED_TEST_DATA_REPO = "git@github.com:RobotecAI/RGL-blobs.git"
+    TAPED_TEST_DATA_BRANCH = "main"
 
     def __init__(self):
         # Platform-dependent configuration
@@ -69,6 +72,10 @@ def main():
                             help="Pass arguments to make. Usage: --make=\"args...\". Defaults to \"-j <cpu count>\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
                             help="Add run-time search path(s) for RGL library. $ORIGIN (actual library path) is added by default.")
+        parser.add_argument("--install-taped-test-deps", action='store_true',
+                            help="Install dependencies for taped test and exit (closed-source dependencies)")
+        parser.add_argument("--build-taped-test", action='store_true',
+                            help="Build taped test")
     if on_windows():
         parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
@@ -99,6 +106,17 @@ def main():
         install_ros2_deps(cfg)
         print('Installed ROS2 deps, exiting...')
         return 0
+
+    # Install taped test dependencies
+    if args.install_taped_test_deps:
+        install_taped_test_deps(cfg)
+        print('Installed dependencies for taped test, exiting...')
+        return 0
+
+    # Check taped test requirements
+    if args.build_taped_test and not args.with_pcl:
+        raise RuntimeError(
+            "Taped test requires PCL extension to be built: run this script with --with-pcl flag")
 
     # Check CUDA
     if not is_cuda_version_ok(cfg):
@@ -137,6 +155,7 @@ def main():
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_UDP_EXTENSION={'ON' if args.with_udp else 'OFF'}",
         f"-DRGL_BUILD_SNOW_EXTENSION={'ON' if args.with_snow else 'OFF'}",
+        f"-DRGL_BUILD_TAPED_TESTS={'ON' if args.build_taped_test else 'OFF'}"
     ]
 
     if on_linux():
@@ -233,15 +252,15 @@ def install_pcl_deps(cfg):
         f"{os.path.join(cfg.VCPKG_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]:{cfg.VCPKG_TRIPLET}")
 
 
-def has_colcon():
-    process = subprocess.Popen("colcon --help", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+def is_command_available(command):
+    process = subprocess.Popen(f"{command}", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     process.wait()
     return process.returncode == 0
 
 
 def install_ros2_deps(cfg):
     # Install colcon if needed
-    if not has_colcon():
+    if not is_command_available("colcon --help"):
         if on_windows():
             run_system_command("pip install colcon-common-extensions")
         elif not inside_docker():  # Linux; Inside docker already installed
@@ -259,6 +278,47 @@ def install_ros2_deps(cfg):
         run_subprocess_command(f"colcon build")
         os.chdir(original_path)
     # TODO: cyclonedds rmw may be installed here (instead of manually in readme)
+
+
+def ensure_git_lfs_installed():
+    if not is_command_available("git-lfs --help"):
+        print("Installing git-lfs...")
+        run_subprocess_command(
+            "curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash")
+        run_subprocess_command("sudo apt install git-lfs")
+
+
+def clone_taped_test_data_repo(cfg):
+    run_subprocess_command(
+        f"git clone -b {cfg.TAPED_TEST_DATA_BRANCH} --single-branch --depth 1 {cfg.TAPED_TEST_DATA_REPO} {cfg.TAPED_TEST_DATA_DIR}")
+    os.chdir(cfg.TAPED_TEST_DATA_DIR)
+    # Set up git-lfs for this repository
+    run_subprocess_command("git-lfs install && git-lfs pull")
+
+
+def is_taped_data_up_to_date(cfg):
+    result = subprocess.Popen("git fetch --dry-run --verbose", shell=True, stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+    stdout, _ = result.communicate()
+    return f"[up to date]      {cfg.TAPED_TEST_DATA_BRANCH}" in stdout.decode()
+
+
+def update_taped_test_data_repo(cfg):
+    if not is_taped_data_up_to_date(cfg):
+        print("Updating taped test benchmark data repository...")
+        run_subprocess_command("git pull && git-lfs pull")
+
+
+def install_taped_test_deps(cfg):
+    # Cloning and updating taped test benchmark data repo requires git-lfs to be installed
+    ensure_git_lfs_installed()
+    if not os.path.isdir(cfg.TAPED_TEST_DATA_DIR):
+        print("Cloning taped test benchmark data repository...")
+        clone_taped_test_data_repo(cfg)
+    else:
+        print("Checking for updates in taped test benchmark data repository...")
+        os.chdir(cfg.TAPED_TEST_DATA_DIR)
+        update_taped_test_data_repo(cfg)
 
 
 # Returns a dict with env variables visible for a command after running in a system shell
