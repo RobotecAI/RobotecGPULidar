@@ -12,11 +12,9 @@ include(GoogleTest)
 
 add_executable(RobotecGPULidar_taped_test ${RGL_TAPED_TEST_FILES})
 
-find_package(GTest REQUIRED)
-
 target_link_libraries(RobotecGPULidar_taped_test PRIVATE
-        GTest::gtest_main
-        GTest::gmock_main
+        gtest_main
+        gmock_main
         spdlog
         RobotecGPULidar
 )

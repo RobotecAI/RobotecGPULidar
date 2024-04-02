@@ -253,14 +253,14 @@ def install_pcl_deps(cfg):
 
 
 def is_command_available(command):
-    process = subprocess.Popen(f"which {command}", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    process = subprocess.Popen(f"{command}", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     process.wait()
     return process.returncode == 0
 
 
 def install_ros2_deps(cfg):
     # Install colcon if needed
-    if not is_command_available("colcon"):
+    if not is_command_available("colcon --help"):
         if on_windows():
             run_system_command("pip install colcon-common-extensions")
         elif not inside_docker():  # Linux; Inside docker already installed
@@ -281,7 +281,7 @@ def install_ros2_deps(cfg):
 
 
 def ensure_git_lfs_installed():
-    if not is_command_available("git-lfs"):
+    if not is_command_available("git-lfs --help"):
         print("Installing git-lfs...")
         run_subprocess_command(
             "curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash")
