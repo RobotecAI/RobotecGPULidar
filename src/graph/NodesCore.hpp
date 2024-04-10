@@ -571,7 +571,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return { /* define later */ }; };
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;

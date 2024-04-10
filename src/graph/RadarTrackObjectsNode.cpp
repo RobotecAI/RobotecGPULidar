@@ -25,7 +25,12 @@ void RadarTrackObjectsNode::validateImpl()
 
 void RadarTrackObjectsNode::enqueueExecImpl()
 {
+	
+}
 
+std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
+{
+	return { DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, XYZ_VEC3_F32, POWER_F32, RCS_F32, NOISE_F32 };
 }
 
 IAnyArray::ConstPtr RadarTrackObjectsNode::getFieldData(rgl_field_t field)
