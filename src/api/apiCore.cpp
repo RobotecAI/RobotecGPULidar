@@ -1101,6 +1101,26 @@ void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, Pl
 	state.nodes.insert({nodeId, node});
 }
 
+RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_radar_track_objects(node={})", repr(node));
+		CHECK_ARG(node != nullptr);
+
+		createOrUpdateNode<RadarTrackObjectsNode>(node);
+	});
+	TAPE_HOOK(node);
+	return status;
+}
+
+void TapeCore::tape_node_points_radar_track_objects(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_radar_track_objects(&node);
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
                                                    float ground_angle_threshold)
 {

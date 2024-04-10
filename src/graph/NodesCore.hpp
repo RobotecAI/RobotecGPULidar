@@ -555,6 +555,36 @@ private:
 	};
 };
 
+struct RadarTrackObjectsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RadarTrackObjectsNode>;
+
+	struct ObjectState
+	{
+		uint32_t id;
+	};
+
+	void setParameters();
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return { /* define later */ }; };
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+	const std::list<ObjectState>& getObjectStates() const
+	{
+		return objectStates;
+	}
+
+private:
+	std::list<ObjectState> objectStates;
+};
+
 struct FilterGroundPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<FilterGroundPointsNode>;

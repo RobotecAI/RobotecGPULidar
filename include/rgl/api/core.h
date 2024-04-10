@@ -782,6 +782,12 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
                                                        float received_noise_st_dev);
 
 /**
+ * Create or modify RadarTrackObjectsNode.
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ */
+RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node);
+
+/**
  * Creates or modifies FilterGroundPointsNode.
  * The Node adds RGL_FIELD_IS_GROUND_I32 which indicates the point is on the ground. Points are not removed.
  * Ground points are defined as those located below the sensor with a normal vector pointing upwards at an angle smaller than the threshold.

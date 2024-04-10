@@ -111,6 +111,7 @@ add_library(RobotecGPULidar SHARED
     src/graph/FromMat3x4fRaysNode.cpp
     src/graph/FilterGroundPointsNode.cpp
     src/graph/RadarPostprocessPointsNode.cpp
+    src/graph/RadarTrackObjectsNode.cpp
     src/graph/SetRangeRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp
     src/graph/SetTimeOffsetsRaysNode.cpp
