@@ -24,6 +24,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/GaussianNoiseAngularHitpointNodeTest.cpp
     src/graph/nodes/GaussianNoiseAngularRayNodeTest.cpp
     src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
+    src/graph/nodes/MaskPointsNodeTest.cpp
     src/graph/nodes/RaytraceNodeTest.cpp
     src/graph/nodes/RadarPostprocessPointsNodeTest.cpp
     src/graph/nodes/SetRingIdsRaysNodeTest.cpp

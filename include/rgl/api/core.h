@@ -841,6 +841,17 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, 
 RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base,
                                                       float st_dev_rise_per_meter);
 
+/**
+ * Creates or modifies MaskPointsNode.
+ * The Node mark points as non-hit based on provided mask.
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param points_mask Pointer to the array of ints. 1 means point is hit, 0 means point is non-hit.
+ * @param points_count Number of elements in the `points_mask` array.
+ */
+RGL_API rgl_status_t rgl_node_mask_points(rgl_node_t* node, const int* points_mask, int32_t points_count);
+
 /******************************** GRAPH ********************************/
 
 /**
