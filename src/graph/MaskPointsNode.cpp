@@ -1,4 +1,4 @@
-// Copyright 2023 Robotec.AI
+// Copyright 2024 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/NodesCore.hpp>
+#include <gpu/nodeKernels.hpp>
 
 void MaskPointsNode::setParameters(const int* maskRaw, size_t maskPointCount)
 {
@@ -28,11 +29,11 @@ void MaskPointsNode::enqueueExecImpl()
 		throw InvalidPipeline("MaskPointsNode: input point count does not match mask point count");
 	}
 
-	const auto inputField = input->getFieldDataTyped<XYZ_VEC3_F32>()->asSubclass<DeviceAsyncArray>();
-	const auto* inputPtr = inputField->getReadPtr();
+	output->resize(inputPointCount, false, false);
+	const auto inputField = input->getFieldDataTyped<IS_HIT_I32>()->asSubclass<DeviceAsyncArray>();
 	auto* outputPtr = output->getWritePtr();
 
-	gpuMaskPoints(getStreamHandle(), pointCount, pointsMask->getReadPtr(), inputPtr, outputPtr);
+	gpuMaskPoints(getStreamHandle(), pointCount, pointsMask->getReadPtr(), inputField->getReadPtr(), outputPtr);
 }
 
 IAnyArray::ConstPtr MaskPointsNode::getFieldData(rgl_field_t field)

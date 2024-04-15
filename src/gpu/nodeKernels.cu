@@ -223,7 +223,7 @@ __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vec
 	outNonGround[tid] = normalUpAngle > ground_angle_threshold;
 }
 
-__global__ void kMaskPoints(size_t pointCount, const int* mask, const Field<IS_HIT_I32>::type* inIsHit,
+__global__ void kMaskPoints(size_t pointCount, const int* mask, const int* inIsHit,
 							Field<IS_HIT_I32>::type* outIsHit)
 {
 	LIMIT(pointCount);
@@ -294,7 +294,7 @@ void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f s
 	    lidarTransform);
 }
 
-void gpuMaskPoints(cudaStream_t stream, size_t pointCount, const int* mask, const Vector<3, float>* inIsHit,
+void gpuMaskPoints(cudaStream_t stream, size_t pointCount, const int* mask, const int* inIsHit,
 				   Field<IS_HIT_I32>::type* outIsHit)
 {
 	run(kMaskPoints, stream, pointCount, mask, inIsHit, outIsHit);

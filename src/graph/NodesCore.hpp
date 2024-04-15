@@ -475,22 +475,20 @@ struct MaskPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<MaskPointsNode>;
 
-	void setParameters(const int* mask, size_t pointCount );
+	void setParameters(const int32_t* mask, size_t pointCount);
 
 	// Node
-	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
-
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
 	size_t pointCount;
-	DeviceAsyncArray<int>::Ptr pointsMask = DeviceAsyncArray<int>::create(arrayMgr);
+	DeviceAsyncArray<int32_t>::Ptr pointsMask = DeviceAsyncArray<int32_t>::create(arrayMgr);
 	DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr output = DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr);
 
 };

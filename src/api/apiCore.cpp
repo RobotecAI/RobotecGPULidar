@@ -1200,7 +1200,7 @@ void TapeCore::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, Pla
 	state.nodes.insert({nodeId, node});
 }
 
-RGL_API rgl_status_t rgl_node_mask_points(rgl_node_t* node, const int* points_mask, int32_t points_count)
+RGL_API rgl_status_t rgl_node_mask_points(rgl_node_t* node, const int32_t* points_mask, int32_t points_count)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_mask_points(node={}, points_mask={}, points_count={})", repr(node), repr(points_mask, points_count),
@@ -1211,12 +1211,14 @@ RGL_API rgl_status_t rgl_node_mask_points(rgl_node_t* node, const int* points_ma
 
 		createOrUpdateNode<MaskPointsNode>(node, points_mask, points_count);
 	});
+	TAPE_HOOK(node, TAPE_ARRAY(points_mask, points_count), points_count);
+	return status;
 }
 
 void TapeCore::tape_node_mask_points(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	auto pointsMask = state.getPtr<const int>(yamlNode[1]);
+	auto pointsMask = state.getPtr<const int32_t>(yamlNode[1]);
 	auto pointsCount = yamlNode[2].as<int32_t>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_mask_points(&node, pointsMask, pointsCount);

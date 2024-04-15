@@ -47,7 +47,7 @@ void gpuFilter(cudaStream_t, size_t count, const Field<RAY_IDX_U32>::type* indic
 void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f sensor_up_axis, float ground_angle_threshold,
                            const Field<XYZ_VEC3_F32>::type* inPoints, const Field<NORMAL_VEC3_F32>::type* inNormalsPtr,
                            Field<IS_GROUND_I32>::type* outNonGround, Mat3x4f lidarTransform);
-void gpuMaskPoints(cudaStream_t stream, size_t pointCount, const bool* mask, const Vector<3, float>* inIsHit,
+void gpuMaskPoints(cudaStream_t stream, size_t pointCount, const int* mask, const int* inIsHit,
                    Field<IS_HIT_I32>::type* outIsHit);
 void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                            Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,

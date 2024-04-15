@@ -847,10 +847,10 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float me
  * Graph input: point cloud
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param points_mask Pointer to the array of ints. 1 means point is hit, 0 means point is non-hit.
+ * @param points_mask Pointer to the array of int32_t. 1 means point is hit, 0 means point is non-hit.
  * @param points_count Number of elements in the `points_mask` array.
  */
-RGL_API rgl_status_t rgl_node_mask_points(rgl_node_t* node, const int* points_mask, int32_t points_count);
+RGL_API rgl_status_t rgl_node_mask_points(rgl_node_t* node, const int32_t* points_mask, int32_t points_count);
 
 /******************************** GRAPH ********************************/
 
