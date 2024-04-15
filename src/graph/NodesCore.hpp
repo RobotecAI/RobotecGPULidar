@@ -490,7 +490,6 @@ private:
 	size_t pointCount;
 	DeviceAsyncArray<int32_t>::Ptr pointsMask = DeviceAsyncArray<int32_t>::create(arrayMgr);
 	DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr output = DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr);
-
 };
 
 struct RadarPostprocessPointsNode : IPointsNodeSingleInput
