@@ -382,6 +382,12 @@ typedef enum : int32_t
 	RGL_FIELD_DYNAMIC_FORMAT = 13842,
 } rgl_field_t;
 
+typedef enum : int32_t
+{
+	RGL_RETURN_TYPE_FIRST = 0,
+	RGL_RETURN_TYPE_LAST = 1,
+} rgl_return_type_t;
+
 /**
  * Helper enum for axis selection
  */

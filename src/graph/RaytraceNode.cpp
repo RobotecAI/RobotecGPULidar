@@ -65,6 +65,10 @@ void RaytraceNode::enqueueExecImpl()
 		data->resize(raysNode->getRayCount(), false, false);
 	}
 
+	mrSamples.resize(MULTI_RETURN_BEAM_SAMPLES * raysNode->getRayCount());
+	mrFirst.resize(raysNode->getRayCount());
+	mrLast.resize(raysNode->getRayCount());
+
 	// Even though we are in graph thread here, we can access Scene class (see comment there)
 	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
 	auto sceneAS = Scene::instance().getASLocked();
@@ -92,7 +96,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayRangesCount = rayRanges.has_value() ? (*rayRanges)->getCount() : defaultRange->getCount(),
 	    .ringIds = ringIds.has_value() ? (*ringIds)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
 	    .ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
-	    .rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
+	    .rayTimeOffsetsMs = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .scene = sceneAS,
 	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
@@ -112,6 +116,8 @@ void RaytraceNode::enqueueExecImpl()
 	    .elevation = getPtrTo<ELEVATION_F32>(),
 	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
 	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
+	    .beamHalfDivergence = 0.0f, // TODO: provide API to set externally
+	    .mrSamples = mrSamples.getPointers(),
 	};
 
 	requestCtxDev->copyFrom(requestCtxHst);
