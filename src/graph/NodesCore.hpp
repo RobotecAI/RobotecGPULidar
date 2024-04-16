@@ -564,25 +564,34 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		uint32_t id;
 	};
 
+	RadarTrackObjectsNode();
+
 	void setParameters();
 
 	// Node
 	void validateImpl() override;
 	void enqueueExecImpl() override;
 
+	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
+
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return fieldData.at(field); }
 
-	const std::list<ObjectState>& getObjectStates() const
-	{
-		return objectStates;
-	}
+	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
 	std::list<ObjectState> objectStates;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
+	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
+	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthHostPtr = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
+	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationHostPtr = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
+	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
+	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
 };
 
 struct FilterGroundPointsNode : IPointsNodeSingleInput

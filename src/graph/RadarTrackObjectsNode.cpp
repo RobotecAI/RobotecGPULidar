@@ -14,26 +14,93 @@
 
 #include <graph/NodesCore.hpp>
 
-void RadarTrackObjectsNode::setParameters()
-{
-}
+RadarTrackObjectsNode::RadarTrackObjectsNode() { fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32)); }
 
-void RadarTrackObjectsNode::validateImpl()
-{
-	IPointsNodeSingleInput::validateImpl();
-}
+void RadarTrackObjectsNode::setParameters() {}
+
+void RadarTrackObjectsNode::validateImpl() { IPointsNodeSingleInput::validateImpl(); }
 
 void RadarTrackObjectsNode::enqueueExecImpl()
 {
-	
+	xyzHostPtr->copyFrom(input->getFieldData(XYZ_VEC3_F32));
+	distanceHostPtr->copyFrom(input->getFieldData(DISTANCE_F32));
+	azimuthHostPtr->copyFrom(input->getFieldData(AZIMUTH_F32));
+	elevationHostPtr->copyFrom(input->getFieldData(ELEVATION_F32));
+	radialSpeedHostPtr->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
+
+	const int detectionsCount = input->getPointCount();
+
+	objectStates.clear(); // TODO(Pawel): Remove this when we start working on tracking.
+
+	struct TrackedObject
+	{
+		Vec3f position;
+		float radialSpeed;
+	};
+	std::vector<TrackedObject> trackedObjects;
+	std::vector<int> objectIndexLookup(detectionsCount, -1);
+
+	constexpr float distanceThreshold = 2.0f;
+	constexpr float azimuthThreshold = 0.1f;
+	constexpr float elevationThreshold = 0.1f;
+	constexpr float radialSpeedThreshold = 0.5f;
+
+	std::list<std::list<int>> objectIndices;
+	for (auto i = 0; i < detectionsCount; ++i) {
+		objectIndices.emplace_back(1, i);
+	}
+
+	auto leftIndex = 0;
+	while (leftIndex < objectIndices.size() - 1) {
+		auto ownIt = objectIndices.begin();
+		std::advance(ownIt, leftIndex);
+		auto checkedIt = std::next(ownIt);
+		bool reorganizationTookPlace = false;
+
+		while (checkedIt != objectIndices.end()) {
+			auto& checkedIndices = *checkedIt;
+
+			// TODO(Pawel): In theory, I do not have to check the same indices multiple times when growing this subset in next iterations.
+			for (auto ownDetectionId : *ownIt) {
+				const auto isPartOfSameObject = [&, distance = distanceHostPtr->at(ownDetectionId),
+				                                 azimuth = azimuthHostPtr->at(ownDetectionId),
+				                                 elevation = elevationHostPtr->at(ownDetectionId),
+				                                 radialSpeed = radialSpeedHostPtr->at(ownDetectionId)](int checkedDetectionId) {
+					return std::abs(distanceHostPtr->at(checkedDetectionId) - distance) <= distanceThreshold &&
+					       std::abs(azimuthHostPtr->at(checkedDetectionId) - azimuth) <= azimuthThreshold &&
+					       std::abs(elevationHostPtr->at(checkedDetectionId) - elevation) <= elevationThreshold &&
+					       std::abs(radialSpeedHostPtr->at(checkedDetectionId) - radialSpeed) <= radialSpeedThreshold;
+				};
+
+				if (std::any_of(checkedIndices.cbegin(), checkedIndices.cend(), isPartOfSameObject)) {
+					ownIt->splice(ownIt->cend(), checkedIndices);
+					break;
+				}
+			}
+			if (checkedIndices.empty()) {
+				checkedIt = objectIndices.erase(checkedIt);
+				reorganizationTookPlace = true;
+			} else {
+				++checkedIt;
+			}
+		}
+
+		if (!reorganizationTookPlace) {
+			// We are done with growing this object, no more matching detections are available.
+			++leftIndex;
+		}
+	}
+
+	for (const auto& separateObjectIndices : objectIndices) {
+		auto& objectState = objectStates.emplace_back();
+		objectState.id = 0;
+	}
+
+	std::printf("Objects count: %lu\n", objectStates.size());
+	std::printf("");
 }
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 {
-	return { DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, XYZ_VEC3_F32, POWER_F32, RCS_F32, NOISE_F32 };
-}
-
-IAnyArray::ConstPtr RadarTrackObjectsNode::getFieldData(rgl_field_t field)
-{
-	return input->getFieldData(field);
+	return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, XYZ_VEC3_F32, POWER_F32, RCS_F32, NOISE_F32};
 }
