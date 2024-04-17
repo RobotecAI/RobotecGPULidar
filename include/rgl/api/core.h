@@ -309,8 +309,18 @@ typedef enum : int32_t
 	RGL_FIELD_RAY_IDX_U32,
 	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
-	RGL_FIELD_AZIMUTH_F32,   // In radians. Assuming up vector is Y, forward vector is Z.
-	RGL_FIELD_ELEVATION_F32, // In radians. Assuming up vector is Y, forward vector is Z.
+	/**
+	 * Azimuth angle of the hit point in radians.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
+	 */
+	RGL_FIELD_AZIMUTH_F32,
+	/**
+	 * Elevation angle of the hit point in radians.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
+	 */
+	RGL_FIELD_ELEVATION_F32,
 	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
 	RGL_FIELD_TIME_STAMP_F64,
