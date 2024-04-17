@@ -131,10 +131,10 @@ extern "C" __global__ void __raygen__()
 	// Assuming rays are generated in left-handed coordinate system with the rotation applied in ZXY order.
 	// TODO(msz-rai): move ray generation to RGL to unify rotations
 	if (ctx.azimuth != nullptr) {
-		ctx.azimuth[rayIdx] = rayLocal.toRotationYFromUnityEngineRad();
+		ctx.azimuth[rayIdx] = rayLocal.toRotationYOrderZXYLeftHandRad();
 	}
 	if (ctx.elevation != nullptr) {
-		ctx.elevation[rayIdx] = rayLocal.toRotationXFromUnityEngineRad();
+		ctx.elevation[rayIdx] = rayLocal.toRotationXOrderZXYLeftHandRad();
 	}
 
 	if (ctx.doApplyDistortion) {

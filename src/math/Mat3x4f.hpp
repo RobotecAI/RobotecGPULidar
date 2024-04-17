@@ -143,9 +143,9 @@ struct Mat3x4f
 		return {rc[0][0], rc[0][1], rc[0][2], 0.0f, rc[1][0], rc[1][1], rc[1][2], 0.0f, rc[2][0], rc[2][1], rc[2][2], 0.0f};
 	}
 
-	HostDevFn inline float toRotationXFromUnityEngineRad() const
+	HostDevFn inline float toRotationXOrderZXYLeftHandRad() const
 	{
-		// Assuming rotation has been applied in the order: z x y
+		// Assuming rotation has been applied in the order: z x y in left-handed coordinate system
 		// Based on: https://www.geometrictools.com/Documentation/EulerAngles.pdf
 		// Taking transpose of the rotation matrix, because X axis facing opposite direction in left-handed coordinate system
 		if (rc[1][2] < 1) {
@@ -159,9 +159,9 @@ struct Mat3x4f
 		}
 	}
 
-	HostDevFn inline float toRotationYFromUnityEngineRad() const
+	HostDevFn inline float toRotationYOrderZXYLeftHandRad() const
 	{
-		// Assuming rotation has been applied in the order: z x y
+		// Assuming rotation has been applied in the order: z x y in left-handed coordinate system
 		// Based on: https://www.geometrictools.com/Documentation/EulerAngles.pdf
 		if (rc[2][1] < 1) {
 			if (rc[2][1] > -1) {

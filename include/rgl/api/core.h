@@ -311,14 +311,14 @@ typedef enum : int32_t
 	RGL_FIELD_DISTANCE_F32,
 	/**
 	 * Azimuth angle of the hit point in radians.
-	 * At the moment compatible with Unity engine only (left-handed coordinate system).
-	 * Assuming up vector is Y, forward vector is Z, and rays are generated with the rotation applied in ZXY order.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
 	 */
 	RGL_FIELD_AZIMUTH_F32,
 	/**
 	 * Elevation angle of the hit point in radians.
-	 * At the moment compatible with Unity engine only (left-handed coordinate system).
-	 * Assuming up vector is Y, forward vector is Z, and rays are generated with the rotation applied in ZXY order.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
 	 */
 	RGL_FIELD_ELEVATION_F32,
 	RGL_FIELD_RING_ID_U16,
