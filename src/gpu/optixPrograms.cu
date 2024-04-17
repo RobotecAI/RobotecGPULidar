@@ -128,11 +128,13 @@ extern "C" __global__ void __raygen__()
 
 	// Assuming up vector is Y, forward vector is Z (true for Unity).
 	// TODO(msz-rai): allow to define up and forward vectors in RGL
+	// Assuming rays are generated in left-handed coordinate system with the rotation applied in ZXY order.
+	// TODO(msz-rai): move ray generation to RGL to unify rotations
 	if (ctx.azimuth != nullptr) {
-		ctx.azimuth[rayIdx] = rayLocal.toRotationYRad();
+		ctx.azimuth[rayIdx] = rayLocal.toRotationYFromUnityEngineRad();
 	}
 	if (ctx.elevation != nullptr) {
-		ctx.elevation[rayIdx] = rayLocal.toRotationXRad();
+		ctx.elevation[rayIdx] = rayLocal.toRotationXFromUnityEngineRad();
 	}
 
 	if (ctx.doApplyDistortion) {
