@@ -103,11 +103,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		for (const auto index : separateObjectIndices) {
 			objectCenter += xyzHostPtr->at(index);
 		}
-		xyzPtr[objectState.id] = 1.0f / separateObjectIndices.size() * objectCenter;
+		xyzPtr[objectState.id] = 1 / static_cast<float>(separateObjectIndices.size()) * objectCenter;
 	}
-
-	std::printf("Objects count: %lu\n", fieldData[XYZ_VEC3_F32]->getCount());
-	std::printf("");
 }
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
