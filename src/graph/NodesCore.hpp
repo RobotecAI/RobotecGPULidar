@@ -579,6 +579,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return fieldData.at(field); }
+	size_t getWidth() const override { return fieldData.empty() ? 0 : fieldData.begin()->second->getCount(); }
+	size_t getHeight() const override { return 1; } // In fact, this will be only a 1-dimensional array.
 
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 

@@ -91,16 +91,26 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		}
 	}
 
+	fieldData[XYZ_VEC3_F32]->resize(objectIndices.size(), true, false);
+	auto* xyzPtr = static_cast<Vec3f*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
+	uint32_t objectIndex = 0;
+
 	for (const auto& separateObjectIndices : objectIndices) {
 		auto& objectState = objectStates.emplace_back();
-		objectState.id = 0;
+		objectState.id = objectIndex++;
+
+		auto objectCenter = Vec3f(0.0f, 0.0f, 0.0f);
+		for (const auto index : separateObjectIndices) {
+			objectCenter += xyzHostPtr->at(index);
+		}
+		xyzPtr[objectState.id] = 1.0f / separateObjectIndices.size() * objectCenter;
 	}
 
-	std::printf("Objects count: %lu\n", objectStates.size());
+	std::printf("Objects count: %lu\n", fieldData[XYZ_VEC3_F32]->getCount());
 	std::printf("");
 }
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 {
-	return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, XYZ_VEC3_F32, POWER_F32, RCS_F32, NOISE_F32};
+	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
 }
