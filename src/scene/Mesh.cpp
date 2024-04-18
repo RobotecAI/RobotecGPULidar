@@ -16,6 +16,7 @@
 #include <scene/Scene.hpp>
 
 #include <filesystem>
+#include <gpu/helpersKernels.hpp>
 
 namespace fs = std::filesystem;
 
@@ -34,9 +35,20 @@ void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
 		                       dVertices->getCount(), vertexCount);
 		throw std::invalid_argument(msg);
 	}
-	dVertices->copyFromExternal(vertices, vertexCount);
+	// Use dVertexSkinningDisplacement as a buffer
+	dVertexSkinningDisplacement->resize(vertexCount, false, false);
+	dVertexSkinningDisplacement->copyFromExternal(vertices, vertexCount);
+
+	// Update both displacements and vertices in a single kernel
+	gpuUpdateVertices(CudaStream::getNullStream()->getHandle(), vertexCount, dVertexSkinningDisplacement->getWritePtr(),
+	                  dVertices->getWritePtr());
+	CHECK_CUDA(cudaStreamSynchronize(CudaStream::getNullStream()->getHandle()));
+
 	gasNeedsUpdate = true;
-	Scene::instance().requestASRebuild();
+	verticesFormerUpdateTime = verticesCurrentUpdateTime;
+	verticesCurrentUpdateTime = Scene::instance().getTime();
+	Scene::instance().requestASRebuild();  // Vertices themselves
+	Scene::instance().requestSBTRebuild(); // Vertices displacement
 }
 
 OptixTraversableHandle Mesh::getGAS(CudaStream::Ptr stream)
@@ -145,4 +157,11 @@ void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 	dTextureCoords.value()->copyFromExternal(texCoords, texCoordCount);
 	gasNeedsUpdate = true;
 	Scene::instance().requestSBTRebuild();
+}
+const Vec3f* Mesh::getSkinningDisplacementSinceLastFrame() const
+{
+	if (!verticesFormerUpdateTime.has_value() || verticesFormerUpdateTime != Scene::instance().getPrevTime()) {
+		return nullptr;
+	}
+	return dVertexSkinningDisplacement->getReadPtr();
 }

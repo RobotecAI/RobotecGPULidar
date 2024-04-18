@@ -26,6 +26,8 @@
 
 #include <rgl/api/core.h>
 
+static constexpr float toDeg = (180.0f / M_PI);
+
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
 struct Vec3fPayload
@@ -54,13 +56,14 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 }
 
 template<bool isFinite>
-__forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float distance = NON_HIT_VALUE, float intensity = 0,
-                                              const int objectID = RGL_ENTITY_INVALID_ID)
+__forceinline__ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID,
+                                              const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed,
+                                              const Vec3f& normal, float incidentAngle)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
 		// Return actual XYZ of the hit point or infinity vector.
-		ctx.xyz[rayIdx] = isFinite ? *xyz : Vec3f{NON_HIT_VALUE, NON_HIT_VALUE, NON_HIT_VALUE};
+		ctx.xyz[rayIdx] = xyz;
 	}
 	if (ctx.isHit != nullptr) {
 		ctx.isHit[rayIdx] = isFinite;
@@ -83,27 +86,64 @@ __forceinline__ __device__ void saveRayResult(const Vec3f* xyz = nullptr, float 
 	if (ctx.entityId != nullptr) {
 		ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
 	}
+	if (ctx.pointAbsVelocity != nullptr) {
+		ctx.pointAbsVelocity[rayIdx] = absVelocity;
+	}
+	if (ctx.pointRelVelocity != nullptr) {
+		ctx.pointRelVelocity[rayIdx] = relVelocity;
+	}
+	if (ctx.radialSpeed != nullptr) {
+		ctx.radialSpeed[rayIdx] = radialSpeed;
+	}
+	if (ctx.normal != nullptr) {
+		ctx.normal[rayIdx] = normal;
+	}
+	if (ctx.incidentAngle != nullptr) {
+		ctx.incidentAngle[rayIdx] = incidentAngle;
+	}
+}
+
+__forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
+{
+	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	Vec3f origin = ray * Vec3f{0, 0, 0};
+	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	Vec3f displacement = dir.normalized() * nonHitDistance;
+	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
+	                isnan(displacement.z()) ? 0 : displacement.z()};
+	Vec3f xyz = origin + displacement;
+	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.001f, Vec3f{NAN}, NAN);
 }
 
 extern "C" __global__ void __raygen__()
 {
 	if (ctx.scene == 0) {
-		saveRayResult<false>();
+		saveNonHitRayResult(ctx.farNonHitDistance);
 		return;
 	}
 
 	const int rayIdx = optixGetLaunchIndex().x;
 	Mat3x4f ray = ctx.rays[rayIdx];
+	const Mat3x4f rayLocal = ctx.rayOriginToWorld.inverse() * ray;
+
+	// Assuming up vector is Y, forward vector is Z (true for Unity).
+	// TODO(msz-rai): allow to define up and forward vectors in RGL
+	// Assuming rays are generated in left-handed coordinate system with the rotation applied in ZXY order.
+	// TODO(msz-rai): move ray generation to RGL to unify rotations
+	if (ctx.azimuth != nullptr) {
+		ctx.azimuth[rayIdx] = rayLocal.toRotationYOrderZXYLeftHandRad();
+	}
+	if (ctx.elevation != nullptr) {
+		ctx.elevation[rayIdx] = rayLocal.toRotationXOrderZXYLeftHandRad();
+	}
 
 	if (ctx.doApplyDistortion) {
-		static const float toDeg = (180.0f / M_PI);
-		// Velocities are in the local frame. Need to transform rays.
-		ray = ctx.rayOriginToWorld.inverse() * ray;
+		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
 		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
 		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f) *
-		      ray;
+		      rayLocal;
 		// Back to the global frame.
 		ray = ctx.rayOriginToWorld * ray;
 	}
@@ -120,21 +160,21 @@ extern "C" __global__ void __raygen__()
 
 extern "C" __global__ void __closesthit__()
 {
-	const TriangleMeshSBTData& sbtData = *(const TriangleMeshSBTData*) optixGetSbtDataPointer();
+	const EntitySBTData& entityData = *(const EntitySBTData*) optixGetSbtDataPointer();
 
 	const int primID = optixGetPrimitiveIndex();
-	assert(primID < sbtData.indexCount);
-	const Vec3i index = sbtData.index[primID];
+	assert(primID < entityData.indexCount);
+	const Vec3i triangleIndices = entityData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
 	const float v = optixGetTriangleBarycentrics().y;
 
-	assert(index.x() < sbtData.vertexCount);
-	assert(index.y() < sbtData.vertexCount);
-	assert(index.z() < sbtData.vertexCount);
+	assert(triangleIndices.x() < entityData.vertexCount);
+	assert(triangleIndices.y() < entityData.vertexCount);
+	assert(triangleIndices.z() < entityData.vertexCount);
 
-	const Vec3f& A = sbtData.vertex[index.x()];
-	const Vec3f& B = sbtData.vertex[index.y()];
-	const Vec3f& C = sbtData.vertex[index.z()];
+	const Vec3f& A = entityData.vertex[triangleIndices.x()];
+	const Vec3f& B = entityData.vertex[triangleIndices.y()];
+	const Vec3f& C = entityData.vertex[triangleIndices.z()];
 
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
@@ -149,7 +189,7 @@ extern "C" __global__ void __closesthit__()
 
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		saveRayResult<false>();
+		saveNonHitRayResult(ctx.nearNonHitDistance);
 		return;
 	}
 
@@ -162,24 +202,81 @@ extern "C" __global__ void __closesthit__()
 		hitWorld = undistortedOrigin + undistortedDir * distance;
 	}
 
-	float intensity = 0;
-	if (sbtData.textureCoords != nullptr && sbtData.texture != 0) {
-		assert(index.x() < sbtData.textureCoordsCount);
-		assert(index.y() < sbtData.textureCoordsCount);
-		assert(index.z() < sbtData.textureCoordsCount);
+	// Normal vector and incident angle
+	Vec3f rayDir = (hitWorld - origin).normalized();
+	const Vec3f wA = optixTransformPointFromObjectToWorldSpace(A);
+	const Vec3f wB = optixTransformPointFromObjectToWorldSpace(B);
+	const Vec3f wC = optixTransformPointFromObjectToWorldSpace(C);
+	const Vec3f wAB = wB - wA;
+	const Vec3f wCA = wC - wA;
+	const Vec3f wNormal = wAB.cross(wCA).normalized();
+	const float incidentAngle = acosf(fabs(wNormal.dot(rayDir)));
 
-		const Vec2f& uvA = sbtData.textureCoords[index.x()];
-		const Vec2f& uvB = sbtData.textureCoords[index.y()];
-		const Vec2f& uvC = sbtData.textureCoords[index.z()];
+	float intensity = 0;
+	bool isIntensityRequested = ctx.intensity != nullptr;
+	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
+		assert(triangleIndices.x() < entityData.textureCoordsCount);
+		assert(triangleIndices.y() < entityData.textureCoordsCount);
+		assert(triangleIndices.z() < entityData.textureCoordsCount);
+
+		const Vec2f& uvA = entityData.textureCoords[triangleIndices.x()];
+		const Vec2f& uvB = entityData.textureCoords[triangleIndices.y()];
+		const Vec2f& uvC = entityData.textureCoords[triangleIndices.z()];
 
 		Vec2f uv = (1 - u - v) * uvA + u * uvB + v * uvC;
 
-		intensity = tex2D<TextureTexelFormat>(sbtData.texture, uv[0], uv[1]);
+		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
 
-	saveRayResult<true>(&hitWorld, distance, intensity, objectID);
+	Vec3f absPointVelocity{NAN};
+	Vec3f relPointVelocity{NAN};
+	float radialSpeed{NAN};
+	bool isVelocityRequested = ctx.pointAbsVelocity != nullptr || ctx.pointRelVelocity != nullptr || ctx.radialSpeed != nullptr;
+	if (ctx.sceneDeltaTime > 0 && isVelocityRequested) {
+		Vec3f displacementFromTransformChange = {0, 0, 0};
+		if (entityData.hasPrevFrameLocalToWorld) {
+			// Computing hit point velocity in simple words:
+			// From raytracing, we get hit point in Entity's coordinate frame (hitObject).
+			// Think of it as a marker dot on the Entity.
+			// Having access to Entity's previous pose, we can compute (entityData.prevFrameLocalToWorld * hitObject),
+			// where the marker dot would be in the previous raytracing frame (displacementVectorOrigin).
+			// Then, we can connect marker dot in previous raytracing frame with its current position and obtain displacementFromTransformChange vector
+			// Dividing displacementFromTransformChange by time elapsed from the previous raytracing frame yields velocity vector.
+			Vec3f displacementVectorOrigin = entityData.prevFrameLocalToWorld * hitObject;
+			displacementFromTransformChange = hitWorld - displacementVectorOrigin;
+		}
+
+		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
+		Vec3f displacementFromSkinning = {0, 0, 0};
+		bool wasSkinned = entityData.vertexDisplacementSincePrevFrame != nullptr;
+		if (wasSkinned) {
+			Mat3x4f objectToWorld;
+			optixGetObjectToWorldTransformMatrix(reinterpret_cast<float*>(objectToWorld.rc));
+			const Vec3f& vA = entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
+			const Vec3f& vB = entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
+			const Vec3f& vC = entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
+			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
+		}
+
+		absPointVelocity = (displacementFromTransformChange + displacementFromSkinning) /
+		                   static_cast<float>(ctx.sceneDeltaTime);
+
+		// Relative point velocity is a sum of linear velocities difference (between sensor and hit-point)
+		// and impact of sensor angular velocity
+		Vec3f absPointVelocityInSensorFrame = ctx.rayOriginToWorld.rotation().inverse() * absPointVelocity;
+		Vec3f relPointVelocityBasedOnSensorLinearVelocity = absPointVelocityInSensorFrame - ctx.sensorLinearVelocityXYZ;
+
+		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;
+		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(hitRays);
+		relPointVelocity = relPointVelocityBasedOnSensorLinearVelocity + relPointVelocityBasedOnSensorAngularVelocity;
+
+		radialSpeed = hitRays.normalized().dot(relPointVelocity);
+	}
+
+	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed, wNormal,
+	                    incidentAngle);
 }
 
-extern "C" __global__ void __miss__() { saveRayResult<false>(); }
+extern "C" __global__ void __miss__() { saveNonHitRayResult(ctx.farNonHitDistance); }
 
 extern "C" __global__ void __anyhit__() {}

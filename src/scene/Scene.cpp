@@ -25,13 +25,15 @@ Scene& Scene::instance()
 
 Scene::Scene() : stream(CudaStream::create(cudaStreamNonBlocking)) {}
 
-std::size_t Scene::getObjectCount() { return entities.size(); }
+std::size_t Scene::getObjectCount() const { return entities.size(); }
 
 void Scene::clear()
 {
 	entities.clear();
 	requestASRebuild();
 	requestSBTRebuild();
+	time.reset();
+	prevTime.reset();
 }
 
 void Scene::addEntity(std::shared_ptr<Entity> entity)
@@ -73,12 +75,11 @@ OptixShaderBindingTable Scene::buildSBT()
 	static DeviceSyncArray<MissRecord>::Ptr dMissRecords = DeviceSyncArray<MissRecord>::create();
 	static HostPinnedArray<HitgroupRecord>::Ptr hHitgroupRecords = HostPinnedArray<HitgroupRecord>::create();
 
-	// TODO(prybicki): low priority: can HG count be reduced to be == count(GASes)? or must it be count(IASes)?
-
 	hHitgroupRecords->reserve(entities.size(), false);
 	hHitgroupRecords->clear(false);
 	for (auto&& entity : entities) {
 		auto& mesh = entity->mesh;
+		std::optional<Mat3x4f> prevFrameTransform = entity->getPreviousFrameLocalToWorldTransform();
 		hHitgroupRecords->append(HitgroupRecord{
 		    .data = {
 		             .vertex = mesh->dVertices->getReadPtr(),
@@ -88,6 +89,9 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
+		             .prevFrameLocalToWorld = prevFrameTransform.value_or(Mat3x4f::identity()),
+		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value(),
+		             .vertexDisplacementSincePrevFrame = mesh->getSkinningDisplacementSinceLastFrame(),
 		             }
         });
 		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
@@ -128,13 +132,12 @@ OptixTraversableHandle Scene::buildAS()
 		int idx = instances->getCount();
 		OptixInstance instance = {
 		    .instanceId = static_cast<unsigned int>(entity->id),
-		    // (more efficient), instead of storing it in HitGroupRecord
 		    .sbtOffset = static_cast<unsigned int>(idx), // NOTE: this assumes a single SBT record per GAS
 		    .visibilityMask = 255,
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
 		    .traversableHandle = entity->mesh->getGAS(getStream()),
 		};
-		entity->transform.toRaw(instance.transform);
+		entity->transformInfo.matrix.toRaw(instance.transform);
 		instances->append(instance);
 	}
 
@@ -178,4 +181,4 @@ void Scene::requestASRebuild() { cachedAS.reset(); }
 
 void Scene::requestSBTRebuild() { cachedSBT.reset(); }
 
-CudaStream::Ptr Scene::getStream() { return stream; }
+CudaStream::Ptr Scene::getStream() const { return stream; }

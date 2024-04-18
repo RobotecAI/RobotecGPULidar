@@ -68,17 +68,17 @@ private:
 	GPUFieldDescBuilder gpuFieldDescBuilder;
 };
 
-struct CompactPointsNode : IPointsNodeSingleInput
+struct CompactByFieldPointsNode : IPointsNodeSingleInput
 {
-	using Ptr = std::shared_ptr<CompactPointsNode>;
-	void setParameters() {}
+	using Ptr = std::shared_ptr<CompactByFieldPointsNode>;
+	void setParameters(rgl_field_t field);
 
 	// Node
 	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32, IS_GROUND_I32}; }
 
 	// Point cloud description
 	bool isDense() const override { return true; }
@@ -89,6 +89,7 @@ struct CompactPointsNode : IPointsNodeSingleInput
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 private:
+	rgl_field_t fieldToCompactBy;
 	size_t width = {0};
 	DeviceAsyncArray<CompactionIndexType>::Ptr inclusivePrefixSum = DeviceAsyncArray<CompactionIndexType>::create(arrayMgr);
 	CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
@@ -115,19 +116,27 @@ struct RaytraceNode : IPointsNode
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
+		if (field == RAY_POSE_MAT3x4_F32) {
+			return raysNode->getRays();
+		}
 		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
 	}
 
 	// RaytraceNode specific
-	void setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity);
+	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
+	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
+	void setNonHitDistanceValues(float nearDistance, float farDistance);
 
 private:
 	IRaysNode::Ptr raysNode;
 
 	DeviceAsyncArray<Vec2f>::Ptr defaultRange = DeviceAsyncArray<Vec2f>::create(arrayMgr);
 	bool doApplyDistortion{false};
-	Vec3f sensorLinearVelocityXYZ;
-	Vec3f sensorAngularVelocityRPY;
+	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
+	Vec3f sensorAngularVelocityRPY{0, 0, 0};
+
+	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
+	float farNonHitDistance{std::numeric_limits<float>::infinity()};
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
@@ -360,7 +369,11 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	void enqueueExecImpl() override {}
 
 	// Point cloud description
-	bool isDense() const override { return false; }
+	bool isDense() const override
+	{
+		// If point cloud doesn't contain IS_HIT field we assume all points are hits.
+		return !fieldData.contains(RGL_FIELD_IS_HIT_I32);
+	}
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return width; }
 	size_t getHeight() const override { return 1; }
@@ -455,5 +468,111 @@ private:
 	    DeviceAsyncArray<curandStatePhilox4_32_10_t>::create(arrayMgr);
 	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(
+	    arrayMgr);
+};
+
+struct RadarPostprocessPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
+
+	void setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad, float rayElevationStepRad,
+	                   float frequency, float powerTransmitted, float cumulativeDeviceGain, float receivedNoiseMean,
+	                   float receivedNoiseStDev);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Point cloud description
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	// Data containers
+	std::vector<Field<RAY_IDX_U32>::type> filteredIndicesHost;
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
+	    arrayMgr);
+	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
+	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
+	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedInputHost =
+	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
+	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationInputHost = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
+	DeviceAsyncArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorDev =
+	    DeviceAsyncArray<Vector<3, thrust::complex<float>>>::create(arrayMgr);
+	HostPinnedArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorHost =
+	    HostPinnedArray<Vector<3, thrust::complex<float>>>::create();
+
+	HostPageableArray<Field<RCS_F32>::type>::Ptr clusterRcsHost = HostPageableArray<Field<RCS_F32>::type>::create();
+	HostPageableArray<Field<POWER_F32>::type>::Ptr clusterPowerHost = HostPageableArray<Field<POWER_F32>::type>::create();
+	HostPageableArray<Field<NOISE_F32>::type>::Ptr clusterNoiseHost = HostPageableArray<Field<NOISE_F32>::type>::create();
+	HostPageableArray<Field<SNR_F32>::type>::Ptr clusterSnrHost = HostPageableArray<Field<SNR_F32>::type>::create();
+
+	DeviceAsyncArray<Field<RCS_F32>::type>::Ptr clusterRcsDev = DeviceAsyncArray<Field<RCS_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<POWER_F32>::type>::Ptr clusterPowerDev = DeviceAsyncArray<Field<POWER_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<NOISE_F32>::type>::Ptr clusterNoiseDev = DeviceAsyncArray<Field<NOISE_F32>::type>::create(arrayMgr);
+	DeviceAsyncArray<Field<SNR_F32>::type>::Ptr clusterSnrDev = DeviceAsyncArray<Field<SNR_F32>::type>::create(arrayMgr);
+
+	float rayAzimuthStepRad;
+	float rayElevationStepRad;
+	float frequencyHz;
+	float powerTransmittedDbm;
+	float cumulativeDeviceGainDbi;
+	float receivedNoiseMeanDb;
+	float receivedNoiseStDevDb;
+
+	std::vector<rgl_radar_scope_t> radarScopes;
+
+	std::random_device randomDevice;
+
+	// RGL related members
+	std::mutex getFieldDataMutex;
+	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
+
+	struct RadarCluster
+	{
+		RadarCluster(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float radialSpeed, float elevation);
+		RadarCluster(RadarCluster&& other) noexcept = default;
+		RadarCluster& operator=(RadarCluster&& other) noexcept = default;
+
+		void addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth, float radialSpeed, float elevation);
+		inline bool isCandidate(float distance, float azimuth, float radialSpeed, const rgl_radar_scope_t& separations) const;
+		inline bool canMergeWith(const RadarCluster& other, const std::vector<rgl_radar_scope_t>& radarScopes) const;
+		void takeIndicesFrom(RadarCluster&& other);
+		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
+		                                                    const Field<ELEVATION_F32>::type* elevations) const;
+
+		std::vector<Field<RAY_IDX_U32>::type> indices;
+		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
+		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
+		Vector<2, Field<RADIAL_SPEED_F32>::type> minMaxRadialSpeed;
+		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
+	};
+};
+
+struct FilterGroundPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<FilterGroundPointsNode>;
+	void setParameters(const Vec3f& sensor_up_vector, float ground_angle_threshold);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {XYZ_VEC3_F32, NORMAL_VEC3_F32}; };
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	Vec3f sensor_up_vector;
+	float ground_angle_threshold;
+	DeviceAsyncArray<Field<IS_GROUND_I32>::type>::Ptr outNonGround = DeviceAsyncArray<Field<IS_GROUND_I32>::type>::create(
 	    arrayMgr);
 };

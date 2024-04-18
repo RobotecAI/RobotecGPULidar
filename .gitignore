@@ -39,5 +39,8 @@ Testing/*
 cmake-build-debug
 cmake-build-release
 build
-external/vcpkg
+external/*
+!external/CMakeLists.txt
+extensions/udp
+extensions/snow
 CMakeSettings.json

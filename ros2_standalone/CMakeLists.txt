@@ -104,6 +104,17 @@ macro(get_standalone_dependencies _library_name)
             endif()
         endif()
 
+        # If library is msgs, fetch all targets to get libraries for dynamic type support
+        # Those libraries are not listed in <XX>_LIBRARIES (which stands for libraries to link against to use <XX>)
+        if(${_library_name} MATCHES ".*\_msgs$")
+            foreach(entry ${${_library_name}_TARGETS})
+                fetch_target_lib(${entry})
+                string(REGEX REPLACE "::" "_" entry_normalized ${entry})
+                list(APPEND REQ_STANDALONE_LIBS
+                        ${${entry_normalized}_LIB_PATH})
+            endforeach()
+        endif()
+
         # Get spdlog and dependency
         if(UNIX AND "${_library_name}" STREQUAL "spdlog")
             include(${${_library_name}_CONFIG})
@@ -148,8 +159,9 @@ macro(install_standalone_dependencies)
             string(REGEX REPLACE "\.lib$" ".dll" dll_path ${bin_path})
             list(APPEND REQ_STANDALONE_DLLS ${dll_path})
         endforeach()
+        list(REMOVE_DUPLICATES REQ_STANDALONE_DLLS)
         install(FILES ${REQ_STANDALONE_DLLS}
-                DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}
         )
     elseif(UNIX)
         set(_resolvedFiles "")
@@ -160,7 +172,7 @@ macro(install_standalone_dependencies)
         endforeach()
 
         install(FILES ${_resolvedFiles}
-                DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}
         )
 
         # Fix soversion files
@@ -199,6 +211,7 @@ set(ros2_standalone_libs
   rclcpp
   sensor_msgs
   visualization_msgs
+  radar_msgs
   rmw_implementation
   rmw_dds_common
   FastRTPS

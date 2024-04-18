@@ -55,7 +55,7 @@ struct Vector
 	HostDevFn Vector(const Vector<dim, U>& other)
 	{
 		for (int i = 0; i < dim; ++i) {
-			row[i] = static_cast<T>(other.row[i]);
+			row[i] = static_cast<T>(other[i]);
 		}
 	}
 
@@ -77,7 +77,7 @@ struct Vector
 	{}
 
 	template<typename TT = T, typename = std::enable_if_t<std::is_same_v<TT, float> && dim == 3>>
-	DevFn operator float3()
+	DevFn operator float3() const
 	{
 		return float3{row[0], row[1], row[2]};
 	}
@@ -126,6 +126,15 @@ struct Vector
 	PIECEWISE_OPERATOR(/, /=)
 #undef PIECEWISE_OPERATOR
 
+	HostDevFn V operator-() const
+	{
+		V v;
+		for (int i = 0; i < dim; ++i) {
+			v.row[i] = -this->row[i];
+		}
+		return v;
+	}
+
 	HostDevFn T lengthSquared() const
 	{
 		auto sum = static_cast<T>(0);
@@ -139,7 +148,7 @@ struct Vector
 
 	HostDevFn V half() const { return *this / V{static_cast<T>(2)}; }
 
-	HostDevFn V normalize() const { return *this / length(); }
+	HostDevFn V normalized() const { return *this / length(); }
 
 	HostDevFn T min() const
 	{
@@ -157,6 +166,32 @@ struct Vector
 			value *= v;
 		}
 		return value;
+	}
+
+	HostDevFn T dot(const V& other) const
+	{
+		T value = static_cast<T>(0);
+		for (int i = 0; i < dim; ++i) {
+			value += row[i] * other.row[i];
+		}
+		return value;
+	}
+
+	// Only for Vector with dim == 3
+	template<int D = dim, typename std::enable_if_t<D == 3, int> = 0>
+	HostDevFn V cross(const V& other) const
+	{
+		V value = V(static_cast<T>(0));
+		value[0] = row[1] * other.row[2] - row[2] * other.row[1];
+		value[1] = row[2] * other.row[0] - row[0] * other.row[2];
+		value[2] = row[0] * other.row[1] - row[1] * other.row[0];
+		return value;
+	}
+
+	template<int D = dim, typename std::enable_if_t<D == 3, int> = 0>
+	HostDevFn V toSpherical() const
+	{
+		return {length(), row[0] == 0 && row[1] == 0 ? 0 : atan2(row[1], row[0]), std::acos(row[2] / length())};
 	}
 
 private:
@@ -198,10 +233,16 @@ using Vec2i = Vector<2, int>;
 using Vec3i = Vector<3, int>;
 using Vec4i = Vector<4, int>;
 
-static_assert(std::is_trivially_copyable<Vec2f>::value);
-static_assert(std::is_trivially_copyable<Vec3f>::value);
-static_assert(std::is_trivially_copyable<Vec4f>::value);
+static_assert(std::is_trivially_copyable_v<Vec2f>);
+static_assert(std::is_trivially_copyable_v<Vec3f>);
+static_assert(std::is_trivially_copyable_v<Vec4f>);
+static_assert(std::is_standard_layout_v<Vec2f>);
+static_assert(std::is_standard_layout_v<Vec3f>);
+static_assert(std::is_standard_layout_v<Vec4f>);
 
-static_assert(std::is_trivially_copyable<Vec2i>::value);
-static_assert(std::is_trivially_copyable<Vec3i>::value);
-static_assert(std::is_trivially_copyable<Vec4i>::value);
+static_assert(std::is_trivially_copyable_v<Vec2i>);
+static_assert(std::is_trivially_copyable_v<Vec3i>);
+static_assert(std::is_trivially_copyable_v<Vec4i>);
+static_assert(std::is_standard_layout_v<Vec2i>);
+static_assert(std::is_standard_layout_v<Vec3i>);
+static_assert(std::is_standard_layout_v<Vec4i>);

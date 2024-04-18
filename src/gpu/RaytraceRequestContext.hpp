@@ -24,6 +24,9 @@ struct RaytraceRequestContext
 	Vec3f sensorAngularVelocityRPY;
 	bool doApplyDistortion;
 
+	float nearNonHitDistance;
+	float farNonHitDistance;
+
 	const Mat3x4f* rays;
 	size_t rayCount;
 
@@ -40,6 +43,7 @@ struct RaytraceRequestContext
 
 	OptixTraversableHandle scene;
 	double sceneTime;
+	float sceneDeltaTime;
 
 	// Output
 	Field<XYZ_VEC3_F32>::type* xyz;
@@ -50,5 +54,12 @@ struct RaytraceRequestContext
 	Field<INTENSITY_F32>::type* intensity;
 	Field<TIME_STAMP_F64>::type* timestamp;
 	Field<ENTITY_ID_I32>::type* entityId;
+	Field<ABSOLUTE_VELOCITY_VEC3_F32>::type* pointAbsVelocity;
+	Field<RELATIVE_VELOCITY_VEC3_F32>::type* pointRelVelocity;
+	Field<RADIAL_SPEED_F32>::type* radialSpeed;
+	Field<AZIMUTH_F32>::type* azimuth;
+	Field<ELEVATION_F32>::type* elevation;
+	Field<NORMAL_VEC3_F32>::type* normal;
+	Field<INCIDENT_ANGLE_F32>::type* incidentAngle;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

@@ -50,7 +50,7 @@ if (UNIX)
     set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-if (${RGL_BUILD_TESTS})
+if (${RGL_BUILD_TESTS} OR ${RGL_BUILD_TAPED_TESTS})
     set(INSTALL_GTEST OFF CACHE INTERNAL "Disable installation of googletest")
     FetchContent_Declare(
         googletest

@@ -28,7 +28,8 @@
 #include <graph/Node.hpp>
 #include <graph/GraphRunCtx.hpp>
 
-#include <Tape.hpp>
+#include <tape/TapeRecorder.hpp>
+
 #include <RGLExceptions.hpp>
 
 #include <repr.hpp>

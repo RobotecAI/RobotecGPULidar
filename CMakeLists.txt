@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
+
 # Build Release by default; CMAKE_BUILD_TYPE needs to be set before project(...)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
         "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
+
+# Use debug postfix 'd' by default.
+if(NOT CMAKE_DEBUG_POSTFIX)
+  set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING
+      "Choose the debug postfix used when building Debug configuration")
+endif()
+
 project(RobotecGPULidar C CXX CUDA)
 
 # Logging default settings (can be changed via API call)
@@ -25,6 +33,8 @@ set(RGL_BUILD_STATIC OFF CACHE BOOL
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
     "Enables building test. GTest will be automatically downloaded")
+set(RGL_BUILD_TAPED_TESTS OFF CACHE BOOL
+    "Enables building taped test.")
 
 # Tools configuration
 set(RGL_BUILD_TOOLS ON CACHE BOOL "Enables building RGL executable tools")
@@ -36,6 +46,9 @@ set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
 set(RGL_BUILD_UDP_EXTENSION OFF CACHE BOOL
     "Enables building UDP extension.")
+set(RGL_BUILD_SNOW_EXTENSION OFF CACHE BOOL
+    "Enables building snow simulation extension.")
+
 
 # Hide automatically generated CTest targets
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -83,7 +96,9 @@ add_library(optixPrograms optixProgramsPtx.c)
 set(RGL_SOURCE_FILES
     src/api/apiCommon.cpp
     src/api/apiCore.cpp
-    src/Tape.cpp
+    src/tape/TapePlayer.cpp
+    src/tape/TapeRecorder.cpp
+    src/tape/PlaybackState.cpp
     src/Logger.cpp
     src/Optix.cpp
     src/gpu/helpersKernels.cu
@@ -99,13 +114,15 @@ set(RGL_SOURCE_FILES
     src/graph/GaussianNoiseAngularHitpointNode.cpp
     src/graph/GaussianNoiseAngularRayNode.cpp
     src/graph/GaussianNoiseDistanceNode.cpp
-    src/graph/CompactPointsNode.cpp
+    src/graph/CompactByFieldPointsNode.cpp
     src/graph/FormatPointsNode.cpp
     src/graph/RaytraceNode.cpp
     src/graph/TransformPointsNode.cpp
     src/graph/TransformRaysNode.cpp
     src/graph/FromArrayPointsNode.cpp
     src/graph/FromMat3x4fRaysNode.cpp
+    src/graph/FilterGroundPointsNode.cpp
+    src/graph/RadarPostprocessPointsNode.cpp
     src/graph/SetRangeRaysNode.cpp
     src/graph/SetRaysRingIdsRaysNode.cpp
     src/graph/SetTimeOffsetsRaysNode.cpp
@@ -128,6 +145,7 @@ set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=$<BOOL:${RGL_BUILD_UDP_EXTENSION}>)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_SNOW_EXTENSION=$<BOOL:${RGL_BUILD_SNOW_EXTENSION}>)
 
 if (RGL_BUILD_PCL_EXTENSION)
     add_subdirectory(extensions/pcl)
@@ -139,6 +157,10 @@ endif()
 
 if (RGL_BUILD_UDP_EXTENSION)
     add_subdirectory(extensions/udp)
+endif()
+
+if (RGL_BUILD_SNOW_EXTENSION)
+    add_subdirectory(extensions/snow)
 endif()
 
 target_include_directories(RobotecGPULidar
@@ -177,7 +199,7 @@ if (NOT ("RGL_LOG_LEVEL_${RGL_LOG_LEVEL}" IN_LIST RGL_AVAILABLE_LOG_LEVELS))
     message(FATAL_ERROR "Incorrect RGL_LOG_LEVEL value: ${RGL_LOG_LEVEL}")
 endif()
 
-if (WIN32 AND RGL_AUTO_TAPE_PATH)
+if (WIN32 AND (RGL_AUTO_TAPE_PATH OR RGL_BUILD_TAPED_TESTS))
     message(FATAL_ERROR "(Auto)Tape not supported on Windows")
 endif()
 
@@ -191,10 +213,18 @@ target_compile_definitions(RobotecGPULidar
 )
 
 # Include tests
-if (RGL_BUILD_TESTS)
+if (RGL_BUILD_TESTS OR RGL_BUILD_TAPED_TESTS)
     enable_testing()
-    add_subdirectory(test)
+
+    if (RGL_BUILD_TESTS)
+        add_subdirectory(test)
+    endif()
+
+    if (RGL_BUILD_TAPED_TESTS)
+        add_subdirectory(test/taped_test)
+    endif()
 endif()
+
 
 # Include tools
 if (RGL_BUILD_TOOLS)

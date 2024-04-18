@@ -24,9 +24,10 @@ static constexpr int maxGPUCoresTestCount = 20000;
 		}                                                                                                                      \
 	} while (false)
 
-#define EXPECT_RGL_INVALID_OBJECT(status, type) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", type)
-#define EXPECT_RGL_INVALID_ARGUMENT(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, "Invalid argument", error)
-#define EXPECT_RGL_INVALID_PIPELINE(status, error) EXPECT_RGL_STATUS(status, RGL_INVALID_PIPELINE, "")
+#define EXPECT_RGL_INVALID_OBJECT(status, ...) EXPECT_RGL_STATUS(status, RGL_INVALID_API_OBJECT, "Object does not exist", __VA_ARGS__)
+#define EXPECT_RGL_INVALID_ARGUMENT(status, ...) EXPECT_RGL_STATUS(status, RGL_INVALID_ARGUMENT, __VA_ARGS__)
+#define EXPECT_RGL_INVALID_PIPELINE(status, ...) EXPECT_RGL_STATUS(status, RGL_INVALID_PIPELINE, __VA_ARGS__)
+#define EXPECT_RGL_TAPE_ERROR(status, ...) EXPECT_RGL_STATUS(status, RGL_TAPE_ERROR, __VA_ARGS__)
 
 struct RGLTest : public ::testing::Test
 {

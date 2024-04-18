@@ -24,17 +24,16 @@ struct DeviceArray : public Array<T>
 	using Ptr = std::shared_ptr<DeviceArray<T>>;
 	using ConstPtr = std::shared_ptr<const DeviceArray<T>>;
 
-	// Explanation why: https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members
-	// Note: do not repeat this for methods, since it inhibits virtual dispatch mechanism
-	using Array<T>::data;
-	using Array<T>::count;
-	using Array<T>::capacity;
-
 	T* getWritePtr() { return data; }
 	const T* getReadPtr() const { return data; }
 	CUdeviceptr getDeviceReadPtr() const { return reinterpret_cast<CUdeviceptr>(this->getReadPtr()); }
 	CUdeviceptr getDeviceWritePtr() { return getDeviceReadPtr(); }
 
 protected:
+	// Explanation why: https://isocpp.org/wiki/faq/templates#nondependent-name-lookup-members
+	// Note: do not repeat this for methods, since it inhibits virtual dispatch mechanism
 	using Array<T>::Array;
+	using Array<T>::data;
+	using Array<T>::count;
+	using Array<T>::capacity;
 };

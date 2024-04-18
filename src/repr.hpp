@@ -139,3 +139,21 @@ static inline std::string repr(rgl_node_t* node)
 	std::string nodePointee = (node != nullptr) ? fmt::format("->{}", repr(*node)) : "";
 	return fmt::format("{}{}", (void*) node, nodePointee);
 }
+
+template<>
+struct fmt::formatter<rgl_radar_scope_t>
+{
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template<typename FormatContext>
+	auto format(const rgl_radar_scope_t& v, FormatContext& ctx)
+	{
+		return fmt::format_to(ctx.out(), "(begin={}, end={}, separation_thresholds: [distance={}, speed={}, azimuth={}])",
+		                      v.begin_distance, v.end_distance, v.distance_separation_threshold,
+		                      v.radial_speed_separation_threshold, v.azimuth_separation_threshold);
+	}
+};

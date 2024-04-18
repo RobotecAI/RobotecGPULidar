@@ -6,7 +6,7 @@
 
 #include <RGLFields.hpp>
 
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 #include <rgl/api/extensions/ros2.h>
 #endif
 
@@ -62,7 +62,7 @@ TEST_P(TextureTest, rgl_texture_reading)
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
-	EXPECT_RGL_SUCCESS(rgl_node_points_compact(&compactNode));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactNode, RGL_FIELD_IS_HIT_I32));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, yieldFields.data(), yieldFields.size()));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));

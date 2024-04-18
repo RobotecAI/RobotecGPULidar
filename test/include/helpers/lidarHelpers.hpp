@@ -21,7 +21,7 @@ static std::vector<rgl_mat3x4f> makeLidar3dRays(float fov_x, float fov_y, float 
 		float rot_x = angle_start_x + add_x;
 		for (float add_y = 0.0f; add_y <= fov_y; add_y += resolution_y) {
 			float rot_y = angle_start_y + add_y;
-			rays.emplace_back(Mat3x4f::rotation(rot_x, rot_y, 0.0).toRGL());
+			rays.emplace_back(Mat3x4f::rotationDeg(rot_x, rot_y, 0.0).toRGL());
 		}
 	}
 

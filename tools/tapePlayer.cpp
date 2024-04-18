@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rgl/api/extensions/tape.h"
 #include "spdlog/fmt/fmt.h"
-#include "Tape.hpp"
+#include "tape/TapePlayer.hpp"
 
 int main(int argc, char** argv)
 {
@@ -23,6 +22,9 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	TapePlayer player{argv[1]};
-	player.playUntil();
+	while (true) {
+		player.playApproximatelyRealtime();
+		player.reset();
+	}
 	return 0;
 }

@@ -19,6 +19,10 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+#include <type_traits>
+#endif
+
+#ifdef __cplusplus
 #define NO_MANGLING extern "C"
 #else // NOT __cplusplus
 #define NO_MANGLING
@@ -47,7 +51,7 @@
 
 #define RGL_VERSION_MAJOR 0
 #define RGL_VERSION_MINOR 16
-#define RGL_VERSION_PATCH 2
+#define RGL_VERSION_PATCH 3
 
 // Invalid Entity ID is assign to rays that does not hit any Entity.
 // Cannot be assigned to Mesh manually. It is reserved for internal raytracing use.
@@ -65,6 +69,12 @@ typedef struct
 	float value[2];
 } rgl_vec2f;
 
+#ifdef __cplusplus
+static_assert(sizeof(rgl_vec2f) == 2 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_vec2f>);
+static_assert(std::is_standard_layout_v<rgl_vec2f>);
+#endif
+
 /**
  * Three consecutive 32-bit floats.
  */
@@ -73,8 +83,10 @@ typedef struct
 	float value[3];
 } rgl_vec3f;
 
-#ifndef __cplusplus
+#ifdef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_vec3f>);
+static_assert(std::is_standard_layout_v<rgl_vec3f>);
 #endif
 
 /**
@@ -85,6 +97,12 @@ typedef struct
 	int32_t value[3];
 } rgl_vec3i;
 
+#ifdef __cplusplus
+static_assert(sizeof(rgl_vec3i) == 3 * sizeof(int32_t));
+static_assert(std::is_trivial_v<rgl_vec3i>);
+static_assert(std::is_standard_layout_v<rgl_vec3i>);
+#endif
+
 /**
  * Row-major matrix with 3 rows and 4 columns of 32-bit floats.
  * Right-handed coordinate system.
@@ -93,6 +111,45 @@ typedef struct
 {
 	float value[3][4];
 } rgl_mat3x4f;
+
+#ifdef __cplusplus
+static_assert(sizeof(rgl_mat3x4f) == 3 * 4 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_mat3x4f>);
+static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
+#endif
+
+/**
+ * Radar parameters applied at a given distance range.
+ */
+typedef struct
+{
+	/**
+	 * The beginning distance range for the parameters.
+	 */
+	float begin_distance;
+	/**
+	 * The end range distance for the parameters.
+	 */
+	float end_distance;
+	/**
+	 * The maximum distance difference to create a new radar detection (in simulation units).
+	 */
+	float distance_separation_threshold;
+	/**
+	 * The maximum radial speed difference to create a new radar detection (in simulation units)
+	 */
+	float radial_speed_separation_threshold;
+	/**
+	 * The maximum azimuth difference to create a new radar detection (in radians).
+	 */
+	float azimuth_separation_threshold;
+} rgl_radar_scope_t;
+
+#ifdef __cplusplus
+static_assert(sizeof(rgl_radar_scope_t) == 5 * sizeof(float));
+static_assert(std::is_trivial_v<rgl_radar_scope_t>);
+static_assert(std::is_standard_layout_v<rgl_radar_scope_t>);
+#endif
 
 /**
  * Represents on-GPU Mesh that can be referenced by Entities on the Scene.
@@ -113,7 +170,9 @@ typedef struct Entity* rgl_entity_t;
 typedef struct Texture* rgl_texture_t;
 
 /**
- * TODO(prybicki)
+ * Opaque handle for a computational graph node in RGL.
+ * Represents a single computational step, e.g. introducing gaussian noise, raytracing or downsampling.
+ * Nodes form a directed acyclic graph, dictating execution order.
  */
 typedef struct Node* rgl_node_t;
 
@@ -133,6 +192,7 @@ typedef enum : int32_t
 	RGL_EXTENSION_PCL = 0,
 	RGL_EXTENSION_ROS2 = 1,
 	RGL_EXTENSION_UDP = 2,
+	RGL_EXTENSION_SNOW = 3,
 	RGL_EXTENSION_COUNT
 } rgl_extension_t;
 
@@ -249,14 +309,71 @@ typedef enum : int32_t
 	RGL_FIELD_XYZ_VEC3_F32 = 1,
 	RGL_FIELD_INTENSITY_F32,
 	RGL_FIELD_IS_HIT_I32,
+	RGL_FIELD_IS_GROUND_I32,
 	RGL_FIELD_RAY_IDX_U32,
-	RGL_FIELD_POINT_IDX_U32,
 	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
+	/**
+	 * Azimuth angle of the hit point in radians.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
+	 */
 	RGL_FIELD_AZIMUTH_F32,
+	/**
+	 * Elevation angle of the hit point in radians.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
+	 */
+	RGL_FIELD_ELEVATION_F32,
 	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
 	RGL_FIELD_TIME_STAMP_F64,
+
+	/**
+	 * Velocity of the hit point on the entity.
+	 * It depends on entity's
+	 * - linear velocity
+	 * - angular velocity
+	 * - mesh deformations (e.g. skinning)
+	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_mesh_update_vertices`.
+	 */
+	RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
+
+	/**
+	 * Velocity of the hit point on the entity, in the coordinate frame of rays source.
+	 */
+	RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32,
+
+	/**
+	 * Scalar describing distance increase per second between hit point and ray source.
+	 */
+	RGL_FIELD_RADIAL_SPEED_F32,
+
+	/**
+	 * Radar-specific fields. At the moment, placeholders only to implement in the future.
+	 */
+	RGL_FIELD_POWER_F32,
+	RGL_FIELD_RCS_F32, // Radar cross-section
+	RGL_FIELD_NOISE_F32,
+	RGL_FIELD_SNR_F32, // Signal-to-noise ratio
+
+	/**
+	 * Normal vector of the mesh triangle where the hit-point is located.
+	 * Assumes right-hand rule of vertices ordering.
+	 */
+	RGL_FIELD_NORMAL_VEC3_F32,
+
+	/**
+	 * Incident angle of the ray hitting the mesh triangle in radians.
+	 * In range [0, PI/2) rad, where 0 means the ray hit the triangle perpendicularly.
+	 */
+	RGL_FIELD_INCIDENT_ANGLE_F32,
+
+	/**
+	 * 3x4 matrix describing pose of the ray in the world coordinate system.
+	 */
+	RGL_FIELD_RAY_POSE_MAT3x4_F32,
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
@@ -354,11 +471,20 @@ RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
 /**
  * Updates Mesh vertex data. The number of vertices must not change.
  * This function is intended to update animated Meshes.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
  * @param mesh Mesh to modify
  * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
  * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
  */
 RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
+
+/**
+ * Assigns value true to out_alive if the given mesh is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param mesh Mesh to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_mesh_is_alive(rgl_mesh_t mesh, bool* out_alive);
 
 /******************************** ENTITY ********************************/
 
@@ -380,6 +506,7 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity);
 
 /**
  * Changes transform (position, rotation, scaling) of the given Entity.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
  * @param entity Entity to modify
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (Entity -> world) coordinate system transform.
  */
@@ -395,9 +522,17 @@ RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 /**
  * Assign intensity texture to the given Entity. The assumption is that the Entity can hold only one intensity texture.
  * @param entity Entity to modify.
- * @apram texture Texture to assign.
+ * @param texture Texture to assign.
  */
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+
+/**
+ * Assigns value true to out_alive if the given entity is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param entity Entity to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive);
 
 /******************************* TEXTURE *******************************/
 
@@ -414,16 +549,25 @@ RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* 
 /**
  * Informs that the given texture will be no longer used.
  * The texture will be destroyed after all referring Entities are destroyed.
- * @param mesh Texture to be marked as no longer needed
+ * @param texture Texture to be marked as no longer needed
  */
 RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
+
+/**
+ * Assigns value true to out_alive if the given texture is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param texture Texture to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_texture_is_alive(rgl_texture_t texture, bool* out_alive);
 
 /******************************** SCENE ********************************/
 
 /**
  * Sets time for the given Scene.
  * Time indicates a specific point when the ray trace is performed in the simulation timeline.
- * Timestamp is used to fill field RGL_FIELD_TIME_STAMP_F64 or for ROS2 publishing.
+ * Calling this function before updating entities/meshes is required to compute velocity of the hit points.
+ * Timestamp may be also used to fill field RGL_FIELD_TIME_STAMP_F64 or for ROS2 publishing.
  * @param scene Scene where time will be set. Pass NULL to use the default Scene.
  * @param nanoseconds Timestamp in nanoseconds.
  */
@@ -502,6 +646,7 @@ RGL_API rgl_status_t rgl_node_rays_transform(rgl_node_t* node, const rgl_mat3x4f
  */
 RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x4f* transform);
 
+// TODO: remove scene parameter here and in other API calls
 /**
  * Creates or modifies RaytraceNode.
  * The Node performs GPU-accelerated raytracing on the given Scene.
@@ -514,23 +659,41 @@ RGL_API rgl_status_t rgl_node_points_transform(rgl_node_t* node, const rgl_mat3x
 RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
 
 /**
- * Creates or modifies RaytraceNode.
- * The same as rgl_node_raytrace, but it applies velocity distortion additionally.
- * To perform raytrace with velocity distortion the time offsets must be set to the rays (using rgl_node_rays_set_time_offsets).
- * The velocities passed to that node must be in the local coordinate frame in which rays are described.
+ * Modifies RaytraceNode to apply sensor velocity.
+ * Necessary for velocity distortion or calculating fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32.
+ * Relative velocity calculation:
+ * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
+ * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_mesh_update_vertices`
+ * @param node RaytraceNode to modify
+ * @param linear_velocity 3D vector for linear velocity in units per second.
+ * @param angular_velocity 3D vector for angular velocity in radians per second (roll, pitch, yaw).
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const rgl_vec3f* linear_velocity,
+                                                          const rgl_vec3f* angular_velocity);
+
+/**
+ * Modifies RaytraceNode to apply sensor distortion.
+ * Requires time offsets set to rays using rgl_node_rays_set_time_offsets.
  * NOTE:
  * The distortion takes into account only sensor velocity. The velocity of the objects being scanned by the sensor is not considered.
- * Graph input: rays
- * Graph output: point cloud (sparse)
- * @param node If (*node) == nullptr, a new node will be created. Otherwise, (*node) will be modified.
- * @param scene Handle to a scene to perform raytracing on. Pass null to use the default scene
- * @param linear_velocity Pointer to a single 3D vector describing the linear velocity of the sensor.
- *                        The velocity is in units per second.
- * @param angular_velocity Pointer to a single 3D vector describing the delta angular velocity of the sensor in euler angles (roll, pitch, yaw).
- *                         The velocity is in radians per second.
+ * Use rgl_node_raytrace_configure_velocity to set sensor velocity.
+ * @param node RaytraceNode to modify
+ * @param enable If true, velocity distortion feature will be enabled.
  */
-RGL_API rgl_status_t rgl_node_raytrace_with_distortion(rgl_node_t* node, rgl_scene_t scene, const rgl_vec3f* linear_velocity,
-                                                       const rgl_vec3f* angular_velocity);
+RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable);
+
+/**
+ * Modifies RaytraceNode to set non-hit values for distance.
+ * Default non-hit value for the RGL_FIELD_DISTANCE_F32 field is set to infinity.
+ * This function allows to set custom values:
+ *  - for non-hits closer than a minimum range (`nearDistance`),
+ *  - for non-hits beyond a maximum range (`farDistance`).
+ * Concurrently, it computes the RGL_FIELD_XYZ_VEC3_F32 field for these non-hit scenarios based on these distances, along with ray origin and direction.
+ * @param node RaytraceNode to modify.
+ * @param nearDistance Distance value for non-hits closer than minimum range.
+ * @param farDistance Distance value for non-hits beyond maximum range.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float nearDistance, float farDistance);
 
 /**
  * Creates or modifies FormatPointsNode.
@@ -562,7 +725,20 @@ RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* 
  * Graph output: point cloud (compacted)
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  */
-RGL_API rgl_status_t rgl_node_points_compact(rgl_node_t* node);
+RGL_API [[deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.")]] rgl_status_t
+rgl_node_points_compact(rgl_node_t* node);
+
+/**
+ * Creates or modifies CompactPointsByFieldNode.
+ * The Node removes points if the given field is set to a non-zero value.
+ * Currently supported fields are RGL_FIELD_IS_HIT_I32 and RGL_FIELD_IS_GROUND_I32.
+ * In other words, it converts a point cloud into a dense one.
+ * Graph input: point cloud
+ * Graph output: point cloud (compacted)
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param field Field by which points will be removed. Has to be RGL_FIELD_IS_HIT_I32 or RGL_FIELD_IS_GROUND_I32.
+ */
+RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field);
 
 /**
  * Creates or modifies SpatialMergePointsNode.
@@ -616,6 +792,47 @@ RGL_API rgl_status_t rgl_node_points_from_array(rgl_node_t* node, const void* po
                                                 const rgl_field_t* fields, int32_t field_count);
 
 /**
+ * Creates or modifies RadarPostprocessPointsNode.
+ * The Node processes point cloud to create radar-like output.
+ * The point cloud is reduced by clustering input based on hit-point attributes: distance, radial speed and azimuth.
+ * Some radar parameters may vary for different distance ranges, as radars may employ multiple frequency bands.
+ * For this reason, the configuration allows the definition of multiple radar scopes of parameters on the assumption that:
+ *   - in case of scopes that overlap, the first matching one will be used
+ *   - if the point is not within any of the radar scopes, it will be rejected
+ * The output consists of the collection of one point per cluster (the closest to the azimuth and elevation center).
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param radar_scopes Array of radar scopes of parameters. See `rgl_radar_scope_t` for more details.
+ * @param radar_scopes_count Number of elements in the `radar_scopes` array.
+ * @param ray_azimuth_step The azimuth step between rays (in radians).
+ * @param ray_elevation_step The elevation step between rays (in radians).
+ * @param frequency The operating frequency of the radar (in Hz).
+ * @param power_transmitted The power transmitted by the radar (in dBm).
+ * @param cumulative_device_gain The gain of the radar's antennas and any other gains of the device (in dBi).
+ * @param received_noise_mean The mean of the received noise (in dB).
+ * @param received_noise_st_dev The standard deviation of the received noise (in dB).
+ */
+RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const rgl_radar_scope_t* radar_scopes,
+                                                       int32_t radar_scopes_count, float ray_azimuth_step,
+                                                       float ray_elevation_step, float frequency, float power_transmitted,
+                                                       float cumulative_device_gain, float received_noise_mean,
+                                                       float received_noise_st_dev);
+
+/**
+ * Creates or modifies FilterGroundPointsNode.
+ * The Node adds RGL_FIELD_IS_GROUND_I32 which indicates the point is on the ground. Points are not removed.
+ * Ground points are defined as those located below the sensor with a normal vector pointing upwards at an angle smaller than the threshold.
+ * Graph input: point cloud
+ * Graph output: point cloud
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param sensor_up_vector Pointer to single Vec3 describing up vector of depended frame.
+ * @param ground_angle_threshold The maximum angle between the sensor's ray and the normal vector of the hit point in radians.
+ */
+RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
+                                                   float ground_angle_threshold);
+
+/**
  * Creates or modifies GaussianNoiseAngularRaysNode.
  * Applies angular noise to the rays before raycasting.
  * See documentation: https://github.com/RobotecAI/RobotecGPULidar/blob/main/docs/GaussianNoise.md#ray-based-angular-noise
@@ -661,6 +878,14 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, 
  */
 RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base,
                                                       float st_dev_rise_per_meter);
+
+/**
+ * Assigns value true to out_alive if the given node is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param node Node to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_node_is_alive(rgl_node_t node, bool* out_alive);
 
 /******************************** GRAPH ********************************/
 

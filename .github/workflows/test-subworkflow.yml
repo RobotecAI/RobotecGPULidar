@@ -1,0 +1,31 @@
+name: test-subworkflow
+
+on:
+  workflow_call:
+    inputs:
+      test-command:
+        required: true
+        type: string
+      docker-image:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    defaults:
+      run:
+        shell: bash
+    runs-on: self-hosted
+    container:
+      image: ${{ inputs.docker-image }}
+      env:
+        NVIDIA_DRIVER_CAPABILITIES: all
+      options:
+        --rm
+        --gpus all
+    steps:
+      - name: test
+        run: ${{ inputs.test-command }}

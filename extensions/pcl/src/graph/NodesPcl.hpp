@@ -18,6 +18,8 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
 
 #include <graph/Node.hpp>
 #include <graph/Interfaces.hpp>
@@ -54,6 +56,47 @@ private:
 	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 	std::mutex getFieldDataMutex;
 	GPUFieldDescBuilder gpuFieldDescBuilder;
+};
+
+struct RemoveGroundPointsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RemoveGroundPointsNode>;
+	void setParameters(rgl_axis_t sensorUpAxis, float groundAngleThreshold, float groundDistanceThreshold,
+	                   float groundFilterDistance);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Point cloud description
+	size_t getWidth() const override;
+	size_t getHeight() const override { return 1; }
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
+
+private:
+	// Data containers
+	std::vector<Field<RAY_IDX_U32>::type> filteredIndicesHost;
+	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
+	    arrayMgr);
+	DeviceAsyncArray<char>::Ptr formattedInput = DeviceAsyncArray<char>::create(arrayMgr);
+	HostPinnedArray<char>::Ptr formattedInputHost = HostPinnedArray<char>::create();
+
+	// PCL members
+	pcl::PointCloud<pcl::PointXYZ>::Ptr toFilterPointCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+	pcl::PointIndices::Ptr groundIndices = std::make_shared<pcl::PointIndices>();
+	pcl::ModelCoefficients planeCoefficients;
+	pcl::SACSegmentation<pcl::PointXYZ> segmentation;
+	float groundFilterDistance;
+
+	// RGL related members
+	GPUFieldDescBuilder gpuFieldDescBuilder;
+	std::mutex getFieldDataMutex;
+	mutable CacheManager<rgl_field_t, IAnyArray::Ptr> cacheManager;
 };
 
 struct VisualizePointsNode : IPointsNodeSingleInput

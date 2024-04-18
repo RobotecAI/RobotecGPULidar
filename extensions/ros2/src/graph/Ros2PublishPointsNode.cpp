@@ -16,58 +16,34 @@
 #include <scene/Scene.hpp>
 #include <RGLFields.hpp>
 
-bool Ros2PublishPointsNode::isRclcppInitializedByRGL = false;
-rclcpp::Node::SharedPtr Ros2PublishPointsNode::ros2Node = nullptr;
-std::string Ros2PublishPointsNode::ros2NodeName = "RobotecGPULidar";
-std::set<std::string> Ros2PublishPointsNode::ros2TopicNames = {};
-
 void Ros2PublishPointsNode::setParameters(const char* topicName, const char* frameId,
                                           rgl_qos_policy_reliability_t qosReliability,
                                           rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory,
                                           int32_t qosHistoryDepth)
 {
-	// Check if rclcpp initialized
-	if (!rclcpp::ok()) {
-		rclcpp::init(0, nullptr);
-		isRclcppInitializedByRGL = true;
-	}
-
-	// Create ROS2 node
-	if (ros2Node.get() == nullptr) {
-		ros2Node = std::make_shared<rclcpp::Node>(ros2NodeName);
-	}
-
-	if (ros2TopicNames.contains(topicName) && this->topicName != topicName) {
-		throw InvalidAPIArgument("ROS2 publisher with the same topic name already exist!");
-	}
-
-	if (ros2Publisher.get() != nullptr) {
-		ros2TopicNames.erase(this->topicName);
-		ros2Publisher.reset();
-	}
-
-	this->topicName = topicName;
-	this->frameId = frameId;
-	ros2TopicNames.insert(topicName);
-
-	rclcpp::QoS qos = rclcpp::QoS(qosHistoryDepth);
+	ros2Message.header.frame_id = frameId;
+	auto qos = rclcpp::QoS(qosHistoryDepth);
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
 	qos.history(static_cast<rmw_qos_history_policy_t>(qosHistory));
-
-	ros2Publisher = ros2Node->create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
+	ros2Publisher = ros2InitGuard->createUniquePublisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
-void Ros2PublishPointsNode::validateImpl()
+void Ros2PublishPointsNode::ros2ValidateImpl()
 {
-	IPointsNodeSingleInput::validateImpl();
 	if (input->getHeight() != 1) {
-		throw InvalidPipeline("ROS2 publish support unorganized pointclouds only");
+		throw InvalidPipeline("ROS2 publish supports unorganized pointclouds only");
 	}
+
+	if (!input->hasField(RGL_FIELD_DYNAMIC_FORMAT)) {
+		auto msg = fmt::format("{} requires a formatted point cloud", getName());
+		throw InvalidPipeline(msg);
+	}
+
 	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
-void Ros2PublishPointsNode::enqueueExecImpl()
+void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 {
 	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT)->asTyped<char>()->asSubclass<HostArray>();
 	int count = input->getPointCount();
@@ -82,31 +58,14 @@ void Ros2PublishPointsNode::enqueueExecImpl()
 	// For now, only default scene is supported.
 	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
 	                               Scene::instance().getTime()->asRos2Msg() :
-	                               static_cast<builtin_interfaces::msg::Time>(ros2Node->get_clock()->now());
-	if (!rclcpp::ok()) {
-		throw std::runtime_error("Unable to publish a message because ROS2 has been shut down.");
-	}
+	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
 	ros2Publisher->publish(ros2Message);
 }
 
-Ros2PublishPointsNode::~Ros2PublishPointsNode()
-{
-	ros2TopicNames.erase(topicName);
-	ros2Publisher.reset();
-
-	if (ros2TopicNames.empty()) {
-		ros2Node.reset();
-
-		if (isRclcppInitializedByRGL) {
-			rclcpp::shutdown();
-			isRclcppInitializedByRGL = false;
-		}
-	}
-}
 
 void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense)
 {
-	ros2Message = sensor_msgs::msg::PointCloud2();
+	ros2Message.fields.clear();
 	int offset = 0;
 	for (const auto& field : fields) {
 		auto ros2fields = toRos2Fields(field);
@@ -127,6 +86,8 @@ void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fi
 			offset += ros2sizes[i];
 		}
 	}
-	ros2Message.height = 1, ros2Message.point_step = offset, ros2Message.is_dense = isDense, ros2Message.is_bigendian = false,
-	ros2Message.header.frame_id = frameId;
+	ros2Message.height = 1;
+	ros2Message.point_step = offset;
+	ros2Message.is_dense = isDense;
+	ros2Message.is_bigendian = false;
 }

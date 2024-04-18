@@ -15,8 +15,9 @@
 #include "rgl/api/extensions/tape.h"
 #include "rgl/api/extensions/pcl.h"
 #include "spdlog/fmt/fmt.h"
-#include "Tape.hpp"
+#include "tape/TapePlayer.hpp"
 #include "macros/checkRGL.hpp"
+#include "tape/PlaybackState.hpp"
 
 constexpr std::string_view INTERCEPTED_NODE_CALL = "rgl_node_points_compact";
 
@@ -74,7 +75,7 @@ try {
 	std::vector<rgl_node_t> interceptedNodes;
 	for (auto&& call : interceptedNodeCalls) {
 		// Those are rgl_node_*, so the first argument will be node
-		auto nodeId = player.getCallArg<TapeAPIObjectID>(call, 0);
+		auto nodeId = player.getTapeCall(call).getArgsNode()[0].as<TapeAPIObjectID>();
 		interceptedNodes.push_back(player.getNodeHandle(nodeId));
 	}
 	fmt::print("Found {} nodes to intercept\n", interceptedNodes.size());
@@ -82,7 +83,7 @@ try {
 	std::vector<TapePlayer::APICallIdx> graphRuns = player.findAll({"rgl_graph_run"});
 	std::unordered_map<TapeAPIObjectID, bool> runnableNodeState;
 	for (auto&& run : graphRuns) {
-		runnableNodeState.insert({player.getCallArg<TapeAPIObjectID>(run, 0), false});
+		runnableNodeState.insert({player.getTapeCall(run).getArgsNode()[0].as<TapeAPIObjectID>(), false});
 	}
 	fmt::print("Tape executes rgl_graph_run() on {} unique nodes\n", runnableNodeState.size());
 
@@ -115,7 +116,7 @@ try {
 	// TODO: this will not work if LiDARS have different capture rate.
 	for (auto&& run : graphRuns) {
 		// Run till next run call
-		auto runNodeArg = player.getCallArg<TapeAPIObjectID>(run, 0);
+		auto runNodeArg = player.getTapeCall(run).getArgsNode()[0].as<TapeAPIObjectID>();
 		player.playThrough(run);
 		runnableNodeState[runNodeArg] = true;
 

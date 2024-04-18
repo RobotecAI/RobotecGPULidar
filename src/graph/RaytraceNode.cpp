@@ -82,6 +82,8 @@ void RaytraceNode::enqueueExecImpl()
 	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
 	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
 	    .doApplyDistortion = doApplyDistortion,
+	    .nearNonHitDistance = nearNonHitDistance,
+	    .farNonHitDistance = farNonHitDistance,
 	    .rays = raysPtr,
 	    .rayCount = raysNode->getRayCount(),
 	    .rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
@@ -94,6 +96,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .scene = sceneAS,
 	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
+	    .sceneDeltaTime = static_cast<float>(Scene::instance().getDeltaTime().value_or(Time::zero()).asSeconds()),
 	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
@@ -102,6 +105,13 @@ void RaytraceNode::enqueueExecImpl()
 	    .intensity = getPtrTo<INTENSITY_F32>(),
 	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
 	    .entityId = getPtrTo<ENTITY_ID_I32>(),
+	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>(),
+	    .pointRelVelocity = getPtrTo<RELATIVE_VELOCITY_VEC3_F32>(),
+	    .radialSpeed = getPtrTo<RADIAL_SPEED_F32>(),
+	    .azimuth = getPtrTo<AZIMUTH_F32>(),
+	    .elevation = getPtrTo<ELEVATION_F32>(),
+	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
+	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
 	};
 
 	requestCtxDev->copyFrom(requestCtxHst);
@@ -156,14 +166,14 @@ std::set<rgl_field_t> RaytraceNode::findFieldsToCompute()
 	return outFields;
 }
 
-void RaytraceNode::setVelocity(const Vec3f* linearVelocity, const Vec3f* angularVelocity)
+void RaytraceNode::setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity)
 {
-	doApplyDistortion = linearVelocity != nullptr && angularVelocity != nullptr;
+	sensorLinearVelocityXYZ = linearVelocity;
+	sensorAngularVelocityRPY = angularVelocity;
+}
 
-	if (!doApplyDistortion) {
-		return;
-	}
-
-	sensorLinearVelocityXYZ = *linearVelocity;
-	sensorAngularVelocityRPY = *angularVelocity;
+void RaytraceNode::setNonHitDistanceValues(float nearDistance, float farDistance)
+{
+	nearNonHitDistance = nearDistance;
+	farNonHitDistance = farDistance;
 }
