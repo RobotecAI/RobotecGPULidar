@@ -41,6 +41,6 @@ cmake-build-release
 build
 external/*
 !external/CMakeLists.txt
-!external/CMakeLists.txt
 extensions/udp
 extensions/snow
+CMakeSettings.json

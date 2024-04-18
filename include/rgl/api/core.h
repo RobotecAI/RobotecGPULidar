@@ -28,6 +28,9 @@
 #define NO_MANGLING
 #endif
 
+#if defined RGL_STATIC
+#define RGL_VISIBLE
+#else
 #if defined _WIN32 || defined __CYGWIN__
 #ifdef __GNUC__
 #define RGL_VISIBLE __attribute__((dllexport))
@@ -42,6 +45,7 @@
 #define RGL_VISIBLE
 #endif
 #endif // _WIN32 || __CYGWIN__
+#endif // RGL_STATIC
 
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
