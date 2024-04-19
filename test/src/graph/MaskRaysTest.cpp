@@ -60,31 +60,36 @@ TEST_F(MaskRaysTest, use_case)
 	// Rays
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
 
+	const int raysNumber = rays.size();
 	// Mask
-	initializeMask(rays.size());
+	initializeMask(raysNumber);
 
 	// Graph
 	rgl_node_t useRaysNode = nullptr;
 	rgl_node_t raytraceNode = nullptr;
+	rgl_node_t compactNode = nullptr;
 	rgl_node_t yieldNode = nullptr;
 
 	// Prepare graph without filtering
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactNode, IS_HIT_I32));
 	EXPECT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, fields.data(), fields.size()));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(useRaysNode, raytraceNode));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, compactNode));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactNode, yieldNode));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
+
 	TestPointCloud outputPointCloud = TestPointCloud::createFromNode(yieldNode, fields);
 	auto fullCloudSize = outputPointCloud.getPointCount();
 
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_mask(raytraceNode, points_mask.data(), 100));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_mask(raytraceNode, points_mask.data(), raysNumber));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
-	TestPointCloud outputPointCloudmasked = TestPointCloud::createFromNode(yieldNode, fields);
-	auto maskedCloudSize = outputPointCloud.getPointCount();
+	TestPointCloud outputPointCloudMasked = TestPointCloud::createFromNode(yieldNode, fields);
+	auto maskedCloudSize = outputPointCloudMasked.getPointCount();
 
 	EXPECT_EQ(fullCloudSize - maskCount, maskedCloudSize);
 

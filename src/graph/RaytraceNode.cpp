@@ -76,6 +76,7 @@ void RaytraceNode::enqueueExecImpl()
 	auto ringIds = raysNode->getRingIds();
 	auto timeOffsets = raysNode->getTimeOffsets();
 
+
 	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
 	requestCtxHst->resize(1, true, false);
 	requestCtxHst->at(0) = RaytraceRequestContext{
@@ -94,6 +95,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .ringIdsCount = ringIds.has_value() ? (*ringIds)->getCount() : 0,
 	    .rayTimeOffsets = timeOffsets.has_value() ? (*timeOffsets)->asSubclass<DeviceAsyncArray>()->getReadPtr() : nullptr,
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
+	    .rayMask = rayMask.has_value() ? (*rayMask)->getReadPtr() : nullptr,
 	    .scene = sceneAS,
 	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
 	    .sceneDeltaTime = static_cast<float>(Scene::instance().getDeltaTime().value_or(Time::zero()).asSeconds()),
@@ -179,9 +181,13 @@ void RaytraceNode::setNonHitDistanceValues(float nearDistance, float farDistance
 }
 void RaytraceNode::setNonHitsMask(const int* maskRaw, size_t maskPointCount)
 {
+	if(raysNode== nullptr) {
+		throw InvalidPipeline("Rays for RaytraceNode has not been set yet.");
+	}
+
 	if (maskPointCount != raysNode->getRayCount()) {
 		throw InvalidPipeline("Mask size does not match the number of rays");
 	}
 
-	rayMask->copyFromExternal(maskRaw, maskPointCount);
+	(*rayMask)->copyFromExternal(maskRaw, maskPointCount);
 }

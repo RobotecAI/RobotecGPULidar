@@ -123,6 +123,12 @@ extern "C" __global__ void __raygen__()
 	}
 
 	const int rayIdx = optixGetLaunchIndex().x;
+
+	if (ctx.rayMask != nullptr && ctx.rayMask[rayIdx] == 0) {
+		saveNonHitRayResult(ctx.farNonHitDistance);
+		return;
+	}
+
 	Mat3x4f ray = ctx.rays[rayIdx];
 	const Mat3x4f rayLocal = ctx.rayOriginToWorld.inverse() * ray;
 
