@@ -177,3 +177,11 @@ void RaytraceNode::setNonHitDistanceValues(float nearDistance, float farDistance
 	nearNonHitDistance = nearDistance;
 	farNonHitDistance = farDistance;
 }
+void RaytraceNode::setNonHitsMask(const int* maskRaw, size_t maskPointCount)
+{
+	if (maskPointCount != raysNode->getRayCount()) {
+		throw InvalidPipeline("Mask size does not match the number of rays");
+	}
+
+	rayMask->copyFromExternal(maskRaw, maskPointCount);
+}

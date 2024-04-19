@@ -126,6 +126,7 @@ struct RaytraceNode : IPointsNode
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
+	void setNonHitsMask(const int* maskRaw, size_t maskPointCount);
 
 private:
 	IRaysNode::Ptr raysNode;
@@ -137,6 +138,8 @@ private:
 
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
+
+	DeviceAsyncArray<int>::Ptr rayMask = DeviceAsyncArray<int>::create(arrayMgr);
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
