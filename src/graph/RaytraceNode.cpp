@@ -76,7 +76,6 @@ void RaytraceNode::enqueueExecImpl()
 	auto ringIds = raysNode->getRingIds();
 	auto timeOffsets = raysNode->getTimeOffsets();
 
-
 	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
 	requestCtxHst->resize(1, true, false);
 	requestCtxHst->at(0) = RaytraceRequestContext{
