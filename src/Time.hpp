@@ -31,6 +31,7 @@ struct Time
 	static Time nanoseconds(uint64_t nanoseconds) { return Time(nanoseconds); }
 
 	HostDevFn double asSeconds() const { return static_cast<double>(timeNs) * 1.0e-9; };
+	HostDevFn double asMilliseconds() const { return static_cast<double>(timeNs) * 1.0e-6; };
 	HostDevFn uint64_t asNanoseconds() const { return timeNs; }
 
 #if RGL_BUILD_ROS2_EXTENSION
