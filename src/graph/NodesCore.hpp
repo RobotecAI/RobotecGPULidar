@@ -140,6 +140,7 @@ private:
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
 
 	std::optional<DeviceAsyncArray<int>::Ptr> rayMask = DeviceAsyncArray<int>::create(arrayMgr);
+	int maskCount = -1;
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);

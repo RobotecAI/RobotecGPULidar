@@ -47,6 +47,11 @@ void RaytraceNode::validateImpl()
 		auto msg = fmt::format("requested for raytrace with velocity distortion, but RaytraceNode cannot get time offsets");
 		throw InvalidPipeline(msg);
 	}
+	if (maskCount >= 0) {
+		if ((*rayMask)->getCount() != raysNode->getRayCount()) {
+			throw InvalidPipeline("Mask size does not match the number of rays");
+		}
+	}
 }
 
 template<rgl_field_t field>
@@ -180,13 +185,6 @@ void RaytraceNode::setNonHitDistanceValues(float nearDistance, float farDistance
 }
 void RaytraceNode::setNonHitsMask(const int* maskRaw, size_t maskPointCount)
 {
-	if(raysNode== nullptr) {
-		throw InvalidPipeline("Rays for RaytraceNode has not been set yet.");
-	}
-
-	if (maskPointCount != raysNode->getRayCount()) {
-		throw InvalidPipeline("Mask size does not match the number of rays");
-	}
-
 	(*rayMask)->copyFromExternal(maskRaw, maskPointCount);
+	maskCount = maskPointCount;
 }

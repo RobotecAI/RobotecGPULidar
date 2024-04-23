@@ -42,12 +42,14 @@ TEST_F(MaskRaysTest, invalid_argument_count)
 
 TEST_F(MaskRaysTest, valid_arguments)
 {
+	const int raysNumber = 100;
 	rgl_node_t raytraceNode = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
 
-	initializeMask( 100);
+	// Mask
+	initializeMask(raysNumber);
 
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_mask(raytraceNode, points_mask.data(), 1));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_mask(raytraceNode, points_mask.data(), raysNumber));
 }
 
 TEST_F(MaskRaysTest, use_case)
