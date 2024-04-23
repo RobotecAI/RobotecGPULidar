@@ -30,6 +30,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
+#include <math/RuningStats.hpp>
 
 
 struct FormatPointsNode : IPointsNodeSingleInput
@@ -559,9 +560,51 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RadarTrackObjectsNode>;
 
+	enum class ObjectStatus : uint8_t
+	{
+		Measured = 0,
+		New = 1,
+		Predicted = 2,
+		Invalid = 255
+	};
+
+	enum class MovementStatus : uint8_t
+	{
+		Moved = 0,
+		Stationary = 1,
+		Invalid = 255
+	};
+
+	struct Probabilities
+	{
+		float existence{100.0f};
+		uint8_t classCar{0};
+		uint8_t classTruck{0};
+		uint8_t classMotorcycle{0};
+		uint8_t classBicycle{0};
+		uint8_t classPedestrian{0};
+		uint8_t classAnimal{0};
+		uint8_t classHazard{0};
+	};
+
 	struct ObjectState
 	{
-		uint32_t id;
+		uint32_t id{0};
+		uint32_t framesCount{0};
+		uint32_t creationTime{0};
+		ObjectStatus objectStatus{ObjectStatus::Invalid};
+		MovementStatus movementStatus{MovementStatus::Invalid};
+		Probabilities probabilities{};
+
+		RunningStats<Vec3f> position{};
+		RunningStats<float> orientation{};
+		RunningStats<Vec2f> absVelocity{};
+		RunningStats<Vec2f> relVelocity{};
+		RunningStats<Vec2f> absAccel{};
+		RunningStats<Vec2f> relAccel{};
+		RunningStats<float> orientationRate{};
+		RunningStats<float> length{};
+		RunningStats<float> width{};
 	};
 
 	RadarTrackObjectsNode();

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <graph/NodesCore.hpp>
+#include <scene/Scene.hpp>
 
 RadarTrackObjectsNode::RadarTrackObjectsNode() { fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32)); }
 
@@ -96,13 +97,31 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	uint32_t objectIndex = 0;
 
 	for (const auto& separateObjectIndices : objectIndices) {
-		auto& objectState = objectStates.emplace_back();
-		objectState.id = objectIndex++;
-
 		auto objectCenter = Vec3f(0.0f, 0.0f, 0.0f);
 		for (const auto index : separateObjectIndices) {
 			objectCenter += xyzHostPtr->at(index);
 		}
+
+		auto& objectState = objectStates.emplace_back();
+		objectState.id = objectIndex++;
+		objectState.framesCount = 1; // This will be updated with object tracking introduction.
+		objectState.creationTime = static_cast<uint32_t>(Scene::instance().getTime().value_or(Time::zero()).asMilliseconds());
+		objectState.objectStatus = ObjectStatus::New;
+		objectState.movementStatus =
+		    MovementStatus::Invalid; // Newly created object does not have velocity data (no 'previous frame' exists).
+		objectState.position.addSample(objectCenter / static_cast<float>(separateObjectIndices.size()));
+
+		// TODO(Pawel): This will require modyfing radar postprocess node - I will require some bounding box here.
+		objectState.orientation.addSample(0.0f);
+		objectState.absVelocity.addSample(Vec2f(0.0f, 0.0f));
+		objectState.relVelocity.addSample(Vec2f(0.0f, 0.0f));
+		objectState.absAccel.addSample(Vec2f(0.0f, 0.0f));
+		objectState.relAccel.addSample(Vec2f(0.0f, 0.0f));
+		objectState.orientationRate.addSample(0.0f);
+		objectState.length.addSample(0.0f);
+		objectState.width.addSample(0.0f);
+
+		// TODO(Pawel): Be careful with indexing here, when working on tracking - id will not match the index for not new objects.
 		xyzPtr[objectState.id] = 1 / static_cast<float>(separateObjectIndices.size()) * objectCenter;
 	}
 }
