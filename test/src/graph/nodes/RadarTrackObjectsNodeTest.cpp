@@ -1,9 +1,7 @@
 #include <api/apiCommon.hpp>
 #include <helpers/testPointCloud.hpp>
-#include <rgl/api/extensions/ros2.h>
 
 #include <random>
-#include <ranges>
 
 
 class RadarTrackObjectsNodeTest : public RGLTest
@@ -114,6 +112,8 @@ TEST_F(RadarTrackObjectsNodeTest, objects_number_test)
 	ASSERT_TRUE(detectedObjectsCount == objectsCount);
 }
 
+#if RGL_BUILD_ROS2_EXTENSION
+#include <rgl/api/extensions/ros2.h>
 TEST_F(RadarTrackObjectsNodeTest, creating_random_objects_test)
 {
 	GTEST_SKIP_("Debug test on development stage.");
@@ -161,3 +161,4 @@ TEST_F(RadarTrackObjectsNodeTest, creating_random_objects_test)
 		EXPECT_RGL_SUCCESS(rgl_cleanup());
 	}
 }
+#endif
