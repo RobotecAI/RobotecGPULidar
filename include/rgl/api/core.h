@@ -382,6 +382,9 @@ typedef enum : int32_t
 	RGL_FIELD_DYNAMIC_FORMAT = 13842,
 } rgl_field_t;
 
+/**
+ * Kinds of return type for multi-return LiDAR output.
+ */
 typedef enum : int32_t
 {
 	RGL_RETURN_TYPE_FIRST = 0,

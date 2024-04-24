@@ -65,6 +65,7 @@ void RaytraceNode::enqueueExecImpl()
 		data->resize(raysNode->getRayCount(), false, false);
 	}
 
+	// TODO(prybicki): don't update this when not needed
 	mrSamples.resize(MULTI_RETURN_BEAM_SAMPLES * raysNode->getRayCount());
 	mrFirst.resize(raysNode->getRayCount());
 	mrLast.resize(raysNode->getRayCount());

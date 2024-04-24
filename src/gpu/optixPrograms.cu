@@ -34,7 +34,7 @@ extern "C" static __constant__ RaytraceRequestContext ctx;
 
 // Helper functions
 template<bool isFinite>
-__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID, const Vec3f& absVelocity,
+__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, int objectID, const Vec3f& absVelocity,
                               const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle);
 __device__ void saveNonHitRayResult(float nonHitDistance);
 __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned sampleBeamIdx);
@@ -48,7 +48,7 @@ extern "C" __global__ void __raygen__()
 		return;
 	}
 
-	const int rayIdx = optixGetLaunchIndex().x;
+	const int rayIdx = static_cast<int>(optixGetLaunchIndex().x);
 	Mat3x4f ray = ctx.rays[rayIdx];
 	const Mat3x4f rayLocal =
 	    ctx.rayOriginToWorld.inverse() *
@@ -94,8 +94,8 @@ extern "C" __global__ void __raygen__()
 
 extern "C" __global__ void __miss__()
 {
-	const int beamIdx = (int) optixGetLaunchIndex().x;
-	const int beamSampleIdx = (int) optixGetPayload_0();
+	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
+	const int beamSampleIdx = static_cast<int>(optixGetPayload_0());
 	ctx.mrSamples.isHit[beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleIdx] = false;
 	if (beamSampleIdx == 0) {
 		saveNonHitRayResult(ctx.farNonHitDistance);
@@ -104,10 +104,10 @@ extern "C" __global__ void __miss__()
 
 extern "C" __global__ void __closesthit__()
 {
-	const EntitySBTData& entityData = *(const EntitySBTData*) optixGetSbtDataPointer();
+	const EntitySBTData& entityData = *(reinterpret_cast<const EntitySBTData*>(optixGetSbtDataPointer()));
 
 	// Triangle
-	const int primID = optixGetPrimitiveIndex();
+	const int primID = static_cast<int>(optixGetPrimitiveIndex());
 	assert(primID < entityData.indexCount);
 	const Vec3i triangleIndices = entityData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
@@ -120,13 +120,13 @@ extern "C" __global__ void __closesthit__()
 	const Vec3f& C = entityData.vertex[triangleIndices.z()];
 
 	// Ray
-	const int beamIdx = optixGetLaunchIndex().x;
+	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
 	const unsigned beamSampleRayIdx = optixGetPayload_0();
 	const unsigned circleIdx = (beamSampleRayIdx - 1) / MULTI_RETURN_BEAM_VERTICES;
 	const unsigned vertexIdx = (beamSampleRayIdx - 1) % MULTI_RETURN_BEAM_VERTICES;
-	const unsigned mrSamplesIndex = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
+	const unsigned mrSamplesIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
 	const Vec3f beamSampleOrigin = optixGetWorldRayOrigin();
-	const int entityId = (int) optixGetInstanceId();
+	const int entityId = static_cast<int>(optixGetInstanceId());
 
 	// Hitpoint
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
@@ -145,7 +145,7 @@ extern "C" __global__ void __closesthit__()
 	// Early out for points that are too close to the sensor
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		ctx.mrSamples.isHit[mrSamplesIndex] = false;
+		ctx.mrSamples.isHit[mrSamplesIdx] = false;
 		if (beamSampleRayIdx == 0) {
 			saveNonHitRayResult(ctx.nearNonHitDistance);
 		}
@@ -179,9 +179,9 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	// Save sub-sampling results
-	ctx.mrSamples.isHit[mrSamplesIndex] = true;
-	ctx.mrSamples.xyz[mrSamplesIndex] = hitWorldSeenBySensor;
-	ctx.mrSamples.distance[mrSamplesIndex] = distance;
+	ctx.mrSamples.isHit[mrSamplesIdx] = true;
+	ctx.mrSamples.xyz[mrSamplesIdx] = hitWorldSeenBySensor;
+	ctx.mrSamples.distance[mrSamplesIdx] = distance;
 	if (beamSampleRayIdx != 0) {
 		return;
 	}
@@ -252,7 +252,7 @@ __device__ Mat3x4f makeBeamSampleRayTransform(float halfDivergenceAngleRad, unsi
 		return Mat3x4f::identity();
 	}
 	const auto circleDivergence = halfDivergenceAngleRad * (1.0f - static_cast<float>(circleIdx) / MULTI_RETURN_BEAM_CIRCLES);
-	auto vertexAngleStep = 2.0f * M_PIf / MULTI_RETURN_BEAM_VERTICES;
+	auto vertexAngleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
 	// First, rotate around X to move the ray vector (initially {0,0,1}) to diverge from the Z axis by circleDivergence.
 	// Then rotate around Z to move the ray vector on the circle.
 	return Mat3x4f::rotationRad(0, 0, static_cast<float>(vertexIdx) * vertexAngleStep) * // Second
@@ -275,7 +275,7 @@ template<bool isFinite>
 __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID, const Vec3f& absVelocity,
                               const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle)
 {
-	const int beamIdx = optixGetLaunchIndex().x;
+	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
 	if (ctx.xyz != nullptr) {
 		// Return actual XYZ of the hit point or infinity vector.
 		ctx.xyz[beamIdx] = xyz;
