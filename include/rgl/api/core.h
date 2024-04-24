@@ -664,7 +664,7 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float
  * @param rays_mask Pointer to the array of int32_t. 1 means point is hit, 0 means point is non-hit.
  * @param rays_count Number of elements in the `points_mask` array.
  */
-RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int32_t* rays_mask, int32_t rays_count);
+RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count);
 
 /**
  * Creates or modifies FormatPointsNode.

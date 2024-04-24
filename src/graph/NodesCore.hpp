@@ -126,7 +126,7 @@ struct RaytraceNode : IPointsNode
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
-	void setNonHitsMask(const int* maskRaw, size_t maskPointCount);
+	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
 
 private:
 	IRaysNode::Ptr raysNode;
@@ -139,8 +139,7 @@ private:
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
 
-	std::optional<DeviceAsyncArray<int>::Ptr> rayMask = DeviceAsyncArray<int>::create(arrayMgr);
-	int maskCount = -1;
+	DeviceAsyncArray<int8_t>::Ptr rayMask;
 
 	HostPinnedArray<RaytraceRequestContext>::Ptr requestCtxHst = HostPinnedArray<RaytraceRequestContext>::create();
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
@@ -473,27 +472,6 @@ private:
 	DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyz = DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr);
 	DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr outDistance = DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(
 	    arrayMgr);
-};
-
-struct MaskPointsNode : IPointsNodeSingleInput
-{
-	using Ptr = std::shared_ptr<MaskPointsNode>;
-
-	void setParameters(const int32_t* mask, size_t pointCount);
-
-	// Node
-	void enqueueExecImpl() override;
-
-	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32}; }
-
-	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
-
-private:
-	size_t pointCount;
-	DeviceAsyncArray<int32_t>::Ptr pointsMask = DeviceAsyncArray<int32_t>::create(arrayMgr);
-	DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr output = DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr);
 };
 
 struct RadarPostprocessPointsNode : IPointsNodeSingleInput

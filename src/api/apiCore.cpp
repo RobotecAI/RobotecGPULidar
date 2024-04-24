@@ -889,7 +889,7 @@ void TapeCore::tape_node_raytrace_configure_non_hits(const YAML::Node& yamlNode,
 	rgl_node_raytrace_configure_non_hits(node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
 }
 
-RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int32_t* rays_mask, int32_t rays_count)
+RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_raytrace_configure_mask(node={}, rays_mask={}, rays_count={})", repr(node), repr(rays_mask, rays_count),
@@ -908,7 +908,7 @@ void TapeCore::tape_node_raytrace_configure_mask(const YAML::Node& yamlNode, Pla
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.at(nodeId);
-	rgl_node_raytrace_configure_mask(node, state.getPtr<const int32_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
+	rgl_node_raytrace_configure_mask(node, state.getPtr<const int8_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)

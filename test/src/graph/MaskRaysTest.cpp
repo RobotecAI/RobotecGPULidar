@@ -9,7 +9,7 @@ class MaskRaysTest : public RGLTest
 
 protected:
 	const int maskCount = 100;
-	std::vector<int32_t> points_mask;
+	std::vector<int8_t> points_mask;
 	std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, INTENSITY_F32, IS_GROUND_I32};
 
 	void initializeMask(int raysCount)
