@@ -26,108 +26,34 @@
 
 #include <rgl/api/core.h>
 
+// Constants
 static constexpr float toDeg = (180.0f / M_PI);
 
+// Globals
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
-struct Vec3fPayload
-{
-	unsigned p0;
-	unsigned p1;
-	unsigned p2;
-};
-
-__forceinline__ __device__ Vec3fPayload encodePayloadVec3f(const Vec3f& src)
-{
-	Vec3fPayload dst;
-	dst.p0 = *(reinterpret_cast<const unsigned*>(&src[0]));
-	dst.p1 = *(reinterpret_cast<const unsigned*>(&src[1]));
-	dst.p2 = *(reinterpret_cast<const unsigned*>(&src[2]));
-	return dst;
-}
-
-__forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
-{
-	return Vec3f{
-	    *reinterpret_cast<const float*>(&src.p0),
-	    *reinterpret_cast<const float*>(&src.p1),
-	    *reinterpret_cast<const float*>(&src.p2),
-	};
-}
-
+// Helper functions
 template<bool isFinite>
-__forceinline__ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID,
-                                              const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed,
-                                              const Vec3f& normal, float incidentAngle, float laserRetro)
-{
-	const int rayIdx = optixGetLaunchIndex().x;
-	if (ctx.xyz != nullptr) {
-		// Return actual XYZ of the hit point or infinity vector.
-		ctx.xyz[rayIdx] = xyz;
-	}
-	if (ctx.isHit != nullptr) {
-		ctx.isHit[rayIdx] = isFinite;
-	}
-	if (ctx.rayIdx != nullptr) {
-		ctx.rayIdx[rayIdx] = rayIdx;
-	}
-	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
-		ctx.ringIdx[rayIdx] = ctx.ringIds[rayIdx % ctx.ringIdsCount];
-	}
-	if (ctx.distance != nullptr) {
-		ctx.distance[rayIdx] = distance;
-	}
-	if (ctx.intensity != nullptr) {
-		ctx.intensity[rayIdx] = intensity;
-	}
-	if (ctx.timestamp != nullptr) {
-		ctx.timestamp[rayIdx] = ctx.sceneTime;
-	}
-	if (ctx.entityId != nullptr) {
-		ctx.entityId[rayIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
-	}
-	if (ctx.pointAbsVelocity != nullptr) {
-		ctx.pointAbsVelocity[rayIdx] = absVelocity;
-	}
-	if (ctx.pointRelVelocity != nullptr) {
-		ctx.pointRelVelocity[rayIdx] = relVelocity;
-	}
-	if (ctx.radialSpeed != nullptr) {
-		ctx.radialSpeed[rayIdx] = radialSpeed;
-	}
-	if (ctx.normal != nullptr) {
-		ctx.normal[rayIdx] = normal;
-	}
-	if (ctx.incidentAngle != nullptr) {
-		ctx.incidentAngle[rayIdx] = incidentAngle;
-	}
-	if (ctx.laserRetro != nullptr) {
-		ctx.laserRetro[rayIdx] = laserRetro;
-	}
-}
-
-__forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
-{
-	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
-	Vec3f origin = ray * Vec3f{0, 0, 0};
-	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-	Vec3f displacement = dir.normalized() * nonHitDistance;
-	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
-	                isnan(displacement.z()) ? 0 : displacement.z()};
-	Vec3f xyz = origin + displacement;
-	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.0f, Vec3f{NAN}, NAN, 0.0f);
-}
+__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, int objectID, const Vec3f& absVelocity,
+                              const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle,
+                              float laserRetro);
+__device__ void saveNonHitRayResult(float nonHitDistance);
+__device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned sampleBeamIdx);
+__device__ Mat3x4f makeBeamSampleRayTransform(float halfDivergenceAngleRad, unsigned circleIdx, unsigned vertexIdx);
 
 extern "C" __global__ void __raygen__()
 {
 	if (ctx.scene == 0) {
-		saveNonHitRayResult(ctx.farNonHitDistance);
+		saveNonHitRayResult(
+		    ctx.farNonHitDistance); // TODO(prybicki): Remove this, assume that host code will not pass invalid scene.
 		return;
 	}
 
-	const int rayIdx = optixGetLaunchIndex().x;
+	const int rayIdx = static_cast<int>(optixGetLaunchIndex().x);
 	Mat3x4f ray = ctx.rays[rayIdx];
-	const Mat3x4f rayLocal = ctx.rayOriginToWorld.inverse() * ray;
+	const Mat3x4f rayLocal =
+	    ctx.rayOriginToWorld.inverse() *
+	    ray; // TODO(prybicki): instead of computing inverse, we should pass rays in local CF and then transform them to world CF.
 
 	// Assuming up vector is Y, forward vector is Z (true for Unity).
 	// TODO(msz-rai): allow to define up and forward vectors in RGL
@@ -144,70 +70,92 @@ extern "C" __global__ void __raygen__()
 		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
 		// In order to not lose numerical precision, first multiply values and then convert to proper unit.
-		ray = Mat3x4f::TRS((ctx.rayTimeOffsets[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
-		                   (ctx.rayTimeOffsets[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f) *
+		ray = Mat3x4f::TRS((ctx.rayTimeOffsetsMs[rayIdx] * ctx.sensorLinearVelocityXYZ) * 0.001f,
+		                   (ctx.rayTimeOffsetsMs[rayIdx] * (ctx.sensorAngularVelocityRPY * toDeg)) * 0.001f) *
 		      rayLocal;
 		// Back to the global frame.
 		ray = ctx.rayOriginToWorld * ray;
 	}
 
-	Vec3f origin = ray * Vec3f{0, 0, 0};
-	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
 	float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[rayIdx].y();
 
-	unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
-	Vec3fPayload originPayload = encodePayloadVec3f(origin);
-	optixTrace(ctx.scene, origin, dir, 0.0f, maxRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0, originPayload.p0,
-	           originPayload.p1, originPayload.p2);
+	shootSamplingRay(ray, maxRange, 0); // Shoot primary ray
+	if (ctx.beamHalfDivergence > 0.0f) {
+		// Shoot multi-return sampling rays
+		for (int circleIdx = 0; circleIdx < MULTI_RETURN_BEAM_CIRCLES; ++circleIdx) {
+			for (int vertexIdx = 0; vertexIdx < MULTI_RETURN_BEAM_VERTICES; vertexIdx++) {
+				Mat3x4f sampleRay = ray * makeBeamSampleRayTransform(ctx.beamHalfDivergence, circleIdx, vertexIdx);
+				// Sampling rays indexes start from 1, 0 is reserved for the primary ray
+				const unsigned beamSampleRayIdx = 1 + circleIdx * MULTI_RETURN_BEAM_VERTICES + vertexIdx;
+				shootSamplingRay(sampleRay, maxRange, beamSampleRayIdx);
+			}
+		}
+	}
+}
+
+extern "C" __global__ void __miss__()
+{
+	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
+	const int beamSampleIdx = static_cast<int>(optixGetPayload_0());
+	ctx.mrSamples.isHit[beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleIdx] = false;
+	if (beamSampleIdx == 0) {
+		saveNonHitRayResult(ctx.farNonHitDistance);
+	}
 }
 
 extern "C" __global__ void __closesthit__()
 {
-	const EntitySBTData& entityData = *(const EntitySBTData*) optixGetSbtDataPointer();
+	const EntitySBTData& entityData = *(reinterpret_cast<const EntitySBTData*>(optixGetSbtDataPointer()));
 
-	const int primID = optixGetPrimitiveIndex();
+	// Triangle
+	const int primID = static_cast<int>(optixGetPrimitiveIndex());
 	assert(primID < entityData.indexCount);
 	const Vec3i triangleIndices = entityData.index[primID];
 	const float u = optixGetTriangleBarycentrics().x;
 	const float v = optixGetTriangleBarycentrics().y;
-
 	assert(triangleIndices.x() < entityData.vertexCount);
 	assert(triangleIndices.y() < entityData.vertexCount);
 	assert(triangleIndices.z() < entityData.vertexCount);
-
 	const Vec3f& A = entityData.vertex[triangleIndices.x()];
 	const Vec3f& B = entityData.vertex[triangleIndices.y()];
 	const Vec3f& C = entityData.vertex[triangleIndices.z()];
 
-	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
-	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
-
-	const int objectID = optixGetInstanceId();
+	// Ray
+	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
+	const unsigned beamSampleRayIdx = optixGetPayload_0();
+	const unsigned circleIdx = (beamSampleRayIdx - 1) / MULTI_RETURN_BEAM_VERTICES;
+	const unsigned vertexIdx = (beamSampleRayIdx - 1) % MULTI_RETURN_BEAM_VERTICES;
+	const unsigned mrSamplesIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
+	const Vec3f beamSampleOrigin = optixGetWorldRayOrigin();
+	const int entityId = static_cast<int>(optixGetInstanceId());
 	const float laserRetro = entityData.laserRetro;
 
-	Vec3f origin = decodePayloadVec3f({optixGetPayload_0(), optixGetPayload_1(), optixGetPayload_2()});
+	// Hitpoint
+	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
+	const Vec3f hitWorldRaytraced = optixTransformPointFromObjectToWorldSpace(hitObject);
+	const float distance = (hitWorldRaytraced - beamSampleOrigin).length();
+	const Vec3f hitWorldSeenBySensor = [&]() {
+		if (!ctx.doApplyDistortion) {
+			return hitWorldRaytraced;
+		}
+		Mat3x4f undistortedRay = ctx.rays[beamIdx] * makeBeamSampleRayTransform(ctx.beamHalfDivergence, circleIdx, vertexIdx);
+		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
+		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
+		return undistortedOrigin + undistortedDir * distance;
+	}();
 
-	// TODO: Optimization - we can use inversesqrt here, which is one operation cheaper then sqrt.
-	float distance = sqrt(pow((hitWorld)[0] - (origin)[0], 2) + pow((hitWorld)[1] - (origin)[1], 2) +
-	                      pow((hitWorld)[2] - (origin)[2], 2));
-
+	// Early out for points that are too close to the sensor
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		saveNonHitRayResult(ctx.nearNonHitDistance);
+		ctx.mrSamples.isHit[mrSamplesIdx] = false;
+		if (beamSampleRayIdx == 0) {
+			saveNonHitRayResult(ctx.nearNonHitDistance);
+		}
 		return;
 	}
 
-	// Fix XYZ if distortion is applied (XYZ must be calculated in sensor coordinate frame)
-	if (ctx.doApplyDistortion) {
-		const int rayIdx = optixGetLaunchIndex().x;
-		Mat3x4f undistortedRay = ctx.rays[rayIdx];
-		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
-		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
-		hitWorld = undistortedOrigin + undistortedDir * distance;
-	}
-
 	// Normal vector and incident angle
-	Vec3f rayDir = (hitWorld - origin).normalized();
+	Vec3f rayDir = optixGetWorldRayDirection();
 	const Vec3f wA = optixTransformPointFromObjectToWorldSpace(A);
 	const Vec3f wB = optixTransformPointFromObjectToWorldSpace(B);
 	const Vec3f wC = optixTransformPointFromObjectToWorldSpace(C);
@@ -232,6 +180,14 @@ extern "C" __global__ void __closesthit__()
 		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
 
+	// Save sub-sampling results
+	ctx.mrSamples.isHit[mrSamplesIdx] = true;
+	ctx.mrSamples.xyz[mrSamplesIdx] = hitWorldSeenBySensor;
+	ctx.mrSamples.distance[mrSamplesIdx] = distance;
+	if (beamSampleRayIdx != 0) {
+		return;
+	}
+
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
 	float radialSpeed{NAN};
@@ -247,7 +203,7 @@ extern "C" __global__ void __closesthit__()
 			// Then, we can connect marker dot in previous raytracing frame with its current position and obtain displacementFromTransformChange vector
 			// Dividing displacementFromTransformChange by time elapsed from the previous raytracing frame yields velocity vector.
 			Vec3f displacementVectorOrigin = entityData.prevFrameLocalToWorld * hitObject;
-			displacementFromTransformChange = hitWorld - displacementVectorOrigin;
+			displacementFromTransformChange = hitWorldRaytraced - displacementVectorOrigin;
 		}
 
 		// Some entities may have skinned meshes - in this case entity.vertexDisplacementSincePrevFrame will be non-null
@@ -270,17 +226,100 @@ extern "C" __global__ void __closesthit__()
 		Vec3f absPointVelocityInSensorFrame = ctx.rayOriginToWorld.rotation().inverse() * absPointVelocity;
 		Vec3f relPointVelocityBasedOnSensorLinearVelocity = absPointVelocityInSensorFrame - ctx.sensorLinearVelocityXYZ;
 
-		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorld;
+		Vec3f hitRays = ctx.rayOriginToWorld.inverse() * hitWorldRaytraced;
 		Vec3f relPointVelocityBasedOnSensorAngularVelocity = Vec3f(.0f) - ctx.sensorAngularVelocityRPY.cross(hitRays);
 		relPointVelocity = relPointVelocityBasedOnSensorLinearVelocity + relPointVelocityBasedOnSensorAngularVelocity;
 
 		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
-
-	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed, wNormal,
-	                    incidentAngle, laserRetro);
+	saveRayResult<true>(hitWorldSeenBySensor, distance, intensity, entityId, absPointVelocity, relPointVelocity, radialSpeed,
+	                    wNormal, incidentAngle, laserRetro);
 }
 
-extern "C" __global__ void __miss__() { saveNonHitRayResult(ctx.farNonHitDistance); }
-
 extern "C" __global__ void __anyhit__() {}
+
+// Helper functions implementations
+
+__device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned int beamSampleRayIdx)
+{
+	Vec3f origin = ray * Vec3f{0, 0, 0};
+	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	const unsigned int flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT; // TODO: try adding OPTIX_RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+	optixTrace(ctx.scene, origin, dir, 0.0f, maxRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0, beamSampleRayIdx);
+}
+
+__device__ Mat3x4f makeBeamSampleRayTransform(float halfDivergenceAngleRad, unsigned int circleIdx, unsigned int vertexIdx)
+{
+	if (ctx.beamHalfDivergence == 0.0f) {
+		return Mat3x4f::identity();
+	}
+	const auto circleDivergence = halfDivergenceAngleRad * (1.0f - static_cast<float>(circleIdx) / MULTI_RETURN_BEAM_CIRCLES);
+	auto vertexAngleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
+	// First, rotate around X to move the ray vector (initially {0,0,1}) to diverge from the Z axis by circleDivergence.
+	// Then rotate around Z to move the ray vector on the circle.
+	return Mat3x4f::rotationRad(0, 0, static_cast<float>(vertexIdx) * vertexAngleStep) * // Second
+	       Mat3x4f::rotationRad(circleDivergence, 0, 0);
+}
+
+__device__ void saveNonHitRayResult(float nonHitDistance)
+{
+	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	Vec3f origin = ray * Vec3f{0, 0, 0};
+	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+	Vec3f displacement = dir.normalized() * nonHitDistance;
+	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
+	                isnan(displacement.z()) ? 0 : displacement.z()};
+	Vec3f xyz = origin + displacement;
+	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.0f, Vec3f{NAN}, NAN, 0.0f);
+}
+
+template<bool isFinite>
+__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID, const Vec3f& absVelocity,
+                              const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle,
+                              float laserRetro)
+{
+	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
+	if (ctx.xyz != nullptr) {
+		// Return actual XYZ of the hit point or infinity vector.
+		ctx.xyz[beamIdx] = xyz;
+	}
+	if (ctx.isHit != nullptr) {
+		ctx.isHit[beamIdx] = isFinite;
+	}
+	if (ctx.rayIdx != nullptr) {
+		ctx.rayIdx[beamIdx] = beamIdx;
+	}
+	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
+		ctx.ringIdx[beamIdx] = ctx.ringIds[beamIdx % ctx.ringIdsCount];
+	}
+	if (ctx.distance != nullptr) {
+		ctx.distance[beamIdx] = distance;
+	}
+	if (ctx.intensity != nullptr) {
+		ctx.intensity[beamIdx] = intensity;
+	}
+	if (ctx.timestamp != nullptr) {
+		ctx.timestamp[beamIdx] = ctx.sceneTime;
+	}
+	if (ctx.entityId != nullptr) {
+		ctx.entityId[beamIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
+	}
+	if (ctx.pointAbsVelocity != nullptr) {
+		ctx.pointAbsVelocity[beamIdx] = absVelocity;
+	}
+	if (ctx.pointRelVelocity != nullptr) {
+		ctx.pointRelVelocity[beamIdx] = relVelocity;
+	}
+	if (ctx.radialSpeed != nullptr) {
+		ctx.radialSpeed[beamIdx] = radialSpeed;
+	}
+	if (ctx.normal != nullptr) {
+		ctx.normal[beamIdx] = normal;
+	}
+	if (ctx.incidentAngle != nullptr) {
+		ctx.incidentAngle[beamIdx] = incidentAngle;
+	}
+	if (ctx.laserRetro != nullptr) {
+		ctx.laserRetro[beamIdx] = laserRetro;
+	}
+}
