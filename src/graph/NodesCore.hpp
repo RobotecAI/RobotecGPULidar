@@ -642,7 +642,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	RadarTrackObjectsNode();
 
-	void setParameters();
+	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
+	                   float radialSpeedThreshold);
 
 	// Node
 	void validateImpl() override;
@@ -663,6 +664,11 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 private:
 	std::list<ObjectState> objectStates;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+
+	float distanceThreshold;
+	float azimuthThreshold;
+	float elevationThreshold;
+	float radialSpeedThreshold;
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();

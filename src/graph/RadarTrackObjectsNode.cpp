@@ -17,7 +17,14 @@
 
 RadarTrackObjectsNode::RadarTrackObjectsNode() { fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32)); }
 
-void RadarTrackObjectsNode::setParameters() {}
+void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
+                                          float radialSpeedThreshold)
+{
+	this->distanceThreshold = distanceThreshold;
+	this->azimuthThreshold = azimuthThreshold;
+	this->elevationThreshold = elevationThreshold;
+	this->radialSpeedThreshold = radialSpeedThreshold;
+}
 
 void RadarTrackObjectsNode::validateImpl() { IPointsNodeSingleInput::validateImpl(); }
 
@@ -40,11 +47,6 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	};
 	std::vector<TrackedObject> trackedObjects;
 	std::vector<int> objectIndexLookup(detectionsCount, -1);
-
-	constexpr float distanceThreshold = 2.0f;
-	constexpr float azimuthThreshold = 0.1f;
-	constexpr float elevationThreshold = 0.1f;
-	constexpr float radialSpeedThreshold = 0.5f;
 
 	std::list<std::list<int>> objectIndices;
 	for (auto i = 0; i < detectionsCount; ++i) {

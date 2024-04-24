@@ -269,7 +269,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	    rgl_node_points_radar_postprocess(&radarPostprocess, &radarScope, 1, 1.0f, 1.0f, 79E9f, 31.0f, 27.0f, 60.0f, 1.0f));
 
 	rgl_node_t radarTrackObjects = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&radarTrackObjects));
+	EXPECT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&radarTrackObjects, 2.0f, 0.1f, 0.1f, 0.5f));
 
 	rgl_node_t filterGround = nullptr;
 	rgl_vec3f sensorUpVector = {0.0f, 1.0f, 0.0f};

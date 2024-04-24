@@ -90,15 +90,19 @@ void generateRandomDetectionClusters(TestPointCloud& pointCloud, size_t clusterC
 TEST_F(RadarTrackObjectsNodeTest, objects_number_test)
 {
 	std::vector<rgl_field_t> fields{XYZ_VEC3_F32};
+	constexpr float distanceThreshold = 2.0f;
+	constexpr float azimuthThreshold = 0.1f;
+	constexpr float elevationThreshold = 0.1f;
+	constexpr float radialSpeedThreshold = 0.5f;
 
 	// Setup objects tracking node
 	rgl_node_t trackObjectsNode = nullptr;
-	ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode));
+	ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode, distanceThreshold, azimuthThreshold,
+	                                                       elevationThreshold, radialSpeedThreshold));
 
 	constexpr size_t objectsCount = 5;
 	constexpr size_t detectionsCountPerObject = 10;
-	std::vector<rgl_field_t> pointFields =
-	    Node::validatePtr<RadarTrackObjectsNode>(trackObjectsNode)->getRequiredFieldList();
+	std::vector<rgl_field_t> pointFields = Node::validatePtr<RadarTrackObjectsNode>(trackObjectsNode)->getRequiredFieldList();
 	TestPointCloud inPointCloud(pointFields, objectsCount * detectionsCountPerObject);
 
 	generateFixedDetectionClusters(inPointCloud, objectsCount, detectionsCountPerObject);
@@ -119,13 +123,18 @@ TEST_F(RadarTrackObjectsNodeTest, creating_random_objects_test)
 	GTEST_SKIP_("Debug test on development stage.");
 
 	std::vector<rgl_field_t> fields{XYZ_VEC3_F32};
+	constexpr float distanceThreshold = 2.0f;
+	constexpr float azimuthThreshold = 0.1f;
+	constexpr float elevationThreshold = 0.1f;
+	constexpr float radialSpeedThreshold = 0.5f;
 	size_t iterationCounter = 0;
 
 	while (true) {
 		// Setup objects tracking node
 		rgl_node_t trackObjectsNode = nullptr, ros2DetectionsNode = nullptr, ros2ObjectsNode = nullptr,
 		           detectionsFormat = nullptr, objectsFormat = nullptr;
-		ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode));
+		ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode, distanceThreshold, azimuthThreshold,
+		                                                       elevationThreshold, radialSpeedThreshold));
 		ASSERT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2DetectionsNode, "radar_detections", "world"));
 		ASSERT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2ObjectsNode, "radar_objects", "world"));
 		ASSERT_RGL_SUCCESS(rgl_node_points_format(&detectionsFormat, fields.data(), fields.size()));
