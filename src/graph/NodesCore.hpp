@@ -30,6 +30,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
+#include <gpu/MultiReturn.hpp>
 
 
 struct FormatPointsNode : IPointsNodeSingleInput
@@ -145,6 +146,38 @@ private:
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
 
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
+
+	struct MultiReturnFields
+	{
+		MultiReturnFields(StreamBoundObjectsManager& arrayMgr)
+		  : isHit(DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr)),
+		    xyz(DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr)),
+		    distance(DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr))
+		{}
+		void resize(size_t size)
+		{
+			isHit->resize(size, false, false);
+			xyz->resize(size, false, false);
+			distance->resize(size, false, false);
+		}
+		MultiReturnPointers getPointers()
+		{
+			return MultiReturnPointers{
+			    .isHit = isHit->getWritePtr(),
+			    .xyz = xyz->getWritePtr(),
+			    .distance = distance->getWritePtr(),
+			};
+		}
+		DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr isHit;
+		DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr xyz;
+		DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr distance;
+	};
+
+
+	MultiReturnFields mrSamples = MultiReturnFields{arrayMgr};
+	MultiReturnFields mrFirst = MultiReturnFields{arrayMgr};
+	MultiReturnFields mrLast = MultiReturnFields{arrayMgr};
+
 
 	template<rgl_field_t>
 	auto getPtrTo();

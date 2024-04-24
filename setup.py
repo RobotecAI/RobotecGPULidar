@@ -108,13 +108,13 @@ def main():
         return 0
 
     # Install taped test dependencies
-    if args.install_taped_test_deps:
+    if on_linux() and args.install_taped_test_deps:
         install_taped_test_deps(cfg)
         print('Installed dependencies for taped test, exiting...')
         return 0
 
     # Check taped test requirements
-    if args.build_taped_test and not args.with_pcl:
+    if on_linux() and args.build_taped_test and not args.with_pcl:
         raise RuntimeError(
             "Taped test requires PCL extension to be built: run this script with --with-pcl flag")
 
@@ -154,8 +154,7 @@ def main():
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
         f"-DRGL_BUILD_UDP_EXTENSION={'ON' if args.with_udp else 'OFF'}",
-        f"-DRGL_BUILD_SNOW_EXTENSION={'ON' if args.with_snow else 'OFF'}",
-        f"-DRGL_BUILD_TAPED_TESTS={'ON' if args.build_taped_test else 'OFF'}"
+        f"-DRGL_BUILD_SNOW_EXTENSION={'ON' if args.with_snow else 'OFF'}"
     ]
 
     if on_linux():
@@ -166,6 +165,8 @@ def main():
                 rpath = rpath.replace("$ORIGIN", "\\$ORIGIN")  # cmake should not treat this as variable
                 linker_rpath_flags.append(f"-Wl,-rpath={rpath}")
         cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
+        # Taped tests
+        cmake_args.append(f"-DRGL_BUILD_TAPED_TESTS={'ON' if args.build_taped_test else 'OFF'}")
 
     # Append user args, possibly overwriting
     cmake_args.append(args.cmake)
