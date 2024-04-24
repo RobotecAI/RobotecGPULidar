@@ -383,6 +383,15 @@ typedef enum : int32_t
 } rgl_field_t;
 
 /**
+ * Kinds of return type for multi-return LiDAR output.
+ */
+typedef enum : int32_t
+{
+	RGL_RETURN_TYPE_FIRST = 0,
+	RGL_RETURN_TYPE_LAST = 1,
+} rgl_return_type_t;
+
+/**
  * Helper enum for axis selection
  */
 typedef enum : int32_t
