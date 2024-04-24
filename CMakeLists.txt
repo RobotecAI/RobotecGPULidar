@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.18)  # 3.18 To automatically detect CUDA_ARCHITECTURES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
+
 # Build Release by default; CMAKE_BUILD_TYPE needs to be set before project(...)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
         "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
+
+# Use debug postfix 'd' by default.
+if(NOT CMAKE_DEBUG_POSTFIX)
+  set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING
+      "Choose the debug postfix used when building Debug configuration")
+endif()
+
 project(RobotecGPULidar C CXX CUDA)
 
 # Logging default settings (can be changed via API call)
@@ -17,6 +25,10 @@ set(RGL_LOG_FILE "" CACHE STRING  # STRING prevents from expanding relative path
     "Defines a file path to store RGL log")
 set(RGL_AUTO_TAPE_PATH "" CACHE STRING  # STRING prevents from expanding relative paths
     "If non-empty, defines a path for the automatic tape (started on the first API call)")
+
+# Library configuration
+set(RGL_BUILD_STATIC OFF CACHE BOOL
+    "Builds RobotecGPULidar as a statically linkable library instead of a shared one")
 
 # Test configuration
 set(RGL_BUILD_TESTS ON CACHE BOOL
@@ -81,7 +93,7 @@ add_custom_command(
     VERBATIM)
 add_library(optixPrograms optixProgramsPtx.c)
 
-add_library(RobotecGPULidar SHARED
+set(RGL_SOURCE_FILES
     src/api/apiCommon.cpp
     src/api/apiCore.cpp
     src/tape/TapePlayer.cpp
@@ -120,6 +132,15 @@ add_library(RobotecGPULidar SHARED
     src/graph/YieldPointsNode.cpp
 )
 
+if (RGL_BUILD_STATIC)
+    add_library(RobotecGPULidar STATIC ${RGL_SOURCE_FILES})
+    target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC)
+    set(RGL_SPDLOG_VARIANT spdlog_header_only)
+else ()
+    add_library(RobotecGPULidar SHARED ${RGL_SOURCE_FILES})
+    set(RGL_SPDLOG_VARIANT spdlog)
+endif ()
+
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
@@ -149,7 +170,7 @@ target_include_directories(RobotecGPULidar
 )
 
 target_link_libraries(RobotecGPULidar PRIVATE
-    spdlog
+    ${RGL_SPDLOG_VARIANT}
     yaml-cpp
     optixPrograms
     cmake_git_version_tracking

@@ -28,6 +28,9 @@
 #define NO_MANGLING
 #endif
 
+#if defined RGL_STATIC
+#define RGL_VISIBLE
+#else
 #if defined _WIN32 || defined __CYGWIN__
 #ifdef __GNUC__
 #define RGL_VISIBLE __attribute__((dllexport))
@@ -42,6 +45,7 @@
 #define RGL_VISIBLE
 #endif
 #endif // _WIN32 || __CYGWIN__
+#endif // RGL_STATIC
 
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
@@ -309,8 +313,18 @@ typedef enum : int32_t
 	RGL_FIELD_RAY_IDX_U32,
 	RGL_FIELD_ENTITY_ID_I32,
 	RGL_FIELD_DISTANCE_F32,
-	RGL_FIELD_AZIMUTH_F32,   // In radians. Assuming up vector is Y, forward vector is Z.
-	RGL_FIELD_ELEVATION_F32, // In radians. Assuming up vector is Y, forward vector is Z.
+	/**
+	 * Azimuth angle of the hit point in radians.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
+	 */
+	RGL_FIELD_AZIMUTH_F32,
+	/**
+	 * Elevation angle of the hit point in radians.
+	 * Currently only compatible with engines that generate rays as follows:
+	 * uses a left-handed coordinate system, rotation applies in ZXY order, up vector is Y, forward vector is Z
+	 */
+	RGL_FIELD_ELEVATION_F32,
 	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
 	RGL_FIELD_TIME_STAMP_F64,
@@ -367,6 +381,15 @@ typedef enum : int32_t
 	// Dynamic fields
 	RGL_FIELD_DYNAMIC_FORMAT = 13842,
 } rgl_field_t;
+
+/**
+ * Kinds of return type for multi-return LiDAR output.
+ */
+typedef enum : int32_t
+{
+	RGL_RETURN_TYPE_FIRST = 0,
+	RGL_RETURN_TYPE_LAST = 1,
+} rgl_return_type_t;
 
 /**
  * Helper enum for axis selection
@@ -464,6 +487,14 @@ RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
  */
 RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
 
+/**
+ * Assigns value true to out_alive if the given mesh is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param mesh Mesh to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_mesh_is_alive(rgl_mesh_t mesh, bool* out_alive);
+
 /******************************** ENTITY ********************************/
 
 /**
@@ -500,9 +531,17 @@ RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 /**
  * Assign intensity texture to the given Entity. The assumption is that the Entity can hold only one intensity texture.
  * @param entity Entity to modify.
- * @apram texture Texture to assign.
+ * @param texture Texture to assign.
  */
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+
+/**
+ * Assigns value true to out_alive if the given entity is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param entity Entity to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive);
 
 /******************************* TEXTURE *******************************/
 
@@ -519,9 +558,17 @@ RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* 
 /**
  * Informs that the given texture will be no longer used.
  * The texture will be destroyed after all referring Entities are destroyed.
- * @param mesh Texture to be marked as no longer needed
+ * @param texture Texture to be marked as no longer needed
  */
 RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
+
+/**
+ * Assigns value true to out_alive if the given texture is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param texture Texture to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_texture_is_alive(rgl_texture_t texture, bool* out_alive);
 
 /******************************** SCENE ********************************/
 
@@ -846,6 +893,14 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_angular_hitpoint(rgl_node_t* node, 
  */
 RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float mean, float st_dev_base,
                                                       float st_dev_rise_per_meter);
+
+/**
+ * Assigns value true to out_alive if the given node is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param node Node to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_node_is_alive(rgl_node_t node, bool* out_alive);
 
 /******************************** GRAPH ********************************/
 

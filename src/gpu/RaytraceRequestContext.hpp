@@ -16,6 +16,7 @@
 
 #include <optix.h>
 #include <RGLFields.hpp>
+#include <gpu/MultiReturn.hpp>
 
 struct RaytraceRequestContext
 {
@@ -38,7 +39,7 @@ struct RaytraceRequestContext
 	const int* ringIds;
 	size_t ringIdsCount;
 
-	const float* rayTimeOffsets;
+	const float* rayTimeOffsetsMs;
 	size_t rayTimeOffsetsCount;
 
 	OptixTraversableHandle scene;
@@ -61,5 +62,9 @@ struct RaytraceRequestContext
 	Field<ELEVATION_F32>::type* elevation;
 	Field<NORMAL_VEC3_F32>::type* normal;
 	Field<INCIDENT_ANGLE_F32>::type* incidentAngle;
+
+	// Multi-Return
+	float beamHalfDivergence;
+	MultiReturnPointers mrSamples;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

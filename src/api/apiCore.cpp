@@ -256,6 +256,16 @@ void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackSta
 	                         yamlNode[2].as<int32_t>());
 }
 
+rgl_status_t rgl_mesh_is_alive(rgl_mesh_t mesh, bool* out_alive)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(out_alive != nullptr);
+		*out_alive = Mesh::instances.contains(mesh);
+	});
+	TAPE_HOOK(mesh, out_alive);
+	return status;
+}
+
 RGL_API rgl_status_t rgl_entity_create(rgl_entity_t* out_entity, rgl_scene_t scene, rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {
@@ -355,6 +365,16 @@ void TapeCore::tape_entity_set_intensity_texture(const YAML::Node& yamlNode, Pla
 	                                 state.textures.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
+rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(out_alive != nullptr);
+		*out_alive = Entity::instances.contains(entity);
+	});
+	TAPE_HOOK(entity, out_alive);
+	return status;
+}
+
 RGL_API rgl_status_t rgl_texture_create(rgl_texture_t* out_texture, const void* texels, int32_t width, int32_t height)
 {
 	auto status = rglSafeCall([&]() {
@@ -396,6 +416,16 @@ void TapeCore::tape_texture_destroy(const YAML::Node& yamlNode, PlaybackState& s
 	auto textureId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_texture_destroy(state.textures.at(textureId));
 	state.textures.erase(textureId);
+}
+
+rgl_status_t rgl_texture_is_alive(rgl_texture_t texture, bool* out_alive)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(out_alive != nullptr);
+		*out_alive = Texture::instances.contains(texture);
+	});
+	TAPE_HOOK(texture, out_alive);
+	return status;
 }
 
 RGL_API rgl_status_t rgl_scene_set_time(rgl_scene_t scene, uint64_t nanoseconds)
@@ -1218,6 +1248,16 @@ void TapeCore::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, Pla
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_gaussian_noise_distance(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>());
 	state.nodes.insert({nodeId, node});
+}
+
+rgl_status_t rgl_node_is_alive(rgl_node_t node, bool* out_alive)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(out_alive != nullptr);
+		*out_alive = Node::instances.contains(node);
+	});
+	TAPE_HOOK(node, out_alive);
+	return status;
 }
 
 RGL_API rgl_status_t rgl_tape_record_begin(const char* path)
