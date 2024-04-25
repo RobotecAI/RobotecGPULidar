@@ -837,10 +837,10 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * Graph input: point cloud, containing RGL_FIELD_DISTANCE_F32, RGL_FIELD_AZIMUTH_F32, RGL_FIELD_ELEVATION_F32 and RGL_FIELD_RADIAL_SPEED_F32
  * Graph output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- * @param object_distance_threshold The maximum distance between any radar detection and other detection closest to it within the same tracked object.
- * @param object_azimuth_threshold The maximum azimuth difference between any radar detection and other detection closest to it within the same tracked object.
- * @param object_elevation_threshold The maximum elevation difference between any radar detection and other detection closest to it within the same tracked object.
- * @param object_radial_speed_threshold The maximum radial speed difference between any radar detection and other detection closest to it within the same tracked object.
+ * @param object_distance_threshold The maximum distance between any radar detection and other detection closest to it within the same tracked object (in meters).
+ * @param object_azimuth_threshold The maximum azimuth difference between any radar detection and other detection closest to it within the same tracked object (in radians).
+ * @param object_elevation_threshold The maximum elevation difference between any radar detection and other detection closest to it within the same tracked object (in radians).
+ * @param object_radial_speed_threshold The maximum radial speed difference between any radar detection and other detection closest to it within the same tracked object (in meters per second).
  */
 RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float object_distance_threshold,
                                                          float object_azimuth_threshold, float object_elevation_threshold,
