@@ -44,7 +44,8 @@ struct Vector
 	Vector(const std::array<T, dim>& values) { std::copy(values.begin(), values.end(), row); }
 
 	// List constructor
-	template<typename... Args>
+	template<typename... Args,
+	    typename = typename std::enable_if<sizeof...(Args) >= 2>::type>
 	HostDevFn Vector(Args... args) : row{static_cast<T>(args)...}
 	{
 		static_assert(sizeof...(Args) == dim);

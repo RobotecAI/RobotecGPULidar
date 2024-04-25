@@ -1148,6 +1148,38 @@ void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, Pl
 	state.nodes.insert({nodeId, node});
 }
 
+RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float object_distance_threshold,
+                                                         float object_azimuth_threshold, float object_elevation_threshold,
+                                                         float object_radial_speed_threshold)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_radar_track_objects(node={}, object_distance_threshold={}, object_azimuth_threshold={}, "
+		            "object_elevation_threshold={}, object_radial_speed_threshold={})",
+		            repr(node), object_distance_threshold, object_azimuth_threshold, object_elevation_threshold,
+		            object_radial_speed_threshold);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(object_distance_threshold > 0.0f);
+		CHECK_ARG(object_azimuth_threshold > 0.0f);
+		CHECK_ARG(object_elevation_threshold > 0.0f);
+		CHECK_ARG(object_radial_speed_threshold > 0.0f);
+
+		createOrUpdateNode<RadarTrackObjectsNode>(node, object_distance_threshold, object_azimuth_threshold,
+		                                          object_elevation_threshold, object_radial_speed_threshold);
+	});
+	TAPE_HOOK(node, object_distance_threshold, object_azimuth_threshold, object_elevation_threshold,
+	          object_radial_speed_threshold);
+	return status;
+}
+
+void TapeCore::tape_node_points_radar_track_objects(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_radar_track_objects(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>(),
+	                                    yamlNode[4].as<float>());
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
                                                    float ground_angle_threshold)
 {
