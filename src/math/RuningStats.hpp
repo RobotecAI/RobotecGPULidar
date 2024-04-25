@@ -1,4 +1,4 @@
-// Copyright 2022 Robotec.AI
+// Copyright 2023 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ public:
 	static constexpr RunningStats calculateFor(const std::vector<StatType>& range)
 	{
 		RunningStats stats;
-		for (auto&& element : range)
-		{
+		for (auto&& element : range) {
 			stats.addSample(element);
 		}
 		return stats;
@@ -44,26 +43,29 @@ public:
 
 	auto getStdDev() const
 	{
+		// This if-statement is only for handling floating point numbers.
 		if constexpr (std::is_floating_point_v<StatType>) {
 			return std::sqrt(getVariance());
-		} else {
-			// I specified here only the ones that are of float type and have aliases (assuming, they are used mostly or at all).
-			const auto variance = getVariance();
-			if constexpr (std::is_same_v<StatType, Vector<2, float>>) {
-				return Vector<2, float>{std::sqrt(variance.x()), std::sqrt(variance.y())};
-			} else if constexpr (std::is_same_v<StatType, Vector<3, float>>) {
-				return Vector<3, float>{std::sqrt(variance.x()), std::sqrt(variance.y()), std::sqrt(variance.z())};
-			} else if constexpr (std::is_same_v<StatType, Vector<4, float>>) {
-				return Vector<4, float>{std::sqrt(variance[0]), std::sqrt(variance[1]), std::sqrt(variance[2]),
-				                        std::sqrt(variance[3])};
-			}
+		}
+
+		// If-statement below all handle Vector types.
+		const auto variance = getVariance();
+
+		if constexpr (std::is_same_v<StatType, Vector<2, float>>) {
+			return Vector<2, float>{std::sqrt(variance.x()), std::sqrt(variance.y())};
+		}
+
+		if constexpr (std::is_same_v<StatType, Vector<3, float>>) {
+			return Vector<3, float>{std::sqrt(variance.x()), std::sqrt(variance.y()), std::sqrt(variance.z())};
+		}
+
+		if constexpr (std::is_same_v<StatType, Vector<4, float>>) {
+			return Vector<4, float>{std::sqrt(variance[0]), std::sqrt(variance[1]), std::sqrt(variance[2]),
+			                        std::sqrt(variance[3])};
 		}
 	}
 
-	auto getMeanAndStdDev() const
-	{
-		return std::make_pair(getMean(), getStdDev());
-	}
+	auto getMeanAndStdDev() const { return std::make_pair(getMean(), getStdDev()); }
 
 private:
 	size_t counter{0};

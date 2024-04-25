@@ -1,4 +1,4 @@
-// Copyright 2023 Robotec.AI
+// Copyright 2024 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,14 +40,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 	objectStates.clear(); // TODO(Pawel): Remove this when we start working on tracking.
 
-	struct TrackedObject
-	{
-		Vec3f position;
-		float radialSpeed;
-	};
-	std::vector<TrackedObject> trackedObjects;
-	std::vector<int> objectIndexLookup(detectionsCount, -1);
-
+	// Top level in this list is for objects. Bottom level is for detections that belong to specific objects. Below is an initialization of a helper
+	// structure for region growing, which starts with a while-loop.
 	std::list<std::list<int>> objectIndices;
 	for (auto i = 0; i < detectionsCount; ++i) {
 		objectIndices.emplace_back(1, i);

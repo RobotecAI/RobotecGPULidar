@@ -608,7 +608,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Invalid = 255
 	};
 
-	struct Probabilities
+	struct ClassificationProbabilities
 	{
 		float existence{100.0f};
 		uint8_t classCar{0};
@@ -627,7 +627,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		uint32_t creationTime{0};
 		ObjectStatus objectStatus{ObjectStatus::Invalid};
 		MovementStatus movementStatus{MovementStatus::Invalid};
-		Probabilities probabilities{};
+		ClassificationProbabilities classificationProbabilities{};
 
 		RunningStats<Vec3f> position{};
 		RunningStats<float> orientation{};
