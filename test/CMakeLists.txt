@@ -26,6 +26,7 @@ set(RGL_TEST_FILES
     src/graph/nodes/GaussianNoiseDistanceNodeTest.cpp
     src/graph/nodes/RaytraceNodeTest.cpp
     src/graph/nodes/RadarPostprocessPointsNodeTest.cpp
+    src/graph/nodes/RadarTrackObjectsNodeTest.cpp
     src/graph/nodes/SetRingIdsRaysNodeTest.cpp
     src/graph/nodes/SetTimeOffsetsRaysNodeTest.cpp
     src/graph/nodes/SpatialMergePointsNodeTest.cpp

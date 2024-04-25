@@ -30,6 +30,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
+#include <math/RuningStats.hpp>
 #include <gpu/MultiReturn.hpp>
 
 
@@ -586,6 +587,95 @@ private:
 		Vector<2, Field<RADIAL_SPEED_F32>::type> minMaxRadialSpeed;
 		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
 	};
+};
+
+struct RadarTrackObjectsNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<RadarTrackObjectsNode>;
+
+	enum class ObjectStatus : uint8_t
+	{
+		Measured = 0,
+		New = 1,
+		Predicted = 2,
+		Invalid = 255
+	};
+
+	enum class MovementStatus : uint8_t
+	{
+		Moved = 0,
+		Stationary = 1,
+		Invalid = 255
+	};
+
+	struct ClassificationProbabilities
+	{
+		float existence{100.0f};
+		uint8_t classCar{0};
+		uint8_t classTruck{0};
+		uint8_t classMotorcycle{0};
+		uint8_t classBicycle{0};
+		uint8_t classPedestrian{0};
+		uint8_t classAnimal{0};
+		uint8_t classHazard{0};
+	};
+
+	struct ObjectState
+	{
+		uint32_t id{0};
+		uint32_t framesCount{0};
+		uint32_t creationTime{0};
+		ObjectStatus objectStatus{ObjectStatus::Invalid};
+		MovementStatus movementStatus{MovementStatus::Invalid};
+		ClassificationProbabilities classificationProbabilities{};
+
+		RunningStats<Vec3f> position{};
+		RunningStats<float> orientation{};
+		RunningStats<Vec2f> absVelocity{};
+		RunningStats<Vec2f> relVelocity{};
+		RunningStats<Vec2f> absAccel{};
+		RunningStats<Vec2f> relAccel{};
+		RunningStats<float> orientationRate{};
+		RunningStats<float> length{};
+		RunningStats<float> width{};
+	};
+
+	RadarTrackObjectsNode();
+
+	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
+	                   float radialSpeedThreshold);
+
+	// Node
+	void validateImpl() override;
+	void enqueueExecImpl() override;
+
+	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
+
+	// Node requirements
+	std::vector<rgl_field_t> getRequiredFieldList() const override;
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return fieldData.at(field); }
+	size_t getWidth() const override { return fieldData.empty() ? 0 : fieldData.begin()->second->getCount(); }
+	size_t getHeight() const override { return 1; } // In fact, this will be only a 1-dimensional array.
+
+	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
+
+private:
+	std::list<ObjectState> objectStates;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+
+	float distanceThreshold;
+	float azimuthThreshold;
+	float elevationThreshold;
+	float radialSpeedThreshold;
+
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
+	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
+	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthHostPtr = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
+	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationHostPtr = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
+	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
+	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
 };
 
 struct FilterGroundPointsNode : IPointsNodeSingleInput
