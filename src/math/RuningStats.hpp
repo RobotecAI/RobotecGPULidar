@@ -35,7 +35,10 @@ public:
 		StatType delta = sample - mean;
 		mean += delta / counter;
 		m2 += delta * (sample - mean);
+		lastSample = sample;
 	}
+
+	StatType getLastSample() const { return lastSample; }
 
 	StatType getMean() const { return mean; }
 
@@ -71,4 +74,5 @@ private:
 	size_t counter{0};
 	StatType mean{0};
 	StatType m2{0};
+	StatType lastSample{0};
 };
