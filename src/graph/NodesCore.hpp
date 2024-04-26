@@ -30,7 +30,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
-#include <math/RuningStats.hpp>
+#include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
 
 
