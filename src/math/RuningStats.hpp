@@ -29,10 +29,10 @@ public:
 		return stats;
 	}
 
-	void addSample(StatType sample)
+	void addSample(const StatType& sample)
 	{
 		++counter;
-		StatType delta = sample - mean;
+		const StatType delta = sample - mean;
 		mean += delta / counter;
 		m2 += delta * (sample - mean);
 		lastSample = sample;
