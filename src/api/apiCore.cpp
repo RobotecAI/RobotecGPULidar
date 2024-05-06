@@ -936,6 +936,28 @@ void TapeCore::tape_node_raytrace_configure_non_hits(const YAML::Node& yamlNode,
 	rgl_node_raytrace_configure_non_hits(node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
 }
 
+RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_mask(node={}, rays_mask={}, rays_count={})", repr(node), repr(rays_mask, rays_count),
+		            rays_count);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(rays_mask != nullptr);
+		CHECK_ARG(rays_count > 0);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setNonHitsMask(rays_mask, rays_count);
+	});
+	TAPE_HOOK(node, TAPE_ARRAY(rays_mask, rays_count), rays_count);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_mask(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_mask(node, state.getPtr<const int8_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
+}
+
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	auto status = rglSafeCall([&]() {
