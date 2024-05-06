@@ -714,6 +714,15 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float
 RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count);
 
 /**
+ * Modifies RaytraceNode to set beam divergence.
+ * Beam divergence is used to calculate the beam width at the distance of hit point.
+ * Setting beam divergence > 0.0f is required to use query for multi-return results.
+ * @param node RaytraceNode to modify.
+ * @param beamDivergence Beam divergence in radians.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float beamDivergence);
+
+/**
  * Creates or modifies FormatPointsNode.
  * The Node converts internal representation into a binary format defined by the `fields` array.
  * Note: It is the user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
