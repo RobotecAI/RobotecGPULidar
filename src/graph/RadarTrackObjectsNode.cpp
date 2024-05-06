@@ -26,8 +26,6 @@ void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuth
 	this->radialSpeedThreshold = radialSpeedThreshold;
 }
 
-void RadarTrackObjectsNode::validateImpl() { IPointsNodeSingleInput::validateImpl(); }
-
 void RadarTrackObjectsNode::enqueueExecImpl()
 {
 	xyzHostPtr->copyFrom(input->getFieldData(XYZ_VEC3_F32));

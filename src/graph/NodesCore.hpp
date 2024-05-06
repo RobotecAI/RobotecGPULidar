@@ -649,13 +649,10 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
 	                   float radialSpeedThreshold);
 
-	// Node
-	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 
-	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	// Data getters
