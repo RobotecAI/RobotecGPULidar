@@ -1,4 +1,4 @@
-// Copyright 2023 Robotec.AI
+// Copyright 2024 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,13 +29,16 @@ public:
 		return stats;
 	}
 
-	void addSample(StatType sample)
+	void addSample(const StatType& sample)
 	{
 		++counter;
-		StatType delta = sample - mean;
+		const StatType delta = sample - mean;
 		mean += delta / counter;
 		m2 += delta * (sample - mean);
+		lastSample = sample;
 	}
+
+	StatType getLastSample() const { return lastSample; }
 
 	StatType getMean() const { return mean; }
 
@@ -71,4 +74,5 @@ private:
 	size_t counter{0};
 	StatType mean{0};
 	StatType m2{0};
+	StatType lastSample{0};
 };

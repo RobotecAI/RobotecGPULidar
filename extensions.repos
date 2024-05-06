@@ -2,7 +2,7 @@ repositories:
   extensions/udp:
     type: git
     url: git@github.com:RobotecAI/RGL-extension-udp.git
-    version: develop
+    version: feature/q2-features
 
   extensions/snow:
     type: git
