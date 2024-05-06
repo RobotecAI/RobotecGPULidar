@@ -42,6 +42,8 @@ struct RaytraceRequestContext
 	const float* rayTimeOffsetsMs;
 	size_t rayTimeOffsetsCount;
 
+	const int8_t* rayMask;
+
 	OptixTraversableHandle scene;
 	double sceneTime;
 	float sceneDeltaTime;

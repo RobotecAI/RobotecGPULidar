@@ -223,7 +223,6 @@ __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vec
 	outNonGround[tid] = normalUpAngle > ground_angle_threshold;
 }
 
-
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {

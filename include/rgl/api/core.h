@@ -721,6 +721,15 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, boo
 RGL_API rgl_status_t rgl_node_raytrace_configure_non_hits(rgl_node_t node, float nearDistance, float farDistance);
 
 /**
+ * Modifies RaytraceNode to apply mask for non-hit values.
+ * Masked rays will be non-hits and will have the default non-hit values no matter of raytracing result.
+ * @param node RaytraceNode to modify.
+ * @param rays_mask Pointer to the array of int32_t. 1 means point is hit, 0 means point is non-hit.
+ * @param rays_count Number of elements in the `points_mask` array.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count);
+
+/**
  * Creates or modifies FormatPointsNode.
  * The Node converts internal representation into a binary format defined by the `fields` array.
  * Note: It is the user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).
