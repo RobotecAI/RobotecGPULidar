@@ -30,7 +30,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
-#include <math/RuningStats.hpp>
+#include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
 
 
@@ -621,6 +621,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		uint8_t classPedestrian{0};
 		uint8_t classAnimal{0};
 		uint8_t classHazard{0};
+		uint8_t classUnknown{0};
 	};
 
 	struct ObjectState
