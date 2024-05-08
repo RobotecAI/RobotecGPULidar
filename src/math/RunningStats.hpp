@@ -14,9 +14,21 @@
 
 #pragma once
 
+template<template <int, typename> class Base, class Checked>
+struct is_specialization_of : std::false_type { };
+
+template<template <int, typename> class Base, int dim, typename T>
+struct is_specialization_of<Base, Base<dim, T>> : std::true_type { };
+
+template <typename>
+inline constexpr bool is_floating_point_vector_v = false;
+
+template <template <int, typename> class Base, int dim, typename T>
+inline constexpr bool is_floating_point_vector_v<Base<dim, T>> = std::is_floating_point_v<T> && is_specialization_of<Base, Vector<dim, T>>::value;
+
 // Integral types here generally make no sense in terms of mean and std dev.
-// I would force users to use floats, to eliminate possible errors.
-template<typename StatType, typename = std::enable_if_t<!std::is_integral_v<StatType>>>
+// Floating point types and any Vector specializations using floating point types are acceptable.
+template<typename StatType, typename = std::enable_if_t<std::is_floating_point_v<StatType> || is_floating_point_vector_v<StatType>>>
 class RunningStats
 {
 public:
