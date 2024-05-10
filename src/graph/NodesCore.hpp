@@ -627,8 +627,6 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	struct ObjectState
 	{
-		Vec3f PredictPosition(uint32_t timeMs) const;
-
 		uint32_t id{0};
 		uint32_t creationTime{0};
 		uint32_t lastUpdateTime{0};
@@ -649,8 +647,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	RadarTrackObjectsNode();
 
-	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
-	                   float radialSpeedThreshold);
+	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold);
 
 	void enqueueExecImpl() override;
 
@@ -666,8 +663,10 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
-	void CreateObjectState(const Vec3f& position, uint32_t timeMs);
-	void UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus newStatus, uint32_t timeMs);
+	Vec3f PredictObjectPosition(const ObjectState& objectState, uint32_t deltaTimeMs) const;
+	void CreateObjectState(const Vec3f& position, uint32_t currentTimeMs);
+	void UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus newStatus, uint32_t currentTimeMs,
+	                       uint32_t deltaTimeMs);
 	void UpdateOutputData();
 
 	std::list<ObjectState> objectStates;
@@ -681,9 +680,9 @@ private:
 	float elevationThreshold;
 	float radialSpeedThreshold;
 
-	float predictionSensitivity = 1.0f; // Max distance between predicted and newly detected position to match objects between frames.
-	float movementSensitivity =
-	    0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
+	float predictionSensitivity =
+	    1.0f; // Max distance between predicted and newly detected position to match objects between frames.
+	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();

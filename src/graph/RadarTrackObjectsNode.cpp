@@ -15,14 +15,6 @@
 #include <graph/NodesCore.hpp>
 #include <scene/Scene.hpp>
 
-Vec3f RadarTrackObjectsNode::ObjectState::PredictPosition(uint32_t timeMs) const
-{
-	// TODO(Pawel): Consider also including acceleration here - modify velocity accordingly.
-	assert(timeMs > lastUpdateTime);
-	const auto predictedMovement = absVelocity.getLastSample() * 0.001f *
-	                               (static_cast<float>(timeMs) - static_cast<float>(lastUpdateTime));
-	return position.getLastSample() + Vec3f{predictedMovement.x(), predictedMovement.y(), 0.0f};
-}
 
 // TODO(Pawel): Consider adding more output fields here, maybe usable for ROS 2 message or visualization. Consider also returning detections, when object states are returned through public method.
 RadarTrackObjectsNode::RadarTrackObjectsNode()
@@ -106,12 +98,15 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		objectCenter *= 1 / static_cast<float>(separateObjectIndices.size());
 	}
 
+	const auto currentTime = static_cast<uint32_t>(Scene::instance().getTime().value_or(Time::zero()).asMilliseconds());
+	const auto deltaTime = currentTime -
+	                       static_cast<uint32_t>(Scene::instance().getPrevTime().value_or(Time::zero()).asMilliseconds());
+
 	// Check object list from previous frame and try to find matches with newly detected objects.
 	// Later, for newly detected objects without match, create new object state.
-	const auto currentTime = static_cast<uint32_t>(Scene::instance().getTime().value_or(Time::zero()).asMilliseconds());
 	for (auto objectStateIt = objectStates.begin(); objectStateIt != objectStates.end();) {
 		auto& objectState = *objectStateIt;
-		const auto predictedPosition = objectState.PredictPosition(currentTime);
+		const auto predictedPosition = PredictObjectPosition(objectState, deltaTime);
 		const auto closestObjectPositionIt = std::min_element(
 		    newObjectPositions.cbegin(), newObjectPositions.cend(), [&](const Vec3f& a, const Vec3f& b) {
 			    return (a - predictedPosition).lengthSquared() < (b - predictedPosition).lengthSquared();
@@ -121,7 +116,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// Update object from previous frame to newly detected object position and remove this positions for next checkouts.
 		if (const auto& closestObjectPosition = *closestObjectPositionIt;
 		    (predictedPosition - closestObjectPosition).length() < predictionSensitivity) {
-			UpdateObjectState(objectState, closestObjectPosition, ObjectStatus::Measured, currentTime);
+			UpdateObjectState(objectState, closestObjectPosition, ObjectStatus::Measured, currentTime, deltaTime);
 			newObjectPositions.erase(closestObjectPositionIt);
 			++objectStateIt;
 			continue;
@@ -131,7 +126,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// (not predicted, so objectStatus was as in the condition below), then update it based on prediction (changing its objectStatus
 		// to ObjectStatus::Predicted).
 		if (objectState.objectStatus == ObjectStatus::New || objectState.objectStatus == ObjectStatus::Measured) {
-			UpdateObjectState(objectState, predictedPosition, ObjectStatus::Predicted, currentTime);
+			UpdateObjectState(objectState, predictedPosition, ObjectStatus::Predicted, currentTime, deltaTime);
 			++objectStateIt;
 			continue;
 		}
@@ -147,11 +142,11 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		CreateObjectState(newObjectPosition, currentTime);
 	}
 
-//	printf("Object states count: %lu (%u)\n", objectStates.size(), currentTime);
-//	for (const auto& objectState : objectStates) {
-//		printf("\t%u: (%.2f, %.2f, %.2f)\n", objectState.id, objectState.position.getLastSample().x(),
-//		       objectState.position.getLastSample().y(), objectState.position.getLastSample().z());
-//	}
+	//	printf("Object states count: %lu (%u)\n", objectStates.size(), currentTime);
+	//	for (const auto& objectState : objectStates) {
+	//		printf("\t%u: (%.2f, %.2f, %.2f)\n", objectState.id, objectState.position.getLastSample().x(),
+	//		       objectState.position.getLastSample().y(), objectState.position.getLastSample().z());
+	//	}
 	UpdateOutputData();
 }
 
@@ -160,7 +155,19 @@ std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
 }
 
-void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t timeMs)
+Vec3f RadarTrackObjectsNode::PredictObjectPosition(const ObjectState& objectState, uint32_t deltaTimeMs) const
+{
+	assert(objectState.position.getSameplesCount() > 0);
+	const auto deltaTimeSec = 1e-3f * static_cast<float>(deltaTimeMs);
+	const auto assumedVelocity = objectState.absAccel.getSameplesCount() > 0 ?
+	                                 (objectState.absVelocity.getLastSample() +
+	                                  deltaTimeSec * objectState.absAccel.getLastSample()) :
+	                                 objectState.absVelocity.getLastSample();
+	const auto predictedMovement = deltaTimeSec * assumedVelocity;
+	return objectState.position.getLastSample() + Vec3f{predictedMovement.x(), predictedMovement.y(), 0.0f};
+}
+
+void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t currentTimeMs)
 {
 	auto& objectState = objectStates.emplace_back();
 	if (objectIDPoll.empty()) {
@@ -171,8 +178,8 @@ void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t ti
 		objectIDPoll.pop();
 	}
 
-	objectState.creationTime = timeMs;
-	objectState.lastUpdateTime = timeMs;
+	objectState.creationTime = currentTimeMs;
+	objectState.lastUpdateTime = currentTimeMs;
 	objectState.objectStatus = ObjectStatus::New;
 
 	// TODO(Pawel): Consider object radial speed (from detections) as a way to decide here.
@@ -189,11 +196,11 @@ void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t ti
 }
 
 void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus objectStatus,
-                                              uint32_t timeMs)
+                                              uint32_t currentTimeMs, uint32_t deltaTimeMs)
 {
 	const auto displacement = newPosition - objectState.position.getLastSample();
-	const auto deltaTimeInv = static_cast<float>(timeMs - objectState.lastUpdateTime);
-	const auto absVelocity = Vec2f{displacement.x() * deltaTimeInv, displacement.y() * deltaTimeInv};
+	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
+	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
 
 	// TODO(Pawel): Note that if this will be second frame when this object exists (first detected last frame, now updated), then
 	// this will work incorrectly - velocity from previous frame will be 0.0f (not possible to determine for newly created objects).
@@ -201,7 +208,7 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	const auto absAccel = Vec2f{absVelocity.x() - objectState.absVelocity.getLastSample().x(),
 	                            absVelocity.y() - objectState.absVelocity.getLastSample().y()};
 
-	objectState.lastUpdateTime = timeMs;
+	objectState.lastUpdateTime = currentTimeMs;
 	objectState.objectStatus = objectStatus;
 	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
 	                                                                           MovementStatus::Stationary;

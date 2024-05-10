@@ -56,6 +56,8 @@ public:
 		m2 += delta * (lastSample - mean);
 	}
 
+	size_t getSameplesCount() const { return counter; }
+
 	StatType getLastSample() const { return lastSample; }
 
 	StatType getMean() const { return mean; }
@@ -110,6 +112,8 @@ public:
 			sumCov[2] = sumCov.z() + prevDelta.z() * currentDelta.x(); // covariance zx
 		}
 	}
+
+	size_t getSameplesCount() const { return counter; }
 
 	const StatType& getLastSample() const { return lastSample; }
 
