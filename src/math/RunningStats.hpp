@@ -111,7 +111,7 @@ public:
 		}
 	}
 
-	StatType getLastSample() const { return lastSample; }
+	const StatType& getLastSample() const { return lastSample; }
 
 	StatType getMean() const { return mean; }
 
