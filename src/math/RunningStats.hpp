@@ -102,12 +102,12 @@ public:
 		m2 += prevDelta * currentDelta;
 
 		if constexpr (dim >= 2) {
-			sumCov[0] = sumCov.x() + prevDelta.x() * currentDelta.y();
+			sumCov[0] = sumCov.x() + prevDelta.x() * currentDelta.y(); // covariance xy
 		}
 
 		if constexpr (dim >= 3) {
-			sumCov[1] = sumCov.y() + prevDelta.y() * currentDelta.z();
-			sumCov[2] = sumCov.z() + prevDelta.z() * currentDelta.x();
+			sumCov[1] = sumCov.y() + prevDelta.y() * currentDelta.z(); // covariance yz
+			sumCov[2] = sumCov.z() + prevDelta.z() * currentDelta.x(); // covariance zx
 		}
 	}
 
