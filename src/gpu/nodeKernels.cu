@@ -223,6 +223,34 @@ __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vec
 	outNonGround[tid] = normalUpAngle > ground_angle_threshold;
 }
 
+__global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
+                                             MultiReturnPointers first, MultiReturnPointers last)
+{
+	LIMIT(beamCount);
+
+	const auto beamIdx = tid;
+	int firstIdx = 0;
+	int lastIdx = 0;
+	for (int sampleIdx = 0; sampleIdx < samplesPerBeam; ++sampleIdx) {
+		if (beamSamples.isHit[beamIdx * samplesPerBeam + sampleIdx] == 0) {
+			continue;
+		}
+		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] <
+		    beamSamples.distance[beamIdx * samplesPerBeam + firstIdx]) {
+			firstIdx = sampleIdx;
+		}
+		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] >
+		    beamSamples.distance[beamIdx * samplesPerBeam + lastIdx]) {
+			lastIdx = sampleIdx;
+		}
+	}
+	first.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + firstIdx];
+	first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
+	last.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + lastIdx];
+	last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
+}
+
+
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {
@@ -293,4 +321,10 @@ void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthSt
 {
 	run(kRadarComputeEnergy, stream, count, rayAzimuthStepRad, rayElevationStepRad, freq, lookAtOriginTransform, rayPose,
 	    hitDist, hitNorm, hitPos, outBUBRFactor);
+}
+
+void gpuProcessBeamSamplesFirstLast(cudaStream_t stream, size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
+                                    MultiReturnPointers first, MultiReturnPointers last)
+{
+	run(kProcessBeamSamplesFirstLast, stream, beamCount, samplesPerBeam, beamSamples, first, last);
 }

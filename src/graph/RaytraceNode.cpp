@@ -133,6 +133,9 @@ void RaytraceNode::enqueueExecImpl()
 	std::size_t pipelineArgsSize = requestCtxDev->getSizeOf() * requestCtxDev->getCount();
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
 	                        launchDims.x, launchDims.y, launchDims.y));
+
+	gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
+	                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers());
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)

@@ -22,6 +22,7 @@
 #include <math/Mat3x4f.hpp>
 #include <RGLFields.hpp>
 #include <thrust/complex.h>
+#include <gpu/MultiReturn.hpp>
 
 /*
  * The following functions are asynchronous!
@@ -51,3 +52,5 @@ void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthSt
                            Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                            const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
                            const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor);
+void gpuProcessBeamSamplesFirstLast(cudaStream_t stream, size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
+                                    MultiReturnPointers first, MultiReturnPointers last);
