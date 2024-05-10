@@ -198,6 +198,7 @@ void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t cu
 void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus objectStatus,
                                               uint32_t currentTimeMs, uint32_t deltaTimeMs)
 {
+	assert(deltaTimeMs > 0);
 	const auto displacement = newPosition - objectState.position.getLastSample();
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
 	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
@@ -205,8 +206,7 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	// TODO(Pawel): Note that if this will be second frame when this object exists (first detected last frame, now updated), then
 	// this will work incorrectly - velocity from previous frame will be 0.0f (not possible to determine for newly created objects).
 	// There may be a need to add some frame counting for this (lifetime of objects).
-	const auto absAccel = Vec2f{absVelocity.x() - objectState.absVelocity.getLastSample().x(),
-	                            absVelocity.y() - objectState.absVelocity.getLastSample().y()};
+	const auto absAccel = absVelocity - objectState.absVelocity.getLastSample();
 
 	objectState.lastUpdateTime = currentTimeMs;
 	objectState.objectStatus = objectStatus;
@@ -234,6 +234,7 @@ void RadarTrackObjectsNode::UpdateOutputData()
 
 	int objectIndex = 0;
 	for (const auto& objectState : objectStates) {
+		assert(objectState.id <= std::numeric_limits<Field<ENTITY_ID_I32>::type>::max());
 		xyzPtr[objectIndex] = objectState.position.getLastSample();
 		idPtr[objectIndex] = objectState.id;
 		++objectIndex;
