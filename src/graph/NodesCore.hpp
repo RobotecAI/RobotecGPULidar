@@ -22,6 +22,7 @@
 #include <ranges>
 #include <algorithm>
 #include <random>
+#include <queue>
 #include <curand_kernel.h>
 
 #include <graph/Node.hpp>
@@ -626,9 +627,11 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	struct ObjectState
 	{
+		Vec3f PredictPosition(uint32_t timeMs) const;
+
 		uint32_t id{0};
-		uint32_t framesCount{0};
 		uint32_t creationTime{0};
+		uint32_t lastUpdateTime{0};
 		ObjectStatus objectStatus{ObjectStatus::Invalid};
 		MovementStatus movementStatus{MovementStatus::Invalid};
 		ClassificationProbabilities classificationProbabilities{};
@@ -663,13 +666,24 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
+	void CreateObjectState(const Vec3f& position, uint32_t timeMs);
+	void UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus newStatus, uint32_t timeMs);
+	void UpdateOutputData();
+
 	std::list<ObjectState> objectStates;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+
+	uint32_t objectIDCounter = 0; // Not static - I assume each ObjectTrackingNode is like a separate radar.
+	std::queue<uint32_t> objectIDPoll;
 
 	float distanceThreshold;
 	float azimuthThreshold;
 	float elevationThreshold;
 	float radialSpeedThreshold;
+
+	float predictionSensitivity = 1.0f; // Max distance between predicted and newly detected position to match objects between frames.
+	float movementSensitivity =
+	    0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();

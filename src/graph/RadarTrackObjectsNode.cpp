@@ -15,7 +15,21 @@
 #include <graph/NodesCore.hpp>
 #include <scene/Scene.hpp>
 
-RadarTrackObjectsNode::RadarTrackObjectsNode() { fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32)); }
+Vec3f RadarTrackObjectsNode::ObjectState::PredictPosition(uint32_t timeMs) const
+{
+	// TODO(Pawel): Consider also including acceleration here - modify velocity accordingly.
+	assert(timeMs > lastUpdateTime);
+	const auto predictedMovement = absVelocity.getLastSample() * 0.001f *
+	                               (static_cast<float>(timeMs) - static_cast<float>(lastUpdateTime));
+	return position.getLastSample() + Vec3f{predictedMovement.x(), predictedMovement.y(), 0.0f};
+}
+
+// TODO(Pawel): Consider adding more output fields here, maybe usable for ROS 2 message or visualization. Consider also returning detections, when object states are returned through public method.
+RadarTrackObjectsNode::RadarTrackObjectsNode()
+{
+	fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32));
+	fieldData.emplace(ENTITY_ID_I32, createArray<HostPinnedArray>(ENTITY_ID_I32));
+}
 
 void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
                                           float radialSpeedThreshold)
@@ -34,14 +48,10 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	elevationHostPtr->copyFrom(input->getFieldData(ELEVATION_F32));
 	radialSpeedHostPtr->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
 
-	const int detectionsCount = input->getPointCount();
-
-	objectStates.clear(); // TODO(Pawel): Remove this when we start working on tracking.
-
 	// Top level in this list is for objects. Bottom level is for detections that belong to specific objects. Below is an initialization of a helper
 	// structure for region growing, which starts with a while-loop.
 	std::list<std::list<int>> objectIndices;
-	for (auto i = 0; i < detectionsCount; ++i) {
+	for (int i = 0; i < input->getPointCount(); ++i) {
 		objectIndices.emplace_back(1, i);
 	}
 
@@ -86,41 +96,139 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		}
 	}
 
-	fieldData[XYZ_VEC3_F32]->resize(objectIndices.size(), true, false);
-	auto* xyzPtr = static_cast<Vec3f*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
-	uint32_t objectIndex = 0;
-
+	// Calculate positions of objects detected in current frame.
+	std::list<Vec3f> newObjectPositions;
 	for (const auto& separateObjectIndices : objectIndices) {
-		auto objectCenter = Vec3f(0.0f, 0.0f, 0.0f);
-		for (const auto index : separateObjectIndices) {
-			objectCenter += xyzHostPtr->at(index);
+		auto& objectCenter = newObjectPositions.emplace_back(0.0f, 0.0f, 0.0f);
+		for (const auto detectionIndex : separateObjectIndices) {
+			objectCenter += xyzHostPtr->at(detectionIndex);
+		}
+		objectCenter *= 1 / static_cast<float>(separateObjectIndices.size());
+	}
+
+	// Check object list from previous frame and try to find matches with newly detected objects.
+	// Later, for newly detected objects without match, create new object state.
+	const auto currentTime = static_cast<uint32_t>(Scene::instance().getTime().value_or(Time::zero()).asMilliseconds());
+	for (auto objectStateIt = objectStates.begin(); objectStateIt != objectStates.end();) {
+		auto& objectState = *objectStateIt;
+		const auto predictedPosition = objectState.PredictPosition(currentTime);
+		const auto closestObjectPositionIt = std::min_element(
+		    newObjectPositions.cbegin(), newObjectPositions.cend(), [&](const Vec3f& a, const Vec3f& b) {
+			    return (a - predictedPosition).lengthSquared() < (b - predictedPosition).lengthSquared();
+		    });
+
+		// There is a newly detected object (current frame) that matches the predicted position of one of objects from previous frame.
+		// Update object from previous frame to newly detected object position and remove this positions for next checkouts.
+		if (const auto& closestObjectPosition = *closestObjectPositionIt;
+		    (predictedPosition - closestObjectPosition).length() < predictionSensitivity) {
+			UpdateObjectState(objectState, closestObjectPosition, ObjectStatus::Measured, currentTime);
+			newObjectPositions.erase(closestObjectPositionIt);
+			++objectStateIt;
+			continue;
 		}
 
-		auto& objectState = objectStates.emplace_back();
-		objectState.id = objectIndex++;
-		objectState.framesCount = 1; // This will be updated with object tracking introduction.
-		objectState.creationTime = static_cast<uint32_t>(Scene::instance().getTime().value_or(Time::zero()).asMilliseconds());
-		objectState.objectStatus = ObjectStatus::New;
-		objectState.movementStatus =
-		    MovementStatus::Invalid; // Newly created object does not have velocity data (no 'previous frame' exists).
-		objectState.position.addSample(objectCenter / static_cast<float>(separateObjectIndices.size()));
+		// There is no match for objectState in newly detected object positions. If that object was already detected in previous frame
+		// (not predicted, so objectStatus was as in the condition below), then update it based on prediction (changing its objectStatus
+		// to ObjectStatus::Predicted).
+		if (objectState.objectStatus == ObjectStatus::New || objectState.objectStatus == ObjectStatus::Measured) {
+			UpdateObjectState(objectState, predictedPosition, ObjectStatus::Predicted, currentTime);
+			++objectStateIt;
+			continue;
+		}
 
-		// TODO(Pawel): This will require modyfing radar postprocess node - I will require some bounding box here.
-		objectState.orientation.addSample(0.0f);
-		objectState.absVelocity.addSample(Vec2f(0.0f, 0.0f));
-		objectState.relVelocity.addSample(Vec2f(0.0f, 0.0f));
-		objectState.absAccel.addSample(Vec2f(0.0f, 0.0f));
-		objectState.relAccel.addSample(Vec2f(0.0f, 0.0f));
-		objectState.orientationRate.addSample(0.0f);
-		objectState.length.addSample(0.0f);
-		objectState.width.addSample(0.0f);
-
-		// TODO(Pawel): Be careful with indexing here, when working on tracking - id will not match the index for not new objects.
-		xyzPtr[objectState.id] = 1 / static_cast<float>(separateObjectIndices.size()) * objectCenter;
+		// objectState do not have a match in newly detected object positions and it was also on ObjectStatus::Predicted last frame -
+		// not this object is considered lost and is removed from object list. Also remove its ID to poll.
+		objectIDPoll.push(objectState.id);
+		objectStateIt = objectStates.erase(objectStateIt);
 	}
+
+	// All newly detected object position that do not have a match in previous frame - create new object state.
+	for (const auto& newObjectPosition : newObjectPositions) {
+		CreateObjectState(newObjectPosition, currentTime);
+	}
+
+//	printf("Object states count: %lu (%u)\n", objectStates.size(), currentTime);
+//	for (const auto& objectState : objectStates) {
+//		printf("\t%u: (%.2f, %.2f, %.2f)\n", objectState.id, objectState.position.getLastSample().x(),
+//		       objectState.position.getLastSample().y(), objectState.position.getLastSample().z());
+//	}
+	UpdateOutputData();
 }
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 {
 	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
+}
+
+void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t timeMs)
+{
+	auto& objectState = objectStates.emplace_back();
+	if (objectIDPoll.empty()) {
+		// Overflow is technically acceptable below, but for > 4,294,967,295 objects it may cause having repeated IDs.
+		objectState.id = objectIDCounter++;
+	} else {
+		objectState.id = objectIDPoll.front();
+		objectIDPoll.pop();
+	}
+
+	objectState.creationTime = timeMs;
+	objectState.lastUpdateTime = timeMs;
+	objectState.objectStatus = ObjectStatus::New;
+
+	// TODO(Pawel): Consider object radial speed (from detections) as a way to decide here.
+	objectState.movementStatus = MovementStatus::Invalid; // No good way to determine it.
+
+	// I do not add velocity or acceleration 0.0f samples because this would affect mean and std dev calculation. However, the
+	// number of samples between their stats and position will not match.
+	objectState.position.addSample(position);
+
+	// TODO(Pawel): This will have to be determined together with detection bounding boxes calculation.
+	objectState.orientation.addSample(0.0f);
+	objectState.length.addSample(0.0f);
+	objectState.width.addSample(0.0f);
+}
+
+void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus objectStatus,
+                                              uint32_t timeMs)
+{
+	const auto displacement = newPosition - objectState.position.getLastSample();
+	const auto deltaTimeInv = static_cast<float>(timeMs - objectState.lastUpdateTime);
+	const auto absVelocity = Vec2f{displacement.x() * deltaTimeInv, displacement.y() * deltaTimeInv};
+
+	// TODO(Pawel): Note that if this will be second frame when this object exists (first detected last frame, now updated), then
+	// this will work incorrectly - velocity from previous frame will be 0.0f (not possible to determine for newly created objects).
+	// There may be a need to add some frame counting for this (lifetime of objects).
+	const auto absAccel = Vec2f{absVelocity.x() - objectState.absVelocity.getLastSample().x(),
+	                            absVelocity.y() - objectState.absVelocity.getLastSample().y()};
+
+	objectState.lastUpdateTime = timeMs;
+	objectState.objectStatus = objectStatus;
+	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
+	                                                                           MovementStatus::Stationary;
+	objectState.position.addSample(newPosition);
+
+	objectState.orientation.addSample(0.0f); // velocity direction (vector normalized?)?
+	objectState.absVelocity.addSample(absVelocity);
+	// objectState.relVelocity.addSample(absVelocity - selfVelocity);
+	objectState.absAccel.addSample(absAccel);
+	// objectState.relAccel.addSample(absAccel - selfAccel);
+	objectState.orientationRate.addSample(0.0f); // change in orientation
+	objectState.length.addSample(0.0f);          // from bbox
+	objectState.width.addSample(0.0f);           // from bbox
+}
+
+void RadarTrackObjectsNode::UpdateOutputData()
+{
+	fieldData[XYZ_VEC3_F32]->resize(objectStates.size(), true, false);
+	auto* xyzPtr = static_cast<Vec3f*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
+
+	fieldData[ENTITY_ID_I32]->resize(objectStates.size(), true, false);
+	auto* idPtr = static_cast<int32_t*>(fieldData[ENTITY_ID_I32]->getRawWritePtr());
+
+	int objectIndex = 0;
+	for (const auto& objectState : objectStates) {
+		xyzPtr[objectIndex] = objectState.position.getLastSample();
+		idPtr[objectIndex] = objectState.id;
+		++objectIndex;
+	}
 }
