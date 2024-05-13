@@ -663,10 +663,10 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
-	Vec3f PredictObjectPosition(const ObjectState& objectState, uint32_t deltaTimeMs) const;
-	void CreateObjectState(const Vec3f& position, uint32_t currentTimeMs);
-	void UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus newStatus, uint32_t currentTimeMs,
-	                       uint32_t deltaTimeMs);
+	Vec3f PredictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
+	void CreateObjectState(const Vec3f& position, double currentTimeMs);
+	void UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus newStatus, double currentTimeMs,
+	                       double deltaTimeMs);
 	void UpdateOutputData();
 
 	std::list<ObjectState> objectStates;
