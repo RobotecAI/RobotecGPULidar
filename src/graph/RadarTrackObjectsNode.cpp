@@ -203,22 +203,23 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
 	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
 
-	// TODO(Pawel): Note that if this will be second frame when this object exists (first detected last frame, now updated), then
-	// this will work incorrectly - velocity from previous frame will be 0.0f (not possible to determine for newly created objects).
-	// There may be a need to add some frame counting for this (lifetime of objects).
-	const auto absAccel = absVelocity - objectState.absVelocity.getLastSample();
-
 	objectState.lastUpdateTime = currentTimeMs;
 	objectState.objectStatus = objectStatus;
 	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
 	                                                                           MovementStatus::Stationary;
 	objectState.position.addSample(newPosition);
-
 	objectState.orientation.addSample(0.0f); // velocity direction (vector normalized?)?
+
+	// There has to be at leas one abs velocity sample from previous frames - in other words, this has to be the third frame to be
+	// able to calculate acceleration (first frame - position, second frame - velocity, third frame - acceleration).
+	if (objectState.absVelocity.getSameplesCount() > 0) {
+		const auto absAccel = (absVelocity - objectState.absVelocity.getLastSample()) * deltaTimeSecInv;
+		objectState.absAccel.addSample(absAccel);
+		// objectState.relAccel.addSample(absAccel - selfAccel);
+	}
+
 	objectState.absVelocity.addSample(absVelocity);
 	// objectState.relVelocity.addSample(absVelocity - selfVelocity);
-	objectState.absAccel.addSample(absAccel);
-	// objectState.relAccel.addSample(absAccel - selfAccel);
 	objectState.orientationRate.addSample(0.0f); // change in orientation
 	objectState.length.addSample(0.0f);          // from bbox
 	objectState.width.addSample(0.0f);           // from bbox
