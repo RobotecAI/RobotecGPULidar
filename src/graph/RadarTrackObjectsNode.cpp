@@ -156,10 +156,10 @@ std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 
 Vec3f RadarTrackObjectsNode::PredictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const
 {
-	assert(objectState.position.getSameplesCount() > 0);
+	assert(objectState.position.getSamplesCount() > 0);
 	assert(deltaTimeMs <= std::numeric_limits<float>::max());
 	const auto deltaTimeSec = 1e-3f * static_cast<float>(deltaTimeMs);
-	const auto assumedVelocity = objectState.absAccel.getSameplesCount() > 0 ?
+	const auto assumedVelocity = objectState.absAccel.getSamplesCount() > 0 ?
 	                                 (objectState.absVelocity.getLastSample() +
 	                                  deltaTimeSec * objectState.absAccel.getLastSample()) :
 	                                 objectState.absVelocity.getLastSample();
@@ -213,7 +213,7 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 
 	// There has to be at leas one abs velocity sample from previous frames - in other words, this has to be the third frame to be
 	// able to calculate acceleration (first frame - position, second frame - velocity, third frame - acceleration).
-	if (objectState.absVelocity.getSameplesCount() > 0) {
+	if (objectState.absVelocity.getSamplesCount() > 0) {
 		const auto absAccel = (absVelocity - objectState.absVelocity.getLastSample()) * deltaTimeSecInv;
 		objectState.absAccel.addSample(absAccel);
 		// objectState.relAccel.addSample(absAccel - selfAccel);
@@ -223,7 +223,7 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 
 	// Behaves similar to acceleration. In order to calculate orientation I need velocity, which can be calculated starting from
 	// the second frame. For this reason, the third frame is the first one when I am able to calculate orientation rate.
-	if (objectState.orientation.getSameplesCount() > 0) {
+	if (objectState.orientation.getSamplesCount() > 0) {
 		objectState.orientationRate.addSample(orientation - objectState.orientation.getLastSample());
 	}
 	objectState.orientation.addSample(orientation);

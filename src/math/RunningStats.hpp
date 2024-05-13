@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "Vector.hpp"
+
 template<template<int, typename> class Base, class Checked>
 struct is_specialization_of : std::false_type
 {};
@@ -56,7 +58,7 @@ public:
 		m2 += delta * (lastSample - mean);
 	}
 
-	size_t getSameplesCount() const { return counter; }
+	size_t getSamplesCount() const { return counter; }
 
 	StatType getLastSample() const { return lastSample; }
 
@@ -113,7 +115,7 @@ public:
 		}
 	}
 
-	size_t getSameplesCount() const { return counter; }
+	size_t getSamplesCount() const { return counter; }
 
 	const StatType& getLastSample() const { return lastSample; }
 
