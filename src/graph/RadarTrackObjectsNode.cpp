@@ -190,7 +190,6 @@ void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, uint32_t cu
 	objectState.position.addSample(position);
 
 	// TODO(Pawel): This will have to be determined together with detection bounding boxes calculation.
-	objectState.orientation.addSample(0.0f);
 	objectState.length.addSample(0.0f);
 	objectState.width.addSample(0.0f);
 }
@@ -202,13 +201,13 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	const auto displacement = newPosition - objectState.position.getLastSample();
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
 	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
+	const auto orientation = atan2(absVelocity.y(), absVelocity.x());
 
 	objectState.lastUpdateTime = currentTimeMs;
 	objectState.objectStatus = objectStatus;
 	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
 	                                                                           MovementStatus::Stationary;
 	objectState.position.addSample(newPosition);
-	objectState.orientation.addSample(0.0f); // velocity direction (vector normalized?)?
 
 	// There has to be at leas one abs velocity sample from previous frames - in other words, this has to be the third frame to be
 	// able to calculate acceleration (first frame - position, second frame - velocity, third frame - acceleration).
@@ -217,10 +216,16 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 		objectState.absAccel.addSample(absAccel);
 		// objectState.relAccel.addSample(absAccel - selfAccel);
 	}
-
 	objectState.absVelocity.addSample(absVelocity);
 	// objectState.relVelocity.addSample(absVelocity - selfVelocity);
-	objectState.orientationRate.addSample(0.0f); // change in orientation
+
+	// Behaves similar to acceleration. In order to calculate orientation I need velocity, which can be calculated starting from
+	// the second frame. For this reason, the third frame is the first one when I am able to calculate orientation rate.
+	if (objectState.orientation.getSameplesCount() > 0) {
+		objectState.orientationRate.addSample(orientation - objectState.orientation.getLastSample());
+	}
+	objectState.orientation.addSample(orientation);
+
 	objectState.length.addSample(0.0f);          // from bbox
 	objectState.width.addSample(0.0f);           // from bbox
 }
