@@ -51,3 +51,25 @@ private:
 	Vector<dim, T> minCorner{0};
 	Vector<dim, T> maxCorner{0};
 };
+
+using Aabb2Df = Aabb<2, float>;
+using Aabb3Df = Aabb<3, float>;
+using Aabb4Df = Aabb<4, float>;
+
+using Aabb2Di = Aabb<2, int>;
+using Aabb3Di = Aabb<3, int>;
+using Aabb4Di = Aabb<4, int>;
+
+static_assert(std::is_trivially_copyable_v<Aabb2Df>);
+static_assert(std::is_trivially_copyable_v<Aabb3Df>);
+static_assert(std::is_trivially_copyable_v<Aabb4Df>);
+static_assert(std::is_standard_layout_v<Aabb2Df>);
+static_assert(std::is_standard_layout_v<Aabb3Df>);
+static_assert(std::is_standard_layout_v<Aabb4Df>);
+
+static_assert(std::is_trivially_copyable_v<Aabb2Di>);
+static_assert(std::is_trivially_copyable_v<Aabb3Di>);
+static_assert(std::is_trivially_copyable_v<Aabb4Di>);
+static_assert(std::is_standard_layout_v<Aabb2Di>);
+static_assert(std::is_standard_layout_v<Aabb3Di>);
+static_assert(std::is_standard_layout_v<Aabb4Di>);
