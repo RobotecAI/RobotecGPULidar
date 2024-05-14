@@ -717,10 +717,11 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int
  * Modifies RaytraceNode to set beam divergence.
  * Beam divergence is used to calculate the beam width at the distance of hit point.
  * Setting beam divergence > 0.0f is required to use query for multi-return results.
+ * Setting beam divergence == 0.0f disables multi-return.
  * @param node RaytraceNode to modify.
  * @param beamDivergence Beam divergence in radians.
  */
-RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float beamDivergence);
+RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float beam_divergence);
 
 /**
  * Creates or modifies FormatPointsNode.
