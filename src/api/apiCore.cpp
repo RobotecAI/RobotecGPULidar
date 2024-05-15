@@ -939,8 +939,8 @@ void TapeCore::tape_node_raytrace_configure_non_hits(const YAML::Node& yamlNode,
 RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_mask(node={}, rays_mask={}, rays_count={})", repr(node), repr(rays_mask, rays_count),
-		            rays_count);
+		RGL_API_LOG("rgl_node_raytrace_configure_mask(node={}, rays_mask={}, rays_count={})", repr(node),
+		            repr(rays_mask, rays_count), rays_count);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(rays_mask != nullptr);
 		CHECK_ARG(rays_count > 0);
@@ -956,6 +956,26 @@ void TapeCore::tape_node_raytrace_configure_mask(const YAML::Node& yamlNode, Pla
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.at(nodeId);
 	rgl_node_raytrace_configure_mask(node, state.getPtr<const int8_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
+}
+
+RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float beam_divergence)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, divergence={})", repr(node), beam_divergence);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(beam_divergence >= 0.0f);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setBeamDivergence(beam_divergence);
+	});
+	TAPE_HOOK(node, beam_divergence);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_beam_divergence(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_beam_divergence(node, yamlNode[1].as<float>());
 }
 
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
