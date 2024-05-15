@@ -244,13 +244,13 @@ __global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBea
 			lastIdx = sampleIdx;
 		}
 	}
-	first.isHit[beamIdx] = firstIdx > 0;
+	first.isHit[beamIdx] = firstIdx >= 0;
 	if (first.isHit[beamIdx]) {
 		first.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + firstIdx];
 		first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
 	}
 
-	last.isHit[beamIdx] = lastIdx > 0;
+	last.isHit[beamIdx] = lastIdx >= 0;
 	if (last.isHit[beamIdx]) {
 		last.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + lastIdx];
 		last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
