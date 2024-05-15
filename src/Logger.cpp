@@ -49,12 +49,11 @@ void Logger::configure(rgl_log_level_t logLevel, std::optional<std::filesystem::
 	}
 
 	mainLogger = std::make_shared<spdlog::logger>("RGL", sinkList.begin(), sinkList.end());
-	mainLogger->set_level(spdlog::level::info); // Print logging configuration as INFO
+	mainLogger->set_level(static_cast<spdlog::level::level_enum>(logLevel));
 	mainLogger->set_pattern("[%c]: %v");
 	mainLogger->info("Logging configured: level={}, file={}, stdout={}",
 	                 spdlog::level::to_string_view(static_cast<spdlog::level::level_enum>(logLevel)),
 	                 logFilePath.has_value() ? logFilePath.value().string() : "(disabled)", useStdout);
 	// https://spdlog.docsforge.com/master/3.custom-formatting/#pattern-flags
 	mainLogger->set_pattern("[%T][%6i us][%l]: %v");
-	mainLogger->set_level(static_cast<spdlog::level::level_enum>(logLevel));
 }
