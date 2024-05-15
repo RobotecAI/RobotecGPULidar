@@ -129,6 +129,7 @@ struct RaytraceNode : IPointsNode
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
+	void setBeamDivergence(float divergence) { beamHalfDivergence = divergence / 2.0f; }
 
 private:
 	IRaysNode::Ptr raysNode;
@@ -140,6 +141,7 @@ private:
 
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
+	float beamHalfDivergence = 0.0f;
 
 	DeviceAsyncArray<int8_t>::Ptr rayMask;
 
@@ -646,8 +648,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	RadarTrackObjectsNode();
 
-	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
-	                   float radialSpeedThreshold);
+	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold);
 
 	// Node
 	void validateImpl() override;
