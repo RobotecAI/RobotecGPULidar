@@ -124,6 +124,8 @@ struct RaytraceNode : IPointsNode
 		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
 	}
 
+	IAnyArray::ConstPtr getFieldDataMultiReturn(rgl_field_t field, rgl_return_type_t);
+
 	// RaytraceNode specific
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
@@ -187,6 +189,33 @@ private:
 
 	std::set<rgl_field_t> findFieldsToCompute();
 	void setFields(const std::set<rgl_field_t>& fields);
+};
+
+struct MultiReturnSwitchNode : IPointsNodeSingleInput
+{
+	using Ptr = std::shared_ptr<MultiReturnSwitchNode>;
+	void setParameters(rgl_return_type_t returnType) { this->returnType = returnType; }
+
+	// Node
+	void validateImpl() override
+	{
+		IPointsNodeSingleInput::validateImpl();
+		rtxInput = getExactlyOneInputOfType<RaytraceNode>();
+	}
+
+	void enqueueExecImpl() override {}
+
+	// Point cloud description
+
+	// Data getters
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
+	{
+		return rtxInput->getFieldDataMultiReturn(field, returnType);
+	}
+
+private:
+	rgl_return_type_t returnType;
+	RaytraceNode::Ptr rtxInput;
 };
 
 struct TransformPointsNode : IPointsNodeSingleInput

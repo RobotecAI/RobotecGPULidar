@@ -229,25 +229,32 @@ __global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBea
 	LIMIT(beamCount);
 
 	const auto beamIdx = tid;
-	int firstIdx = 0;
-	int lastIdx = 0;
+	int firstIdx = -1;
+	int lastIdx = -1;
 	for (int sampleIdx = 0; sampleIdx < samplesPerBeam; ++sampleIdx) {
 		if (beamSamples.isHit[beamIdx * samplesPerBeam + sampleIdx] == 0) {
 			continue;
 		}
-		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] <
-		    beamSamples.distance[beamIdx * samplesPerBeam + firstIdx]) {
+		auto currentFirstDistance = firstIdx >= 0 ? beamSamples.distance[beamIdx * samplesPerBeam + firstIdx] : FLT_MAX;
+		auto currentLastDistance = lastIdx >= 0 ? beamSamples.distance[beamIdx * samplesPerBeam + lastIdx] : -FLT_MAX;
+		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] < currentFirstDistance) {
 			firstIdx = sampleIdx;
 		}
-		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] >
-		    beamSamples.distance[beamIdx * samplesPerBeam + lastIdx]) {
+		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] > currentLastDistance) {
 			lastIdx = sampleIdx;
 		}
 	}
-	first.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + firstIdx];
-	first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
-	last.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + lastIdx];
-	last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
+	first.isHit[beamIdx] = firstIdx > 0;
+	if (first.isHit[beamIdx]) {
+		first.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + firstIdx];
+		first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
+	}
+
+	last.isHit[beamIdx] = lastIdx > 0;
+	if (last.isHit[beamIdx]) {
+		last.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + lastIdx];
+		last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
+	}
 }
 
 
