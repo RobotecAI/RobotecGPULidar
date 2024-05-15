@@ -123,7 +123,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .elevation = getPtrTo<ELEVATION_F32>(),
 	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
 	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
-	    .beamHalfDivergence = 0.0f, // TODO: provide API to set externally
+	    .beamHalfDivergence = beamHalfDivergence,
 	    .mrSamples = mrSamples.getPointers(),
 	};
 
