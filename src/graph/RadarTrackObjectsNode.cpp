@@ -122,9 +122,9 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		}
 
 		// There is no match for objectState in newly detected object positions. If that object was already detected in previous frame
-		// (not predicted, so objectStatus was as in the condition below), then update it based on prediction (changing its objectStatus
-		// to ObjectStatus::Predicted).
-		if (objectState.objectStatus == ObjectStatus::New || objectState.objectStatus == ObjectStatus::Measured) {
+		// (new, measured or predicted, does not matter) and its last measurement time was within maxPredictionTimeFrame, then its
+		// position (and state) in current frame is predicted.
+		if (objectState.lastMeasuredTime >= currentTime - maxPredictionTimeFrame) {
 			UpdateObjectState(objectState, predictedPosition, ObjectStatus::Predicted, currentTime, deltaTime);
 			++objectStateIt;
 			continue;
@@ -180,7 +180,7 @@ void RadarTrackObjectsNode::CreateObjectState(const Vec3f& position, double curr
 
 	assert(currentTimeMs <= std::numeric_limits<decltype(objectState.creationTime)>::max());
 	objectState.creationTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
-	objectState.lastUpdateTime = objectState.creationTime;
+	objectState.lastMeasuredTime = objectState.creationTime;
 	objectState.objectStatus = ObjectStatus::New;
 
 	// TODO(Pawel): Consider object radial speed (from detections) as a way to decide here.
@@ -204,8 +204,10 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
 	const auto orientation = atan2(absVelocity.y(), absVelocity.x());
 
-	assert(currentTimeMs <= std::numeric_limits<decltype(objectState.creationTime)>::max());
-	objectState.lastUpdateTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
+	if (objectStatus == ObjectStatus::Measured) {
+		assert(currentTimeMs <= std::numeric_limits<decltype(objectState.creationTime)>::max());
+		objectState.lastMeasuredTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
+	}
 	objectState.objectStatus = objectStatus;
 	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
 	                                                                           MovementStatus::Stationary;

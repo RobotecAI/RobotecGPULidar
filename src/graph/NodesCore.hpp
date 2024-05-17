@@ -629,7 +629,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	{
 		uint32_t id{0};
 		uint32_t creationTime{0};
-		uint32_t lastUpdateTime{0};
+		uint32_t lastMeasuredTime{0};
 		ObjectStatus objectStatus{ObjectStatus::Invalid};
 		MovementStatus movementStatus{MovementStatus::Invalid};
 		ClassificationProbabilities classificationProbabilities{};
@@ -680,8 +680,11 @@ private:
 	float elevationThreshold;
 	float radialSpeedThreshold;
 
+	// TODO(Pawel): Add these as node parameters.
 	float predictionSensitivity =
 	    1.0f; // Max distance between predicted and newly detected position to match objects between frames.
+	float maxPredictionTimeFrame = 500.0f; // Maximum time in milliseconds that can pass between two detections of the same object.
+	                                       // In other words, how long object state can be predicted until it will be declared lost.
 	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
