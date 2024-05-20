@@ -47,6 +47,11 @@ public:
 		expand(other.max);
 	}
 
+	void reset()
+	{
+		minCorner = maxCorner = {0};
+	}
+
 private:
 	Vector<dim, T> minCorner{0};
 	Vector<dim, T> maxCorner{0};
