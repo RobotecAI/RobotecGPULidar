@@ -123,7 +123,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .elevation = getPtrTo<ELEVATION_F32>(),
 	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
 	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
-	    .beamHalfDivergence = 0.0f, // TODO: provide API to set externally
+	    .beamHalfDivergence = beamHalfDivergence,
 	    .mrSamples = mrSamples.getPointers(),
 	};
 
@@ -132,6 +132,9 @@ void RaytraceNode::enqueueExecImpl()
 	std::size_t pipelineArgsSize = requestCtxDev->getSizeOf() * requestCtxDev->getCount();
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
 	                        launchDims.x, launchDims.y, launchDims.y));
+
+	gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
+	                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers());
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
