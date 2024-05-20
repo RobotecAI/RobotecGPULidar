@@ -30,8 +30,32 @@ public:
 	Aabb& operator=(const Aabb& other) = default;
 	Aabb& operator=(Aabb&& other) = default;
 
-	Vector<dim, T> min() const { return min; }
-	Vector<dim, T> max() const { return max; }
+	Aabb operator+(const Vector<dim, T>& rhs) const
+	{
+		Aabb result = *this;
+		return result += rhs;
+	}
+
+	Aabb operator+(const Aabb& rhs) const
+	{
+		Aabb result = *this;
+		return result += rhs;
+	}
+
+	Aabb& operator+=(const Vector<dim, T>& rhs)
+	{
+		expand(rhs);
+		return *this;
+	}
+
+	Aabb& operator+=(const Aabb& rhs)
+	{
+		merge(rhs);
+		return *this;
+	}
+
+	Vector<dim, T> min() const { return minCorner; }
+	Vector<dim, T> max() const { return maxCorner; }
 
 	void expand(const Vector<dim, T>& point)
 	{
@@ -43,8 +67,8 @@ public:
 
 	void merge(const Aabb& other)
 	{
-		expand(other.min);
-		expand(other.max);
+		expand(other.minCorner);
+		expand(other.maxCorner);
 	}
 
 	void reset()
