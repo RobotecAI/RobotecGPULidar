@@ -658,7 +658,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	RadarTrackObjectsNode();
 
-	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold);
+	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold,
+	                   float maxMatchingDistance, float maxPredictionTimeFrame, float movementSensitivity);
 
 	void enqueueExecImpl() override;
 

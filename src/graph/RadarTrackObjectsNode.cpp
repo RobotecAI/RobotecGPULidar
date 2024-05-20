@@ -24,12 +24,17 @@ RadarTrackObjectsNode::RadarTrackObjectsNode()
 }
 
 void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
-                                          float radialSpeedThreshold)
+                                          float radialSpeedThreshold, float maxMatchingDistance, float maxPredictionTimeFrame,
+                                          float movementSensitivity)
 {
 	this->distanceThreshold = distanceThreshold;
 	this->azimuthThreshold = azimuthThreshold;
 	this->elevationThreshold = elevationThreshold;
 	this->radialSpeedThreshold = radialSpeedThreshold;
+
+	this->maxMatchingDistance = maxMatchingDistance;
+	this->maxPredictionTimeFrame = maxPredictionTimeFrame;
+	this->movementSensitivity = movementSensitivity;
 }
 
 void RadarTrackObjectsNode::enqueueExecImpl()
@@ -150,12 +155,6 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		CreateObjectState(newObject, currentTime);
 	}
 
-	//	printf("Object states count: %lu (%lf)\n", objectStates.size(), currentTime);
-	//	for (const auto& objectState : objectStates) {
-	//		printf("\t%u: (%.2f, %.2f, %.2f)\n", objectState.id, objectState.position.getLastSample().x(),
-	//		       objectState.position.getLastSample().y(), objectState.position.getLastSample().z());
-	//	}
-	//  printf("Object size: %f %f\n", objectStates.front().width.getLastSample(), objectStates.front().length.getLastSample());
 	UpdateOutputData();
 }
 

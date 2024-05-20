@@ -922,8 +922,8 @@ void TapeCore::tape_node_raytrace_configure_non_hits(const YAML::Node& yamlNode,
 RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int8_t* rays_mask, int32_t rays_count)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_mask(node={}, rays_mask={}, rays_count={})", repr(node), repr(rays_mask, rays_count),
-		            rays_count);
+		RGL_API_LOG("rgl_node_raytrace_configure_mask(node={}, rays_mask={}, rays_count={})", repr(node),
+		            repr(rays_mask, rays_count), rays_count);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(rays_mask != nullptr);
 		CHECK_ARG(rays_count > 0);
@@ -1155,21 +1155,27 @@ void TapeCore::tape_node_points_radar_postprocess(const YAML::Node& yamlNode, Pl
 
 RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float object_distance_threshold,
                                                          float object_azimuth_threshold, float object_elevation_threshold,
-                                                         float object_radial_speed_threshold)
+                                                         float object_radial_speed_threshold, float max_matching_distance,
+                                                         float max_prediction_time_frame, float movement_sensitivity)
 {
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_points_radar_track_objects(node={}, object_distance_threshold={}, object_azimuth_threshold={}, "
-		            "object_elevation_threshold={}, object_radial_speed_threshold={})",
+		            "object_elevation_threshold={}, object_radial_speed_threshold={}, max_matching_distance={}, "
+		            "max_prediction_time_frame={}, movement_sensitivity={})",
 		            repr(node), object_distance_threshold, object_azimuth_threshold, object_elevation_threshold,
-		            object_radial_speed_threshold);
+		            object_radial_speed_threshold, max_matching_distance, max_prediction_time_frame, movement_sensitivity);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG(object_distance_threshold > 0.0f);
 		CHECK_ARG(object_azimuth_threshold > 0.0f);
 		CHECK_ARG(object_elevation_threshold > 0.0f);
 		CHECK_ARG(object_radial_speed_threshold > 0.0f);
+		CHECK_ARG(max_matching_distance > 0.0f);
+		CHECK_ARG(max_prediction_time_frame > 0.0f);
+		CHECK_ARG(movement_sensitivity >= 0.0f);
 
 		createOrUpdateNode<RadarTrackObjectsNode>(node, object_distance_threshold, object_azimuth_threshold,
-		                                          object_elevation_threshold, object_radial_speed_threshold);
+		                                          object_elevation_threshold, object_radial_speed_threshold,
+		                                          max_matching_distance, max_prediction_time_frame, movement_sensitivity);
 	});
 	TAPE_HOOK(node, object_distance_threshold, object_azimuth_threshold, object_elevation_threshold,
 	          object_radial_speed_threshold);
@@ -1181,7 +1187,8 @@ void TapeCore::tape_node_points_radar_track_objects(const YAML::Node& yamlNode, 
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_points_radar_track_objects(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>(),
-	                                    yamlNode[4].as<float>());
+	                                    yamlNode[4].as<float>(), yamlNode[5].as<float>(), yamlNode[6].as<float>(),
+	                                    yamlNode[7].as<float>());
 	state.nodes.insert({nodeId, node});
 }
 
