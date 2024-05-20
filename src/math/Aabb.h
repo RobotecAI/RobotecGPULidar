@@ -21,7 +21,7 @@ class Aabb
 {
 public:
 	Aabb() = default;
-	Aabb(const Vector<dim, T>& center, const Vector<dim, T>& size) : minCorner{center - size / 2}, maxCorner{center + size / 2}
+	Aabb(const Vector<dim, T>& center, const Vector<dim, T>& size) : minValue{center - size / 2}, maxValue{center + size / 2}
 	{}
 
 	Aabb(const Aabb& other) = default;
@@ -54,31 +54,31 @@ public:
 		return *this;
 	}
 
-	Vector<dim, T> min() const { return minCorner; }
-	Vector<dim, T> max() const { return maxCorner; }
+	const Vector<dim, T>& minCorner() const { return minValue; }
+	const Vector<dim, T>& maxCorner() const { return maxValue; }
 
 	void expand(const Vector<dim, T>& point)
 	{
 		for (int i = 0; i < dim; ++i) {
-			minCorner[i] = std::min(minCorner[i], point[i]);
-			maxCorner[i] = std::max(maxCorner[i], point[i]);
+			minValue[i] = std::min(minValue[i], point[i]);
+			maxValue[i] = std::max(maxValue[i], point[i]);
 		}
 	}
 
 	void merge(const Aabb& other)
 	{
-		expand(other.minCorner);
-		expand(other.maxCorner);
+		expand(other.minValue);
+		expand(other.maxValue);
 	}
 
 	void reset()
 	{
-		minCorner = maxCorner = {0};
+		minValue = maxValue = {0};
 	}
 
 private:
-	Vector<dim, T> minCorner{0};
-	Vector<dim, T> maxCorner{0};
+	Vector<dim, T> minValue{0};
+	Vector<dim, T> maxValue{0};
 };
 
 using Aabb2Df = Aabb<2, float>;
