@@ -31,6 +31,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
+#include <math/Aabb.h>
 #include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
 
@@ -531,11 +532,14 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
+	const std::vector<Aabb3Df>& getClusterAabbs() const { return clusterAabbs; }
+
 private:
 	// Data containers
 	std::vector<Field<RAY_IDX_U32>::type> filteredIndicesHost;
 	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
 	    arrayMgr);
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzInputHost = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
 	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedInputHost =
@@ -565,6 +569,7 @@ private:
 	float receivedNoiseStDevDb;
 
 	std::vector<rgl_radar_scope_t> radarScopes;
+	std::vector<Aabb3Df> clusterAabbs;
 
 	std::random_device randomDevice;
 
