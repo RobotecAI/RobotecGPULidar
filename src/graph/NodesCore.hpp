@@ -692,7 +692,7 @@ private:
 	float radialSpeedThreshold;
 
 	// TODO(Pawel): Add these as node parameters.
-	float predictionSensitivity =
+	float maxMatchingDistance =
 	    1.0f; // Max distance between predicted and newly detected position to match objects between frames.
 	float maxPredictionTimeFrame =
 	    500.0f;                        // Maximum time in milliseconds that can pass between two detections of the same object.

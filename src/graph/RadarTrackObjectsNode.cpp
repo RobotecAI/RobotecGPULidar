@@ -122,7 +122,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// There is a newly detected object (current frame) that matches the predicted position of one of objects from previous frame.
 		// Update object from previous frame to newly detected object position and remove this positions for next checkouts.
 		if (const auto& closestObject = *closestObjectIt;
-		    (predictedPosition - closestObject.position).length() < predictionSensitivity) {
+		    (predictedPosition - closestObject.position).length() < maxMatchingDistance) {
 			UpdateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
 			                  deltaTime);
 			newObjectBounds.erase(closestObjectIt);
