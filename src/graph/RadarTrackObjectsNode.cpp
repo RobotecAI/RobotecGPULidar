@@ -224,7 +224,10 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	// objectState.relVelocity.addSample(absVelocity - selfVelocity);
 
 	// Behaves similar to acceleration. In order to calculate orientation I need velocity, which can be calculated starting from
-	// the second frame. For this reason, the third frame is the first one when I am able to calculate orientation rate.
+	// the second frame. For this reason, the third frame is the first one when I am able to calculate orientation rate. Additionally,
+	// if object does not move, keep its previous orientation.
+	const auto orientation = objectState.movementStatus == MovementStatus::Moved ? atan2(absVelocity.y(), absVelocity.x()) :
+	                                                                               objectState.orientation.getLastSample();
 	if (objectState.orientation.getSamplesCount() > 0) {
 		objectState.orientationRate.addSample(orientation - objectState.orientation.getLastSample());
 	}
