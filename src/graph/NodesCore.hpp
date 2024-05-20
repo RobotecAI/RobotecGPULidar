@@ -617,6 +617,12 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Invalid = 255
 	};
 
+	struct ObjectBounds
+	{
+		Vec3f position{0};
+		Aabb3Df aabb{};
+	};
+
 	struct ClassificationProbabilities
 	{
 		float existence{100.0f};
@@ -669,9 +675,9 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 private:
 	Vec3f PredictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
-	void CreateObjectState(const Vec3f& position, double currentTimeMs);
-	void UpdateObjectState(ObjectState& objectState, const Vec3f& newPosition, ObjectStatus newStatus, double currentTimeMs,
-	                       double deltaTimeMs);
+	void CreateObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
+	void UpdateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
+	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs);
 	void UpdateOutputData();
 
 	std::list<ObjectState> objectStates;
@@ -688,8 +694,9 @@ private:
 	// TODO(Pawel): Add these as node parameters.
 	float predictionSensitivity =
 	    1.0f; // Max distance between predicted and newly detected position to match objects between frames.
-	float maxPredictionTimeFrame = 500.0f; // Maximum time in milliseconds that can pass between two detections of the same object.
-	                                       // In other words, how long object state can be predicted until it will be declared lost.
+	float maxPredictionTimeFrame =
+	    500.0f;                        // Maximum time in milliseconds that can pass between two detections of the same object.
+	                                   // In other words, how long object state can be predicted until it will be declared lost.
 	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
