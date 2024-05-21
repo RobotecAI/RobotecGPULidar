@@ -30,29 +30,29 @@ Vec3f getRandomVector()
 	return Vec3f{std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)};
 }
 
-void generateDetectionClusters(TestPointCloud& pointCloud, const std::vector<Vec3f>& clusterCenters, size_t clusterPointsCount)
+void generateDetectionFields(const Vec3f& clusterCenter, const Vec3f& clusterSpread, size_t clusterPointsCount,
+                             std::vector<Vec3f>& xyz, std::vector<float>& distance, std::vector<float>& azimuth,
+                             std::vector<float>& elevation, std::vector<float>& radialSpeed)
+{
+	const auto clusterXYZ = generateFieldValues(clusterPointsCount, genNormal);
+	for (const auto& detectionXYZ : clusterXYZ) {
+		const auto worldXYZ = detectionXYZ * clusterSpread + clusterCenter;
+		const auto worldSph = worldXYZ.toSpherical();
+
+		xyz.emplace_back(worldXYZ);
+		distance.emplace_back(worldSph[0]);
+		azimuth.emplace_back(worldSph[1]);
+		elevation.emplace_back(worldSph[2]);
+		radialSpeed.emplace_back(getRandomValue<float, 4.8f, 5.2f>());
+	}
+}
+
+void generateDetectionCluster(const Vec3f& clusterCenter, const Vec3f& clusterSpread, size_t clusterPointsCount,
+                              TestPointCloud& pointCloud)
 {
 	std::vector<Vec3f> xyz;
-	std::vector<float> distance;
-	std::vector<float> azimuth;
-	std::vector<float> elevation;
-	std::vector<float> radialSpeed;
-
-	for (const auto clusterCenter : clusterCenters) {
-		const auto clusterXYZ = generateFieldValues(clusterPointsCount, genNormal);
-		for (const auto& detectionXYZ : clusterXYZ) {
-			const auto worldXYZ = detectionXYZ + clusterCenter;
-
-			xyz.emplace_back(worldXYZ);
-			distance.emplace_back(worldXYZ.length());
-
-			const auto worldSph = worldXYZ.toSpherical();
-			azimuth.emplace_back(worldSph[1]);
-			elevation.emplace_back(worldSph[2]);
-
-			radialSpeed.emplace_back(getRandomValue<float, 4.8f, 5.2f>());
-		}
-	}
+	std::vector<float> distance, azimuth, elevation, radialSpeed;
+	generateDetectionFields(clusterCenter, clusterSpread, clusterPointsCount, xyz, distance, azimuth, elevation, radialSpeed);
 
 	pointCloud.setFieldValues<XYZ_VEC3_F32>(xyz);
 	pointCloud.setFieldValues<DISTANCE_F32>(distance);
@@ -64,45 +64,56 @@ void generateDetectionClusters(TestPointCloud& pointCloud, const std::vector<Vec
 void generateFixedDetectionClusters(TestPointCloud& pointCloud, size_t clusterCount, size_t clusterPointsCount)
 {
 	constexpr float centerScale = 10.0f;
-	const Vec3f centerXOffset = Vec3f{20.0f, 0.0f, 0.0f};
+	const Vec3f clusterSpread = {1.0f};
 
-	std::vector<Vec3f> clusterCenters;
+	std::vector<Vec3f> xyz;
+	std::vector<float> distance, azimuth, elevation, radialSpeed;
+
 	for (int i = 0; i < clusterCount; ++i) {
 		const auto angle = i * 2 * M_PI / static_cast<double>(clusterCount);
-		clusterCenters.emplace_back(Vec3f{std::cos(angle), std::sin(angle), 0.0f} * centerScale);
+		const auto clusterCenter = Vec3f{std::cos(angle), std::sin(angle), 0.0f} * centerScale;
+		generateDetectionFields(clusterCenter, clusterSpread, clusterPointsCount, xyz, distance, azimuth, elevation, radialSpeed);
 	}
 
-	generateDetectionClusters(pointCloud, clusterCenters, clusterPointsCount);
+	pointCloud.setFieldValues<XYZ_VEC3_F32>(xyz);
+	pointCloud.setFieldValues<DISTANCE_F32>(distance);
+	pointCloud.setFieldValues<AZIMUTH_F32>(azimuth);
+	pointCloud.setFieldValues<ELEVATION_F32>(elevation);
+	pointCloud.setFieldValues<RADIAL_SPEED_F32>(radialSpeed);
 }
 
 void generateRandomDetectionClusters(TestPointCloud& pointCloud, size_t clusterCount, size_t clusterPointsCount)
 {
 	constexpr float centerScale = 10.0f;
+	const Vec3f clusterSpread = {1.0f};
 	const Vec3f centerOffset = Vec3f{20.0f, 0.0f, 0.0f};
 
-	std::vector<Vec3f> clusterCenters;
-	std::generate_n(std::back_inserter(clusterCenters), clusterCount,
-	                [&]() { return getRandomVector() * centerScale + centerOffset; });
+	std::vector<Vec3f> xyz;
+	std::vector<float> distance, azimuth, elevation, radialSpeed;
 
-	generateDetectionClusters(pointCloud, clusterCenters, clusterPointsCount);
+	for (int i = 0; i < clusterCount; ++i) {
+		const auto clusterCenter = getRandomVector() * centerScale + centerOffset;
+		generateDetectionFields(clusterCenter, clusterSpread, clusterPointsCount, xyz, distance, azimuth, elevation, radialSpeed);
+	}
+
+	pointCloud.setFieldValues<XYZ_VEC3_F32>(xyz);
+	pointCloud.setFieldValues<DISTANCE_F32>(distance);
+	pointCloud.setFieldValues<AZIMUTH_F32>(azimuth);
+	pointCloud.setFieldValues<ELEVATION_F32>(elevation);
+	pointCloud.setFieldValues<RADIAL_SPEED_F32>(radialSpeed);
 }
 
 TEST_F(RadarTrackObjectsNodeTest, objects_number_test)
 {
-	GTEST_SKIP_("Skipped for development - go back before PR");
-
-	std::vector<rgl_field_t> fields{XYZ_VEC3_F32, ENTITY_ID_I32};
-
 	constexpr float distanceThreshold = 2.0f;
-	constexpr float azimuthThreshold = 0.1f;
-	constexpr float elevationThreshold = 0.1f;
+	constexpr float azimuthThreshold = 0.5f;
+	constexpr float elevationThreshold = 0.5f;
 	constexpr float radialSpeedThreshold = 0.5f;
 
 	constexpr float maxMatchingDistance = 1.0f;
 	constexpr float maxPredictionTimeFrame = 500.0f;
 	constexpr float movementSensitivity = 0.01;
 
-	// Setup objects tracking node
 	rgl_node_t trackObjectsNode = nullptr;
 	ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode, distanceThreshold, azimuthThreshold,
 	                                                       elevationThreshold, radialSpeedThreshold, maxMatchingDistance,
@@ -112,7 +123,6 @@ TEST_F(RadarTrackObjectsNodeTest, objects_number_test)
 	constexpr size_t detectionsCountPerObject = 10;
 	std::vector<rgl_field_t> pointFields = Node::validatePtr<RadarTrackObjectsNode>(trackObjectsNode)->getRequiredFieldList();
 	TestPointCloud inPointCloud(pointFields, objectsCount * detectionsCountPerObject);
-
 	generateFixedDetectionClusters(inPointCloud, objectsCount, detectionsCountPerObject);
 
 	const auto usePointsNode = inPointCloud.createUsePointsNode();
@@ -120,8 +130,73 @@ TEST_F(RadarTrackObjectsNodeTest, objects_number_test)
 	ASSERT_RGL_SUCCESS(rgl_graph_run(trackObjectsNode));
 
 	int32_t detectedObjectsCount = 0, objectsSize = 0;
-	rgl_graph_get_result_size(trackObjectsNode, fields.at(0), &detectedObjectsCount, &objectsSize);
-	ASSERT_TRUE(detectedObjectsCount == objectsCount);
+	ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(trackObjectsNode, XYZ_VEC3_F32, &detectedObjectsCount, &objectsSize));
+	ASSERT_EQ(detectedObjectsCount, objectsCount);
+}
+
+TEST_F(RadarTrackObjectsNodeTest, tracking_kinematic_object_test)
+{
+	constexpr float distanceThreshold = 2.0f;
+	constexpr float azimuthThreshold = 0.5f;
+	constexpr float elevationThreshold = 0.5f;
+	constexpr float radialSpeedThreshold = 0.5f;
+
+	constexpr float maxMatchingDistance = 1.0f;
+	constexpr float maxPredictionTimeFrame = 500.0f;
+	constexpr float movementSensitivity = 0.01;
+
+	rgl_node_t trackObjectsNode = nullptr;
+	ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode, distanceThreshold, azimuthThreshold,
+	                                                       elevationThreshold, radialSpeedThreshold, maxMatchingDistance,
+	                                                       maxPredictionTimeFrame, movementSensitivity));
+
+	constexpr size_t detectionsCount = 10;
+	const Vec3f clusterSpread = {1.0f};
+	const Vec3f& initialCloudTranslation = Vec3f{5.0f, -3.0f, 0.0f};
+	const Vec3f iterationTranslation = Vec3f{0.0f, 0.1f, 0.0f};
+	const uint64_t frameTimeNs = 5 * 1e6; // ms
+
+	const int numberOfIterations = 60;
+	int iterationCounter = 0;
+	while (iterationCounter < numberOfIterations) {
+		auto trackObjectsNodePtr = Node::validatePtr<RadarTrackObjectsNode>(trackObjectsNode);
+		TestPointCloud inPointCloud(trackObjectsNodePtr->getRequiredFieldList(), detectionsCount);
+		generateDetectionCluster(initialCloudTranslation + static_cast<float>(iterationCounter) * iterationTranslation,
+		                         clusterSpread, detectionsCount, inPointCloud);
+
+		auto usePointsNode = inPointCloud.createUsePointsNode();
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, trackObjectsNode));
+
+		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, iterationCounter * frameTimeNs));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(trackObjectsNode));
+
+		ASSERT_RGL_SUCCESS(rgl_graph_node_remove_child(usePointsNode, trackObjectsNode));
+
+		{
+			const auto& objectStates = trackObjectsNodePtr->getObjectStates();
+			ASSERT_EQ(objectStates.size(), 1); // Only one group of detections is generated, and they are assumed to be part of the same object.
+
+			const auto& checkedObjectState = objectStates.front();
+			ASSERT_NEAR(checkedObjectState.lastMeasuredTime, 1e-6 * iterationCounter * frameTimeNs, 1e-6);
+
+			if (iterationCounter > 0) {
+				ASSERT_EQ(checkedObjectState.objectStatus, RadarTrackObjectsNode::ObjectStatus::Measured);
+				ASSERT_EQ(checkedObjectState.movementStatus, RadarTrackObjectsNode::MovementStatus::Moved);
+
+				const auto measuredVelocity = checkedObjectState.absVelocity.getLastSample();
+				const auto appliedVelocity = 1e9f * Vec2f(iterationTranslation.x(), iterationTranslation.y()) / frameTimeNs;
+				ASSERT_NEAR((measuredVelocity - appliedVelocity).length(), 0.0f, 1e-3f);
+				ASSERT_NEAR(checkedObjectState.absAccel.getLastSample().length(), 0.0f, 0.1f);
+
+				const auto measuredOrientation = checkedObjectState.orientation.getLastSample();
+				const auto appliedOrientation = atan2(appliedVelocity.y(), appliedVelocity.x());
+				ASSERT_NEAR(measuredOrientation, appliedOrientation, 1e-3f);
+				ASSERT_NEAR(checkedObjectState.orientationRate.getLastSample(), 0.0f, 0.1f);
+			}
+		}
+
+		++iterationCounter;
+	}
 }
 
 #if RGL_BUILD_ROS2_EXTENSION
