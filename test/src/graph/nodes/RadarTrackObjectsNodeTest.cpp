@@ -259,4 +259,68 @@ TEST_F(RadarTrackObjectsNodeTest, creating_random_objects_test)
 		EXPECT_RGL_SUCCESS(rgl_cleanup());
 	}
 }
+
+TEST_F(RadarTrackObjectsNodeTest, tracking_objects_test)
+{
+	GTEST_SKIP_("Debug test on development stage.");
+
+	std::vector<rgl_field_t> detectionFields{XYZ_VEC3_F32};
+	std::vector<rgl_field_t> objectFields{XYZ_VEC3_F32, ENTITY_ID_I32};
+
+	constexpr float distanceThreshold = 2.0f;
+	constexpr float azimuthThreshold = 0.1f;
+	constexpr float elevationThreshold = 0.1f;
+	constexpr float radialSpeedThreshold = 0.5f;
+
+	constexpr float maxMatchingDistance = 1.0f;
+	constexpr float maxPredictionTimeFrame = 500.0f;
+	constexpr float movementSensitivity = 0.01;
+
+	// Setup objects tracking node
+	rgl_node_t trackObjectsNode = nullptr, ros2DetectionsNode = nullptr, ros2ObjectsNode = nullptr, detectionsFormat = nullptr,
+	           objectsFormat = nullptr;
+	ASSERT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&trackObjectsNode, distanceThreshold, azimuthThreshold,
+	                                                       elevationThreshold, radialSpeedThreshold, maxMatchingDistance,
+	                                                       maxPredictionTimeFrame, movementSensitivity));
+	ASSERT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2DetectionsNode, "radar_detections", "world"));
+	ASSERT_RGL_SUCCESS(rgl_node_points_ros2_publish(&ros2ObjectsNode, "radar_objects", "world"));
+	ASSERT_RGL_SUCCESS(rgl_node_points_format(&detectionsFormat, detectionFields.data(), detectionFields.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_points_format(&objectsFormat, objectFields.data(), objectFields.size()));
+
+	constexpr size_t objectsCount = 5;
+	constexpr size_t detectionsCountPerObject = 10;
+	std::vector<rgl_field_t> pointFields = Node::validatePtr<RadarTrackObjectsNode>(trackObjectsNode)->getRequiredFieldList();
+	TestPointCloud inPointCloud(pointFields, objectsCount * detectionsCountPerObject);
+
+	generateFixedDetectionClusters(inPointCloud, objectsCount, detectionsCountPerObject);
+
+	auto usePointsNode = inPointCloud.createUsePointsNode();
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, trackObjectsNode));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, detectionsFormat));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(detectionsFormat, ros2DetectionsNode));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(trackObjectsNode, objectsFormat));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(objectsFormat, ros2ObjectsNode));
+
+	const uint64_t frameTime = 5 * 1e6; // ms
+	int iterationCounter = 0;
+	while (true) {
+		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, iterationCounter * frameTime));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(trackObjectsNode));
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+		rgl_graph_node_remove_child(usePointsNode, trackObjectsNode);
+		rgl_graph_node_remove_child(usePointsNode, detectionsFormat);
+
+		inPointCloud.transform(Mat3x4f::rotationDeg(0.0f, 0.0f, 5.0f));
+		usePointsNode = inPointCloud.createUsePointsNode();
+
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, trackObjectsNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(usePointsNode, detectionsFormat));
+
+		++iterationCounter;
+	}
+}
 #endif
