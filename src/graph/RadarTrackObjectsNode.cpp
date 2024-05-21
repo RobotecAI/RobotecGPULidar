@@ -217,6 +217,9 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
 	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
 
+	const auto radarVelocity = input->getLinearVelocity();
+	const auto relVelocity = absVelocity - Vec2f{radarVelocity.x(), radarVelocity.y()};
+
 	if (objectStatus == ObjectStatus::Measured) {
 		assert(currentTimeMs <= std::numeric_limits<decltype(objectState.creationTime)>::max());
 		objectState.lastMeasuredTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
@@ -231,10 +234,12 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	if (objectState.absVelocity.getSamplesCount() > 0) {
 		const auto absAccel = (absVelocity - objectState.absVelocity.getLastSample()) * deltaTimeSecInv;
 		objectState.absAccel.addSample(absAccel);
-		// objectState.relAccel.addSample(absAccel - selfAccel);
+
+		const auto relAccel = (relVelocity - objectState.relVelocity.getLastSample()) * deltaTimeSecInv;
+		objectState.relAccel.addSample(relAccel);
 	}
 	objectState.absVelocity.addSample(absVelocity);
-	// objectState.relVelocity.addSample(absVelocity - selfVelocity);
+	objectState.relVelocity.addSample(relVelocity);
 
 	// Behaves similar to acceleration. In order to calculate orientation I need velocity, which can be calculated starting from
 	// the second frame. For this reason, the third frame is the first one when I am able to calculate orientation rate. Additionally,

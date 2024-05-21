@@ -116,6 +116,8 @@ struct RaytraceNode : IPointsNode
 	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
+	Vec3f getLinearVelocity() const override { return sensorLinearVelocityXYZ; }
+	Vec3f getAngularVelocity() const override { return sensorAngularVelocityRPY; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
@@ -694,7 +696,6 @@ private:
 	float elevationThreshold;
 	float radialSpeedThreshold;
 
-	// TODO(Pawel): Add these as node parameters.
 	float maxMatchingDistance =
 	    1.0f; // Max distance between predicted and newly detected position to match objects between frames.
 	float maxPredictionTimeFrame =
