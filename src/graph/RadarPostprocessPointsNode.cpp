@@ -78,6 +78,7 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 		return;
 	}
 
+	xyzInputHost->copyFrom(input->getFieldData(XYZ_VEC3_F32));
 	distanceInputHost->copyFrom(input->getFieldData(DISTANCE_F32));
 	azimuthInputHost->copyFrom(input->getFieldData(AZIMUTH_F32));
 	radialSpeedInputHost->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
@@ -143,13 +144,19 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	clusterPowerHost->resize(filteredIndicesHost.size(), false, false);
 	clusterNoiseHost->resize(filteredIndicesHost.size(), false, false);
 	clusterSnrHost->resize(filteredIndicesHost.size(), false, false);
+
 	std::normal_distribution<float> gaussianNoise(receivedNoiseMeanDb, receivedNoiseStDevDb);
+	clusterAabbs.resize(clusters.size());
+
 	for (int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
 		std::complex<float> AU = 0;
 		std::complex<float> AR = 0;
-		auto&& cluster = clusters[clusterIdx];
+		auto& cluster = clusters[clusterIdx];
+		auto& clusterAabb = clusterAabbs[clusterIdx];
+		clusterAabb.reset();
 
 		for (const auto pointInCluster : cluster.indices) {
+			clusterAabb.expand(xyzInputHost->at(pointInCluster));
 			std::complex<float> BU = {outBUBRFactorHost->at(pointInCluster)[0].real(),
 			                          outBUBRFactorHost->at(pointInCluster)[0].imag()};
 			std::complex<float> BR = {outBUBRFactorHost->at(pointInCluster)[1].real(),

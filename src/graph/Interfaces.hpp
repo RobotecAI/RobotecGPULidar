@@ -87,6 +87,8 @@ struct IPointsNode : virtual Node
 	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
 
 	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
+	virtual Vec3f getLinearVelocity() const { return Vec3f{0.0f}; }
+	virtual Vec3f getAngularVelocity() const { return Vec3f{0.0f}; }
 
 	// Data getters
 	virtual IAnyArray::ConstPtr getFieldData(rgl_field_t field) = 0;
@@ -120,6 +122,8 @@ struct IPointsNodeSingleInput : IPointsNode
 	virtual size_t getHeight() const override { return input->getHeight(); }
 
 	virtual Mat3x4f getLookAtOriginTransform() const override { return input->getLookAtOriginTransform(); }
+	virtual Vec3f getLinearVelocity() const { return input->getLinearVelocity(); }
+	virtual Vec3f getAngularVelocity() const { return input->getAngularVelocity(); }
 
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }
