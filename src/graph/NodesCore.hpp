@@ -22,6 +22,7 @@
 #include <ranges>
 #include <algorithm>
 #include <random>
+#include <queue>
 #include <curand_kernel.h>
 
 #include <graph/Node.hpp>
@@ -30,6 +31,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <CacheManager.hpp>
 #include <GPUFieldDescBuilder.hpp>
+#include <math/Aabb.h>
 #include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
 
@@ -114,6 +116,8 @@ struct RaytraceNode : IPointsNode
 	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
+	Vec3f getLinearVelocity() const override { return sensorLinearVelocityXYZ; }
+	Vec3f getAngularVelocity() const override { return sensorAngularVelocityRPY; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
@@ -532,11 +536,14 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
+	const std::vector<Aabb3Df>& getClusterAabbs() const { return clusterAabbs; }
+
 private:
 	// Data containers
 	std::vector<Field<RAY_IDX_U32>::type> filteredIndicesHost;
 	DeviceAsyncArray<Field<RAY_IDX_U32>::type>::Ptr filteredIndices = DeviceAsyncArray<Field<RAY_IDX_U32>::type>::create(
 	    arrayMgr);
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzInputHost = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceInputHost = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
 	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr azimuthInputHost = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedInputHost =
@@ -566,6 +573,7 @@ private:
 	float receivedNoiseStDevDb;
 
 	std::vector<rgl_radar_scope_t> radarScopes;
+	std::vector<Aabb3Df> clusterAabbs;
 
 	std::random_device randomDevice;
 
@@ -613,6 +621,12 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Invalid = 255
 	};
 
+	struct ObjectBounds
+	{
+		Vec3f position{0};
+		Aabb3Df aabb{};
+	};
+
 	struct ClassificationProbabilities
 	{
 		float existence{100.0f};
@@ -629,8 +643,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	struct ObjectState
 	{
 		uint32_t id{0};
-		uint32_t framesCount{0};
 		uint32_t creationTime{0};
+		uint32_t lastMeasuredTime{0};
 		ObjectStatus objectStatus{ObjectStatus::Invalid};
 		MovementStatus movementStatus{MovementStatus::Invalid};
 		ClassificationProbabilities classificationProbabilities{};
@@ -648,15 +662,13 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	RadarTrackObjectsNode();
 
-	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold);
+	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold,
+	                   float maxMatchingDistance, float maxPredictionTimeFrame, float movementSensitivity);
 
-	// Node
-	void validateImpl() override;
 	void enqueueExecImpl() override;
 
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 
-	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override;
 
 	// Data getters
@@ -667,13 +679,29 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
+	Vec3f predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
+	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
+	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
+	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs);
+	void updateOutputData();
+
 	std::list<ObjectState> objectStates;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+
+	uint32_t objectIDCounter = 0; // Not static - I assume each ObjectTrackingNode is like a separate radar.
+	std::queue<uint32_t> objectIDPoll;
 
 	float distanceThreshold;
 	float azimuthThreshold;
 	float elevationThreshold;
 	float radialSpeedThreshold;
+
+	float maxMatchingDistance =
+	    1.0f; // Max distance between predicted and newly detected position to match objects between frames.
+	float maxPredictionTimeFrame =
+	    500.0f;                        // Maximum time in milliseconds that can pass between two detections of the same object.
+	                                   // In other words, how long object state can be predicted until it will be declared lost.
+	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
