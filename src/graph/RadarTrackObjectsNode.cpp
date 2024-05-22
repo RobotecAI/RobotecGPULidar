@@ -118,7 +118,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	// Later, for newly detected objects without match, create new object state.
 	for (auto objectStateIt = objectStates.begin(); objectStateIt != objectStates.end();) {
 		auto& objectState = *objectStateIt;
-		const auto predictedPosition = PredictObjectPosition(objectState, deltaTime);
+		const auto predictedPosition = predictObjectPosition(objectState, deltaTime);
 		const auto closestObjectIt = std::min_element(
 		    newObjectBounds.cbegin(), newObjectBounds.cend(), [&](const auto& a, const auto& b) {
 			    return (a.position - predictedPosition).lengthSquared() < (b.position - predictedPosition).lengthSquared();
@@ -128,7 +128,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// Update object from previous frame to newly detected object position and remove this positions for next checkouts.
 		if (const auto& closestObject = *closestObjectIt;
 		    (predictedPosition - closestObject.position).length() < maxMatchingDistance) {
-			UpdateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
+			updateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
 			                  deltaTime);
 			newObjectBounds.erase(closestObjectIt);
 			++objectStateIt;
@@ -139,7 +139,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// (new, measured or predicted, does not matter) and its last measurement time was within maxPredictionTimeFrame, then its
 		// position (and state) in current frame is predicted.
 		if (objectState.lastMeasuredTime >= currentTime - maxPredictionTimeFrame) {
-			UpdateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime);
+			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime);
 			++objectStateIt;
 			continue;
 		}
@@ -152,10 +152,10 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 	// All newly detected object position that do not have a match in previous frame - create new object state.
 	for (const auto& newObject : newObjectBounds) {
-		CreateObjectState(newObject, currentTime);
+		createObjectState(newObject, currentTime);
 	}
 
-	UpdateOutputData();
+	updateOutputData();
 }
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
@@ -163,7 +163,7 @@ std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
 }
 
-Vec3f RadarTrackObjectsNode::PredictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const
+Vec3f RadarTrackObjectsNode::predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const
 {
 	assert(objectState.position.getSamplesCount() > 0);
 	assert(deltaTimeMs <= std::numeric_limits<float>::max());
@@ -176,7 +176,7 @@ Vec3f RadarTrackObjectsNode::PredictObjectPosition(const ObjectState& objectStat
 	return objectState.position.getLastSample() + Vec3f{predictedMovement.x(), predictedMovement.y(), 0.0f};
 }
 
-void RadarTrackObjectsNode::CreateObjectState(const ObjectBounds& objectBounds, double currentTimeMs)
+void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, double currentTimeMs)
 {
 	auto& objectState = objectStates.emplace_back();
 	if (objectIDPoll.empty()) {
@@ -208,7 +208,7 @@ void RadarTrackObjectsNode::CreateObjectState(const ObjectBounds& objectBounds, 
 	objectState.width.addSample(objectBounds.aabb.maxCorner().y() - objectBounds.aabb.minCorner().y());
 }
 
-void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Vec3f& updatedPosition,
+void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition,
                                               const Aabb3Df& updatedAabb, ObjectStatus objectStatus, double currentTimeMs,
                                               double deltaTimeMs)
 {
@@ -260,13 +260,13 @@ void RadarTrackObjectsNode::UpdateObjectState(ObjectState& objectState, const Ve
 	}
 }
 
-void RadarTrackObjectsNode::UpdateOutputData()
+void RadarTrackObjectsNode::updateOutputData()
 {
-	fieldData[XYZ_VEC3_F32]->resize(objectStates.size(), true, false);
-	auto* xyzPtr = static_cast<Vec3f*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
+	fieldData[XYZ_VEC3_F32]->resize(objectStates.size(), false, false);
+	auto* xyzPtr = static_cast<Field<XYZ_VEC3_F32>::type*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
 
-	fieldData[ENTITY_ID_I32]->resize(objectStates.size(), true, false);
-	auto* idPtr = static_cast<int32_t*>(fieldData[ENTITY_ID_I32]->getRawWritePtr());
+	fieldData[ENTITY_ID_I32]->resize(objectStates.size(), false, false);
+	auto* idPtr = static_cast<Field<ENTITY_ID_I32>::type*>(fieldData[ENTITY_ID_I32]->getRawWritePtr());
 
 	int objectIndex = 0;
 	for (const auto& objectState : objectStates) {

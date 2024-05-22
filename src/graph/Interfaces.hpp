@@ -122,6 +122,8 @@ struct IPointsNodeSingleInput : IPointsNode
 	virtual size_t getHeight() const override { return input->getHeight(); }
 
 	virtual Mat3x4f getLookAtOriginTransform() const override { return input->getLookAtOriginTransform(); }
+	virtual Vec3f getLinearVelocity() const { return input->getLinearVelocity(); }
+	virtual Vec3f getAngularVelocity() const { return input->getAngularVelocity(); }
 
 	// Data getters
 	virtual bool hasField(rgl_field_t field) const { return input->hasField(field); }

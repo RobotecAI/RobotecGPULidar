@@ -16,6 +16,13 @@
 
 #include "Vector.hpp"
 
+/**
+ * Axis-aligned bounding box, with dynamic dimension (> 0) and for arithmetic types. You can create an empty aabb or initialize
+ * it with center and size. You modify aabb:
+ *  - by extending it with a new point or
+ *  - by merging it with another aabb.
+ *  Additionally, + and += operators are overloaded to provide convenient alternative for these operations.
+ */
 template<int dim, typename T, typename = std::enable_if_t<(dim > 0) && std::is_arithmetic_v<T>>>
 class Aabb
 {

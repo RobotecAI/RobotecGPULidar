@@ -679,11 +679,11 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
-	Vec3f PredictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
-	void CreateObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
-	void UpdateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
+	Vec3f predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
+	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
+	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
 	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs);
-	void UpdateOutputData();
+	void updateOutputData();
 
 	std::list<ObjectState> objectStates;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;

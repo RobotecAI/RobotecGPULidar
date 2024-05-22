@@ -1198,7 +1198,7 @@ RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float
 		                                          max_matching_distance, max_prediction_time_frame, movement_sensitivity);
 	});
 	TAPE_HOOK(node, object_distance_threshold, object_azimuth_threshold, object_elevation_threshold,
-	          object_radial_speed_threshold);
+	          object_radial_speed_threshold, max_matching_distance, max_prediction_time_frame, movement_sensitivity);
 	return status;
 }
 
