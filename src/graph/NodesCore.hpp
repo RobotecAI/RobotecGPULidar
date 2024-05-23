@@ -205,8 +205,6 @@ struct MultiReturnSwitchNode : IPointsNodeSingleInput
 
 	void enqueueExecImpl() override {}
 
-	// Point cloud description
-
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
