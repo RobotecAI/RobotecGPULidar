@@ -1319,7 +1319,7 @@ RGL_API rgl_status_t rgl_node_multi_return_switch(rgl_node_t* node, rgl_return_t
 void TapeCore::tape_node_multi_return_switch(const YAML::Node& yamlNode, PlaybackState& state)
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	auto return_type = (rgl_return_type_t) yamlNode[1].as<int>();
+	auto return_type = static_cast<rgl_return_type_t>(yamlNode[1].as<int>());
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_multi_return_switch(&node, return_type);
 	state.nodes.insert({nodeId, node});
