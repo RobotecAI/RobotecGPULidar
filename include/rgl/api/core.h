@@ -946,6 +946,17 @@ RGL_API rgl_status_t rgl_node_gaussian_noise_distance(rgl_node_t* node, float me
                                                       float st_dev_rise_per_meter);
 
 /**
+ * Creates or modifies MultiReturnSwitchNode
+ * This is a special node which does not modify the data but acts as an adapter to the multi-return feature.
+ * Thanks to this node, user can attach unchanged pipelines to work with specific return type from multi-return raytracing.
+ * Graph input: point cloud (with multi-return fields)
+ * Graph output: point cloud (with a selected field from parent's multi-return point cloud)
+ * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
+ * @param return_type Return type to select from multi-return point cloud.
+ */
+RGL_API rgl_status_t rgl_node_multi_return_switch(rgl_node_t* node, rgl_return_type_t);
+
+/**
  * Assigns value true to out_alive if the given node is known and has not been destroyed,
  * assigns value false otherwise.
  * @param node Node to check if alive
