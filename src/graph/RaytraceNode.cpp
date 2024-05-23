@@ -137,6 +137,27 @@ void RaytraceNode::enqueueExecImpl()
 	                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers());
 }
 
+IAnyArray::ConstPtr RaytraceNode::getFieldDataMultiReturn(rgl_field_t field, rgl_return_type_t type)
+{
+	if (type == RGL_RETURN_TYPE_FIRST) {
+		switch (field) {
+			case XYZ_VEC3_F32: return mrFirst.xyz;
+			case DISTANCE_F32: return mrFirst.distance;
+			case IS_HIT_I32: return mrFirst.isHit;
+			default: throw InvalidPipeline(fmt::format("Multi-Return not supported for this field ({})", toString(field)));
+		}
+	}
+	if (type == RGL_RETURN_TYPE_LAST) {
+		switch (field) {
+			case XYZ_VEC3_F32: return mrLast.xyz;
+			case DISTANCE_F32: return mrLast.distance;
+			case IS_HIT_I32: return mrLast.isHit;
+			default: throw InvalidPipeline(fmt::format("Multi-Return not supported for this field ({})", toString(field)));
+		}
+	}
+	throw InvalidPipeline(fmt::format("Unknown multi-return type ({})", type));
+}
+
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)
 {
 	auto keyViewer = std::views::keys(fieldData);

@@ -68,6 +68,7 @@ class TapeCore
 	static void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_multi_return_switch(const YAML::Node& yamlNode, PlaybackState& state);
 
 	// Called once in the translation unit
 	static inline bool autoExtendTapeFunctions = std::invoke([]() {
@@ -123,6 +124,7 @@ class TapeCore
 		    TAPE_CALL_MAPPING("rgl_node_gaussian_noise_angular_ray", TapeCore::tape_node_gaussian_noise_angular_ray),
 		    TAPE_CALL_MAPPING("rgl_node_gaussian_noise_angular_hitpoint", TapeCore::tape_node_gaussian_noise_angular_hitpoint),
 		    TAPE_CALL_MAPPING("rgl_node_gaussian_noise_distance", TapeCore::tape_node_gaussian_noise_distance),
+		    TAPE_CALL_MAPPING("rgl_node_multi_return_switch", TapeCore::tape_node_multi_return_switch),
 		};
 		TapePlayer::extendTapeFunctions(tapeFunctions);
 		return true;
