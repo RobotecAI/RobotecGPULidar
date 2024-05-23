@@ -941,16 +941,19 @@ void TapeCore::tape_node_raytrace_configure_mask(const YAML::Node& yamlNode, Pla
 	rgl_node_raytrace_configure_mask(node, state.getPtr<const int8_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
-RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float beam_divergence)
+RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float horizontal_beam_divergence,
+                                                                 float vertical_beam_divergence)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, divergence={})", repr(node), beam_divergence);
+		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, divergence={})", repr(node),
+		            horizontal_beam_divergence, vertical_beam_divergence);
 		CHECK_ARG(node != nullptr);
-		CHECK_ARG(beam_divergence >= 0.0f);
+		CHECK_ARG((horizontal_beam_divergence > 0.0f && vertical_beam_divergence > 0.0f) ||
+		          (horizontal_beam_divergence == 0.0f && vertical_beam_divergence == 0.0f));
 		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
-		raytraceNode->setBeamDivergence(beam_divergence);
+		raytraceNode->setBeamDivergence(horizontal_beam_divergence, vertical_beam_divergence);
 	});
-	TAPE_HOOK(node, beam_divergence);
+	TAPE_HOOK(node, horizontal_beam_divergence, vertical_beam_divergence);
 	return status;
 }
 
@@ -958,7 +961,7 @@ void TapeCore::tape_node_raytrace_configure_beam_divergence(const YAML::Node& ya
 {
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.at(nodeId);
-	rgl_node_raytrace_configure_beam_divergence(node, yamlNode[1].as<float>());
+	rgl_node_raytrace_configure_beam_divergence(node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
 }
 
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)

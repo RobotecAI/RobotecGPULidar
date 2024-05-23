@@ -66,7 +66,8 @@ struct RaytraceRequestContext
 	Field<INCIDENT_ANGLE_F32>::type* incidentAngle;
 
 	// Multi-Return
-	float beamHalfDivergence;
+	float hBeamHalfDivergence;
+	float vBeamHalfDivergence;
 	MultiReturnPointers mrSamples;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

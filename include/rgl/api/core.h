@@ -720,9 +720,10 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int
  * Setting beam divergence > 0.0f is required to use query for multi-return results.
  * Setting beam divergence == 0.0f disables multi-return.
  * @param node RaytraceNode to modify.
- * @param beamDivergence Beam divergence in radians.
+ * @param horizontal_beam_divergence Horizontal beam divergence in radians.
+ * @param vertical_beam_divergence Vertical beam divergence in radians.
  */
-RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float beam_divergence);
+RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float horizontal_beam_divergence, float vertical_beam_divergence);
 
 /**
  * Creates or modifies FormatPointsNode.
