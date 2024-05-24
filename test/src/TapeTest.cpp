@@ -196,6 +196,8 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 
+	EXPECT_RGL_SUCCESS(rgl_entity_set_laser_retro(entity, 50.0f));
+
 	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, 1.5 * 1e9));
 
 	rgl_node_t useRays = nullptr;

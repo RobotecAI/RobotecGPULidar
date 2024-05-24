@@ -41,6 +41,7 @@ set(RGL_TEST_FILES
     src/memory/arrayTypingTest.cpp
     src/scene/entityAPITest.cpp
     src/scene/entityIdTest.cpp
+    src/scene/entityLaserRetroTest.cpp
     src/scene/entityVelocityTest.cpp
     src/scene/meshAPITest.cpp
     src/scene/textureTest.cpp
