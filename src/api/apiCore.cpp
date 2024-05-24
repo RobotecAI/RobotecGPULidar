@@ -365,6 +365,23 @@ void TapeCore::tape_entity_set_intensity_texture(const YAML::Node& yamlNode, Pla
 	                                 state.textures.at(yamlNode[1].as<TapeAPIObjectID>()));
 }
 
+RGL_API rgl_status_t rgl_entity_set_laser_retro(rgl_entity_t entity, float retro)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_set_laser_retro(entity={}, retro={})", (void*) entity, retro);
+		CHECK_ARG(entity != nullptr);
+		Entity::validatePtr(entity)->setLaserRetro(retro);
+	});
+	TAPE_HOOK(entity, retro);
+	return status;
+}
+
+void TapeCore::tape_entity_set_laser_retro(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_set_laser_retro(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                           yamlNode[1].as<Field<LASER_RETRO_F32>::type>());
+}
+
 rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive)
 {
 	auto status = rglSafeCall([&]() {

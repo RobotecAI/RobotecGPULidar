@@ -52,6 +52,7 @@ struct RaytraceRequestContext
 	Field<RING_ID_U16>::type* ringIdx;
 	Field<DISTANCE_F32>::type* distance;
 	Field<INTENSITY_F32>::type* intensity;
+	Field<LASER_RETRO_F32>::type* laserRetro;
 	Field<TIME_STAMP_F64>::type* timestamp;
 	Field<ENTITY_ID_I32>::type* entityId;
 	Field<ABSOLUTE_VELOCITY_VEC3_F32>::type* pointAbsVelocity;

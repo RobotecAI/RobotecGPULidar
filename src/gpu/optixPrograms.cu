@@ -58,7 +58,7 @@ __forceinline__ __device__ Vec3f decodePayloadVec3f(const Vec3fPayload& src)
 template<bool isFinite>
 __forceinline__ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID,
                                               const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed,
-                                              const Vec3f& normal, float incidentAngle)
+                                              const Vec3f& normal, float incidentAngle, float laserRetro)
 {
 	const int rayIdx = optixGetLaunchIndex().x;
 	if (ctx.xyz != nullptr) {
@@ -101,6 +101,9 @@ __forceinline__ __device__ void saveRayResult(const Vec3f& xyz, float distance, 
 	if (ctx.incidentAngle != nullptr) {
 		ctx.incidentAngle[rayIdx] = incidentAngle;
 	}
+	if (ctx.laserRetro != nullptr) {
+		ctx.laserRetro[rayIdx] = laserRetro;
+	}
 }
 
 __forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
@@ -112,7 +115,7 @@ __forceinline__ __device__ void saveNonHitRayResult(float nonHitDistance)
 	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
 	                isnan(displacement.z()) ? 0 : displacement.z()};
 	Vec3f xyz = origin + displacement;
-	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.001f, Vec3f{NAN}, NAN);
+	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.0f, Vec3f{NAN}, NAN, 0.0f);
 }
 
 extern "C" __global__ void __raygen__()
@@ -179,7 +182,8 @@ extern "C" __global__ void __closesthit__()
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	Vec3f hitWorld = optixTransformPointFromObjectToWorldSpace(hitObject);
 
-	int objectID = optixGetInstanceId();
+	const int objectID = optixGetInstanceId();
+	const float laserRetro = entityData.laserRetro;
 
 	Vec3f origin = decodePayloadVec3f({optixGetPayload_0(), optixGetPayload_1(), optixGetPayload_2()});
 
@@ -274,7 +278,7 @@ extern "C" __global__ void __closesthit__()
 	}
 
 	saveRayResult<true>(hitWorld, distance, intensity, objectID, absPointVelocity, relPointVelocity, radialSpeed, wNormal,
-	                    incidentAngle);
+	                    incidentAngle, laserRetro);
 }
 
 extern "C" __global__ void __miss__() { saveNonHitRayResult(ctx.farNonHitDistance); }

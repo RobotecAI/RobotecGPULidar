@@ -33,6 +33,9 @@ static std::function<Field<XYZ_VEC3_F32>::type(int)> genCoord = [](int i) {
 static std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
+static std::function<Field<LASER_RETRO_F32>::type(int)> genLaserRetro = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
 static std::function<Field<AZIMUTH_F32>::type(int)> genAzimuth = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
