@@ -539,8 +539,7 @@ RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_t
  * @param entity Entity to modify.
  * @param retro Laser retro value to set.
  */
-RGL_API rgl_status_t
-rgl_entity_set_laser_retro(rgl_entity_t entity, float retro);
+RGL_API rgl_status_t rgl_entity_set_laser_retro(rgl_entity_t entity, float retro);
 
 /**
  * Assigns value true to out_alive if the given entity is known and has not been destroyed,
