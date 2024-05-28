@@ -67,14 +67,13 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 
 ## Building in Docker (Linux)
 
-1. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
-3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
-4. `docker build . --tag rgl:latest`
-5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:latest /bin/bash`
-6. `./setup.py --clean-build --with-pcl`
-   - For build with ROS2 extension, do source ROS2 first:\
-     `source /opt/ros/humble/setup.bash && ./setup.py --clean-build --with-pcl --with-ros2`
+1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
+2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
+3. `docker build --build-context optix=${OptiX_INSTALL_DIR} --target=export-binaries --output=bin .`
+    - The binaries will be exported to the `bin` directory
+4. TODO: Describe building the image and running the container
+   - Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+   - (...)
 
 ## Building on Ubuntu 22
 
