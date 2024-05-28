@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18) # # 3.18 To have DISCOVERY_MODE option for gtest_discover_tests()
 
 set(RGL_TEST_FILES
     src/apiReadmeExample.cpp
@@ -82,7 +82,7 @@ target_compile_definitions(RobotecGPULidar_test PRIVATE
     RGL_TEST_DATA_DIR="${CMAKE_CURRENT_LIST_DIR}/data"
 )
 
-target_link_libraries(RobotecGPULidar_test PRIVATE
+target_link_libraries(RobotecGPULidar_test
     gtest_main
     gmock_main
     RobotecGPULidar
@@ -121,4 +121,5 @@ endif()
 
 include(GoogleTest)
 
-gtest_discover_tests(RobotecGPULidar_test)
+gtest_discover_tests(RobotecGPULidar_test
+        DISCOVERY_MODE PRE_TEST)
