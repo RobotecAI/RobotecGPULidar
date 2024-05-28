@@ -15,6 +15,11 @@ using namespace std::chrono_literals;
 class GraphMultiReturn : public RGLTest
 {
 protected:
+	// VLP16 data
+	const float vlp16LidarObjectDistance = 100.0f;
+	const float vlp16LidarHBeamDivergence = 0.003f; // VLP16 horizontal beam divergence in rads
+	const float vlp16LidarHBeamDiameter = 0.2868f;  // VLP16 beam horizontal diameter at 100m
+
 	const std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32 /*, INTENSITY_F32, ENTITY_ID_I32*/};
 
 	rgl_node_t rays = nullptr, mrRays = nullptr, cameraRays = nullptr, transform = nullptr, mrTransform = nullptr,
@@ -24,7 +29,7 @@ protected:
 	           compactFirst = nullptr, compactLast = nullptr;
 
 	void constructMRGraph(const std::vector<rgl_mat3x4f>& raysTf, const rgl_mat3x4f& lidarPose, const float beamDivAngle,
-	                      bool withPublish)
+	                      bool withPublish = false)
 	{
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&mrRays, raysTf.data(), raysTf.size()));
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&mrTransform, &lidarPose));
@@ -59,6 +64,39 @@ protected:
 			EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrFormatLast, mrPublishLast));
 		}
 	}
+
+	void constructCameraGraph(const rgl_mat3x4f& cameraPose, const char* topic)
+	{
+#ifdef RGL_BUILD_ROS2_EXTENSION
+		const std::vector<rgl_mat3x4f> cameraRayTf = makeLidar3dRays(360.0f, 180.0f, 0.5f, 0.5f);
+		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&cameraRays, cameraRayTf.data(), cameraRayTf.size()));
+		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&cameraTransform, &cameraPose));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&cameraRaytrace, nullptr));
+		EXPECT_RGL_SUCCESS(rgl_node_points_format(&cameraFormat, fields.data(), fields.size()));
+		EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&cameraPublish, topic, "world"));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraRays, cameraTransform));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraTransform, cameraRaytrace));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraRaytrace, cameraFormat));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraFormat, cameraPublish));
+#else
+		GTEST_SKIP() << "Publishing is not supported without ROS2 extension. Skippping the test with camera.";
+#endif
+	}
+
+	void spawnStairsOnScene(const float stepWidth, const float stepHeight, const float stepDepth, const float stairsBaseHeight,
+	                        const Vec3f& stairsTranslation) const
+	{
+		const Vec3f cubeHalfEdgeScaled{CUBE_HALF_EDGE * stepDepth / CUBE_EDGE, CUBE_HALF_EDGE * stepWidth / CUBE_EDGE,
+		                               CUBE_HALF_EDGE * stepHeight / CUBE_EDGE};
+
+		const auto firstCubeTf =
+		    Mat3x4f::translation(stairsTranslation) *
+		    Mat3x4f::TRS({cubeHalfEdgeScaled.x(), 0.0f, -cubeHalfEdgeScaled.z() + stairsBaseHeight + stepHeight},
+		                 {0.0f, 0.0f, 0.0f}, {stepDepth / CUBE_EDGE, stepWidth / CUBE_EDGE, stepHeight / CUBE_EDGE});
+		spawnCubeOnScene(firstCubeTf);
+		spawnCubeOnScene(Mat3x4f::translation(stepDepth, 0.0f, stepHeight) * firstCubeTf);
+		spawnCubeOnScene(Mat3x4f::translation(2 * stepDepth, 0.0f, 2 * stepHeight) * firstCubeTf);
+	}
 };
 
 /**
@@ -68,8 +106,8 @@ protected:
 TEST_F(GraphMultiReturn, VLP16_data_compare)
 {
 	// Lidar
-	const std::vector<rgl_mat3x4f> raysTf {Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, -90.0f}).toRGL()};
-	const float lidarCubeFaceDist = 100.0f;
+	const std::vector<rgl_mat3x4f> raysTf{Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, -90.0f}).toRGL()};
+	const float lidarCubeFaceDist = vlp16LidarObjectDistance;
 	const float lidarCubeCenterDist = lidarCubeFaceDist + CUBE_HALF_EDGE;
 	const rgl_mat3x4f lidarPose = Mat3x4f::TRS({lidarCubeCenterDist, 0.0f, 0.0f}).toRGL();
 
@@ -77,8 +115,8 @@ TEST_F(GraphMultiReturn, VLP16_data_compare)
 	spawnCubeOnScene(Mat3x4f::identity());
 
 	// VLP16 horizontal beam divergence in rads
-	const float beamDivAngle = 0.003f;
-	constructMRGraph(raysTf, lidarPose, beamDivAngle, false);
+	const float beamDivAngle = vlp16LidarHBeamDivergence;
+	constructMRGraph(raysTf, lidarPose, beamDivAngle);
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(mrRays));
 
@@ -97,7 +135,7 @@ TEST_F(GraphMultiReturn, VLP16_data_compare)
 	EXPECT_NEAR(mrFirstPoints.at(0).z(), expectedFirstPoint.z(), epsilon);
 	EXPECT_NEAR(mrFirstDistances.at(0), lidarCubeFaceDist, epsilon);
 
-	const float expectedDiameter = 0.2868f; // VLP16 beam horizontal diameter at 100m
+	const float expectedDiameter = vlp16LidarHBeamDiameter;
 
 	const auto mrLastOutPointcloud = TestPointCloud::createFromNode(mrFormatLast, fields);
 	const auto mrLastIsHits = mrLastOutPointcloud.getFieldValues<IS_HIT_I32>();
@@ -133,7 +171,7 @@ TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
 	GTEST_SKIP(); // Comment to run the test
 
 	// Lidar
-	const std::vector<rgl_mat3x4f> raysTf {Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, 90.0f}).toRGL()};
+	const std::vector<rgl_mat3x4f> raysTf{Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, 90.0f}).toRGL()};
 	const float lidarCubeFaceDist = 100.0f;
 	const float lidarCubeCenterDist = lidarCubeFaceDist + CUBE_HALF_EDGE * 2;
 	const Vec3f lidarTransl = {-lidarCubeCenterDist, 3.0f, 3.0f};
@@ -147,18 +185,10 @@ TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
 	std::vector<rgl_entity_t> entities = {spawnCubeOnScene(entitiesTransforms.at(0)),
 	                                      spawnCubeOnScene(entitiesTransforms.at(1))};
 
-	// Camera
-	const rgl_mat3x4f cameraPose = Mat3x4f::TRS(Vec3f{-8.0f, 1.0f, 5.0f}, {90.0f, 30.0f, -70.0f}).toRGL();
-	const std::vector<rgl_mat3x4f> cameraRayTf = makeLidar3dRays(360.0f, 180.0f, 0.5f, 0.5f);
-	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&cameraRays, cameraRayTf.data(), cameraRayTf.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&cameraTransform, &cameraPose));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&cameraRaytrace, nullptr));
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&cameraFormat, fields.data(), fields.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&cameraPublish, "MRTest_PairsOfCubes_Camera", "world"));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraRays, cameraTransform));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraTransform, cameraRaytrace));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraRaytrace, cameraFormat));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraFormat, cameraPublish));
+	// Lidar with MR
+	const float beamDivAngle = 0.003f;
+	rgl_node_t mrRays = nullptr, mrRaytrace = nullptr, mrFormatFirst = nullptr, mrFormatLast = nullptr;
+	constructMRGraph(raysTf, lidarPose, beamDivAngle, true);
 
 	// Lidar without MR
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
@@ -171,9 +201,9 @@ TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
 
-	// Lidar with MR
-	const float beamDivAngle = 0.003f;
-	constructMRGraph(raysTf, lidarPose, beamDivAngle, true);
+	// Camera
+	const rgl_mat3x4f cameraPose = Mat3x4f::TRS(Vec3f{-8.0f, 1.0f, 5.0f}, {90.0f, 30.0f, -70.0f}).toRGL();
+	constructCameraGraph(cameraPose, "MRTest_Camera");
 
 	int frameId = 0;
 	while (true) {
@@ -188,6 +218,62 @@ TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
 		ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
 
 		std::this_thread::sleep_for(50ms);
+		frameId += 1;
+	}
+}
+#endif
+
+#if RGL_BUILD_ROS2_EXTENSION
+/**
+ * This test verifies how changing the beam divergence affects the results obtained with the multi return feature enabled.
+ * Three cubes arranged in the shape of a stairs are placed on the scene. LiDAR aims the only ray at the center of the middle “stair",
+ * during the test the beam divergence angle is increased/decreased periodically.
+ */
+TEST_F(GraphMultiReturn, stairs)
+{
+	/*
+	 *                    ____        ^
+	 *               ____|            | Z+
+	 *          ____| middle step     |
+	 *         |                       ----> X+
+	 */
+
+	GTEST_SKIP(); // Comment to run the test
+
+	// Scene
+	const float stairsBaseHeight = 0.0f;
+	const float stepWidth = 1.0f;
+	const float stepHeight = vlp16LidarHBeamDiameter + 0.1f;
+	const float stepDepth = 0.8f;
+	const Vec3f stairsTranslation{2.0f, 0.0f, 0.0f};
+
+	spawnStairsOnScene(stepWidth, stepHeight, stepDepth, stairsBaseHeight, stairsTranslation);
+
+	// Lidar
+	const std::vector<rgl_mat3x4f> raysTf{Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, 90.0f}).toRGL()};
+
+	const float lidarMiddleStepDist = 1.5f * vlp16LidarObjectDistance;
+	const Vec3f lidarTransl{-lidarMiddleStepDist + stepDepth, 0.0f, stepHeight * 1.5f};
+
+	const rgl_mat3x4f lidarPose{(Mat3x4f::translation(lidarTransl + stairsTranslation)).toRGL()};
+
+	// Lidar with MR
+	const float beamDivAngle = vlp16LidarHBeamDivergence;
+	constructMRGraph(raysTf, lidarPose, beamDivAngle, true);
+
+	// Camera
+	rgl_mat3x4f cameraPose = Mat3x4f::translation({0.0f, -1.5f, stepHeight * 3 + 1.0f}).toRGL();
+	constructCameraGraph(cameraPose, "MRTest_Camera");
+
+	int frameId = 0;
+	while (true) {
+		const float newBeamDivAngle = beamDivAngle + std::sin(frameId * 0.1f) * beamDivAngle;
+		ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(mrRaytrace, newBeamDivAngle));
+
+		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(mrRaytrace));
+
+		std::this_thread::sleep_for(100ms);
 		frameId += 1;
 	}
 }
