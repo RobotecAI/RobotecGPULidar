@@ -1,6 +1,3 @@
-.git
-.gitattributes
-.gitignore
 .vs
 .vscode
 bin
