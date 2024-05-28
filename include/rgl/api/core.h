@@ -71,8 +71,8 @@ typedef struct
 
 #ifdef __cplusplus
 static_assert(sizeof(rgl_vec2f) == 2 * sizeof(float));
-static_assert(std::is_trivial_v<rgl_vec2f>);
-static_assert(std::is_standard_layout_v<rgl_vec2f>);
+static_assert(std::is_trivial<rgl_vec2f>::value);
+static_assert(std::is_standard_layout<rgl_vec2f>::value);
 #endif
 
 /**
@@ -85,8 +85,8 @@ typedef struct
 
 #ifdef __cplusplus
 static_assert(sizeof(rgl_vec3f) == 3 * sizeof(float));
-static_assert(std::is_trivial_v<rgl_vec3f>);
-static_assert(std::is_standard_layout_v<rgl_vec3f>);
+static_assert(std::is_trivial<rgl_vec3f>::value);
+static_assert(std::is_standard_layout<rgl_vec3f>::value);
 #endif
 
 /**
@@ -99,8 +99,8 @@ typedef struct
 
 #ifdef __cplusplus
 static_assert(sizeof(rgl_vec3i) == 3 * sizeof(int32_t));
-static_assert(std::is_trivial_v<rgl_vec3i>);
-static_assert(std::is_standard_layout_v<rgl_vec3i>);
+static_assert(std::is_trivial<rgl_vec3i>::value);
+static_assert(std::is_standard_layout<rgl_vec3i>::value);
 #endif
 
 /**
@@ -114,8 +114,8 @@ typedef struct
 
 #ifdef __cplusplus
 static_assert(sizeof(rgl_mat3x4f) == 3 * 4 * sizeof(float));
-static_assert(std::is_trivial_v<rgl_mat3x4f>);
-static_assert(std::is_standard_layout_v<rgl_mat3x4f>);
+static_assert(std::is_trivial<rgl_mat3x4f>::value);
+static_assert(std::is_standard_layout<rgl_mat3x4f>::value);
 #endif
 
 /**
@@ -147,8 +147,8 @@ typedef struct
 
 #ifdef __cplusplus
 static_assert(sizeof(rgl_radar_scope_t) == 5 * sizeof(float));
-static_assert(std::is_trivial_v<rgl_radar_scope_t>);
-static_assert(std::is_standard_layout_v<rgl_radar_scope_t>);
+static_assert(std::is_trivial<rgl_radar_scope_t>::value);
+static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
 #endif
 
 /**
