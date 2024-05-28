@@ -84,7 +84,7 @@ protected:
 
 	void constructCameraGraph(const rgl_mat3x4f& cameraPose)
 	{
-#ifdef RGL_BUILD_ROS2_EXTENSION
+#if RGL_BUILD_ROS2_EXTENSION
 		const std::vector<rgl_mat3x4f> cameraRayTf = makeLidar3dRays(360.0f, 180.0f, 1.0f, 1.0f);
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&cameraRays, cameraRayTf.data(), cameraRayTf.size()));
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&cameraTransform, &cameraPose));
