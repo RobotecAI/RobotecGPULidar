@@ -212,6 +212,9 @@ struct MultiReturnSwitchNode : IPointsNodeSingleInput
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
+		if (returnType == RGL_RETURN_TYPE_NOT_DIVERGENT) {
+			return rtxInput->getFieldData(field);
+		}
 		return rtxInput->getFieldDataMultiReturn(field, returnType);
 	}
 
