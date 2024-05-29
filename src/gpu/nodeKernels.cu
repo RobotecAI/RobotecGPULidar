@@ -245,16 +245,15 @@ __global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBea
 		}
 	}
 	Vec3f beamOrigin = beamsWorld[beamIdx] * Vec3f{0, 0, 0};
-	Vec3f beamDir = (beamsWorld[beamIdx] * Vec3f{0, 0, 1}).normalized();
-	printf("%f\n", beamDir.length());
+	Vec3f beamDir = ((beamsWorld[beamIdx] * Vec3f{0, 0, 1}) - beamOrigin).normalized();
 	bool isHit = firstIdx >= 0; // Note that firstHit >= 0 implies lastHit >= 0
 	first.isHit[beamIdx] = isHit;
 	last.isHit[beamIdx] = isHit;
 	if (isHit) {
-		first.xyz[beamIdx] = beamOrigin + beamDir * first.distance[beamIdx];
 		first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
-		last.xyz[beamIdx] = beamOrigin + beamDir * last.distance[beamIdx];
 		last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
+		first.xyz[beamIdx] = beamOrigin + beamDir * first.distance[beamIdx];
+		last.xyz[beamIdx] = beamOrigin + beamDir * last.distance[beamIdx];
 	}
 }
 

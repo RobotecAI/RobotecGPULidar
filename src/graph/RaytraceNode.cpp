@@ -133,8 +133,10 @@ void RaytraceNode::enqueueExecImpl()
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
 	                        launchDims.x, launchDims.y, launchDims.y));
 
-	gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
-	                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers(), raysPtr);
+	if (beamHalfDivergence > 0.0f) {
+		gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
+		                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers(), raysPtr);
+	}
 }
 
 IAnyArray::ConstPtr RaytraceNode::getFieldDataMultiReturn(rgl_field_t field, rgl_return_type_t type)
