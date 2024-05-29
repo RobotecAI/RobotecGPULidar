@@ -374,6 +374,13 @@ typedef enum : int32_t
 	 */
 	RGL_FIELD_RAY_POSE_MAT3x4_F32,
 
+	/**
+	 * Lidar reflective value. Similar to the `RGL_FIELD_INTENSITY_F32` but set as a single value for the entire entity.
+	 * Could be replaced with `RGL_FIELD_INTENSITY_F32` and a 1x1 texture when float-type texture will be supported.
+	 * For non-hit points zero is assigned.
+	 */
+	RGL_FIELD_LASER_RETRO_F32,
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
@@ -525,6 +532,15 @@ RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
  * @param texture Texture to assign.
  */
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture);
+
+/**
+ * Set laser retro value for the given Entity.
+ * The value can be retrieved from `RGL_FIELD_LASER_RETRO_F32` point cloud field.
+ * Default retro for the Entity is zero.
+ * @param entity Entity to modify.
+ * @param retro Laser retro value to set.
+ */
+RGL_API rgl_status_t rgl_entity_set_laser_retro(rgl_entity_t entity, float retro);
 
 /**
  * Assigns value true to out_alive if the given entity is known and has not been destroyed,

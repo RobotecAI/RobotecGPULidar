@@ -18,6 +18,7 @@ struct EntitySBTData
 	const Vec2f* textureCoords;
 	size_t textureCoordsCount;
 	cudaTextureObject_t texture;
+	float laserRetro;
 
 	// Info about the previous frame:
 	Mat3x4f prevFrameLocalToWorld; // Must not be used if !hasPrevFrameLocalToWorld

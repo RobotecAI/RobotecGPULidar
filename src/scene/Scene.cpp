@@ -89,6 +89,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
 		             .texture = entity->intensityTexture != nullptr ? entity->intensityTexture->getTextureObject() : 0,
+		             .laserRetro = entity->laserRetro,
 		             .prevFrameLocalToWorld = prevFrameTransform.value_or(Mat3x4f::identity()),
 		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value(),
 		             .vertexDisplacementSincePrevFrame = mesh->getSkinningDisplacementSinceLastFrame(),

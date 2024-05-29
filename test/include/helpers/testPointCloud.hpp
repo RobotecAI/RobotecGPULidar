@@ -204,8 +204,8 @@ public:
 			int fieldOffset = offsets.at(fieldIndex);
 			bool allZeros = true;
 			for (int i = 0; i < getPointCount(); ++i) {
-				if (std::memcmp(data.data() + i * getPointByteSize() + fieldOffset, std::vector<char>(getFieldSize(field), 0).data(),
-				                getFieldSize(field)) != 0) {
+				if (std::memcmp(data.data() + i * getPointByteSize() + fieldOffset,
+				                std::vector<char>(getFieldSize(field), 0).data(), getFieldSize(field)) != 0) {
 					allZeros = false;
 					break;
 				}
@@ -288,6 +288,7 @@ private:
 		{RAY_IDX_U32, [&](std::size_t count) {setFieldValues<RAY_IDX_U32>(generateFieldValues(count, genRayIdx));}},
 		{ENTITY_ID_I32, [&](std::size_t count) {setFieldValues<ENTITY_ID_I32>(generateFieldValues(count, genEntityId));}},
 		{INTENSITY_F32, [&](std::size_t count) {setFieldValues<INTENSITY_F32>(generateFieldValues(count, genIntensity));}},
+		{LASER_RETRO_F32, [&](std::size_t count) {setFieldValues<LASER_RETRO_F32>(generateFieldValues(count, genLaserRetro));}},
 		{RING_ID_U16, [&](std::size_t count) {setFieldValues<RING_ID_U16>(generateFieldValues(count, genRingId));}},
 		{AZIMUTH_F32, [&](std::size_t count) {setFieldValues<AZIMUTH_F32>(generateFieldValues(count, genAzimuth));}},
 		{ELEVATION_F32, [&](std::size_t count) {setFieldValues<ELEVATION_F32>(generateFieldValues(count, genElevation));}},

@@ -44,6 +44,12 @@ void Entity::setId(int newId)
 	Scene::instance().requestASRebuild(); // Update instanceId field in AS
 }
 
+void Entity::setLaserRetro(float retro)
+{
+	laserRetro = retro;
+	Scene::instance().requestSBTRebuild();
+}
+
 void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 {
 	intensityTexture = texture;

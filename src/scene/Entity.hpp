@@ -57,6 +57,11 @@ struct Entity : APIObject<Entity>
 	void setIntensityTexture(std::shared_ptr<Texture> texture);
 
 	/**
+	 * Sets laser retro that will be used as a point attribute LASER_RETRO_F32 when a ray hits this entity.
+	 */
+	void setLaserRetro(float retro);
+
+	/**
 	 * Returns Entity's transform such that it is possible to compute meaningful velocity between it and the current transform.
 	 * Most often it will return the previous frame (if Entity is updated on each frame). See source for details.
 	 * NOTE: It is assumed that (current) transform is always valid for the present scene time (even if it was set in the past).
@@ -84,6 +89,7 @@ private:
 	TransformWithTime formerTransformInfo{Mat3x4f::identity(), std::nullopt};
 
 	Field<ENTITY_ID_I32>::type id{RGL_DEFAULT_ENTITY_ID};
+	float laserRetro{};
 
 	std::shared_ptr<Mesh> mesh{};
 	std::shared_ptr<Texture> intensityTexture{};
