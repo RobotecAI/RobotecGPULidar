@@ -240,7 +240,6 @@ def install_pcl_deps(cfg):
     if not os.path.isdir(cfg.VCPKG_DIR):
         if on_linux() and not inside_docker():  # Inside docker already installed
             print("Installing dependencies for vcpkg...")
-            run_system_command("sudo apt update")
             run_system_command("sudo apt install git curl zip unzip tar freeglut3-dev libglew-dev libglfw3-dev")
         run_subprocess_command(
             f"git clone -b {cfg.VCPKG_TAG} --single-branch --depth 1 https://github.com/microsoft/vcpkg {cfg.VCPKG_DIR}")
@@ -265,7 +264,6 @@ def install_ros2_deps(cfg):
         if on_windows():
             run_system_command("pip install colcon-common-extensions")
         elif not inside_docker():  # Linux; Inside docker already installed
-            run_system_command("sudo apt update")
             run_system_command("sudo apt install python3-colcon-common-extensions")
     # Clone radar msgs
     if not os.path.isdir(cfg.RADAR_MSGS_DIR):
