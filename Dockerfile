@@ -22,6 +22,16 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
         python3 \
         sudo
 
+# Set working directory using standard opt path
+WORKDIR /opt/rgl
+
+# Copy only dependencies definition files
+COPY ./setup.py .
+
+# install dependencies while caching apt downloads
+# RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+#    ./setup.py --install-deps-only
+
 ################################################################################
 # MARK: builder - build rgl binaries
 ################################################################################
