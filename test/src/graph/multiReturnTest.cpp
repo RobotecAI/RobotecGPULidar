@@ -206,7 +206,6 @@ TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
 
 	// Lidar with MR
 	const float beamDivAngle = 0.003f;
-	rgl_node_t mrRays = nullptr, mrRaytrace = nullptr, mrFormatFirst = nullptr, mrFormatLast = nullptr;
 	constructMRGraph(raysTf, lidarPose, beamDivAngle, true);
 
 	// Lidar without MR
