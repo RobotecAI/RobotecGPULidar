@@ -7,7 +7,13 @@ FROM nvidia/cuda:11.7.1-devel-ubuntu22.04 as base
 ################################################################################
 FROM $BASE_IMAGE as prepper
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt update
+
+# Edit apt config for caching and update once
+RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/ && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+      > /etc/apt/apt.conf.d/keep-cache && \
+    apt-get update
+
 RUN apt install -y \
     git \
     cmake \
