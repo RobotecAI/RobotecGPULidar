@@ -19,7 +19,8 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get install -y --no-install-recommends \
         cmake \
         git \
-        python3
+        python3 \
+        sudo
 
 ################################################################################
 # MARK: builder - build rgl binaries
