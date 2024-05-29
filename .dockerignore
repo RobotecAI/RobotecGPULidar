@@ -4,6 +4,7 @@
 # First-order allow exception for select directories
 !/.clang-format
 !/.githooks
+!/.git
 !/CMakeLists.txt
 !/Dockerfile
 !/docs
