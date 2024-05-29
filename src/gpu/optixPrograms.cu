@@ -142,8 +142,9 @@ extern "C" __global__ void __closesthit__()
 		if (!ctx.doApplyDistortion) {
 			return hitWorldRaytraced;
 		}
-		Mat3x4f undistortedRay = ctx.raysWorld[beamIdx] *
-		                         makeBeamSampleRayTransform(ctx.beamHalfDivergence, circleIdx, vertexIdx);
+		Mat3x4f sampleRayTf = beamSampleRayIdx == 0 ? Mat3x4f::identity() :
+		                                              makeBeamSampleRayTransform(ctx.beamHalfDivergence, circleIdx, vertexIdx);
+		Mat3x4f undistortedRay = ctx.raysWorld[beamIdx] * sampleRayTf;
 		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
 		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
 		return undistortedOrigin + undistortedDir * distance;
