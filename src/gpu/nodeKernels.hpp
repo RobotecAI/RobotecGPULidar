@@ -53,4 +53,4 @@ void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthSt
                            const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
                            const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor);
 void gpuProcessBeamSamplesFirstLast(cudaStream_t stream, size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
-                                    MultiReturnPointers first, MultiReturnPointers last);
+                                    MultiReturnPointers first, MultiReturnPointers last, const Mat3x4f* beamWorld);
