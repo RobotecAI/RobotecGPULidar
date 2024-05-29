@@ -1,17 +1,18 @@
-.vs
-.vscode
-bin
-[_][Bb]uild
-Builds/*
-Testing/*
-.idea
-cmake-build-debug
-cmake-build-release
-build
-external/*
-!external/CMakeLists.txt
+# Ignore everything by default
+*
 
-README.md
-CHANGELOG.md
-CONTRIBUTING.md
-LICENSE
+# First-order allow exception for select directories
+!/.clang-format
+!/.githooks
+!/CMakeLists.txt
+!/Dockerfile
+!/docs
+!/extensions
+!/extensions.repos
+!external/CMakeLists.txt
+!/include
+!/ros2_standalone
+!/setup.py
+!/src
+!/test
+!/tools
