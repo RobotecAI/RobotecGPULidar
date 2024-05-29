@@ -1,4 +1,6 @@
-ARG BASE_IMAGE=nvidia/cuda:11.7.1-devel-ubuntu22.04
+ARG BASE_IMAGE=base
+# Stage from full image tag name for dependabot detection
+FROM nvidia/cuda:11.7.1-devel-ubuntu22.04 as base
 ARG DEBIAN_FRONTEND=noninteractive
 
 FROM ${BASE_IMAGE} as rgl-core
