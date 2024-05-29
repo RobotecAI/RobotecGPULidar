@@ -55,7 +55,7 @@ extern "C" __global__ void __raygen__()
 		return;
 	}
 
-	Mat3x4f ray = ctx.rays[rayIdx];
+	Mat3x4f ray = ctx.raysWorld[rayIdx];
 	const Mat3x4f rayLocal =
 	    ctx.rayOriginToWorld.inverse() *
 	    ray; // TODO(prybicki): instead of computing inverse, we should pass rays in local CF and then transform them to world CF.
@@ -142,7 +142,8 @@ extern "C" __global__ void __closesthit__()
 		if (!ctx.doApplyDistortion) {
 			return hitWorldRaytraced;
 		}
-		Mat3x4f undistortedRay = ctx.rays[beamIdx] * makeBeamSampleRayTransform(ctx.beamHalfDivergence, circleIdx, vertexIdx);
+		Mat3x4f undistortedRay = ctx.raysWorld[beamIdx] *
+		                         makeBeamSampleRayTransform(ctx.beamHalfDivergence, circleIdx, vertexIdx);
 		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
 		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
 		return undistortedOrigin + undistortedDir * distance;
@@ -186,7 +187,6 @@ extern "C" __global__ void __closesthit__()
 
 	// Save sub-sampling results
 	ctx.mrSamples.isHit[mrSamplesIdx] = true;
-	ctx.mrSamples.xyz[mrSamplesIdx] = hitWorldSeenBySensor;
 	ctx.mrSamples.distance[mrSamplesIdx] = distance;
 	if (beamSampleRayIdx != 0) {
 		return;
@@ -267,7 +267,7 @@ __device__ Mat3x4f makeBeamSampleRayTransform(float halfDivergenceAngleRad, unsi
 
 __device__ void saveNonHitRayResult(float nonHitDistance)
 {
-	Mat3x4f ray = ctx.rays[optixGetLaunchIndex().x];
+	Mat3x4f ray = ctx.raysWorld[optixGetLaunchIndex().x];
 	Vec3f origin = ray * Vec3f{0, 0, 0};
 	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
 	Vec3f displacement = dir.normalized() * nonHitDistance;
