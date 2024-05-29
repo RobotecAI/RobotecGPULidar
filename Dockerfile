@@ -14,10 +14,12 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/ && \
       > /etc/apt/apt.conf.d/keep-cache && \
     apt-get update
 
-RUN apt install -y \
-    git \
-    cmake \
-    python3
+# Install bootstrap tools for install scripts
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    apt-get install -y --no-install-recommends \
+        cmake \
+        git \
+        python3
 
 ################################################################################
 # MARK: builder - build rgl binaries
