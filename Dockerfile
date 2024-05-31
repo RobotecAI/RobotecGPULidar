@@ -26,11 +26,11 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
 WORKDIR /opt/rgl
 
 # Copy only dependencies definition files
-COPY ./setup.py .
+COPY ./install_deps.py .
 
 # install dependencies while caching apt downloads
-# RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
-#    ./setup.py --install-deps-only
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    ./install_deps.py
 
 ################################################################################
 # MARK: builder - build rgl binaries
@@ -56,4 +56,4 @@ RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
 # MARK: exporter - export rgl binaries
 ################################################################################
 FROM scratch AS exporter
-COPY --from=builder /code/build/libRobotecGPULidar.so /
+COPY --from=builder /opt/rgl/build/libRobotecGPULidar.so /

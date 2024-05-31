@@ -1,19 +1,7 @@
-include(FetchContent)
 
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.9.2
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(spdlog)
-
-FetchContent_Declare(
-    cmake_git_version_tracking
-    GIT_REPOSITORY https://github.com/andrew-hardin/cmake-git-version-tracking.git
-    GIT_TAG 904dbda1336ba4b9a1415a68d5f203f576b696bb
-)
-FetchContent_MakeAvailable(cmake_git_version_tracking)
+add_subdirectory("${PROJECT_SOURCE_DIR}/external/spdlog")
+add_subdirectory("${PROJECT_SOURCE_DIR}/external/yaml-cpp")
+add_subdirectory("${PROJECT_SOURCE_DIR}/external/cmake_git_version_tracking")
 
 # An attempt to disable targets from yaml-cpp; had difficulties with some of them
 # More details here: https://github.com/jbeder/yaml-cpp/issues/1158
@@ -22,13 +10,6 @@ set(YAML_CPP_BUILD_CONTRIB OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
 set(YAML_CPP_BUILD_TOOLS OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
 set(YAML_CPP_INSTALL OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
 set(YAML_CPP_FORMAT_SOURCE OFF CACHE INTERNAL "Disable yaml-cpp artifacts")
-FetchContent_Declare(
-    yaml-cpp
-    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG yaml-cpp-0.7.0
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(yaml-cpp)
 set_property(TARGET yaml-cpp PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Disable compilation warnings for dependencies
@@ -51,15 +32,10 @@ if (UNIX)
 endif()
 
 if (${RGL_BUILD_TESTS} OR ${RGL_BUILD_TAPED_TESTS})
+    add_subdirectory("${PROJECT_SOURCE_DIR}/external/googletest")
+
     set(INSTALL_GTEST OFF CACHE INTERNAL "Disable installation of googletest")
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest
-        GIT_TAG release-1.11.0
-        GIT_SHALLOW TRUE
-    )
 
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
 endif()
