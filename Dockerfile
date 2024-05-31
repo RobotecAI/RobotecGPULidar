@@ -1,11 +1,13 @@
 ARG BASE_IMAGE=base
+ARG WITH_PCL=0
+ARG WITH_ROS2=0
 # Stage from full image tag name for dependabot detection
 FROM nvidia/cuda:11.7.1-devel-ubuntu22.04 as base
 
 ################################################################################
 # MARK: prepper - prep rgl dependencies
 ################################################################################
-FROM $BASE_IMAGE as prepper
+FROM $BASE_IMAGE as prepper-core
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Edit apt config for caching and update once
@@ -28,9 +30,36 @@ WORKDIR /opt/rgl
 # Copy only dependencies definition files
 COPY ./install_deps.py .
 
-# install dependencies while caching apt downloads
+# Install dependencies while caching apt downloads
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     ./install_deps.py
+
+# Handle PCL extension
+FROM prepper-core AS prepper-pcl-0
+
+FROM prepper-core AS prepper-pcl-1
+# Copy only dependencies definition files
+COPY ./extensions/pcl/install_deps.py .
+
+# Install dependencies while caching apt downloads
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    ./install_deps.py
+
+# Handle ROS2 extension
+FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-0
+
+FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-1
+# TODO - install ROS2 here
+
+# Copy only dependencies definition files
+COPY ./extensions/ros2/install_deps.py .
+
+# Install dependencies while caching apt downloads
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    ./install_deps.py
+
+# Final prepper stage with selected extensions
+FROM prepper-ros2-${WITH_ROS2} AS prepper
 
 ################################################################################
 # MARK: builder - build rgl binaries
