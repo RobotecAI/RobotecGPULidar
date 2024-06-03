@@ -6,7 +6,6 @@
 !/.githooks
 !/.git
 !/CMakeLists.txt
-!/Dockerfile
 !/docs
 !/extensions
 !/extensions.repos
