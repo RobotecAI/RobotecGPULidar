@@ -7,6 +7,7 @@ FROM nvidia/cuda:11.7.1-devel-ubuntu22.04 as base
 ################################################################################
 # MARK: prepper - prep rgl dependencies
 ################################################################################
+### Core dependencies stage
 FROM $BASE_IMAGE as prepper-core
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -34,39 +35,38 @@ COPY ./install_deps.py .
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     ./install_deps.py
 
-# Handle PCL extension
+### PCL extension dependencies stage (added on top of core depenencies based on `WITH_PCL` argument)
 FROM prepper-core AS prepper-pcl-0
-
+# Do nothing, PCL extension is not enabled
 FROM prepper-core AS prepper-pcl-1
-# Copy only dependencies definition files
+# Copy only dependencies definition files for PCL extension
 COPY ./extensions/pcl/install_deps.py .
 
-# Install dependencies while caching apt downloads
+# Install PCL extension dependencies while caching apt downloads
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     ./install_deps.py
 
-# Handle ROS2 extension
+### ROS2 extension dependencies stage (added on top of PCL depenencies based on `WITH_ROS2` argument)
 FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-0
-
+# Do nothing, ROS2 extension is not enabled
 FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-1
-# Install ROS2
-# Setup timezone
+# Install ROS2: Setup timezone
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     echo 'Etc/UTC' > /etc/timezone && \
     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     apt-get install -q -y --no-install-recommends tzdata
 
-# Setup sources.list
+# Install ROS2: Setup sources.list
 RUN echo "deb http://packages.ros.org/ros2/ubuntu jammy main" > /etc/apt/sources.list.d/ros2-latest.list
 
-# Setup keys
+# Install ROS2: Setup keys
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
-# Setup environment
+# Install ROS2: Setup environment
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-# Install packages
+# Install ROS2: Install packages
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -85,14 +85,14 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     ros-humble-velodyne-pointcloud \
     psmisc # `killall` command
 
-# Copy only dependencies definition files
+# Copy only dependencies definition files for ROS2 extension
 COPY ./extensions/ros2/install_deps.py .
 
-# Install dependencies while caching apt downloads
+# Install ROS2 extension dependencies while caching apt downloads
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     /bin/bash -c "source /opt/ros/humble/setup.bash; ./install_deps.py"
 
-# Final prepper stage with selected extensions
+### Final prepper stage with selected extensions
 FROM prepper-ros2-${WITH_ROS2} AS prepper
 
 ################################################################################
@@ -118,7 +118,7 @@ RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
     cat /etc/nsswitch.conf
 
 ################################################################################
-# MARK: exporter - export rgl binaries
+# MARK: exporter - export rgl binaries and executables
 ################################################################################
 FROM scratch AS exporter
 # Note: Using glob patterns (`?`, `*`, `[]`) to handle conditional COPY
