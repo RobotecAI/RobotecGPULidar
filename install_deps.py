@@ -28,7 +28,7 @@ def install_deps():
     if not os.path.isdir(cfg.SPDLOG_DIR):
         run_subprocess_command(
             f"git clone -b {cfg.SPDLOG_VERSION} --single-branch --depth 1 https://github.com/gabime/spdlog.git {cfg.SPDLOG_DIR}")
-        
+
     if not os.path.isdir(cfg.CMAKE_GIT_VERSION_TRACKING_DIR):
         run_subprocess_command(
             f"git clone --single-branch https://github.com/andrew-hardin/cmake-git-version-tracking.git {cfg.CMAKE_GIT_VERSION_TRACKING_DIR}")
@@ -39,12 +39,12 @@ def install_deps():
     if not os.path.isdir(cfg.YAML_CPP_DIR):
         run_subprocess_command(
             f"git clone -b {cfg.YAML_CPP_VERSION} --single-branch --depth 1 https://github.com/jbeder/yaml-cpp.git {cfg.YAML_CPP_DIR}")
-        
+
     if not os.path.isdir(cfg.GOOGLETEST_DIR):
         run_subprocess_command(
             f"git clone -b {cfg.GOOGLETEST_VERSION} --single-branch --depth 1 https://github.com/google/googletest {cfg.GOOGLETEST_DIR}")
 
-    print('Installed deps installed successfully')
+    print("RGL deps installed successfully")
 
 
 def are_deps_installed() -> bool:

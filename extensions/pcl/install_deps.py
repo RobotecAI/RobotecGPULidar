@@ -39,7 +39,7 @@ def install_deps():
     run_subprocess_command(
         f"{os.path.join(cfg.VCPKG_DIR, cfg.VCPKG_EXEC)} install --clean-after-build pcl[core,visualization]:{cfg.VCPKG_TRIPLET}")
 
-    print('PCL deps installed successfully')
+    print("PCL deps installed successfully")
 
 
 def are_deps_installed() -> bool:
@@ -64,6 +64,6 @@ def run_subprocess_command(command: str, shell=True, stderr=sys.stderr, stdout=s
 
 
 if __name__ == "__main__":
-    print('Important: this script should be executed from the root of the project (e.g. `./extensions/pcl/install_deps.py`)')
+    print("Important: this script should be executed from the root of the project (e.g. `./extensions/pcl/install_deps.py`)")
 
     sys.exit(install_deps())
