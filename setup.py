@@ -124,11 +124,12 @@ def main():
         os.environ["Path"] = os.environ["Path"] + ";" + os.path.join(os.getcwd(), args.build_dir)
 
     if args.with_ros2:
+        cfg_ros2 = ros2_deps.Config()
         # Source environment for additional packages
         # ROS2 itself must be sourced by the user, because its location is unknown to this script
         ros2_deps.check_ros2_version()
         setup = "setup.bat" if on_windows() else "setup.sh"
-        source_environment(os.path.join(os.getcwd(), cfg.RADAR_MSGS_INSTALL_DIR, setup))
+        source_environment(os.path.join(os.getcwd(), cfg_ros2.RADAR_MSGS_INSTALL_DIR, setup))
 
     # Build
     cmake_args = [
