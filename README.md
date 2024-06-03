@@ -88,7 +88,8 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
     1. You may be asked to create a Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
-4. Use `setup.py` script to build.
+4. Install dependencies with command: `./setup.py --install-deps`
+5. Use `setup.py` script to build.
    - It will use CMake to generate files for the build system (make) and the build.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
@@ -104,7 +105,8 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
    - install the framework and set the environment variable `OptiX_INSTALL_DIR`
 4. Install [Python3](https://www.python.org/downloads/).
 5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to the RGL repository.
-6. Run `python setup.py` command to build the project.
+6. Run `python setup.py --install-deps` command to install dependencies.
+7. Run `python setup.py` command to build the project.
    - It will use CMake to generate files for the build system (ninja) and build.
    - You can pass optional CMake and ninja parameters, e.g.
      - `python setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`
