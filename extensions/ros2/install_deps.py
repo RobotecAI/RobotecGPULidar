@@ -16,13 +16,10 @@ class Config:
 def install_deps():
     cfg = Config()
 
-    # Go to script directory
-    os.chdir(os.path.join(sys.path[0]))
-
     # Install dependencies for ROS2 extension
     check_ros2_version()
     install_ros2_deps(cfg)
-    
+
     print('ROS2 deps installed successfully')
 
 
@@ -79,4 +76,6 @@ def is_command_available(command):
 
 
 if __name__ == "__main__":
+    print('Important: this script should be executed from the root of the project (e.g. `./extensions/ros2/install_deps.py`)')
+
     sys.exit(install_deps())

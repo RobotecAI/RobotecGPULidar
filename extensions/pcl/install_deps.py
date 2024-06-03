@@ -24,9 +24,6 @@ class Config:
 def install_deps():
     cfg = Config()
 
-    # Go to script directory
-    os.chdir(sys.path[0])
-
     # Clone vcpkg
     if not os.path.isdir(cfg.VCPKG_DIR):
         if on_linux():
@@ -67,4 +64,6 @@ def run_subprocess_command(command: str, shell=True, stderr=sys.stderr, stdout=s
 
 
 if __name__ == "__main__":
+    print('Important: this script should be executed from the root of the project (e.g. `./extensions/pcl/install_deps.py`)')
+
     sys.exit(install_deps())
