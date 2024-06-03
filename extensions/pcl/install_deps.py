@@ -31,7 +31,7 @@ def install_deps():
     if not os.path.isdir(cfg.VCPKG_DIR):
         if on_linux():
             print("Installing dependencies for vcpkg...")
-            run_subprocess_command("sudo apt-get install -y git curl zip unzip tar freeglut3-dev libglew-dev libglfw3-dev")
+            run_subprocess_command("sudo apt-get install -y git pkg-config curl zip unzip tar freeglut3-dev libglew-dev libglfw3-dev")
         run_subprocess_command(
             f"git clone -b {cfg.VCPKG_TAG} --single-branch --depth 1 https://github.com/microsoft/vcpkg {cfg.VCPKG_DIR}")
     # Bootstrap vcpkg
