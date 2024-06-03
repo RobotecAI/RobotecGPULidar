@@ -82,7 +82,7 @@ target_compile_definitions(RobotecGPULidar_test PRIVATE
     RGL_TEST_DATA_DIR="${CMAKE_CURRENT_LIST_DIR}/data"
 )
 
-target_link_libraries(RobotecGPULidar_test
+target_link_libraries(RobotecGPULidar_test PRIVATE
     gtest_main
     gmock_main
     RobotecGPULidar
