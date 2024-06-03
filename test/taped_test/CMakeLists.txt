@@ -24,4 +24,7 @@ target_include_directories(RobotecGPULidar_taped_test PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
 )
 
+# Set $ORIGIN rpath to search for dependencies in the executable location (Linux only)
+set_target_properties(RobotecGPULidar_taped_test PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
+
 gtest_discover_tests(RobotecGPULidar_taped_test)

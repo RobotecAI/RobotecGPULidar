@@ -119,7 +119,10 @@ if (RGL_BUILD_ROS2_EXTENSION)
     )
 endif()
 
+# Set $ORIGIN rpath to search for dependencies in the executable location (Linux only)
+set_target_properties(RobotecGPULidar_test PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
+
 include(GoogleTest)
 
 gtest_discover_tests(RobotecGPULidar_test
-        DISCOVERY_MODE PRE_TEST)
+    DISCOVERY_MODE PRE_TEST)
