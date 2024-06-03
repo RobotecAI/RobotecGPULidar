@@ -21,9 +21,9 @@ class Config:
     CUDA_MIN_VER_PATCH = 0
     CMAKE_GENERATOR = "'Unix Makefiles'"
 
-    TAPED_TEST_DATA_DIR = os.path.join("external", "taped_test_data")
-    TAPED_TEST_DATA_REPO = "git@github.com:RobotecAI/RGL-blobs.git"
-    TAPED_TEST_DATA_BRANCH = "main"
+    RGL_BLOBS_DIR = os.path.join("external", "rgl_blobs")
+    RGL_BLOBS_REPO = "git@github.com:RobotecAI/RGL-blobs.git"
+    RGL_BLOBS_BRANCH = "main"
 
     def __init__(self):
         # Platform-dependent configuration
@@ -45,6 +45,8 @@ def main():
                         help="Install dependencies for PCL extension and exit")
     parser.add_argument("--install-ros2-deps", action='store_true',
                         help="Install dependencies for ROS2 extension and exit")
+    parser.add_argument("--fetch-rgl-blobs", action='store_true',
+                        help="Fetch RGL blobs and exit (repo used for storing closed-source testing data)")
     parser.add_argument("--clean-build", action='store_true',
                         help="Remove build directory before cmake")
     parser.add_argument("--with-pcl", action='store_true',
@@ -64,6 +66,8 @@ def main():
                             help="Pass arguments to make. Usage: --make=\"args...\". Defaults to \"-j <cpu count>\"")
         parser.add_argument("--lib-rpath", type=str, nargs='*',
                             help="Add run-time search path(s) for RGL library. $ORIGIN (actual library path) is added by default.")
+        parser.add_argument("--build-taped-test", action='store_true',
+                            help="Build taped test (requires RGL blobs repo in runtime)")
     if on_windows():
         parser.add_argument("--ninja", type=str, default=f"-j{os.cpu_count()}", dest="build_args",
                             help="Pass arguments to ninja. Usage: --ninja=\"args...\". Defaults to \"-j <cpu count>\"")
@@ -89,6 +93,11 @@ def main():
     # Install dependencies for ROS2 extension
     if args.install_ros2_deps:
         ros2_deps.install_deps()
+        return 0
+
+    # Install dependencies for ROS2 extension
+    if args.fetch_rgl_blobs:
+        fetch_rgl_blobs_repo(cfg)
         return 0
 
     # Check CUDA
@@ -149,6 +158,8 @@ def main():
                 rpath = rpath.replace("$ORIGIN", "\\$ORIGIN")  # cmake should not treat this as variable
                 linker_rpath_flags.append(f"-Wl,-rpath={rpath}")
         cmake_args.append(f"-DCMAKE_SHARED_LINKER_FLAGS=\"{' '.join(linker_rpath_flags)}\"")
+        # Taped test
+        cmake_args.append(f"-DRGL_BUILD_TAPED_TESTS={'ON' if args.build_taped_test else 'OFF'}")
 
     # Append user args, possibly overwriting
     cmake_args.append(args.cmake)
@@ -230,6 +241,46 @@ def source_environment(filepath):
         if new_key in original_env and original_env[new_key] != new_value:
             print(f"Modified environment variable: {new_key}={new_env[new_key]}")
         os.environ[new_key] = new_env[new_key]
+
+
+def is_command_available(command):
+    process = subprocess.Popen(f"{command}", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    process.wait()
+    return process.returncode == 0
+
+
+def fetch_rgl_blobs_repo(cfg):
+    def is_up_to_date(branch):
+        result = subprocess.Popen("git fetch --dry-run --verbose", shell=True, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT)
+        stdout, _ = result.communicate()
+        return f"[up to date]      {branch}" in stdout.decode()
+
+    def ensure_git_lfs_installed():
+
+        if not is_command_available("git-lfs --help"):
+            print("Installing git-lfs...")
+            run_subprocess_command(
+                "curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash")
+            run_subprocess_command("sudo apt install git-lfs")
+
+    ensure_git_lfs_installed()
+    if not os.path.isdir(cfg.RGL_BLOBS_DIR):
+        print("Cloning rgl blobs repository...")
+        run_subprocess_command(
+            f"git clone -b {cfg.RGL_BLOBS_BRANCH} --single-branch --depth 1 {cfg.RGL_BLOBS_REPO} {cfg.RGL_BLOBS_DIR}")
+        os.chdir(cfg.RGL_BLOBS_DIR)
+        # Set up git-lfs for this repository
+        run_subprocess_command("git-lfs install && git-lfs pull")
+        print("RGL blobs repo cloned successfully")
+        return
+
+    print("Checking for updates in rgl blobs repository...")
+    os.chdir(cfg.RGL_BLOBS_DIR)
+    if not is_up_to_date(cfg.RGL_BLOBS_BRANCH):
+        print("Updating rgl blobs repository...")
+        run_subprocess_command("git pull && git-lfs pull")
+    print("RGL blobs repo fetched successfully")
 
 
 if __name__ == "__main__":
