@@ -49,14 +49,48 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
 FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-0
 
 FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-1
-# TODO - install ROS2 here
+# Install ROS2
+# Setup timezone
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    echo 'Etc/UTC' > /etc/timezone && \
+    ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+    apt-get install -q -y --no-install-recommends tzdata
+
+# Setup sources.list
+RUN echo "deb http://packages.ros.org/ros2/ubuntu jammy main" > /etc/apt/sources.list.d/ros2-latest.list
+
+# Setup keys
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+
+# Setup environment
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+# Install packages
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    # ROS2
+    dirmngr \
+    gnupg2 \
+    ros-humble-ros-core=0.10.0-1* \
+    # Packages for RGL ROS2 standalone build
+    ros-humble-cyclonedds \
+    ros-humble-rmw-cyclonedds-cpp \
+    ros-humble-fastrtps \
+    ros-humble-rmw-fastrtps-cpp \
+    patchelf \
+    # Packages for UDP-ROS2 integration test
+    ros-humble-velodyne-driver \
+    ros-humble-velodyne-pointcloud \
+    psmisc # `killall` command
 
 # Copy only dependencies definition files
 COPY ./extensions/ros2/install_deps.py .
 
 # Install dependencies while caching apt downloads
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
-    ./install_deps.py
+    /bin/bash -c "source /opt/ros/humble/setup.bash; ./install_deps.py"
 
 # Final prepper stage with selected extensions
 FROM prepper-ros2-${WITH_ROS2} AS prepper
