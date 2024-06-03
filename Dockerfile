@@ -108,8 +108,10 @@ RUN cat /etc/nsswitch.conf && \
 
 # Copy rest of source tree
 COPY . .
+
+ARG BUILD_CMD="./setup.py"
 RUN --mount=type=bind,from=optix,target=${OptiX_INSTALL_DIR} \
-    ./setup.py
+    /bin/bash -c "$BUILD_CMD"
 
 # Restore DNS lookups
 RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
