@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18) # # 3.18 To have DISCOVERY_MODE option for gtest_discover_tests()
 
 if(WIN32)
     message(FATAL_ERROR "Tape not supported on Windows")
@@ -27,4 +27,5 @@ target_include_directories(RobotecGPULidar_taped_test PRIVATE
 # Set $ORIGIN rpath to search for dependencies in the executable location (Linux only)
 set_target_properties(RobotecGPULidar_taped_test PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
 
-gtest_discover_tests(RobotecGPULidar_taped_test)
+gtest_discover_tests(RobotecGPULidar_taped_test
+        DISCOVERY_MODE PRE_TEST)

@@ -92,7 +92,7 @@ jobs:
       - run: '
         docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
         --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="./setup.py --with-pcl --with-ros2-standalone --with-udp --with-snow --build-taped-test"
+        --build-arg BUILD_CMD="source /opt/ros/humble/setup.bash && ./setup.py --with-pcl --with-ros2-standalone --with-udp --with-snow --build-taped-test"
         --target=exporter --output=bin-all .'
 
 ####### TEST WITH RGL DOCKER IMAGE ######
