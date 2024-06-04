@@ -115,14 +115,14 @@ protected:
 		spawnCubeOnScene(Mat3x4f::translation(2 * stepDepth, 0.0f, 2 * stepHeight) * firstCubeTf);
 	}
 
-	float mmToMeters(float mm) const { return mm * 0.001f; }
+	constexpr float mmToMeters(float mm) const { return mm * 0.001f; }
 };
 
 /**
  * This test verifies the accuracy of multiple return handling for the data specified for LiDAR VLP16
  * by firing a single beam into a cube and making sure the first and last hits are correctly calculated.
  */
-TEST_F(GraphMultiReturn, VLP16_data_compare)
+TEST_F(GraphMultiReturn, vlp16_data_compare)
 {
 	// Lidar
 	const std::vector<rgl_mat3x4f> raysTf{Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, -90.0f}).toRGL()};
