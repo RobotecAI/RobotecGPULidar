@@ -10,6 +10,7 @@ set(RGL_TAPED_TEST_FILES
 
 include(GoogleTest)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 add_executable(RobotecGPULidar_taped_test ${RGL_TAPED_TEST_FILES})
 
 target_link_libraries(RobotecGPULidar_taped_test PRIVATE

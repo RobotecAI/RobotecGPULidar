@@ -1,3 +1,4 @@
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/tools)
 add_executable(inspectLibRGL inspectLibRGL.cpp)
 
 # Linux only - tape related tools
