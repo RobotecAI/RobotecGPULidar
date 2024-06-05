@@ -28,7 +28,7 @@ struct RaytraceRequestContext
 	float nearNonHitDistance;
 	float farNonHitDistance;
 
-	const Mat3x4f* rays;
+	const Mat3x4f* raysWorld;
 	size_t rayCount;
 
 	Mat3x4f rayOriginToWorld;

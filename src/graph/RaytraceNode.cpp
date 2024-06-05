@@ -94,7 +94,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .doApplyDistortion = doApplyDistortion,
 	    .nearNonHitDistance = nearNonHitDistance,
 	    .farNonHitDistance = farNonHitDistance,
-	    .rays = raysPtr,
+	    .raysWorld = raysPtr,
 	    .rayCount = raysNode->getRayCount(),
 	    .rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
 	    .rayRanges = rayRanges.has_value() ? (*rayRanges)->asSubclass<DeviceAsyncArray>()->getReadPtr() :
@@ -134,8 +134,10 @@ void RaytraceNode::enqueueExecImpl()
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
 	                        launchDims.x, launchDims.y, launchDims.y));
 
-	gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
-	                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers());
+	if (beamHalfDivergence > 0.0f) {
+		gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
+		                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers(), raysPtr);
+	}
 }
 
 IAnyArray::ConstPtr RaytraceNode::getFieldDataMultiReturn(rgl_field_t field, rgl_return_type_t type)
@@ -145,7 +147,7 @@ IAnyArray::ConstPtr RaytraceNode::getFieldDataMultiReturn(rgl_field_t field, rgl
 			case XYZ_VEC3_F32: return mrFirst.xyz;
 			case DISTANCE_F32: return mrFirst.distance;
 			case IS_HIT_I32: return mrFirst.isHit;
-			default: throw InvalidPipeline(fmt::format("Multi-Return not supported for this field ({})", toString(field)));
+			default: return getFieldData(field);
 		}
 	}
 	if (type == RGL_RETURN_TYPE_LAST) {
@@ -153,7 +155,7 @@ IAnyArray::ConstPtr RaytraceNode::getFieldDataMultiReturn(rgl_field_t field, rgl
 			case XYZ_VEC3_F32: return mrLast.xyz;
 			case DISTANCE_F32: return mrLast.distance;
 			case IS_HIT_I32: return mrLast.isHit;
-			default: throw InvalidPipeline(fmt::format("Multi-Return not supported for this field ({})", toString(field)));
+			default: return getFieldData(field);
 		}
 	}
 	throw InvalidPipeline(fmt::format("Unknown multi-return type ({})", type));
