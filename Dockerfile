@@ -68,8 +68,7 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
         ros-$ROS_DISTRO-fastrtps \
         ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
         ros-$ROS_DISTRO-rmw-fastrtps-cpp \
-        ros-$ROS_DISTRO-rosidl-default-generators \
-        ros-$ROS_DISTRO-visualization-msgs \
+        ros-$ROS_DISTRO-ros-core \
         # Packages for UDP-ROS2 integration test
         psmisc # `killall` command \
         ros-$ROS_DISTRO-velodyne-driver \
