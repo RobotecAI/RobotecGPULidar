@@ -59,8 +59,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6
 
 # Install ROS2: Install packages
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-ros-core=0.10.0-1* \
     # Packages for RGL ROS2 standalone build
     ros-humble-cyclonedds \
