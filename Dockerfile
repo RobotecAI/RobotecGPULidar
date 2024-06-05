@@ -51,12 +51,10 @@ FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-0
 # Do nothing, ROS2 extension is not enabled
 FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-1
 
-# Install ROS2: Setup sources.list
+# Install ROS2: Setup sources.list and keys
 RUN . /etc/os-release && \
-    echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list
-
-# Install ROS2: Setup keys
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+    echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list && \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
 ARG ROS_DISTRO=humble
 ENV ROS_DISTRO=$ROS_DISTRO
@@ -92,21 +90,12 @@ FROM prepper-ros2-${WITH_ROS2} AS prepper
 FROM prepper AS builder
 ARG OptiX_INSTALL_DIR=/optix
 
-# Disable DNS lookups
-RUN cat /etc/nsswitch.conf && \
-    sed -e 's#hosts:\(.*\)dns\(.*\)#hosts:\1\2#g' -i.bak /etc/nsswitch.conf && \
-    cat /etc/nsswitch.conf
-
 # Copy rest of source tree
 COPY . .
 
 ARG BUILD_CMD="./setup.py"
 RUN --mount=type=bind,from=optix,target=${OptiX_INSTALL_DIR} \
     sh -c "$BUILD_CMD"
-
-# Restore DNS lookups
-RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
-    cat /etc/nsswitch.conf
 
 ################################################################################
 # MARK: dancer - multi-stage for cache dancing
