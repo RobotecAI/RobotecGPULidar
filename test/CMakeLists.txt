@@ -76,6 +76,7 @@ endif()
 
 file(COPY ${CMAKE_SOURCE_DIR}/test/data/ DESTINATION ${CMAKE_BINARY_DIR}/data/)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
 target_compile_definitions(RobotecGPULidar_test PRIVATE
