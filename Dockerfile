@@ -52,7 +52,8 @@ FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-0
 FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-1
 
 # Install ROS2: Setup sources.list
-RUN echo "deb http://packages.ros.org/ros2/ubuntu jammy main" > /etc/apt/sources.list.d/ros2-latest.list
+RUN . /etc/os-release && \
+    echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list
 
 # Install ROS2: Setup keys
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
