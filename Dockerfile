@@ -128,8 +128,8 @@ FROM builder AS dancer
 
 # Copy only the lib and bin directories
 RUN mkdir /dancer && \
-    cp -r build/lib /dancer/ && \
-    cp -r build/bin /dancer/
+    cp -r build/bin /dancer/ && \
+    cp -r build/lib /dancer/
 
 ################################################################################
 # MARK: exporter - export rgl binaries and executables
