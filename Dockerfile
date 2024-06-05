@@ -62,17 +62,17 @@ ENV ROS_DISTRO=$ROS_DISTRO
 # Install ROS2: Install packages
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
-    # Packages for RGL ROS2 standalone build
-    ros-$ROS_DISTRO-core \
-    ros-$ROS_DISTRO-cyclonedds \
-    ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
-    ros-$ROS_DISTRO-fastrtps \
-    ros-$ROS_DISTRO-rmw-fastrtps-cpp \
-    patchelf \
-    # Packages for UDP-ROS2 integration test
-    ros-$ROS_DISTRO-velodyne-driver \
-    ros-$ROS_DISTRO-velodyne-pointcloud \
-    psmisc # `killall` command
+        # Packages for RGL ROS2 standalone build
+        ros-$ROS_DISTRO-core \
+        ros-$ROS_DISTRO-cyclonedds \
+        ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+        ros-$ROS_DISTRO-fastrtps \
+        ros-$ROS_DISTRO-rmw-fastrtps-cpp \
+        patchelf \
+        # Packages for UDP-ROS2 integration test
+        ros-$ROS_DISTRO-velodyne-driver \
+        ros-$ROS_DISTRO-velodyne-pointcloud \
+        psmisc # `killall` command
 
 # Copy only dependencies definition files for ROS2 extension
 COPY ./extensions/ros2/install_deps.py .
