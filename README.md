@@ -78,8 +78,21 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
     - By default, the build command compiles the core part of the library only. To include extensions it must be overwritten:
         - `--build-arg BUILD_CMD="./setup.py --with-pcl"` - includes PCL extension
         - `--build-arg BUILD_CMD='. /opt/ros/$ROS_DISTRO/setup.sh && ./setup.py ./setup.py --with-ros2'` - includes ROS2 extension (ROS2 must be sourced first)
-   - The command for building RGL with PCL and ROS2 extensions would be:\
-   `docker build --build-arg WITH_ROS2=1 --build-arg WITH_PCL=1 --build-arg BUILD_CMD='. /opt/ros/$ROS_DISTRO/setup.sh && ./setup.py --with-ros2 --with-pcl' --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=build .`
+   - The command for building RGL with PCL and ROS2 extensions would be:
+
+```shell
+docker build \
+   --build-arg WITH_ROS2=1 \
+   --build-arg WITH_PCL=1 \
+   --build-arg BUILD_CMD='\
+      . /opt/ros/$ROS_DISTRO/setup.sh && \
+      ./setup.py \
+         --with-ros2 \
+         --with-pcl' \
+   --build-context optix=$OptiX_INSTALL_DIR \
+   --target=exporter \
+   --output=build .
+```
 
 ## Building on Ubuntu 22
 
