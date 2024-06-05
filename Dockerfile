@@ -102,7 +102,7 @@ COPY . .
 
 ARG BUILD_CMD="./setup.py"
 RUN --mount=type=bind,from=optix,target=${OptiX_INSTALL_DIR} \
-    /bin/bash -c "$BUILD_CMD"
+    sh -c "$BUILD_CMD"
 
 # Restore DNS lookups
 RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
