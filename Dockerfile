@@ -63,7 +63,7 @@ ENV ROS_DISTRO=$ROS_DISTRO
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     # Packages for RGL ROS2 standalone build
-    ros-$ROS_DISTRO-core=0.10.0-1* \
+    ros-$ROS_DISTRO-core \
     ros-$ROS_DISTRO-cyclonedds \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     ros-$ROS_DISTRO-fastrtps \
