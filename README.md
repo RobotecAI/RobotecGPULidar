@@ -70,16 +70,16 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
 2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
 3. `docker build --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=build .`
-    - The binaries will be exported to the `bin` directory
+    - The binaries will be exported to the `build` directory
 4. To build RGL with extensions, docker must install additional dependencies.
     - It could be enabled by setting the following arguments:
         - `--build-arg WITH_PCL=1` - adds stage to install dependencies for PCL extension
         - `--build-arg WITH_ROS2=1` - adds stage to install dependencies for ROS2 extension
     - By default, the build command compiles the core part of the library only. To include extensions it must be overwritten:
         - `--build-arg BUILD_CMD="./setup.py --with-pcl"` - includes PCL extension
-        - `--build-arg BUILD_CMD="source /opt/ros/humble/setup.bash && ./setup.py --with-ros2"` - includes ROS2 extension (ROS2 must be sourced first)
+        - `--build-arg BUILD_CMD='. /opt/ros/$ROS_DISTRO/setup.sh && ./setup.py ./setup.py --with-ros2'` - includes ROS2 extension (ROS2 must be sourced first)
    - The command for building RGL with PCL and ROS2 extensions would be:\
-   `docker build --build-arg WITH_ROS2=1 --build-arg WITH_PCL=1 --build-arg BUILD_CMD="source /opt/ros/humble/setup.bash && ./setup.py --with-ros2 --with-pcl" --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=bin .`
+   `docker build --build-arg WITH_ROS2=1 --build-arg WITH_PCL=1 --build-arg BUILD_CMD='. /opt/ros/$ROS_DISTRO/setup.sh && ./setup.py --with-ros2 --with-pcl' --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=build .`
 
 ## Building on Ubuntu 22
 
