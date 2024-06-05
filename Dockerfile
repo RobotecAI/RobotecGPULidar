@@ -118,23 +118,22 @@ RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
     cat /etc/nsswitch.conf
 
 ################################################################################
+# MARK: dancer - multi-stage for cache dancing
+################################################################################
+FROM builder AS dancer
+
+# Copy entire build directory
+# RUN mkdir /dancer && \
+#     cp -rT build /dancer
+
+# Copy only the lib and bin directories
+RUN mkdir /dancer && \
+    cp -r build/lib /dancer/ && \
+    cp -r build/bin /dancer/
+
+################################################################################
 # MARK: exporter - export rgl binaries and executables
 ################################################################################
 FROM scratch AS exporter
-# Note: Using glob patterns (`?`, `*`, `[]`) to handle conditional COPY
-# Docker will not fail if it won't find any valid source
 
-# rgl binary
-COPY --from=builder /opt/rgl/build/libRobotecGPULidar.so /
-
-# ros2 standalone libs
-COPY --from=builder /opt/rgl/build/ros2_standalon[e]/*.so* /ros2_standalone/
-
-# tests
-COPY --from=builder /opt/rgl/build/tes[t]/RobotecGPULidar_test /test/
-COPY --from=builder /opt/rgl/build/tes[t]/taped_test/RobotecGPULidar_taped_test /test/taped_test
-
-# tools
-COPY --from=builder /opt/rgl/build/tool[s]/inspectLibRGL /tools/
-COPY --from=builder /opt/rgl/build/tool[s]/tapePlayer /tools/
-COPY --from=builder /opt/rgl/build/tool[s]/tapeVisualize[r] /tools/
+COPY --from=dancer /dancer /
