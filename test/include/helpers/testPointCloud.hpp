@@ -241,7 +241,7 @@ public:
 	}
 
 	template<rgl_field_t T>
-	std::vector<typename Field<T>::type> getFieldValues()
+	std::vector<typename Field<T>::type> getFieldValues() const
 	{
 		int fieldIndex = std::find(fields.begin(), fields.end(), T) - fields.begin();
 
@@ -252,7 +252,7 @@ public:
 
 		for (int i = 0; i < getPointCount(); i++) {
 			fieldValues.emplace_back(
-			    *reinterpret_cast<typename Field<T>::type*>(data.data() + i * getPointByteSize() + offset));
+			    *reinterpret_cast<const typename Field<T>::type*>(data.data() + i * getPointByteSize() + offset));
 		}
 
 		return fieldValues;

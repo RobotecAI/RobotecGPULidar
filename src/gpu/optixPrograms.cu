@@ -137,7 +137,9 @@ extern "C" __global__ void __closesthit__()
 	// Hitpoint
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	const Vec3f hitWorldRaytraced = optixTransformPointFromObjectToWorldSpace(hitObject);
-	const float distance = (hitWorldRaytraced - beamSampleOrigin).length();
+	const Vector<3, double> hwrd = hitWorldRaytraced;
+	const Vector<3, double> hso = beamSampleOrigin;
+	const double distance = (hwrd - hso).length();
 	const Vec3f hitWorldSeenBySensor = [&]() {
 		if (!ctx.doApplyDistortion) {
 			return hitWorldRaytraced;
