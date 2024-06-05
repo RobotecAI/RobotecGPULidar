@@ -394,8 +394,9 @@ typedef enum : int32_t
  */
 typedef enum : int32_t
 {
-	RGL_RETURN_TYPE_FIRST = 0,
-	RGL_RETURN_TYPE_LAST = 1,
+	RGL_RETURN_TYPE_NOT_DIVERGENT = 0,
+	RGL_RETURN_TYPE_FIRST = 1,
+	RGL_RETURN_TYPE_LAST = 2,
 } rgl_return_type_t;
 
 /**
