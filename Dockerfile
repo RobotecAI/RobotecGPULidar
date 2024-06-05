@@ -80,7 +80,8 @@ COPY ./extensions/ros2/install_deps.py .
 
 # Install ROS2 extension dependencies while caching apt downloads
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
-    /bin/bash -c "source /opt/ros/humble/setup.bash; ./install_deps.py"
+    . /opt/ros/$ROS_DISTRO/setup.sh && \
+    ./install_deps.py
 
 ### Final prepper stage with selected extensions
 FROM prepper-ros2-${WITH_ROS2} AS prepper
