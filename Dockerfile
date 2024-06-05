@@ -54,13 +54,14 @@ FROM prepper-pcl-${WITH_PCL} AS prepper-ros2-1
 # Install ROS2: Setup sources.list and keys
 RUN . /etc/os-release && \
     echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654 && \
+    apt-get update
 
 ARG ROS_DISTRO=humble
 ENV ROS_DISTRO=$ROS_DISTRO
 # Install ROS2: Install packages
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get install -y --no-install-recommends \
         # Packages for RGL ROS2 standalone build
         patchelf \
         ros-$ROS_DISTRO-cyclonedds \
