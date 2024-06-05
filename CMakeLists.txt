@@ -131,6 +131,7 @@ set(RGL_SOURCE_FILES
     src/graph/YieldPointsNode.cpp
 )
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 if (RGL_BUILD_STATIC)
     add_library(RobotecGPULidar STATIC ${RGL_SOURCE_FILES})
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC)
