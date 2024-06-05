@@ -69,7 +69,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 
 1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
 2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
-3. `docker build --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=bin .`
+3. `docker build --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=build .`
     - The binaries will be exported to the `bin` directory
 4. To build RGL with extensions, docker must install additional dependencies.
     - It could be enabled by setting the following arguments:
