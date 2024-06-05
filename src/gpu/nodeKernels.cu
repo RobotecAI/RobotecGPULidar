@@ -224,7 +224,7 @@ __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vec
 }
 
 __global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
-                                             MultiReturnPointers first, MultiReturnPointers last)
+                                             MultiReturnPointers first, MultiReturnPointers last, const Mat3x4f* beamsWorld)
 {
 	LIMIT(beamCount);
 
@@ -244,14 +244,16 @@ __global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBea
 			lastIdx = sampleIdx;
 		}
 	}
+	Vec3f beamOrigin = beamsWorld[beamIdx] * Vec3f{0, 0, 0};
+	Vec3f beamDir = ((beamsWorld[beamIdx] * Vec3f{0, 0, 1}) - beamOrigin).normalized();
 	bool isHit = firstIdx >= 0; // Note that firstHit >= 0 implies lastHit >= 0
 	first.isHit[beamIdx] = isHit;
 	last.isHit[beamIdx] = isHit;
 	if (isHit) {
-		first.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + firstIdx];
 		first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
-		last.xyz[beamIdx] = beamSamples.xyz[beamIdx * samplesPerBeam + lastIdx];
 		last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
+		first.xyz[beamIdx] = beamOrigin + beamDir * first.distance[beamIdx];
+		last.xyz[beamIdx] = beamOrigin + beamDir * last.distance[beamIdx];
 	}
 }
 
@@ -329,7 +331,7 @@ void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthSt
 }
 
 void gpuProcessBeamSamplesFirstLast(cudaStream_t stream, size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
-                                    MultiReturnPointers first, MultiReturnPointers last)
+                                    MultiReturnPointers first, MultiReturnPointers last, const Mat3x4f* beamsWorld)
 {
-	run(kProcessBeamSamplesFirstLast, stream, beamCount, samplesPerBeam, beamSamples, first, last);
+	run(kProcessBeamSamplesFirstLast, stream, beamCount, samplesPerBeam, beamSamples, first, last, beamsWorld);
 }
