@@ -31,7 +31,7 @@ endmacro()
 # Install all libraries listed in REQ_THIRD_PARTY_STANDALONE_LIBS
 macro(install_standalone_third_party)
     install(FILES ${REQ_THIRD_PARTY_STANDALONE_LIBS}
-            DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}/../lib/ros2_standalone
     )
 endmacro()
 
@@ -161,7 +161,7 @@ macro(install_standalone_dependencies)
         endforeach()
         list(REMOVE_DUPLICATES REQ_STANDALONE_DLLS)
         install(FILES ${REQ_STANDALONE_DLLS}
-            DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}/../lib/ros2_standalone
         )
     elseif(UNIX)
         set(_resolvedFiles "")
@@ -172,7 +172,7 @@ macro(install_standalone_dependencies)
         endforeach()
 
         install(FILES ${_resolvedFiles}
-            DESTINATION ${INSTALL_DESTINATION_DIR}
+            DESTINATION ${INSTALL_DESTINATION_DIR}/../lib/ros2_standalone
         )
 
         # Fix soversion files
@@ -188,7 +188,7 @@ macro(install_standalone_dependencies)
                     string(SUBSTRING "${_remainingPath}" 0 ${_lastDotPos} _tempPos)
                     get_filename_component(_libPathFilename "${_tempPos}" NAME)
                     get_filename_component(_resolvedFilename "${_resolvedFile}" NAME)
-                    install(CODE "execute_process(COMMAND ln -s ${_resolvedFilename} ${_libPathFilename} WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR} ERROR_QUIET)")
+                    install(CODE "execute_process(COMMAND ln -s ${_resolvedFilename} ${_libPathFilename} WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR}/../lib/ros2_standalone ERROR_QUIET)")
                     set(_remainingPath "${_tempPos}")
                 endwhile()
             endif()
@@ -196,11 +196,11 @@ macro(install_standalone_dependencies)
 
         # rpath for each standalone lib must be updated so all the libs will see each other
         install(CODE
-          "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR} -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+          "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR}/../lib/ros2_standalone -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
         )
         # soversion files as well
         install(CODE
-          "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR} -name *.so.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+          "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/${INSTALL_DESTINATION_DIR}/../lib/ros2_standalone -name *.so.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
         )
     endif()
 endmacro()
