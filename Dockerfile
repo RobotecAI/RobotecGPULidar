@@ -57,19 +57,21 @@ RUN echo "deb http://packages.ros.org/ros2/ubuntu jammy main" > /etc/apt/sources
 # Install ROS2: Setup keys
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
+ARG ROS_DISTRO=humble
+ENV ROS_DISTRO=$ROS_DISTRO
 # Install ROS2: Install packages
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-ros-core=0.10.0-1* \
     # Packages for RGL ROS2 standalone build
-    ros-humble-cyclonedds \
-    ros-humble-rmw-cyclonedds-cpp \
-    ros-humble-fastrtps \
-    ros-humble-rmw-fastrtps-cpp \
+    ros-$ROS_DISTRO-core=0.10.0-1* \
+    ros-$ROS_DISTRO-cyclonedds \
+    ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+    ros-$ROS_DISTRO-fastrtps \
+    ros-$ROS_DISTRO-rmw-fastrtps-cpp \
     patchelf \
     # Packages for UDP-ROS2 integration test
-    ros-humble-velodyne-driver \
-    ros-humble-velodyne-pointcloud \
+    ros-$ROS_DISTRO-velodyne-driver \
+    ros-$ROS_DISTRO-velodyne-pointcloud \
     psmisc # `killall` command
 
 # Copy only dependencies definition files for ROS2 extension
