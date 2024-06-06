@@ -38,7 +38,7 @@ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity,
                               const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle);
 __device__ void saveNonHitRayResult(float nonHitDistance);
 __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned sampleBeamIdx);
-__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceAngleRad, float vHalfVDivergenceAngleRad, unsigned ellipseIdx, unsigned vertexIdx);
+__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceAngleRad, float vHalfDivergenceAngleRad, unsigned ellipseIdx, unsigned vertexIdx);
 
 extern "C" __global__ void __raygen__()
 {
@@ -260,12 +260,6 @@ __device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceAngleRad, flo
 	if (ctx.hBeamHalfDivergence == 0.0f && ctx.vBeamHalfDivergence == 0.0f) {
 		return Mat3x4f::identity();
 	}
-//	const auto circleDivergence = hHalfDivergenceAngleRad * (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
-//	auto vertexAngleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
-//	// First, rotate around X to move the ray vector (initially {0,0,1}) to diverge from the Z axis by circleDivergence.
-//	// Then rotate around Z to move the ray vector on the circle.
-//	return Mat3x4f::rotationRad(0, 0, static_cast<float>(vertexIdx) * vertexAngleStep) * // Second
-//	       Mat3x4f::rotationRad(circleDivergence, 0, 0);
 
 	const float hCurrentDivergence = hHalfDivergenceAngleRad * (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
 	const float vCurrentDivergence = vHalfDivergenceAngleRad * (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);

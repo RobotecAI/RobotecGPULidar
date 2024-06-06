@@ -5,6 +5,9 @@
 
 #include "RGLFields.hpp"
 #include "math/Mat3x4f.hpp"
+#include "gpu/MultiReturn.hpp"
+
+#include <cmath>
 
 using namespace std::chrono_literals;
 
@@ -328,5 +331,64 @@ TEST_F(GraphMultiReturn, multiple_ray_beams)
 
 	ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
 	ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
+}
+
+/**
+ * In the MR implementation, the beam is modeled using beam samples, from which the first and last hits are calculated.
+ * This test uses the code that generates these beam samples and fires them inside the cube.
+ * It verifies the accuracy of beam sample generation with different horizontal and vertical divergence angles.
+ */
+TEST_F(GraphMultiReturn, horizontal_vertical_beam_divergence)
+{
+	GTEST_SKIP(); // Comment to run the test
+
+	const float hHalfDivergenceAngleRad = M_PI / 4;
+	const float vHalfDivergenceAngleRad = M_PI / 8;
+
+	// Lidar
+	const auto lidarTransl = Vec3f{0.0f, 0.0f, 0.0f};
+	const rgl_mat3x4f lidarPose = Mat3x4f::TRS(lidarTransl).toRGL();
+	std::vector<rgl_mat3x4f> raysTf;
+	raysTf.reserve(MULTI_RETURN_BEAM_SAMPLES);
+
+	raysTf.emplace_back(Mat3x4f::identity().toRGL());
+
+	// Code that generates beam samples in the makeBeamSampleRayTransform function (gpu/optixPrograms.cu)
+	for (int ellipseIdx = 0; ellipseIdx < MULTI_RETURN_BEAM_ELLIPSES; ++ellipseIdx) {
+		for (int vertexIdx = 0; vertexIdx < MULTI_RETURN_BEAM_VERTICES; ++vertexIdx) {
+			const float hCurrentDivergence = hHalfDivergenceAngleRad *
+			                                 (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
+			const float vCurrentDivergence = vHalfDivergenceAngleRad *
+			                                 (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
+
+			const float angleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
+
+			const float hAngle = hCurrentDivergence * std::cos(static_cast<float>(vertexIdx) * angleStep);
+			const float vAngle = vCurrentDivergence * std::sin(static_cast<float>(vertexIdx) * angleStep);
+
+			const auto rotation = Mat3x4f::rotationRad(vAngle, 0.0f, 0.0f) * Mat3x4f::rotationRad(0.0f, hAngle, 0.0f);
+			raysTf.emplace_back(rotation.toRGL());
+		}
+	}
+
+	// Scene
+	spawnCubeOnScene(Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {6.0f, 6.0f, 6.0f}));
+
+	// Camera
+	constructCameraGraph(Mat3x4f::identity().toRGL());
+
+	// Graph without MR
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transform, &lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "MRTest_Lidar_Without_MR", "world"));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, transform));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transform, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
+	ASSERT_RGL_SUCCESS(rgl_graph_run(rays));
 }
 #endif
