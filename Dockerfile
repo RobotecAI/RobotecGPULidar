@@ -64,6 +64,7 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get install -y --no-install-recommends \
         # Packages for RGL ROS2 standalone build
         patchelf \
+        pkg-config \
         ros-$ROS_DISTRO-cyclonedds \
         ros-$ROS_DISTRO-fastrtps \
         ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
