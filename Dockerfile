@@ -91,12 +91,21 @@ FROM prepper-ros2-${WITH_ROS2} AS prepper
 FROM prepper AS builder
 ARG OptiX_INSTALL_DIR=/optix
 
+# Disable DNS lookups
+RUN cat /etc/nsswitch.conf && \
+    sed -e 's#hosts:\(.*\)dns\(.*\)#hosts:\1\2#g' -i.bak /etc/nsswitch.conf && \
+    cat /etc/nsswitch.conf
+
 # Copy rest of source tree
 COPY . .
 
 ARG BUILD_CMD="./setup.py"
 RUN --mount=type=bind,from=optix,target=${OptiX_INSTALL_DIR} \
     sh -c "$BUILD_CMD"
+
+# Restore DNS lookups
+RUN mv /etc/nsswitch.conf.bak /etc/nsswitch.conf && \
+    cat /etc/nsswitch.conf
 
 ################################################################################
 # MARK: dancer - multi-stage for cache dancing
