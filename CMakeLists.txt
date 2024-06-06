@@ -213,6 +213,9 @@ target_compile_definitions(RobotecGPULidar
     PRIVATE RGL_BUILD # Used in headers to differentiate whether it is parsed as library or client's code, affects __declspec on Windows.
 )
 
+# Enable relative paths in the build RPATH for executables
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+
 # Include tests
 if (RGL_BUILD_TESTS OR RGL_BUILD_TAPED_TESTS)
     enable_testing()

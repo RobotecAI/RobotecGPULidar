@@ -101,9 +101,7 @@ jobs:
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-core && mkdir test-dev && cd test-dev &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
-        ./RobotecGPULidar_test'
+        cd bin-core/bin/test && ./RobotecGPULidar_test'
       docker-image: localhost:5000/rgl:latest
 
   test-pcl-dev:
@@ -112,9 +110,7 @@ jobs:
     with:
       test-command: '
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-        cd bin-pcl && mkdir test-dev && cd test-dev &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so ../test/taped_test/RobotecGPULidar_taped_test . &&
-        ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+        cd bin-pcl/bin/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
       docker-image: localhost:5000/rgl:latest
 
   test-ros2-dev:
@@ -126,8 +122,7 @@ jobs:
       test-command: '
         source /opt/ros/humble/setup.bash &&
         source /rgldep/radar_msgs/install/setup.bash &&
-        cd bin-ros2 && mkdir test-dev && cd test-dev &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
+        cd bin-ros2/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
       docker-image: localhost:5000/rgl:latest
@@ -137,9 +132,7 @@ jobs:
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-udp && mkdir test-dev && cd test-dev &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
-        ./RobotecGPULidar_test'
+        cd bin-udp/bin/test && ./RobotecGPULidar_test'
       docker-image: localhost:5000/rgl:latest
 
   test-snow-dev:
@@ -147,9 +140,7 @@ jobs:
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-snow && mkdir test-dev && cd test-dev &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
-        ./RobotecGPULidar_test'
+        cd bin-snow/bin/test && ./RobotecGPULidar_test'
       docker-image: localhost:5000/rgl:latest
 
   test-all-dev:
@@ -164,8 +155,7 @@ jobs:
         source /rgldep/radar_msgs/install/setup.bash &&
         export RGL_TEST_VLP16_CALIB_FILE=$(pwd)/extensions/udp/test/resources/Ros2Vlp16Calib.yaml &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-        cd bin-all && mkdir test-dev && cd test-dev &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so ../test/taped_test/RobotecGPULidar_taped_test . &&
+        cd bin-all/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
       docker-image: localhost:5000/rgl:latest
@@ -176,9 +166,7 @@ jobs:
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-core && mkdir test-prod && cd test-prod &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
-        ./RobotecGPULidar_test'
+        cd bin-core/bin/test && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-pcl-prod:
@@ -189,9 +177,7 @@ jobs:
       test-command: '
         apt update && apt install -y libxcursor1 libgl1 &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-        cd bin-pcl && mkdir test-prod && cd test-prod &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so ../test/taped_test/RobotecGPULidar_taped_test . &&
-        ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
+        cd bin-pcl/bin/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-ros2-prod:
@@ -201,8 +187,8 @@ jobs:
       # Copy ROS2 libraries to be visible for libRobotecGPULidar.so
       # Run tests twice, each for different RMW implementation
       test-command: '
-        cd bin-ros2 && mkdir test-prod && cd test-prod &&
-        cp -r ../test/RobotecGPULidar_test ../libRobotecGPULidar.so ../ros2_standalone/*.so* . &&
+        cp -p bin-ros2/lib/ros2_standalone/* bin-ros2/lib &&
+        cd bin-ros2/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
@@ -212,9 +198,7 @@ jobs:
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-udp && mkdir test-prod && cd test-prod &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
-        ./RobotecGPULidar_test'
+        cd bin-udp/bin/test && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-snow-prod:
@@ -222,9 +206,7 @@ jobs:
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-snow && mkdir test-prod && cd test-prod &&
-        cp ../test/RobotecGPULidar_test ../libRobotecGPULidar.so . &&
-        ./RobotecGPULidar_test'
+        cd bin-snow/bin/test && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-all-prod:
@@ -237,8 +219,8 @@ jobs:
       test-command: '
         apt update && apt install -y libxcursor1 libgl1 &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-        cd bin-all && mkdir test-prod && cd test-prod &&
-        cp -r ../test/RobotecGPULidar_test ../libRobotecGPULidar.so ../test/taped_test/RobotecGPULidar_taped_test ../ros2_standalone/*.so* . &&
+        cp -p bin-all/lib/ros2_standalone/* bin-all/lib &&
+        cd bin-all/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
