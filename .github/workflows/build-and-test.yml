@@ -62,7 +62,7 @@ jobs:
       - run: '
         docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
         --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="source /opt/ros/humble/setup.bash && ./setup.py --with-ros2-standalone"
+        --build-arg BUILD_CMD=". /opt/ros/humble/setup.bash && ./setup.py --with-ros2-standalone"
         --target=exporter --output=bin-ros2 .'
 
   build-udp:
@@ -92,7 +92,7 @@ jobs:
       - run: '
         docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
         --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="source /opt/ros/humble/setup.bash && ./setup.py --with-pcl --with-ros2-standalone --with-udp --with-snow --build-taped-test"
+        --build-arg BUILD_CMD=". /opt/ros/humble/setup.bash && ./setup.py --with-pcl --with-ros2-standalone --with-udp --with-snow --build-taped-test"
         --target=exporter --output=bin-all .'
 
 ####### TEST WITH RGL DOCKER IMAGE ######
@@ -120,8 +120,8 @@ jobs:
       # Source ROS2 and radar_msgs, standalone build is tested in prod environment
       # Run tests twice, each for different RMW implementation
       test-command: '
-        source /opt/ros/humble/setup.bash &&
-        source /rgldep/radar_msgs/install/setup.bash &&
+        . /opt/ros/humble/setup.bash &&
+        . /rgldep/radar_msgs/install/setup.bash &&
         cd bin-ros2/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
@@ -151,8 +151,8 @@ jobs:
       # Set `RGL_TEST_VLP16_CALIB_FILE` for UDP-ROS2 integration test
       # Run tests twice, each for different RMW implementation
       test-command: '
-        source /opt/ros/humble/setup.bash &&
-        source /rgldep/radar_msgs/install/setup.bash &&
+        . /opt/ros/humble/setup.bash &&
+        . /rgldep/radar_msgs/install/setup.bash &&
         export RGL_TEST_VLP16_CALIB_FILE=$(pwd)/extensions/udp/test/resources/Ros2Vlp16Calib.yaml &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
         cd bin-all/bin/test &&
