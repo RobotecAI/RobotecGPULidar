@@ -152,6 +152,21 @@ static_assert(std::is_standard_layout_v<rgl_radar_scope_t>);
 #endif
 
 /**
+ * Radar object class used in object tracking.
+ */
+typedef enum : int32_t
+{
+	RGL_RADAR_CLASS_CAR = 0,
+	RGL_RADAR_CLASS_TRUCK,
+	RGL_RADAR_CLASS_MOTORCYCLE,
+	RGL_RADAR_CLASS_BICYCLE,
+	RGL_RADAR_CLASS_PEDESTRIAN,
+	RGL_RADAR_CLASS_ANIMAL,
+	RGL_RADAR_CLASS_HAZARD,
+	RGL_RADAR_CLASS_UNKNOWN
+} rgl_radar_object_class_t;
+
+/**
  * Represents on-GPU Mesh that can be referenced by Entities on the Scene.
  * Each Mesh can be referenced by any number of Entities on different Scenes.
  */

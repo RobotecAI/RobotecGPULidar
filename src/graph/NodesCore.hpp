@@ -656,6 +656,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	struct ObjectBounds
 	{
+		Field<ENTITY_ID_I32>::type mostCommonEntityId = RGL_ENTITY_INVALID_ID;
 		Vec3f position{0};
 		Aabb3Df aabb{};
 	};
@@ -713,12 +714,14 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 private:
 	Vec3f predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
+	void parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId, ClassificationProbabilities& probabilities);
 	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
 	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
 	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs);
 	void updateOutputData();
 
 	std::list<ObjectState> objectStates;
+	std::unordered_map<Field<ENTITY_ID_I32>::type, rgl_radar_object_class_t> entityIdToClass;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
 
 	uint32_t objectIDCounter = 0; // Not static - I assume each ObjectTrackingNode is like a separate radar.
@@ -742,6 +745,7 @@ private:
 	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationHostPtr = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
+	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr entityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
 };
 
 struct FilterGroundPointsNode : IPointsNodeSingleInput

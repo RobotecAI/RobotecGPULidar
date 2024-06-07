@@ -44,6 +44,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	azimuthHostPtr->copyFrom(input->getFieldData(AZIMUTH_F32));
 	elevationHostPtr->copyFrom(input->getFieldData(ELEVATION_F32));
 	radialSpeedHostPtr->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
+	entityIdHostPtr->copyFrom(input->getFieldData(ENTITY_ID_I32));
 
 	// TODO(Pawel): Reconsider approach below.
 	// At this moment, I would like to check input this way, because it will keep RadarTrackObjectsNode testable without
@@ -104,9 +105,19 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	std::list<ObjectBounds> newObjectBounds;
 	for (const auto& separateObjectIndices : objectIndices) {
 		auto& objectBounds = newObjectBounds.emplace_back();
+		auto entityIdHist = std::unordered_map<Field<ENTITY_ID_I32>::type, int>();
 		for (const auto detectionIndex : separateObjectIndices) {
+			++entityIdHist[entityIdHostPtr->at(detectionIndex)];
 			objectBounds.position += xyzHostPtr->at(detectionIndex);
 			objectBounds.aabb += detectionAabbs[detectionIndex];
+		}
+		// Most common detection entity id is assigned as object id.
+		int maxIdCount = -1;
+		for (const auto& [entityId, count] : entityIdHist) {
+			if (count > maxIdCount) {
+				objectBounds.mostCommonEntityId = entityId;
+				maxIdCount = count;
+			}
 		}
 		objectBounds.position *= 1 / static_cast<float>(separateObjectIndices.size());
 	}
@@ -160,7 +171,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 {
-	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32};
+	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, ENTITY_ID_I32};
 }
 
 Vec3f RadarTrackObjectsNode::predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const
@@ -174,6 +185,30 @@ Vec3f RadarTrackObjectsNode::predictObjectPosition(const ObjectState& objectStat
 	                                 objectState.absVelocity.getLastSample();
 	const auto predictedMovement = deltaTimeSec * assumedVelocity;
 	return objectState.position.getLastSample() + Vec3f{predictedMovement.x(), predictedMovement.y(), 0.0f};
+}
+
+void RadarTrackObjectsNode::parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId,
+                                                            ClassificationProbabilities& probabilities)
+{
+	// May be updated, if entities will be able to belong to multiple classes.
+	constexpr auto maxClassificationProbability = std::numeric_limits<uint8_t>::max();
+
+	const auto it = entityIdToClass.find(entityId);
+	if (it == entityIdToClass.cend()) {
+		probabilities.classUnknown = maxClassificationProbability;
+		return;
+	}
+
+	switch (it->second) {
+		case RGL_RADAR_CLASS_CAR: probabilities.classCar = maxClassificationProbability; break;
+		case RGL_RADAR_CLASS_TRUCK: probabilities.classTruck = maxClassificationProbability; break;
+		case RGL_RADAR_CLASS_MOTORCYCLE: probabilities.classMotorcycle = maxClassificationProbability; break;
+		case RGL_RADAR_CLASS_BICYCLE: probabilities.classBicycle = maxClassificationProbability; break;
+		case RGL_RADAR_CLASS_PEDESTRIAN: probabilities.classPedestrian = maxClassificationProbability; break;
+		case RGL_RADAR_CLASS_ANIMAL: probabilities.classAnimal = maxClassificationProbability; break;
+		case RGL_RADAR_CLASS_HAZARD: probabilities.classHazard = maxClassificationProbability; break;
+		default: probabilities.classUnknown = maxClassificationProbability;
+	}
 }
 
 void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, double currentTimeMs)
@@ -194,6 +229,7 @@ void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, 
 
 	// TODO(Pawel): Consider object radial speed (from detections) as a way to decide here.
 	objectState.movementStatus = MovementStatus::Invalid; // No good way to determine it.
+	parseEntityIdToClassProbability(objectBounds.mostCommonEntityId, objectState.classificationProbabilities);
 
 	// I do not add velocity or acceleration 0.0f samples because this would affect mean and std dev calculation. However, the
 	// number of samples between their stats and position will not match.
