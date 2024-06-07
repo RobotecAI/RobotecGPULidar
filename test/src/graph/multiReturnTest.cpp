@@ -5,6 +5,9 @@
 
 #include "RGLFields.hpp"
 #include "math/Mat3x4f.hpp"
+#include "gpu/MultiReturn.hpp"
+
+#include <cmath>
 
 using namespace std::chrono_literals;
 
@@ -17,8 +20,10 @@ class GraphMultiReturn : public RGLTest
 protected:
 	// VLP16 data
 	const float vlp16LidarObjectDistance = 100.0f;
-	const float vlp16LidarHBeamDivergence = 0.003f; // Velodyne VLP16 horizontal beam divergence in rads
-	const float vlp16LidarHBeamDiameter = 0.2868f;  // Velodyne VLP16 beam horizontal diameter at 100m
+	const float vlp16LidarHBeamDivergence = 0.003f;  // Velodyne VLP16 horizontal beam divergence in rads
+	const float vlp16LidarVBeamDivergence = 0.0015f; // Velodyne VLP16 vertical beam divergence in rads
+	const float vlp16LidarHBeamDiameter = 0.2868f;   // Velodyne VLP16 beam horizontal diameter at 100m
+	const float vlp16LidarVBeamDiameter = 0.1596f;   // Velodyne VLP16 beam vertical diameter at 100m
 
 	std::vector<Mat3x4f> vlp16Channels{Mat3x4f::TRS({0.0f, 0.0f, mmToMeters(11.2f)}, {0.0f, -15.0f, 0.0f}),
 	                                   Mat3x4f::TRS({0.0f, 0.0f, mmToMeters(0.7f)}, {0.0f, +1.0f, 0.0f}),
@@ -45,13 +50,13 @@ protected:
 	           publish = nullptr, cameraPublish = nullptr, mrPublishFirst = nullptr, mrPublishLast = nullptr,
 	           compactFirst = nullptr, compactLast = nullptr;
 
-	void constructMRGraph(const std::vector<rgl_mat3x4f>& raysTf, const rgl_mat3x4f& lidarPose, const float beamDivAngle,
-	                      bool withPublish = false)
+	void constructMRGraph(const std::vector<rgl_mat3x4f>& raysTf, const rgl_mat3x4f& lidarPose, const float hBeamDivAngle,
+	                      const float vBeamDivAngle, bool withPublish = false)
 	{
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&mrRays, raysTf.data(), raysTf.size()));
 		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&mrTransform, &lidarPose));
 		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&mrRaytrace, nullptr));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(mrRaytrace, beamDivAngle));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(mrRaytrace, hBeamDivAngle, vBeamDivAngle));
 		EXPECT_RGL_SUCCESS(rgl_node_multi_return_switch(&mrFirst, RGL_RETURN_TYPE_FIRST));
 		EXPECT_RGL_SUCCESS(rgl_node_multi_return_switch(&mrLast, RGL_RETURN_TYPE_LAST));
 		EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactFirst, RGL_FIELD_IS_HIT_I32));
@@ -134,9 +139,7 @@ TEST_F(GraphMultiReturn, vlp16_data_compare)
 	// Scene
 	spawnCubeOnScene(Mat3x4f::identity());
 
-	// VLP16 horizontal beam divergence in rads
-	const float beamDivAngle = vlp16LidarHBeamDivergence;
-	constructMRGraph(raysTf, lidarPose, beamDivAngle);
+	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence);
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(mrRays));
 
@@ -159,7 +162,7 @@ TEST_F(GraphMultiReturn, vlp16_data_compare)
 	const auto mrLastIsHits = mrLastOutPointcloud.getFieldValues<IS_HIT_I32>();
 	const auto mrLastPoints = mrLastOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
 	const auto mrLastDistances = mrLastOutPointcloud.getFieldValues<DISTANCE_F32>();
-	const float expectedDiameter = vlp16LidarHBeamDiameter;
+	const float expectedDiameter = std::max(vlp16LidarHBeamDiameter, vlp16LidarVBeamDiameter);
 	const auto expectedLastDistance = static_cast<float>(sqrt(pow(lidarCubeFaceDist, 2) + pow(expectedDiameter / 2, 2)));
 	// Substract because the ray is pointing as is the negative X axis
 	const auto expectedLastPoint = lidarTransl - Vec3f{expectedLastDistance, 0.0f, 0.0f};
@@ -177,7 +180,7 @@ TEST_F(GraphMultiReturn, vlp16_data_compare)
  * with two cubes placed one behind the other, one cube cyclically moving sideways.
  * LiDAR fires the beam in such a way that in some frames the beam partially overlaps the edge of the moving cube.
  */
-TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
+TEST_F(GraphMultiReturn, cube_in_motion)
 {
 	/*
 	 *                            gap
@@ -208,8 +211,7 @@ TEST_F(GraphMultiReturn, pairs_of_cubes_in_motion)
 	                                      spawnCubeOnScene(entitiesTransforms.at(1))};
 
 	// Lidar with MR
-	const float beamDivAngle = 0.003f;
-	constructMRGraph(raysTf, lidarPose, beamDivAngle, true);
+	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, true);
 
 	// Lidar without MR
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
@@ -264,7 +266,7 @@ TEST_F(GraphMultiReturn, stairs)
 	// Scene
 	const float stairsBaseHeight = 0.0f;
 	const float stepWidth = 1.0f;
-	const float stepHeight = vlp16LidarHBeamDiameter + 0.1f;
+	const float stepHeight = vlp16LidarVBeamDiameter + 0.1f;
 	const float stepDepth = 0.8f;
 	const Vec3f stairsTranslation{2.0f, 0.0f, 0.0f};
 
@@ -279,8 +281,7 @@ TEST_F(GraphMultiReturn, stairs)
 	const rgl_mat3x4f lidarPose{(Mat3x4f::translation(lidarTransl + stairsTranslation)).toRGL()};
 
 	// Lidar with MR
-	const float beamDivAngle = vlp16LidarHBeamDivergence;
-	constructMRGraph(raysTf, lidarPose, beamDivAngle, true);
+	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, true);
 
 	// Camera
 	rgl_mat3x4f cameraPose = Mat3x4f::translation({0.0f, -1.5f, stepHeight * 3 + 1.0f}).toRGL();
@@ -289,8 +290,9 @@ TEST_F(GraphMultiReturn, stairs)
 
 	int frameId = 0;
 	while (true) {
-		const float newBeamDivAngle = beamDivAngle + std::sin(frameId * 0.1f) * beamDivAngle;
-		ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(mrRaytrace, newBeamDivAngle));
+		const float newVBeamDivAngle = vlp16LidarVBeamDivergence + std::sin(frameId * 0.1f) * vlp16LidarVBeamDivergence;
+		ASSERT_RGL_SUCCESS(
+		    rgl_node_raytrace_configure_beam_divergence(mrRaytrace, vlp16LidarHBeamDivergence, newVBeamDivAngle));
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(mrRaytrace));
 
@@ -329,5 +331,64 @@ TEST_F(GraphMultiReturn, multiple_ray_beams)
 
 	ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
 	ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
+}
+
+/**
+ * In the MR implementation, the beam is modeled using beam samples, from which the first and last hits are calculated.
+ * This test uses the code that generates these beam samples and fires them inside the cube.
+ * It verifies the accuracy of beam sample generation with different horizontal and vertical divergence angles.
+ */
+TEST_F(GraphMultiReturn, horizontal_vertical_beam_divergence)
+{
+	GTEST_SKIP(); // Comment to run the test
+
+	const float hHalfDivergenceAngleRad = M_PI / 4;
+	const float vHalfDivergenceAngleRad = M_PI / 8;
+
+	// Lidar
+	const auto lidarTransl = Vec3f{0.0f, 0.0f, 0.0f};
+	const rgl_mat3x4f lidarPose = Mat3x4f::TRS(lidarTransl).toRGL();
+	std::vector<rgl_mat3x4f> raysTf;
+	raysTf.reserve(MULTI_RETURN_BEAM_SAMPLES);
+
+	raysTf.emplace_back(Mat3x4f::identity().toRGL());
+
+	// Code that generates beam samples in the makeBeamSampleRayTransform function (gpu/optixPrograms.cu)
+	for (int layerIdx = 0; layerIdx < MULTI_RETURN_BEAM_LAYERS; ++layerIdx) {
+		for (int vertexIdx = 0; vertexIdx < MULTI_RETURN_BEAM_VERTICES; ++vertexIdx) {
+			const float hCurrentDivergence = hHalfDivergenceAngleRad *
+			                                 (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
+			const float vCurrentDivergence = vHalfDivergenceAngleRad *
+			                                 (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
+
+			const float angleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
+
+			const float hAngle = hCurrentDivergence * std::cos(static_cast<float>(vertexIdx) * angleStep);
+			const float vAngle = vCurrentDivergence * std::sin(static_cast<float>(vertexIdx) * angleStep);
+
+			const auto rotation = Mat3x4f::rotationRad(vAngle, 0.0f, 0.0f) * Mat3x4f::rotationRad(0.0f, hAngle, 0.0f);
+			raysTf.emplace_back(rotation.toRGL());
+		}
+	}
+
+	// Scene
+	spawnCubeOnScene(Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {6.0f, 6.0f, 6.0f}));
+
+	// Camera
+	constructCameraGraph(Mat3x4f::identity().toRGL());
+
+	// Graph without MR
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transform, &lidarPose));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "MRTest_Lidar_Without_MR", "world"));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, transform));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transform, raytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
+	ASSERT_RGL_SUCCESS(rgl_graph_run(rays));
 }
 #endif
