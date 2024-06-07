@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 class Config:
+    SUPPORTED_ROS_DISTROS = ["humble"]
+
     # Paths relative to project root
     RADAR_MSGS_DIR = os.path.join("external", "radar_msgs")
     RADAR_MSGS_INSTALL_DIR = os.path.join("external", "radar_msgs", "install")
@@ -51,10 +53,10 @@ def install_ros2_deps(cfg):
 
 
 def check_ros2_version():
-    if "ROS_DISTRO" not in os.environ:
+    if "ROS_DISTRO" not in os.environ and "AMENT_PREFIX_PATH" not in os.environ:
         raise RuntimeError("ROS2 environment not found! Make sure you have sourced ROS2 setup file")
-    if os.environ["ROS_DISTRO"] != "humble":
-        raise RuntimeError(f"RGL requires ROS2 humble, found {os.environ['ROS_DISTRO']}")
+    if os.environ["ROS_DISTRO"] not in Config().SUPPORTED_ROS_DISTROS:
+        raise RuntimeError(f"ROS distro '{os.environ['ROS_DISTRO']}' not supported. Choose one of {Config().SUPPORTED_ROS_DISTROS}")
 
 
 def on_windows():
