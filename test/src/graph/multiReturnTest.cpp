@@ -354,12 +354,12 @@ TEST_F(GraphMultiReturn, horizontal_vertical_beam_divergence)
 	raysTf.emplace_back(Mat3x4f::identity().toRGL());
 
 	// Code that generates beam samples in the makeBeamSampleRayTransform function (gpu/optixPrograms.cu)
-	for (int ellipseIdx = 0; ellipseIdx < MULTI_RETURN_BEAM_ELLIPSES; ++ellipseIdx) {
+	for (int layerIdx = 0; layerIdx < MULTI_RETURN_BEAM_LAYERS; ++layerIdx) {
 		for (int vertexIdx = 0; vertexIdx < MULTI_RETURN_BEAM_VERTICES; ++vertexIdx) {
 			const float hCurrentDivergence = hHalfDivergenceAngleRad *
-			                                 (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
+			                                 (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
 			const float vCurrentDivergence = vHalfDivergenceAngleRad *
-			                                 (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
+			                                 (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
 
 			const float angleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
 

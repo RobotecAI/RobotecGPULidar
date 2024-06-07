@@ -38,7 +38,7 @@ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity,
                               const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle);
 __device__ void saveNonHitRayResult(float nonHitDistance);
 __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned sampleBeamIdx);
-__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceAngleRad, float vHalfDivergenceAngleRad, unsigned ellipseIdx, unsigned vertexIdx);
+__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned layerIdx, unsigned vertexIdx);
 
 extern "C" __global__ void __raygen__()
 {
@@ -85,13 +85,13 @@ extern "C" __global__ void __raygen__()
 	float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[rayIdx].y();
 
 	shootSamplingRay(ray, maxRange, 0); // Shoot primary ray
-	if (ctx.hBeamHalfDivergence > 0.0f && ctx.vBeamHalfDivergence > 0.0f) {
+	if (ctx.hBeamHalfDivergenceRad > 0.0f && ctx.vBeamHalfDivergenceRad > 0.0f) {
 		// Shoot multi-return sampling rays
-		for (int ellipseIdx = 0; ellipseIdx < MULTI_RETURN_BEAM_ELLIPSES; ++ellipseIdx) {
+		for (int layerIdx = 0; layerIdx < MULTI_RETURN_BEAM_LAYERS; ++layerIdx) {
 			for (int vertexIdx = 0; vertexIdx < MULTI_RETURN_BEAM_VERTICES; vertexIdx++) {
-				Mat3x4f sampleRay = ray * makeBeamSampleRayTransform(ctx.hBeamHalfDivergence, ctx.vBeamHalfDivergence, ellipseIdx, vertexIdx);
+				Mat3x4f sampleRay = ray * makeBeamSampleRayTransform(ctx.hBeamHalfDivergenceRad, ctx.vBeamHalfDivergenceRad, layerIdx, vertexIdx);
 				// Sampling rays indexes start from 1, 0 is reserved for the primary ray
-				const unsigned beamSampleRayIdx = 1 + ellipseIdx * MULTI_RETURN_BEAM_VERTICES + vertexIdx;
+				const unsigned beamSampleRayIdx = 1 + layerIdx * MULTI_RETURN_BEAM_VERTICES + vertexIdx;
 				shootSamplingRay(sampleRay, maxRange, beamSampleRayIdx);
 			}
 		}
@@ -145,7 +145,7 @@ extern "C" __global__ void __closesthit__()
 			return hitWorldRaytraced;
 		}
 		Mat3x4f sampleRayTf = beamSampleRayIdx == 0 ? Mat3x4f::identity() :
-		                                              makeBeamSampleRayTransform(ctx.hBeamHalfDivergence, ctx.vBeamHalfDivergence, circleIdx, vertexIdx);
+		                                              makeBeamSampleRayTransform(ctx.hBeamHalfDivergenceRad, ctx.vBeamHalfDivergenceRad, circleIdx, vertexIdx);
 		Mat3x4f undistortedRay = ctx.raysWorld[beamIdx] * sampleRayTf;
 		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
 		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
@@ -255,19 +255,19 @@ __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned in
 	optixTrace(ctx.scene, origin, dir, 0.0f, maxRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0, beamSampleRayIdx);
 }
 
-__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceAngleRad, float vHalfDivergenceAngleRad, unsigned int ellipseIdx, unsigned int vertexIdx)
+__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned int layerIdx, unsigned int vertexIdx)
 {
-	if (ctx.hBeamHalfDivergence == 0.0f && ctx.vBeamHalfDivergence == 0.0f) {
+	if (ctx.hBeamHalfDivergenceRad == 0.0f && ctx.vBeamHalfDivergenceRad == 0.0f) {
 		return Mat3x4f::identity();
 	}
 
-	const float hCurrentDivergence = hHalfDivergenceAngleRad * (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
-	const float vCurrentDivergence = vHalfDivergenceAngleRad * (1.0f - static_cast<float>(ellipseIdx) / MULTI_RETURN_BEAM_ELLIPSES);
+	const float hCurrentHalfDivergenceRad = hHalfDivergenceRad * (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
+	const float vCurrentHalfDivergenceRad = vHalfDivergenceRad * (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
 
 	const float angleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
 
-	const float hAngle = hCurrentDivergence * cos(static_cast<float>(vertexIdx) * angleStep);
-	const float vAngle = vCurrentDivergence * sin(static_cast<float>(vertexIdx) * angleStep);
+	const float hAngle = hCurrentHalfDivergenceRad * cos(static_cast<float>(vertexIdx) * angleStep);
+	const float vAngle = vCurrentHalfDivergenceRad * sin(static_cast<float>(vertexIdx) * angleStep);
 
 	return Mat3x4f::rotationRad(vAngle, 0.0f, 0.0f) * Mat3x4f::rotationRad(0.0f, hAngle, 0.0f);
 }

@@ -945,7 +945,7 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node
                                                                  float vertical_beam_divergence)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, divergence={})", repr(node),
+		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, horizontal_divergence={}, vertical_divergence={})", repr(node),
 		            horizontal_beam_divergence, vertical_beam_divergence);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG((horizontal_beam_divergence > 0.0f && vertical_beam_divergence > 0.0f) ||
