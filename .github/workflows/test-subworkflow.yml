@@ -26,6 +26,7 @@ jobs:
       options:
         --rm
         --gpus all
+        --workdir /opt/rgl-test # to not overwrite dependencies installed in docker image
     steps:
       - name: test
         run: ${{ inputs.test-command }}

@@ -102,7 +102,7 @@ jobs:
     with:
       test-command: '
         cd bin-core/bin/test && ./RobotecGPULidar_test'
-      docker-image: localhost:5000/rgl:latest
+      docker-image: localhost:5000/robotecgpulidar-all:latest
 
   test-pcl-dev:
     needs: [ build-pcl ]
@@ -111,7 +111,7 @@ jobs:
       test-command: '
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
         cd bin-pcl/bin/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
-      docker-image: localhost:5000/rgl:latest
+      docker-image: localhost:5000/robotecgpulidar-all:latest
 
   test-ros2-dev:
     needs: [ build-ros2 ]
@@ -121,11 +121,11 @@ jobs:
       # Run tests twice, each for different RMW implementation
       test-command: '
         . /opt/ros/humble/setup.sh &&
-        . /rgldep/radar_msgs/install/setup.sh &&
+        . /opt/rgl/external/radar_msgs/install/setup.sh &&
         cd bin-ros2/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
-      docker-image: localhost:5000/rgl:latest
+      docker-image: localhost:5000/robotecgpulidar-all:latest
 
   test-udp-dev:
     needs: [ build-udp ]
@@ -133,7 +133,7 @@ jobs:
     with:
       test-command: '
         cd bin-udp/bin/test && ./RobotecGPULidar_test'
-      docker-image: localhost:5000/rgl:latest
+      docker-image: localhost:5000/robotecgpulidar-all:latest
 
   test-snow-dev:
     needs: [ build-snow ]
@@ -141,7 +141,7 @@ jobs:
     with:
       test-command: '
         cd bin-snow/bin/test && ./RobotecGPULidar_test'
-      docker-image: localhost:5000/rgl:latest
+      docker-image: localhost:5000/robotecgpulidar-all:latest
 
   test-all-dev:
     needs: [ build-all ]
@@ -152,13 +152,13 @@ jobs:
       # Run tests twice, each for different RMW implementation
       test-command: '
         . /opt/ros/humble/setup.sh &&
-        . /rgldep/radar_msgs/install/setup.sh &&
+        . /opt/rgl/external/radar_msgs/install/setup.sh &&
         export RGL_TEST_VLP16_CALIB_FILE=$(pwd)/extensions/udp/test/resources/Ros2Vlp16Calib.yaml &&
         export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
         cd bin-all/bin/test &&
         export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
-      docker-image: localhost:5000/rgl:latest
+      docker-image: localhost:5000/robotecgpulidar-all:latest
 
 ####### TEST WITH CLEAN UBUNTU DOCKER IMAGE ######
   test-core-prod:
