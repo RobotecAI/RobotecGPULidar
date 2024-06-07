@@ -233,8 +233,9 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	float farNonHitDistance = 2.0f;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_non_hits(raytrace, nearNonHitDistance, farNonHitDistance));
 
-	float beamDivergence = 0.1f;
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(raytrace, beamDivergence));
+	float hBeamDivergence = 0.1f;
+	float vBeamDivergence = 0.1f;
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(raytrace, hBeamDivergence, vBeamDivergence));
 
 	rgl_node_t format = nullptr;
 	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_DISTANCE_F32};

@@ -123,7 +123,8 @@ void RaytraceNode::enqueueExecImpl()
 	    .elevation = getPtrTo<ELEVATION_F32>(),
 	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
 	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
-	    .beamHalfDivergence = beamHalfDivergence,
+	    .hBeamHalfDivergenceRad = hBeamHalfDivergenceRad,
+	    .vBeamHalfDivergenceRad = vBeamHalfDivergenceRad,
 	    .mrSamples = mrSamples.getPointers(),
 	};
 
@@ -133,7 +134,7 @@ void RaytraceNode::enqueueExecImpl()
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
 	                        launchDims.x, launchDims.y, launchDims.y));
 
-	if (beamHalfDivergence > 0.0f) {
+	if (hBeamHalfDivergenceRad > 0.0f && vBeamHalfDivergenceRad > 0.0f) {
 		gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
 		                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers(), raysPtr);
 	}
