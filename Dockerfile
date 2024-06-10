@@ -71,7 +71,8 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
         ros-$ROS_DISTRO-rmw-fastrtps-cpp \
         ros-$ROS_DISTRO-ros-core \
         # Packages for UDP-ROS2 integration test
-        psmisc # `killall` command \
+        # psmisc for`killall` command
+        psmisc \
         ros-$ROS_DISTRO-velodyne-driver \
         ros-$ROS_DISTRO-velodyne-pointcloud
 
