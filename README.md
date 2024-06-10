@@ -77,7 +77,7 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
         - `--build-arg WITH_ROS2=1` - adds stage to install dependencies for ROS2 extension
     - By default, the build command compiles the core part of the library only. To include extensions it must be overwritten:
         - `--build-arg BUILD_CMD="./setup.py --with-pcl"` - includes PCL extension
-        - `--build-arg BUILD_CMD='. /opt/ros/$ROS_DISTRO/setup.sh && ./setup.py --with-ros2'` - includes ROS2 extension (ROS2 must be sourced first)
+        - `--build-arg BUILD_CMD='. /opt/ros/\$ROS_DISTRO/setup.sh && ./setup.py --with-ros2'` - includes ROS2 extension (ROS2 must be sourced first)
    - The command for building RGL with PCL and ROS2 extensions would be:
 
 ```shell
@@ -85,7 +85,7 @@ docker build \
    --build-arg WITH_ROS2=1 \
    --build-arg WITH_PCL=1 \
    --build-arg BUILD_CMD='\
-      . /opt/ros/$ROS_DISTRO/setup.sh && \
+      . /opt/ros/\$ROS_DISTRO/setup.sh && \
       ./setup.py \
          --with-ros2 \
          --with-pcl' \
