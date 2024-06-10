@@ -42,7 +42,7 @@ void RadarTrackObjectsNode::setObjectClasses(const int32_t* entityIds, const rgl
 {
 	entityIdsToClasses.clear();
 	for (int i = 0; i < count; ++i) {
-		entityIdsToClasses[entityIds[i]] = objectClasses[i];
+		entityIdsToClasses[static_cast<Field<ENTITY_ID_I32>::type>(entityIds[i])] = objectClasses[i];
 	}
 }
 
