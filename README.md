@@ -132,3 +132,6 @@ docker build \
 The development of this project was made possible thanks to cooperation with Tier IV - challenging needs
 in terms of features and performance of Tier IV's project allowed to significantly enrich Robotec GPU Lidar
 with features such as Gaussian noise and animated meshes as well as optimize it to provide real-time performance with many lidars.
+
+Additionally, we would like to express our gratitude to Dexory for their contribution to enhancing docker-based build pipeline,
+ensuring a more robust and efficient workflow, and the overall development of the project.
