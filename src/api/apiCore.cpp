@@ -1215,6 +1215,32 @@ void TapeCore::tape_node_points_radar_track_objects(const YAML::Node& yamlNode, 
 	state.nodes.insert({nodeId, node});
 }
 
+RGL_API rgl_status_t rgl_node_points_radar_set_classes(rgl_node_t node, const int32_t* entity_ids,
+                                                       const rgl_radar_object_class_t* object_classes, int32_t count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_points_radar_set_classes(node={}, entity_ids={}, classes={}, count={})", repr(node),
+		            repr(entity_ids, count), repr(object_classes, count), count);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(entity_ids != nullptr);
+		CHECK_ARG(object_classes != nullptr);
+		CHECK_ARG(count >= 0);
+		RadarTrackObjectsNode::Ptr trackObjectsNode = Node::validatePtr<RadarTrackObjectsNode>(node);
+		trackObjectsNode->setObjectClasses(entity_ids, object_classes, count);
+	});
+	TAPE_HOOK(node, entity_ids, object_classes, count);
+	return status;
+}
+
+void TapeCore::tape_node_points_radar_set_classes(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_points_radar_set_classes(node, state.getPtr<const int32_t>(yamlNode[1]),
+	                                  state.getPtr<const rgl_radar_object_class_t>(yamlNode[2]), yamlNode[3].as<int32_t>());
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_filter_ground(rgl_node_t* node, const rgl_vec3f* sensor_up_vector,
                                                    float ground_angle_threshold)
 {
