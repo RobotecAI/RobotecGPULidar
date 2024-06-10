@@ -37,6 +37,15 @@ void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuth
 	this->movementSensitivity = movementSensitivity;
 }
 
+void RadarTrackObjectsNode::setObjectClasses(const int32_t* entityIds, const rgl_radar_object_class_t* objectClasses,
+                                             int32_t count)
+{
+	entityIdsToClasses.clear();
+	for (int i = 0; i < count; ++i) {
+		entityIdsToClasses[entityIds[i]] = objectClasses[i];
+	}
+}
+
 void RadarTrackObjectsNode::enqueueExecImpl()
 {
 	xyzHostPtr->copyFrom(input->getFieldData(XYZ_VEC3_F32));
@@ -193,12 +202,14 @@ void RadarTrackObjectsNode::parseEntityIdToClassProbability(Field<ENTITY_ID_I32>
 	// May be updated, if entities will be able to belong to multiple classes.
 	constexpr auto maxClassificationProbability = std::numeric_limits<uint8_t>::max();
 
-	const auto it = entityIdToClass.find(entityId);
-	if (it == entityIdToClass.cend()) {
+	const auto it = entityIdsToClasses.find(entityId);
+	if (it == entityIdsToClasses.cend()) {
 		probabilities.classUnknown = maxClassificationProbability;
 		return;
 	}
 
+	// Single probability is set, but not probabilities are zeroed - the logic here is that probabilities are only set on
+	// object creation, so initially all probabilities are zero.
 	switch (it->second) {
 		case RGL_RADAR_CLASS_CAR: probabilities.classCar = maxClassificationProbability; break;
 		case RGL_RADAR_CLASS_TRUCK: probabilities.classTruck = maxClassificationProbability; break;

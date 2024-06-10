@@ -696,6 +696,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold,
 	                   float maxMatchingDistance, float maxPredictionTimeFrame, float movementSensitivity);
 
+	void setObjectClasses(const int32_t* entityIds, const rgl_radar_object_class_t* objectClasses, int32_t count);
+
 	void enqueueExecImpl() override;
 
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
@@ -718,7 +720,7 @@ private:
 	void updateOutputData();
 
 	std::list<ObjectState> objectStates;
-	std::unordered_map<Field<ENTITY_ID_I32>::type, rgl_radar_object_class_t> entityIdToClass;
+	std::unordered_map<Field<ENTITY_ID_I32>::type, rgl_radar_object_class_t> entityIdsToClasses;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
 
 	uint32_t objectIDCounter = 0; // Not static - I assume each ObjectTrackingNode is like a separate radar.

@@ -886,6 +886,17 @@ RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float
                                                          float max_prediction_time_frame, float movement_sensitivity);
 
 /**
+ * Modifies RadarTrackObjectsNode to set entity ids to radar object classes mapping.
+ * This is necessary to call for RadarTrackObjectsNode to classify tracked objects correctly. If not set, objects will be classified as RGL_RADAR_CLASS_UNKNOWN by default.
+ * @param node RadarTrackObjectsNode to modify.
+ * @param entity_ids Array of RGL entity ids.
+ * @param object_classes Array of radar object classes.
+ * @param count Number of elements in entity_ids and object_classes arrays.
+ */
+RGL_API rgl_status_t rgl_node_points_radar_set_classes(rgl_node_t node, const int32_t* entity_ids,
+                                                       const rgl_radar_object_class_t* object_classes, int32_t count);
+
+/**
  * Creates or modifies FilterGroundPointsNode.
  * The Node adds RGL_FIELD_IS_GROUND_I32 which indicates the point is on the ground. Points are not removed.
  * Ground points are defined as those located below the sensor with a normal vector pointing upwards at an angle smaller than the threshold.
