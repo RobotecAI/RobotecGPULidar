@@ -10,9 +10,6 @@
     - `rgl_node_points_remove_ground`
   - Added API call to filter ground based on the incident angle of the ray hitting the mesh triangle
     - `rgl_node_points_filter_ground`
-  - Added API call to compact point cloud by given field (RGL_FIELD_IS_HIT_I32 or RGL_FIELD_IS_GROUND_I32)
-    - `rgl_node_points_compact_by_field`
-    - At the same time, `rgl_node_points_compact` became deprecated
   - Added API call to publish [RadarScan](http://docs.ros.org/en/noetic/api/radar_msgs/html/msg/RadarScan.html) message into ROS2 topic
     - `rgl_node_publish_ros2_radarscan`
   - Added new fields (point attributes) calculation:
@@ -24,8 +21,12 @@
       - `RGL_FIELD_NORMAL_VEC3_F32`
     - Incident angle of the ray hitting the mesh triangle
       - `RGL_FIELD_INCIDENT_ANGLE_F32`
-    - Elevation angle of the hit point
+    - Azimuth and elevation angle of the hit point
+      - `RGL_FIELD_AZIMUTH_F32`
       - `RGL_FIELD_ELEVATION_F32`
+- Added API call to compact point cloud by given field (`RGL_FIELD_IS_HIT_I32` or `RGL_FIELD_IS_GROUND_I32`)
+  - `rgl_node_points_compact_by_field`
+  - At the same time, `rgl_node_points_compact` became deprecated
 - Added set of calls to check if API objects are still valid
   - `rgl_mesh_is_alive`
   - `rgl_entity_is_alive`
@@ -43,8 +44,6 @@
     - `rgl_entity_set_laser_retro`
   - Note: could be replaced with 1x1 float-type texture in the future
 - Added CI to the project using GitHub actions
-- Added support for private extensions via [vcs](https://github.com/dirk-thomas/vcstool)
-  - Introduced udp and snow extensions
 - Added static build option
   - Added variable to the CMakeLists (default OFF):
     - `RGL_BUILD_STATIC`
