@@ -1225,7 +1225,7 @@ RGL_API rgl_status_t rgl_node_points_radar_set_classes(rgl_node_t node, const in
 		RadarTrackObjectsNode::Ptr trackObjectsNode = Node::validatePtr<RadarTrackObjectsNode>(node);
 		trackObjectsNode->setObjectClasses(entity_ids, object_classes, count);
 	});
-	TAPE_HOOK(node, entity_ids, object_classes, count);
+	TAPE_HOOK(node, TAPE_ARRAY(entity_ids, count), TAPE_ARRAY(object_classes, count), count);
 	return status;
 }
 
