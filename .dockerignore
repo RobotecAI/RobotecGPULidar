@@ -1,9 +1,19 @@
-.vs
-.vscode
-Builds/*
-Testing/*
-.idea
-cmake-build-debug
-cmake-build-release
-build
-external/vcpkg
+# Ignore everything by default
+*
+
+# First-order allow exception for select directories
+!/.clang-format
+!/.githooks
+!/.git
+!/CMakeLists.txt
+!/docs
+!/extensions
+!/extensions.repos
+!external/CMakeLists.txt
+!/include
+!/ros2_standalone
+!/setup.py
+!/install_deps.py
+!/src
+!/test
+!/tools

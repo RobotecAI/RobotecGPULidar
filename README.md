@@ -67,14 +67,32 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 
 ## Building in Docker (Linux)
 
-1. Set up [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
-3. `export OptiX_INSTALL_DIR=<Path to OptiX>`
-4. `docker build . --tag rgl:latest`
-5. `docker run --net=host --gpus all -v $(pwd):/code -v ${OptiX_INSTALL_DIR}:/optix -e OptiX_INSTALL_DIR=/optix -e NVIDIA_DRIVER_CAPABILITIES=all -it rgl:latest /bin/bash`
-6. `./setup.py --clean-build --with-pcl`
-   - For build with ROS2 extension, do source ROS2 first:\
-     `source /opt/ros/humble/setup.bash && ./setup.py --clean-build --with-pcl --with-ros2`
+1. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**
+2. `export OptiX_INSTALL_DIR=<Path to OptiX>`
+3. `docker build --build-context optix=${OptiX_INSTALL_DIR} --target=exporter --output=build .`
+    - The binaries will be exported to the `build` directory
+4. To build RGL with extensions, docker must install additional dependencies.
+    - It could be enabled by setting the following arguments:
+        - `--build-arg WITH_PCL=1` - adds stage to install dependencies for PCL extension
+        - `--build-arg WITH_ROS2=1` - adds stage to install dependencies for ROS2 extension
+    - By default, the build command compiles the core part of the library only. To include extensions it must be overwritten:
+        - `--build-arg BUILD_CMD="./setup.py --with-pcl"` - includes PCL extension
+        - `--build-arg BUILD_CMD='. /opt/ros/\$ROS_DISTRO/setup.sh && ./setup.py --with-ros2'` - includes ROS2 extension (ROS2 must be sourced first)
+   - The command for building RGL with PCL and ROS2 extensions would be:
+
+```shell
+docker build \
+   --build-arg WITH_ROS2=1 \
+   --build-arg WITH_PCL=1 \
+   --build-arg BUILD_CMD='\
+      . /opt/ros/\$ROS_DISTRO/setup.sh && \
+      ./setup.py \
+         --with-ros2 \
+         --with-pcl' \
+   --build-context optix=$OptiX_INSTALL_DIR \
+   --target=exporter \
+   --output=build .
+```
 
 ## Building on Ubuntu 22
 
@@ -83,7 +101,8 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
     1. You may be asked to create a Nvidia account to download
 3. Export environment variable:
    1. `export OptiX_INSTALL_DIR=<your-OptiX-path>`.
-4. Use `setup.py` script to build.
+4. Install dependencies with command: `./setup.py --install-deps`
+5. Use `setup.py` script to build.
    - It will use CMake to generate files for the build system (make) and the build.
    - You can pass optional CMake and make parameters, e.g.
      - `./setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --make="-j 16"`
@@ -99,7 +118,8 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
    - install the framework and set the environment variable `OptiX_INSTALL_DIR`
 4. Install [Python3](https://www.python.org/downloads/).
 5. Run `x64 Native Tools Command Prompt for VS 20xx` and navigate to the RGL repository.
-6. Run `python setup.py` command to build the project.
+6. Run `python setup.py --install-deps` command to install dependencies.
+7. Run `python setup.py` command to build the project.
    - It will use CMake to generate files for the build system (ninja) and build.
    - You can pass optional CMake and ninja parameters, e.g.
      - `python setup.py --cmake="-DCMAKE_BUILD_TYPE=Debug" --ninja="-j 16"`

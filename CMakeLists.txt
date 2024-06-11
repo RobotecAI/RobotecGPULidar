@@ -131,6 +131,7 @@ set(RGL_SOURCE_FILES
     src/graph/YieldPointsNode.cpp
 )
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 if (RGL_BUILD_STATIC)
     add_library(RobotecGPULidar STATIC ${RGL_SOURCE_FILES})
     target_compile_definitions(RobotecGPULidar PUBLIC RGL_STATIC)
@@ -211,6 +212,9 @@ target_compile_definitions(RobotecGPULidar
     PUBLIC RGL_AUTO_TAPE_PATH="${RGL_AUTO_TAPE_PATH}"
     PRIVATE RGL_BUILD # Used in headers to differentiate whether it is parsed as library or client's code, affects __declspec on Windows.
 )
+
+# Enable relative paths in the build RPATH for executables
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 # Include tests
 if (RGL_BUILD_TESTS OR RGL_BUILD_TAPED_TESTS)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18) # # 3.18 To have DISCOVERY_MODE option for gtest_discover_tests()
 
 set(RGL_TEST_FILES
     src/apiReadmeExample.cpp
@@ -77,6 +77,7 @@ endif()
 
 file(COPY ${CMAKE_SOURCE_DIR}/test/data/ DESTINATION ${CMAKE_BINARY_DIR}/data/)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 add_executable(RobotecGPULidar_test ${RGL_TEST_FILES})
 
 target_compile_definitions(RobotecGPULidar_test PRIVATE
@@ -120,6 +121,10 @@ if (RGL_BUILD_ROS2_EXTENSION)
     )
 endif()
 
+# Set $ORIGIN rpath to search for dependencies in the executable location (Linux only)
+set_target_properties(RobotecGPULidar_test PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
+
 include(GoogleTest)
 
-gtest_discover_tests(RobotecGPULidar_test)
+gtest_discover_tests(RobotecGPULidar_test
+    DISCOVERY_MODE PRE_TEST)

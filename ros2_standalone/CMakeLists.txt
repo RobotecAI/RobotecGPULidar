@@ -16,7 +16,7 @@ set(REQ_STANDALONE_LIBS "")
 set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
 set(REQ_STANDALONE_DLLS "")
 
-set(INSTALL_DESTINATION_DIR "ros2_standalone")
+set(INSTALL_DESTINATION_DIR "lib/ros2_standalone")
 
 # Extend REQ_THIRD_PARTY_STANDALONE_LIBS with _library_name third party dependencies
 macro(get_standalone_third_party_dependencies _library_name)
