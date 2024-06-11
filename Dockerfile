@@ -2,7 +2,7 @@ ARG BASE_IMAGE=base
 ARG WITH_PCL=0
 ARG WITH_ROS2=0
 # Stage from full image tag name for dependabot detection
-FROM nvidia/cuda:11.7.1-devel-ubuntu22.04 as base
+FROM nvidia/cuda:12.5.0-devel-ubuntu22.04 as base
 
 ################################################################################
 # MARK: prepper - prep rgl dependencies
