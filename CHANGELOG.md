@@ -1,5 +1,65 @@
 # Change Log
 
+## [0.17.0] 11 June 2024
+
+### Added
+- Added radar sensor simulation
+  - Added API call to process point cloud to create radar-like output
+    - `rgl_node_points_radar_postprocess`
+  - Added API call to remove ground using RANSAC method to fit the plane model to the point cloud
+    - `rgl_node_points_remove_ground`
+  - Added API call to filter ground based on the incident angle of the ray hitting the mesh triangle
+    - `rgl_node_points_filter_ground`
+  - Added API call to publish [RadarScan](http://docs.ros.org/en/noetic/api/radar_msgs/html/msg/RadarScan.html) message into ROS2 topic
+    - `rgl_node_publish_ros2_radarscan`
+  - Added new fields (point attributes) calculation:
+    - Velocity of the hit point on the entity. Depends on entity's linear and angular velocity, and mesh deformations (inferred from calls `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_mesh_update_vertices`).
+      - `RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32`
+      - `RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32`
+      - `RGL_FIELD_RADIAL_SPEED_F32`
+    - Normal vector of the mesh triangle where the hit-point is located
+      - `RGL_FIELD_NORMAL_VEC3_F32`
+    - Incident angle of the ray hitting the mesh triangle
+      - `RGL_FIELD_INCIDENT_ANGLE_F32`
+    - Azimuth and elevation angle of the hit point
+      - `RGL_FIELD_AZIMUTH_F32`
+      - `RGL_FIELD_ELEVATION_F32`
+- Added API call to compact point cloud by given field (`RGL_FIELD_IS_HIT_I32` or `RGL_FIELD_IS_GROUND_I32`)
+  - `rgl_node_points_compact_by_field`
+  - At the same time, `rgl_node_points_compact` became deprecated
+- Added set of calls to check if API objects are still valid
+  - `rgl_mesh_is_alive`
+  - `rgl_entity_is_alive`
+  - `rgl_texture_is_alive`
+  - `rgl_node_is_alive`
+- Added raytrace node configurations
+  - Added API call to configure values for non-hit points
+    - `rgl_node_raytrace_configure_non_hits`
+  - Added API call to configure sensor velocity (necessary for velocity distortion or calculating fields `RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32` and `RGL_FIELD_RADIAL_SPEED_F32`)
+    - `rgl_node_raytrace_configure_velocity`
+  - Added API call to configure (turn on/off) velocity distortion
+    - `rgl_node_raytrace_configure_distortion`
+- Added support for LiDAR reflective value (similar to intensity but set as a single floating-point value for the entire entity)
+  - Added API call to set laser retro value to the entity
+    - `rgl_entity_set_laser_retro`
+  - Note: could be replaced with 1x1 float-type texture in the future
+- Added CI to the project using GitHub actions
+- Added static build option
+  - Added variable to the CMakeLists (default OFF):
+    - `RGL_BUILD_STATIC`
+
+### Changed
+- Optimized tape files format to be lighter and be loaded faster
+  - Note: old tape files are not compatible
+- Improved docker-based build pipeline
+  - Introduced multistage dockerfile for the build process
+  - Decoupled dependency installation from compilation scripts (better caching)
+
+### Removed
+- Removed API call for modifying RaytraceNode to apply velocity distortion
+  - `rgl_node_raytrace_with_distortion`
+  - Replaced by `rgl_node_raytrace_configure_distortion`
+
 ## [0.16.2] 19 November 2023
 
 ### Fixed
