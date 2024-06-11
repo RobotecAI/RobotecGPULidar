@@ -4,7 +4,7 @@
 
 ### Added
 - Added radar sensor simulation
-  - Added API call to processes point cloud to create radar-like output
+  - Added API call to process point cloud to create radar-like output
     - `rgl_node_points_radar_postprocess`
   - Added API call to remove ground using RANSAC method to fit the plane model to the point cloud
     - `rgl_node_points_remove_ground`
@@ -16,7 +16,7 @@
   - Added API call to publish [RadarScan](http://docs.ros.org/en/noetic/api/radar_msgs/html/msg/RadarScan.html) message into ROS2 topic
     - `rgl_node_publish_ros2_radarscan`
   - Added new fields (point attributes) calculation:
-    - Velocity of the hit point on the entity that depends on entity's linear and angular velocity, and mesh deformations (inferred from calls `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_mesh_update_vertices`).
+    - Velocity of the hit point on the entity. Depends on entity's linear and angular velocity, and mesh deformations (inferred from calls `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_mesh_update_vertices`).
       - `RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32`
       - `RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32`
       - `RGL_FIELD_RADIAL_SPEED_F32`
