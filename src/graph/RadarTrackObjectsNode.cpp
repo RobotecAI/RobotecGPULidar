@@ -70,7 +70,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	}
 
 	int leftIndex = 0;
-	while (leftIndex < objectIndices.size() - 1) {
+	while (leftIndex + 1 < objectIndices.size()) {
 		auto ownIt = objectIndices.begin();
 		std::advance(ownIt, leftIndex);
 		auto checkedIt = std::next(ownIt);
