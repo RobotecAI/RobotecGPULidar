@@ -88,7 +88,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 					return std::abs(distanceHostPtr->at(checkedDetectionId) - distance) <= distanceThreshold &&
 					       std::abs(azimuthHostPtr->at(checkedDetectionId) - azimuth) <= azimuthThreshold &&
 					       std::abs(elevationHostPtr->at(checkedDetectionId) - elevation) <= elevationThreshold &&
-					       std::abs(radialSpeedHostPtr->at(checkedDetectionId) - radialSpeed) <= radialSpeedThreshold;
+					       (std::isunordered(radialSpeed, radialSpeedHostPtr->at(checkedDetectionId)) ||
+					        std::abs(radialSpeedHostPtr->at(checkedDetectionId) - radialSpeed) <= radialSpeedThreshold);
 				};
 
 				if (std::any_of(checkedIndices.cbegin(), checkedIndices.cend(), isPartOfSameObject)) {
