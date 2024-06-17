@@ -19,8 +19,8 @@
 // TODO(Pawel): Consider adding more output fields here, maybe usable for ROS 2 message or visualization. Consider also returning detections, when object states are returned through public method.
 RadarTrackObjectsNode::RadarTrackObjectsNode()
 {
-	fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32));
-	fieldData.emplace(ENTITY_ID_I32, createArray<HostPinnedArray>(ENTITY_ID_I32));
+	fieldData.emplace(XYZ_VEC3_F32, createArray<DeviceAsyncArray>(XYZ_VEC3_F32, arrayMgr));
+	fieldData.emplace(ENTITY_ID_I32, createArray<DeviceAsyncArray>(ENTITY_ID_I32, arrayMgr));
 }
 
 void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
@@ -310,11 +310,11 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 
 void RadarTrackObjectsNode::updateOutputData()
 {
-	fieldData[XYZ_VEC3_F32]->resize(objectStates.size(), false, false);
-	auto* xyzPtr = static_cast<Field<XYZ_VEC3_F32>::type*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
+	outXyzHostPtr->resize(objectStates.size(), false, false);
+	auto* xyzPtr = static_cast<Field<XYZ_VEC3_F32>::type*>(outXyzHostPtr->getRawWritePtr());
 
-	fieldData[ENTITY_ID_I32]->resize(objectStates.size(), false, false);
-	auto* idPtr = static_cast<Field<ENTITY_ID_I32>::type*>(fieldData[ENTITY_ID_I32]->getRawWritePtr());
+	outEntityIdHostPtr->resize(objectStates.size(), false, false);
+	auto* idPtr = static_cast<Field<ENTITY_ID_I32>::type*>(outEntityIdHostPtr->getRawWritePtr());
 
 	int objectIndex = 0;
 	for (const auto& objectState : objectStates) {
@@ -323,4 +323,7 @@ void RadarTrackObjectsNode::updateOutputData()
 		idPtr[objectIndex] = objectState.id;
 		++objectIndex;
 	}
+
+	fieldData[XYZ_VEC3_F32]->copyFrom(outXyzHostPtr);
+	fieldData[ENTITY_ID_I32]->copyFrom(outEntityIdHostPtr);
 }

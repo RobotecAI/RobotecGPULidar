@@ -724,7 +724,7 @@ private:
 
 	std::list<ObjectState> objectStates;
 	std::unordered_map<Field<ENTITY_ID_I32>::type, rgl_radar_object_class_t> entityIdsToClasses;
-	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
 
 	uint32_t objectIDCounter = 0; // Not static - I assume each ObjectTrackingNode is like a separate radar.
 	std::queue<uint32_t> objectIDPoll;
@@ -748,6 +748,9 @@ private:
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
 	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr entityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
+
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
+	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr outEntityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
 };
 
 struct FilterGroundPointsNode : IPointsNodeSingleInput
