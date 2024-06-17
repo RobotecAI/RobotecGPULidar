@@ -116,8 +116,6 @@ struct RaytraceNode : IPointsNode
 	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
-	Vec3f getLinearVelocity() const override { return sensorLinearVelocityXYZ; }
-	Vec3f getAngularVelocity() const override { return sensorAngularVelocityRPY; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
@@ -659,6 +657,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Field<ENTITY_ID_I32>::type mostCommonEntityId = RGL_ENTITY_INVALID_ID;
 		Vec3f position{0};
 		Aabb3Df aabb{};
+		Vec2f absVelocity{};
+		Vec2f relVelocity{};
 	};
 
 	struct ClassificationProbabilities
@@ -719,7 +719,8 @@ private:
 	void parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId, ClassificationProbabilities& probabilities);
 	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
 	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
-	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs);
+	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs, const Vec2f& absVelocity,
+	                       const Vec2f& relVelocity);
 	void updateOutputData();
 
 	std::list<ObjectState> objectStates;
@@ -748,6 +749,10 @@ private:
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
 	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr entityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
+	HostPinnedArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::Ptr velocityRelHostPtr =
+	    HostPinnedArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create();
+	HostPinnedArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::Ptr velocityAbsHostPtr =
+	    HostPinnedArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create();
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr outEntityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();

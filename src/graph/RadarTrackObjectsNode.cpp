@@ -54,6 +54,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	elevationHostPtr->copyFrom(input->getFieldData(ELEVATION_F32));
 	radialSpeedHostPtr->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
 	entityIdHostPtr->copyFrom(input->getFieldData(ENTITY_ID_I32));
+	velocityRelHostPtr->copyFrom(input->getFieldData(RELATIVE_VELOCITY_VEC3_F32));
+	velocityAbsHostPtr->copyFrom(input->getFieldData(ABSOLUTE_VELOCITY_VEC3_F32));
 
 	// TODO(Pawel): Reconsider approach below.
 	// At this moment, I would like to check input this way, because it will keep RadarTrackObjectsNode testable without
@@ -88,8 +90,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 					return std::abs(distanceHostPtr->at(checkedDetectionId) - distance) <= distanceThreshold &&
 					       std::abs(azimuthHostPtr->at(checkedDetectionId) - azimuth) <= azimuthThreshold &&
 					       std::abs(elevationHostPtr->at(checkedDetectionId) - elevation) <= elevationThreshold &&
-					       (std::isunordered(radialSpeed, radialSpeedHostPtr->at(checkedDetectionId)) ||
-					        std::abs(radialSpeedHostPtr->at(checkedDetectionId) - radialSpeed) <= radialSpeedThreshold);
+					       std::abs(radialSpeedHostPtr->at(checkedDetectionId) - radialSpeed) <= radialSpeedThreshold;
 				};
 
 				if (std::any_of(checkedIndices.cbegin(), checkedIndices.cend(), isPartOfSameObject)) {
@@ -120,6 +121,10 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 			++entityIdHist[entityIdHostPtr->at(detectionIndex)];
 			objectBounds.position += xyzHostPtr->at(detectionIndex);
 			objectBounds.aabb += detectionAabbs[detectionIndex];
+			const auto velocityRel3f = velocityRelHostPtr->at(detectionIndex);
+			objectBounds.relVelocity += Vec2f{velocityRel3f.x(), velocityRel3f.y()};
+			const auto velocityAbs3f = velocityAbsHostPtr->at(detectionIndex);
+			objectBounds.absVelocity += Vec2f{velocityAbs3f.x(), velocityAbs3f.y()};
 		}
 		// Most common detection entity id is assigned as object id.
 		int maxIdCount = -1;
@@ -130,6 +135,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 			}
 		}
 		objectBounds.position *= 1 / static_cast<float>(separateObjectIndices.size());
+		objectBounds.relVelocity *= 1 / static_cast<float>(separateObjectIndices.size());
+		objectBounds.absVelocity *= 1 / static_cast<float>(separateObjectIndices.size());
 	}
 
 	const auto currentTime = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds();
@@ -150,7 +157,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		if (const auto& closestObject = *closestObjectIt;
 		    (predictedPosition - closestObject.position).length() < maxMatchingDistance) {
 			updateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
-			                  deltaTime);
+			                  deltaTime, closestObject.absVelocity, closestObject.relVelocity);
 			newObjectBounds.erase(closestObjectIt);
 			++objectStateIt;
 			continue;
@@ -160,7 +167,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// (new, measured or predicted, does not matter) and its last measurement time was within maxPredictionTimeFrame, then its
 		// position (and state) in current frame is predicted.
 		if (objectState.lastMeasuredTime >= currentTime - maxPredictionTimeFrame) {
-			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime);
+			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime,
+			                  objectState.absVelocity.getLastSample(), objectState.relVelocity.getLastSample());
 			++objectStateIt;
 			continue;
 		}
@@ -258,15 +266,11 @@ void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, 
 
 void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition,
                                               const Aabb3Df& updatedAabb, ObjectStatus objectStatus, double currentTimeMs,
-                                              double deltaTimeMs)
+                                              double deltaTimeMs, const Vec2f& absVelocity, const Vec2f& relVelocity)
 {
 	assert(deltaTimeMs > 0 && deltaTimeMs <= std::numeric_limits<float>::max());
 	const auto displacement = updatedPosition - objectState.position.getLastSample();
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
-	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
-
-	const auto radarVelocity = input->getLinearVelocity();
-	const auto relVelocity = absVelocity - Vec2f{radarVelocity.x(), radarVelocity.y()};
 
 	if (objectStatus == ObjectStatus::Measured) {
 		assert(currentTimeMs <= std::numeric_limits<decltype(objectState.creationTime)>::max());
