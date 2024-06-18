@@ -328,25 +328,17 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 
 void RadarTrackObjectsNode::updateOutputData()
 {
-	auto isObjectToBeAdded = [](auto&& objectState) {
-		return objectState.objectStatus == ObjectStatus::Measured || objectState.objectStatus == ObjectStatus::New;
-	};
-
-	std::size_t objectCount = std::count_if(objectStates.cbegin(), objectStates.cend(), isObjectToBeAdded);
-
-	outXyzHostPtr->resize(objectCount, false, false);
+	outXyzHostPtr->resize(objectStates.size(), false, false);
 	auto* xyzPtr = static_cast<Field<XYZ_VEC3_F32>::type*>(outXyzHostPtr->getRawWritePtr());
 
-	outEntityIdHostPtr->resize(objectCount, false, false);
+	outEntityIdHostPtr->resize(objectStates.size(), false, false);
 	auto* idPtr = static_cast<Field<ENTITY_ID_I32>::type*>(outEntityIdHostPtr->getRawWritePtr());
 
 	int objectIndex = 0;
 	for (const auto& objectState : objectStates) {
 		assert(objectState.id <= std::numeric_limits<Field<ENTITY_ID_I32>::type>::max());
-		if (isObjectToBeAdded(objectState)) {
-			xyzPtr[objectIndex] = objectState.position.getLastSample();
-			idPtr[objectIndex] = objectState.id;
-		}
+		xyzPtr[objectIndex] = objectState.position.getLastSample();
+		idPtr[objectIndex] = objectState.id;
 		++objectIndex;
 	}
 
