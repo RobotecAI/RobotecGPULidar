@@ -219,9 +219,9 @@ extern "C" __global__ void __closesthit__()
 		if (wasSkinned) {
 			Mat3x4f objectToWorld;
 			optixGetObjectToWorldTransformMatrix(reinterpret_cast<float*>(objectToWorld.rc));
-			const Vec3f& vA = entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
-			const Vec3f& vB = entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
-			const Vec3f& vC = entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
+			const Vec3f& vA = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
+			const Vec3f& vB = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
+			const Vec3f& vC = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
 			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
 		}
 
