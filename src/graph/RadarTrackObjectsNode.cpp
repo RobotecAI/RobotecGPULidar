@@ -190,7 +190,14 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 {
-	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, ENTITY_ID_I32};
+	return {XYZ_VEC3_F32,
+	        DISTANCE_F32,
+	        AZIMUTH_F32,
+	        ELEVATION_F32,
+	        RADIAL_SPEED_F32,
+	        ENTITY_ID_I32,
+	        RELATIVE_VELOCITY_VEC3_F32,
+	        ABSOLUTE_VELOCITY_VEC3_F32};
 }
 
 Vec3f RadarTrackObjectsNode::predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const
