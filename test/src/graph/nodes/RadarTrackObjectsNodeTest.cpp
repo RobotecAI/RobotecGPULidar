@@ -48,10 +48,8 @@ void generateDetectionFields(const Vec3f& clusterCenter, const Vec3f& clusterSpr
 		elevation.emplace_back(worldSph[2]);
 		radialSpeed.emplace_back(getRandomValue<float, 4.8f, 5.2f>());
 		entityIds.emplace_back(clusterId);
-		absVelocities.emplace_back(Vec3f{getRandomValue<float, 4.8f, 5.2f>(), getRandomValue<float, 4.8f, 5.2f>(),
-		                                 getRandomValue<float, 4.8f, 5.2f>()});
-		relVelocities.emplace_back(Vec3f{getRandomValue<float, 4.8f, 5.2f>(), getRandomValue<float, 4.8f, 5.2f>(),
-		                                 getRandomValue<float, 4.8f, 5.2f>()});
+		absVelocities.emplace_back(Vec3f{0});
+		relVelocities.emplace_back(Vec3f{0});
 	}
 }
 
