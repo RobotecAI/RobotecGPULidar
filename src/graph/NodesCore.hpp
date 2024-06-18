@@ -657,8 +657,8 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Field<ENTITY_ID_I32>::type mostCommonEntityId = RGL_ENTITY_INVALID_ID;
 		Vec3f position{0};
 		Aabb3Df aabb{};
-		Vec2f absVelocity{};
-		Vec2f relVelocity{};
+		Vec3f absVelocity{};
+		Vec3f relVelocity{};
 	};
 
 	struct ClassificationProbabilities
@@ -685,13 +685,17 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 		RunningStats<Vec3f> position{};
 		RunningStats<float> orientation{};
-		RunningStats<Vec2f> absVelocity{};
-		RunningStats<Vec2f> relVelocity{};
-		RunningStats<Vec2f> absAccel{};
-		RunningStats<Vec2f> relAccel{};
+		RunningStats<Vec3f> absVelocity{};
+		RunningStats<Vec3f> relVelocity{};
+		RunningStats<Vec3f> absAccel{};
+		RunningStats<Vec3f> relAccel{};
 		RunningStats<float> orientationRate{};
 		RunningStats<float> length{};
 		RunningStats<float> width{};
+
+		// Workaround to be able to publish objects in the sensor frame via UDP
+		// Transform points node cannot transform ObjectState
+		Vec3f positionSensorFrame{};
 	};
 
 	RadarTrackObjectsNode();
@@ -719,8 +723,8 @@ private:
 	void parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId, ClassificationProbabilities& probabilities);
 	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
 	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
-	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs, const Vec2f& absVelocity,
-	                       const Vec2f& relVelocity);
+	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs, const Vec3f& absVelocity,
+	                       const Vec3f& relVelocity);
 	void updateOutputData();
 
 	std::list<ObjectState> objectStates;
@@ -741,6 +745,8 @@ private:
 	    500.0f;                        // Maximum time in milliseconds that can pass between two detections of the same object.
 	                                   // In other words, how long object state can be predicted until it will be declared lost.
 	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
+
+	Mat3x4f lookAtSensorFrameTransform { Mat3x4f::identity() };
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
