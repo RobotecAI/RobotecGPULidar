@@ -45,3 +45,33 @@ static std::vector<rgl_mat3x4f> makeGridOfParallelRays(Vec2f minCoord, Vec2f max
 	}
 	return rays;
 }
+
+
+#if RGL_BUILD_ROS2_EXTENSION
+#include <rgl/api/extensions/ros2.h>
+
+#include <RGLFields.hpp>
+
+/**
+* @brief Auxiliary lidar graph for imaging entities on the scene
+*/
+static rgl_node_t constructCameraGraph(const rgl_mat3x4f& cameraPose, const char* cameraName = "camera")
+{
+	const std::vector<rgl_field_t> fields{XYZ_VEC3_F32};
+	const std::vector<rgl_mat3x4f> cameraRayTf = makeLidar3dRays(360.0f, 180.0f, 0.5f, 0.5f);
+	rgl_node_t cameraRays = nullptr, cameraTransform = nullptr, cameraRaytrace = nullptr, cameraFormat = nullptr,
+	           cameraPublish = nullptr;
+
+	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&cameraRays, cameraRayTf.data(), cameraRayTf.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&cameraTransform, &cameraPose));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&cameraRaytrace, nullptr));
+	EXPECT_RGL_SUCCESS(rgl_node_points_format(&cameraFormat, fields.data(), fields.size()));
+	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&cameraPublish, cameraName, "world"));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraRays, cameraTransform));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraTransform, cameraRaytrace));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraRaytrace, cameraFormat));
+	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(cameraFormat, cameraPublish));
+
+	return cameraRays;
+}
+#endif

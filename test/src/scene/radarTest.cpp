@@ -24,14 +24,15 @@ protected:
 };
 
 struct RadarTest : RGLTest
-{};
-
-const auto minAzimuth = -65.0f;
-const auto maxAzimuth = 65.0f;
-const auto minElevation = -7.5f;
-const auto maxElevation = 7.5f;
-const auto azimuthStep = 0.49f;
-const auto elevationStep = 0.49f;
+{
+protected:
+	const float minAzimuth = -65.0f;
+	const float maxAzimuth = 65.0f;
+	const float minElevation = -7.5f;
+	const float maxElevation = 7.5f;
+	const float azimuthStep = 0.49f;
+	const float elevationStep = 0.49f;
+};
 
 rgl_mesh_t getFlatPlate(float dim)
 {
@@ -59,37 +60,17 @@ rgl_mesh_t getFlatPlate(float dim)
 	return outMesh;
 }
 
-std::vector<rgl_mat3x4f> genRadarRays()
-{
-	std::vector<rgl_mat3x4f> rays;
-	for (auto a = minAzimuth; a <= maxAzimuth; a += azimuthStep) {
-		for (auto e = minElevation; e <= maxElevation; e += elevationStep) {
-			// By default, the rays are directed along the Z-axis
-			// So first, we rotate them around the Y-axis to point towards the X-axis (to be RVIZ2 compatible)
-			// Then, rotation around Z is azimuth, around Y is elevation
-			const auto ray = Mat3x4f::rotationDeg(a, e, 0);
-			rays.emplace_back(ray.toRGL());
-
-			// The above will have to be modified again - we assume that target is farther in X axis when in fact
-			// we use Z as RGL LiDAR front. Remember to update.
-
-			const auto rayDir = ray * Vec3f{0, 0, 1};
-			//printf("rayDir: %.2f %.2f %.2f\n", rayDir.x(), rayDir.y(), rayDir.z());
-		}
-	}
-
-	return rays;
-}
-
 namespace fs = std::filesystem;
 using namespace std::chrono_literals;
+
+#include <helpers/radarHelpers.hpp>
 
 TEST_F(RadarTest, rotating_reflector_2d)
 {
 	GTEST_SKIP();
 
 	// Setup sensor and graph
-	std::vector<rgl_mat3x4f> raysData = genRadarRays();
+	std::vector<rgl_mat3x4f> raysData = genRadarRays(minAzimuth, maxAzimuth, minElevation, maxElevation, azimuthStep, elevationStep);
 	//	std::vector<rgl_mat3x4f> raysData = {
 	//	    Mat3x4f::rotationDeg(0, 0, 0).toRGL(),
 	////	    Mat3x4f::rotationDeg(2.5, 0, 0).toRGL(),
@@ -111,7 +92,7 @@ TEST_F(RadarTest, rotating_reflector_2d)
 	           lidarPublish = nullptr;
 
 	rgl_node_t raysTransform = nullptr;
-	auto raycasterTransform = Mat3x4f::rotationDeg(0.0f, 90.0f, 0.0f).toRGL();
+	auto raycasterTransform = Mat3x4f::identity().toRGL();
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysData.data(), raysData.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&raysTransform, &raycasterTransform));

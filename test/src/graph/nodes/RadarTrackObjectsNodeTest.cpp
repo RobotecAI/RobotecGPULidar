@@ -394,4 +394,186 @@ TEST_F(RadarTrackObjectsNodeTest, tracking_objects_test)
 		++iterationCounter;
 	}
 }
+
+#include <filesystem>
+#include <helpers/sceneHelpers.hpp>
+#include <helpers/radarHelpers.hpp>
+#include <helpers/lidarHelpers.hpp>
+
+TEST_F(RadarTrackObjectsNodeTest, tracking_object_with_radar_postprocess_input_test)
+{
+	GTEST_SKIP_("Debug test on development stage.");
+
+	// Radar rays parameters
+	constexpr auto minAzimuth = -90.0f;
+	constexpr auto maxAzimuth = 90.0f;
+	constexpr auto minElevation = -90.0f;
+	constexpr auto maxElevation = 90.0f;
+	constexpr auto azimuthStep = 0.49f;
+	constexpr auto elevationStep = 0.49f;
+
+	constexpr PostProcessNodeParams radarPostProcessParams{
+	    .scope = {.begin_distance = 1.0f,
+	              .end_distance = 10.0f,
+	              .distance_separation_threshold = 0.3f,
+	              .radial_speed_separation_threshold = 0.3f,
+	              .azimuth_separation_threshold = 8.0f * (std::numbers::pi_v<float> / 180.0f)},
+	    .radarScopesCount = 1,
+	    .azimuthStepRad = azimuthStep * (std::numbers::pi_v<float> / 180.0f),
+	    .elevationStepRad = elevationStep * (std::numbers::pi_v<float> / 180.0f),
+	    .frequencyHz = 79E9f,
+	    .powerTransmittedDdm = 31.0f,
+	    .antennaGainDbi = 27.0f,
+	    .noiseMean = 60.0f,
+	    .noiseStdDev = 1.0f,
+	};
+
+	constexpr TrackObjectNodeParams trackingParams{
+	    .distanceThreshold = 2.0f,
+	    .azimuthThreshold = 0.5f,
+	    .elevationThreshold = 0.5f,
+	    .radialSpeedThreshold = 0.5f,
+	    .maxMatchingDistance = 1.0f,
+	    .maxPredictionTimeFrame = 1.0f,
+	    .movementSensitivity = 0.01,
+	};
+
+	// Scene
+	rgl_mesh_t reflector2dMesh = loadFromSTL(std::filesystem::path(RGL_TEST_DATA_DIR) / "reflector2d.stl");
+	const std::vector<Field<ENTITY_ID_I32>::type> entityIds{1};
+	rgl_entity_t entity = nullptr;
+	const auto entityTransl = Vec3f{5.0f, 0.0f, 0.0f};
+	const auto entityPose = Mat3x4f::translation(entityTransl).toRGL();
+
+	ASSERT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, reflector2dMesh));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_id(entity, entityIds.at(0)));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPose));
+
+	// Radar rays
+	const std::vector<rgl_mat3x4f> radarRays = genRadarRays(minAzimuth, maxAzimuth, minElevation, maxElevation, azimuthStep,
+	                                                        elevationStep);
+	const Vec3f radarRayTransl = Vec3f{0.0f};
+	const rgl_mat3x4f radarRayTf = Mat3x4f::translation(radarRayTransl).toRGL();
+
+	// Radar track objects graph
+	rgl_node_t postProcessNode = nullptr, trackObjectsNode = nullptr;
+	const std::vector<rgl_radar_object_class_t> objectClasses{
+	    static_cast<rgl_radar_object_class_t>(entityIds.at(0) % RGL_RADAR_CLASS_COUNT)};
+	constructRadarPostProcessObjectTrackingGraph(radarRays, radarRayTf, postProcessNode, radarPostProcessParams,
+	                                             trackObjectsNode, trackingParams, entityIds, objectClasses, true);
+
+	// Auxiliary lidar graph for imaging entities on the scene
+	const Vec3f cameraTransl = radarRayTransl + Vec3f{-2.0f, 0.0f, 0.0f};
+	const rgl_mat3x4f cameraPose = Mat3x4f::translation(cameraTransl).toRGL();
+	rgl_node_t cameraRays = constructCameraGraph(cameraPose);
+
+	constexpr uint64_t frameTime = 5 * 1e6; // ms
+	int iterationCounter = 0;
+	while (true) {
+		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, iterationCounter * frameTime));
+
+		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(trackObjectsNode));
+
+		// Verify objects count on the output - only one object is expected
+		int32_t detectedObjectsCount = 0, objectsSize = 0;
+		ASSERT_RGL_SUCCESS(rgl_graph_get_result_size(trackObjectsNode, XYZ_VEC3_F32, &detectedObjectsCount, &objectsSize));
+
+		int32_t expectedObjectsCount = 1;
+		ASSERT_EQ(detectedObjectsCount, expectedObjectsCount);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+		++iterationCounter;
+	}
+}
+
+TEST_F(RadarTrackObjectsNodeTest, tracking_kinematic_object_with_radar_postprocess_input_test)
+{
+	GTEST_SKIP_("Debug test on development stage.");
+
+	// Radar rays parameters
+	constexpr auto minAzimuth = -90.0f;
+	constexpr auto maxAzimuth = 90.0f;
+	constexpr auto minElevation = -90.0f;
+	constexpr auto maxElevation = 90.0f;
+	constexpr auto azimuthStep = 0.49f;
+	constexpr auto elevationStep = 0.49f;
+
+	constexpr PostProcessNodeParams radarPostProcessParams{
+	    .scope = {.begin_distance = 15.0f,
+	              .end_distance = 30.0f,
+	              .distance_separation_threshold = 0.3f,
+	              .radial_speed_separation_threshold = 0.3f,
+	              .azimuth_separation_threshold = 8.0f * (std::numbers::pi_v<float> / 180.0f)},
+	    .radarScopesCount = 1,
+	    .azimuthStepRad = azimuthStep * (std::numbers::pi_v<float> / 180.0f),
+	    .elevationStepRad = elevationStep * (std::numbers::pi_v<float> / 180.0f),
+	    .frequencyHz = 79E9f,
+	    .powerTransmittedDdm = 31.0f,
+	    .antennaGainDbi = 27.0f,
+	    .noiseMean = 60.0f,
+	    .noiseStdDev = 1.0f,
+	};
+
+	constexpr TrackObjectNodeParams trackingParams{
+	    .distanceThreshold = 2.0f,
+	    .azimuthThreshold = 0.5f,
+	    .elevationThreshold = 0.5f,
+	    .radialSpeedThreshold = 0.5f,
+	    .maxMatchingDistance = 1.0f,
+	    .maxPredictionTimeFrame = 1.0f,
+	    .movementSensitivity = 0.01,
+	};
+
+	// Scene
+	rgl_mesh_t reflector2dMesh = loadFromSTL(std::filesystem::path(RGL_TEST_DATA_DIR) / "reflector2d.stl");
+	const std::vector<Field<ENTITY_ID_I32>::type> entityIds{1};
+	rgl_entity_t entity = nullptr;
+
+	ASSERT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, reflector2dMesh));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_id(entity, entityIds.at(0)));
+
+	// Radar rays
+	const std::vector<rgl_mat3x4f> radarRays = genRadarRays(minAzimuth, maxAzimuth, minElevation, maxElevation, azimuthStep,
+	                                                        elevationStep);
+	const Vec3f radarRayTransl = Vec3f{0.0f};
+	const rgl_mat3x4f radarRayTf = Mat3x4f::translation(radarRayTransl).toRGL();
+
+	// Radar track objects graph
+	rgl_node_t postProcessNode = nullptr, trackObjectsNode = nullptr;
+	const std::vector<rgl_radar_object_class_t> objectClasses{
+	    static_cast<rgl_radar_object_class_t>(entityIds.at(0) % RGL_RADAR_CLASS_COUNT)};
+	constructRadarPostProcessObjectTrackingGraph(radarRays, radarRayTf, postProcessNode, radarPostProcessParams,
+	                                             trackObjectsNode, trackingParams, entityIds, objectClasses, true);
+
+	// Auxiliary lidar graph for imaging entities on the scene
+	const Vec3f cameraTransl = radarRayTransl + Vec3f{0.0f, 0.0f, 2.0f};
+	const rgl_mat3x4f cameraPose = Mat3x4f::translation(cameraTransl).toRGL();
+	rgl_node_t cameraRays = constructCameraGraph(cameraPose);
+
+	// Kinematic object parameters
+	constexpr float maxObjectRadarDistance = radarPostProcessParams.scope.end_distance + 2.0f;
+	constexpr float minObjectRadarDistance = radarPostProcessParams.scope.begin_distance - 2.0f;
+	constexpr float amplitude = (maxObjectRadarDistance - minObjectRadarDistance) / 2.0f;
+	constexpr float shift = (maxObjectRadarDistance + minObjectRadarDistance) / 2.0f;
+
+	constexpr uint64_t frameTime = 5 * 1e6; // ms
+	int iterationCounter = 0;
+	while (true) {
+		const auto entityTransl = radarRayTransl +
+		                          Vec3f{amplitude * std::sin(static_cast<float>(iterationCounter) * 0.1f) + shift, 0.0f, 0.0f};
+		const auto entityPose = Mat3x4f::translation(entityTransl).toRGL();
+		ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPose));
+
+		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, iterationCounter * frameTime));
+
+		ASSERT_RGL_SUCCESS(rgl_graph_run(postProcessNode));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+		++iterationCounter;
+	}
+}
 #endif
