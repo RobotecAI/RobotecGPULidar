@@ -34,6 +34,7 @@
 #include <math/Aabb.h>
 #include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
+#include <Time.hpp>
 
 
 struct FormatPointsNode : IPointsNodeSingleInput
@@ -747,6 +748,7 @@ private:
 	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	Mat3x4f lookAtSensorFrameTransform { Mat3x4f::identity() };
+	Time currentTime { Time::zero() };
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
