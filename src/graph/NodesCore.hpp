@@ -748,7 +748,7 @@ private:
 	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
 
 	Mat3x4f lookAtSensorFrameTransform { Mat3x4f::identity() };
-	Time currentTime { Time::zero() };
+	decltype(Time::zero().asMilliseconds()) currentTime { Time::zero().asMilliseconds() };
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();

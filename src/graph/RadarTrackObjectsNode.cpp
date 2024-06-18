@@ -141,14 +141,14 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	}
 
 	// We cannot use `Scene::instance().getPrevTime()` because scene could be updated more frequently than given sensor
-	const auto deltaTimeMs = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds() - currentTime.asMilliseconds();
-	const auto currentTimeMs = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds();
+	const auto deltaTime = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds() - currentTime;
+	currentTime = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds();
 
 	// Check object list from previous frame and try to find matches with newly detected objects.
 	// Later, for newly detected objects without match, create new object state.
 	for (auto objectStateIt = objectStates.begin(); objectStateIt != objectStates.end();) {
 		auto& objectState = *objectStateIt;
-		const auto predictedPosition = predictObjectPosition(objectState, deltaTimeMs);
+		const auto predictedPosition = predictObjectPosition(objectState, deltaTime);
 		const auto closestObjectIt = std::min_element(
 		    newObjectBounds.cbegin(), newObjectBounds.cend(), [&](const auto& a, const auto& b) {
 			    return (a.position - predictedPosition).lengthSquared() < (b.position - predictedPosition).lengthSquared();
@@ -158,8 +158,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// Update object from previous frame to newly detected object position and remove this positions for next checkouts.
 		if (const auto& closestObject = *closestObjectIt;
 		    (predictedPosition - closestObject.position).length() < maxMatchingDistance) {
-			updateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTimeMs,
-			                  deltaTimeMs, closestObject.absVelocity, closestObject.relVelocity);
+			updateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
+			                  deltaTime, closestObject.absVelocity, closestObject.relVelocity);
 			newObjectBounds.erase(closestObjectIt);
 			++objectStateIt;
 			continue;
@@ -168,8 +168,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// There is no match for objectState in newly detected object positions. If that object was already detected in previous frame
 		// (new, measured or predicted, does not matter) and its last measurement time was within maxPredictionTimeFrame, then its
 		// position (and state) in current frame is predicted.
-		if (objectState.lastMeasuredTime >= currentTimeMs - maxPredictionTimeFrame) {
-			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTimeMs, deltaTimeMs,
+		if (objectState.lastMeasuredTime >= currentTime - maxPredictionTimeFrame) {
+			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime,
 			                  objectState.absVelocity.getLastSample(), objectState.relVelocity.getLastSample());
 			++objectStateIt;
 			continue;
@@ -183,7 +183,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 	// All newly detected object position that do not have a match in previous frame - create new object state.
 	for (const auto& newObject : newObjectBounds) {
-		createObjectState(newObject, deltaTimeMs);
+		createObjectState(newObject, deltaTime);
 	}
 
 	updateOutputData();
