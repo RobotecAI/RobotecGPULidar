@@ -872,6 +872,7 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * Additionally, cloud points have tracked object IDs. Note that for correct calculation and publishing some of object characteristics (e.g. velocity) user has to call
  * rgl_scene_set_time for current scene.
  * The node expects input in world frame to be able to perform prediction properly.
+ * Object's orientation, length, and width calculations assume the forward axis is Z and the left axis is -X.
  * Graph input: point cloud, containing additionally RGL_FIELD_DISTANCE_F32, RGL_FIELD_AZIMUTH_F32, RGL_FIELD_ELEVATION_F32, RGL_FIELD_RADIAL_SPEED_F32 and ENTITY_ID_I32.
  * Graph output: point cloud, contains only XYZ_VEC3_F32 for tracked object positions and ENTITY_ID_I32 for their IDs.
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.

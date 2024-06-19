@@ -269,10 +269,10 @@ void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, 
 	// TODO(Pawel): Consider updating this later. One option would be to take rotated bounding box, and calculate orientation as
 	// the vector perpendicular to its shorter edge. Then, width would be that defined as that exact edge. The other edge would
 	// be taken as length.
-	// At this moment I just assume that object length is alongside X axis, and its width is alongside Y axis. Note also that
+	// At this moment I just assume that object length is alongside forward axis, and its width is alongside left axis. Note also that
 	// length and width does not have to be correlated to object orientation.
-	objectState.length.addSample(objectBounds.aabb.maxCorner().x() - objectBounds.aabb.minCorner().x());
-	objectState.width.addSample(objectBounds.aabb.maxCorner().y() - objectBounds.aabb.minCorner().y());
+	objectState.length.addSample(objectBounds.aabb.maxCorner().z() - objectBounds.aabb.minCorner().z());
+	objectState.width.addSample((-objectBounds.aabb.maxCorner().x()) - (-objectBounds.aabb.minCorner().x()));
 
 	objectState.positionSensorFrame = lookAtSensorFrameTransform * objectState.position.getLastSample();
 }
@@ -317,8 +317,8 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 	objectState.orientation.addSample(orientation);
 
 	if (objectStatus == ObjectStatus::Measured) {
-		objectState.length.addSample(updatedAabb.maxCorner().x() - updatedAabb.minCorner().x());
-		objectState.width.addSample(updatedAabb.maxCorner().y() - updatedAabb.minCorner().y());
+		objectState.length.addSample(updatedAabb.maxCorner().z() - updatedAabb.minCorner().z());
+		objectState.width.addSample((-updatedAabb.maxCorner().x()) - (-updatedAabb.minCorner().x()));
 	} else {
 		objectState.length.addSample(objectState.length.getLastSample());
 		objectState.width.addSample(objectState.width.getLastSample());
