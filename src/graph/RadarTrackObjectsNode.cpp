@@ -183,7 +183,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 	// All newly detected object position that do not have a match in previous frame - create new object state.
 	for (const auto& newObject : newObjectBounds) {
-		createObjectState(newObject, deltaTime);
+		createObjectState(newObject, currentTime);
 	}
 
 	updateOutputData();
