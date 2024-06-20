@@ -745,7 +745,7 @@ private:
 	float maxPredictionTimeFrame =
 	    500.0f;                        // Maximum time in milliseconds that can pass between two detections of the same object.
 	                                   // In other words, how long object state can be predicted until it will be declared lost.
-	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
+	float movementSensitivity = 0.01f; // Max velocity for an object to be qualified as MovementStatus::Stationary.
 
 	Mat3x4f lookAtSensorFrameTransform { Mat3x4f::identity() };
 	decltype(Time::zero().asMilliseconds()) currentTime { Time::zero().asMilliseconds() };

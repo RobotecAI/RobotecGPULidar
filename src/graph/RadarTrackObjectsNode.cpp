@@ -255,9 +255,8 @@ void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, 
 	objectState.creationTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
 	objectState.lastMeasuredTime = objectState.creationTime;
 	objectState.objectStatus = ObjectStatus::New;
-
-	// TODO(Pawel): Consider object radial speed (from detections) as a way to decide here.
-	objectState.movementStatus = MovementStatus::Invalid; // No good way to determine it.
+	objectState.movementStatus = objectBounds.absVelocity.length() > movementSensitivity ? MovementStatus::Moved :
+	                                                                                       MovementStatus::Stationary;
 	parseEntityIdToClassProbability(objectBounds.mostCommonEntityId, objectState.classificationProbabilities);
 
 	// I do not add acceleration 0.0f samples because this would affect mean and std dev calculation. However, the
@@ -282,7 +281,6 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
                                               double deltaTimeMs, const Vec3f& absVelocity, const Vec3f& relVelocity)
 {
 	assert(deltaTimeMs > 0 && deltaTimeMs <= std::numeric_limits<float>::max());
-	const auto displacement = updatedPosition - objectState.position.getLastSample();
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
 
 	if (objectStatus == ObjectStatus::Measured) {
@@ -290,8 +288,8 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 		objectState.lastMeasuredTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
 	}
 	objectState.objectStatus = objectStatus;
-	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
-	                                                                           MovementStatus::Stationary;
+	objectState.movementStatus = absVelocity.length() > movementSensitivity ? MovementStatus::Moved :
+	                                                                          MovementStatus::Stationary;
 	objectState.position.addSample(updatedPosition);
 
 	// There has to be at leas one abs velocity sample from previous frames - in other words, this has to be the third frame to be

@@ -882,7 +882,7 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * @param object_radial_speed_threshold The maximum radial speed difference between a radar detection and other closest detection classified as the same tracked object (in meters per second).
  * @param max_matching_distance The maximum distance between predicted (based on previous frame) and newly detected object position to match objects between frames (in meters).
  * @param max_prediction_time_frame The maximum time that object state can be predicted until it will be declared lost unless measured again (in milliseconds).
- * @param movement_sensitivity The maximum position change for an object to be qualified as stationary (in meters).
+ * @param movement_sensitivity The maximum velocity for an object to be qualified as stationary (in meters per seconds).
  */
 RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float object_distance_threshold,
                                                          float object_azimuth_threshold, float object_elevation_threshold,
