@@ -277,6 +277,12 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_node_t radarTrackObjects = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_node_points_radar_track_objects(&radarTrackObjects, 2.0f, 0.1f, 0.1f, 0.5f, 1.0f, 500.0f, 0.01f));
 
+	std::vector<Field<ENTITY_ID_I32>::type> entityIds = {1, 2, 3};
+	std::vector<rgl_radar_object_class_t> objectClasses = {RGL_RADAR_CLASS_CAR, RGL_RADAR_CLASS_TRUCK,
+	                                                       RGL_RADAR_CLASS_MOTORCYCLE};
+	EXPECT_RGL_SUCCESS(
+	    rgl_node_points_radar_set_classes(radarTrackObjects, entityIds.data(), objectClasses.data(), entityIds.size()));
+
 	rgl_node_t filterGround = nullptr;
 	rgl_vec3f sensorUpVector = {0.0f, 1.0f, 0.0f};
 	EXPECT_RGL_SUCCESS(rgl_node_points_filter_ground(&filterGround, &sensorUpVector, 0.1f));

@@ -34,6 +34,7 @@
 #include <math/Aabb.h>
 #include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
+#include <Time.hpp>
 
 
 struct FormatPointsNode : IPointsNodeSingleInput
@@ -116,8 +117,6 @@ struct RaytraceNode : IPointsNode
 	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
-	Vec3f getLinearVelocity() const override { return sensorLinearVelocityXYZ; }
-	Vec3f getAngularVelocity() const override { return sensorAngularVelocityRPY; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
@@ -656,8 +655,11 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 	struct ObjectBounds
 	{
+		Field<ENTITY_ID_I32>::type mostCommonEntityId = RGL_ENTITY_INVALID_ID;
 		Vec3f position{0};
 		Aabb3Df aabb{};
+		Vec3f absVelocity{};
+		Vec3f relVelocity{};
 	};
 
 	struct ClassificationProbabilities
@@ -684,19 +686,25 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 		RunningStats<Vec3f> position{};
 		RunningStats<float> orientation{};
-		RunningStats<Vec2f> absVelocity{};
-		RunningStats<Vec2f> relVelocity{};
-		RunningStats<Vec2f> absAccel{};
-		RunningStats<Vec2f> relAccel{};
+		RunningStats<Vec3f> absVelocity{};
+		RunningStats<Vec3f> relVelocity{};
+		RunningStats<Vec3f> absAccel{};
+		RunningStats<Vec3f> relAccel{};
 		RunningStats<float> orientationRate{};
 		RunningStats<float> length{};
 		RunningStats<float> width{};
+
+		// Workaround to be able to publish objects in the sensor frame via UDP
+		// Transform points node cannot transform ObjectState
+		Vec3f positionSensorFrame{};
 	};
 
 	RadarTrackObjectsNode();
 
 	void setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold, float radialSpeedThreshold,
 	                   float maxMatchingDistance, float maxPredictionTimeFrame, float movementSensitivity);
+
+	void setObjectClasses(const int32_t* entityIds, const rgl_radar_object_class_t* objectClasses, int32_t count);
 
 	void enqueueExecImpl() override;
 
@@ -713,13 +721,16 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 
 private:
 	Vec3f predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
+	void parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId, ClassificationProbabilities& probabilities);
 	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
 	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
-	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs);
+	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs, const Vec3f& absVelocity,
+	                       const Vec3f& relVelocity);
 	void updateOutputData();
 
 	std::list<ObjectState> objectStates;
-	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData;
+	std::unordered_map<Field<ENTITY_ID_I32>::type, rgl_radar_object_class_t> entityIdsToClasses;
+	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
 
 	uint32_t objectIDCounter = 0; // Not static - I assume each ObjectTrackingNode is like a separate radar.
 	std::queue<uint32_t> objectIDPoll;
@@ -734,7 +745,10 @@ private:
 	float maxPredictionTimeFrame =
 	    500.0f;                        // Maximum time in milliseconds that can pass between two detections of the same object.
 	                                   // In other words, how long object state can be predicted until it will be declared lost.
-	float movementSensitivity = 0.01f; // Max position change for an object to be qualified as MovementStatus::Stationary.
+	float movementSensitivity = 0.01f; // Max velocity for an object to be qualified as MovementStatus::Stationary.
+
+	Mat3x4f lookAtSensorFrameTransform { Mat3x4f::identity() };
+	decltype(Time::zero().asMilliseconds()) currentTime { Time::zero().asMilliseconds() };
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
@@ -742,6 +756,14 @@ private:
 	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationHostPtr = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
+	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr entityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
+	HostPinnedArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::Ptr velocityRelHostPtr =
+	    HostPinnedArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create();
+	HostPinnedArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::Ptr velocityAbsHostPtr =
+	    HostPinnedArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create();
+
+	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr outXyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
+	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr outEntityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
 };
 
 struct FilterGroundPointsNode : IPointsNodeSingleInput
