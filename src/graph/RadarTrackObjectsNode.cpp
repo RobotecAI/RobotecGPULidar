@@ -19,8 +19,8 @@
 // TODO(Pawel): Consider adding more output fields here, maybe usable for ROS 2 message or visualization. Consider also returning detections, when object states are returned through public method.
 RadarTrackObjectsNode::RadarTrackObjectsNode()
 {
-	fieldData.emplace(XYZ_VEC3_F32, createArray<HostPinnedArray>(XYZ_VEC3_F32));
-	fieldData.emplace(ENTITY_ID_I32, createArray<HostPinnedArray>(ENTITY_ID_I32));
+	fieldData.emplace(XYZ_VEC3_F32, createArray<DeviceAsyncArray>(XYZ_VEC3_F32, arrayMgr));
+	fieldData.emplace(ENTITY_ID_I32, createArray<DeviceAsyncArray>(ENTITY_ID_I32, arrayMgr));
 }
 
 void RadarTrackObjectsNode::setParameters(float distanceThreshold, float azimuthThreshold, float elevationThreshold,
@@ -48,12 +48,16 @@ void RadarTrackObjectsNode::setObjectClasses(const int32_t* entityIds, const rgl
 
 void RadarTrackObjectsNode::enqueueExecImpl()
 {
+	lookAtSensorFrameTransform = input->getLookAtOriginTransform();
+
 	xyzHostPtr->copyFrom(input->getFieldData(XYZ_VEC3_F32));
 	distanceHostPtr->copyFrom(input->getFieldData(DISTANCE_F32));
 	azimuthHostPtr->copyFrom(input->getFieldData(AZIMUTH_F32));
 	elevationHostPtr->copyFrom(input->getFieldData(ELEVATION_F32));
 	radialSpeedHostPtr->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
 	entityIdHostPtr->copyFrom(input->getFieldData(ENTITY_ID_I32));
+	velocityRelHostPtr->copyFrom(input->getFieldData(RELATIVE_VELOCITY_VEC3_F32));
+	velocityAbsHostPtr->copyFrom(input->getFieldData(ABSOLUTE_VELOCITY_VEC3_F32));
 
 	// TODO(Pawel): Reconsider approach below.
 	// At this moment, I would like to check input this way, because it will keep RadarTrackObjectsNode testable without
@@ -120,6 +124,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 			++entityIdHist[entityIdHostPtr->at(detectionIndex)];
 			objectBounds.position += xyzHostPtr->at(detectionIndex);
 			objectBounds.aabb += detectionAabbs[detectionIndex];
+			objectBounds.relVelocity += velocityRelHostPtr->at(detectionIndex);
+			objectBounds.absVelocity += velocityAbsHostPtr->at(detectionIndex);
 		}
 		// Most common detection entity id is assigned as object id.
 		int maxIdCount = -1;
@@ -130,10 +136,13 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 			}
 		}
 		objectBounds.position *= 1 / static_cast<float>(separateObjectIndices.size());
+		objectBounds.relVelocity *= 1 / static_cast<float>(separateObjectIndices.size());
+		objectBounds.absVelocity *= 1 / static_cast<float>(separateObjectIndices.size());
 	}
 
-	const auto currentTime = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds();
-	const auto deltaTime = currentTime - Scene::instance().getPrevTime().value_or(Time::zero()).asMilliseconds();
+	// We cannot use `Scene::instance().getPrevTime()` because scene could be updated more frequently than given sensor
+	const auto deltaTime = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds() - currentTime;
+	currentTime = Scene::instance().getTime().value_or(Time::zero()).asMilliseconds();
 
 	// Check object list from previous frame and try to find matches with newly detected objects.
 	// Later, for newly detected objects without match, create new object state.
@@ -150,7 +159,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		if (const auto& closestObject = *closestObjectIt;
 		    (predictedPosition - closestObject.position).length() < maxMatchingDistance) {
 			updateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
-			                  deltaTime);
+			                  deltaTime, closestObject.absVelocity, closestObject.relVelocity);
 			newObjectBounds.erase(closestObjectIt);
 			++objectStateIt;
 			continue;
@@ -160,7 +169,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		// (new, measured or predicted, does not matter) and its last measurement time was within maxPredictionTimeFrame, then its
 		// position (and state) in current frame is predicted.
 		if (objectState.lastMeasuredTime >= currentTime - maxPredictionTimeFrame) {
-			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime);
+			updateObjectState(objectState, predictedPosition, {}, ObjectStatus::Predicted, currentTime, deltaTime,
+			                  objectState.absVelocity.getLastSample(), objectState.relVelocity.getLastSample());
 			++objectStateIt;
 			continue;
 		}
@@ -181,7 +191,14 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 {
-	return {XYZ_VEC3_F32, DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, ENTITY_ID_I32};
+	return {XYZ_VEC3_F32,
+	        DISTANCE_F32,
+	        AZIMUTH_F32,
+	        ELEVATION_F32,
+	        RADIAL_SPEED_F32,
+	        ENTITY_ID_I32,
+	        RELATIVE_VELOCITY_VEC3_F32,
+	        ABSOLUTE_VELOCITY_VEC3_F32};
 }
 
 Vec3f RadarTrackObjectsNode::predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const
@@ -194,14 +211,14 @@ Vec3f RadarTrackObjectsNode::predictObjectPosition(const ObjectState& objectStat
 	                                  deltaTimeSec * objectState.absAccel.getLastSample()) :
 	                                 objectState.absVelocity.getLastSample();
 	const auto predictedMovement = deltaTimeSec * assumedVelocity;
-	return objectState.position.getLastSample() + Vec3f{predictedMovement.x(), predictedMovement.y(), 0.0f};
+	return objectState.position.getLastSample() + predictedMovement;
 }
 
 void RadarTrackObjectsNode::parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId,
                                                             ClassificationProbabilities& probabilities)
 {
 	// May be updated, if entities will be able to belong to multiple classes.
-	constexpr auto maxClassificationProbability = std::numeric_limits<uint8_t>::max();
+	constexpr auto maxClassificationProbability = 100;
 
 	const auto it = entityIdsToClasses.find(entityId);
 	if (it == entityIdsToClasses.cend()) {
@@ -238,43 +255,41 @@ void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, 
 	objectState.creationTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
 	objectState.lastMeasuredTime = objectState.creationTime;
 	objectState.objectStatus = ObjectStatus::New;
-
-	// TODO(Pawel): Consider object radial speed (from detections) as a way to decide here.
-	objectState.movementStatus = MovementStatus::Invalid; // No good way to determine it.
+	objectState.movementStatus = objectBounds.absVelocity.length() > movementSensitivity ? MovementStatus::Moved :
+	                                                                                       MovementStatus::Stationary;
 	parseEntityIdToClassProbability(objectBounds.mostCommonEntityId, objectState.classificationProbabilities);
 
-	// I do not add velocity or acceleration 0.0f samples because this would affect mean and std dev calculation. However, the
+	// I do not add acceleration 0.0f samples because this would affect mean and std dev calculation. However, the
 	// number of samples between their stats and position will not match.
 	objectState.position.addSample(objectBounds.position);
+	objectState.relVelocity.addSample(objectBounds.relVelocity);
+	objectState.absVelocity.addSample(objectBounds.absVelocity);
 
 	// TODO(Pawel): Consider updating this later. One option would be to take rotated bounding box, and calculate orientation as
 	// the vector perpendicular to its shorter edge. Then, width would be that defined as that exact edge. The other edge would
 	// be taken as length.
-	// At this moment I just assume that object length is alongside X axis, and its width is alongside Y axis. Note also that
+	// At this moment I just assume that object length is alongside forward axis, and its width is alongside left axis. Note also that
 	// length and width does not have to be correlated to object orientation.
-	objectState.length.addSample(objectBounds.aabb.maxCorner().x() - objectBounds.aabb.minCorner().x());
-	objectState.width.addSample(objectBounds.aabb.maxCorner().y() - objectBounds.aabb.minCorner().y());
+	objectState.length.addSample(objectBounds.aabb.maxCorner().z() - objectBounds.aabb.minCorner().z());
+	objectState.width.addSample((-objectBounds.aabb.maxCorner().x()) - (-objectBounds.aabb.minCorner().x()));
+
+	objectState.positionSensorFrame = lookAtSensorFrameTransform * objectState.position.getLastSample();
 }
 
 void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition,
                                               const Aabb3Df& updatedAabb, ObjectStatus objectStatus, double currentTimeMs,
-                                              double deltaTimeMs)
+                                              double deltaTimeMs, const Vec3f& absVelocity, const Vec3f& relVelocity)
 {
 	assert(deltaTimeMs > 0 && deltaTimeMs <= std::numeric_limits<float>::max());
-	const auto displacement = updatedPosition - objectState.position.getLastSample();
 	const auto deltaTimeSecInv = 1e3f / static_cast<float>(deltaTimeMs);
-	const auto absVelocity = Vec2f{displacement.x() * deltaTimeSecInv, displacement.y() * deltaTimeSecInv};
-
-	const auto radarVelocity = input->getLinearVelocity();
-	const auto relVelocity = absVelocity - Vec2f{radarVelocity.x(), radarVelocity.y()};
 
 	if (objectStatus == ObjectStatus::Measured) {
 		assert(currentTimeMs <= std::numeric_limits<decltype(objectState.creationTime)>::max());
 		objectState.lastMeasuredTime = static_cast<decltype(objectState.creationTime)>(currentTimeMs);
 	}
 	objectState.objectStatus = objectStatus;
-	objectState.movementStatus = displacement.length() > movementSensitivity ? MovementStatus::Moved :
-	                                                                           MovementStatus::Stationary;
+	objectState.movementStatus = absVelocity.length() > movementSensitivity ? MovementStatus::Moved :
+	                                                                          MovementStatus::Stationary;
 	objectState.position.addSample(updatedPosition);
 
 	// There has to be at leas one abs velocity sample from previous frames - in other words, this has to be the third frame to be
@@ -292,7 +307,7 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 	// Behaves similar to acceleration. In order to calculate orientation I need velocity, which can be calculated starting from
 	// the second frame. For this reason, the third frame is the first one when I am able to calculate orientation rate. Additionally,
 	// if object does not move, keep its previous orientation.
-	const auto orientation = objectState.movementStatus == MovementStatus::Moved ? atan2(absVelocity.y(), absVelocity.x()) :
+	const auto orientation = objectState.movementStatus == MovementStatus::Moved ? atan2(-absVelocity.x(), absVelocity.z()) :
 	                                                                               objectState.orientation.getLastSample();
 	if (objectState.orientation.getSamplesCount() > 0) {
 		objectState.orientationRate.addSample(orientation - objectState.orientation.getLastSample());
@@ -300,21 +315,23 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 	objectState.orientation.addSample(orientation);
 
 	if (objectStatus == ObjectStatus::Measured) {
-		objectState.length.addSample(updatedAabb.maxCorner().x() - updatedAabb.minCorner().x());
-		objectState.width.addSample(updatedAabb.maxCorner().y() - updatedAabb.minCorner().y());
+		objectState.length.addSample(updatedAabb.maxCorner().z() - updatedAabb.minCorner().z());
+		objectState.width.addSample((-updatedAabb.maxCorner().x()) - (-updatedAabb.minCorner().x()));
 	} else {
 		objectState.length.addSample(objectState.length.getLastSample());
 		objectState.width.addSample(objectState.width.getLastSample());
 	}
+
+	objectState.positionSensorFrame = lookAtSensorFrameTransform * objectState.position.getLastSample();
 }
 
 void RadarTrackObjectsNode::updateOutputData()
 {
-	fieldData[XYZ_VEC3_F32]->resize(objectStates.size(), false, false);
-	auto* xyzPtr = static_cast<Field<XYZ_VEC3_F32>::type*>(fieldData[XYZ_VEC3_F32]->getRawWritePtr());
+	outXyzHostPtr->resize(objectStates.size(), false, false);
+	auto* xyzPtr = static_cast<Field<XYZ_VEC3_F32>::type*>(outXyzHostPtr->getRawWritePtr());
 
-	fieldData[ENTITY_ID_I32]->resize(objectStates.size(), false, false);
-	auto* idPtr = static_cast<Field<ENTITY_ID_I32>::type*>(fieldData[ENTITY_ID_I32]->getRawWritePtr());
+	outEntityIdHostPtr->resize(objectStates.size(), false, false);
+	auto* idPtr = static_cast<Field<ENTITY_ID_I32>::type*>(outEntityIdHostPtr->getRawWritePtr());
 
 	int objectIndex = 0;
 	for (const auto& objectState : objectStates) {
@@ -323,4 +340,7 @@ void RadarTrackObjectsNode::updateOutputData()
 		idPtr[objectIndex] = objectState.id;
 		++objectIndex;
 	}
+
+	fieldData[XYZ_VEC3_F32]->copyFrom(outXyzHostPtr);
+	fieldData[ENTITY_ID_I32]->copyFrom(outEntityIdHostPtr);
 }

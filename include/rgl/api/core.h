@@ -871,6 +871,8 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * and calculates various characteristics of these objects. The output from this Node is in the form of a point cloud, where point XYZ coordinates are tracked objects positions.
  * Additionally, cloud points have tracked object IDs. Note that for correct calculation and publishing some of object characteristics (e.g. velocity) user has to call
  * rgl_scene_set_time for current scene.
+ * The node expects input in world frame to be able to perform prediction properly.
+ * Object's orientation, length, and width calculations assume the forward axis is Z and the left axis is -X.
  * Graph input: point cloud, containing additionally RGL_FIELD_DISTANCE_F32, RGL_FIELD_AZIMUTH_F32, RGL_FIELD_ELEVATION_F32, RGL_FIELD_RADIAL_SPEED_F32 and ENTITY_ID_I32.
  * Graph output: point cloud, contains only XYZ_VEC3_F32 for tracked object positions and ENTITY_ID_I32 for their IDs.
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
@@ -880,7 +882,7 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * @param object_radial_speed_threshold The maximum radial speed difference between a radar detection and other closest detection classified as the same tracked object (in meters per second).
  * @param max_matching_distance The maximum distance between predicted (based on previous frame) and newly detected object position to match objects between frames (in meters).
  * @param max_prediction_time_frame The maximum time that object state can be predicted until it will be declared lost unless measured again (in milliseconds).
- * @param movement_sensitivity The maximum position change for an object to be qualified as stationary (in meters).
+ * @param movement_sensitivity The maximum velocity for an object to be qualified as stationary (in meters per seconds).
  */
 RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float object_distance_threshold,
                                                          float object_azimuth_threshold, float object_elevation_threshold,
