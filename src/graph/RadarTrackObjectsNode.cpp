@@ -218,7 +218,7 @@ void RadarTrackObjectsNode::parseEntityIdToClassProbability(Field<ENTITY_ID_I32>
                                                             ClassificationProbabilities& probabilities)
 {
 	// May be updated, if entities will be able to belong to multiple classes.
-	constexpr auto maxClassificationProbability = std::numeric_limits<uint8_t>::max();
+	constexpr auto maxClassificationProbability = 100;
 
 	const auto it = entityIdsToClasses.find(entityId);
 	if (it == entityIdsToClasses.cend()) {
