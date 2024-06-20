@@ -278,8 +278,20 @@ void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type
 	minMaxDistance[1] = std::max(minMaxDistance[1], distance);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], azimuth);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], azimuth);
-	minMaxRadialSpeed[0] = std::min(minMaxRadialSpeed[0], radialSpeed);
-	minMaxRadialSpeed[1] = std::max(minMaxRadialSpeed[1], radialSpeed);
+
+	// There are three reasonable cases that should be handled as intended:
+	// - limit and radialSpeed are nans - limit will be set to nan (from radialSpeed)
+	// - limit is nan and radialSpeed if a number - limit will be set to a number (from radialSpeed)
+	// - limit and radialSpeed are numbers - std::min will be called.
+	// There can technically be a fourth case:
+	// - limit is a number and radialSpeed is nan - this should technically be handled via order of arguments in std::min
+	//   (assumption that comparison inside will return false); what is more important, such candidate should be eliminated
+	//   with isCandidate method;
+	// The fourth case should not occur - radial speed is either nan for all entities (first raycast, with delta time = 0) or
+	// has value for all entities.
+	minMaxRadialSpeed[0] = std::isnan(minMaxRadialSpeed[0]) ? radialSpeed : std::min(minMaxRadialSpeed[0], radialSpeed);
+	minMaxRadialSpeed[1] = std::isnan(minMaxRadialSpeed[1]) ? radialSpeed : std::max(minMaxRadialSpeed[1], radialSpeed);
+
 	minMaxElevation[0] = std::min(minMaxElevation[0], elevation);
 	minMaxElevation[1] = std::max(minMaxElevation[1], elevation);
 }
@@ -291,12 +303,22 @@ inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance
 	const auto isWithinDistanceUpperBound = distance - radarScope.distance_separation_threshold <= minMaxDistance[1];
 	const auto isWithinAzimuthLowerBound = azimuth + radarScope.azimuth_separation_threshold >= minMaxAzimuth[0];
 	const auto isWithinAzimuthUpperBound = azimuth - radarScope.azimuth_separation_threshold <= minMaxAzimuth[1];
+
 	const auto isWithinRadialSpeedLowerBound = radialSpeed + radarScope.radial_speed_separation_threshold >=
 	                                           minMaxRadialSpeed[0];
 	const auto isWithinRadialSpeedUpperBound = radialSpeed - radarScope.radial_speed_separation_threshold <=
 	                                           minMaxRadialSpeed[1];
+
+	// Radial speed may be nan if this is the first raytracing call (delta time equals 0). When cluster has nan radial speed
+	// limits (technically just do not have radial speed information), the goal below is to ignore radial speed checkout. The
+	// next goal is to allow adding points to cluster, if these points have non nan radial speed - to eliminate undefined
+	// radial speed information from cluster. This should also work well, when limits are fine and candidate's radial speed
+	// is nan - then radial speed checkouts will give false and the candidate will not pass.
+	// Context for radial speed checkouts below - this can be interpreted as "true if any radial speed limit is nan or
+	// candidate's radial speed is within limits"
 	return isWithinDistanceLowerBound && isWithinDistanceUpperBound && isWithinAzimuthLowerBound && isWithinAzimuthUpperBound &&
-	       isWithinRadialSpeedLowerBound && isWithinRadialSpeedUpperBound;
+	       (std::isunordered(minMaxRadialSpeed[0], minMaxRadialSpeed[1]) ||
+	        (isWithinRadialSpeedLowerBound && isWithinRadialSpeedUpperBound));
 }
 
 inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(const RadarCluster& other,
@@ -330,7 +352,10 @@ inline bool RadarPostprocessPointsNode::RadarCluster::canMergeWith(const RadarCl
 	                         areRangesWithinThreshold(minMaxRadialSpeed, other.minMaxRadialSpeed,
 	                                                  radarScope->radial_speed_separation_threshold);
 
-	return isDistanceGood && isAzimuthGood && isRadialSpeedGood;
+	// Radial speed check is ignored if one of limits on it, in one of clusters, is nan.
+	return isDistanceGood && isAzimuthGood &&
+	       (isRadialSpeedGood || std::isunordered(minMaxRadialSpeed[0], minMaxRadialSpeed[1]) ||
+	        std::isunordered(other.minMaxRadialSpeed[0], other.minMaxRadialSpeed[1]));
 }
 
 void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& other)
@@ -339,8 +364,8 @@ void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& ot
 	minMaxDistance[1] = std::max(minMaxDistance[1], other.minMaxDistance[1]);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], other.minMaxAzimuth[0]);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], other.minMaxAzimuth[1]);
-	minMaxRadialSpeed[0] = std::min(minMaxRadialSpeed[0], other.minMaxRadialSpeed[0]);
-	minMaxRadialSpeed[1] = std::max(minMaxRadialSpeed[1], other.minMaxRadialSpeed[1]);
+	minMaxRadialSpeed[0] = std::isnan(other.minMaxRadialSpeed[0]) ? minMaxRadialSpeed[0] : std::min(other.minMaxRadialSpeed[0], minMaxRadialSpeed[0]);
+	minMaxRadialSpeed[1] = std::isnan(other.minMaxRadialSpeed[1]) ? minMaxRadialSpeed[1] : std::min(other.minMaxRadialSpeed[1], minMaxRadialSpeed[1]);
 	minMaxElevation[0] = std::min(minMaxElevation[0], other.minMaxElevation[0]);
 	minMaxElevation[1] = std::max(minMaxElevation[1], other.minMaxElevation[1]);
 

@@ -80,12 +80,19 @@ public:
 
 	void reset()
 	{
-		minValue = maxValue = {0};
+		minValue = {std::numeric_limits<T>::max()};
+		maxValue = {std::numeric_limits<T>::lowest()};
+	}
+
+	void reset(const Vector<dim, T>& center, const Vector<dim, T>& size)
+	{
+		minValue = {center - size / 2};
+		maxValue = {center + size / 2};
 	}
 
 private:
-	Vector<dim, T> minValue{0};
-	Vector<dim, T> maxValue{0};
+	Vector<dim, T> minValue{std::numeric_limits<T>::max()};
+	Vector<dim, T> maxValue{std::numeric_limits<T>::lowest()};
 };
 
 using Aabb2Df = Aabb<2, float>;

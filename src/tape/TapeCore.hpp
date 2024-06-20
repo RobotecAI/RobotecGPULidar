@@ -65,6 +65,7 @@ class TapeCore
 	static void tape_node_points_filter_ground(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_radar_postprocess(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_radar_track_objects(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_points_radar_set_classes(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_gaussian_noise_angular_ray(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_gaussian_noise_angular_hitpoint(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, PlaybackState& state);
@@ -121,6 +122,7 @@ class TapeCore
 		    TAPE_CALL_MAPPING("rgl_node_points_filter_ground", TapeCore::tape_node_points_filter_ground),
 		    TAPE_CALL_MAPPING("rgl_node_points_radar_postprocess", TapeCore::tape_node_points_radar_postprocess),
 		    TAPE_CALL_MAPPING("rgl_node_points_radar_track_objects", TapeCore::tape_node_points_radar_track_objects),
+		    TAPE_CALL_MAPPING("rgl_node_points_radar_set_classes", TapeCore::tape_node_points_radar_set_classes),
 		    TAPE_CALL_MAPPING("rgl_node_gaussian_noise_angular_ray", TapeCore::tape_node_gaussian_noise_angular_ray),
 		    TAPE_CALL_MAPPING("rgl_node_gaussian_noise_angular_hitpoint", TapeCore::tape_node_gaussian_noise_angular_hitpoint),
 		    TAPE_CALL_MAPPING("rgl_node_gaussian_noise_distance", TapeCore::tape_node_gaussian_noise_distance),
