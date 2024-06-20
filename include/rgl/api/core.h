@@ -152,6 +152,22 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
 #endif
 
 /**
+ * Radar object class used in object tracking.
+ */
+typedef enum : int32_t
+{
+	RGL_RADAR_CLASS_CAR = 0,
+	RGL_RADAR_CLASS_TRUCK,
+	RGL_RADAR_CLASS_MOTORCYCLE,
+	RGL_RADAR_CLASS_BICYCLE,
+	RGL_RADAR_CLASS_PEDESTRIAN,
+	RGL_RADAR_CLASS_ANIMAL,
+	RGL_RADAR_CLASS_HAZARD,
+	RGL_RADAR_CLASS_UNKNOWN,
+	RGL_RADAR_CLASS_COUNT
+} rgl_radar_object_class_t;
+
+/**
  * Represents on-GPU Mesh that can be referenced by Entities on the Scene.
  * Each Mesh can be referenced by any number of Entities on different Scenes.
  */
@@ -868,10 +884,12 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
 /**
  * Creates or modifies RadarTrackObjectsNode.
  * The Node takes radar detections point cloud as input (from rgl_node_points_radar_postprocess), groups detections into objects based on given thresholds (node parameters),
- * and calculates various characteristics of these objects. This Node is intended to be connected to object list publishing node (from rgl_node_publish_udp_objectlist).
- * The output from this Node is in the form of a point cloud, where point XYZ coordinates are tracked objects positions. Additionally, cloud points have tracked object IDs.
- * Note that for correct calculation and publishing some of object characteristics (e.g. velocity) user has to call rgl_scene_set_time for current scene.
- * Graph input: point cloud, containing RGL_FIELD_DISTANCE_F32, RGL_FIELD_AZIMUTH_F32, RGL_FIELD_ELEVATION_F32 and RGL_FIELD_RADIAL_SPEED_F32
+ * and calculates various characteristics of these objects. The output from this Node is in the form of a point cloud, where point XYZ coordinates are tracked objects positions.
+ * Additionally, cloud points have tracked object IDs. Note that for correct calculation and publishing some of object characteristics (e.g. velocity) user has to call
+ * rgl_scene_set_time for current scene.
+ * The node expects input in world frame to be able to perform prediction properly.
+ * Object's orientation, length, and width calculations assume the forward axis is Z and the left axis is -X.
+ * Graph input: point cloud, containing additionally RGL_FIELD_DISTANCE_F32, RGL_FIELD_AZIMUTH_F32, RGL_FIELD_ELEVATION_F32, RGL_FIELD_RADIAL_SPEED_F32 and ENTITY_ID_I32.
  * Graph output: point cloud, contains only XYZ_VEC3_F32 for tracked object positions and ENTITY_ID_I32 for their IDs.
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
  * @param object_distance_threshold The maximum distance between a radar detection and other closest detection classified as the same tracked object (in meters).
@@ -880,12 +898,25 @@ RGL_API rgl_status_t rgl_node_points_radar_postprocess(rgl_node_t* node, const r
  * @param object_radial_speed_threshold The maximum radial speed difference between a radar detection and other closest detection classified as the same tracked object (in meters per second).
  * @param max_matching_distance The maximum distance between predicted (based on previous frame) and newly detected object position to match objects between frames (in meters).
  * @param max_prediction_time_frame The maximum time that object state can be predicted until it will be declared lost unless measured again (in milliseconds).
- * @param movement_sensitivity The maximum position change for an object to be qualified as stationary (in meters).
+ * @param movement_sensitivity The maximum velocity for an object to be qualified as stationary (in meters per seconds).
  */
 RGL_API rgl_status_t rgl_node_points_radar_track_objects(rgl_node_t* node, float object_distance_threshold,
                                                          float object_azimuth_threshold, float object_elevation_threshold,
                                                          float object_radial_speed_threshold, float max_matching_distance,
                                                          float max_prediction_time_frame, float movement_sensitivity);
+
+/**
+ * Modifies RadarTrackObjectsNode to set entity ids to radar object classes mapping.
+ * This is necessary to call for RadarTrackObjectsNode to classify tracked objects correctly. If not set, objects will be classified as RGL_RADAR_CLASS_UNKNOWN by default.
+ * Note that entity can only belong to a single class - passing entity id multiple times in entity_ids array will result in the last version to be assigned. There is no
+ * limit on how many entities can have the same class.
+ * @param node RadarTrackObjectsNode to modify.
+ * @param entity_ids Array of RGL entity ids.
+ * @param object_classes Array of radar object classes.
+ * @param count Number of elements in entity_ids and object_classes arrays.
+ */
+RGL_API rgl_status_t rgl_node_points_radar_set_classes(rgl_node_t node, const int32_t* entity_ids,
+                                                       const rgl_radar_object_class_t* object_classes, int32_t count);
 
 /**
  * Creates or modifies FilterGroundPointsNode.
