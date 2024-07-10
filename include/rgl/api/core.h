@@ -462,7 +462,7 @@ RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vert
 /**
  * Assign texture coordinates to given Mesh. Pair of texture coordinates is assigned to each vertex.
  *
- * @param mesh Address to store the resulting Mesh handle
+ * @param mesh Mesh to modify
  * @param uvs An array of rgl_vec2f or binary-compatible data representing Mesh uv coordinates
  * @param vertex_count Number of elements in the vertices array. It has to be equal to vertex buffer size.
  */
