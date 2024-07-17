@@ -340,7 +340,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		case ENTITY_ID_I32: return {"entity_id"};
 		case RAY_IDX_U32: return {"ray_idx"};
 		case INTENSITY_F32:
-		     INTENSITY_U8:
+		case INTENSITY_U8:
 			return {"intensity"};
 		case LASER_RETRO_F32: return {"laser_retro"};
 		case RING_ID_U16: return {"channel"};
@@ -349,7 +349,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		case DISTANCE_F32: return {"distance"};
 		case RETURN_TYPE_U8: return {"return_type"};
 		case TIME_STAMP_F64:
-		     TIME_STAMP_U32:
+		case TIME_STAMP_U32:
 			return {"time_stamp"};
 		case ABSOLUTE_VELOCITY_VEC3_F32: return {"abs_vx", "abs_vy", "abs_vz"};
 		case RELATIVE_VELOCITY_VEC3_F32: return {"rel_vx", "rel_vy", "rel_vz"};
