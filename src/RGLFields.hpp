@@ -343,7 +343,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		     INTENSITY_U8:
 			return {"intensity"};
 		case LASER_RETRO_F32: return {"laser_retro"};
-		case RING_ID_U16: return {"ring"};
+		case RING_ID_U16: return {"channel"};
 		case AZIMUTH_F32: return {"azimuth"};
 		case ELEVATION_F32: return {"elevation"};
 		case DISTANCE_F32: return {"distance"};
