@@ -88,6 +88,7 @@ void RaytraceNode::enqueueExecImpl()
 
 	// Note: requestCtx is a HostPinnedArray just for convenience (Host meme accessible from GPU), may be optimized.
 	requestCtxHst->resize(1, true, false);
+
 	requestCtxHst->at(0) = RaytraceRequestContext{
 	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
 	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
@@ -106,16 +107,17 @@ void RaytraceNode::enqueueExecImpl()
 	    .rayTimeOffsetsCount = timeOffsets.has_value() ? (*timeOffsets)->getCount() : 0,
 	    .rayMask = (rayMask != nullptr) ? rayMask->getReadPtr() : nullptr,
 	    .scene = sceneAS,
-	    .sceneTime = Scene::instance().getTime().value_or(Time::zero()).asSeconds(),
 	    .sceneDeltaTime = static_cast<float>(Scene::instance().getDeltaTime().value_or(Time::zero()).asSeconds()),
 	    .xyz = getPtrTo<XYZ_VEC3_F32>(),
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
 	    .ringIdx = getPtrTo<RING_ID_U16>(),
 	    .distance = getPtrTo<DISTANCE_F32>(),
-	    .intensity = getPtrTo<INTENSITY_F32>(),
+	    .intensityF32 = getPtrTo<INTENSITY_F32>(),
+	    .intensityU8 = getPtrTo<INTENSITY_U8>(),
 	    .laserRetro = getPtrTo<LASER_RETRO_F32>(),
-	    .timestamp = getPtrTo<TIME_STAMP_F64>(),
+	    .timestampF64 = getPtrTo<TIME_STAMP_F64>(),
+	    .timestampU32 = getPtrTo<TIME_STAMP_U32>(),
 	    .entityId = getPtrTo<ENTITY_ID_I32>(),
 	    .pointAbsVelocity = getPtrTo<ABSOLUTE_VELOCITY_VEC3_F32>(),
 	    .pointRelVelocity = getPtrTo<RELATIVE_VELOCITY_VEC3_F32>(),
@@ -128,7 +130,6 @@ void RaytraceNode::enqueueExecImpl()
 	    .vBeamHalfDivergenceRad = vBeamHalfDivergenceRad,
 	    .mrSamples = mrSamples.getPointers(),
 	};
-
 	requestCtxDev->copyFrom(requestCtxHst);
 	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
 	std::size_t pipelineArgsSize = requestCtxDev->getSizeOf() * requestCtxDev->getCount();
