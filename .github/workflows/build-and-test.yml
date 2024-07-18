@@ -75,15 +75,15 @@ jobs:
         --build-arg BUILD_CMD="./setup.py --with-udp"
         --target=exporter --output=bin-udp .'
 
-  build-snow:
+  build-weather:
     needs: [ checkout-repository, load-env ]
     runs-on: self-hosted
     steps:
       - run: '
         docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
         --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="./setup.py --with-snow"
-        --target=exporter --output=bin-snow .'
+        --build-arg BUILD_CMD="./setup.py --with-weather"
+        --target=exporter --output=bin-weather .'
 
   build-all:
     needs: [ checkout-repository, load-env ]
@@ -92,7 +92,7 @@ jobs:
       - run: '
         docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
         --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD=". /opt/ros/\$ROS_DISTRO/setup.sh && ./setup.py --with-pcl --with-ros2-standalone --with-udp --with-snow --build-taped-test"
+        --build-arg BUILD_CMD=". /opt/ros/\$ROS_DISTRO/setup.sh && ./setup.py --with-pcl --with-ros2-standalone --with-udp --with-weather --build-taped-test"
         --target=exporter --output=bin-all .'
 
 ####### TEST WITH RGL DOCKER IMAGE ######
@@ -135,12 +135,12 @@ jobs:
         cd bin-udp/bin/test && ./RobotecGPULidar_test'
       docker-image: localhost:5000/robotecgpulidar-all:latest
 
-  test-snow-dev:
-    needs: [ build-snow ]
+  test-weather-dev:
+    needs: [ build-weather ]
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-snow/bin/test && ./RobotecGPULidar_test'
+        cd bin-weather/bin/test && ./RobotecGPULidar_test'
       docker-image: localhost:5000/robotecgpulidar-all:latest
 
   test-all-dev:
@@ -201,12 +201,12 @@ jobs:
         cd bin-udp/bin/test && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
-  test-snow-prod:
-    needs: [ build-snow ]
+  test-weather-prod:
+    needs: [ build-weather ]
     uses: ./.github/workflows/test-subworkflow.yml
     with:
       test-command: '
-        cd bin-snow/bin/test && ./RobotecGPULidar_test'
+        cd bin-weather/bin/test && ./RobotecGPULidar_test'
       docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
 
   test-all-prod:

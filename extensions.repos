@@ -4,8 +4,8 @@ repositories:
     url: git@github.com:RobotecAI/RGL-extension-udp.git
     version: develop
 
-  extensions/snow:
+  extensions/weather:
     type: git
-    url: git@github.com:RobotecAI/RGL-extension-snow.git
+    url: git@github.com:RobotecAI/RGL-extension-weather.git
     version: develop
 
