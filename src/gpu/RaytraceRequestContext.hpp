@@ -45,7 +45,6 @@ struct RaytraceRequestContext
 	const int8_t* rayMask;
 
 	OptixTraversableHandle scene;
-	double sceneTime;
 	float sceneDeltaTime;
 
 	// Output
@@ -54,9 +53,11 @@ struct RaytraceRequestContext
 	Field<RAY_IDX_U32>::type* rayIdx;
 	Field<RING_ID_U16>::type* ringIdx;
 	Field<DISTANCE_F32>::type* distance;
-	Field<INTENSITY_F32>::type* intensity;
+	Field<INTENSITY_F32>::type* intensityF32;
+	Field<INTENSITY_U8>::type* intensityU8;
 	Field<LASER_RETRO_F32>::type* laserRetro;
-	Field<TIME_STAMP_F64>::type* timestamp;
+	Field<TIME_STAMP_F64>::type* timestampF64;
+	Field<TIME_STAMP_U32>::type* timestampU32;
 	Field<ENTITY_ID_I32>::type* entityId;
 	Field<ABSOLUTE_VELOCITY_VEC3_F32>::type* pointAbsVelocity;
 	Field<RELATIVE_VELOCITY_VEC3_F32>::type* pointRelVelocity;

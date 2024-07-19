@@ -230,16 +230,12 @@ TEST_F(FormatPointsNodeTest, validate_results_after_changing_format)
 	                                 Mat3x4f::TRS({0.2, 0, 0}).toRGL(), Mat3x4f::TRS({0.3, 0, 0}).toRGL(),
 	                                 Mat3x4f::TRS({0.4, 0, 0}).toRGL()};
 	rgl_mat3x4f lidarPoseTf = Mat3x4f::identity().toRGL();
-	std::vector<rgl_field_t> formatFields = {XYZ_VEC3_F32, PADDING_32, TIME_STAMP_F64};
+	std::vector<rgl_field_t> formatFields = {XYZ_VEC3_F32, PADDING_32};
 	struct FormatStruct
 	{
 		Field<XYZ_VEC3_F32>::type xyz;
 		Field<PADDING_32>::type padding;
-		Field<TIME_STAMP_F64>::type timestamp;
 	} formatStruct;
-
-	Time timestamp = Time::seconds(1.5);
-	EXPECT_RGL_SUCCESS(rgl_scene_set_time(nullptr, timestamp.asNanoseconds()));
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarPoseTf));
@@ -265,7 +261,6 @@ TEST_F(FormatPointsNodeTest, validate_results_after_changing_format)
 		EXPECT_NEAR(formatData[i].xyz[0], rays[i].value[0][3], EPSILON_F);
 		EXPECT_NEAR(formatData[i].xyz[1], rays[i].value[1][3], EPSILON_F);
 		EXPECT_NEAR(formatData[i].xyz[2], EXPECTED_HITPOINT_Z, EPSILON_F);
-		EXPECT_EQ(formatData[i].timestamp, timestamp.asSeconds());
 	}
 
 	// Test if fields update is propagated over graph properly
@@ -294,7 +289,6 @@ TEST_F(FormatPointsNodeTest, validate_results_after_changing_format)
 		EXPECT_NEAR(formatDataEx[i].xyz[1], rays[i].value[1][3], EPSILON_F);
 		EXPECT_NEAR(formatDataEx[i].xyz[2], EXPECTED_HITPOINT_Z, EPSILON_F);
 		EXPECT_NEAR(formatDataEx[i].distance, EXPECTED_RAY_DISTANCE, EPSILON_F);
-		EXPECT_EQ(formatDataEx[i].timestamp, timestamp.asSeconds());
 	}
 }
 

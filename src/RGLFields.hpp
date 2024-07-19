@@ -40,6 +40,7 @@ typedef unsigned char TextureTexelFormat;
 #define RAY_IDX_U32 RGL_FIELD_RAY_IDX_U32
 #define ENTITY_ID_I32 RGL_FIELD_ENTITY_ID_I32
 #define INTENSITY_F32 RGL_FIELD_INTENSITY_F32
+#define INTENSITY_U8 RGL_FIELD_INTENSITY_U8
 #define LASER_RETRO_F32 RGL_FIELD_LASER_RETRO_F32
 #define RING_ID_U16 RGL_FIELD_RING_ID_U16
 #define AZIMUTH_F32 RGL_FIELD_AZIMUTH_F32
@@ -47,6 +48,7 @@ typedef unsigned char TextureTexelFormat;
 #define DISTANCE_F32 RGL_FIELD_DISTANCE_F32
 #define RETURN_TYPE_U8 RGL_FIELD_RETURN_TYPE_U8
 #define TIME_STAMP_F64 RGL_FIELD_TIME_STAMP_F64
+#define TIME_STAMP_U32 RGL_FIELD_TIME_STAMP_U32
 #define ABSOLUTE_VELOCITY_VEC3_F32 RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32
 #define RELATIVE_VELOCITY_VEC3_F32 RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32
 #define RADIAL_SPEED_F32 RGL_FIELD_RADIAL_SPEED_F32
@@ -70,6 +72,7 @@ inline const std::set<rgl_field_t>& getAllRealFields()
 	    RAY_IDX_U32,
 	    ENTITY_ID_I32,
 	    INTENSITY_F32,
+	    INTENSITY_U8,
 	    LASER_RETRO_F32,
 	    RING_ID_U16,
 	    AZIMUTH_F32,
@@ -77,6 +80,7 @@ inline const std::set<rgl_field_t>& getAllRealFields()
 	    DISTANCE_F32,
 	    RETURN_TYPE_U8,
 	    TIME_STAMP_F64,
+	    TIME_STAMP_U32,
 	    ABSOLUTE_VELOCITY_VEC3_F32,
 	    RELATIVE_VELOCITY_VEC3_F32,
 	    RADIAL_SPEED_F32,
@@ -117,6 +121,7 @@ FIELD(XYZ_VEC3_F32, Vec3f);
 FIELD(RAY_IDX_U32, uint32_t); // PCL uses uint32_t
 FIELD(ENTITY_ID_I32, int32_t);
 FIELD(INTENSITY_F32, float);
+FIELD(INTENSITY_U8, uint8_t);
 FIELD(LASER_RETRO_F32, float);
 FIELD(IS_HIT_I32, int32_t);    // Signed may be faster
 FIELD(IS_GROUND_I32, int32_t); // Signed may be faster
@@ -126,6 +131,7 @@ FIELD(ELEVATION_F32, float);
 FIELD(RING_ID_U16, uint16_t);
 FIELD(RETURN_TYPE_U8, uint8_t);
 FIELD(TIME_STAMP_F64, double);
+FIELD(TIME_STAMP_U32, uint32_t);
 FIELD(PADDING_8, uint8_t);
 FIELD(PADDING_16, uint16_t);
 FIELD(PADDING_32, uint32_t);
@@ -149,6 +155,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case IS_HIT_I32: return Field<IS_HIT_I32>::size;
 		case IS_GROUND_I32: return Field<IS_GROUND_I32>::size;
 		case INTENSITY_F32: return Field<INTENSITY_F32>::size;
+		case INTENSITY_U8: return Field<INTENSITY_U8>::size;
 		case LASER_RETRO_F32: return Field<LASER_RETRO_F32>::size;
 		case RING_ID_U16: return Field<RING_ID_U16>::size;
 		case AZIMUTH_F32: return Field<AZIMUTH_F32>::size;
@@ -156,6 +163,7 @@ inline std::size_t getFieldSize(rgl_field_t type)
 		case DISTANCE_F32: return Field<DISTANCE_F32>::size;
 		case RETURN_TYPE_U8: return Field<RETURN_TYPE_U8>::size;
 		case TIME_STAMP_F64: return Field<TIME_STAMP_F64>::size;
+		case TIME_STAMP_U32: return Field<TIME_STAMP_U32>::size;
 		case ABSOLUTE_VELOCITY_VEC3_F32: return Field<ABSOLUTE_VELOCITY_VEC3_F32>::size;
 		case RELATIVE_VELOCITY_VEC3_F32: return Field<RELATIVE_VELOCITY_VEC3_F32>::size;
 		case RADIAL_SPEED_F32: return Field<RADIAL_SPEED_F32>::size;
@@ -206,6 +214,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		case RAY_IDX_U32: return Subclass<Field<RAY_IDX_U32>::type>::create(std::forward<Args>(args)...);
 		case ENTITY_ID_I32: return Subclass<Field<ENTITY_ID_I32>::type>::create(std::forward<Args>(args)...);
 		case INTENSITY_F32: return Subclass<Field<INTENSITY_F32>::type>::create(std::forward<Args>(args)...);
+		case INTENSITY_U8: return Subclass<Field<INTENSITY_U8>::type>::create(std::forward<Args>(args)...);
 		case LASER_RETRO_F32: return Subclass<Field<LASER_RETRO_F32>::type>::create(std::forward<Args>(args)...);
 		case RING_ID_U16: return Subclass<Field<RING_ID_U16>::type>::create(std::forward<Args>(args)...);
 		case AZIMUTH_F32: return Subclass<Field<AZIMUTH_F32>::type>::create(std::forward<Args>(args)...);
@@ -213,6 +222,7 @@ inline std::shared_ptr<IAnyArray> createArray(rgl_field_t type, Args&&... args)
 		case DISTANCE_F32: return Subclass<Field<DISTANCE_F32>::type>::create(std::forward<Args>(args)...);
 		case RETURN_TYPE_U8: return Subclass<Field<RETURN_TYPE_U8>::type>::create(std::forward<Args>(args)...);
 		case TIME_STAMP_F64: return Subclass<Field<TIME_STAMP_F64>::type>::create(std::forward<Args>(args)...);
+		case TIME_STAMP_U32: return Subclass<Field<TIME_STAMP_U32>::type>::create(std::forward<Args>(args)...);
 		case IS_HIT_I32: return Subclass<Field<IS_HIT_I32>::type>::create(std::forward<Args>(args)...);
 		case IS_GROUND_I32: return Subclass<Field<IS_GROUND_I32>::type>::create(std::forward<Args>(args)...);
 		case ABSOLUTE_VELOCITY_VEC3_F32:
@@ -240,6 +250,7 @@ inline std::string toString(rgl_field_t type)
 		case RAY_IDX_U32: return "RAY_IDX_U32";
 		case ENTITY_ID_I32: return "ENTITY_ID_I32";
 		case INTENSITY_F32: return "INTENSITY_F32";
+		case INTENSITY_U8: return "INTENSITY_U8";
 		case LASER_RETRO_F32: return "LASER_RETRO_F32";
 		case RING_ID_U16: return "RING_ID_U16";
 		case AZIMUTH_F32: return "AZIMUTH_F32";
@@ -247,6 +258,7 @@ inline std::string toString(rgl_field_t type)
 		case DISTANCE_F32: return "DISTANCE_F32";
 		case RETURN_TYPE_U8: return "RETURN_TYPE_U8";
 		case TIME_STAMP_F64: return "TIME_STAMP_F64";
+		case TIME_STAMP_U32: return "TIME_STAMP_U32";
 		case ABSOLUTE_VELOCITY_VEC3_F32: return "ABSOLUTE_VELOCITY_VEC3_F32";
 		case RELATIVE_VELOCITY_VEC3_F32: return "RELATIVE_VELOCITY_VEC3_F32";
 		case RADIAL_SPEED_F32: return "RADIAL_SPEED_F32";
@@ -278,6 +290,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 		case RAY_IDX_U32: return {sensor_msgs::msg::PointField::UINT32};
 		case ENTITY_ID_I32: return {sensor_msgs::msg::PointField::INT32};
 		case INTENSITY_F32: return {sensor_msgs::msg::PointField::FLOAT32};
+		case INTENSITY_U8: return {sensor_msgs::msg::PointField::UINT8};
 		case LASER_RETRO_F32: return {sensor_msgs::msg::PointField::FLOAT32};
 		case RING_ID_U16: return {sensor_msgs::msg::PointField::UINT16};
 		case AZIMUTH_F32: return {sensor_msgs::msg::PointField::FLOAT32};
@@ -285,6 +298,7 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 		case DISTANCE_F32: return {sensor_msgs::msg::PointField::FLOAT32};
 		case RETURN_TYPE_U8: return {sensor_msgs::msg::PointField::UINT8};
 		case TIME_STAMP_F64: return {sensor_msgs::msg::PointField::FLOAT64};
+		case TIME_STAMP_U32: return {sensor_msgs::msg::PointField::UINT32};
 		case ABSOLUTE_VELOCITY_VEC3_F32:
 			return {sensor_msgs::msg::PointField::FLOAT32, sensor_msgs::msg::PointField::FLOAT32,
 			        sensor_msgs::msg::PointField::FLOAT32};
@@ -318,20 +332,25 @@ inline std::vector<uint8_t> toRos2Fields(rgl_field_t type)
 
 inline std::vector<std::string> toRos2Names(rgl_field_t type)
 {
+	// clang-format off
 	switch (type) {
 		case XYZ_VEC3_F32: return {"x", "y", "z"};
 		case IS_HIT_I32: return {"is_hit"};
 		case IS_GROUND_I32: return {"is_ground"};
 		case ENTITY_ID_I32: return {"entity_id"};
 		case RAY_IDX_U32: return {"ray_idx"};
-		case INTENSITY_F32: return {"intensity"};
+		case INTENSITY_F32:
+		case INTENSITY_U8:
+			return {"intensity"};
 		case LASER_RETRO_F32: return {"laser_retro"};
-		case RING_ID_U16: return {"ring"};
+		case RING_ID_U16: return {"channel"};
 		case AZIMUTH_F32: return {"azimuth"};
 		case ELEVATION_F32: return {"elevation"};
 		case DISTANCE_F32: return {"distance"};
 		case RETURN_TYPE_U8: return {"return_type"};
-		case TIME_STAMP_F64: return {"time_stamp"};
+		case TIME_STAMP_F64:
+		case TIME_STAMP_U32:
+			return {"time_stamp"};
 		case ABSOLUTE_VELOCITY_VEC3_F32: return {"abs_vx", "abs_vy", "abs_vz"};
 		case RELATIVE_VELOCITY_VEC3_F32: return {"rel_vx", "rel_vy", "rel_vz"};
 		case RADIAL_SPEED_F32: return {"radial_speed"};
@@ -346,6 +365,7 @@ inline std::vector<std::string> toRos2Names(rgl_field_t type)
 		case PADDING_16: return {};
 		case PADDING_32: return {};
 	}
+	// clang-format on
 	throw std::invalid_argument(fmt::format("toRos2Names: unknown RGL field {}", type));
 }
 

@@ -323,7 +323,15 @@ typedef enum : int32_t
 typedef enum : int32_t
 {
 	RGL_FIELD_XYZ_VEC3_F32 = 1,
+	/**
+	 * Strength of the returned signal captured by the LiDAR sensor.
+	 * It is simulated using intensity textures assigned to entities (see `rgl_entity_set_intensity_texture`).
+	 */
 	RGL_FIELD_INTENSITY_F32,
+	/**
+	 * Same as RGL_FIELD_INTENSITY_F32, but uint8_t type.
+	 */
+	RGL_FIELD_INTENSITY_U8,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_IS_GROUND_I32,
 	RGL_FIELD_RAY_IDX_U32,
@@ -343,7 +351,16 @@ typedef enum : int32_t
 	RGL_FIELD_ELEVATION_F32,
 	RGL_FIELD_RING_ID_U16,
 	RGL_FIELD_RETURN_TYPE_U8,
+	/**
+	 * Seconds have passed since the time of the sensor trigger when this point was measured.
+	 * If velocity distortion is disabled, the time stamp for all points will be zero.
+	 */
 	RGL_FIELD_TIME_STAMP_F64,
+	/**
+	 * Nanoseconds have passed since the time of the sensor trigger when this point was measured.
+	 * If velocity distortion is disabled, the time stamp for all points will be zero.
+	 */
+	RGL_FIELD_TIME_STAMP_U32,
 
 	/**
 	 * Velocity of the hit point on the entity.
@@ -755,7 +772,8 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_mask(rgl_node_t node, const int
  * @param horizontal_beam_divergence Horizontal beam divergence in radians.
  * @param vertical_beam_divergence Vertical beam divergence in radians.
  */
-RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float horizontal_beam_divergence, float vertical_beam_divergence);
+RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node, float horizontal_beam_divergence,
+                                                                 float vertical_beam_divergence);
 
 /**
  * Creates or modifies FormatPointsNode.

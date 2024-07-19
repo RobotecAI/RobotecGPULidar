@@ -44,9 +44,9 @@ protected:
 		std::vector<TestPointStruct> points;
 		points.reserve(pointsCount);
 		for (int i = 0; i < pointsCount; i++) {
-			points.emplace_back(TestPointStruct{genCoord(i), genHalfHit(i), genRayIdx(i), genEntityId(i), genIntensity(i),
+			points.emplace_back(TestPointStruct{genCoord(i), genHalfHit(i), genRayIdx(i), genEntityId(i), genIntensityF32(i),
 			                                    genRingId(i), genAzimuth(i), genDistance(i), genReturnType(i),
-			                                    genTimeStamp(i)});
+			                                    genTimeStampF64(i)});
 		}
 		return points;
 	}
@@ -57,12 +57,12 @@ protected:
 		isHit = generateFieldValues(pointsCount, genHalfHit);
 		rayIdx = generateFieldValues(pointsCount, genRayIdx);
 		entityId = generateFieldValues(pointsCount, genEntityId);
-		intensity = generateFieldValues(pointsCount, genIntensity);
+		intensity = generateFieldValues(pointsCount, genIntensityF32);
 		ringId = generateFieldValues(pointsCount, genRingId);
 		azimuth = generateFieldValues(pointsCount, genAzimuth);
 		distance = generateFieldValues(pointsCount, genDistance);
 		returnType = generateFieldValues(pointsCount, genReturnType);
-		timeStamp = generateFieldValues(pointsCount, genTimeStamp);
+		timeStamp = generateFieldValues(pointsCount, genTimeStampF64);
 	}
 
 	void setFieldValues(TestPointCloud& pointCloud)

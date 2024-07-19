@@ -30,8 +30,11 @@ static std::function<Field<XYZ_VEC3_F32>::type(int)> genCoord = [](int i) {
 	return Vec3f(static_cast<float>(i) / (static_cast<float>(i) + 1), static_cast<float>(i) / (static_cast<float>(i) + 2),
 	             static_cast<float>(i) / (static_cast<float>(i) + 3));
 };
-static std::function<Field<INTENSITY_F32>::type(int)> genIntensity = [](int i) {
+static std::function<Field<INTENSITY_F32>::type(int)> genIntensityF32 = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<INTENSITY_U8>::type(int)> genIntensityU8 = [](int i) {
+	return i % std::numeric_limits<Field<INTENSITY_U8>::type>::max();
 };
 static std::function<Field<LASER_RETRO_F32>::type(int)> genLaserRetro = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
@@ -45,7 +48,10 @@ static std::function<Field<ELEVATION_F32>::type(int)> genElevation = [](int i) {
 static std::function<Field<DISTANCE_F32>::type(int)> genDistance = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
-static std::function<Field<TIME_STAMP_F64>::type(int)> genTimeStamp = [](int i) {
+static std::function<Field<TIME_STAMP_F64>::type(int)> genTimeStampF64 = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
+static std::function<Field<TIME_STAMP_U32>::type(int)> genTimeStampU32 = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };
 static std::function<Field<RAY_IDX_U32>::type(int)> genRayIdx = [](int i) { return i; };

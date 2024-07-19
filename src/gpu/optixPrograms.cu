@@ -39,7 +39,8 @@ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity,
                               float laserRetro);
 __device__ void saveNonHitRayResult(float nonHitDistance);
 __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned sampleBeamIdx);
-__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned layerIdx, unsigned vertexIdx);
+__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned layerIdx,
+                                              unsigned vertexIdx);
 
 extern "C" __global__ void __raygen__()
 {
@@ -72,6 +73,16 @@ extern "C" __global__ void __raygen__()
 		ctx.elevation[rayIdx] = rayLocal.toRotationXOrderZXYLeftHandRad();
 	}
 
+	if (ctx.timestampF64 != nullptr) {
+		ctx.timestampF64[rayIdx] = ctx.doApplyDistortion ? ctx.rayTimeOffsetsMs[rayIdx] * 1e-3f : 0; // in seconds
+	}
+	if (ctx.timestampU32 != nullptr) {
+		ctx.timestampU32[rayIdx] = ctx.doApplyDistortion ?
+		                               static_cast<uint32_t>(ctx.rayTimeOffsetsMs[rayIdx] * 1e6f) // in nanoseconds
+		                               :
+		                               0;
+	}
+
 	if (ctx.doApplyDistortion) {
 		// Velocities are in the local frame. Need to operate on rays in local frame.
 		// Ray time offsets are in milliseconds, velocities are in unit per seconds.
@@ -90,7 +101,8 @@ extern "C" __global__ void __raygen__()
 		// Shoot multi-return sampling rays
 		for (int layerIdx = 0; layerIdx < MULTI_RETURN_BEAM_LAYERS; ++layerIdx) {
 			for (int vertexIdx = 0; vertexIdx < MULTI_RETURN_BEAM_VERTICES; vertexIdx++) {
-				Mat3x4f sampleRay = ray * makeBeamSampleRayTransform(ctx.hBeamHalfDivergenceRad, ctx.vBeamHalfDivergenceRad, layerIdx, vertexIdx);
+				Mat3x4f sampleRay = ray * makeBeamSampleRayTransform(ctx.hBeamHalfDivergenceRad, ctx.vBeamHalfDivergenceRad,
+				                                                     layerIdx, vertexIdx);
 				// Sampling rays indexes start from 1, 0 is reserved for the primary ray
 				const unsigned beamSampleRayIdx = 1 + layerIdx * MULTI_RETURN_BEAM_VERTICES + vertexIdx;
 				shootSamplingRay(sampleRay, maxRange, beamSampleRayIdx);
@@ -146,8 +158,10 @@ extern "C" __global__ void __closesthit__()
 		if (!ctx.doApplyDistortion) {
 			return hitWorldRaytraced;
 		}
-		Mat3x4f sampleRayTf = beamSampleRayIdx == 0 ? Mat3x4f::identity() :
-		                                              makeBeamSampleRayTransform(ctx.hBeamHalfDivergenceRad, ctx.vBeamHalfDivergenceRad, circleIdx, vertexIdx);
+		Mat3x4f sampleRayTf = beamSampleRayIdx == 0 ?
+		                          Mat3x4f::identity() :
+		                          makeBeamSampleRayTransform(ctx.hBeamHalfDivergenceRad, ctx.vBeamHalfDivergenceRad, circleIdx,
+		                                                     vertexIdx);
 		Mat3x4f undistortedRay = ctx.raysWorld[beamIdx] * sampleRayTf;
 		Vec3f undistortedOrigin = undistortedRay * Vec3f{0, 0, 0};
 		Vec3f undistortedDir = undistortedRay * Vec3f{0, 0, 1} - undistortedOrigin;
@@ -175,7 +189,7 @@ extern "C" __global__ void __closesthit__()
 	const float incidentAngle = acosf(fabs(wNormal.dot(rayDir)));
 
 	float intensity = 0;
-	bool isIntensityRequested = ctx.intensity != nullptr;
+	bool isIntensityRequested = ctx.intensityF32 != nullptr || ctx.intensityU8 != nullptr;
 	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
 		assert(triangleIndices.x() < entityData.textureCoordsCount);
 		assert(triangleIndices.y() < entityData.textureCoordsCount);
@@ -258,14 +272,17 @@ __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned in
 	optixTrace(ctx.scene, origin, dir, 0.0f, maxRange, 0.0f, OptixVisibilityMask(255), flags, 0, 1, 0, beamSampleRayIdx);
 }
 
-__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned int layerIdx, unsigned int vertexIdx)
+__device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned int layerIdx,
+                                              unsigned int vertexIdx)
 {
 	if (ctx.hBeamHalfDivergenceRad == 0.0f && ctx.vBeamHalfDivergenceRad == 0.0f) {
 		return Mat3x4f::identity();
 	}
 
-	const float hCurrentHalfDivergenceRad = hHalfDivergenceRad * (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
-	const float vCurrentHalfDivergenceRad = vHalfDivergenceRad * (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
+	const float hCurrentHalfDivergenceRad = hHalfDivergenceRad *
+	                                        (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
+	const float vCurrentHalfDivergenceRad = vHalfDivergenceRad *
+	                                        (1.0f - static_cast<float>(layerIdx) / MULTI_RETURN_BEAM_LAYERS);
 
 	const float angleStep = 2.0f * static_cast<float>(M_PI) / MULTI_RETURN_BEAM_VERTICES;
 
@@ -309,11 +326,12 @@ __device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity,
 	if (ctx.distance != nullptr) {
 		ctx.distance[beamIdx] = distance;
 	}
-	if (ctx.intensity != nullptr) {
-		ctx.intensity[beamIdx] = intensity;
+	if (ctx.intensityF32 != nullptr) {
+		ctx.intensityF32[beamIdx] = intensity;
 	}
-	if (ctx.timestamp != nullptr) {
-		ctx.timestamp[beamIdx] = ctx.sceneTime;
+	if (ctx.intensityU8 != nullptr) {
+		// intensity < 0 not possible
+		ctx.intensityU8[beamIdx] = intensity < UINT8_MAX ? static_cast<uint8_t>(std::round(intensity)) : UINT8_MAX;
 	}
 	if (ctx.entityId != nullptr) {
 		ctx.entityId[beamIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
