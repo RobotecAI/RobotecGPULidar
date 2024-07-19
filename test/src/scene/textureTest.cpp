@@ -56,7 +56,8 @@ TEST_P(TextureTest, rgl_texture_reading)
 	// Create RGL graph pipeline.
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
 
-	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 360, 0.36, 0.36);
+	std::vector<rgl_mat3x4f> rays = {// Ray must be incident perpendicular to the surface to receive all intensity
+	                                 Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}).toRGL()};
 
 	std::vector<rgl_field_t> yieldFields = {INTENSITY_F32};
 

@@ -134,9 +134,12 @@ struct RaytraceNode : IPointsNode
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
-	void setBeamDivergence(float hDivergenceRad, float vDivergenceRad) {
+	void setBeamDivergence(float hDivergenceRad, float vDivergenceRad)
+	{
 		hBeamHalfDivergenceRad = hDivergenceRad / 2.0f;
-		vBeamHalfDivergenceRad = vDivergenceRad / 2.0f;}
+		vBeamHalfDivergenceRad = vDivergenceRad / 2.0f;
+	}
+	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
 
 private:
 	IRaysNode::Ptr raysNode;
@@ -150,6 +153,7 @@ private:
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
 	float hBeamHalfDivergenceRad = 0.0f;
 	float vBeamHalfDivergenceRad = 0.0f;
+	float defaultIntensity = 0.0f;
 
 	DeviceAsyncArray<int8_t>::Ptr rayMask;
 
@@ -747,8 +751,8 @@ private:
 	                                   // In other words, how long object state can be predicted until it will be declared lost.
 	float movementSensitivity = 0.01f; // Max velocity for an object to be qualified as MovementStatus::Stationary.
 
-	Mat3x4f lookAtSensorFrameTransform { Mat3x4f::identity() };
-	decltype(Time::zero().asMilliseconds()) currentTime { Time::zero().asMilliseconds() };
+	Mat3x4f lookAtSensorFrameTransform{Mat3x4f::identity()};
+	decltype(Time::zero().asMilliseconds()) currentTime{Time::zero().asMilliseconds()};
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr xyzHostPtr = HostPinnedArray<Field<XYZ_VEC3_F32>::type>::create();
 	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr distanceHostPtr = HostPinnedArray<Field<DISTANCE_F32>::type>::create();

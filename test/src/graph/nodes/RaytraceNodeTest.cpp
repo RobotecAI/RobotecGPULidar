@@ -271,3 +271,56 @@ TEST_F(RaytraceNodeTest, config_non_hit_far_distance_should_correctly_change_out
 		EXPECT_EQ(outIsHits.at(i), 0);
 	}
 }
+
+TEST_F(RaytraceNodeTest, config_default_intensity_should_correctly_change_output)
+{
+	spawnCubeOnScene(Mat3x4f::TRS({0, 0, 0}));
+
+	std::vector<rgl_mat3x4f> rays = {
+	    Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}).toRGL(),                  // hit point
+	    Mat3x4f::TRS({CUBE_HALF_EDGE * 3, 0, 0}, {0, 0, 0}).toRGL(), // non-hit point
+	};
+
+	float defaultIntensity = 100.0f;
+	const float expectedIntensityForNonHit = 0.0f;
+
+	std::vector<rgl_field_t> outFields{IS_HIT_I32, INTENSITY_F32};
+
+	rgl_node_t raysNode = nullptr;
+	rgl_node_t yieldNode = nullptr;
+
+	ASSERT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&raysNode, rays.data(), rays.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_default_intensity(raytraceNode, defaultIntensity));
+	ASSERT_RGL_SUCCESS(rgl_node_points_yield(&yieldNode, outFields.data(), outFields.size()));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raysNode, raytraceNode));
+	ASSERT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, yieldNode));
+
+	ASSERT_RGL_SUCCESS(rgl_graph_run(raysNode));
+
+	auto validateOutput = [&]() {
+		TestPointCloud outPointCloud = TestPointCloud::createFromNode(yieldNode, outFields);
+		std::vector<Field<INTENSITY_F32>::type> outIntensities = outPointCloud.getFieldValues<INTENSITY_F32>();
+		std::vector<Field<IS_HIT_I32>::type> outIsHits = outPointCloud.getFieldValues<IS_HIT_I32>();
+
+		ASSERT_EQ(rays.size(), outIntensities.size());
+		ASSERT_EQ(rays.size(), outIsHits.size());
+
+		// Hit point
+		EXPECT_EQ(outIsHits[0], 1);
+		EXPECT_EQ(outIntensities[0], defaultIntensity);
+
+		// Non-hit point
+		EXPECT_EQ(outIsHits[1], 0);
+		EXPECT_EQ(outIntensities[1], expectedIntensityForNonHit);
+	};
+
+	validateOutput();
+
+	// Second round
+	defaultIntensity = 25.0f;
+	ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_default_intensity(raytraceNode, defaultIntensity));
+	ASSERT_RGL_SUCCESS(rgl_graph_run(raysNode));
+	validateOutput();
+}

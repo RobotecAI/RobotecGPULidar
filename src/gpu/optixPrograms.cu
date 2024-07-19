@@ -188,7 +188,7 @@ extern "C" __global__ void __closesthit__()
 	const Vec3f wNormal = wAB.cross(wCA).normalized();
 	const float incidentAngle = acosf(fabs(wNormal.dot(rayDir)));
 
-	float intensity = 0;
+	float intensity = ctx.defaultIntensity;
 	bool isIntensityRequested = ctx.intensityF32 != nullptr || ctx.intensityU8 != nullptr;
 	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
 		assert(triangleIndices.x() < entityData.textureCoordsCount);

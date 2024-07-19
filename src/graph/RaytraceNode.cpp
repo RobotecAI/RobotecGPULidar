@@ -95,6 +95,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .doApplyDistortion = doApplyDistortion,
 	    .nearNonHitDistance = nearNonHitDistance,
 	    .farNonHitDistance = farNonHitDistance,
+	    .defaultIntensity = defaultIntensity,
 	    .raysWorld = raysPtr,
 	    .rayCount = raysNode->getRayCount(),
 	    .rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),
