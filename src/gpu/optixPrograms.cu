@@ -203,6 +203,7 @@ extern "C" __global__ void __closesthit__()
 
 		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
+	intensity *= cosf(incidentAngle);
 
 	// Save sub-sampling results
 	ctx.mrSamples.isHit[mrSamplesIdx] = true;
