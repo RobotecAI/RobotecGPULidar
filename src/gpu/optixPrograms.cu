@@ -178,7 +178,7 @@ extern "C" __global__ void __closesthit__()
 		return;
 	}
 
-	// Normal vector and incident angle
+	// Normal vector
 	Vec3f rayDir = optixGetWorldRayDirection();
 	const Vec3f wA = optixTransformPointFromObjectToWorldSpace(A);
 	const Vec3f wB = optixTransformPointFromObjectToWorldSpace(B);
@@ -186,7 +186,10 @@ extern "C" __global__ void __closesthit__()
 	const Vec3f wAB = wB - wA;
 	const Vec3f wCA = wC - wA;
 	const Vec3f wNormal = wAB.cross(wCA).normalized();
-	const float incidentAngle = acosf(fabs(wNormal.dot(rayDir)));
+
+	// Incident angle
+	const float cosIncidentAngle = fabs(wNormal.dot(rayDir));
+	const float incidentAngle = acosf(cosIncidentAngle);
 
 	float intensity = ctx.defaultIntensity;
 	bool isIntensityRequested = ctx.intensityF32 != nullptr || ctx.intensityU8 != nullptr;
@@ -203,7 +206,7 @@ extern "C" __global__ void __closesthit__()
 
 		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
-	intensity *= cosf(incidentAngle);
+	intensity *= cosIncidentAngle;
 
 	// Save sub-sampling results
 	ctx.mrSamples.isHit[mrSamplesIdx] = true;
