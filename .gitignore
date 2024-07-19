@@ -42,5 +42,5 @@ build
 external/*
 !external/CMakeLists.txt
 extensions/udp
-extensions/snow
+extensions/weather
 CMakeSettings.json

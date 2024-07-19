@@ -104,8 +104,8 @@ if (RGL_BUILD_UDP_EXTENSION)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/udp/test ${CMAKE_CURRENT_BINARY_DIR}/udp)
 endif()
 
-if (RGL_BUILD_SNOW_EXTENSION)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/snow/test ${CMAKE_CURRENT_BINARY_DIR}/snow)
+if (RGL_BUILD_WEATHER_EXTENSION)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/weather/test ${CMAKE_CURRENT_BINARY_DIR}/weather)
 endif()
 
 if (RGL_BUILD_ROS2_EXTENSION)

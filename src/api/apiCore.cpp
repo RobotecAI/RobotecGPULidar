@@ -88,7 +88,7 @@ RGL_API rgl_status_t rgl_get_extension_info(rgl_extension_t extension, int32_t* 
 			case RGL_EXTENSION_PCL: *out_available = RGL_BUILD_PCL_EXTENSION; break;
 			case RGL_EXTENSION_ROS2: *out_available = RGL_BUILD_ROS2_EXTENSION; break;
 			case RGL_EXTENSION_UDP: *out_available = RGL_BUILD_UDP_EXTENSION; break;
-			case RGL_EXTENSION_SNOW: *out_available = RGL_BUILD_SNOW_EXTENSION; break;
+			case RGL_EXTENSION_WEATHER: *out_available = RGL_BUILD_WEATHER_EXTENSION; break;
 			default: throw std::invalid_argument(fmt::format("queried unknown RGL extension: {}", extension));
 		}
 	});
