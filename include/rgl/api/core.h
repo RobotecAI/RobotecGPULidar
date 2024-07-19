@@ -776,6 +776,16 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node
                                                                  float vertical_beam_divergence);
 
 /**
+ * Modifies RaytraceNode to set default intensity.
+ * This value will be considered when hitting entities with no intensity texture set (`rgl_entity_set_intensity_texture`)
+ * Defaulted default intensity is set to zero.
+ * When accessing `RGL_FIELD_INTENSITY_U8` float is cast to uint8_t type with clamping at uint8_t max value (255).
+ * @param node RaytraceNode to modify.
+ * @param default_intensity Default intensity to set (cannot be a negative number).
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t node, float default_intensity);
+
+/**
  * Creates or modifies FormatPointsNode.
  * The Node converts internal representation into a binary format defined by the `fields` array.
  * Note: It is the user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).

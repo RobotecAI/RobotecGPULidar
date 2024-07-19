@@ -962,8 +962,8 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node
                                                                  float vertical_beam_divergence)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, horizontal_divergence={}, vertical_divergence={})", repr(node),
-		            horizontal_beam_divergence, vertical_beam_divergence);
+		RGL_API_LOG("rgl_node_raytrace_configure_beam_divergence(node={}, horizontal_divergence={}, vertical_divergence={})",
+		            repr(node), horizontal_beam_divergence, vertical_beam_divergence);
 		CHECK_ARG(node != nullptr);
 		CHECK_ARG((horizontal_beam_divergence > 0.0f && vertical_beam_divergence > 0.0f) ||
 		          (horizontal_beam_divergence == 0.0f && vertical_beam_divergence == 0.0f));
@@ -979,6 +979,27 @@ void TapeCore::tape_node_raytrace_configure_beam_divergence(const YAML::Node& ya
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.at(nodeId);
 	rgl_node_raytrace_configure_beam_divergence(node, yamlNode[1].as<float>(), yamlNode[2].as<float>());
+}
+
+RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t node, float default_intensity)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_default_intensity(node={}, default_intensity={})", repr(node),
+		            default_intensity);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(default_intensity >= 0.0f);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setDefaultIntensity(default_intensity);
+	});
+	TAPE_HOOK(node, default_intensity);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_default_intensity(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_default_intensity(node, yamlNode[1].as<float>());
 }
 
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
