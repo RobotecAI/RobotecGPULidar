@@ -423,14 +423,44 @@ typedef enum : int32_t
 } rgl_field_t;
 
 /**
- * Kinds of return type for multi-return LiDAR output.
+ * Kinds of return types for multi-return LiDAR output.
+ */
+typedef enum : uint8_t
+{
+	RGL_RETURN_TYPE_UNKNOWN = 1 << 0,
+	RGL_RETURN_TYPE_STRONGEST = 1 << 1,
+	RGL_RETURN_TYPE_LAST = 1 << 2,
+	RGL_RETURN_TYPE_SECOND = 1 << 3,
+	RGL_RETURN_TYPE_FIRST = 1 << 4,
+	RGL_RETURN_TYPE_SECOND_STRONGEST = 1 << 5,
+} rgl_return_type_t;
+
+/**
+ * Bitshift and masks for coding return mode. Most significant byte encodes the number of returns.
+ */
+const int32_t RGL_RETURN_MODE_RETURNS_BIT_SHIFT = 24;
+const int32_t RGL_RETURN_MODE_SINGLE_MASK = 1 << RGL_RETURN_MODE_RETURNS_BIT_SHIFT;
+const int32_t RGL_RETURN_MODE_DUAL_MASK = 2 << RGL_RETURN_MODE_RETURNS_BIT_SHIFT;
+
+/**
+ * Kinds of return modes for multi-return LiDAR output.
  */
 typedef enum : int32_t
 {
-	RGL_RETURN_TYPE_NOT_DIVERGENT = 0,
-	RGL_RETURN_TYPE_FIRST = 1,
-	RGL_RETURN_TYPE_LAST = 2,
-} rgl_return_type_t;
+	RGL_RETURN_MODE_UNKNOWN = RGL_RETURN_TYPE_UNKNOWN,
+	// Single return modes
+	RGL_RETURN_FIRST = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_FIRST,
+	RGL_RETURN_SECOND = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_SECOND,
+	RGL_RETURN_LAST = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_LAST,
+	RGL_RETURN_STRONGEST = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_STRONGEST,
+	// Dual return modes
+	RGL_RETURN_LAST_STRONGEST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_LAST | RGL_RETURN_TYPE_STRONGEST,
+	RGL_RETURN_FIRST_LAST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_FIRST | RGL_RETURN_TYPE_LAST,
+	RGL_RETURN_FIRST_STRONGEST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_FIRST | RGL_RETURN_TYPE_STRONGEST,
+	RGL_RETURN_STRONGEST_SECOND_STRONGEST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_STRONGEST |
+	                                        RGL_RETURN_TYPE_SECOND_STRONGEST,
+	RGL_RETURN_FIRST_SECOND = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_FIRST | RGL_RETURN_TYPE_SECOND,
+} rgl_return_mode_t;
 
 /**
  * Helper enum for axis selection
@@ -833,7 +863,10 @@ RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_fiel
 /**
  * Creates or modifies SpatialMergePointsNode.
  * The Node merges point clouds spatially (e.g., multiple lidars outputs into one point cloud).
- * Only provided fields are merged (RGL_FIELD_DYNAMIC_FORMAT is not supported).
+ * Only provided fields are merged (RGL_FIELD_DYNAMIC_FORMAT is not supported). This Node do not resolve point return types
+ * (RGL_FIELD_RETURN_TYPE_U8) in any way - output return mode is always assumed to be RGL_RETURN_MODE_UNKNOWN and respective
+ * cloud points keep their return types. This may results in a case, where output point cloud contain points e.g. from
+ * four or more return types (rgl_return_type_t).
  * Input point clouds must be unorganized (height == 1).
  * Any modification to the Node's parameters clears accumulated data.
  * Graph input: point cloud(s)
@@ -860,7 +893,9 @@ RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_
 
 /**
  * Creates or modifies FromArrayPointsNode.
- * The Node provides initial points for its children Nodes.
+ * The Node provides initial points for its children Nodes. This Node does not handle return mode - it is assumed that
+ * return mode is always RGL_RETURN_MODE_UNKNOWN. RGL_FIELD_RETURN_TYPE_U8 field values are still set according to data
+ * passed by user.
  * Input: none
  * Output: point cloud
  * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.

@@ -44,6 +44,9 @@ struct EmptyNode : IPointsNode, INoInputNode
 	bool hasField(rgl_field_t field) const override { return true; }
 	size_t getWidth() const override { return 0; }
 	size_t getHeight() const override { return 0; }
+	rgl_return_mode_t getReturnMode() const override { return RGL_RETURN_MODE_UNKNOWN; }
+	size_t getReturnCount() const override { return 0; }
+
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return createArray<DeviceAsyncArray>(field, arrayMgr); }
 
 protected:

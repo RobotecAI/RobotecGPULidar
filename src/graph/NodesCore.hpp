@@ -34,6 +34,7 @@
 #include <math/Aabb.h>
 #include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
+#include <returnModeUtils.h>
 #include <Time.hpp>
 
 
@@ -113,8 +114,10 @@ struct RaytraceNode : IPointsNode
 	// Point cloud description
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
-	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
+	size_t getWidth() const override { return raysNode ? getReturnCount() * raysNode->getRayCount() : 0; }
 	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
+	rgl_return_mode_t getReturnMode() const override { return returnMode; }
+	size_t getReturnCount() const override { return ::getReturnCount(returnMode); }
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
@@ -134,12 +137,13 @@ struct RaytraceNode : IPointsNode
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
+	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
+	void setReturnMode(rgl_return_mode_t mode) { this->returnMode = mode; }
 	void setBeamDivergence(float hDivergenceRad, float vDivergenceRad)
 	{
 		hBeamHalfDivergenceRad = hDivergenceRad / 2.0f;
 		vBeamHalfDivergenceRad = vDivergenceRad / 2.0f;
 	}
-	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
 
 private:
 	IRaysNode::Ptr raysNode;
@@ -151,9 +155,11 @@ private:
 
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
+	float defaultIntensity = 0.0f;
+
+	rgl_return_mode_t returnMode = RGL_RETURN_FIRST;
 	float hBeamHalfDivergenceRad = 0.0f;
 	float vBeamHalfDivergenceRad = 0.0f;
-	float defaultIntensity = 0.0f;
 
 	DeviceAsyncArray<int8_t>::Ptr rayMask;
 
@@ -218,7 +224,8 @@ struct MultiReturnSwitchNode : IPointsNodeSingleInput
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
-		if (returnType == RGL_RETURN_TYPE_NOT_DIVERGENT) {
+		// TODO(Pawel): Handle this somehow with new multi-return.
+		if (returnType == RGL_RETURN_TYPE_UNKNOWN) {
 			return rtxInput->getFieldData(field);
 		}
 		return rtxInput->getFieldDataMultiReturn(field, returnType);
@@ -396,6 +403,8 @@ struct SpatialMergePointsNode : IPointsNode
 	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	std::size_t getWidth() const override { return width; }
 	std::size_t getHeight() const override { return 1; }
+	rgl_return_mode_t getReturnMode() const override { return RGL_RETURN_MODE_UNKNOWN; }
+	std::size_t getReturnCount() const override { return 1; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
@@ -456,6 +465,8 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return width; }
 	size_t getHeight() const override { return 1; }
+	rgl_return_mode_t getReturnMode() const override { return RGL_RETURN_MODE_UNKNOWN; }
+	size_t getReturnCount() const override { return 1; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
