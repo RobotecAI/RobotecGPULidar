@@ -31,6 +31,7 @@ For some, the process has been automated - run `setup.py --install-ros2-deps` to
     ```bash
     apt install -y ros-${ROS_DISTRO}-cyclonedds ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
     apt install -y ros-${ROS_DISTRO}-fastrtps ros-${ROS_DISTRO}-rmw-fastrtps-cpp
+    apt install -y ros-${ROS_DISTRO}-radar-msgs
     apt install patchelf
     ```
 
