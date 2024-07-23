@@ -77,7 +77,7 @@ struct TestScene
 			changed[7].value[0] -= -abs(sin(tt));
 			changed[7].value[1] += -abs(sin(tt));
 			changed[7].value[2] += -abs(sin(tt));
-			EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(cube.mesh, changed, ARRAY_SIZE(changed)));
+			EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(cube.entity, changed, ARRAY_SIZE(changed)));
 		});
 
 		// -Z; moved around a circle on XY plane, rotating around Z, so that it always points to the center
@@ -106,7 +106,7 @@ struct TestScene
 			changed[1].value[2] += sin(t) / S;
 			changed[2].value[2] += sin(t) / S;
 			changed[3].value[2] += sin(t) / S;
-			EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(cube.mesh, changed, ARRAY_SIZE(changed)));
+			EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(cube.entity, changed, ARRAY_SIZE(changed)));
 		});
 
 		TestScene scene = {

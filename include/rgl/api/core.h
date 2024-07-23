@@ -369,7 +369,7 @@ typedef enum : int32_t
 	 * - linear velocity
 	 * - angular velocity
 	 * - mesh deformations (e.g. skinning)
-	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_mesh_update_vertices`.
+	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_entity_apply_external_animation`.
 	 */
 	RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 
@@ -520,16 +520,6 @@ RGL_API rgl_status_t rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2
 RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
 
 /**
- * Updates Mesh vertex data. The number of vertices must not change.
- * This function is intended to update animated Meshes.
- * Should be called after rgl_scene_set_time to ensure proper velocity computation.
- * @param mesh Mesh to modify
- * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
- * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
- */
-RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
-
-/**
  * Assigns value true to out_alive if the given mesh is known and has not been destroyed,
  * assigns value false otherwise.
  * @param mesh Mesh to check if alive
@@ -585,6 +575,17 @@ RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_t
  * @param retro Laser retro value to set.
  */
 RGL_API rgl_status_t rgl_entity_set_laser_retro(rgl_entity_t entity, float retro);
+
+/**
+ * Provides updated vertices to the Entity resulted from external animation system.
+ * It does not modify Mesh API object bound to the Entity.
+ * The number of vertices must not change.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
+ * @param entity Entity to modify
+ * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
+ * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
+ */
+RGL_API rgl_status_t rgl_entity_apply_external_animation(rgl_entity_t entity, const rgl_vec3f* vertices, int32_t vertex_count);
 
 /**
  * Assigns value true to out_alive if the given entity is known and has not been destroyed,
@@ -723,7 +724,7 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
  * Necessary for velocity distortion or calculating fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32.
  * Relative velocity calculation:
  * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
- * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_mesh_update_vertices`
+ * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_entity_apply_external_animation`
  * @param node RaytraceNode to modify
  * @param linear_velocity 3D vector for linear velocity in units per second.
  * @param angular_velocity 3D vector for angular velocity in radians per second (roll, pitch, yaw).

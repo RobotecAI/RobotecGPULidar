@@ -77,3 +77,46 @@ std::optional<Mat3x4f> Entity::getPreviousFrameLocalToWorldTransform() const
 
 	return formerTransformInfo.matrix;
 }
+
+void Entity::applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCount)
+{
+	if (!std::holds_alternative<ExternalAnimator>(animator)) {
+		animator = ExternalAnimator(mesh->dVertices);
+	}
+	try {
+		std::get<ExternalAnimator>(animator).animate(vertices, vertexCount);
+		formerAnimationTime = currentAnimationTime;
+		currentAnimationTime = Scene::instance().getTime();
+		Scene::instance().requestASRebuild();  // Vertices themselves
+		Scene::instance().requestSBTRebuild(); // Vertices displacement
+	}
+	catch (std::bad_variant_access const& ex) {
+		throw std::runtime_error("Internal library error: type of animator is not as expected.");
+	}
+}
+
+const Vec3f* Entity::getVertexDisplacementSincePrevFrame()
+{
+	if (!formerAnimationTime.has_value() || formerAnimationTime != Scene::instance().getPrevTime()) {
+		return nullptr;
+	}
+	try {
+		return std::get<ExternalAnimator>(animator).dVertexAnimationDisplacement->getReadPtr();
+	}
+	catch (std::bad_variant_access const& ex) {
+		throw std::runtime_error("Internal library error: type of animator is not as expected.");
+	}
+}
+
+DeviceSyncArray<Vec3f>::Ptr Entity::getAnimatedVertices()
+{
+	if (std::holds_alternative<std::monostate>(animator)) {
+		return nullptr;
+	}
+	try {
+		return std::get<ExternalAnimator>(animator).dAnimatedVertices;
+	}
+	catch (std::bad_variant_access const& ex) {
+		throw std::runtime_error("Internal library error: type of animator is not as expected.");
+	}
+}
