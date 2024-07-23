@@ -57,6 +57,7 @@ class TapeCore
 	static void tape_node_raytrace_configure_mask(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_raytrace_configure_beam_divergence(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_raytrace_configure_default_intensity(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_raytrace_configure_return_mode(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_format(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_yield(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_compact(const YAML::Node& yamlNode, PlaybackState& state);
@@ -117,6 +118,8 @@ class TapeCore
 		                      TapeCore::tape_node_raytrace_configure_beam_divergence),
 		    TAPE_CALL_MAPPING("rgl_node_raytrace_configure_default_intensity",
 		                      TapeCore::tape_node_raytrace_configure_default_intensity),
+		    TAPE_CALL_MAPPING("rgl_node_raytrace_configure_return_mode",
+		                      TapeCore::tape_node_raytrace_configure_return_mode),
 		    TAPE_CALL_MAPPING("rgl_node_points_format", TapeCore::tape_node_points_format),
 		    TAPE_CALL_MAPPING("rgl_node_points_yield", TapeCore::tape_node_points_yield),
 		    TAPE_CALL_MAPPING("rgl_node_points_compact", TapeCore::tape_node_points_compact),

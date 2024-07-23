@@ -816,6 +816,18 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node
 RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t node, float default_intensity);
 
 /**
+ * Modifies RaytraceNode to set return mode.
+ * Point return types (RGL_FIELD_RETURN_TYPE_U8) will be set to corresponding rgl_return_type_t values, e.g. return mode
+ * RGL_RETURN_FIRST_LAST will result in point return types to be set to RGL_RETURN_TYPE_FIRST or RGL_RETURN_TYPE_LAST,
+ * interchangeably.
+ * Default return mode on RaytraceNode is RGL_RETURN_FIRST.
+ * Passing RGL_RETURN_MODE_UNDEFINED will have no effect (does not change return mode).
+ * @param node RaytraceNode to modify.
+ * @param return_mode Return mode to set.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_return_mode(rgl_node_t node, rgl_return_mode_t return_mode);
+
+/**
  * Creates or modifies FormatPointsNode.
  * The Node converts internal representation into a binary format defined by the `fields` array.
  * Note: It is the user's responsibility to ensure proper data structure alignment. See (https://en.wikipedia.org/wiki/Data_structure_alignment).

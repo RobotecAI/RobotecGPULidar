@@ -1002,6 +1002,28 @@ void TapeCore::tape_node_raytrace_configure_default_intensity(const YAML::Node& 
 	rgl_node_raytrace_configure_default_intensity(node, yamlNode[1].as<float>());
 }
 
+RGL_API rgl_status_t rgl_node_raytrace_configure_return_mode(rgl_node_t node, rgl_return_mode_t return_mode)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_default_intensity(node={}, return_mode={})", repr(node), return_mode);
+		CHECK_ARG(node != nullptr);
+
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setReturnMode(return_mode);
+	});
+	TAPE_HOOK(node, return_mode);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_return_mode(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto returnMode = static_cast<rgl_return_mode_t>(yamlNode[1].as<int>());
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_raytrace_configure_return_mode(node, returnMode);
+	state.nodes.insert({nodeId, node});
+}
+
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	auto status = rglSafeCall([&]() {

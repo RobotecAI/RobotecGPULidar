@@ -138,7 +138,13 @@ struct RaytraceNode : IPointsNode
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
 	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
-	void setReturnMode(rgl_return_mode_t mode) { this->returnMode = mode; }
+	void setReturnMode(rgl_return_mode_t mode)
+	{
+		if (mode == RGL_RETURN_MODE_UNKNOWN) {
+			return;
+		}
+		returnMode = mode;
+	}
 	void setBeamDivergence(float hDivergenceRad, float vDivergenceRad)
 	{
 		hBeamHalfDivergenceRad = hDivergenceRad / 2.0f;
