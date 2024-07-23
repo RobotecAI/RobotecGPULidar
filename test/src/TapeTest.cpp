@@ -180,12 +180,13 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
-	EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, cubeVertices, ARRAY_SIZE(cubeVertices)));
 
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
+
+	EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(entity, cubeVertices, ARRAY_SIZE(cubeVertices)));
 
 	rgl_texture_t texture = nullptr;
 	int width = 1024;

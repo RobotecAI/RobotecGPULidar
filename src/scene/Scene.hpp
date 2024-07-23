@@ -20,6 +20,7 @@
 #include <optional>
 #include <unordered_map>
 #include <scene/ASBuildScratchpad.hpp>
+#include <scene/GASBuilder.hpp>
 #include <APIObject.hpp>
 
 #include <Time.hpp>
@@ -81,9 +82,19 @@ private:
 	OptixShaderBindingTable buildSBT();
 	OptixTraversableHandle buildAS();
 
+	/**
+	 * The method process GASes for all entities to be up-to-date. It performs:
+	 * - build if GAS do not exist
+	 * - update of the GAS for animated entities
+	 */
+	void setupGASForEntities();
+
 private:
 	CudaStream::Ptr stream;
 	std::set<std::shared_ptr<Entity>> entities;
+	std::unordered_map<std::shared_ptr<Mesh>, std::shared_ptr<GASBuilder>> gasBuilderForStaticMeshes; // GASes for static meshes
+	std::unordered_map<std::shared_ptr<Entity>, std::shared_ptr<GASBuilder>>
+	    gasBuilderForEntities; // GASes for entities; Non-animated entities hold static meshes GASes
 	ASBuildScratchpad scratchpad;
 
 	std::mutex optixStructsMutex;

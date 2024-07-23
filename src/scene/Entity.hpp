@@ -16,10 +16,13 @@
 
 #include <utility>
 
+#include <variant>
+
 #include <APIObject.hpp>
 #include <RGLFields.hpp>
 #include <scene/Scene.hpp>
 #include <scene/Mesh.hpp>
+#include <scene/animator/ExternalAnimator.hpp>
 #include <math/Mat3x4f.hpp>
 
 /**
@@ -69,6 +72,23 @@ struct Entity : APIObject<Entity>
 	 */
 	std::optional<Mat3x4f> getPreviousFrameLocalToWorldTransform() const;
 
+	void applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCount);
+
+	bool isAnimated() const { return !std::holds_alternative<std::monostate>(animator); }
+
+	/**
+	 * Returns an array of deformed vertices due to animation.
+	 * If vertices were not animated, returns NULL (equivalent to an array of zero vectors).
+	 */
+	DeviceSyncArray<Vec3f>::Ptr getAnimatedVertices();
+
+	/**
+	 * Returns an array describing displacement of each vertex between current and previous state, due to animation.
+	 * If vertices were not animated in the previous frame, returns NULL (equivalent to an array of zero vectors).
+	 * @return Pointer do GPU-accessible array, same size as vertexCount. May be NULL.
+	 */
+	const Vec3f* getVertexDisplacementSincePrevFrame();
+
 private:
 	/**
 	 * Creates Entity with given mesh and identity transform.
@@ -93,4 +113,8 @@ private:
 
 	std::shared_ptr<Mesh> mesh{};
 	std::shared_ptr<Texture> intensityTexture{};
+
+	std::variant<std::monostate, ExternalAnimator> animator = std::monostate();
+	std::optional<Time> currentAnimationTime;
+	std::optional<Time> formerAnimationTime;
 };

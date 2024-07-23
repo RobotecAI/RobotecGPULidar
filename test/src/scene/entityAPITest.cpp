@@ -49,3 +49,23 @@ TEST_F(EntityTest, rgl_entity_set_pose)
 	// Correct set_pose
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTestTransform));
 }
+
+#define VERTICES cubeVertices
+#define INDICES cubeIndices
+
+TEST_F(EntityTest, rgl_entity_apply_external_animation)
+{
+	rgl_entity_t entity = makeEntity();
+
+	// Invalid args
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_apply_external_animation(nullptr, nullptr, 0), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_apply_external_animation(entity, nullptr, 0), "vertices != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_apply_external_animation(entity, VERTICES, 0), "vertex_count > 0");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_apply_external_animation(entity, VERTICES, ARRAY_SIZE(VERTICES) + 1),
+	                            "vertex counts do not match");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_apply_external_animation((rgl_entity_t) 0x1234, VERTICES, ARRAY_SIZE(VERTICES)),
+	                          "Entity 0x1234");
+
+	// Correct update_vertices
+	EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(entity, VERTICES, ARRAY_SIZE(VERTICES)));
+}

@@ -236,26 +236,6 @@ void TapeCore::tape_mesh_destroy(const YAML::Node& yamlNode, PlaybackState& stat
 	state.meshes.erase(meshId);
 }
 
-RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
-		CHECK_ARG(mesh != nullptr);
-		CHECK_ARG(vertices != nullptr);
-		CHECK_ARG(vertex_count > 0);
-		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
-		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
-	});
-	TAPE_HOOK(mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count);
-	return status;
-}
-
-void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackState& state)
-{
-	rgl_mesh_update_vertices(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()), state.getPtr<const rgl_vec3f>(yamlNode[1]),
-	                         yamlNode[2].as<int32_t>());
-}
-
 rgl_status_t rgl_mesh_is_alive(rgl_mesh_t mesh, bool* out_alive)
 {
 	auto status = rglSafeCall([&]() {
@@ -380,6 +360,27 @@ void TapeCore::tape_entity_set_laser_retro(const YAML::Node& yamlNode, PlaybackS
 {
 	rgl_entity_set_laser_retro(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
 	                           yamlNode[1].as<Field<LASER_RETRO_F32>::type>());
+}
+
+RGL_API rgl_status_t rgl_entity_apply_external_animation(rgl_entity_t entity, const rgl_vec3f* vertices, int32_t vertex_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_apply_external_animation(entity={}, vertices={})", (void*) entity,
+		            repr(vertices, vertex_count));
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(vertices != nullptr);
+		CHECK_ARG(vertex_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Entity::validatePtr(entity)->applyExternalAnimation(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
+	});
+	TAPE_HOOK(entity, TAPE_ARRAY(vertices, vertex_count), vertex_count);
+	return status;
+}
+
+void TapeCore::tape_entity_apply_external_animation(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_apply_external_animation(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                                    state.getPtr<const rgl_vec3f>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
 rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive)
