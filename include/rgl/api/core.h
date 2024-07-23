@@ -809,16 +809,6 @@ RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t*
 RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
 
 /**
- * Creates or modifies CompactPointsNode.
- * The Node removes non-hit points. In other words, it converts a point cloud into a dense one.
- * Graph input: point cloud
- * Graph output: point cloud (compacted)
- * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- */
-[[deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.")]] RGL_API rgl_status_t
-rgl_node_points_compact(rgl_node_t* node);
-
-/**
  * Creates or modifies CompactPointsByFieldNode.
  * The Node removes points if the given field is set to a non-zero value.
  * Currently supported fields are RGL_FIELD_IS_HIT_I32 and RGL_FIELD_IS_GROUND_I32.
