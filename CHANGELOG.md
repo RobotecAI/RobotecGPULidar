@@ -1,5 +1,45 @@
 # Change Log
 
+## [0.18.0] 24 July 2024
+
+### Added
+
+- Added radar object tracking feature
+  - Added API call to produce point cloud with radar objects
+    - `rgl_node_points_radar_track_objects`
+- Added mechanism to simulate fault injection
+  - Added API call to mask groups of rays
+    - `rgl_node_raytrace_configure_mask`
+- Added multi-return simulation
+  - Currently, this feature is limited to outputting a single return point cloud, but the user can select which return mode is simulated (first or last)
+  - Added API call to configure beam divergence
+    - `rgl_node_raytrace_configure_beam_divergence`
+  - Added API call to switch between return modes:
+    - `rgl_node_multi_return_switch`
+- Added new fields: `RGL_FIELD_INTENSITY_U8` and `RGL_FIELD_TIME_STAMP_U32`
+  - These fields are duplicates of existing fields but are stored in other data types
+- Added default intensity configuration
+  - Added API call to configure default intensity
+    - `rgl_node_raytrace_configure_default_intensity`
+  - Default intensity is considered when hitting entities with no intensity texture set
+
+### Changed
+
+- Renamed ROS2 field name for `RGL_FIELD_RING_ID`
+  - `ring` -> `channel`
+- Changed the content of time stamp fields (`RGL_FIELD_TIME_STAMP_F64` and `RGL_FIELD_TIME_STAMP_U32`)
+  - Previously, it was time on the scene when the raytrace is triggered
+  - Now, it holds the time have passed since the time of the raytrace trigger when given point was measured
+    - If velocity distortion is disabled, the time stamp for all points will be zero
+- Intensity value of the point is based on intensity texture of the entity and the incident angle
+  - Ihe influence of the incident angle was added
+
+### Removed
+
+- Removed deprecated API call
+  - `rgl_node_points_compact`
+  - Please use `rgl_node_points_compact_by_field` instead.
+
 ## [0.17.0] 11 June 2024
 
 ### Added
