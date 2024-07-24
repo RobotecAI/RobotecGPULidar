@@ -326,6 +326,7 @@ typedef enum : int32_t
 	/**
 	 * Strength of the returned signal captured by the LiDAR sensor.
 	 * It is simulated using intensity textures assigned to entities (see `rgl_entity_set_intensity_texture`).
+	 * The final value also depends on the incident angle of the ray hit.
 	 */
 	RGL_FIELD_INTENSITY_F32,
 	/**
