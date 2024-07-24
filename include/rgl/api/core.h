@@ -50,7 +50,7 @@
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 17
+#define RGL_VERSION_MINOR 18
 #define RGL_VERSION_PATCH 0
 
 // Invalid Entity ID is assign to rays that does not hit any Entity.
@@ -326,6 +326,7 @@ typedef enum : int32_t
 	/**
 	 * Strength of the returned signal captured by the LiDAR sensor.
 	 * It is simulated using intensity textures assigned to entities (see `rgl_entity_set_intensity_texture`).
+	 * The final value also depends on the incident angle of the ray hit.
 	 */
 	RGL_FIELD_INTENSITY_F32,
 	/**

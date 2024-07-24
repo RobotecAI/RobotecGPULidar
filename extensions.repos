@@ -2,10 +2,10 @@ repositories:
   extensions/udp:
     type: git
     url: git@github.com:RobotecAI/RGL-extension-udp.git
-    version: develop
+    version: v0.18.0
 
   extensions/weather:
     type: git
     url: git@github.com:RobotecAI/RGL-extension-weather.git
-    version: develop
+    version: v0.18.0
 
