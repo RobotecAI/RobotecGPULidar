@@ -39,6 +39,7 @@ void PlaybackState::clear()
 	meshes.clear();
 	entities.clear();
 	textures.clear();
+	skeletons.clear();
 	nodes.clear();
 }
 

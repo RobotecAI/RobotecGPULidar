@@ -51,6 +51,7 @@ struct PlaybackState
 	std::unordered_map<TapeAPIObjectID, rgl_mesh_t> meshes;
 	std::unordered_map<TapeAPIObjectID, rgl_entity_t> entities;
 	std::unordered_map<TapeAPIObjectID, rgl_texture_t> textures;
+	std::unordered_map<TapeAPIObjectID, rgl_skeleton_t> skeletons;
 	std::unordered_map<TapeAPIObjectID, rgl_node_t> nodes;
 
 private:
