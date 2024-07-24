@@ -186,6 +186,12 @@ typedef struct Entity* rgl_entity_t;
 typedef struct Texture* rgl_texture_t;
 
 /**
+ * Opaque handle representing a hierarchical structure of bones used in the mesh skinning.
+ * Each Skeleton can be referenced by any number of Entities.
+ */
+typedef struct Skeleton* rgl_skeleton_t;
+
+/**
  * Opaque handle for a computational graph node in RGL.
  * Represents a single computational step, e.g. introducing gaussian noise, raytracing or downsampling.
  * Nodes form a directed acyclic graph, dictating execution order.
@@ -621,6 +627,45 @@ RGL_API rgl_status_t rgl_texture_destroy(rgl_texture_t texture);
  * @param out_alive Boolean set to indicate if alive
  */
 RGL_API rgl_status_t rgl_texture_is_alive(rgl_texture_t texture, bool* out_alive);
+
+/******************************* SKELETON *******************************/
+
+/**
+ * Creates a Skeleton
+ * Skeleton is a hierarchical structure of bones used in the mesh skinning to animate a 3D model.
+ * It is bound to the entity (could be shared between multiple entities).
+ *
+ * Each bone in the Skeleton is characterized by its index, its parent's index, its restpose, and optionally its name.
+ * The index of each bone corresponds to its position in the arrays provided as parameters to this function.
+ * It is assumed that the root bone has an index of zero and is the first element in these arrays.
+ * The data at each index in the arrays corresponds to the bone with the same index.
+ *
+ * @param out_skeleton Handle to the created Skeleton.
+ * @param parent_idxes An array containing the parent index for each bone (zero-indexed).
+ *                     A negative value indicates the bone is a root bone (no parent).
+ * @param restposes An array containing inverse of the transformation matrix of the bone in restpose for each bone.
+ *                  Typically, the restpose is the same as the bindpose.
+ * @param names An array containing the names of the bones. This is used for debugging purposes.
+ *              Pass nullptr if names are not needed.
+ * @param bones_count The number of bones, which is the length of the `parent_idxes`, `restposes`, and `names` arrays.
+ */
+RGL_API rgl_status_t rgl_skeleton_create(rgl_skeleton_t* out_skeleton, const int32_t* parent_idxes,
+                                         const rgl_mat3x4f* restposes, const char** names, int32_t bones_count);
+
+/**
+ * Informs that the given Skeleton will be no longer used.
+ * The Skeleton will be destroyed after all referring Entities are destroyed.
+ * @param skeleton Skeleton to be marked as no longer needed
+ */
+RGL_API rgl_status_t rgl_skeleton_destroy(rgl_skeleton_t skeleton);
+
+/**
+ * Assigns value true to out_alive if the given skeleton is known and has not been destroyed,
+ * assigns value false otherwise.
+ * @param texture Skeleton to check if alive
+ * @param out_alive Boolean set to indicate if alive
+ */
+RGL_API rgl_status_t rgl_skeleton_is_alive(rgl_skeleton_t skeleton, bool* out_alive);
 
 /******************************** SCENE ********************************/
 

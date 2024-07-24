@@ -194,6 +194,13 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	auto textureRawData = generateCheckerboardTexture<TextureTexelFormat>(width, height);
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), width, height));
+
+	rgl_skeleton_t skeleton = nullptr;
+	std::vector<int32_t> parentIdxes = {-1, 0};
+	std::vector<rgl_mat3x4f> restposes = {Mat3x4f::identity().toRGL(), Mat3x4f::identity().toRGL()};
+	std::vector<const char*> names = {"b0", "b1"};
+	EXPECT_RGL_SUCCESS(rgl_skeleton_create(&skeleton, parentIdxes.data(), restposes.data(), names.data(), parentIdxes.size()));
+
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 
@@ -352,6 +359,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	EXPECT_RGL_SUCCESS(rgl_entity_destroy(entity));
 	EXPECT_RGL_SUCCESS(rgl_mesh_destroy(mesh));
 	EXPECT_RGL_SUCCESS(rgl_texture_destroy(texture));
+	EXPECT_RGL_SUCCESS(rgl_skeleton_destroy(skeleton));
 
 	EXPECT_RGL_SUCCESS(rgl_cleanup());
 

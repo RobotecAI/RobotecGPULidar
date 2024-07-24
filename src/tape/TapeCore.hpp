@@ -30,6 +30,8 @@ class TapeCore
 	static void tape_texture_destroy(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_create(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_destroy(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_skeleton_create(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_skeleton_destroy(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_set_pose(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_set_id(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_set_intensity_texture(const YAML::Node& yamlNode, PlaybackState& state);
@@ -85,6 +87,8 @@ class TapeCore
 		    TAPE_CALL_MAPPING("rgl_mesh_set_texture_coords", TapeCore::tape_mesh_set_texture_coords),
 		    TAPE_CALL_MAPPING("rgl_texture_create", TapeCore::tape_texture_create),
 		    TAPE_CALL_MAPPING("rgl_texture_destroy", TapeCore::tape_texture_destroy),
+		    TAPE_CALL_MAPPING("rgl_skeleton_create", TapeCore::tape_skeleton_create),
+		    TAPE_CALL_MAPPING("rgl_skeleton_destroy", TapeCore::tape_skeleton_destroy),
 		    TAPE_CALL_MAPPING("rgl_entity_create", TapeCore::tape_entity_create),
 		    TAPE_CALL_MAPPING("rgl_entity_destroy", TapeCore::tape_entity_destroy),
 		    TAPE_CALL_MAPPING("rgl_entity_set_pose", TapeCore::tape_entity_set_pose),

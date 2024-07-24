@@ -23,6 +23,7 @@
 #include <scene/Entity.hpp>
 #include <scene/Mesh.hpp>
 #include <scene/Texture.hpp>
+#include <scene/Skeleton.hpp>
 
 #include <graph/NodesCore.hpp>
 #include <graph/GraphRunCtx.hpp>
@@ -157,6 +158,7 @@ RGL_API rgl_status_t rgl_cleanup(void)
 		Entity::instances.clear();
 		Mesh::instances.clear();
 		Texture::instances.clear();
+		Skeleton::instances.clear();
 		Scene::instance().clear();
 	});
 	TAPE_HOOK();
@@ -443,6 +445,61 @@ rgl_status_t rgl_texture_is_alive(rgl_texture_t texture, bool* out_alive)
 		*out_alive = Texture::instances.contains(texture);
 	});
 	TAPE_HOOK(texture, out_alive);
+	return status;
+}
+
+rgl_status_t rgl_skeleton_create(rgl_skeleton_t* out_skeleton, const int32_t* parent_idxes, const rgl_mat3x4f* restposes,
+                                 const char** names, int32_t bones_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_skeleton_create(out_skeleton={}, parent_idxes={}, restposes={}, names={})", (void*) out_skeleton,
+		            repr(parent_idxes, bones_count), repr(restposes, bones_count),
+		            names == nullptr ? "nullptr" : repr(names, bones_count));
+		CHECK_ARG(out_skeleton != nullptr);
+		CHECK_ARG(parent_idxes != nullptr);
+		CHECK_ARG(restposes != nullptr);
+		CHECK_ARG(bones_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		*out_skeleton = Skeleton::create(parent_idxes, restposes, names, bones_count).get();
+	});
+	TAPE_HOOK(out_skeleton, TAPE_ARRAY(parent_idxes, bones_count), TAPE_ARRAY(restposes, bones_count), names, bones_count);
+	return status;
+}
+
+void TapeCore::tape_skeleton_create(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_skeleton_t skeleton = nullptr;
+	rgl_skeleton_create(&skeleton, state.getPtr<const int32_t>(yamlNode[1]), state.getPtr<const rgl_mat3x4f>(yamlNode[2]),
+	                    nullptr, yamlNode[4].as<int32_t>());
+	state.skeletons.insert(std::make_pair(yamlNode[0].as<TapeAPIObjectID>(), skeleton));
+}
+
+rgl_status_t rgl_skeleton_destroy(rgl_skeleton_t skeleton)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_skeleton_destroy(skeleton={})", (void*) skeleton);
+		CHECK_ARG(skeleton != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Skeleton::release(skeleton);
+	});
+	TAPE_HOOK(skeleton);
+	return status;
+}
+
+void TapeCore::tape_skeleton_destroy(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto skeletonId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_skeleton_destroy(state.skeletons.at(skeletonId));
+	state.skeletons.erase(skeletonId);
+}
+
+rgl_status_t rgl_skeleton_is_alive(rgl_skeleton_t skeleton, bool* out_alive)
+{
+	auto status = rglSafeCall([&]() {
+		CHECK_ARG(out_alive != nullptr);
+		//		*out_alive = Skeleton::instances.contains(skeleton);
+	});
+	TAPE_HOOK(skeleton, out_alive);
 	return status;
 }
 
