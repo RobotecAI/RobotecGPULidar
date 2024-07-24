@@ -32,7 +32,7 @@
   - Now, it holds the time have passed since the time of the raytrace trigger when given point was measured
     - If velocity distortion is disabled, the time stamp for all points will be zero
 - Intensity value of the point is based on intensity texture of the entity and the incident angle
-  - Ihe influence of the incident angle was added
+  - The influence of the incident angle was added
 
 ### Removed
 
