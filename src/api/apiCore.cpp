@@ -460,7 +460,7 @@ rgl_status_t rgl_skeleton_create(rgl_skeleton_t* out_skeleton, const int32_t* pa
 		CHECK_ARG(restposes != nullptr);
 		CHECK_ARG(bones_count > 0);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
-		*out_skeleton = Skeleton::create(parent_idxes, restposes, names, bones_count).get();
+		*out_skeleton = Skeleton::create(parent_idxes, reinterpret_cast<const Mat3x4f*>(restposes), names, bones_count).get();
 	});
 	TAPE_HOOK(out_skeleton, TAPE_ARRAY(parent_idxes, bones_count), TAPE_ARRAY(restposes, bones_count), names, bones_count);
 	return status;
@@ -497,7 +497,7 @@ rgl_status_t rgl_skeleton_is_alive(rgl_skeleton_t skeleton, bool* out_alive)
 {
 	auto status = rglSafeCall([&]() {
 		CHECK_ARG(out_alive != nullptr);
-		//		*out_alive = Skeleton::instances.contains(skeleton);
+		*out_alive = Skeleton::instances.contains(skeleton);
 	});
 	TAPE_HOOK(skeleton, out_alive);
 	return status;

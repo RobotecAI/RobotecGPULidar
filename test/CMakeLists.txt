@@ -46,6 +46,7 @@ set(RGL_TEST_FILES
     src/scene/entityLaserRetroTest.cpp
     src/scene/entityVelocityTest.cpp
     src/scene/meshAPITest.cpp
+    src/scene/skeletonTest.cpp
     src/scene/textureTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/graphThreadSynchronization.cpp
