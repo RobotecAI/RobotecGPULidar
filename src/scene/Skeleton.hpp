@@ -14,15 +14,29 @@
 
 #pragma once
 
-#include <rgl/api/core.h>
+#include <set>
+#include <vector>
+#include <optional>
+
+#include <math/Mat3x4f.hpp>
 #include <APIObject.hpp>
+
+struct Bone
+{
+	std::optional<std::string> name{std::nullopt};
+	std::set<int32_t> childIdxes{};
+	Mat3x4f restposeToModelTransform{};
+};
 
 struct Skeleton : APIObject<Skeleton>
 {
 	friend APIObject<Skeleton>;
 
-private:
-	Skeleton(const int32_t* parentIdxes, const rgl_mat3x4f* restposes, const char** names, std::size_t bones_count) {}
+	const std::vector<Bone>& getBones() const { return bones; }
 
 private:
+	Skeleton(const int32_t* parentIdxes, const Mat3x4f* restposes, const char** names, std::size_t bonesCount);
+
+private:
+	std::vector<Bone> bones{};
 };
