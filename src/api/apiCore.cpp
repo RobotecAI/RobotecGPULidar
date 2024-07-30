@@ -219,6 +219,28 @@ void TapeCore::tape_mesh_set_texture_coords(const YAML::Node& yamlNode, Playback
 	                            yamlNode[2].as<int32_t>());
 }
 
+RGL_API rgl_status_t rgl_mesh_set_bone_weights(rgl_mesh_t mesh, const rgl_bone_weights_t* bone_weights,
+                                               int32_t bone_weights_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_mesh_set_bone_weights(mesh={}, bone_weights={})", (void*) mesh,
+		            repr(bone_weights, bone_weights_count));
+		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(bone_weights != nullptr);
+		CHECK_ARG(bone_weights_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Mesh::validatePtr(mesh)->setBoneWeights(bone_weights, bone_weights_count);
+	});
+	TAPE_HOOK(mesh, TAPE_ARRAY(bone_weights, bone_weights_count), bone_weights_count);
+	return status;
+}
+
+void TapeCore::tape_mesh_set_bone_weights(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_mesh_set_bone_weights(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                          state.getPtr<const rgl_bone_weights_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
+}
+
 RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {

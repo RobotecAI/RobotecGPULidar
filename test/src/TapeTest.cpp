@@ -181,6 +181,10 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
 
+	std::vector<rgl_bone_weights_t> boneWeights(ARRAY_SIZE(cubeVertices));
+	memset(boneWeights.data(), 0, sizeof(rgl_bone_weights_t) * boneWeights.size()); // zero all bone weights
+	EXPECT_RGL_SUCCESS(rgl_mesh_set_bone_weights(mesh, boneWeights.data(), boneWeights.size()));
+
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
