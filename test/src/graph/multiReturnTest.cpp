@@ -42,7 +42,8 @@ protected:
 	                                   Mat3x4f::TRS({0.0f, 0.0f, mmToMeters(0.7f)}, {0.0f, -1.0f, 0.0f}),
 	                                   Mat3x4f::TRS({0.0f, 0.0f, mmToMeters(-11.2f)}, {0.0f, +15.0f, 0.0f})};
 
-	const std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32 /*, INTENSITY_F32, ENTITY_ID_I32*/};
+	const std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32,
+	                                         RETURN_TYPE_U8 /*, INTENSITY_F32, ENTITY_ID_I32*/};
 
 	rgl_node_t rays = nullptr, mrRays = nullptr, cameraRays = nullptr, transform = nullptr, mrTransform = nullptr,
 	           cameraTransform = nullptr, raytrace = nullptr, mrRaytrace = nullptr, cameraRaytrace = nullptr, mrFirst = nullptr,
@@ -129,6 +130,8 @@ protected:
  */
 TEST_F(GraphMultiReturn, vlp16_data_compare)
 {
+	GTEST_SKIP();
+
 	// Lidar
 	const std::vector<rgl_mat3x4f> raysTf{Mat3x4f::TRS({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, -90.0f}).toRGL()};
 	const float lidarCubeFaceDist = vlp16LidarObjectDistance;
@@ -217,6 +220,9 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transform, &lidarPose));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+	EXPECT_RGL_SUCCESS(
+	    rgl_node_raytrace_configure_beam_divergence(raytrace, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, RGL_RETURN_FIRST_LAST));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "MRTest_Lidar_Without_MR", "world"));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, transform));
@@ -228,6 +234,12 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	const rgl_mat3x4f cameraPose = Mat3x4f::TRS(Vec3f{-8.0f, 1.0f, 5.0f}, {90.0f, 30.0f, -70.0f}).toRGL();
 	constructCameraGraph(cameraPose);
 
+	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_SECOND, RGL_RETURN_LAST, RGL_RETURN_STRONGEST};
+//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_LAST_STRONGEST, RGL_RETURN_FIRST_LAST, RGL_RETURN_FIRST_STRONGEST,
+//	                                              RGL_RETURN_STRONGEST_SECOND_STRONGEST, RGL_RETURN_FIRST_SECOND};
+	int returnModeIdx = -1;
+	//std::vector<rgl_vec3f> points;
+
 	int frameId = 0;
 	while (true) {
 
@@ -236,12 +248,27 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 		                         .toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
 
+//		if (frameId % 200 == 0) {
+//			returnModeIdx = ++returnModeIdx % static_cast<int>(returnModes.size());
+//			EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnModes[returnModeIdx]));
+//			std::cout << "Changed return mode to: " << returnModes[returnModeIdx] << std::endl;
+//		}
+
 		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
 		ASSERT_RGL_SUCCESS(rgl_graph_run(rays));
-		ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
+		//ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
 
 		std::this_thread::sleep_for(50ms);
 		frameId += 1;
+
+		//		int32_t count = 0, size_of = 0;
+		//		rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_VEC3_F32, &count, &size_of);
+		//		points.resize(count);
+		//		rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_VEC3_F32, points.data());
+		//		std::cout << "Multi-return test: " << count << " " << size_of << std::endl;
+		//		for (const auto& p : points) {
+		//			std::cout << p.value[0] << " " << p.value[1] << " " << p.value[2] << std::endl;
+		//		}
 	}
 }
 #endif

@@ -33,54 +33,33 @@ static constexpr float toDeg = (180.0f / M_PI);
 extern "C" static __constant__ RaytraceRequestContext ctx;
 
 // Helper functions
-template<bool isFinite>
-__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, int objectID, const Vec3f& absVelocity,
-                              const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle,
-                              float laserRetro);
-__device__ void saveNonHitRayResult(float nonHitDistance);
+//template<bool isFinite>
+//__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, int objectID, const Vec3f& absVelocity,
+//                              const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle,
+//                              float laserRetro);
+//__device__ void saveNonHitRayResult(float nonHitDistance);
+__device__ void saveSampleAsNonHit(int sampleIdx, float nonHitDistance);
+__device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, float laserRetro, int objectID,
+                                const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal,
+                                float incidentAngle);
+__device__ void saveNonHitBeamSamples(int beamIdx, float nonHitDistance);
+__device__ void saveBeamSharedData(int beamIdx, const Mat3x4f& rayLocal);
 __device__ void shootSamplingRay(const Mat3x4f& ray, float maxRange, unsigned sampleBeamIdx);
 __device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vHalfDivergenceRad, unsigned layerIdx,
                                               unsigned vertexIdx);
 
 extern "C" __global__ void __raygen__()
 {
-	if (ctx.scene == 0) {
-		saveNonHitRayResult(
-		    ctx.farNonHitDistance); // TODO(prybicki): Remove this, assume that host code will not pass invalid scene.
-		return;
-	}
-
 	const int rayIdx = static_cast<int>(optixGetLaunchIndex().x);
-
-	if (ctx.rayMask != nullptr && ctx.rayMask[rayIdx] == 0) {
-		saveNonHitRayResult(ctx.farNonHitDistance);
-		return;
-	}
-
 	Mat3x4f ray = ctx.raysWorld[rayIdx];
 	const Mat3x4f rayLocal =
 	    ctx.rayOriginToWorld.inverse() *
 	    ray; // TODO(prybicki): instead of computing inverse, we should pass rays in local CF and then transform them to world CF.
 
-	// Assuming up vector is Y, forward vector is Z (true for Unity).
-	// TODO(msz-rai): allow to define up and forward vectors in RGL
-	// Assuming rays are generated in left-handed coordinate system with the rotation applied in ZXY order.
-	// TODO(msz-rai): move ray generation to RGL to unify rotations
-	if (ctx.azimuth != nullptr) {
-		ctx.azimuth[rayIdx] = rayLocal.toRotationYOrderZXYLeftHandRad();
-	}
-	if (ctx.elevation != nullptr) {
-		ctx.elevation[rayIdx] = rayLocal.toRotationXOrderZXYLeftHandRad();
-	}
-
-	if (ctx.timestampF64 != nullptr) {
-		ctx.timestampF64[rayIdx] = ctx.doApplyDistortion ? ctx.rayTimeOffsetsMs[rayIdx] * 1e-3f : 0; // in seconds
-	}
-	if (ctx.timestampU32 != nullptr) {
-		ctx.timestampU32[rayIdx] = ctx.doApplyDistortion ?
-		                               static_cast<uint32_t>(ctx.rayTimeOffsetsMs[rayIdx] * 1e6f) // in nanoseconds
-		                               :
-		                               0;
+	saveBeamSharedData(rayIdx, rayLocal);
+	if (ctx.rayMask != nullptr && ctx.rayMask[rayIdx] == 0) {
+		saveNonHitBeamSamples(rayIdx, ctx.farNonHitDistance);
+		return;
 	}
 
 	if (ctx.doApplyDistortion) {
@@ -115,10 +94,11 @@ extern "C" __global__ void __miss__()
 {
 	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
 	const int beamSampleIdx = static_cast<int>(optixGetPayload_0());
-	ctx.mrSamples.isHit[beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleIdx] = false;
-	if (beamSampleIdx == 0) {
-		saveNonHitRayResult(ctx.farNonHitDistance);
-	}
+	//	ctx.mrSamples.isHit[beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleIdx] = false;
+	//	if (beamSampleIdx == 0) {
+	//		saveNonHitRayResult(ctx.farNonHitDistance);
+	//	}
+	saveSampleAsNonHit(beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleIdx, ctx.farNonHitDistance);
 }
 
 extern "C" __global__ void __closesthit__()
@@ -143,7 +123,7 @@ extern "C" __global__ void __closesthit__()
 	const unsigned beamSampleRayIdx = optixGetPayload_0();
 	const unsigned circleIdx = (beamSampleRayIdx - 1) / MULTI_RETURN_BEAM_VERTICES;
 	const unsigned vertexIdx = (beamSampleRayIdx - 1) % MULTI_RETURN_BEAM_VERTICES;
-	const unsigned mrSamplesIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
+	const unsigned mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
 	const Vec3f beamSampleOrigin = optixGetWorldRayOrigin();
 	const int entityId = static_cast<int>(optixGetInstanceId());
 	const float laserRetro = entityData.laserRetro;
@@ -171,11 +151,13 @@ extern "C" __global__ void __closesthit__()
 	// Early out for points that are too close to the sensor
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
-		ctx.mrSamples.isHit[mrSamplesIdx] = false;
-		if (beamSampleRayIdx == 0) {
-			saveNonHitRayResult(ctx.nearNonHitDistance);
-		}
+		saveSampleAsNonHit(mrSampleIdx, ctx.nearNonHitDistance);
 		return;
+		//		ctx.mrSamples.isHit[mrSamplesIdx] = false;
+		//		if (beamSampleRayIdx == 0) {
+		//			saveNonHitRayResult(ctx.nearNonHitDistance);
+		//		}
+		//		return;
 	}
 
 	// Normal vector
@@ -208,12 +190,16 @@ extern "C" __global__ void __closesthit__()
 	}
 	intensity *= cosIncidentAngle;
 
+	//	ctx.samplesIsHit[mrSamplesIdx] = true;
+	//	ctx.samplesDistance[mrSamplesIdx] = static_cast<float>(distance);
+	//	ctx.samplesIntensity[mrSamplesIdx] = intensity;
+
 	// Save sub-sampling results
-	ctx.mrSamples.isHit[mrSamplesIdx] = true;
-	ctx.mrSamples.distance[mrSamplesIdx] = distance;
-	if (beamSampleRayIdx != 0) {
-		return;
-	}
+	//	ctx.mrSamples.isHit[mrSamplesIdx] = true;
+	//	ctx.mrSamples.distance[mrSamplesIdx] = distance;
+	//	if (beamSampleRayIdx != 0) {
+	//		return;
+	//	}
 
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
@@ -260,8 +246,16 @@ extern "C" __global__ void __closesthit__()
 
 		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
-	saveRayResult<true>(hitWorldSeenBySensor, distance, intensity, entityId, absPointVelocity, relPointVelocity, radialSpeed,
-	                    wNormal, incidentAngle, laserRetro);
+
+	saveSampleAsHit(mrSampleIdx, distance, intensity, laserRetro, entityId, absPointVelocity, relPointVelocity, radialSpeed,
+	                wNormal, incidentAngle);
+
+	//	printf("sample idx: %d distance: %f xyz: %f %f %f mr samples xyz: %f %f %f\n", mrSampleIdx, distance,
+	//	       hitWorldSeenBySensor.x(), hitWorldSeenBySensor.y(), hitWorldSeenBySensor.z(), ctx.mrSamples.xyz[mrSampleIdx].x(),
+	//	       ctx.mrSamples.xyz[mrSampleIdx].y(), ctx.mrSamples.xyz[mrSampleIdx].z());
+
+	//	saveRayResult<true>(hitWorldSeenBySensor, distance, intensity, entityId, absPointVelocity, relPointVelocity, radialSpeed,
+	//	                    wNormal, incidentAngle, laserRetro);
 }
 
 extern "C" __global__ void __anyhit__() {}
@@ -296,66 +290,140 @@ __device__ Mat3x4f makeBeamSampleRayTransform(float hHalfDivergenceRad, float vH
 	return Mat3x4f::rotationRad(vAngle, 0.0f, 0.0f) * Mat3x4f::rotationRad(0.0f, hAngle, 0.0f);
 }
 
-__device__ void saveNonHitRayResult(float nonHitDistance)
+__device__ void saveSampleAsNonHit(int sampleIdx, float nonHitDistance)
 {
-	Mat3x4f ray = ctx.raysWorld[optixGetLaunchIndex().x];
-	Vec3f origin = ray * Vec3f{0, 0, 0};
-	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
-	Vec3f displacement = dir.normalized() * nonHitDistance;
-	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
-	                isnan(displacement.z()) ? 0 : displacement.z()};
-	Vec3f xyz = origin + displacement;
-	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.0f, Vec3f{NAN}, NAN, 0.0f);
+	ctx.mrSamples.isHit[sampleIdx] = false;
+	ctx.mrSamples.distance[sampleIdx] = nonHitDistance;
 }
 
-template<bool isFinite>
-__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID, const Vec3f& absVelocity,
-                              const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle,
-                              float laserRetro)
+__device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, float laserRetro, int objectID,
+                                const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal,
+                                float incidentAngle)
 {
-	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
-	if (ctx.xyz != nullptr) {
-		// Return actual XYZ of the hit point or infinity vector.
-		ctx.xyz[beamIdx] = xyz;
+	ctx.mrSamples.isHit[sampleIdx] = true;
+	ctx.mrSamples.distance[sampleIdx] = distance;
+	ctx.mrSamples.intensity[sampleIdx] = intensity;
+
+	if (ctx.mrSamples.laserRetro != nullptr) {
+		ctx.mrSamples.laserRetro[sampleIdx] = laserRetro;
 	}
-	if (ctx.isHit != nullptr) {
-		ctx.isHit[beamIdx] = isFinite;
+	if (ctx.mrSamples.entityId != nullptr) {
+		ctx.mrSamples.entityId[sampleIdx] = objectID;
 	}
-	if (ctx.rayIdx != nullptr) {
-		ctx.rayIdx[beamIdx] = beamIdx;
+	if (ctx.mrSamples.absVelocity != nullptr) {
+		ctx.mrSamples.absVelocity[sampleIdx] = absVelocity;
 	}
-	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
-		ctx.ringIdx[beamIdx] = ctx.ringIds[beamIdx % ctx.ringIdsCount];
+	if (ctx.mrSamples.relVelocity != nullptr) {
+		ctx.mrSamples.relVelocity[sampleIdx] = relVelocity;
 	}
-	if (ctx.distance != nullptr) {
-		ctx.distance[beamIdx] = distance;
+	if (ctx.mrSamples.radialSpeed != nullptr) {
+		ctx.mrSamples.radialSpeed[sampleIdx] = radialSpeed;
 	}
-	if (ctx.intensityF32 != nullptr) {
-		ctx.intensityF32[beamIdx] = intensity;
+	if (ctx.mrSamples.normal != nullptr) {
+		ctx.mrSamples.normal[sampleIdx] = normal;
 	}
-	if (ctx.intensityU8 != nullptr) {
-		// intensity < 0 not possible
-		ctx.intensityU8[beamIdx] = intensity < UINT8_MAX ? static_cast<uint8_t>(std::round(intensity)) : UINT8_MAX;
-	}
-	if (ctx.entityId != nullptr) {
-		ctx.entityId[beamIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
-	}
-	if (ctx.pointAbsVelocity != nullptr) {
-		ctx.pointAbsVelocity[beamIdx] = absVelocity;
-	}
-	if (ctx.pointRelVelocity != nullptr) {
-		ctx.pointRelVelocity[beamIdx] = relVelocity;
-	}
-	if (ctx.radialSpeed != nullptr) {
-		ctx.radialSpeed[beamIdx] = radialSpeed;
-	}
-	if (ctx.normal != nullptr) {
-		ctx.normal[beamIdx] = normal;
-	}
-	if (ctx.incidentAngle != nullptr) {
-		ctx.incidentAngle[beamIdx] = incidentAngle;
-	}
-	if (ctx.laserRetro != nullptr) {
-		ctx.laserRetro[beamIdx] = laserRetro;
+	if (ctx.mrSamples.incidentAngle != nullptr) {
+		ctx.mrSamples.incidentAngle[sampleIdx] = incidentAngle;
 	}
 }
+
+__device__ void saveNonHitBeamSamples(int beamIdx, float nonHitDistance)
+{
+	for (int sampleIdx = beamIdx; sampleIdx < beamIdx + MULTI_RETURN_BEAM_SAMPLES; ++sampleIdx) {
+		saveSampleAsNonHit(sampleIdx, nonHitDistance);
+	}
+}
+
+__device__ void saveBeamSharedData(int beamIdx, const Mat3x4f& rayLocal)
+{
+	for (int returnPointIdx = beamIdx; returnPointIdx < beamIdx + ctx.returnCount; ++returnPointIdx) {
+		if (ctx.rayIdx != nullptr) {
+			ctx.rayIdx[returnPointIdx] = beamIdx;
+		}
+
+		// Assuming up vector is Y, forward vector is Z (true for Unity).
+		// TODO(msz-rai): allow to define up and forward vectors in RGL
+		// Assuming rays are generated in left-handed coordinate system with the rotation applied in ZXY order.
+		// TODO(msz-rai): move ray generation to RGL to unify rotations
+		if (ctx.azimuth != nullptr) {
+			ctx.azimuth[returnPointIdx] = rayLocal.toRotationYOrderZXYLeftHandRad();
+		}
+		if (ctx.elevation != nullptr) {
+			ctx.elevation[returnPointIdx] = rayLocal.toRotationXOrderZXYLeftHandRad();
+		}
+
+		if (ctx.timestampF64 != nullptr) {
+			ctx.timestampF64[returnPointIdx] = ctx.doApplyDistortion ? ctx.rayTimeOffsetsMs[beamIdx] * 1e-3f : 0; // in seconds
+		}
+		if (ctx.timestampU32 != nullptr) {
+			ctx.timestampU32[returnPointIdx] = ctx.doApplyDistortion ?
+			                                       static_cast<uint32_t>(ctx.rayTimeOffsetsMs[beamIdx] * 1e6f) // in nanoseconds
+			                                       :
+			                                       0;
+		}
+	}
+}
+
+//__device__ void saveNonHitRayResult(float nonHitDistance)
+//{
+//	Mat3x4f ray = ctx.raysWorld[optixGetLaunchIndex().x];
+//	Vec3f origin = ray * Vec3f{0, 0, 0};
+//	Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+//	Vec3f displacement = dir.normalized() * nonHitDistance;
+//	displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
+//	                isnan(displacement.z()) ? 0 : displacement.z()};
+//	Vec3f xyz = origin + displacement;
+//	saveRayResult<false>(xyz, nonHitDistance, 0, RGL_ENTITY_INVALID_ID, Vec3f{NAN}, Vec3f{NAN}, 0.0f, Vec3f{NAN}, NAN, 0.0f);
+//}
+
+//template<bool isFinite>
+//__device__ void saveRayResult(const Vec3f& xyz, float distance, float intensity, const int objectID, const Vec3f& absVelocity,
+//                              const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal, float incidentAngle,
+//                              float laserRetro)
+//{
+//	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
+//	if (ctx.xyz != nullptr) {
+//		// Return actual XYZ of the hit point or infinity vector.
+//		ctx.xyz[beamIdx] = xyz;
+//	}
+//	if (ctx.isHit != nullptr) {
+//		ctx.isHit[beamIdx] = isFinite;
+//	}
+//	if (ctx.rayIdx != nullptr) {
+//		ctx.rayIdx[beamIdx] = beamIdx;
+//	}
+//	if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
+//		ctx.ringIdx[beamIdx] = ctx.ringIds[beamIdx % ctx.ringIdsCount];
+//	}
+//	if (ctx.distance != nullptr) {
+//		ctx.distance[beamIdx] = distance;
+//	}
+//	if (ctx.intensityF32 != nullptr) {
+//		ctx.intensityF32[beamIdx] = intensity;
+//	}
+//	if (ctx.intensityU8 != nullptr) {
+//		// intensity < 0 not possible
+//		ctx.intensityU8[beamIdx] = intensity < UINT8_MAX ? static_cast<uint8_t>(std::round(intensity)) : UINT8_MAX;
+//	}
+//	if (ctx.entityId != nullptr) {
+//		ctx.entityId[beamIdx] = isFinite ? objectID : RGL_ENTITY_INVALID_ID;
+//	}
+//	if (ctx.pointAbsVelocity != nullptr) {
+//		ctx.pointAbsVelocity[beamIdx] = absVelocity;
+//	}
+//	if (ctx.pointRelVelocity != nullptr) {
+//		ctx.pointRelVelocity[beamIdx] = relVelocity;
+//	}
+//	if (ctx.radialSpeed != nullptr) {
+//		ctx.radialSpeed[beamIdx] = radialSpeed;
+//	}
+//	if (ctx.normal != nullptr) {
+//		ctx.normal[beamIdx] = normal;
+//	}
+//	if (ctx.incidentAngle != nullptr) {
+//		ctx.incidentAngle[beamIdx] = incidentAngle;
+//	}
+//	if (ctx.laserRetro != nullptr) {
+//		ctx.laserRetro[beamIdx] = laserRetro;
+//	}
+//}

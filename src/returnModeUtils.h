@@ -18,5 +18,5 @@
 
 inline size_t getReturnCount(rgl_return_mode_t returnMode)
 {
-	return static_cast<size_t>(returnMode >> RGL_RETURN_MODE_RETURNS_BIT_SHIFT);
+	return static_cast<size_t>(returnMode >> RGL_RETURN_MODE_BIT_SHIFT);
 }

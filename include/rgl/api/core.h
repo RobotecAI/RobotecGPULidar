@@ -423,43 +423,57 @@ typedef enum : int32_t
 } rgl_field_t;
 
 /**
+ * Bitshift and masks for coding return modes and types. Most significant byte encodes the number of returns. Return mode is
+ * encoded on 8 most significant bits (24-31) - 1 for single return mode, 2 for dual return. Remaining 24 bits are for encoding
+ * return type. First return is on 8 LEAST significant bits (0-7), and next 8 bits (8-15) are for second return. Bits 16-23 are
+ * not used at this moment - in the future e.g. the third return may be encoded there. Return type comes from rgl_return_type_t.
+ * Example: RGL_RETURN_LAST_STRONGEST would be encoded as:
+ * 		0x02000201
+ * 			02 - dual return
+ * 			00 - not used bits
+ * 			02 - second return - RGL_RETURN_TYPE_LAST
+ *			01 - first return - RGL_RETURN_TYPE_STRONGEST
+ */
+const int32_t RGL_RETURN_MODE_BIT_SHIFT = 24;
+const int32_t RGL_RETURN_MODE_SINGLE = 1 << RGL_RETURN_MODE_BIT_SHIFT;
+const int32_t RGL_RETURN_MODE_DUAL = 2 << RGL_RETURN_MODE_BIT_SHIFT;
+const int32_t RGL_RETURN_TYPE_BIT_SHIFT = 8;
+
+/**
  * Kinds of return types for multi-return LiDAR output.
  */
 typedef enum : uint8_t
 {
-	RGL_RETURN_TYPE_UNKNOWN = 1 << 0,
-	RGL_RETURN_TYPE_STRONGEST = 1 << 1,
-	RGL_RETURN_TYPE_LAST = 1 << 2,
-	RGL_RETURN_TYPE_SECOND = 1 << 3,
-	RGL_RETURN_TYPE_FIRST = 1 << 4,
-	RGL_RETURN_TYPE_SECOND_STRONGEST = 1 << 5,
+	RGL_RETURN_TYPE_UNKNOWN = 0,
+	RGL_RETURN_TYPE_STRONGEST = 1,
+	RGL_RETURN_TYPE_LAST = 2,
+	RGL_RETURN_TYPE_SECOND = 3,
+	RGL_RETURN_TYPE_FIRST = 4,
+	RGL_RETURN_TYPE_SECOND_STRONGEST = 5,
 } rgl_return_type_t;
-
-/**
- * Bitshift and masks for coding return mode. Most significant byte encodes the number of returns.
- */
-const int32_t RGL_RETURN_MODE_RETURNS_BIT_SHIFT = 24;
-const int32_t RGL_RETURN_MODE_SINGLE_MASK = 1 << RGL_RETURN_MODE_RETURNS_BIT_SHIFT;
-const int32_t RGL_RETURN_MODE_DUAL_MASK = 2 << RGL_RETURN_MODE_RETURNS_BIT_SHIFT;
 
 /**
  * Kinds of return modes for multi-return LiDAR output.
  */
 typedef enum : int32_t
 {
-	RGL_RETURN_MODE_UNKNOWN = RGL_RETURN_TYPE_UNKNOWN,
+	RGL_RETURN_UNKNOWN = RGL_RETURN_TYPE_UNKNOWN,
 	// Single return modes
-	RGL_RETURN_FIRST = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_FIRST,
-	RGL_RETURN_SECOND = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_SECOND,
-	RGL_RETURN_LAST = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_LAST,
-	RGL_RETURN_STRONGEST = RGL_RETURN_MODE_SINGLE_MASK | RGL_RETURN_TYPE_STRONGEST,
+	RGL_RETURN_FIRST = RGL_RETURN_MODE_SINGLE | RGL_RETURN_TYPE_FIRST,
+	RGL_RETURN_SECOND = RGL_RETURN_MODE_SINGLE | RGL_RETURN_TYPE_SECOND,
+	RGL_RETURN_LAST = RGL_RETURN_MODE_SINGLE | RGL_RETURN_TYPE_LAST,
+	RGL_RETURN_STRONGEST = RGL_RETURN_MODE_SINGLE | RGL_RETURN_TYPE_STRONGEST,
 	// Dual return modes
-	RGL_RETURN_LAST_STRONGEST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_LAST | RGL_RETURN_TYPE_STRONGEST,
-	RGL_RETURN_FIRST_LAST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_FIRST | RGL_RETURN_TYPE_LAST,
-	RGL_RETURN_FIRST_STRONGEST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_FIRST | RGL_RETURN_TYPE_STRONGEST,
-	RGL_RETURN_STRONGEST_SECOND_STRONGEST = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_STRONGEST |
-	                                        RGL_RETURN_TYPE_SECOND_STRONGEST,
-	RGL_RETURN_FIRST_SECOND = RGL_RETURN_MODE_DUAL_MASK | RGL_RETURN_TYPE_FIRST | RGL_RETURN_TYPE_SECOND,
+	RGL_RETURN_LAST_STRONGEST = RGL_RETURN_MODE_DUAL | (RGL_RETURN_TYPE_LAST) |
+	                            (RGL_RETURN_TYPE_STRONGEST << RGL_RETURN_TYPE_BIT_SHIFT),
+	RGL_RETURN_FIRST_LAST = RGL_RETURN_MODE_DUAL | (RGL_RETURN_TYPE_FIRST) |
+	                        (RGL_RETURN_TYPE_LAST << RGL_RETURN_TYPE_BIT_SHIFT),
+	RGL_RETURN_FIRST_STRONGEST = RGL_RETURN_MODE_DUAL | (RGL_RETURN_TYPE_FIRST) |
+	                             (RGL_RETURN_TYPE_STRONGEST << RGL_RETURN_TYPE_BIT_SHIFT),
+	RGL_RETURN_STRONGEST_SECOND_STRONGEST = RGL_RETURN_MODE_DUAL | (RGL_RETURN_TYPE_STRONGEST) |
+	                                        (RGL_RETURN_TYPE_SECOND_STRONGEST << RGL_RETURN_TYPE_BIT_SHIFT),
+	RGL_RETURN_FIRST_SECOND = RGL_RETURN_MODE_DUAL | (RGL_RETURN_TYPE_FIRST) |
+	                          (RGL_RETURN_TYPE_SECOND << RGL_RETURN_TYPE_BIT_SHIFT),
 } rgl_return_mode_t;
 
 /**
@@ -876,7 +890,7 @@ RGL_API rgl_status_t rgl_node_points_compact_by_field(rgl_node_t* node, rgl_fiel
  * Creates or modifies SpatialMergePointsNode.
  * The Node merges point clouds spatially (e.g., multiple lidars outputs into one point cloud).
  * Only provided fields are merged (RGL_FIELD_DYNAMIC_FORMAT is not supported). This Node do not resolve point return types
- * (RGL_FIELD_RETURN_TYPE_U8) in any way - output return mode is always assumed to be RGL_RETURN_MODE_UNKNOWN and respective
+ * (RGL_FIELD_RETURN_TYPE_U8) in any way - output return mode is always assumed to be RGL_RETURN_UNKNOWN and respective
  * cloud points keep their return types. This may results in a case, where output point cloud contain points e.g. from
  * four or more return types (rgl_return_type_t).
  * Input point clouds must be unorganized (height == 1).
@@ -906,7 +920,7 @@ RGL_API rgl_status_t rgl_node_points_temporal_merge(rgl_node_t* node, const rgl_
 /**
  * Creates or modifies FromArrayPointsNode.
  * The Node provides initial points for its children Nodes. This Node does not handle return mode - it is assumed that
- * return mode is always RGL_RETURN_MODE_UNKNOWN. RGL_FIELD_RETURN_TYPE_U8 field values are still set according to data
+ * return mode is always RGL_RETURN_UNKNOWN. RGL_FIELD_RETURN_TYPE_U8 field values are still set according to data
  * passed by user.
  * Input: none
  * Output: point cloud

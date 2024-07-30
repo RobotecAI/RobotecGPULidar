@@ -100,6 +100,115 @@ __device__ Vec3f reflectPolarization(const Vec3f& pol, const Vec3f& hitNormal, c
 	return -polCompR * refPolR + polCompU * refPolU;
 }
 
+__device__ void saveReturnHit(const RaytraceRequestContext* ctx, int beamIdx, int sampleIdx, int returnPointIdx, int returnType)
+{
+	if (ctx->xyz != nullptr) {
+		const Mat3x4f ray = ctx->raysWorld[beamIdx];
+		const Vec3f origin = ray * Vec3f{0, 0, 0};
+		const Vec3f dir = (ray * Vec3f{0, 0, 1} - origin).normalized();
+		ctx->xyz[returnPointIdx] = origin + dir * ctx->mrSamples.distance[sampleIdx];
+	}
+	if (ctx->isHit != nullptr) {
+		ctx->isHit[returnPointIdx] = ctx->mrSamples.isHit[sampleIdx];
+	}
+	if (ctx->ringIdx != nullptr && ctx->ringIds != nullptr) {
+		ctx->ringIdx[returnPointIdx] = ctx->ringIds[beamIdx % ctx->ringIdsCount];
+	}
+	if (ctx->returnType != nullptr) {
+		ctx->returnType[returnPointIdx] = returnType;
+	}
+	if (ctx->distance != nullptr) {
+		ctx->distance[returnPointIdx] = ctx->mrSamples.distance[sampleIdx];
+	}
+	if (ctx->intensityF32 != nullptr) {
+		ctx->intensityF32[returnPointIdx] = ctx->mrSamples.intensity[sampleIdx];
+	}
+	if (ctx->intensityU8 != nullptr) {
+		// intensity < 0 not possible
+		ctx->intensityU8[returnPointIdx] = ctx->mrSamples.intensity[sampleIdx] < UINT8_MAX ?
+		                                       static_cast<uint8_t>(std::round(ctx->mrSamples.intensity[sampleIdx])) :
+		                                       UINT8_MAX;
+	}
+	if (ctx->entityId != nullptr) {
+		ctx->entityId[returnPointIdx] = ctx->mrSamples.entityId[sampleIdx];
+	}
+	if (ctx->pointAbsVelocity != nullptr) {
+		ctx->pointAbsVelocity[returnPointIdx] = ctx->mrSamples.absVelocity[sampleIdx];
+	}
+	if (ctx->pointRelVelocity != nullptr) {
+		ctx->pointRelVelocity[returnPointIdx] = ctx->mrSamples.relVelocity[sampleIdx];
+	}
+	if (ctx->radialSpeed != nullptr) {
+		ctx->radialSpeed[returnPointIdx] = ctx->mrSamples.radialSpeed[sampleIdx];
+	}
+	if (ctx->normal != nullptr) {
+		ctx->normal[returnPointIdx] = ctx->mrSamples.normal[sampleIdx];
+	}
+	if (ctx->incidentAngle != nullptr) {
+		ctx->incidentAngle[returnPointIdx] = ctx->mrSamples.incidentAngle[sampleIdx];
+	}
+	if (ctx->laserRetro != nullptr) {
+		ctx->laserRetro[returnPointIdx] = ctx->mrSamples.laserRetro[sampleIdx];
+	}
+}
+
+__device__ void saveReturnNonHit(const RaytraceRequestContext* ctx, int beamIdx, int returnPointIdx, int returnType)
+{
+	// Arbitrary decision - if all samples are non hit, I just take the distance from center ray. This distance will be either
+	// ctx.nearNonHitDistance or ctx.farNonHitDistance, based on optix kernel processing.
+	const auto nonHitDistance = ctx->mrSamples.distance[0];
+
+	if (ctx->xyz != nullptr) {
+		const Mat3x4f ray = ctx->raysWorld[beamIdx];
+		const Vec3f origin = ray * Vec3f{0, 0, 0};
+		const Vec3f dir = ray * Vec3f{0, 0, 1} - origin;
+		Vec3f displacement = dir.normalized() * nonHitDistance;
+		displacement = {isnan(displacement.x()) ? 0 : displacement.x(), isnan(displacement.y()) ? 0 : displacement.y(),
+		                isnan(displacement.z()) ? 0 : displacement.z()};
+		ctx->xyz[returnPointIdx] = origin + displacement;
+	}
+	if (ctx->isHit != nullptr) {
+		ctx->isHit[returnPointIdx] = false;
+	}
+	if (ctx->ringIdx != nullptr && ctx->ringIds != nullptr) {
+		ctx->ringIdx[returnPointIdx] = ctx->ringIds[beamIdx % ctx->ringIdsCount];
+	}
+	if (ctx->returnType != nullptr) {
+		ctx->returnType[returnPointIdx] = returnType;
+	}
+	if (ctx->distance != nullptr) {
+		ctx->distance[returnPointIdx] = nonHitDistance;
+	}
+	if (ctx->intensityF32 != nullptr) {
+		ctx->intensityF32[returnPointIdx] = 0;
+	}
+	if (ctx->intensityU8 != nullptr) {
+		// intensity < 0 not possible
+		ctx->intensityU8[returnPointIdx] = 0;
+	}
+	if (ctx->entityId != nullptr) {
+		ctx->entityId[returnPointIdx] = RGL_ENTITY_INVALID_ID;
+	}
+	if (ctx->pointAbsVelocity != nullptr) {
+		ctx->pointAbsVelocity[returnPointIdx] = Vec3f{NAN};
+	}
+	if (ctx->pointRelVelocity != nullptr) {
+		ctx->pointRelVelocity[returnPointIdx] = Vec3f{NAN};
+	}
+	if (ctx->radialSpeed != nullptr) {
+		ctx->radialSpeed[returnPointIdx] = 0;
+	}
+	if (ctx->normal != nullptr) {
+		ctx->normal[returnPointIdx] = Vec3f{NAN};
+	}
+	if (ctx->incidentAngle != nullptr) {
+		ctx->incidentAngle[returnPointIdx] = NAN;
+	}
+	if (ctx->laserRetro != nullptr) {
+		ctx->laserRetro[returnPointIdx] = 0;
+	}
+}
+
 __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                                     Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                                     const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
@@ -257,6 +366,112 @@ __global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBea
 	}
 }
 
+__global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_return_mode_t returnMode,
+                                      const RaytraceRequestContext* ctx)
+{
+	LIMIT(beamCount);
+
+	const auto beamIdx = tid;
+	const auto firstSampleInBeamIdx = beamIdx * samplesPerBeam;
+	int first = -1, second = -1, last = -1;
+	int strongest = -1, secondStrongest = -1;
+	int sampleIdx = firstSampleInBeamIdx;
+
+//	printf("firstSampleIdx: %d samplesPerBeam: %d\n", firstSampleInBeamIdx, samplesPerBeam);
+
+	for (; sampleIdx < firstSampleInBeamIdx + samplesPerBeam; ++sampleIdx) {
+		//		printf("sample after optix %f %f %f\n", ctx->mrSamples.xyz[sampleIdx].x(), ctx->mrSamples.xyz[sampleIdx].y(),
+		//		       ctx->mrSamples.xyz[sampleIdx].z());
+		if (ctx->mrSamples.isHit[sampleIdx] == 1) {
+			first = sampleIdx;
+			second = first;
+			last = first;
+			strongest = sampleIdx;
+			secondStrongest = strongest;
+			break;
+		}
+	}
+
+	const auto returnCount = returnMode >> RGL_RETURN_MODE_BIT_SHIFT;
+	//printf("returnMode: %d returnCount: %d\n", returnMode, returnCount);
+
+	// There were no hits within beam samples.
+	if (first == -1) {
+		for (int returnIdx = 0; returnIdx < returnCount; ++returnIdx) {
+			const auto returnPointIdx = beamIdx * returnCount + returnIdx;
+			const auto returnType = (returnMode >> (returnIdx * RGL_RETURN_TYPE_BIT_SHIFT)) & 0xff;
+			saveReturnNonHit(ctx, beamIdx, returnPointIdx, returnType);
+		}
+		return;
+	}
+
+	//printf("reference sample idx: %d\n", sampleIdx);
+
+	// Base initial values on first sample that returned a hit.
+	for (sampleIdx = sampleIdx + 1; sampleIdx < firstSampleInBeamIdx + samplesPerBeam; ++sampleIdx) {
+		if (ctx->mrSamples.isHit[sampleIdx] == 0) {
+			continue;
+		}
+
+		// TODO(Pawel): Revise this logic.
+		const auto currentSampleDistance = ctx->mrSamples.distance[sampleIdx];
+		if (currentSampleDistance < ctx->mrSamples.distance[first]) {
+			// Sample is closer than first. I ignore current == first, because then second would become equal to first.
+			second = first;
+			first = sampleIdx;
+		} else if (ctx->mrSamples.distance[first] < currentSampleDistance &&
+		           currentSampleDistance < ctx->mrSamples.distance[second]) {
+			// Sample is farther than first and closer than second. Note that current == first distance is ignored here -
+			// otherwise second would become first everytime when current would be equal first.
+			second = sampleIdx;
+		}
+
+		if (currentSampleDistance > ctx->mrSamples.distance[last]) {
+			last = sampleIdx;
+		}
+
+		const auto currentIntensity = ctx->mrSamples.intensity[sampleIdx];
+		if (currentIntensity > ctx->mrSamples.intensity[strongest]) {
+			secondStrongest = strongest;
+			strongest = sampleIdx;
+		} else if (ctx->mrSamples.intensity[strongest] > currentIntensity &&
+		           currentIntensity > ctx->mrSamples.intensity[secondStrongest]) {
+			secondStrongest = sampleIdx;
+		}
+	}
+
+//		printf("first: %d, second: %d, last: %d, strongest: %d, secondStrongest: %d\n", first, second, last, strongest,
+//		       secondStrongest);
+
+	for (int returnIdx = 0; returnIdx < returnCount; ++returnIdx) {
+		const auto returnType = (returnMode >> (returnIdx * RGL_RETURN_TYPE_BIT_SHIFT)) & 0xff;
+		int rayIdx = -1;
+
+//		printf("return idx: %d test: %d return types: %d\n", returnIdx, (returnMode >> (returnIdx * RGL_RETURN_TYPE_BIT_SHIFT)) & 0xff, returnType);
+
+		if (returnType == RGL_RETURN_TYPE_FIRST) {
+			rayIdx = first;
+		} else if (returnType == RGL_RETURN_TYPE_SECOND) {
+			rayIdx = second;
+		} else if (returnType == RGL_RETURN_TYPE_LAST) {
+			rayIdx = last;
+		} else if (returnType == RGL_RETURN_TYPE_STRONGEST) {
+			rayIdx = strongest;
+		} else if (returnType == RGL_RETURN_TYPE_SECOND_STRONGEST) {
+			rayIdx = secondStrongest;
+		}
+
+		if (rayIdx >= 0) {
+			const auto returnPointIdx = beamIdx * returnCount + returnIdx;
+//			printf("assigned sample: %f %f %f\n", ctx->mrSamples.xyz[rayIdx].x(), ctx->mrSamples.xyz[rayIdx].y(),
+//			       ctx->mrSamples.xyz[rayIdx].z());
+			saveReturnHit(ctx, beamIdx, rayIdx, returnPointIdx, returnType);
+			//			printf("assigned xyz: %f %f %f\n", ctx->xyz[returnPointIdx].x(), ctx->xyz[returnPointIdx].y(),
+			//			       ctx->xyz[returnPointIdx].z());
+			//printf("%f %f %f\n", ctx->mrSamples.xyz[sampleIdx].x(), ctx->mrSamples.xyz[sampleIdx].y(), ctx->mrSamples.xyz[sampleIdx].z());
+		}
+	}
+}
 
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount)
@@ -334,4 +549,10 @@ void gpuProcessBeamSamplesFirstLast(cudaStream_t stream, size_t beamCount, int s
                                     MultiReturnPointers first, MultiReturnPointers last, const Mat3x4f* beamsWorld)
 {
 	run(kProcessBeamSamplesFirstLast, stream, beamCount, samplesPerBeam, beamSamples, first, last, beamsWorld);
+}
+
+void gpuReduceDivergentBeams(cudaStream_t stream, size_t beamCount, int samplesPerBeam, rgl_return_mode_t returnMode,
+                             const RaytraceRequestContext* ctx)
+{
+	run(kReduceDivergentBeams, stream, beamCount, samplesPerBeam, returnMode, ctx);
 }
