@@ -152,6 +152,30 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
 #endif
 
 /**
+ * Describes 4 bone weights affecting a mesh vertex.
+ * The sum of all weights for a given vertex should equal 1.
+ * If a vertex is affected by fewer than 4 bones, each of the remaining weight values must be 0.
+ */
+typedef struct
+{
+	/**
+	 * Array for 4 bone indexes affecting a vertex.
+	 */
+	int32_t bone_idxes[4];
+	/**
+	 * Array for skinning weights.
+	 * The weight at each index corresponds to the bone_idx with the same index.
+	 */
+	float weights[4];
+} rgl_bone_weights_t;
+
+#ifdef __cplusplus
+static_assert(sizeof(rgl_bone_weights_t) == 4 * sizeof(int32_t) + 4 * sizeof(float));
+static_assert(std::is_trivial<rgl_bone_weights_t>::value);
+static_assert(std::is_standard_layout<rgl_bone_weights_t>::value);
+#endif
+
+/**
  * Radar object class used in object tracking.
  */
 typedef enum : int32_t
@@ -517,6 +541,17 @@ RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vert
  * @param vertex_count Number of elements in the vertices array. It has to be equal to vertex buffer size.
  */
 RGL_API rgl_status_t rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_count);
+
+/**
+ * Assign bone weights to given Mesh.
+ *
+ * @param mesh Mesh to modify.
+ * @param bone_weights An array of rgl_bone_weights_t objects that associate vertices with the bones affecting them.
+                       The bone weights object at each index corresponds to the vertex with the same index (`vertices` array of `rgl_mesh_create` API call).
+ * @param bone_weights_count Number of elements in the bone_weights array. It must be equal to the vertex count of the Mesh!
+ */
+RGL_API rgl_status_t rgl_mesh_set_bone_weights(rgl_mesh_t mesh, const rgl_bone_weights_t* bone_weights,
+                                               int32_t bone_weights_count);
 
 /**
  * Informs that the given Mesh will be no longer used.

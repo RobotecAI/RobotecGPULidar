@@ -26,8 +26,8 @@ Mesh::Mesh(const Vec3f* vertices, size_t vertexCount, const Vec3i* indices, size
 void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 {
 	if (texCoordCount != dVertices->getCount()) {
-		auto msg = fmt::format("Invalid argument: cannot set texture coordinates because vertex count do not match with "
-		                       "texture coordinates count: vertices={}, textureCoords={}",
+		auto msg = fmt::format("Cannot set texture coordinates because vertex count do not match with "
+		                       "texture coordinates count: vertexCount={}, textureCoords={}",
 		                       dVertices->getCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}
@@ -38,4 +38,20 @@ void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 
 	dTextureCoords.value()->copyFromExternal(texCoords, texCoordCount);
 	Scene::instance().requestSBTRebuild();
+}
+
+void Mesh::setBoneWeights(const rgl_bone_weights_t* boneWeights, int32_t boneWeightsCount)
+{
+	if (boneWeightsCount != dVertices->getCount()) {
+		auto msg = fmt::format("Cannot set bone weights because vertex count do not match with "
+		                       "bone weights count: vertexCount={}, boneWeightsCount={}",
+		                       dVertices->getCount(), boneWeightsCount);
+		throw std::invalid_argument(msg);
+	}
+
+	if (!dBoneWeights.has_value()) {
+		dBoneWeights = DeviceSyncArray<BoneWeights>::create();
+	}
+
+	dBoneWeights.value()->copyFromExternal(reinterpret_cast<const BoneWeights*>(boneWeights), boneWeightsCount);
 }
