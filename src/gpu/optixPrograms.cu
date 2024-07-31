@@ -329,7 +329,7 @@ __device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, 
 
 __device__ void saveNonHitBeamSamples(int beamIdx, float nonHitDistance)
 {
-	for (int sampleIdx = beamIdx; sampleIdx < beamIdx + MULTI_RETURN_BEAM_SAMPLES; ++sampleIdx) {
+	for (int sampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES; sampleIdx < beamIdx * MULTI_RETURN_BEAM_SAMPLES + MULTI_RETURN_BEAM_SAMPLES; ++sampleIdx) {
 		saveSampleAsNonHit(sampleIdx, nonHitDistance);
 	}
 }
