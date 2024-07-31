@@ -336,7 +336,7 @@ __device__ void saveNonHitBeamSamples(int beamIdx, float nonHitDistance)
 
 __device__ void saveBeamSharedData(int beamIdx, const Mat3x4f& rayLocal)
 {
-	for (int returnPointIdx = beamIdx; returnPointIdx < beamIdx + ctx.returnCount; ++returnPointIdx) {
+	for (int returnPointIdx = beamIdx * ctx.returnCount; returnPointIdx < (beamIdx + 1) * ctx.returnCount; ++returnPointIdx) {
 		if (ctx.rayIdx != nullptr) {
 			ctx.rayIdx[returnPointIdx] = beamIdx;
 		}
