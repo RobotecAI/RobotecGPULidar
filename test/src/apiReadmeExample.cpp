@@ -19,7 +19,7 @@ TEST(EndToEnd, ReadmeExample)
 	rgl_mat3x4f entity_tf = {
 	    .value = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 5}}
     };
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube_entity, &entity_tf));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube_entity, &entity_tf));
 
 	// Create a graph representation of a lidar that sends 1 ray and is situated at (x,y,z) = (0, 0, 0), facing positive Z
 	rgl_mat3x4f ray_tf = {
