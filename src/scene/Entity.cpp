@@ -56,6 +56,8 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	Scene::instance().requestSBTRebuild();
 }
 
+void Entity::setSkeleton(std::shared_ptr<Skeleton> skeleton) { animator = SkeletonAnimator(std::move(skeleton), mesh); }
+
 std::optional<Mat3x4f> Entity::getPreviousFrameLocalToWorldTransform() const
 {
 	// At the moment of writing, setting Scene time (rgl_scene_set_time) is optional.
@@ -83,16 +85,15 @@ void Entity::applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCou
 	if (!std::holds_alternative<ExternalAnimator>(animator)) {
 		animator = ExternalAnimator(mesh->dVertices);
 	}
-	try {
-		std::get<ExternalAnimator>(animator).animate(vertices, vertexCount);
+	if (auto* externalAnimator = std::get_if<ExternalAnimator>(&animator)) {
+		externalAnimator->animate(vertices, vertexCount);
 		formerAnimationTime = currentAnimationTime;
 		currentAnimationTime = Scene::instance().getTime();
 		Scene::instance().requestASRebuild();  // Vertices themselves
 		Scene::instance().requestSBTRebuild(); // Vertices displacement
+		return;
 	}
-	catch (std::bad_variant_access const& ex) {
-		throw std::runtime_error("Internal library error: type of animator is not as expected.");
-	}
+	throw std::runtime_error("Internal library error: type of the animator is not as expected.");
 }
 
 const Vec3f* Entity::getVertexDisplacementSincePrevFrame()
@@ -100,23 +101,35 @@ const Vec3f* Entity::getVertexDisplacementSincePrevFrame()
 	if (!formerAnimationTime.has_value() || formerAnimationTime != Scene::instance().getPrevTime()) {
 		return nullptr;
 	}
-	try {
-		return std::get<ExternalAnimator>(animator).dVertexAnimationDisplacement->getReadPtr();
-	}
-	catch (std::bad_variant_access const& ex) {
-		throw std::runtime_error("Internal library error: type of animator is not as expected.");
-	}
+
+	return std::visit(
+	    [](const auto& concreteAnimator) -> const Vec3f* {
+		    using AnimatorType = std::decay_t<decltype(concreteAnimator)>;
+		    if constexpr (std::is_same_v<AnimatorType, std::monostate>) {
+			    return nullptr;
+		    } else if constexpr (std::is_same_v<AnimatorType, ExternalAnimator> ||
+		                         std::is_same_v<AnimatorType, SkeletonAnimator>) {
+			    return concreteAnimator.dVertexAnimationDisplacement->getReadPtr();
+		    } else {
+			    throw std::runtime_error("Internal library error: type of the animator is not as expected.");
+		    }
+	    },
+	    animator);
 }
 
 DeviceSyncArray<Vec3f>::Ptr Entity::getAnimatedVertices()
 {
-	if (std::holds_alternative<std::monostate>(animator)) {
-		return nullptr;
-	}
-	try {
-		return std::get<ExternalAnimator>(animator).dAnimatedVertices;
-	}
-	catch (std::bad_variant_access const& ex) {
-		throw std::runtime_error("Internal library error: type of animator is not as expected.");
-	}
+	return std::visit(
+	    [](const auto& concreteAnimator) -> DeviceSyncArray<Vec3f>::Ptr {
+		    using AnimatorType = std::decay_t<decltype(concreteAnimator)>;
+		    if constexpr (std::is_same_v<AnimatorType, std::monostate>) {
+			    return nullptr;
+		    } else if constexpr (std::is_same_v<AnimatorType, ExternalAnimator> ||
+		                         std::is_same_v<AnimatorType, SkeletonAnimator>) {
+			    return concreteAnimator.dAnimatedVertices;
+		    } else {
+			    throw std::runtime_error("Internal library error: type of the animator is not as expected.");
+		    }
+	    },
+	    animator);
 }

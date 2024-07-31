@@ -407,6 +407,26 @@ void TapeCore::tape_entity_apply_external_animation(const YAML::Node& yamlNode, 
 	                                    state.getPtr<const rgl_vec3f>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
+RGL_API rgl_status_t rgl_entity_set_skeleton(rgl_entity_t entity, rgl_skeleton_t skeleton)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_set_skeleton(entity={}, skeleton={})", (void*) entity, (void*) skeleton);
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(skeleton != nullptr);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Entity::validatePtr(entity)->setSkeleton(Skeleton::validatePtr(skeleton));
+	});
+
+	TAPE_HOOK(entity, skeleton);
+	return status;
+}
+
+void TapeCore::tape_entity_set_skeleton(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_set_skeleton(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                        state.skeletons.at(yamlNode[1].as<TapeAPIObjectID>()));
+}
+
 rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive)
 {
 	auto status = rglSafeCall([&]() {
