@@ -399,7 +399,7 @@ typedef enum : int32_t
 	 * - linear velocity
 	 * - angular velocity
 	 * - mesh deformations (e.g. skinning)
-	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_entity_apply_external_animation`.
+	 * The aforementioned are inferred from calls to `rgl_entity_set_transform`, `rgl_scene_set_time` and `rgl_entity_apply_external_animation`.
 	 */
 	RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 
@@ -592,7 +592,7 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity);
  * @param entity Entity to modify
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (Entity -> world) coordinate system transform.
  */
-RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform);
+RGL_API rgl_status_t rgl_entity_set_transform(rgl_entity_t entity, const rgl_mat3x4f* transform);
 
 /**
  * Set instance ID of the given Entity.
@@ -812,7 +812,7 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
  * Necessary for velocity distortion or calculating fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32.
  * Relative velocity calculation:
  * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
- * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_entity_apply_external_animation`
+ * `rgl_scene_set_time`, `rgl_entity_set_transform`, and `rgl_entity_apply_external_animation`
  * @param node RaytraceNode to modify
  * @param linear_velocity 3D vector for linear velocity in units per second.
  * @param angular_velocity 3D vector for angular velocity in radians per second (roll, pitch, yaw).

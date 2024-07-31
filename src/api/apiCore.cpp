@@ -312,10 +312,10 @@ void TapeCore::tape_entity_destroy(const YAML::Node& yamlNode, PlaybackState& st
 	state.entities.erase(entityId);
 }
 
-RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
+RGL_API rgl_status_t rgl_entity_set_transform(rgl_entity_t entity, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_entity_set_pose(entity={}, transform={})", (void*) entity, repr(transform, 1));
+		RGL_API_LOG("rgl_entity_set_transform(entity={}, transform={})", (void*) entity, repr(transform, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(transform != nullptr);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
@@ -326,9 +326,10 @@ RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f*
 	return status;
 }
 
-void TapeCore::tape_entity_set_pose(const YAML::Node& yamlNode, PlaybackState& state)
+void TapeCore::tape_entity_set_transform(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_entity_set_pose(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()), state.getPtr<const rgl_mat3x4f>(yamlNode[1]));
+	rgl_entity_set_transform(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                         state.getPtr<const rgl_mat3x4f>(yamlNode[1]));
 }
 
 RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id)

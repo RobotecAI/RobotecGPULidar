@@ -53,7 +53,7 @@ TEST_F(SpatialMergePointsNodeTest, spatial_merge_from_transforms)
 
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_transform(entity, &entityPoseTf));
 
 	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, compact = nullptr;
 	rgl_node_t transformPtsZero = nullptr, transformPtsY = nullptr;
@@ -96,7 +96,7 @@ TEST_F(SpatialMergePointsNodeTest, spatial_merge_from_raytraces)
 	auto mesh = makeCubeMesh();
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_transform(entity, &entityPoseTf));
 
 	constexpr int LIDAR_FOV_Y = 40;
 	constexpr int LIDAR_ROTATION_STEP = LIDAR_FOV_Y / 2; // Make laser overlaps to validate merging

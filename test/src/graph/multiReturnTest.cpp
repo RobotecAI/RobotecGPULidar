@@ -231,10 +231,10 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	int frameId = 0;
 	while (true) {
 
-		const auto newPose = (entitiesTransforms.at(0) *
-		                      Mat3x4f::translation(0.0f, std::abs(std::sin(frameId * 0.05f)) * gapRange.y(), 0.0f))
-		                         .toRGL();
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
+		const auto newTf = (entitiesTransforms.at(0) *
+		                    Mat3x4f::translation(0.0f, std::abs(std::sin(frameId * 0.05f)) * gapRange.y(), 0.0f))
+		                       .toRGL();
+		EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entities.at(0), &newTf));
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
 		ASSERT_RGL_SUCCESS(rgl_graph_run(rays));

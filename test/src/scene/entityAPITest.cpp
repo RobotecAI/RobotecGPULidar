@@ -37,17 +37,17 @@ TEST_F(EntityTest, rgl_entity_create_destroy)
 	EXPECT_RGL_INVALID_OBJECT(rgl_entity_destroy((rgl_entity_t) 0x1234), "Entity 0x1234");
 }
 
-TEST_F(EntityTest, rgl_entity_set_pose)
+TEST_F(EntityTest, rgl_entity_set_transform)
 {
 	rgl_entity_t entity = makeEntity();
 
 	// Invalid args
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(nullptr, nullptr), "entity != nullptr");
-	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_pose(entity, nullptr), "transform != nullptr");
-	EXPECT_RGL_INVALID_OBJECT(rgl_entity_set_pose((rgl_entity_t) 0x1234, &identityTestTransform), "Entity 0x1234");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_transform(nullptr, nullptr), "entity != nullptr");
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_entity_set_transform(entity, nullptr), "transform != nullptr");
+	EXPECT_RGL_INVALID_OBJECT(rgl_entity_set_transform((rgl_entity_t) 0x1234, &identityTestTransform), "Entity 0x1234");
 
 	// Correct set_pose
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTestTransform));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entity, &identityTestTransform));
 }
 
 #define VERTICES cubeVertices

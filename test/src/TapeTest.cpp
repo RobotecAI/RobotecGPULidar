@@ -187,7 +187,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entity, &identityTf));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
 
 	EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(entity, cubeVertices, ARRAY_SIZE(cubeVertices)));
@@ -427,7 +427,7 @@ TEST_F(TapeTest, SceneReconstruction)
 	auto mesh = makeCubeMesh();
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_transform(entity, &entityPoseTf));
 	rgl_tape_record_end();
 
 	testCubeSceneOnGraph();

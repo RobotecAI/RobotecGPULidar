@@ -22,7 +22,10 @@ protected:
 	}
 };
 
-TEST_F(MaskRaysTest, invalid_argument_node) { EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace_configure_mask(nullptr, nullptr, 0)); }
+TEST_F(MaskRaysTest, invalid_argument_node)
+{
+	EXPECT_RGL_INVALID_ARGUMENT(rgl_node_raytrace_configure_mask(nullptr, nullptr, 0));
+}
 
 TEST_F(MaskRaysTest, invalid_argument_mask)
 {
@@ -56,8 +59,8 @@ TEST_F(MaskRaysTest, use_case)
 {
 	// Scene
 	rgl_entity_t wall = makeEntity(makeCubeMesh());
-	rgl_mat3x4f wallPose = Mat3x4f::TRS(Vec3f(0,0,0), Vec3f(0, 0, 0), Vec3f(10,10,10)).toRGL();
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(wall, &wallPose));
+	rgl_mat3x4f wallPose = Mat3x4f::TRS(Vec3f(0, 0, 0), Vec3f(0, 0, 0), Vec3f(10, 10, 10)).toRGL();
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(wall, &wallPose));
 
 	// Rays
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);
@@ -94,5 +97,4 @@ TEST_F(MaskRaysTest, use_case)
 	auto maskedCloudSize = outputPointCloudMasked.getPointCount();
 
 	EXPECT_EQ(fullCloudSize - maskCount, maskedCloudSize);
-
 }

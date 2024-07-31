@@ -34,7 +34,7 @@ TEST_F(FilterGroundPointsNodeTest, floor_test)
 	// Scene
 	rgl_entity_t wall = makeEntity(makeCubeMesh());
 	rgl_mat3x4f wallPose = Mat3x4f::TRS(WALL_POS, Vec3f(0, 0, 0), WALL_DIMS).toRGL();
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(wall, &wallPose));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(wall, &wallPose));
 
 	// Rays
 	std::vector<rgl_mat3x4f> rays = makeLidar3dRays(360, 180, 0.36, 0.18);

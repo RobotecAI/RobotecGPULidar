@@ -37,28 +37,28 @@ struct TestScene
 
 		// +X, moves +/- 1 from initial position
 		DynamicCube translatingCube([](DynamicCube& cube, float t) {
-			auto pose = Mat3x4f::translation(Vec3f{DIST + std::sin(t), 0, 0}).toRGL();
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+			auto transform = Mat3x4f::translation(Vec3f{DIST + std::sin(t), 0, 0}).toRGL();
+			EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube.entity, &transform));
 		});
 
 		// -X, rotates around Z, ccw
 		DynamicCube rotatingCube([](DynamicCube& cube, float t) {
-			auto pose = (Mat3x4f::translation(-DIST, 0, 0) * Mat3x4f::rotationRad(0, 0, t)).toRGL();
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+			auto transform = (Mat3x4f::translation(-DIST, 0, 0) * Mat3x4f::rotationRad(0, 0, t)).toRGL();
+			EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube.entity, &transform));
 		});
 
 		// +Y, scales between 0.5 and 1.5
 		DynamicCube scalingCube([](DynamicCube& cube, float t) {
 			float s = 1.0f + std::sin(t) / 2.0f;
-			auto pose = (Mat3x4f::translation(0, DIST, 0) * Mat3x4f::scale(s, s, s)).toRGL();
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+			auto transform = (Mat3x4f::translation(0, DIST, 0) * Mat3x4f::scale(s, s, s)).toRGL();
+			EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube.entity, &transform));
 		});
 
 		// -Y, oscillates between cube and pyramid by collapsing frontal face into cube's center point
 		DynamicCube morphingCube([](DynamicCube& cube, float t) {
 			auto tt = t / 2.0f;
-			auto pose = Mat3x4f::translation(Vec3f{0, -DIST, 0}).toRGL();
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+			auto transform = Mat3x4f::translation(Vec3f{0, -DIST, 0}).toRGL();
+			EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube.entity, &transform));
 
 			rgl_vec3f changed[ARRAY_SIZE(cubeVertices)];
 			for (int i = 0; i < ARRAY_SIZE(cubeVertices); ++i) {
@@ -87,17 +87,17 @@ struct TestScene
 			auto translation = Mat3x4f::translation(R * std::sin(t), -R * std::cos(t), -CUBE_HALF_EDGE);
 			auto rotation = Mat3x4f::rotationRad(0, 0, t);
 			auto scale = Mat3x4f::scale(s, s, s);
-			auto pose = (translation * rotation * scale).toRGL();
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+			auto transform = (translation * rotation * scale).toRGL();
+			EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube.entity, &transform));
 		});
 
 		// +Z, translated +-Z and morphed (-Z wall oscillates along Z), effects should cancel out
 		DynamicCube morphTranslateCube([](DynamicCube& cube, float t) {
 			constexpr float S = 2.0f; // scale
-			auto pose = (Mat3x4f::translation({-DIST, -DIST, DIST + -sin(t)}) * Mat3x4f::scale(S, S, S)).toRGL();
-			EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube.entity, &pose));
+			auto transform = (Mat3x4f::translation({-DIST, -DIST, DIST + -sin(t)}) * Mat3x4f::scale(S, S, S)).toRGL();
+			EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube.entity, &transform));
 
-			// Note: vertices are changed in local space, so they are not affected by the entity's pose
+			// Note: vertices are changed in local space, so they are not affected by the entity's transform
 			rgl_vec3f changed[ARRAY_SIZE(cubeVertices)];
 			for (int i = 0; i < ARRAY_SIZE(cubeVertices); ++i) {
 				changed[i] = cubeVertices[i];
@@ -143,7 +143,7 @@ TEST(EntityVelocity, Interactive)
 	rgl_node_t rays = nullptr, rayTransform = nullptr, raytrace = nullptr, compact = nullptr, format = nullptr,
 	           publish = nullptr, markersRelVel = nullptr, markersAbsVel = nullptr, transformPoints = nullptr;
 	std::vector<rgl_mat3x4f> raysTf = makeLidar3dRays(360.0f, 180.0f);
-	rgl_mat3x4f lidarPoseRGL = Mat3x4f::identity().toRGL(), lidarIndicatorPoseRGL;
+	rgl_mat3x4f lidartransformRGL = Mat3x4f::identity().toRGL(), lidarIndicatortransformRGL;
 
 	// Published fields
 	std::vector<rgl_field_t> fields = {RGL_FIELD_XYZ_VEC3_F32, RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
@@ -151,10 +151,10 @@ TEST(EntityVelocity, Interactive)
 
 	// Construct graph: rays -> transform ->  raytrace -> compact -> format -> publish
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidarPoseRGL));
+	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidartransformRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 	EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
-	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &lidarPoseRGL));
+	EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &lidartransformRGL));
 	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "EntityVelocityTest", "world"));
 	createOrUpdateNode<Ros2PublishPointVelocityMarkersNode>(&markersRelVel, "EntityRelVelocityTestMarkers", "world",
@@ -186,17 +186,17 @@ TEST(EntityVelocity, Interactive)
 		Vec3f sensorAngularVelocityXYZ = Vec3f{0, 0, 0};                                            // radians
 
 		Mat3x4f diff = Mat3x4f::TRS(sensorLinearVelocityXYZ * deltaTime, sensorAngularVelocityXYZ * RadToDeg * deltaTime);
-		Mat3x4f lidarPose = diff * Mat3x4f::fromRGL(lidarPoseRGL);
-		Mat3x4f lidarIndicatorPose = Mat3x4f::translation(lidarPose.translation() + Vec3f{0, 0, -0.2f}) * lidarPose.rotation() *
-		                             Mat3x4f::scale(0.01f, 0.01f, 0.01f);
-		lidarPoseRGL = lidarPose.toRGL();
-		lidarIndicatorPoseRGL = lidarIndicatorPose.toRGL();
+		Mat3x4f lidartransform = diff * Mat3x4f::fromRGL(lidartransformRGL);
+		Mat3x4f lidarIndicatortransform = Mat3x4f::translation(lidartransform.translation() + Vec3f{0, 0, -0.2f}) *
+		                                  lidartransform.rotation() * Mat3x4f::scale(0.01f, 0.01f, 0.01f);
+		lidartransformRGL = lidartransform.toRGL();
+		lidarIndicatortransformRGL = lidarIndicatortransform.toRGL();
 
 		ASSERT_RGL_SUCCESS(rgl_scene_set_time(nullptr, currentTime));
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(lidarIndicator, &lidarIndicatorPoseRGL));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_transform(lidarIndicator, &lidarIndicatortransformRGL));
 
 		auto pointsTransform = Mat3x4f::identity().toRGL();
-		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidarPoseRGL));
+		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&rayTransform, &lidartransformRGL));
 		EXPECT_RGL_SUCCESS(rgl_node_points_transform(&transformPoints, &pointsTransform));
 		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
 		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_velocity(raytrace,

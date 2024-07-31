@@ -29,7 +29,7 @@ struct GaussianStressTest : public RGLTest
 	{
 		// Setup scene
 		rgl_entity_t cube = makeEntity(makeCubeMesh());
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube, &cubePoseTf));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube, &cubePoseTf));
 
 		// Create nodes
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, lidarRays.data(), lidarRays.size()));
