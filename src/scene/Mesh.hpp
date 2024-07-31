@@ -37,6 +37,7 @@ struct Mesh : APIObject<Mesh>
 	friend APIObject<Mesh>;
 	friend struct Scene;
 	friend struct Entity;
+	friend struct SkeletonAnimator;
 
 	/**
 	 * Sets textures coordinates to the mesh. Vertex count and texture coordinates count must be equal.

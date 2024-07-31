@@ -629,6 +629,14 @@ RGL_API rgl_status_t rgl_entity_set_laser_retro(rgl_entity_t entity, float retro
 RGL_API rgl_status_t rgl_entity_apply_external_animation(rgl_entity_t entity, const rgl_vec3f* vertices, int32_t vertex_count);
 
 /**
+ * Assign skeleton to given Entity.
+ *
+ * @param entity Entity to modify.
+ * @param skeleton Skeleton to assign.
+ */
+RGL_API rgl_status_t rgl_entity_set_skeleton(rgl_entity_t entity, rgl_skeleton_t skeleton);
+
+/**
  * Assigns value true to out_alive if the given entity is known and has not been destroyed,
  * assigns value false otherwise.
  * @param entity Entity to check if alive

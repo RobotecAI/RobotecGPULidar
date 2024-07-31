@@ -23,6 +23,7 @@
 #include <scene/Scene.hpp>
 #include <scene/Mesh.hpp>
 #include <scene/animator/ExternalAnimator.hpp>
+#include <scene/animator/SkeletonAnimator.hpp>
 #include <math/Mat3x4f.hpp>
 
 /**
@@ -63,6 +64,11 @@ struct Entity : APIObject<Entity>
 	 * Sets laser retro that will be used as a point attribute LASER_RETRO_F32 when a ray hits this entity.
 	 */
 	void setLaserRetro(float retro);
+
+	/**
+	 * Sets skeleton that will be used in skeleton animation.
+	 */
+	void setSkeleton(std::shared_ptr<Skeleton> skeleton);
 
 	/**
 	 * Returns Entity's transform such that it is possible to compute meaningful velocity between it and the current transform.
@@ -114,7 +120,7 @@ private:
 	std::shared_ptr<Mesh> mesh{};
 	std::shared_ptr<Texture> intensityTexture{};
 
-	std::variant<std::monostate, ExternalAnimator> animator = std::monostate();
+	std::variant<std::monostate, ExternalAnimator, SkeletonAnimator> animator = std::monostate();
 	std::optional<Time> currentAnimationTime;
 	std::optional<Time> formerAnimationTime;
 };
