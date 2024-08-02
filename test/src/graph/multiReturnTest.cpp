@@ -138,32 +138,32 @@ TEST_F(GraphMultiReturn, vlp16_data_compare)
 	// Verify the output
 	const float epsilon = 1e-4f;
 
-	//	const auto mrFirstOutPointcloud = TestPointCloud::createFromNode(mrFormatFirst, fields);
-	//	const auto mrFirstIsHits = mrFirstOutPointcloud.getFieldValues<IS_HIT_I32>();
-	//	const auto mrFirstPoints = mrFirstOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
-	//	const auto mrFirstDistances = mrFirstOutPointcloud.getFieldValues<DISTANCE_F32>();
-	//	const auto expectedFirstPoint = Vec3f{CUBE_HALF_EDGE, 0.0f, 0.0f};
-	//	EXPECT_EQ(mrFirstOutPointcloud.getPointCount(), raysTf.size());
-	//	EXPECT_TRUE(mrFirstIsHits.at(0));
-	//	EXPECT_NEAR(mrFirstDistances.at(0), lidarCubeFaceDist, epsilon);
-	//	EXPECT_NEAR(mrFirstPoints.at(0).x(), expectedFirstPoint.x(), epsilon);
-	//	EXPECT_NEAR(mrFirstPoints.at(0).y(), expectedFirstPoint.y(), epsilon);
-	//	EXPECT_NEAR(mrFirstPoints.at(0).z(), expectedFirstPoint.z(), epsilon);
-	//
-	//	const auto mrLastOutPointcloud = TestPointCloud::createFromNode(mrFormatLast, fields);
-	//	const auto mrLastIsHits = mrLastOutPointcloud.getFieldValues<IS_HIT_I32>();
-	//	const auto mrLastPoints = mrLastOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
-	//	const auto mrLastDistances = mrLastOutPointcloud.getFieldValues<DISTANCE_F32>();
-	//	const float expectedDiameter = std::max(vlp16LidarHBeamDiameter, vlp16LidarVBeamDiameter);
-	//	const auto expectedLastDistance = static_cast<float>(sqrt(pow(lidarCubeFaceDist, 2) + pow(expectedDiameter / 2, 2)));
-	//	// Substract because the ray is pointing as is the negative X axis
-	//	const auto expectedLastPoint = lidarTransl - Vec3f{expectedLastDistance, 0.0f, 0.0f};
-	//	EXPECT_EQ(mrLastOutPointcloud.getPointCount(), raysTf.size());
-	//	EXPECT_TRUE(mrLastIsHits.at(0));
-	//	EXPECT_NEAR(mrLastDistances.at(0), expectedLastDistance, epsilon);
-	//	EXPECT_NEAR(mrLastPoints.at(0).x(), expectedLastPoint.x(), epsilon);
-	//	EXPECT_NEAR(mrLastPoints.at(0).y(), expectedLastPoint.y(), epsilon);
-	//	EXPECT_NEAR(mrLastPoints.at(0).z(), expectedLastPoint.z(), epsilon);
+	const auto outPointcloud = TestPointCloud::createFromNode(format, fields);
+	const auto isHits = outPointcloud.getFieldValues<IS_HIT_I32>();
+	const auto points = outPointcloud.getFieldValues<XYZ_VEC3_F32>();
+	const auto distances = outPointcloud.getFieldValues<DISTANCE_F32>();
+	EXPECT_EQ(isHits.size(), 2); // Single beam, first and last return.
+	EXPECT_EQ(points.size(), isHits.size());
+	EXPECT_EQ(distances.size(), isHits.size());
+
+	// First return.
+	const auto expectedFirstPoint = Vec3f{CUBE_HALF_EDGE, 0.0f, 0.0f};
+	EXPECT_TRUE(isHits.at(0));
+	EXPECT_NEAR(distances.at(0), lidarCubeFaceDist, epsilon);
+	EXPECT_NEAR(points.at(0).x(), expectedFirstPoint.x(), epsilon);
+	EXPECT_NEAR(points.at(0).y(), expectedFirstPoint.y(), epsilon);
+	EXPECT_NEAR(points.at(0).z(), expectedFirstPoint.z(), epsilon);
+
+	// Second return.
+	const float expectedDiameter = std::max(vlp16LidarHBeamDiameter, vlp16LidarVBeamDiameter);
+	const auto expectedLastDistance = static_cast<float>(sqrt(pow(lidarCubeFaceDist, 2) + pow(expectedDiameter / 2, 2)));
+	// Subtract because the ray is pointing as is the negative X axis.
+	const auto expectedLastPoint = lidarTransl - Vec3f{expectedLastDistance, 0.0f, 0.0f};
+	EXPECT_TRUE(isHits.at(1));
+	EXPECT_NEAR(distances.at(1), expectedLastDistance, epsilon);
+	EXPECT_NEAR(points.at(1).x(), expectedLastPoint.x(), epsilon);
+	EXPECT_NEAR(points.at(1).y(), expectedLastPoint.y(), epsilon);
+	EXPECT_NEAR(points.at(1).z(), expectedLastPoint.z(), epsilon);
 }
 
 #if RGL_BUILD_ROS2_EXTENSION
