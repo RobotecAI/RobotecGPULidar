@@ -209,42 +209,31 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	const rgl_mat3x4f cameraPose = Mat3x4f::TRS(Vec3f{-8.0f, 1.0f, 5.0f}, {90.0f, 30.0f, -70.0f}).toRGL();
 	constructCameraGraph(cameraPose);
 
-	//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_SECOND, RGL_RETURN_LAST, RGL_RETURN_STRONGEST};
-	//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_LAST, RGL_RETURN_FIRST_LAST};
-	//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_LAST_STRONGEST, RGL_RETURN_FIRST_LAST, RGL_RETURN_FIRST_STRONGEST,
-	//	                                              RGL_RETURN_STRONGEST_SECOND_STRONGEST, RGL_RETURN_FIRST_SECOND};
-	int returnModeIdx = -1;
-	//std::vector<rgl_vec3f> points;
-
+	// Switching return modes
+	constexpr int framesPerSwitch = 200;
 	int frameId = 0;
-	while (true) {
+	const auto switchToNextMode = [&]() {
+		static int returnModeIdx = -1;
+		static const std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_LAST, RGL_RETURN_FIRST_LAST};
 
+		returnModeIdx = ++returnModeIdx % static_cast<int>(returnModes.size());
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnModes[returnModeIdx]));
+	};
+
+	while (true) {
 		const auto newPose = (entitiesTransforms.at(0) *
 		                      Mat3x4f::translation(0.0f, std::abs(2 * std::sin(frameId * 0.05f)) * gapRange.y() - 0.9f, 0.0f))
 		                         .toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
 
-		//		if (frameId % 200 == 0) {
-		//			returnModeIdx = ++returnModeIdx % static_cast<int>(returnModes.size());
-		//			EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnModes[returnModeIdx]));
-		//			//std::cout << "Changed return mode to: " << returnModes[returnModeIdx] << std::endl;
-		//		}
+		if (frameId++ % framesPerSwitch == 0) {
+			switchToNextMode();
+		}
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
 		ASSERT_RGL_SUCCESS(rgl_graph_run(rays));
-		//ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
 
 		std::this_thread::sleep_for(50ms);
-		frameId += 1;
-
-		//		int32_t count = 0, size_of = 0;
-		//		rgl_graph_get_result_size(raytrace, RGL_FIELD_XYZ_VEC3_F32, &count, &size_of);
-		//		points.resize(count);
-		//		rgl_graph_get_result_data(raytrace, RGL_FIELD_XYZ_VEC3_F32, points.data());
-		//		std::cout << "Multi-return test: " << count << " " << size_of << std::endl;
-		//		for (const auto& p : points) {
-		//			std::cout << p.value[0] << " " << p.value[1] << " " << p.value[2] << std::endl;
-		//		}
 	}
 }
 #endif
