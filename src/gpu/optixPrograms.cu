@@ -56,9 +56,9 @@ extern "C" __global__ void __raygen__()
 	    ctx.rayOriginToWorld.inverse() *
 	    ray; // TODO(prybicki): instead of computing inverse, we should pass rays in local CF and then transform them to world CF.
 
+	saveNonHitBeamSamples(rayIdx, ctx.farNonHitDistance);
 	saveBeamSharedData(rayIdx, rayLocal);
 	if (ctx.rayMask != nullptr && ctx.rayMask[rayIdx] == 0) {
-		saveNonHitBeamSamples(rayIdx, ctx.farNonHitDistance);
 		return;
 	}
 
@@ -329,7 +329,8 @@ __device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, 
 
 __device__ void saveNonHitBeamSamples(int beamIdx, float nonHitDistance)
 {
-	for (int sampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES; sampleIdx < beamIdx * MULTI_RETURN_BEAM_SAMPLES + MULTI_RETURN_BEAM_SAMPLES; ++sampleIdx) {
+	for (int sampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES; sampleIdx < (beamIdx + 1) * MULTI_RETURN_BEAM_SAMPLES;
+	     ++sampleIdx) {
 		saveSampleAsNonHit(sampleIdx, nonHitDistance);
 	}
 }
