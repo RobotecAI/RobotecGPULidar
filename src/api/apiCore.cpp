@@ -1007,7 +1007,7 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_return_mode(rgl_node_t node, rg
 	auto status = rglSafeCall([&]() {
 		RGL_API_LOG("rgl_node_raytrace_configure_default_intensity(node={}, return_mode={})", repr(node), return_mode);
 		CHECK_ARG(node != nullptr);
-
+		CHECK_ARG(return_mode != RGL_RETURN_UNKNOWN);
 		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
 		raytraceNode->setReturnMode(return_mode);
 	});
