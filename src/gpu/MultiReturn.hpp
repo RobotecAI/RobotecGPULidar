@@ -22,6 +22,8 @@
 
 struct MultiReturnSamplesPointers
 {
+	// XYZ is not stored for samples, because we calculate it alongside center ray direction. For this reason, only distance
+	// is necessary.
 	Field<IS_HIT_I32>::type* isHit;
 	Field<DISTANCE_F32>::type* distance;
 	Field<INTENSITY_F32>::type* intensity;
