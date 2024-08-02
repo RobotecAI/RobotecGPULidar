@@ -416,6 +416,8 @@ __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_
 			sampleIdx = secondStrongest;
 		}
 
+		// TODO(Pawel): Consider saveReturnAsNonHit on failing this checkout. However, -1 on sampleIdx is a process issue here.
+		// More useful solution would be a way to verify returnMode somewhere before even calling kernels.
 		if (sampleIdx >= 0) {
 			const auto returnPointIdx = beamIdx * returnCount + returnIdx;
 			saveReturnAsHit(ctx, beamIdx, sampleIdx, returnPointIdx, returnType);
