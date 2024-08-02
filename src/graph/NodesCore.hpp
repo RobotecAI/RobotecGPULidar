@@ -124,7 +124,9 @@ struct RaytraceNode : IPointsNode
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
+		// TODO(Pawel): Watch for this - in case of dual return mode this will probably return smaller field array than expected.
 		if (field == RAY_POSE_MAT3x4_F32) {
+			assert(getReturnCount() == 1);
 			return raysNode->getRays();
 		}
 		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
@@ -163,14 +165,17 @@ private:
 		void adjustToFields(const std::unordered_map<rgl_field_t, IAnyArray::Ptr>& inFieldData,
 		                    StreamBoundObjectsManager& arrayMgr)
 		{
+			// TODO(Pawel): Consider if it will not be better to:
+			// - only resize on adjustToFields for arrays that were already present,
+			// - instead of creating new arrays with each adjustToFields if fields are present.
 			// clang-format off
-		laserRetro = inFieldData.contains(LASER_RETRO_F32) ? DeviceAsyncArray<Field<LASER_RETRO_F32>::type>::create(arrayMgr) : nullptr;
-		entityId = inFieldData.contains(ENTITY_ID_I32) ? DeviceAsyncArray<Field<ENTITY_ID_I32>::type>::create(arrayMgr) : nullptr;
-		absVelocity = inFieldData.contains(ABSOLUTE_VELOCITY_VEC3_F32) ? DeviceAsyncArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create(arrayMgr) : nullptr;
-		relVelocity = inFieldData.contains(RELATIVE_VELOCITY_VEC3_F32) ? DeviceAsyncArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create(arrayMgr) : nullptr;
-		radialSpeed = inFieldData.contains(RADIAL_SPEED_F32) ? DeviceAsyncArray<Field<RADIAL_SPEED_F32>::type>::create(arrayMgr) : nullptr;
-		normal = inFieldData.contains(NORMAL_VEC3_F32) ? DeviceAsyncArray<Field<NORMAL_VEC3_F32>::type>::create(arrayMgr) : nullptr;
-		incidentAngle = inFieldData.contains(INCIDENT_ANGLE_F32) ? DeviceAsyncArray<Field<INCIDENT_ANGLE_F32>::type>::create(arrayMgr) : nullptr;
+			laserRetro = inFieldData.contains(LASER_RETRO_F32) ? DeviceAsyncArray<Field<LASER_RETRO_F32>::type>::create(arrayMgr) : nullptr;
+			entityId = inFieldData.contains(ENTITY_ID_I32) ? DeviceAsyncArray<Field<ENTITY_ID_I32>::type>::create(arrayMgr) : nullptr;
+			absVelocity = inFieldData.contains(ABSOLUTE_VELOCITY_VEC3_F32) ? DeviceAsyncArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create(arrayMgr) : nullptr;
+			relVelocity = inFieldData.contains(RELATIVE_VELOCITY_VEC3_F32) ? DeviceAsyncArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create(arrayMgr) : nullptr;
+			radialSpeed = inFieldData.contains(RADIAL_SPEED_F32) ? DeviceAsyncArray<Field<RADIAL_SPEED_F32>::type>::create(arrayMgr) : nullptr;
+			normal = inFieldData.contains(NORMAL_VEC3_F32) ? DeviceAsyncArray<Field<NORMAL_VEC3_F32>::type>::create(arrayMgr) : nullptr;
+			incidentAngle = inFieldData.contains(INCIDENT_ANGLE_F32) ? DeviceAsyncArray<Field<INCIDENT_ANGLE_F32>::type>::create(arrayMgr) : nullptr;
 			// clang-format on
 		}
 
@@ -252,36 +257,6 @@ private:
 	DeviceAsyncArray<RaytraceRequestContext>::Ptr requestCtxDev = DeviceAsyncArray<RaytraceRequestContext>::create(arrayMgr);
 
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
-
-	struct MultiReturnFields
-	{
-		MultiReturnFields(StreamBoundObjectsManager& arrayMgr)
-		  : isHit(DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr)),
-		    xyz(DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr)),
-		    distance(DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr))
-		{}
-		void resize(size_t size)
-		{
-			isHit->resize(size, false, false);
-			xyz->resize(size, false, false);
-			distance->resize(size, false, false);
-		}
-		MultiReturnPointers getPointers()
-		{
-			return MultiReturnPointers{
-			    .isHit = isHit->getWritePtr(),
-			    .xyz = xyz->getWritePtr(),
-			    .distance = distance->getWritePtr(),
-			};
-		}
-		DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr isHit;
-		DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr xyz;
-		DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr distance;
-	};
-
-	MultiReturnFields mrSamples = MultiReturnFields{arrayMgr};
-	MultiReturnFields mrFirst = MultiReturnFields{arrayMgr};
-	MultiReturnFields mrLast = MultiReturnFields{arrayMgr};
 
 	template<rgl_field_t>
 	auto getPtrTo();
