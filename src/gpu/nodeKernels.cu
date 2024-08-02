@@ -332,40 +332,6 @@ __global__ void kFilterGroundPoints(size_t pointCount, const Vec3f sensor_up_vec
 	outNonGround[tid] = normalUpAngle > ground_angle_threshold;
 }
 
-__global__ void kProcessBeamSamplesFirstLast(size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
-                                             MultiReturnPointers first, MultiReturnPointers last, const Mat3x4f* beamsWorld)
-{
-	LIMIT(beamCount);
-
-	const auto beamIdx = tid;
-	int firstIdx = -1;
-	int lastIdx = -1;
-	for (int sampleIdx = 0; sampleIdx < samplesPerBeam; ++sampleIdx) {
-		if (beamSamples.isHit[beamIdx * samplesPerBeam + sampleIdx] == 0) {
-			continue;
-		}
-		auto currentFirstDistance = firstIdx >= 0 ? beamSamples.distance[beamIdx * samplesPerBeam + firstIdx] : FLT_MAX;
-		auto currentLastDistance = lastIdx >= 0 ? beamSamples.distance[beamIdx * samplesPerBeam + lastIdx] : -FLT_MAX;
-		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] < currentFirstDistance) {
-			firstIdx = sampleIdx;
-		}
-		if (beamSamples.distance[beamIdx * samplesPerBeam + sampleIdx] > currentLastDistance) {
-			lastIdx = sampleIdx;
-		}
-	}
-	Vec3f beamOrigin = beamsWorld[beamIdx] * Vec3f{0, 0, 0};
-	Vec3f beamDir = ((beamsWorld[beamIdx] * Vec3f{0, 0, 1}) - beamOrigin).normalized();
-	bool isHit = firstIdx >= 0; // Note that firstHit >= 0 implies lastHit >= 0
-	first.isHit[beamIdx] = isHit;
-	last.isHit[beamIdx] = isHit;
-	if (isHit) {
-		first.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + firstIdx];
-		last.distance[beamIdx] = beamSamples.distance[beamIdx * samplesPerBeam + lastIdx];
-		first.xyz[beamIdx] = beamOrigin + beamDir * first.distance[beamIdx];
-		last.xyz[beamIdx] = beamOrigin + beamDir * last.distance[beamIdx];
-	}
-}
-
 __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_return_mode_t returnMode,
                                       const RaytraceRequestContext* ctx)
 {
@@ -543,12 +509,6 @@ void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthSt
 {
 	run(kRadarComputeEnergy, stream, count, rayAzimuthStepRad, rayElevationStepRad, freq, lookAtOriginTransform, rayPose,
 	    hitDist, hitNorm, hitPos, outBUBRFactor);
-}
-
-void gpuProcessBeamSamplesFirstLast(cudaStream_t stream, size_t beamCount, int samplesPerBeam, MultiReturnPointers beamSamples,
-                                    MultiReturnPointers first, MultiReturnPointers last, const Mat3x4f* beamsWorld)
-{
-	run(kProcessBeamSamplesFirstLast, stream, beamCount, samplesPerBeam, beamSamples, first, last, beamsWorld);
 }
 
 void gpuReduceDivergentBeams(cudaStream_t stream, size_t beamCount, int samplesPerBeam, rgl_return_mode_t returnMode,

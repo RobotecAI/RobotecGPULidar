@@ -20,13 +20,6 @@
 #define MULTI_RETURN_BEAM_LAYERS 3
 #define MULTI_RETURN_BEAM_SAMPLES (1 + (MULTI_RETURN_BEAM_VERTICES * MULTI_RETURN_BEAM_LAYERS))
 
-struct MultiReturnPointers
-{
-	Field<IS_HIT_I32>::type* isHit;
-	Field<XYZ_VEC3_F32>::type* xyz;
-	Field<DISTANCE_F32>::type* distance;
-};
-
 struct MultiReturnSamplesPointers
 {
 	Field<IS_HIT_I32>::type* isHit;
