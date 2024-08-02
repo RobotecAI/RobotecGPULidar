@@ -221,9 +221,11 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	};
 
 	while (true) {
-		const auto newPose = (entitiesTransforms.at(0) *
-		                      Mat3x4f::translation(0.0f, std::abs(2 * std::sin(frameId * 0.05f)) * gapRange.y() - 0.9f, 0.0f))
-		                         .toRGL();
+		const auto newPose =
+		    (entitiesTransforms.at(0) *
+		     Mat3x4f::translation(0.0f, std::abs(2 * std::sin(static_cast<float>(frameId) * 0.05f)) * gapRange.y() - 0.9f,
+		                          0.0f))
+		        .toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
 
 		if (frameId++ % framesPerSwitch == 0) {
@@ -282,7 +284,8 @@ TEST_F(GraphMultiReturn, stairs)
 
 	int frameId = 0;
 	while (true) {
-		const float newVBeamDivAngle = vlp16LidarVBeamDivergence + std::sin(frameId * 0.1f) * vlp16LidarVBeamDivergence;
+		const float newVBeamDivAngle = vlp16LidarVBeamDivergence +
+		                               std::sin(static_cast<float>(frameId) * 0.1f) * vlp16LidarVBeamDivergence;
 		ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(raytrace, vlp16LidarHBeamDivergence, newVBeamDivAngle));
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
@@ -313,7 +316,8 @@ TEST_F(GraphMultiReturn, multiple_ray_beams)
 
 	for (int i = 0; i < horizontalSteps; ++i) {
 		for (const auto& velodyneVLP16Channel : vlp16Channels) {
-			vlp16RaysTf.emplace_back((Mat3x4f::rotationDeg(0.0f, 90.0f, resolution * i) * velodyneVLP16Channel).toRGL());
+			vlp16RaysTf.emplace_back(
+			    (Mat3x4f::rotationDeg(0.0f, 90.0f, resolution * static_cast<float>(i)) * velodyneVLP16Channel).toRGL());
 		}
 	}
 	const rgl_mat3x4f lidarPose = Mat3x4f::identity().toRGL();
