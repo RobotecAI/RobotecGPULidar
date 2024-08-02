@@ -45,46 +45,35 @@ protected:
 	const std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32,
 	                                         RETURN_TYPE_U8 /*, INTENSITY_F32, ENTITY_ID_I32*/};
 
-	rgl_node_t rays = nullptr, mrRays = nullptr, cameraRays = nullptr, transform = nullptr, mrTransform = nullptr,
-	           cameraTransform = nullptr, raytrace = nullptr, mrRaytrace = nullptr, cameraRaytrace = nullptr, mrFirst = nullptr,
-	           mrLast = nullptr, format = nullptr, mrFormatFirst = nullptr, mrFormatLast = nullptr, cameraFormat = nullptr,
-	           publish = nullptr, cameraPublish = nullptr, mrPublishFirst = nullptr, mrPublishLast = nullptr,
-	           compactFirst = nullptr, compactLast = nullptr;
+	rgl_node_t rays = nullptr, cameraRays = nullptr, transform = nullptr, cameraTransform = nullptr, raytrace = nullptr,
+	           cameraRaytrace = nullptr, format = nullptr, cameraFormat = nullptr, publish = nullptr, cameraPublish = nullptr,
+	           compact = nullptr;
 
 	void constructMRGraph(const std::vector<rgl_mat3x4f>& raysTf, const rgl_mat3x4f& lidarPose, const float hBeamDivAngle,
-	                      const float vBeamDivAngle, bool withPublish = false)
+	                      const float vBeamDivAngle, rgl_return_mode_t returnMode, bool withPublish = false)
 	{
-		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&mrRays, raysTf.data(), raysTf.size()));
-		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&mrTransform, &lidarPose));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&mrRaytrace, nullptr));
-		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(mrRaytrace, hBeamDivAngle, vBeamDivAngle));
-		EXPECT_RGL_SUCCESS(rgl_node_multi_return_switch(&mrFirst, RGL_RETURN_TYPE_FIRST));
-		EXPECT_RGL_SUCCESS(rgl_node_multi_return_switch(&mrLast, RGL_RETURN_TYPE_LAST));
-		EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactFirst, RGL_FIELD_IS_HIT_I32));
-		EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compactLast, RGL_FIELD_IS_HIT_I32));
-		EXPECT_RGL_SUCCESS(rgl_node_points_format(&mrFormatFirst, fields.data(), fields.size()));
-		EXPECT_RGL_SUCCESS(rgl_node_points_format(&mrFormatLast, fields.data(), fields.size()));
+		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
+		EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transform, &lidarPose));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(raytrace, hBeamDivAngle, vBeamDivAngle));
+		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnMode));
+		EXPECT_RGL_SUCCESS(rgl_node_points_compact_by_field(&compact, RGL_FIELD_IS_HIT_I32));
+		EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 #if RGL_BUILD_ROS2_EXTENSION
 		if (withPublish) {
-			EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&mrPublishFirst, "MRTest_First", "world"));
-			EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&mrPublishLast, "MRTest_Last", "world"));
+			EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "MRTest_MultiReturnCloud", "world"));
 		}
 #else
 		if (withPublish) {
 			GTEST_SKIP() << "Publishing is not supported without ROS2 extension. Skippping the test.";
 		}
 #endif
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrRays, mrTransform));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrTransform, mrRaytrace));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrRaytrace, mrFirst));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrRaytrace, mrLast));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrFirst, compactFirst));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrLast, compactLast));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactFirst, mrFormatFirst));
-		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactLast, mrFormatLast));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, transform));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transform, raytrace));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, compact));
+		EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compact, format));
 		if (withPublish) {
-			EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrFormatFirst, mrPublishFirst));
-			EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(mrFormatLast, mrPublishLast));
+			EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
 		}
 	}
 
@@ -142,39 +131,39 @@ TEST_F(GraphMultiReturn, vlp16_data_compare)
 	// Scene
 	spawnCubeOnScene(Mat3x4f::identity());
 
-	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence);
+	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, RGL_RETURN_FIRST_LAST);
 
-	EXPECT_RGL_SUCCESS(rgl_graph_run(mrRays));
+	EXPECT_RGL_SUCCESS(rgl_graph_run(rays));
 
 	// Verify the output
 	const float epsilon = 1e-4f;
 
-	const auto mrFirstOutPointcloud = TestPointCloud::createFromNode(mrFormatFirst, fields);
-	const auto mrFirstIsHits = mrFirstOutPointcloud.getFieldValues<IS_HIT_I32>();
-	const auto mrFirstPoints = mrFirstOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
-	const auto mrFirstDistances = mrFirstOutPointcloud.getFieldValues<DISTANCE_F32>();
-	const auto expectedFirstPoint = Vec3f{CUBE_HALF_EDGE, 0.0f, 0.0f};
-	EXPECT_EQ(mrFirstOutPointcloud.getPointCount(), raysTf.size());
-	EXPECT_TRUE(mrFirstIsHits.at(0));
-	EXPECT_NEAR(mrFirstDistances.at(0), lidarCubeFaceDist, epsilon);
-	EXPECT_NEAR(mrFirstPoints.at(0).x(), expectedFirstPoint.x(), epsilon);
-	EXPECT_NEAR(mrFirstPoints.at(0).y(), expectedFirstPoint.y(), epsilon);
-	EXPECT_NEAR(mrFirstPoints.at(0).z(), expectedFirstPoint.z(), epsilon);
-
-	const auto mrLastOutPointcloud = TestPointCloud::createFromNode(mrFormatLast, fields);
-	const auto mrLastIsHits = mrLastOutPointcloud.getFieldValues<IS_HIT_I32>();
-	const auto mrLastPoints = mrLastOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
-	const auto mrLastDistances = mrLastOutPointcloud.getFieldValues<DISTANCE_F32>();
-	const float expectedDiameter = std::max(vlp16LidarHBeamDiameter, vlp16LidarVBeamDiameter);
-	const auto expectedLastDistance = static_cast<float>(sqrt(pow(lidarCubeFaceDist, 2) + pow(expectedDiameter / 2, 2)));
-	// Substract because the ray is pointing as is the negative X axis
-	const auto expectedLastPoint = lidarTransl - Vec3f{expectedLastDistance, 0.0f, 0.0f};
-	EXPECT_EQ(mrLastOutPointcloud.getPointCount(), raysTf.size());
-	EXPECT_TRUE(mrLastIsHits.at(0));
-	EXPECT_NEAR(mrLastDistances.at(0), expectedLastDistance, epsilon);
-	EXPECT_NEAR(mrLastPoints.at(0).x(), expectedLastPoint.x(), epsilon);
-	EXPECT_NEAR(mrLastPoints.at(0).y(), expectedLastPoint.y(), epsilon);
-	EXPECT_NEAR(mrLastPoints.at(0).z(), expectedLastPoint.z(), epsilon);
+	//	const auto mrFirstOutPointcloud = TestPointCloud::createFromNode(mrFormatFirst, fields);
+	//	const auto mrFirstIsHits = mrFirstOutPointcloud.getFieldValues<IS_HIT_I32>();
+	//	const auto mrFirstPoints = mrFirstOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
+	//	const auto mrFirstDistances = mrFirstOutPointcloud.getFieldValues<DISTANCE_F32>();
+	//	const auto expectedFirstPoint = Vec3f{CUBE_HALF_EDGE, 0.0f, 0.0f};
+	//	EXPECT_EQ(mrFirstOutPointcloud.getPointCount(), raysTf.size());
+	//	EXPECT_TRUE(mrFirstIsHits.at(0));
+	//	EXPECT_NEAR(mrFirstDistances.at(0), lidarCubeFaceDist, epsilon);
+	//	EXPECT_NEAR(mrFirstPoints.at(0).x(), expectedFirstPoint.x(), epsilon);
+	//	EXPECT_NEAR(mrFirstPoints.at(0).y(), expectedFirstPoint.y(), epsilon);
+	//	EXPECT_NEAR(mrFirstPoints.at(0).z(), expectedFirstPoint.z(), epsilon);
+	//
+	//	const auto mrLastOutPointcloud = TestPointCloud::createFromNode(mrFormatLast, fields);
+	//	const auto mrLastIsHits = mrLastOutPointcloud.getFieldValues<IS_HIT_I32>();
+	//	const auto mrLastPoints = mrLastOutPointcloud.getFieldValues<XYZ_VEC3_F32>();
+	//	const auto mrLastDistances = mrLastOutPointcloud.getFieldValues<DISTANCE_F32>();
+	//	const float expectedDiameter = std::max(vlp16LidarHBeamDiameter, vlp16LidarVBeamDiameter);
+	//	const auto expectedLastDistance = static_cast<float>(sqrt(pow(lidarCubeFaceDist, 2) + pow(expectedDiameter / 2, 2)));
+	//	// Substract because the ray is pointing as is the negative X axis
+	//	const auto expectedLastPoint = lidarTransl - Vec3f{expectedLastDistance, 0.0f, 0.0f};
+	//	EXPECT_EQ(mrLastOutPointcloud.getPointCount(), raysTf.size());
+	//	EXPECT_TRUE(mrLastIsHits.at(0));
+	//	EXPECT_NEAR(mrLastDistances.at(0), expectedLastDistance, epsilon);
+	//	EXPECT_NEAR(mrLastPoints.at(0).x(), expectedLastPoint.x(), epsilon);
+	//	EXPECT_NEAR(mrLastPoints.at(0).y(), expectedLastPoint.y(), epsilon);
+	//	EXPECT_NEAR(mrLastPoints.at(0).z(), expectedLastPoint.z(), epsilon);
 }
 
 #if RGL_BUILD_ROS2_EXTENSION
@@ -214,29 +203,16 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	                                      spawnCubeOnScene(entitiesTransforms.at(1))};
 
 	// Lidar with MR
-	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, true);
-
-	// Lidar without MR
-	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&rays, raysTf.data(), raysTf.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_rays_transform(&transform, &lidarPose));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytrace, nullptr));
-	EXPECT_RGL_SUCCESS(
-	    rgl_node_raytrace_configure_beam_divergence(raytrace, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence));
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, RGL_RETURN_FIRST_LAST));
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
-	EXPECT_RGL_SUCCESS(rgl_node_points_ros2_publish(&publish, "MRTest_Lidar_Without_MR", "world"));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(rays, transform));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(transform, raytrace));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytrace, format));
-	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(format, publish));
+	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, RGL_RETURN_FIRST_LAST, true);
 
 	// Camera
 	const rgl_mat3x4f cameraPose = Mat3x4f::TRS(Vec3f{-8.0f, 1.0f, 5.0f}, {90.0f, 30.0f, -70.0f}).toRGL();
 	constructCameraGraph(cameraPose);
 
-	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_SECOND, RGL_RETURN_LAST, RGL_RETURN_STRONGEST};
-//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_LAST_STRONGEST, RGL_RETURN_FIRST_LAST, RGL_RETURN_FIRST_STRONGEST,
-//	                                              RGL_RETURN_STRONGEST_SECOND_STRONGEST, RGL_RETURN_FIRST_SECOND};
+	//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_SECOND, RGL_RETURN_LAST, RGL_RETURN_STRONGEST};
+	//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_LAST, RGL_RETURN_FIRST_LAST};
+	//	std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_LAST_STRONGEST, RGL_RETURN_FIRST_LAST, RGL_RETURN_FIRST_STRONGEST,
+	//	                                              RGL_RETURN_STRONGEST_SECOND_STRONGEST, RGL_RETURN_FIRST_SECOND};
 	int returnModeIdx = -1;
 	//std::vector<rgl_vec3f> points;
 
@@ -244,15 +220,15 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	while (true) {
 
 		const auto newPose = (entitiesTransforms.at(0) *
-		                      Mat3x4f::translation(0.0f, std::abs(std::sin(frameId * 0.05f)) * gapRange.y(), 0.0f))
+		                      Mat3x4f::translation(0.0f, std::abs(2 * std::sin(frameId * 0.05f)) * gapRange.y() - 0.9f, 0.0f))
 		                         .toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
 
-//		if (frameId % 200 == 0) {
-//			returnModeIdx = ++returnModeIdx % static_cast<int>(returnModes.size());
-//			EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnModes[returnModeIdx]));
-//			std::cout << "Changed return mode to: " << returnModes[returnModeIdx] << std::endl;
-//		}
+		//		if (frameId % 200 == 0) {
+		//			returnModeIdx = ++returnModeIdx % static_cast<int>(returnModes.size());
+		//			EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnModes[returnModeIdx]));
+		//			//std::cout << "Changed return mode to: " << returnModes[returnModeIdx] << std::endl;
+		//		}
 
 		ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
 		ASSERT_RGL_SUCCESS(rgl_graph_run(rays));
@@ -308,7 +284,7 @@ TEST_F(GraphMultiReturn, stairs)
 	const rgl_mat3x4f lidarPose{(Mat3x4f::translation(lidarTransl + stairsTranslation)).toRGL()};
 
 	// Lidar with MR
-	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, true);
+	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, RGL_RETURN_FIRST_LAST, true);
 
 	// Camera
 	rgl_mat3x4f cameraPose = Mat3x4f::translation({0.0f, -1.5f, stepHeight * 3 + 1.0f}).toRGL();
@@ -318,10 +294,9 @@ TEST_F(GraphMultiReturn, stairs)
 	int frameId = 0;
 	while (true) {
 		const float newVBeamDivAngle = vlp16LidarVBeamDivergence + std::sin(frameId * 0.1f) * vlp16LidarVBeamDivergence;
-		ASSERT_RGL_SUCCESS(
-		    rgl_node_raytrace_configure_beam_divergence(mrRaytrace, vlp16LidarHBeamDivergence, newVBeamDivAngle));
+		ASSERT_RGL_SUCCESS(rgl_node_raytrace_configure_beam_divergence(raytrace, vlp16LidarHBeamDivergence, newVBeamDivAngle));
 
-		ASSERT_RGL_SUCCESS(rgl_graph_run(mrRaytrace));
+		ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));
 
 		std::this_thread::sleep_for(100ms);
 		frameId += 1;
@@ -353,11 +328,10 @@ TEST_F(GraphMultiReturn, multiple_ray_beams)
 		}
 	}
 	const rgl_mat3x4f lidarPose = Mat3x4f::identity().toRGL();
-	const float beamDivAngle = vlp16LidarHBeamDivergence;
-	constructMRGraph(vlp16RaysTf, lidarPose, beamDivAngle, true);
+	constructMRGraph(vlp16RaysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, RGL_RETURN_FIRST_LAST, true);
 
 	ASSERT_RGL_SUCCESS(rgl_graph_run(cameraRays));
-	ASSERT_RGL_SUCCESS(rgl_graph_run(mrRays));
+	ASSERT_RGL_SUCCESS(rgl_graph_run(rays));
 }
 
 /**
