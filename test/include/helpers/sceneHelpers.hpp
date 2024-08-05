@@ -5,6 +5,7 @@
 
 #include <helpers/commonHelpers.hpp>
 #include <helpers/geometryData.hpp>
+#include <helpers/textureHelpers.hpp>
 
 #include <math/Mat3x4f.hpp>
 #include "stl_reader.h"
@@ -28,9 +29,19 @@ static rgl_entity_t makeEntity(rgl_mesh_t mesh = nullptr)
 	return entity;
 }
 
-static inline rgl_entity_t spawnCubeOnScene(const Mat3x4f& transform, std::optional<int> id = std::nullopt)
+static inline rgl_entity_t spawnCubeOnScene(const Mat3x4f& transform, std::optional<int> id = std::nullopt, std::optional<int32_t> intensity = std::nullopt)
 {
-	rgl_entity_t boxEntity = makeEntity(makeCubeMesh());
+	rgl_mesh_t mesh = makeCubeMesh();
+	rgl_entity_t boxEntity = makeEntity(mesh);
+
+	if (intensity.has_value()) {
+		EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, ARRAY_SIZE(cubeUVs)));
+
+		const auto colorTexture = generateStaticColorTexture(1, 1, intensity.value());
+		rgl_texture_t rglTexture = nullptr;
+		EXPECT_RGL_SUCCESS(rgl_texture_create(&rglTexture, colorTexture.data(), 1, 1));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(boxEntity, rglTexture));
+	}
 
 	auto rglTransform = transform.toRGL();
 	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(boxEntity, &rglTransform));
