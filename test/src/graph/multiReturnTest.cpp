@@ -42,8 +42,8 @@ protected:
 	                                   Mat3x4f::TRS({0.0f, 0.0f, mmToMeters(0.7f)}, {0.0f, -1.0f, 0.0f}),
 	                                   Mat3x4f::TRS({0.0f, 0.0f, mmToMeters(-11.2f)}, {0.0f, +15.0f, 0.0f})};
 
-	const std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32,
-	                                         RETURN_TYPE_U8 /*, INTENSITY_F32, ENTITY_ID_I32*/};
+	const std::vector<rgl_field_t> fields = {XYZ_VEC3_F32, IS_HIT_I32, DISTANCE_F32, RETURN_TYPE_U8,
+	                                         INTENSITY_F32 /*, ENTITY_ID_I32*/};
 
 	rgl_node_t rays = nullptr, cameraRays = nullptr, transform = nullptr, cameraTransform = nullptr, raytrace = nullptr,
 	           cameraRaytrace = nullptr, format = nullptr, cameraFormat = nullptr, publish = nullptr, cameraPublish = nullptr,
@@ -197,10 +197,12 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	// Scene
 	const Vec2f gapRange = {0.001f, 0.5f};
 	const std::vector<Mat3x4f> entitiesTransforms = {
-	    Mat3x4f::TRS(Vec3f{-5.0f, lidarTransl.y() + gapRange.x() + CUBE_HALF_EDGE, lidarTransl.z()}),
+	    Mat3x4f::TRS(Vec3f{-5.0f, lidarTransl.y() + gapRange.y() + CUBE_HALF_EDGE, lidarTransl.z()}, {0, 0, 0}, {0.1f, 1, 1}),
+	    Mat3x4f::TRS(Vec3f{-2.2f, lidarTransl.y() - 0.125f - CUBE_HALF_EDGE, lidarTransl.z()}, {0, 0, 0}, {0.1f, 1, 1}),
 	    Mat3x4f::TRS(Vec3f{0.0f, lidarTransl.y(), lidarTransl.z()}, {0, 0, 0}, {2, 2, 2})};
 	std::vector<rgl_entity_t> entities = {spawnCubeOnScene(entitiesTransforms.at(0)),
-	                                      spawnCubeOnScene(entitiesTransforms.at(1))};
+	                                      spawnCubeOnScene(entitiesTransforms.at(1), std::nullopt, 100),
+	                                      spawnCubeOnScene(entitiesTransforms.at(2))};
 
 	// Lidar with MR
 	constructMRGraph(raysTf, lidarPose, vlp16LidarHBeamDivergence, vlp16LidarVBeamDivergence, RGL_RETURN_FIRST_LAST, true);
@@ -214,18 +216,17 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	int frameId = 0;
 	const auto switchToNextMode = [&]() {
 		static int returnModeIdx = -1;
-		static const std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_LAST, RGL_RETURN_FIRST_LAST};
+		static const std::vector<rgl_return_mode_t> returnModes = {RGL_RETURN_FIRST, RGL_RETURN_LAST, RGL_RETURN_STRONGEST,
+		                                                           RGL_RETURN_FIRST_LAST, RGL_RETURN_LAST_STRONGEST};
 
 		returnModeIdx = ++returnModeIdx % static_cast<int>(returnModes.size());
 		EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnModes[returnModeIdx]));
 	};
 
 	while (true) {
-		const auto newPose =
-		    (entitiesTransforms.at(0) *
-		     Mat3x4f::translation(0.0f, std::abs(2 * std::sin(static_cast<float>(frameId) * 0.05f)) * gapRange.y() - 0.9f,
-		                          0.0f))
-		        .toRGL();
+		const auto newPose = (entitiesTransforms.at(0) *
+		                      Mat3x4f::translation(0.0f, 0.5f * std::sin(static_cast<float>(0.1f * frameId)), 0.0f))
+		                         .toRGL();
 		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
 
 		if (frameId++ % framesPerSwitch == 0) {
