@@ -47,7 +47,7 @@ static std::optional<std::string> wrapError(nvmlReturn_t status)
 	return {std::string(err)};
 }
 
-static CUcontext getCurrentDeviceContext()
+static CUcontext createDeviceContext()
 {
 	const char* error = nullptr;
 	CUresult status;
@@ -60,10 +60,10 @@ static CUcontext getCurrentDeviceContext()
 	}
 
 	CUcontext cudaContext = nullptr;
-	CUresult primaryCtxStatus = cuDevicePrimaryCtxRetain(&cudaContext, device);
-	if (primaryCtxStatus != CUDA_SUCCESS) {
-		cuGetErrorString(primaryCtxStatus, &error);
-		throw std::runtime_error(fmt::format("failed to get primary CUDA context: {} ({})\n", error, primaryCtxStatus));
+	status = cuCtxCreate(&cudaContext, 0, device);
+	if (status != CUDA_SUCCESS) {
+		cuGetErrorString(status, &error);
+		throw std::runtime_error(fmt::format("failed to get primary CUDA context: {} ({})\n", error, status));
 	}
 	assert(cudaContext != nullptr);
 	return cudaContext;
@@ -129,7 +129,8 @@ Optix::Optix()
 {
 	logVersions();
 	CHECK_OPTIX(optixInit());
-	CHECK_OPTIX(optixDeviceContextCreate(getCurrentDeviceContext(), nullptr, &context));
+	this->cudaContext = createDeviceContext();
+	CHECK_OPTIX(optixDeviceContextCreate(this->cudaContext, nullptr, &context));
 
 	auto cb = [](unsigned level, const char* tag, const char* message, void*) {
 		auto fmt = "[OptiX][{:^12}]: {}";
@@ -177,6 +178,10 @@ Optix::~Optix()
 
 	if (context) {
 		optixDeviceContextDestroy(context);
+	}
+
+	if (cudaContext) {
+		cuCtxDestroy(this->cudaContext);
 	}
 }
 

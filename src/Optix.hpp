@@ -15,6 +15,7 @@
 #pragma once
 
 #include <optix_types.h>
+#include <cuda.h>
 
 // RAII object to (de)fillSizeAndOffset OptiX and CUDA
 struct Optix
@@ -34,4 +35,6 @@ struct Optix
 
 private:
 	void initializeStaticOptixStructures();
+
+	CUcontext cudaContext = nullptr;
 };
