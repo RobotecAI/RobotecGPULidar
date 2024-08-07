@@ -54,6 +54,7 @@ struct RaytraceRequestContext
 	Field<IS_HIT_I32>::type* isHit;
 	Field<RAY_IDX_U32>::type* rayIdx;
 	Field<RING_ID_U16>::type* ringIdx;
+	Field<RETURN_TYPE_U8>::type* returnType;
 	Field<DISTANCE_F32>::type* distance;
 	Field<INTENSITY_F32>::type* intensityF32;
 	Field<INTENSITY_U8>::type* intensityU8;
@@ -70,8 +71,9 @@ struct RaytraceRequestContext
 	Field<INCIDENT_ANGLE_F32>::type* incidentAngle;
 
 	// Multi-Return
+	MultiReturnSamplesPointers mrSamples;
+	int returnCount;
 	float hBeamHalfDivergenceRad;
 	float vBeamHalfDivergenceRad;
-	MultiReturnPointers mrSamples;
 };
 static_assert(std::is_trivially_copyable<RaytraceRequestContext>::value);

@@ -85,6 +85,8 @@ struct IPointsNode : virtual Node
 	virtual std::size_t getWidth() const = 0;
 	virtual std::size_t getHeight() const = 0;
 	virtual std::size_t getPointCount() const { return getWidth() * getHeight(); }
+	virtual rgl_return_mode_t getReturnMode() const = 0;
+	virtual std::size_t getReturnCount() const = 0;
 
 	virtual Mat3x4f getLookAtOriginTransform() const { return Mat3x4f::identity(); }
 
@@ -118,6 +120,8 @@ struct IPointsNodeSingleInput : IPointsNode
 	virtual bool isDense() const override { return input->isDense(); }
 	virtual size_t getWidth() const override { return input->getWidth(); }
 	virtual size_t getHeight() const override { return input->getHeight(); }
+	virtual rgl_return_mode_t getReturnMode() const override { return input->getReturnMode(); }
+	virtual size_t getReturnCount() const override { return input->getReturnCount(); }
 
 	virtual Mat3x4f getLookAtOriginTransform() const override { return input->getLookAtOriginTransform(); }
 
