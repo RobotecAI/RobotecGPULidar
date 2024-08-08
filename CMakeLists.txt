@@ -108,7 +108,6 @@ set(RGL_SOURCE_FILES
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/Texture.cpp
-    src/scene/Skeleton.cpp
     src/scene/ASBuildScratchpad.cpp
     src/scene/animator/ExternalAnimator.cpp
     src/graph/GraphRunCtx.cpp

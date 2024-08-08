@@ -56,8 +56,6 @@ void Entity::setIntensityTexture(std::shared_ptr<Texture> texture)
 	Scene::instance().requestSBTRebuild();
 }
 
-void Entity::setSkeleton(std::shared_ptr<Skeleton> skeleton) { animator = SkeletonAnimator(std::move(skeleton), mesh); }
-
 std::optional<Mat3x4f> Entity::getPreviousFrameLocalToWorldTransform() const
 {
 	// At the moment of writing, setting Scene time (rgl_scene_set_time) is optional.

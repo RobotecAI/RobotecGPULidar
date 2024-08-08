@@ -15,15 +15,13 @@
 #pragma once
 
 #include <scene/Mesh.hpp>
-#include <scene/Skeleton.hpp>
 
 struct SkeletonAnimator
 {
 	friend struct Entity;
 
-	explicit SkeletonAnimator(std::shared_ptr<Skeleton> skeleton, std::shared_ptr<Mesh> mesh)
+	explicit SkeletonAnimator(std::shared_ptr<Mesh> mesh)
 	{
-		skeleton = std::move(skeleton);
 		mesh = mesh;
 
 		dAnimatedVertices->copyFrom(mesh->dVertices);
@@ -32,7 +30,6 @@ struct SkeletonAnimator
 	void animate(const Mat3x4f* pose) {}
 
 private:
-	std::shared_ptr<Skeleton> skeleton;
 	std::shared_ptr<Mesh> mesh;
 
 	DeviceSyncArray<Vec3f>::Ptr dAnimatedVertices = DeviceSyncArray<Vec3f>::create();
