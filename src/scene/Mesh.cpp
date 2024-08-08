@@ -55,3 +55,11 @@ void Mesh::setBoneWeights(const rgl_bone_weights_t* boneWeights, int32_t boneWei
 
 	dBoneWeights.value()->copyFromExternal(reinterpret_cast<const BoneWeights*>(boneWeights), boneWeightsCount);
 }
+
+void Mesh::setRestposes(const Mat3x4f* restposes, int32_t restposesCount)
+{
+	if (!dRestposes.has_value()) {
+		dRestposes = DeviceSyncArray<Mat3x4f>::create();
+	}
+	dRestposes.value()->copyFromExternal(restposes, restposesCount);
+}

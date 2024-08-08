@@ -15,6 +15,7 @@
 #pragma once
 
 #include <APIObject.hpp>
+#include <math/Mat3x4f.hpp>
 #include <math/Vector.hpp>
 #include <memory/Array.hpp>
 #include <scene/BoneWeights.hpp>
@@ -32,7 +33,7 @@ struct Mesh : APIObject<Mesh>
 
 	/**
 	 * Sets textures coordinates to the mesh. Vertex count and texture coordinates count must be equal.
-	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
+	 * After this operation, SBT needs to be rebuilt.
 	 */
 	void setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount);
 
@@ -40,6 +41,11 @@ struct Mesh : APIObject<Mesh>
 	 * Sets bone weights to the mesh. Vertex count and bone weights count must be equal.
 	 */
 	void setBoneWeights(const rgl_bone_weights_t* boneWeights, int32_t boneWeightsCount);
+
+	/**
+	 * Sets restposes to the mesh (used for skeleton animations).
+	 */
+	void setRestposes(const Mat3x4f* restposes, int32_t restposesCount);
 
 private:
 	Mesh(const Vec3f* vertices, std::size_t vertexCount, const Vec3i* indices, std::size_t indexCount);
@@ -49,4 +55,5 @@ private:
 	DeviceSyncArray<Vec3i>::Ptr dIndices = DeviceSyncArray<Vec3i>::create();
 	std::optional<DeviceSyncArray<Vec2f>::Ptr> dTextureCoords;
 	std::optional<DeviceSyncArray<BoneWeights>::Ptr> dBoneWeights;
+	std::optional<DeviceSyncArray<Mat3x4f>::Ptr> dRestposes;
 };

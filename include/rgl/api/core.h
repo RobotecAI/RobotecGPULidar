@@ -554,6 +554,17 @@ RGL_API rgl_status_t rgl_mesh_set_bone_weights(rgl_mesh_t mesh, const rgl_bone_w
                                                int32_t bone_weights_count);
 
 /**
+ * Assign restposes to given Mesh.
+ *
+ * @param mesh Mesh to modify.
+ * @param restposes An array containing inverse of the transformation matrix of the bone in restpose for each bone.
+ *                  Restpose at each index in the array corresponds to the bone with the same index.
+ *                  Typically, the restpose is the same as the bindpose.
+ * @param restposes_count Number of elements in the restposes array.
+ */
+RGL_API rgl_status_t rgl_mesh_set_restposes(rgl_mesh_t mesh, const rgl_mat3x4f* restposes, int32_t restposes_count);
+
+/**
  * Informs that the given Mesh will be no longer used.
  * The Mesh will be destroyed after all referring Entities are destroyed.
  * @param mesh Mesh to be marked as no longer needed
