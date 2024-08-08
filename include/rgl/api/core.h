@@ -159,14 +159,14 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
 typedef struct
 {
 	/**
-	 * Array for 4 bone indexes affecting a vertex.
-	 */
-	int32_t bone_idxes[4];
-	/**
 	 * Array for skinning weights.
 	 * The weight at each index corresponds to the bone_idx with the same index.
 	 */
 	float weights[4];
+	/**
+	 * Array for 4 bone indexes affecting a vertex.
+	 */
+	int32_t bone_idxes[4];
 } rgl_bone_weights_t;
 
 #ifdef __cplusplus
