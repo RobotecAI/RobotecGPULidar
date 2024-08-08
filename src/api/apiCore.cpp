@@ -241,6 +241,26 @@ void TapeCore::tape_mesh_set_bone_weights(const YAML::Node& yamlNode, PlaybackSt
 	                          state.getPtr<const rgl_bone_weights_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
+RGL_API rgl_status_t rgl_mesh_set_restposes(rgl_mesh_t mesh, const rgl_mat3x4f* restposes, int32_t restposes_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_mesh_set_restposes(mesh={}, restposes={})", (void*) mesh, repr(restposes, restposes_count));
+		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(restposes != nullptr);
+		CHECK_ARG(restposes_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Mesh::validatePtr(mesh)->setRestposes(reinterpret_cast<const Mat3x4f*>(restposes), restposes_count);
+	});
+	TAPE_HOOK(mesh, TAPE_ARRAY(restposes, restposes_count), restposes_count);
+	return status;
+}
+
+void TapeCore::tape_mesh_set_restposes(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_mesh_set_restposes(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()), state.getPtr<const rgl_mat3x4f>(yamlNode[1]),
+	                       yamlNode[2].as<int32_t>());
+}
+
 RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {
