@@ -66,11 +66,6 @@ struct Entity : APIObject<Entity>
 	void setLaserRetro(float retro);
 
 	/**
-	 * Sets skeleton that will be used in skeleton animation.
-	 */
-	void setSkeleton(std::shared_ptr<Skeleton> skeleton);
-
-	/**
 	 * Returns Entity's transform such that it is possible to compute meaningful velocity between it and the current transform.
 	 * Most often it will return the previous frame (if Entity is updated on each frame). See source for details.
 	 * NOTE: It is assumed that (current) transform is always valid for the present scene time (even if it was set in the past).
