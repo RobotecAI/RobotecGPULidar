@@ -17,16 +17,7 @@
 #include <APIObject.hpp>
 #include <math/Vector.hpp>
 #include <memory/Array.hpp>
-
-/**
- * Same as `rgl_bone_weights_t` but uses vector types to speed up CUDA operations.
- */
-struct BoneWeights
-{
-	int4 boneIndexes;
-	float4 weights;
-};
-static_assert(sizeof(BoneWeights) == sizeof(rgl_bone_weights_t));
+#include <scene/BoneWeights.hpp>
 
 /**
  * Represents mesh data (at the moment vertices and indices) stored on the GPU.
