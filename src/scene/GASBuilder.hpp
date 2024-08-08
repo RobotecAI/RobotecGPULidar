@@ -26,7 +26,7 @@ struct GASBuilder
 	explicit GASBuilder(const CudaStream::Ptr& stream, const DeviceSyncArray<Vec3f>::Ptr& vertices,
 	                    const DeviceSyncArray<Vec3i>::Ptr& indices)
 	{
-		const unsigned triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
+		triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 		vertexBuffers[0] = vertices->getDeviceReadPtr();
 
 		buildInput = {
@@ -66,8 +66,6 @@ struct GASBuilder
 		    nullptr, // &emitDesc,
 		    0));
 
-		CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
-
 		// Compaction yields around 10% of memory save-up and slows down a lot (e.g. 500us per model)
 		// scratchpad.doCompaction(gasHandle);
 	}
@@ -94,8 +92,6 @@ struct GASBuilder
 		    scratchpad.dFull->getDeviceReadPtr(), scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &gas,
 		    nullptr, // &emitDesc,
 		    0));
-
-		CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
 	}
 
 	OptixTraversableHandle getGAS() const { return gas; }
@@ -105,6 +101,7 @@ private:
 
 	// Shared between constructor (GAS building) and updateGAS()
 	OptixBuildInput buildInput;
+	unsigned triangleInputFlags;
 	CUdeviceptr vertexBuffers[1];
 	OptixAccelBuildOptions buildOptions;
 
