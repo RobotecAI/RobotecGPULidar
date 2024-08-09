@@ -42,15 +42,27 @@ struct SkeletonAnimator
 
 	void animate(const Mat3x4f* pose, std::size_t bonesCount)
 	{
+		if (mesh->dRestposes.value()->getCount() != bonesCount) {
+			auto msg = fmt::format(
+			    "Cannot perform skeleton animation because bones count do not match restposes count: bones={}, restposes={}",
+			    bonesCount, mesh->dRestposes.value()->getCount());
+			throw std::invalid_argument(msg);
+		}
+
 		dAnimationMatrix->copyFromExternal(pose, bonesCount);
+		const std::size_t vertexCount = mesh->dVertices->getCount();
 
-		// Run kernel
-		gpuPerformMeshSkinning(CudaStream::getNullStream()->getHandle(), mesh->dVertices->getCount(),
-		                       dAnimationMatrix->getCount(), mesh->dVertices->getReadPtr(),
-		                       mesh->dBoneWeights->get()->getReadPtr(), mesh->dRestposes.value()->getReadPtr(),
-		                       dAnimationMatrix->getWritePtr(), dAnimatedVertices->getWritePtr());
+		// Write new vertices to dVertexAnimationDisplacement to preserve old vertices in dAnimatedVertices
+		gpuPerformMeshSkinning(CudaStream::getNullStream()->getHandle(), mesh->dVertices->getCount(), bonesCount,
+		                       mesh->dVertices->getReadPtr(), mesh->dBoneWeights->get()->getReadPtr(),
+		                       mesh->dRestposes.value()->getReadPtr(), dAnimationMatrix->getWritePtr(),
+		                       dVertexAnimationDisplacement->getWritePtr());
 
-		// TODO(msz-rai): calculate dVertexAnimationDisplacement
+		// Update displacements and animation vertices
+		// dVertexAnimationDisplacement contains new vertices; dAnimatedVertices - old vertices
+		// After this operation, the array's names will match the data they contain
+		gpuUpdateVertices(CudaStream::getNullStream()->getHandle(), vertexCount, dVertexAnimationDisplacement->getWritePtr(),
+		                  dAnimatedVertices->getWritePtr());
 	}
 
 private:

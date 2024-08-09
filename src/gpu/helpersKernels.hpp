@@ -20,5 +20,3 @@
 
 void gpuSetupRandomNumberGenerator(cudaStream_t stream, size_t elementsCount, unsigned int seed,
                                    curandStatePhilox4_32_10_t* outPHILOXStates);
-
-void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement, Vec3f* oldToNewVertices);
