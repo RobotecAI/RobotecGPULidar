@@ -14,24 +14,46 @@
 
 #pragma once
 
+#include <gpu/sceneKernels.hpp>
+
 #include <scene/Mesh.hpp>
 
 struct SkeletonAnimator
 {
 	friend struct Entity;
 
-	explicit SkeletonAnimator(std::shared_ptr<Mesh> mesh)
+	explicit SkeletonAnimator(const std::shared_ptr<Mesh>& mesh)
 	{
-		mesh = mesh;
+		this->mesh = mesh;
 
 		dAnimatedVertices->copyFrom(mesh->dVertices);
 		dVertexAnimationDisplacement->resize(mesh->dVertices->getCount(), true, false);
+
+		dAnimationMatrix->resize(mesh->dRestposes.value()->getCount(), false, false);
 	}
-	void animate(const Mat3x4f* pose) {}
+
+	void animate(const Mat3x4f* pose, std::size_t bonesCount)
+	{
+		if (!mesh->dBoneWeights.has_value()) {
+			throw std::invalid_argument("invalid");
+		}
+
+		dAnimationMatrix->copyFromExternal(pose, bonesCount);
+
+		// Run kernel
+		gpuPerformMeshSkinning(CudaStream::getNullStream()->getHandle(), mesh->dVertices->getCount(),
+		                       dAnimationMatrix->getCount(), mesh->dVertices->getReadPtr(),
+		                       mesh->dBoneWeights->get()->getReadPtr(), mesh->dRestposes.value()->getReadPtr(),
+		                       dAnimationMatrix->getWritePtr(), dAnimatedVertices->getWritePtr());
+
+		// TODO(msz-rai): calculate dVertexAnimationDisplacement
+	}
 
 private:
 	std::shared_ptr<Mesh> mesh;
 
 	DeviceSyncArray<Vec3f>::Ptr dAnimatedVertices = DeviceSyncArray<Vec3f>::create();
 	DeviceSyncArray<Vec3f>::Ptr dVertexAnimationDisplacement = DeviceSyncArray<Vec3f>::create();
+
+	DeviceSyncArray<Mat3x4f>::Ptr dAnimationMatrix = DeviceSyncArray<Mat3x4f>::create();
 };

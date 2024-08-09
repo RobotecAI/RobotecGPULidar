@@ -104,6 +104,7 @@ set(RGL_SOURCE_FILES
     src/gpu/helpersKernels.cu
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
+    src/gpu/sceneKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp

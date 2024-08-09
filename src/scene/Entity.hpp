@@ -75,6 +75,8 @@ struct Entity : APIObject<Entity>
 
 	void applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCount);
 
+	void setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount);
+
 	bool isAnimated() const { return !std::holds_alternative<std::monostate>(animator); }
 
 	/**
