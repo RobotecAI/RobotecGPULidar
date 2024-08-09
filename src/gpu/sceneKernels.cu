@@ -37,10 +37,27 @@ __global__ void kCalculateAnimationMatrix(size_t boneCount, const Mat3x4f* restp
 	animationMatrix[tid] = animationMatrix[tid] * restposes[tid];
 }
 
+// Updates vertices and calculates their displacement.
+// Input: newVertices and oldVertices
+// Output: verticesDisplacement and newVertices
+__global__ void kUpdateVertices(size_t vertexCount, Vec3f* newVerticesToDisplacement, Vec3f* oldToNewVertices)
+{
+	LIMIT(vertexCount);
+	// See ExternalAnimator::animate or SkeletonAnimator::animate to understand the logic here.
+	Vec3f newVertex = newVerticesToDisplacement[tid];
+	newVerticesToDisplacement[tid] -= oldToNewVertices[tid];
+	oldToNewVertices[tid] = newVertex;
+}
+
 void gpuPerformMeshSkinning(cudaStream_t stream, size_t vertexCount, size_t boneCount, const Vec3f* restposeVertices,
                             const BoneWeights* boneWeights, const Mat3x4f* restposes, Mat3x4f* animationMatrix,
                             Vec3f* skinnedVertices)
 {
 	run(kCalculateAnimationMatrix, stream, boneCount, restposes, animationMatrix);
 	run(kPerformMeshSkinning, stream, vertexCount, restposeVertices, boneWeights, animationMatrix, skinnedVertices);
+}
+
+void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement, Vec3f* oldToNewVertices)
+{
+	run(kUpdateVertices, stream, vertexCount, newVerticesToDisplacement, oldToNewVertices);
 }

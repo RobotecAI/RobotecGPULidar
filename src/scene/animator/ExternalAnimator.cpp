@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gpu/helpersKernels.hpp>
+#include <gpu/sceneKernels.hpp>
 #include <scene/animator/ExternalAnimator.hpp>
 
 ExternalAnimator::ExternalAnimator(DeviceSyncArray<Vec3f>::Ptr originalVertices)
