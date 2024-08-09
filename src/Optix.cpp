@@ -62,8 +62,8 @@ static CUcontext getCurrentDeviceContext()
 	CUcontext cudaContext = nullptr;
 	CUresult primaryCtxStatus = cuDevicePrimaryCtxRetain(&cudaContext, device);
 	if (primaryCtxStatus != CUDA_SUCCESS) {
-		cuGetErrorString(status, &error);
-		throw std::runtime_error(fmt::format("failed to get primary CUDA context: {} ({})\n", error, status));
+		cuGetErrorString(primaryCtxStatus, &error);
+		throw std::runtime_error(fmt::format("failed to get primary CUDA context: {} ({})\n", error, primaryCtxStatus));
 	}
 	assert(cudaContext != nullptr);
 	return cudaContext;
