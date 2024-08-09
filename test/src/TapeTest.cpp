@@ -191,6 +191,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entity, &identityTf));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose_world(entity, restposes.data(), restposes.size()));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
 
 	EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(entity, cubeVertices, ARRAY_SIZE(cubeVertices)));

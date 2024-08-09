@@ -350,6 +350,26 @@ void TapeCore::tape_entity_set_transform(const YAML::Node& yamlNode, PlaybackSta
 	                         state.getPtr<const rgl_mat3x4f>(yamlNode[1]));
 }
 
+RGL_API rgl_status_t rgl_entity_set_pose_world(rgl_entity_t entity, const rgl_mat3x4f* pose, int32_t bones_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_set_pose_world(entity={}, pose={})", (void*) entity, repr(pose, bones_count));
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(pose != nullptr);
+		CHECK_ARG(bones_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Entity::validatePtr(entity)->setPoseAndAnimate(reinterpret_cast<const Mat3x4f*>(pose), bones_count);
+	});
+	TAPE_HOOK(entity, TAPE_ARRAY(pose, bones_count), bones_count);
+	return status;
+}
+
+void TapeCore::tape_entity_set_pose_world(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_set_pose_world(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                          state.getPtr<const rgl_mat3x4f>(yamlNode[1]), yamlNode[2].as<int32_t>());
+}
+
 RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id)
 {
 	auto status = rglSafeCall([&]() {

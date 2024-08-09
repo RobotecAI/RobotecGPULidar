@@ -554,9 +554,9 @@ RGL_API rgl_status_t rgl_mesh_set_bone_weights(rgl_mesh_t mesh, const rgl_bone_w
  * @param restposes An array containing inverse of the transformation matrix of the bone in restpose for each bone.
  *                  Restpose at each index in the array corresponds to the bone with the same index.
  *                  Typically, the restpose is the same as the bindpose.
- * @param restposes_count Number of elements in the restposes array.
+ * @param bones_count Number of elements in the restposes array.
  */
-RGL_API rgl_status_t rgl_mesh_set_restposes(rgl_mesh_t mesh, const rgl_mat3x4f* restposes, int32_t restposes_count);
+RGL_API rgl_status_t rgl_mesh_set_restposes(rgl_mesh_t mesh, const rgl_mat3x4f* restposes, int32_t bones_count);
 
 /**
  * Informs that the given Mesh will be no longer used.
@@ -598,6 +598,19 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity);
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (Entity -> world) coordinate system transform.
  */
 RGL_API rgl_status_t rgl_entity_set_transform(rgl_entity_t entity, const rgl_mat3x4f* transform);
+
+/**
+ * Set the current pose of the given Entity in world coordinates.
+ * The pose stands for bone transforms used in skeleton animation.
+ * The mesh associated with this entity must have bone weights and restposes assigned.
+ * If the pose of an entity is being set, the API call `rgl_entity_set_transform` should no longer be called on this entity.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
+ * @param entity Entity to modify.
+ * @param pose An array containing transformation matrices of the bones in world coordinates.
+ *             Bone transform at each index corresponds to the bone with the same index.
+ * @param bones_count Number of elements in the pose array. It must be equal to restposes count in the associated mesh!
+ */
+RGL_API rgl_status_t rgl_entity_set_pose_world(rgl_entity_t entity, const rgl_mat3x4f* pose, int32_t bones_count);
 
 /**
  * Set instance ID of the given Entity.
