@@ -111,6 +111,7 @@ set(RGL_SOURCE_FILES
     src/scene/Texture.cpp
     src/scene/ASBuildScratchpad.cpp
     src/scene/animator/ExternalAnimator.cpp
+    src/scene/animator/SkeletonAnimator.cpp
     src/graph/GraphRunCtx.cpp
     src/graph/Node.cpp
     src/graph/GaussianNoiseAngularHitpointNode.cpp

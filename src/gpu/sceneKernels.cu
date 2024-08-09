@@ -16,25 +16,25 @@
 #include <gpu/kernelUtils.hpp>
 #include <gpu/sceneKernels.hpp>
 
-__global__ void kPerformMeshSkinning(size_t vertexCount, const Vec3f* restposeVertices, const BoneWeights* boneWeights,
-                                     const Mat3x4f* animationMatrix, Vec3f* skinnedVertices)
+__global__ void kPerformSkeletonAnimation(size_t vertexCount, const Vec3f* restposeVertices, const BoneWeights* boneWeights,
+                                          const Mat3x4f* animationMatrices, Vec3f* skinnedVertices)
 {
 	LIMIT(vertexCount);
 
-	skinnedVertices[tid] = (animationMatrix[boneWeights[tid].boneIndexes.x] * restposeVertices[tid]) *
+	skinnedVertices[tid] = (animationMatrices[boneWeights[tid].boneIndexes.x] * restposeVertices[tid]) *
 	                       boneWeights[tid].weights.x;
-	skinnedVertices[tid] += (animationMatrix[boneWeights[tid].boneIndexes.y] * restposeVertices[tid]) *
+	skinnedVertices[tid] += (animationMatrices[boneWeights[tid].boneIndexes.y] * restposeVertices[tid]) *
 	                        boneWeights[tid].weights.y;
-	skinnedVertices[tid] += (animationMatrix[boneWeights[tid].boneIndexes.z] * restposeVertices[tid]) *
+	skinnedVertices[tid] += (animationMatrices[boneWeights[tid].boneIndexes.z] * restposeVertices[tid]) *
 	                        boneWeights[tid].weights.z;
-	skinnedVertices[tid] += (animationMatrix[boneWeights[tid].boneIndexes.w] * restposeVertices[tid]) *
+	skinnedVertices[tid] += (animationMatrices[boneWeights[tid].boneIndexes.w] * restposeVertices[tid]) *
 	                        boneWeights[tid].weights.w;
 }
 
-__global__ void kCalculateAnimationMatrix(size_t boneCount, const Mat3x4f* restposes, Mat3x4f* animationMatrix)
+__global__ void kCalculateAnimationMatrices(size_t boneCount, const Mat3x4f* restposes, Mat3x4f* animationMatrices)
 {
 	LIMIT(boneCount);
-	animationMatrix[tid] = animationMatrix[tid] * restposes[tid];
+	animationMatrices[tid] = animationMatrices[tid] * restposes[tid];
 }
 
 // Updates vertices and calculates their displacement.
@@ -49,15 +49,16 @@ __global__ void kUpdateVertices(size_t vertexCount, Vec3f* newVerticesToDisplace
 	oldToNewVertices[tid] = newVertex;
 }
 
-void gpuPerformMeshSkinning(cudaStream_t stream, size_t vertexCount, size_t boneCount, const Vec3f* restposeVertices,
-                            const BoneWeights* boneWeights, const Mat3x4f* restposes, Mat3x4f* animationMatrix,
-                            Vec3f* skinnedVertices)
+void gpuPerformSkeletonAnimation(cudaStream_t stream, size_t vertexCount, size_t boneCount, const Vec3f* restposeVertices,
+                                 const BoneWeights* boneWeights, const Mat3x4f* restposes, Mat3x4f* animationMatrices,
+                                 Vec3f* skinnedVertices)
 {
-	run(kCalculateAnimationMatrix, stream, boneCount, restposes, animationMatrix);
-	run(kPerformMeshSkinning, stream, vertexCount, restposeVertices, boneWeights, animationMatrix, skinnedVertices);
+	run(kCalculateAnimationMatrices, stream, boneCount, restposes, animationMatrices);
+	run(kPerformSkeletonAnimation, stream, vertexCount, restposeVertices, boneWeights, animationMatrices, skinnedVertices);
 }
 
-void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement, Vec3f* oldToNewVertices)
+void gpuUpdateVerticesWithDisplacement(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement,
+                                       Vec3f* oldToNewVertices)
 {
 	run(kUpdateVertices, stream, vertexCount, newVerticesToDisplacement, oldToNewVertices);
 }
