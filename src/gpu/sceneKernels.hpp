@@ -21,8 +21,9 @@
 #include <math/Mat3x4f.hpp>
 #include <scene/BoneWeights.hpp>
 
-void gpuPerformMeshSkinning(cudaStream_t stream, size_t vertexCount, size_t boneCount, const Vec3f* restposeVertices,
-                            const BoneWeights* boneWeights, const Mat3x4f* restposes, Mat3x4f* animationMatrix,
-                            Vec3f* skinnedVertices);
+void gpuPerformSkeletonAnimation(cudaStream_t stream, size_t vertexCount, size_t boneCount, const Vec3f* restposeVertices,
+                                 const BoneWeights* boneWeights, const Mat3x4f* restposes, Mat3x4f* animationMatrices,
+                                 Vec3f* skinnedVertices);
 
-void gpuUpdateVertices(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement, Vec3f* oldToNewVertices);
+void gpuUpdateVerticesWithDisplacement(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement,
+                                       Vec3f* oldToNewVertices);

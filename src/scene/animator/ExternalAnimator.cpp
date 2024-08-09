@@ -34,7 +34,7 @@ void ExternalAnimator::animate(const Vec3f* vertices, std::size_t vertexCount)
 	dVertexAnimationDisplacement->copyFromExternal(vertices, vertexCount);
 
 	// Update both displacements and vertices in a single kernel
-	gpuUpdateVertices(CudaStream::getNullStream()->getHandle(), vertexCount, dVertexAnimationDisplacement->getWritePtr(),
-	                  dAnimatedVertices->getWritePtr());
+	gpuUpdateVerticesWithDisplacement(CudaStream::getNullStream()->getHandle(), vertexCount,
+	                                  dVertexAnimationDisplacement->getWritePtr(), dAnimatedVertices->getWritePtr());
 	CHECK_CUDA(cudaStreamSynchronize(CudaStream::getNullStream()->getHandle()));
 }

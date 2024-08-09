@@ -15,55 +15,15 @@
 #pragma once
 
 #include <gpu/sceneKernels.hpp>
-
 #include <scene/Mesh.hpp>
 
 struct SkeletonAnimator
 {
 	friend struct Entity;
 
-	explicit SkeletonAnimator(const std::shared_ptr<Mesh>& mesh)
-	{
-		if (!mesh->dBoneWeights.has_value()) {
-			throw std::invalid_argument("Cannot create SkeletonAnimator because mesh has no bone weights defined.");
-		}
+	explicit SkeletonAnimator(const std::shared_ptr<Mesh>& mesh);
 
-		if (!mesh->dRestposes.has_value()) {
-			throw std::invalid_argument("Cannot create SkeletonAnimator because mesh has no restposes defined.");
-		}
-
-		this->mesh = mesh;
-
-		dAnimatedVertices->copyFrom(mesh->dVertices);
-		dVertexAnimationDisplacement->resize(mesh->dVertices->getCount(), true, false);
-
-		dAnimationMatrix->resize(mesh->dRestposes.value()->getCount(), false, false);
-	}
-
-	void animate(const Mat3x4f* pose, std::size_t bonesCount)
-	{
-		if (mesh->dRestposes.value()->getCount() != bonesCount) {
-			auto msg = fmt::format(
-			    "Cannot perform skeleton animation because bones count do not match restposes count: bones={}, restposes={}",
-			    bonesCount, mesh->dRestposes.value()->getCount());
-			throw std::invalid_argument(msg);
-		}
-
-		dAnimationMatrix->copyFromExternal(pose, bonesCount);
-		const std::size_t vertexCount = mesh->dVertices->getCount();
-
-		// Write new vertices to dVertexAnimationDisplacement to preserve old vertices in dAnimatedVertices
-		gpuPerformMeshSkinning(CudaStream::getNullStream()->getHandle(), mesh->dVertices->getCount(), bonesCount,
-		                       mesh->dVertices->getReadPtr(), mesh->dBoneWeights->get()->getReadPtr(),
-		                       mesh->dRestposes.value()->getReadPtr(), dAnimationMatrix->getWritePtr(),
-		                       dVertexAnimationDisplacement->getWritePtr());
-
-		// Update displacements and animation vertices
-		// dVertexAnimationDisplacement contains new vertices; dAnimatedVertices - old vertices
-		// After this operation, the array's names will match the data they contain
-		gpuUpdateVertices(CudaStream::getNullStream()->getHandle(), vertexCount, dVertexAnimationDisplacement->getWritePtr(),
-		                  dAnimatedVertices->getWritePtr());
-	}
+	void animate(const Mat3x4f* pose, std::size_t bonesCount);
 
 private:
 	std::shared_ptr<Mesh> mesh;
@@ -71,5 +31,5 @@ private:
 	DeviceSyncArray<Vec3f>::Ptr dAnimatedVertices = DeviceSyncArray<Vec3f>::create();
 	DeviceSyncArray<Vec3f>::Ptr dVertexAnimationDisplacement = DeviceSyncArray<Vec3f>::create();
 
-	DeviceSyncArray<Mat3x4f>::Ptr dAnimationMatrix = DeviceSyncArray<Mat3x4f>::create();
+	DeviceSyncArray<Mat3x4f>::Ptr dAnimationMatrices = DeviceSyncArray<Mat3x4f>::create();
 };
