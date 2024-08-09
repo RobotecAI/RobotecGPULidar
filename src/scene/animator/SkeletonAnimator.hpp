@@ -24,6 +24,14 @@ struct SkeletonAnimator
 
 	explicit SkeletonAnimator(const std::shared_ptr<Mesh>& mesh)
 	{
+		if (!mesh->dBoneWeights.has_value()) {
+			throw std::invalid_argument("Cannot create SkeletonAnimator because mesh has no bone weights defined.");
+		}
+
+		if (!mesh->dRestposes.has_value()) {
+			throw std::invalid_argument("Cannot create SkeletonAnimator because mesh has no restposes defined.");
+		}
+
 		this->mesh = mesh;
 
 		dAnimatedVertices->copyFrom(mesh->dVertices);
@@ -34,10 +42,6 @@ struct SkeletonAnimator
 
 	void animate(const Mat3x4f* pose, std::size_t bonesCount)
 	{
-		if (!mesh->dBoneWeights.has_value()) {
-			throw std::invalid_argument("invalid");
-		}
-
 		dAnimationMatrix->copyFromExternal(pose, bonesCount);
 
 		// Run kernel
