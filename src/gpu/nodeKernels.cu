@@ -16,7 +16,7 @@
 #include <gpu/nodeKernels.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <macros/cuda.hpp>
-#include <vector>
+#include <returnModeUtils.h>
 
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
@@ -101,7 +101,7 @@ __device__ Vec3f reflectPolarization(const Vec3f& pol, const Vec3f& hitNormal, c
 }
 
 __device__ void saveReturnAsHit(const RaytraceRequestContext* ctx, int beamIdx, int sampleIdx, int returnPointIdx,
-                                int returnType)
+                                rgl_return_type_t returnType)
 {
 	if (ctx->xyz != nullptr) {
 		const Mat3x4f ray = ctx->raysWorld[beamIdx];
@@ -111,9 +111,6 @@ __device__ void saveReturnAsHit(const RaytraceRequestContext* ctx, int beamIdx, 
 	}
 	if (ctx->isHit != nullptr) {
 		ctx->isHit[returnPointIdx] = ctx->mrSamples.isHit[sampleIdx];
-	}
-	if (ctx->ringIdx != nullptr && ctx->ringIds != nullptr) {
-		ctx->ringIdx[returnPointIdx] = ctx->ringIds[beamIdx % ctx->ringIdsCount];
 	}
 	if (ctx->returnType != nullptr) {
 		ctx->returnType[returnPointIdx] = returnType;
@@ -153,7 +150,8 @@ __device__ void saveReturnAsHit(const RaytraceRequestContext* ctx, int beamIdx, 
 	}
 }
 
-__device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int beamIdx, int returnPointIdx, int returnType)
+__device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int beamIdx, int returnPointIdx,
+                                   rgl_return_type_t returnType)
 {
 	// Arbitrary decision - if all samples are non hits, I just take the distance from center ray. This distance will be either
 	// ctx.nearNonHitDistance or ctx.farNonHitDistance, based on optix kernel processing - check optixPrograms.cu. This provides
@@ -172,9 +170,6 @@ __device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int beamId
 	}
 	if (ctx->isHit != nullptr) {
 		ctx->isHit[returnPointIdx] = false;
-	}
-	if (ctx->ringIdx != nullptr && ctx->ringIds != nullptr) {
-		ctx->ringIdx[returnPointIdx] = ctx->ringIds[beamIdx % ctx->ringIdsCount];
 	}
 	if (ctx->returnType != nullptr) {
 		ctx->returnType[returnPointIdx] = returnType;
@@ -356,13 +351,13 @@ __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_
 		}
 	}
 
-	const auto returnCount = returnMode >> RGL_RETURN_MODE_BIT_SHIFT;
+	const auto returnCount = static_cast<int>(getReturnCount(returnMode));
 
 	// There were no hits within beam samples.
 	if (first == -1) {
 		for (int returnIdx = 0; returnIdx < returnCount; ++returnIdx) {
 			const auto returnPointIdx = beamIdx * returnCount + returnIdx;
-			const auto returnType = (returnMode >> (returnIdx * RGL_RETURN_TYPE_BIT_SHIFT)) & 0xff;
+			const auto returnType = getReturnType(returnMode, returnIdx);
 			saveReturnAsNonHit(ctx, beamIdx, returnPointIdx, returnType);
 		}
 		return;
@@ -374,19 +369,18 @@ __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_
 			continue;
 		}
 
-		const auto currentSampleDistance = ctx->mrSamples.distance[sampleIdx];
-		if (currentSampleDistance < ctx->mrSamples.distance[first]) {
+		const auto currentDistance = ctx->mrSamples.distance[sampleIdx];
+		if (currentDistance < ctx->mrSamples.distance[first]) {
 			// Sample is closer than first. I ignore current == first, because then second would become equal to first.
 			second = first;
 			first = sampleIdx;
-		} else if (ctx->mrSamples.distance[first] < currentSampleDistance &&
-		           currentSampleDistance < ctx->mrSamples.distance[second]) {
+		} else if (ctx->mrSamples.distance[first] < currentDistance && currentDistance < ctx->mrSamples.distance[second]) {
 			// Sample is farther than first and closer than second. Note that current == first distance is ignored here -
 			// otherwise second would become first everytime when current would be equal first.
 			second = sampleIdx;
 		}
 
-		if (currentSampleDistance > ctx->mrSamples.distance[last]) {
+		if (currentDistance > ctx->mrSamples.distance[last]) {
 			last = sampleIdx;
 		}
 
@@ -401,7 +395,7 @@ __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_
 	}
 
 	for (int returnIdx = 0; returnIdx < returnCount; ++returnIdx) {
-		const auto returnType = (returnMode >> (returnIdx * RGL_RETURN_TYPE_BIT_SHIFT)) & 0xff;
+		const auto returnType = getReturnType(returnMode, returnIdx);
 		sampleIdx = -1;
 
 		if (returnType == RGL_RETURN_TYPE_FIRST) {

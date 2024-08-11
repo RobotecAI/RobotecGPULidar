@@ -121,6 +121,9 @@ extern "C" __global__ void __closesthit__()
 	// Hitpoint
 	Vec3f hitObject = Vec3f((1 - u - v) * A + u * B + v * C);
 	const Vec3f hitWorldRaytraced = optixTransformPointFromObjectToWorldSpace(hitObject);
+
+	// TODO: Check if double is still necessary here. After changing to float all tests seem to pass, but
+	// it was a precision issue at some point in the past.
 	const Vector<3, double> hwrd = hitWorldRaytraced;
 	const Vector<3, double> hso = beamSampleOrigin;
 	const double distance = (hwrd - hso).length();
@@ -146,8 +149,9 @@ extern "C" __global__ void __closesthit__()
 	const float incidentAngle = acosf(cosIncidentAngle);
 
 	float intensity = ctx.defaultIntensity;
-	bool isIntensityRequested = ctx.intensityF32 != nullptr || ctx.intensityU8 != nullptr;
-	if (isIntensityRequested && entityData.textureCoords != nullptr && entityData.texture != 0) {
+	// TODO(Pawel): Check if it is possible to read this only based on mode requested - if any requested
+	// return is strongest or second strongest.
+	if (entityData.textureCoords != nullptr && entityData.texture != 0) {
 		assert(triangleIndices.x() < entityData.textureCoordsCount);
 		assert(triangleIndices.y() < entityData.textureCoordsCount);
 		assert(triangleIndices.z() < entityData.textureCoordsCount);
@@ -315,6 +319,9 @@ __device__ void saveBeamSharedData(int beamIdx, const Mat3x4f& rayLocal)
 			                                       static_cast<uint32_t>(ctx.rayTimeOffsetsMs[beamIdx] * 1e6f) // in nanoseconds
 			                                       :
 			                                       0;
+		}
+		if (ctx.ringIdx != nullptr && ctx.ringIds != nullptr) {
+			ctx.ringIdx[returnPointIdx] = ctx.ringIds[beamIdx % ctx.ringIdsCount];
 		}
 	}
 }

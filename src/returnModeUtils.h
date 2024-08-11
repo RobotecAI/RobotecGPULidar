@@ -14,9 +14,42 @@
 
 #pragma once
 
+#include <cassert>
+
+#include <macros/cuda.hpp>
 #include <rgl/api/core.h>
 
-inline size_t getReturnCount(rgl_return_mode_t returnMode)
+inline HostDevFn size_t getReturnCount(rgl_return_mode_t returnMode)
 {
 	return static_cast<size_t>(returnMode >> RGL_RETURN_MODE_BIT_SHIFT);
+}
+
+inline HostDevFn rgl_return_type_t getReturnType(rgl_return_mode_t returnMode, size_t returnIndex)
+{
+	return static_cast<rgl_return_type_t>((returnMode >> (returnIndex * RGL_RETURN_TYPE_BIT_SHIFT)) & 0xff);
+}
+
+inline HostFn const std::string& getReturnTypeName(rgl_return_type_t returnType)
+{
+	// clang-format off
+	static const std::unordered_map<rgl_return_type_t, std::string> typeNames = {
+		{RGL_RETURN_TYPE_UNKNOWN, "Unknown"},
+		{RGL_RETURN_TYPE_FIRST, "First"},
+		{RGL_RETURN_TYPE_SECOND, "Second"},
+		{RGL_RETURN_TYPE_LAST, "Last"},
+	    {RGL_RETURN_TYPE_STRONGEST, "Strongest"},
+	    {RGL_RETURN_TYPE_SECOND_STRONGEST, "SecondStrongest"},
+	};
+	// clang-format on
+	assert(typeNames.find(returnType) != typeNames.cend());
+	return typeNames.at(returnType);
+}
+
+inline HostFn std::string getReturnModeName(rgl_return_mode_t returnMode)
+{
+	std::string returnModeName = getReturnTypeName(getReturnType(returnMode, 0));
+	for (size_t returnIdx = 1; returnIdx < getReturnCount(returnMode); ++returnIdx) {
+		returnModeName += "-" + getReturnTypeName(getReturnType(returnMode, returnIdx));
+	}
+	return returnModeName;
 }

@@ -835,7 +835,7 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t no
  * RGL_RETURN_FIRST_LAST will result in point return types to be set to RGL_RETURN_TYPE_FIRST or RGL_RETURN_TYPE_LAST,
  * interchangeably.
  * Default return mode on RaytraceNode is RGL_RETURN_FIRST.
- * Passing RGL_RETURN_MODE_UNDEFINED will have no effect (does not change return mode).
+ * Passing RGL_RETURN_UNKNOWN is an invalid operation and will fail - user can not set RGL_RETURN_UNKNOWN as return mode.
  * @param node RaytraceNode to modify.
  * @param return_mode Return mode to set.
  */
