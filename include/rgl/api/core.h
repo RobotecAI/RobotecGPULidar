@@ -50,7 +50,7 @@
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 17
+#define RGL_VERSION_MINOR 18
 #define RGL_VERSION_PATCH 0
 
 // Invalid Entity ID is assign to rays that does not hit any Entity.
@@ -326,6 +326,7 @@ typedef enum : int32_t
 	/**
 	 * Strength of the returned signal captured by the LiDAR sensor.
 	 * It is simulated using intensity textures assigned to entities (see `rgl_entity_set_intensity_texture`).
+	 * The final value also depends on the incident angle of the ray hit.
 	 */
 	RGL_FIELD_INTENSITY_F32,
 	/**
@@ -863,16 +864,6 @@ RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t*
  * @param field_count Number of elements in the `fields` array
  */
 RGL_API rgl_status_t rgl_node_points_yield(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count);
-
-/**
- * Creates or modifies CompactPointsNode.
- * The Node removes non-hit points. In other words, it converts a point cloud into a dense one.
- * Graph input: point cloud
- * Graph output: point cloud (compacted)
- * @param node If (*node) == nullptr, a new Node will be created. Otherwise, (*node) will be modified.
- */
-RGL_API [[deprecated("Use rgl_node_points_compact_by_field(rgl_node_t* node, rgl_field_t field) instead.")]] rgl_status_t
-rgl_node_points_compact(rgl_node_t* node);
 
 /**
  * Creates or modifies CompactPointsByFieldNode.

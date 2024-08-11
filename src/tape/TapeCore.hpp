@@ -60,7 +60,6 @@ class TapeCore
 	static void tape_node_raytrace_configure_return_mode(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_format(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_yield(const YAML::Node& yamlNode, PlaybackState& state);
-	static void tape_node_points_compact(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_compact_by_field(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_spatial_merge(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_temporal_merge(const YAML::Node& yamlNode, PlaybackState& state);
@@ -121,7 +120,6 @@ class TapeCore
 		                      TapeCore::tape_node_raytrace_configure_return_mode),
 		    TAPE_CALL_MAPPING("rgl_node_points_format", TapeCore::tape_node_points_format),
 		    TAPE_CALL_MAPPING("rgl_node_points_yield", TapeCore::tape_node_points_yield),
-		    TAPE_CALL_MAPPING("rgl_node_points_compact", TapeCore::tape_node_points_compact),
 		    TAPE_CALL_MAPPING("rgl_node_points_compact_by_field", TapeCore::tape_node_points_compact_by_field),
 		    TAPE_CALL_MAPPING("rgl_node_points_spatial_merge", TapeCore::tape_node_points_spatial_merge),
 		    TAPE_CALL_MAPPING("rgl_node_points_temporal_merge", TapeCore::tape_node_points_temporal_merge),
