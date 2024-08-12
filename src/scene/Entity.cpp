@@ -85,10 +85,7 @@ void Entity::applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCou
 	}
 	if (auto* externalAnimator = std::get_if<ExternalAnimator>(&animator)) {
 		externalAnimator->animate(vertices, vertexCount);
-		formerAnimationTime = currentAnimationTime;
-		currentAnimationTime = Scene::instance().getTime();
-		Scene::instance().requestASRebuild();  // Vertices themselves
-		Scene::instance().requestSBTRebuild(); // Vertices displacement
+		updateAnimationTime();
 		return;
 	}
 	throw std::runtime_error("Internal library error: type of the animator is not as expected.");
@@ -101,14 +98,18 @@ void Entity::setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount)
 	}
 	if (auto* skeletonAnimator = std::get_if<SkeletonAnimator>(&animator)) {
 		skeletonAnimator->animate(pose, bonesCount);
-		formerAnimationTime = currentAnimationTime;
-		currentAnimationTime = Scene::instance().getTime();
-		setTransform(Mat3x4f::identity());
-		//		Scene::instance().requestASRebuild();  // Vertices themselves
-		//		Scene::instance().requestSBTRebuild(); // Vertices displacement
+		updateAnimationTime();
 		return;
 	}
 	throw std::invalid_argument("Internal library error: type of the animator is not as expected.");
+}
+
+void Entity::updateAnimationTime()
+{
+	formerAnimationTime = currentAnimationTime;
+	currentAnimationTime = Scene::instance().getTime();
+	Scene::instance().requestASRebuild();  // Vertices themselves
+	Scene::instance().requestSBTRebuild(); // Vertices displacement
 }
 
 const Vec3f* Entity::getVertexDisplacementSincePrevFrame()

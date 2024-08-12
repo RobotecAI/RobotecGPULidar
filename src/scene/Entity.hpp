@@ -102,6 +102,8 @@ private:
 	 */
 	Entity(std::shared_ptr<Mesh> mesh);
 
+	void updateAnimationTime();
+
 private:
 	struct TransformWithTime
 	{
