@@ -48,6 +48,11 @@ void Scene::addEntity(std::shared_ptr<Entity> entity)
 void Scene::removeEntity(std::shared_ptr<Entity> entity)
 {
 	entities.erase(entity);
+	// If there are only 2 uses of GAS builder (one in each map: `gasBuilderForEntities` and `gasBuilderForStaticMeshes`) for static mesh,
+	// it needs to be deleted (it is the last entity that uses this mesh/GAS)
+	if (!entity->isAnimated() && gasBuilderForEntities[entity].use_count() <= 2) {
+		gasBuilderForStaticMeshes.erase(entity->mesh);
+	}
 	gasBuilderForEntities.erase(entity);
 	requestASRebuild();
 	requestSBTRebuild();
