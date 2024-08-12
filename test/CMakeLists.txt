@@ -41,6 +41,7 @@ set(RGL_TEST_FILES
     src/memory/arrayChangeStreamTest.cpp
     src/memory/arrayOpsTest.cpp
     src/memory/arrayTypingTest.cpp
+    src/scene/animationVelocityTest.cpp
     src/scene/entityAPITest.cpp
     src/scene/entityIdTest.cpp
     src/scene/entityLaserRetroTest.cpp
