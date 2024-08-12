@@ -29,7 +29,7 @@
 /**
  * Entity represents an object on a scene, consisting of:
  * - reference to mesh
- * - pose (local-to-world transform)
+ * - transform (local-to-world)
  * - (optional) reference to intensity texture
  * - (optional) id (for instance segmentation)
  * - etc.
@@ -73,17 +73,28 @@ struct Entity : APIObject<Entity>
 	 */
 	std::optional<Mat3x4f> getPreviousFrameLocalToWorldTransform() const;
 
+	/**
+	 * Updates animated vertices with the provided ones. Vertex count must be equal to original vertex count of the mesh.
+	 */
 	void applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCount);
 
+	/**
+	 * Performs skeleton animation based on provided pose. Bones must be equal to restposes count defined in the mesh.
+	 */
 	void setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount);
 
+	/**
+	 * Returns whether the given entity has been animated at least once.
+	 * @return true if entity is animated.
+	 */
 	bool isAnimated() const { return !std::holds_alternative<std::monostate>(animator); }
 
 	/**
 	 * Returns an array of deformed vertices due to animation.
-	 * If vertices were not animated, returns NULL (equivalent to an array of zero vectors).
+	 * If vertices were not animated, returns nullopt.
+	 * @return Device array of animated vertices if available.
 	 */
-	DeviceSyncArray<Vec3f>::Ptr getAnimatedVertices();
+	std::optional<DeviceSyncArray<Vec3f>::Ptr> getAnimatedVertices();
 
 	/**
 	 * Returns an array describing displacement of each vertex between current and previous state, due to animation.
@@ -102,6 +113,9 @@ private:
 	 */
 	Entity(std::shared_ptr<Mesh> mesh);
 
+	/**
+	 * Updates animation time to current scene time and requests AS & SBT to rebuild.
+	 */
 	void updateAnimationTime();
 
 private:

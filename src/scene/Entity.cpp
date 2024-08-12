@@ -133,13 +133,13 @@ const Vec3f* Entity::getVertexDisplacementSincePrevFrame()
 	    animator);
 }
 
-DeviceSyncArray<Vec3f>::Ptr Entity::getAnimatedVertices()
+std::optional<DeviceSyncArray<Vec3f>::Ptr> Entity::getAnimatedVertices()
 {
 	return std::visit(
-	    [](const auto& concreteAnimator) -> DeviceSyncArray<Vec3f>::Ptr {
+	    [](const auto& concreteAnimator) -> std::optional<DeviceSyncArray<Vec3f>::Ptr> {
 		    using AnimatorType = std::decay_t<decltype(concreteAnimator)>;
 		    if constexpr (std::is_same_v<AnimatorType, std::monostate>) {
-			    return nullptr;
+			    return std::nullopt;
 		    } else if constexpr (std::is_same_v<AnimatorType, ExternalAnimator> ||
 		                         std::is_same_v<AnimatorType, SkeletonAnimator>) {
 			    return concreteAnimator.dAnimatedVertices;

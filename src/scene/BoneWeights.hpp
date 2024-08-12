@@ -18,9 +18,9 @@
 
 #include <rgl/api/core.h>
 
-/**
-* Same as `rgl_bone_weights_t` but uses vector types to speed up CUDA operations.
-*/
+/*
+ * Same as `rgl_bone_weights_t` but uses vector types to speed up CUDA operations.
+ */
 struct BoneWeights
 {
 	float4 weights;

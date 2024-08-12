@@ -90,8 +90,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		std::optional<Mat3x4f> prevFrameTransform = entity->getPreviousFrameLocalToWorldTransform();
 		hHitgroupRecords->append(HitgroupRecord{
 		    .data = {
-		             .vertex = entity->isAnimated() ? entity->getAnimatedVertices()->getReadPtr() :
-                     entity->mesh->dVertices->getReadPtr(),
+		             .vertex = entity->getAnimatedVertices().value_or(entity->mesh->dVertices)->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
 		             // vertex count always the same (animated or not)
 		             .vertexCount = entity->mesh->dVertices->getCount(),
@@ -205,11 +204,12 @@ void Scene::setupGASForEntities()
 		if (entity->isAnimated()) {
 			// Update GAS if already built
 			if (gasBuilderForEntities.contains(entity)) {
-				gasBuilderForEntities[entity]->updateGAS(getStream(), entity->getAnimatedVertices(), entity->mesh->dIndices);
+				gasBuilderForEntities[entity]->updateGAS(getStream(), entity->getAnimatedVertices().value(),
+				                                         entity->mesh->dIndices);
 				continue;
 			}
 			// Build GAS
-			gasBuilderForEntities[entity] = std::make_shared<GASBuilder>(getStream(), entity->getAnimatedVertices(),
+			gasBuilderForEntities[entity] = std::make_shared<GASBuilder>(getStream(), entity->getAnimatedVertices().value(),
 			                                                             entity->mesh->dIndices);
 			continue;
 		}

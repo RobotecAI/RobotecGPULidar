@@ -155,6 +155,7 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
  * Describes 4 bone weights affecting a mesh vertex.
  * The sum of all weights for a given vertex should equal 1.
  * If a vertex is affected by fewer than 4 bones, each of the remaining weight values must be 0.
+ * bone_idxes for unused bones must still be valid (filled with the existing bone indexes).
  */
 typedef struct
 {
@@ -170,7 +171,7 @@ typedef struct
 } rgl_bone_weights_t;
 
 #ifdef __cplusplus
-static_assert(sizeof(rgl_bone_weights_t) == 4 * sizeof(int32_t) + 4 * sizeof(float));
+static_assert(sizeof(rgl_bone_weights_t) == 4 * sizeof(float) + 4 * sizeof(int32_t));
 static_assert(std::is_trivial<rgl_bone_weights_t>::value);
 static_assert(std::is_standard_layout<rgl_bone_weights_t>::value);
 #endif
@@ -393,7 +394,8 @@ typedef enum : int32_t
 	 * - linear velocity
 	 * - angular velocity
 	 * - mesh deformations (e.g. skinning)
-	 * The aforementioned are inferred from calls to `rgl_entity_set_transform`, `rgl_scene_set_time` and `rgl_entity_apply_external_animation`.
+	 * The aforementioned are inferred from calls to
+	 *  `rgl_entity_set_transform`, `rgl_scene_set_time` and `rgl_entity_apply_external_animation`, `rgl_entity_set_pose_world`.
 	 */
 	RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 
@@ -783,7 +785,7 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
  * Necessary for velocity distortion or calculating fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32.
  * Relative velocity calculation:
  * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
- * `rgl_scene_set_time`, `rgl_entity_set_transform`, and `rgl_entity_apply_external_animation`
+ * `rgl_scene_set_time`, `rgl_entity_set_transform`, `rgl_entity_set_pose_world`, and `rgl_entity_apply_external_animation`
  * @param node RaytraceNode to modify
  * @param linear_velocity 3D vector for linear velocity in units per second.
  * @param angular_velocity 3D vector for angular velocity in radians per second (roll, pitch, yaw).

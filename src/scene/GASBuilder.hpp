@@ -21,6 +21,11 @@
 #include <scene/ASBuildScratchpad.hpp>
 #include <macros/optix.hpp>
 
+/*
+ * Builder for geometry-AS.
+ * It also allows to update GAS (vertex and index counts must be equal to the original counts).
+ * All operations are performed asynchronously.
+ */
 struct GASBuilder
 {
 	explicit GASBuilder(const CudaStream::Ptr& stream, const DeviceSyncArray<Vec3f>::Ptr& vertices,
