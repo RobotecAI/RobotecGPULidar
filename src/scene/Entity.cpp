@@ -16,6 +16,13 @@
 
 API_OBJECT_INSTANCE(Entity);
 
+// Helper class to combine multiple callables into one overload set for std::visit.
+template<typename... Callable>
+struct Visitor : Callable...
+{
+	using Callable::operator()...;
+};
+
 std::shared_ptr<Entity> Entity::create(std::shared_ptr<Mesh> mesh)
 {
 	auto entity = APIObject<Entity>::create(mesh);
@@ -118,34 +125,19 @@ const Vec3f* Entity::getVertexDisplacementSincePrevFrame()
 		return nullptr;
 	}
 
+	using ReturnT = const Vec3f*;
 	return std::visit(
-	    [](const auto& concreteAnimator) -> const Vec3f* {
-		    using AnimatorType = std::decay_t<decltype(concreteAnimator)>;
-		    if constexpr (std::is_same_v<AnimatorType, std::monostate>) {
-			    return nullptr;
-		    } else if constexpr (std::is_same_v<AnimatorType, ExternalAnimator> ||
-		                         std::is_same_v<AnimatorType, SkeletonAnimator>) {
-			    return concreteAnimator.dVertexAnimationDisplacement->getReadPtr();
-		    } else {
-			    throw std::runtime_error("Internal library error: type of the animator is not as expected.");
-		    }
-	    },
+	    Visitor<decltype([](std::monostate a) -> ReturnT { return nullptr; }),
+	            decltype([](const ExternalAnimator& a) -> ReturnT { return a.dVertexAnimationDisplacement->getReadPtr(); }),
+	            decltype([](const SkeletonAnimator& a) -> ReturnT { return a.dVertexAnimationDisplacement->getReadPtr(); })>{},
 	    animator);
 }
 
 std::optional<DeviceSyncArray<Vec3f>::Ptr> Entity::getAnimatedVertices()
 {
-	return std::visit(
-	    [](const auto& concreteAnimator) -> std::optional<DeviceSyncArray<Vec3f>::Ptr> {
-		    using AnimatorType = std::decay_t<decltype(concreteAnimator)>;
-		    if constexpr (std::is_same_v<AnimatorType, std::monostate>) {
-			    return std::nullopt;
-		    } else if constexpr (std::is_same_v<AnimatorType, ExternalAnimator> ||
-		                         std::is_same_v<AnimatorType, SkeletonAnimator>) {
-			    return concreteAnimator.dAnimatedVertices;
-		    } else {
-			    throw std::runtime_error("Internal library error: type of the animator is not as expected.");
-		    }
-	    },
-	    animator);
+	using ReturnT = std::optional<DeviceSyncArray<Vec3f>::Ptr>;
+	return std::visit(Visitor<decltype([](std::monostate a) -> ReturnT { return std::nullopt; }),
+	                          decltype([](const ExternalAnimator& a) -> ReturnT { return a.dAnimatedVertices; }),
+	                          decltype([](const SkeletonAnimator& a) -> ReturnT { return a.dAnimatedVertices; })>{},
+	                  animator);
 }
