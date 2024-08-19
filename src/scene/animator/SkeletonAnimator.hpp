@@ -17,6 +17,11 @@
 #include <gpu/sceneKernels.hpp>
 #include <scene/Mesh.hpp>
 
+/*
+ * Animator that performs skeleton animation based on bone weights, restposes and the current bone pose.
+ * The result of the animation is new vertices of the mesh.
+ * Vertex animation displacement is the result of subtraction between current and previous vertices.
+ */
 struct SkeletonAnimator
 {
 	friend struct Entity;

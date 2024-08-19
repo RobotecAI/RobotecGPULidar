@@ -79,7 +79,7 @@ struct Entity : APIObject<Entity>
 	void applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCount);
 
 	/**
-	 * Performs skeleton animation based on provided pose. Bones must be equal to restposes count defined in the mesh.
+	 * Performs skeleton animation based on provided pose. Number of bones must be equal to restposes count defined in the mesh.
 	 */
 	void setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount);
 

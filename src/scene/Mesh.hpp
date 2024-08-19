@@ -39,6 +39,8 @@ struct Mesh : APIObject<Mesh>
 
 	/**
 	 * Sets bone weights to the mesh. Vertex count and bone weights count must be equal.
+	 * TODO(msz-rai): Consider performing bone weights normalization for safety.
+	 * TODO(msz-rai): This may be crucial when loading models directly from files outside the simulation engine.
 	 */
 	void setBoneWeights(const rgl_bone_weights_t* boneWeights, int32_t boneWeightsCount);
 

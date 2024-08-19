@@ -153,7 +153,7 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
 
 /**
  * Describes 4 bone weights affecting a mesh vertex.
- * The sum of all weights for a given vertex should equal 1.
+ * The sum of all weights for a given vertex should equal 1 (RGL do not normalize them).
  * If a vertex is affected by fewer than 4 bones, each of the remaining weight values must be 0.
  * bone_idxes for unused bones must still be valid (filled with the existing bone indexes).
  */
@@ -605,7 +605,7 @@ RGL_API rgl_status_t rgl_entity_set_transform(rgl_entity_t entity, const rgl_mat
  * Set the current pose of the given Entity in world coordinates.
  * The pose stands for bone transforms used in skeleton animation.
  * The mesh associated with this entity must have bone weights and restposes assigned.
- * If the pose of an entity is being set, the API call `rgl_entity_set_transform` should no longer be called on this entity.
+ * Since it is expected the pose is already in world coordinates, the API call `rgl_entity_set_transform` should no longer be called on this entity.
  * Should be called after rgl_scene_set_time to ensure proper velocity computation.
  * @param entity Entity to modify.
  * @param pose An array containing transformation matrices of the bones in world coordinates.

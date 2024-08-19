@@ -18,6 +18,11 @@
 #include <memory/Array.hpp>
 #include <scene/Scene.hpp>
 
+/*
+ * Animator that holds animation results performed outside RGL (e.g. game engine).
+ * Its update method (called animate) requires providing new (already animated) vertices of the mesh.
+ * Vertex animation displacement is the result of subtraction between new and previous vertices.
+ */
 struct ExternalAnimator
 {
 	friend struct Entity;
