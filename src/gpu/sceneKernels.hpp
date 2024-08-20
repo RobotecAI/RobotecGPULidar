@@ -15,7 +15,6 @@
 #pragma once
 
 #include <cuda.h>
-#include <curand_kernel.h>
 
 #include <math/Vector.hpp>
 #include <math/Mat3x4f.hpp>

@@ -97,14 +97,14 @@ TEST_F(AnimationVelocityTest, skeleton_animation_velocity)
 
 	// First 4 vertices are affected by bone 0, next 4 vertices are affected by bone 1. Bone 1 will be animated.
 	std::vector<rgl_bone_weights_t> cubeBoneWeights = {
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {0, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {0, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {0, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {0, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {1, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {1, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {1, 0, 0, 0}},
-	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_idxes = {1, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {0, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {0, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {0, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {0, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {1, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {1, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {1, 0, 0, 0}},
+	    {.weights = {1.0f, 0.0f, 0.0f, 0.0f}, .bone_indexes = {1, 0, 0, 0}},
 	};
 	std::vector<Mat3x4f> restposes = {Mat3x4f::identity(), Mat3x4f::identity()};
 	std::vector<rgl_mat3x4f> restposesRgl = {restposes[0].toRGL(), restposes[1].toRGL()};

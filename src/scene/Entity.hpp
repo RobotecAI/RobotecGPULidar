@@ -99,7 +99,7 @@ struct Entity : APIObject<Entity>
 	/**
 	 * Returns an array describing displacement of each vertex between current and previous state, due to animation.
 	 * If vertices were not animated in the previous frame, returns NULL (equivalent to an array of zero vectors).
-	 * @return Pointer do GPU-accessible array, same size as vertexCount. May be NULL.
+	 * @return Pointer to GPU-accessible array, same size as vertexCount. May be NULL.
 	 */
 	const Vec3f* getVertexDisplacementSincePrevFrame();
 

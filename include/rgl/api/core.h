@@ -155,7 +155,7 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
  * Describes 4 bone weights affecting a mesh vertex.
  * The sum of all weights for a given vertex should equal 1 (RGL do not normalize them).
  * If a vertex is affected by fewer than 4 bones, each of the remaining weight values must be 0.
- * bone_idxes for unused bones must still be valid (filled with the existing bone indexes).
+ * bone_indexes for unused bones must still be valid (filled with the existing bone indexes).
  */
 typedef struct
 {
@@ -167,7 +167,7 @@ typedef struct
 	/**
 	 * Array for 4 bone indexes affecting a vertex.
 	 */
-	int32_t bone_idxes[4];
+	int32_t bone_indexes[4];
 } rgl_bone_weights_t;
 
 #ifdef __cplusplus

@@ -90,12 +90,9 @@ void Entity::applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCou
 	if (!std::holds_alternative<ExternalAnimator>(animator)) {
 		animator = ExternalAnimator(mesh->dVertices);
 	}
-	if (auto* externalAnimator = std::get_if<ExternalAnimator>(&animator)) {
-		externalAnimator->animate(vertices, vertexCount);
-		updateAnimationTime();
-		return;
-	}
-	throw std::runtime_error("Internal library error: type of the animator is not as expected.");
+	auto externalAnimator = std::get<ExternalAnimator>(animator);
+	externalAnimator.animate(vertices, vertexCount);
+	updateAnimationTime();
 }
 
 void Entity::setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount)
@@ -103,12 +100,9 @@ void Entity::setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount)
 	if (!std::holds_alternative<SkeletonAnimator>(animator)) {
 		animator = SkeletonAnimator(mesh);
 	}
-	if (auto* skeletonAnimator = std::get_if<SkeletonAnimator>(&animator)) {
-		skeletonAnimator->animate(pose, bonesCount);
-		updateAnimationTime();
-		return;
-	}
-	throw std::invalid_argument("Internal library error: type of the animator is not as expected.");
+	auto skeletonAnimator = std::get<SkeletonAnimator>(animator);
+	skeletonAnimator.animate(pose, bonesCount);
+	updateAnimationTime();
 }
 
 void Entity::updateAnimationTime()
