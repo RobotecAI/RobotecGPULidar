@@ -157,9 +157,9 @@ TEST_F(RadarTest, rotating_reflector_2d)
 		auto position = Vec3f{0, 0, 5};
 		auto rotation = Vec3f{0, -90, 0};
 		auto scale = Vec3f{1, 1, 1};
-		rgl_mat3x4f reflectorPose =
+		rgl_mat3x4f reflectorTf =
 		    (Mat3x4f::TRS(position, {angle, 0, 0}, scale) * Mat3x4f::TRS({0, 0, 0}, rotation, scale)).toRGL();
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(reflector2D, &reflectorPose));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_transform(reflector2D, &reflectorTf));
 
 		//		std::locale loc(std::locale(), new numpunct());
 		//		std::cout << fmt::format(loc, "{0:L} ", angle);

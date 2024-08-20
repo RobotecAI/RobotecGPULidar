@@ -33,7 +33,7 @@ static inline rgl_entity_t spawnCubeOnScene(const Mat3x4f& transform, std::optio
 	rgl_entity_t boxEntity = makeEntity(makeCubeMesh());
 
 	auto rglTransform = transform.toRGL();
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(boxEntity, &rglTransform));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(boxEntity, &rglTransform));
 
 	if (id.has_value()) {
 		EXPECT_RGL_SUCCESS(rgl_entity_set_id(boxEntity, id.value()));

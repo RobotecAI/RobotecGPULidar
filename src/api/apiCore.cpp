@@ -217,6 +217,48 @@ void TapeCore::tape_mesh_set_texture_coords(const YAML::Node& yamlNode, Playback
 	                            yamlNode[2].as<int32_t>());
 }
 
+RGL_API rgl_status_t rgl_mesh_set_bone_weights(rgl_mesh_t mesh, const rgl_bone_weights_t* bone_weights,
+                                               int32_t bone_weights_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_mesh_set_bone_weights(mesh={}, bone_weights={})", (void*) mesh,
+		            repr(bone_weights, bone_weights_count));
+		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(bone_weights != nullptr);
+		CHECK_ARG(bone_weights_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Mesh::validatePtr(mesh)->setBoneWeights(bone_weights, bone_weights_count);
+	});
+	TAPE_HOOK(mesh, TAPE_ARRAY(bone_weights, bone_weights_count), bone_weights_count);
+	return status;
+}
+
+void TapeCore::tape_mesh_set_bone_weights(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_mesh_set_bone_weights(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                          state.getPtr<const rgl_bone_weights_t>(yamlNode[1]), yamlNode[2].as<int32_t>());
+}
+
+RGL_API rgl_status_t rgl_mesh_set_restposes(rgl_mesh_t mesh, const rgl_mat3x4f* restposes, int32_t restposes_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_mesh_set_restposes(mesh={}, restposes={})", (void*) mesh, repr(restposes, restposes_count));
+		CHECK_ARG(mesh != nullptr);
+		CHECK_ARG(restposes != nullptr);
+		CHECK_ARG(restposes_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Mesh::validatePtr(mesh)->setRestposes(reinterpret_cast<const Mat3x4f*>(restposes), restposes_count);
+	});
+	TAPE_HOOK(mesh, TAPE_ARRAY(restposes, restposes_count), restposes_count);
+	return status;
+}
+
+void TapeCore::tape_mesh_set_restposes(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_mesh_set_restposes(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()), state.getPtr<const rgl_mat3x4f>(yamlNode[1]),
+	                       yamlNode[2].as<int32_t>());
+}
+
 RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh)
 {
 	auto status = rglSafeCall([&]() {
@@ -234,26 +276,6 @@ void TapeCore::tape_mesh_destroy(const YAML::Node& yamlNode, PlaybackState& stat
 	auto meshId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_mesh_destroy(state.meshes.at(meshId));
 	state.meshes.erase(meshId);
-}
-
-RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_mesh_update_vertices(mesh={}, vertices={})", (void*) mesh, repr(vertices, vertex_count));
-		CHECK_ARG(mesh != nullptr);
-		CHECK_ARG(vertices != nullptr);
-		CHECK_ARG(vertex_count > 0);
-		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
-		Mesh::validatePtr(mesh)->updateVertices(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
-	});
-	TAPE_HOOK(mesh, TAPE_ARRAY(vertices, vertex_count), vertex_count);
-	return status;
-}
-
-void TapeCore::tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackState& state)
-{
-	rgl_mesh_update_vertices(state.meshes.at(yamlNode[0].as<TapeAPIObjectID>()), state.getPtr<const rgl_vec3f>(yamlNode[1]),
-	                         yamlNode[2].as<int32_t>());
 }
 
 rgl_status_t rgl_mesh_is_alive(rgl_mesh_t mesh, bool* out_alive)
@@ -308,10 +330,10 @@ void TapeCore::tape_entity_destroy(const YAML::Node& yamlNode, PlaybackState& st
 	state.entities.erase(entityId);
 }
 
-RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform)
+RGL_API rgl_status_t rgl_entity_set_transform(rgl_entity_t entity, const rgl_mat3x4f* transform)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_entity_set_pose(entity={}, transform={})", (void*) entity, repr(transform, 1));
+		RGL_API_LOG("rgl_entity_set_transform(entity={}, transform={})", (void*) entity, repr(transform, 1));
 		CHECK_ARG(entity != nullptr);
 		CHECK_ARG(transform != nullptr);
 		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
@@ -322,9 +344,30 @@ RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f*
 	return status;
 }
 
-void TapeCore::tape_entity_set_pose(const YAML::Node& yamlNode, PlaybackState& state)
+void TapeCore::tape_entity_set_transform(const YAML::Node& yamlNode, PlaybackState& state)
 {
-	rgl_entity_set_pose(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()), state.getPtr<const rgl_mat3x4f>(yamlNode[1]));
+	rgl_entity_set_transform(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                         state.getPtr<const rgl_mat3x4f>(yamlNode[1]));
+}
+
+RGL_API rgl_status_t rgl_entity_set_pose_world(rgl_entity_t entity, const rgl_mat3x4f* pose, int32_t bones_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_set_pose_world(entity={}, pose={})", (void*) entity, repr(pose, bones_count));
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(pose != nullptr);
+		CHECK_ARG(bones_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Entity::validatePtr(entity)->setPoseAndAnimate(reinterpret_cast<const Mat3x4f*>(pose), bones_count);
+	});
+	TAPE_HOOK(entity, TAPE_ARRAY(pose, bones_count), bones_count);
+	return status;
+}
+
+void TapeCore::tape_entity_set_pose_world(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_set_pose_world(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                          state.getPtr<const rgl_mat3x4f>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
 RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id)
@@ -380,6 +423,27 @@ void TapeCore::tape_entity_set_laser_retro(const YAML::Node& yamlNode, PlaybackS
 {
 	rgl_entity_set_laser_retro(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
 	                           yamlNode[1].as<Field<LASER_RETRO_F32>::type>());
+}
+
+RGL_API rgl_status_t rgl_entity_apply_external_animation(rgl_entity_t entity, const rgl_vec3f* vertices, int32_t vertex_count)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_apply_external_animation(entity={}, vertices={})", (void*) entity,
+		            repr(vertices, vertex_count));
+		CHECK_ARG(entity != nullptr);
+		CHECK_ARG(vertices != nullptr);
+		CHECK_ARG(vertex_count > 0);
+		GraphRunCtx::synchronizeAll(); // Prevent races with graph threads
+		Entity::validatePtr(entity)->applyExternalAnimation(reinterpret_cast<const Vec3f*>(vertices), vertex_count);
+	});
+	TAPE_HOOK(entity, TAPE_ARRAY(vertices, vertex_count), vertex_count);
+	return status;
+}
+
+void TapeCore::tape_entity_apply_external_animation(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_apply_external_animation(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                                    state.getPtr<const rgl_vec3f>(yamlNode[1]), yamlNode[2].as<int32_t>());
 }
 
 rgl_status_t rgl_entity_is_alive(rgl_entity_t entity, bool* out_alive)

@@ -15,11 +15,6 @@
 #include <scene/Mesh.hpp>
 #include <scene/Scene.hpp>
 
-#include <filesystem>
-#include <gpu/helpersKernels.hpp>
-
-namespace fs = std::filesystem;
-
 API_OBJECT_INSTANCE(Mesh);
 
 Mesh::Mesh(const Vec3f* vertices, size_t vertexCount, const Vec3i* indices, size_t indexCount)
@@ -28,124 +23,11 @@ Mesh::Mesh(const Vec3f* vertices, size_t vertexCount, const Vec3i* indices, size
 	dIndices->copyFromExternal(indices, indexCount);
 }
 
-void Mesh::updateVertices(const Vec3f* vertices, std::size_t vertexCount)
-{
-	if (dVertices->getCount() != vertexCount) {
-		auto msg = fmt::format("Invalid argument: cannot update vertices because vertex counts do not match: old={}, new={}",
-		                       dVertices->getCount(), vertexCount);
-		throw std::invalid_argument(msg);
-	}
-	// Use dVertexSkinningDisplacement as a buffer
-	dVertexSkinningDisplacement->resize(vertexCount, false, false);
-	dVertexSkinningDisplacement->copyFromExternal(vertices, vertexCount);
-
-	// Update both displacements and vertices in a single kernel
-	gpuUpdateVertices(CudaStream::getNullStream()->getHandle(), vertexCount, dVertexSkinningDisplacement->getWritePtr(),
-	                  dVertices->getWritePtr());
-	CHECK_CUDA(cudaStreamSynchronize(CudaStream::getNullStream()->getHandle()));
-
-	gasNeedsUpdate = true;
-	verticesFormerUpdateTime = verticesCurrentUpdateTime;
-	verticesCurrentUpdateTime = Scene::instance().getTime();
-	Scene::instance().requestASRebuild();  // Vertices themselves
-	Scene::instance().requestSBTRebuild(); // Vertices displacement
-}
-
-OptixTraversableHandle Mesh::getGAS(CudaStream::Ptr stream)
-{
-	if (!cachedGAS.has_value()) {
-		cachedGAS = buildGAS(stream);
-	}
-	if (gasNeedsUpdate) {
-		updateGAS(stream);
-	}
-	return *cachedGAS;
-}
-
-void Mesh::updateGAS(CudaStream::Ptr stream)
-{
-	OptixAccelBuildOptions updateOptions = buildOptions;
-	updateOptions.operation = OPTIX_BUILD_OPERATION_UPDATE;
-
-	// OptiX update disallows buffer sizes to change
-	OptixBuildInput updateInput = buildInput;
-	const CUdeviceptr vertexBuffers[1] = {dVertices->getDeviceReadPtr()};
-	updateInput.triangleArray.vertexBuffers = vertexBuffers;
-	updateInput.triangleArray.indexBuffer = dIndices->getDeviceReadPtr();
-
-	scratchpad.resizeToFit(updateInput, updateOptions);
-
-	// Fun fact: calling optixAccelBuild does not change anything visually, but introduces a significant slowdown
-	// Investigation is needed whether it needs to be called at all (OptiX documentation says yes, but it works without)
-	CHECK_OPTIX(optixAccelBuild(
-	    Optix::getOrCreate().context, stream->getHandle(), &updateOptions, &updateInput, 1,
-	    scratchpad.dTemp->getDeviceReadPtr(), scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(),
-	    scratchpad.dFull->getDeviceReadPtr(), scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &cachedGAS.value(),
-	    nullptr, // &emitDesc,
-	    0));
-
-	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
-
-	gasNeedsUpdate = false;
-}
-
-OptixTraversableHandle Mesh::buildGAS(CudaStream::Ptr stream)
-{
-	triangleInputFlags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
-	vertexBuffers[0] = dVertices->getDeviceReadPtr();
-
-	buildInput = {
-	    .type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES,
-	    .triangleArray = {
-	                      .vertexBuffers = vertexBuffers,
-	                      .numVertices = static_cast<unsigned int>(dVertices->getCount()),
-	                      .vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3,
-	                      .vertexStrideInBytes = sizeof(decltype(dVertices)::element_type::DataType),
-	                      .indexBuffer = dIndices->getDeviceReadPtr(),
-	                      .numIndexTriplets = static_cast<unsigned int>(dIndices->getCount()),
-	                      .indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3,
-	                      .indexStrideInBytes = sizeof(decltype(dIndices)::element_type::DataType),
-	                      .flags = &triangleInputFlags,
-	                      .numSbtRecords = 1,
-	                      .sbtIndexOffsetBuffer = 0,
-	                      .sbtIndexOffsetSizeInBytes = 0,
-	                      .sbtIndexOffsetStrideInBytes = 0,
-	                      }
-    };
-
-	buildOptions = {.buildFlags = OPTIX_BUILD_FLAG_PREFER_FAST_TRACE | OPTIX_BUILD_FLAG_ALLOW_UPDATE,
-	                // | OPTIX_BUILD_FLAG_ALLOW_COMPACTION, // Temporarily disabled
-	                .operation = OPTIX_BUILD_OPERATION_BUILD};
-
-	scratchpad.resizeToFit(buildInput, buildOptions);
-
-	// OptixAccelEmitDesc emitDesc = {
-	// .result = scratchpad.dCompactedSize.readDeviceRaw(),
-	// .type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE,
-	// };
-
-	OptixTraversableHandle gasHandle;
-	CHECK_OPTIX(optixAccelBuild(
-	    Optix::getOrCreate().context, stream->getHandle(), &buildOptions, &buildInput, 1, scratchpad.dTemp->getDeviceReadPtr(),
-	    scratchpad.dTemp->getSizeOf() * scratchpad.dTemp->getCount(), scratchpad.dFull->getDeviceReadPtr(),
-	    scratchpad.dFull->getSizeOf() * scratchpad.dFull->getCount(), &gasHandle,
-	    nullptr, // &emitDesc,
-	    0));
-
-	CHECK_CUDA(cudaStreamSynchronize(stream->getHandle()));
-
-	// Compaction yields around 10% of memory save-up and slows down a lot (e.g. 500us per model)
-	// scratchpad.doCompaction(gasHandle);
-
-	gasNeedsUpdate = false;
-	return gasHandle;
-}
-
 void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 {
 	if (texCoordCount != dVertices->getCount()) {
-		auto msg = fmt::format("Invalid argument: cannot set texture coordinates because vertex count do not match with "
-		                       "texture coordinates count: vertices={}, textureCoords={}",
+		auto msg = fmt::format("Cannot set texture coordinates because vertex count do not match with "
+		                       "texture coordinates count: vertexCount={}, textureCoords={}",
 		                       dVertices->getCount(), texCoordCount);
 		throw std::invalid_argument(msg);
 	}
@@ -155,13 +37,29 @@ void Mesh::setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount)
 	}
 
 	dTextureCoords.value()->copyFromExternal(texCoords, texCoordCount);
-	gasNeedsUpdate = true;
 	Scene::instance().requestSBTRebuild();
 }
-const Vec3f* Mesh::getSkinningDisplacementSinceLastFrame() const
+
+void Mesh::setBoneWeights(const rgl_bone_weights_t* boneWeights, int32_t boneWeightsCount)
 {
-	if (!verticesFormerUpdateTime.has_value() || verticesFormerUpdateTime != Scene::instance().getPrevTime()) {
-		return nullptr;
+	if (boneWeightsCount != dVertices->getCount()) {
+		auto msg = fmt::format("Cannot set bone weights because vertex count do not match with "
+		                       "bone weights count: vertexCount={}, boneWeightsCount={}",
+		                       dVertices->getCount(), boneWeightsCount);
+		throw std::invalid_argument(msg);
 	}
-	return dVertexSkinningDisplacement->getReadPtr();
+
+	if (!dBoneWeights.has_value()) {
+		dBoneWeights = DeviceSyncArray<BoneWeights>::create();
+	}
+
+	dBoneWeights.value()->copyFromExternal(reinterpret_cast<const BoneWeights*>(boneWeights), boneWeightsCount);
+}
+
+void Mesh::setRestposes(const Mat3x4f* restposes, int32_t restposesCount)
+{
+	if (!dRestposes.has_value()) {
+		dRestposes = DeviceSyncArray<Mat3x4f>::create();
+	}
+	dRestposes.value()->copyFromExternal(restposes, restposesCount);
 }

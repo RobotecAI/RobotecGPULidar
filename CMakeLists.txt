@@ -104,11 +104,14 @@ set(RGL_SOURCE_FILES
     src/gpu/helpersKernels.cu
     src/gpu/gaussianNoiseKernels.cu
     src/gpu/nodeKernels.cu
+    src/gpu/sceneKernels.cu
     src/scene/Scene.cpp
     src/scene/Mesh.cpp
     src/scene/Entity.cpp
     src/scene/Texture.cpp
     src/scene/ASBuildScratchpad.cpp
+    src/scene/animator/ExternalAnimator.cpp
+    src/scene/animator/SkeletonAnimator.cpp
     src/graph/GraphRunCtx.cpp
     src/graph/Node.cpp
     src/graph/GaussianNoiseAngularHitpointNode.cpp

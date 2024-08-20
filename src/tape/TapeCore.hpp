@@ -25,16 +25,19 @@ class TapeCore
 	static void tape_cleanup(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_mesh_create(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_mesh_destroy(const YAML::Node& yamlNode, PlaybackState& state);
-	static void tape_mesh_update_vertices(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_mesh_set_texture_coords(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_mesh_set_bone_weights(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_mesh_set_restposes(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_texture_create(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_texture_destroy(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_create(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_destroy(const YAML::Node& yamlNode, PlaybackState& state);
-	static void tape_entity_set_pose(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_entity_set_transform(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_entity_set_pose_world(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_set_id(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_set_intensity_texture(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_entity_set_laser_retro(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_entity_apply_external_animation(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_scene_set_time(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_graph_run(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_graph_destroy(const YAML::Node& yamlNode, PlaybackState& state);
@@ -82,16 +85,19 @@ class TapeCore
 		    TAPE_CALL_MAPPING("rgl_cleanup", TapeCore::tape_cleanup),
 		    TAPE_CALL_MAPPING("rgl_mesh_create", TapeCore::tape_mesh_create),
 		    TAPE_CALL_MAPPING("rgl_mesh_destroy", TapeCore::tape_mesh_destroy),
-		    TAPE_CALL_MAPPING("rgl_mesh_update_vertices", TapeCore::tape_mesh_update_vertices),
 		    TAPE_CALL_MAPPING("rgl_mesh_set_texture_coords", TapeCore::tape_mesh_set_texture_coords),
+		    TAPE_CALL_MAPPING("rgl_mesh_set_bone_weights", TapeCore::tape_mesh_set_bone_weights),
+		    TAPE_CALL_MAPPING("rgl_mesh_set_restposes", TapeCore::tape_mesh_set_restposes),
 		    TAPE_CALL_MAPPING("rgl_texture_create", TapeCore::tape_texture_create),
 		    TAPE_CALL_MAPPING("rgl_texture_destroy", TapeCore::tape_texture_destroy),
 		    TAPE_CALL_MAPPING("rgl_entity_create", TapeCore::tape_entity_create),
 		    TAPE_CALL_MAPPING("rgl_entity_destroy", TapeCore::tape_entity_destroy),
-		    TAPE_CALL_MAPPING("rgl_entity_set_pose", TapeCore::tape_entity_set_pose),
+		    TAPE_CALL_MAPPING("rgl_entity_set_transform", TapeCore::tape_entity_set_transform),
+		    TAPE_CALL_MAPPING("rgl_entity_set_pose_world", TapeCore::tape_entity_set_pose_world),
 		    TAPE_CALL_MAPPING("rgl_entity_set_id", TapeCore::tape_entity_set_id),
 		    TAPE_CALL_MAPPING("rgl_entity_set_intensity_texture", TapeCore::tape_entity_set_intensity_texture),
 		    TAPE_CALL_MAPPING("rgl_entity_set_laser_retro", TapeCore::tape_entity_set_laser_retro),
+		    TAPE_CALL_MAPPING("rgl_entity_apply_external_animation", TapeCore::tape_entity_apply_external_animation),
 		    TAPE_CALL_MAPPING("rgl_scene_set_time", TapeCore::tape_scene_set_time),
 		    TAPE_CALL_MAPPING("rgl_graph_run", TapeCore::tape_graph_run),
 		    TAPE_CALL_MAPPING("rgl_graph_destroy", TapeCore::tape_graph_destroy),

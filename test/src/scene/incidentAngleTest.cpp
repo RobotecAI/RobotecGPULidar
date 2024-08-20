@@ -44,8 +44,8 @@ TEST_P(IncidentAngleTest, wall)
 
 	// Scene
 	rgl_entity_t wall = makeEntity(makeCubeMesh());
-	rgl_mat3x4f wallPose = Mat3x4f::TRS(WALL_POS + wallPosOffset, wallRotDeg, WALL_DIMS).toRGL();
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(wall, &wallPose));
+	rgl_mat3x4f wallTransform = Mat3x4f::TRS(WALL_POS + wallPosOffset, wallRotDeg, WALL_DIMS).toRGL();
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(wall, &wallTransform));
 
 	// Sensor
 	std::vector<rgl_mat3x4f> rays = makeGridOfParallelRays(Vec2f(-1, -1), Vec2f(1, 1), Vec2i(10, 10));

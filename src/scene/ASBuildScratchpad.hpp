@@ -26,7 +26,7 @@
  */
 struct ASBuildScratchpad
 {
-	friend struct Mesh;
+	friend struct GASBuilder;
 	friend struct Scene;
 
 	void resizeToFit(OptixBuildInput input, OptixAccelBuildOptions options);

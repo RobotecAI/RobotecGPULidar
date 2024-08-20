@@ -239,7 +239,6 @@ extern "C" __global__ void __closesthit__()
 		if (wasSkinned) {
 			Mat3x4f objectToWorld;
 			optixGetObjectToWorldTransformMatrix(reinterpret_cast<float*>(objectToWorld.rc));
-			// TODO(msz-rai): To verify if rotation is needed (in some tests it produces more realistic results)
 			const Vec3f& vA = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
 			const Vec3f& vB = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
 			const Vec3f& vC = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];

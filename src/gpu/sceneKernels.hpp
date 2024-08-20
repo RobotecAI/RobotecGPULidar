@@ -1,4 +1,4 @@
-// Copyright 2023 Robotec.AI
+// Copyright 2024 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,16 @@
 // limitations under the License.
 
 #pragma once
+
 #include <cuda.h>
-#include <curand_kernel.h>
 
 #include <math/Vector.hpp>
+#include <math/Mat3x4f.hpp>
+#include <scene/BoneWeights.hpp>
 
-void gpuSetupRandomNumberGenerator(cudaStream_t stream, size_t elementsCount, unsigned int seed,
-                                   curandStatePhilox4_32_10_t* outPHILOXStates);
+void gpuPerformSkeletonAnimation(cudaStream_t stream, size_t vertexCount, size_t boneCount, const Vec3f* restposeVertices,
+                                 const BoneWeights* boneWeights, const Mat3x4f* restposes, Mat3x4f* animationMatrices,
+                                 Vec3f* skinnedVertices);
+
+void gpuUpdateVerticesWithDisplacement(cudaStream_t stream, size_t vertexCount, Vec3f* newVerticesToDisplacement,
+                                       Vec3f* oldToNewVertices);

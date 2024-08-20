@@ -1,4 +1,4 @@
-// Copyright 2023 Robotec.AI
+// Copyright 2024 Robotec.AI
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,17 @@
 // limitations under the License.
 
 #pragma once
-#include <cuda.h>
-#include <curand_kernel.h>
 
-#include <math/Vector.hpp>
+#include <vector_types.h>
 
-void gpuSetupRandomNumberGenerator(cudaStream_t stream, size_t elementsCount, unsigned int seed,
-                                   curandStatePhilox4_32_10_t* outPHILOXStates);
+#include <rgl/api/core.h>
+
+/*
+ * Same as `rgl_bone_weights_t` but uses vector types to speed up CUDA operations.
+ */
+struct BoneWeights
+{
+	float4 weights;
+	int4 boneIndexes;
+};
+static_assert(sizeof(BoneWeights) == sizeof(rgl_bone_weights_t));

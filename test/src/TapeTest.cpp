@@ -180,12 +180,21 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 
 	rgl_mesh_t mesh = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_mesh_create(&mesh, cubeVertices, ARRAY_SIZE(cubeVertices), cubeIndices, ARRAY_SIZE(cubeIndices)));
-	EXPECT_RGL_SUCCESS(rgl_mesh_update_vertices(mesh, cubeVertices, ARRAY_SIZE(cubeVertices)));
+
+	std::vector<rgl_bone_weights_t> boneWeights(ARRAY_SIZE(cubeVertices));
+	memset(boneWeights.data(), 0, sizeof(rgl_bone_weights_t) * boneWeights.size()); // zero all bone weights
+	EXPECT_RGL_SUCCESS(rgl_mesh_set_bone_weights(mesh, boneWeights.data(), boneWeights.size()));
+
+	std::vector<rgl_mat3x4f> restposes = {Mat3x4f::identity().toRGL(), Mat3x4f::identity().toRGL()};
+	EXPECT_RGL_SUCCESS(rgl_mesh_set_restposes(mesh, restposes.data(), restposes.size()));
 
 	rgl_entity_t entity = nullptr;
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
-	EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entity, &identityTf));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entity, &identityTf));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_pose_world(entity, restposes.data(), restposes.size()));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_id(entity, 1));
+
+	EXPECT_RGL_SUCCESS(rgl_entity_apply_external_animation(entity, cubeVertices, ARRAY_SIZE(cubeVertices)));
 
 	rgl_texture_t texture = nullptr;
 	int width = 1024;
@@ -193,6 +202,7 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	auto textureRawData = generateCheckerboardTexture<TextureTexelFormat>(width, height);
 
 	EXPECT_RGL_SUCCESS(rgl_texture_create(&texture, textureRawData.data(), width, height));
+
 	EXPECT_RGL_SUCCESS(rgl_mesh_set_texture_coords(mesh, cubeUVs, 8));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
 
@@ -413,7 +423,7 @@ TEST_F(TapeTest, SceneReconstruction)
 	auto mesh = makeCubeMesh();
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_transform(entity, &entityPoseTf));
 	rgl_tape_record_end();
 
 	testCubeSceneOnGraph();
