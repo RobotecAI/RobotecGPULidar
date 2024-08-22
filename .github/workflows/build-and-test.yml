@@ -9,6 +9,7 @@ on:
       - 'develop'
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 # Cancel previous runs if new changes on PR/branch
 concurrency:
