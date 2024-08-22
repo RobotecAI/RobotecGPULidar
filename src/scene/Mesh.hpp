@@ -14,20 +14,11 @@
 
 #pragma once
 
-#include <cstddef>
-
-#include <optix_stubs.h>
-
 #include <APIObject.hpp>
-#include <Optix.hpp>
+#include <math/Mat3x4f.hpp>
 #include <math/Vector.hpp>
-#include <macros/cuda.hpp>
-#include <macros/optix.hpp>
-#include <scene/ASBuildScratchpad.hpp>
-
-#include <filesystem>
 #include <memory/Array.hpp>
-#include <Time.hpp>
+#include <scene/BoneWeights.hpp>
 
 /**
  * Represents mesh data (at the moment vertices and indices) stored on the GPU.
@@ -37,54 +28,34 @@ struct Mesh : APIObject<Mesh>
 {
 	friend APIObject<Mesh>;
 	friend struct Scene;
-
-	/**
-	 * Updates vertices of this mesh. Vertex count must remain unchanged, otherwise an exception is thrown.
-	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
-	 */
-	void updateVertices(const Vec3f* vertices, std::size_t vertexCount);
-
-	/**
-	 * Returns an array describing displacement of each vertex between current and previous state, due to skinning.
-	 * If vertices were not skinned in the previous frame, returns NULL (equivalent to an array of zero vectors).
-	 * @return Pointer do GPU-accessible array, same size as vertexCount. May be NULL.
-	 */
-	const Vec3f* getSkinningDisplacementSinceLastFrame() const;
+	friend struct Entity;
+	friend struct SkeletonAnimator;
 
 	/**
 	 * Sets textures coordinates to the mesh. Vertex count and texture coordinates count must be equal.
-	 * After this operation, GAS needs to be rebuilt. This is handled internally in getGAS.
+	 * After this operation, SBT needs to be rebuilt.
 	 */
 	void setTexCoords(const Vec2f* texCoords, std::size_t texCoordCount);
 
 	/**
-	 * Returns GAS for this mesh.
-	 * If no changes occurred (e.g. call to updateVertices), then returns cached GAS.
-	 * Otherwise, queues building GAS in the given stream, without synchronizing it.
+	 * Sets bone weights to the mesh. Vertex count and bone weights count must be equal.
+	 * TODO(msz-rai): Consider performing bone weights normalization for safety.
+	 * TODO(msz-rai): This may be crucial when loading models directly from files outside the simulation engine.
 	 */
-	OptixTraversableHandle getGAS(CudaStream::Ptr stream);
+	void setBoneWeights(const rgl_bone_weights_t* boneWeights, int32_t boneWeightsCount);
+
+	/**
+	 * Sets restposes to the mesh (used for skeleton animations).
+	 */
+	void setRestposes(const Mat3x4f* restposes, int32_t restposesCount);
 
 private:
 	Mesh(const Vec3f* vertices, std::size_t vertexCount, const Vec3i* indices, std::size_t indexCount);
 
-	OptixTraversableHandle buildGAS(CudaStream::Ptr stream);
-	void updateGAS(CudaStream::Ptr stream);
-
 private:
-	ASBuildScratchpad scratchpad;
-	bool gasNeedsUpdate;
-	std::optional<OptixTraversableHandle> cachedGAS;
-
-	std::optional<Time> verticesCurrentUpdateTime;
-	std::optional<Time> verticesFormerUpdateTime;
 	DeviceSyncArray<Vec3f>::Ptr dVertices = DeviceSyncArray<Vec3f>::create();
 	DeviceSyncArray<Vec3i>::Ptr dIndices = DeviceSyncArray<Vec3i>::create();
-	DeviceSyncArray<Vec3f>::Ptr dVertexSkinningDisplacement = DeviceSyncArray<Vec3f>::create();
 	std::optional<DeviceSyncArray<Vec2f>::Ptr> dTextureCoords;
-
-	// Shared between buildGAS() and updateGAS()
-	OptixBuildInput buildInput;
-	CUdeviceptr vertexBuffers[1];
-	unsigned triangleInputFlags;
-	OptixAccelBuildOptions buildOptions;
+	std::optional<DeviceSyncArray<BoneWeights>::Ptr> dBoneWeights;
+	std::optional<DeviceSyncArray<Mat3x4f>::Ptr> dRestposes;
 };

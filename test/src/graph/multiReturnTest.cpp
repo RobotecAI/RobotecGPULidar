@@ -238,10 +238,10 @@ TEST_F(GraphMultiReturn, cube_in_motion)
 	};
 
 	while (true) {
-		const auto newPose = (entitiesTransforms.at(0) *
+		const auto newTf = (entitiesTransforms.at(0) *
 		                      Mat3x4f::translation(0.0f, 0.5f * std::sin(static_cast<float>(0.1f * frameId)), 0.0f))
 		                         .toRGL();
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(entities.at(0), &newPose));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entities.at(0), &newTf));
 
 		if (frameId++ % framesPerSwitch == 0) {
 			switchToNextMode();

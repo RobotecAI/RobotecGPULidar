@@ -32,6 +32,8 @@ void Scene::clear()
 	entities.clear();
 	requestASRebuild();
 	requestSBTRebuild();
+	gasBuilderForEntities.clear();
+	gasBuilderForStaticMeshes.clear();
 	time.reset();
 	prevTime.reset();
 }
@@ -46,6 +48,12 @@ void Scene::addEntity(std::shared_ptr<Entity> entity)
 void Scene::removeEntity(std::shared_ptr<Entity> entity)
 {
 	entities.erase(entity);
+	// If there are only 2 uses of GAS builder (one in each map: `gasBuilderForEntities` and `gasBuilderForStaticMeshes`) for static mesh,
+	// it needs to be deleted (it is the last entity that uses this mesh/GAS)
+	if (!entity->isAnimated() && gasBuilderForEntities[entity].use_count() <= 2) {
+		gasBuilderForStaticMeshes.erase(entity->mesh);
+	}
+	gasBuilderForEntities.erase(entity);
 	requestASRebuild();
 	requestSBTRebuild();
 }
@@ -82,9 +90,10 @@ OptixShaderBindingTable Scene::buildSBT()
 		std::optional<Mat3x4f> prevFrameTransform = entity->getPreviousFrameLocalToWorldTransform();
 		hHitgroupRecords->append(HitgroupRecord{
 		    .data = {
-		             .vertex = mesh->dVertices->getReadPtr(),
+		             .vertex = entity->getAnimatedVertices().value_or(entity->mesh->dVertices)->getReadPtr(),
 		             .index = mesh->dIndices->getReadPtr(),
-		             .vertexCount = mesh->dVertices->getCount(),
+		             // vertex count always the same (animated or not)
+		             .vertexCount = entity->mesh->dVertices->getCount(),
 		             .indexCount = mesh->dIndices->getCount(),
 		             .textureCoords = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getReadPtr() : nullptr,
 		             .textureCoordsCount = mesh->dTextureCoords.has_value() ? mesh->dTextureCoords.value()->getCount() : 0,
@@ -92,7 +101,7 @@ OptixShaderBindingTable Scene::buildSBT()
 		             .laserRetro = entity->laserRetro,
 		             .prevFrameLocalToWorld = prevFrameTransform.value_or(Mat3x4f::identity()),
 		             .hasPrevFrameLocalToWorld = prevFrameTransform.has_value(),
-		             .vertexDisplacementSincePrevFrame = mesh->getSkinningDisplacementSinceLastFrame(),
+		             .vertexDisplacementSincePrevFrame = entity->getVertexDisplacementSincePrevFrame(),
 		             }
         });
 		HitgroupRecord& last = hHitgroupRecords->at(hHitgroupRecords->getCount() - 1);
@@ -125,6 +134,8 @@ OptixTraversableHandle Scene::buildAS()
 		return static_cast<OptixTraversableHandle>(0);
 	}
 
+	setupGASForEntities();
+
 	// Construct Instance Acceleration Structures based on Entities present on the scene
 	// TODO: this approach may be inefficient - most of the time only transform changes
 	auto instances = HostPinnedArray<OptixInstance>::create();
@@ -136,7 +147,7 @@ OptixTraversableHandle Scene::buildAS()
 		    .sbtOffset = static_cast<unsigned int>(idx), // NOTE: this assumes a single SBT record per GAS
 		    .visibilityMask = 255,
 		    .flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT,
-		    .traversableHandle = entity->mesh->getGAS(getStream()),
+		    .traversableHandle = gasBuilderForEntities[entity]->getGAS(),
 		};
 		entity->transformInfo.matrix.toRaw(instance.transform);
 		instances->append(instance);
@@ -183,3 +194,40 @@ void Scene::requestASRebuild() { cachedAS.reset(); }
 void Scene::requestSBTRebuild() { cachedSBT.reset(); }
 
 CudaStream::Ptr Scene::getStream() const { return stream; }
+
+void Scene::setupGASForEntities()
+{
+	for (auto&& entity : entities) {
+		/////////////////////
+		// Animated entity //
+		/////////////////////
+		if (entity->isAnimated()) {
+			// Update GAS if already built
+			if (gasBuilderForEntities.contains(entity)) {
+				gasBuilderForEntities[entity]->updateGAS(getStream(), entity->getAnimatedVertices().value(),
+				                                         entity->mesh->dIndices);
+				continue;
+			}
+			// Build GAS
+			gasBuilderForEntities[entity] = std::make_shared<GASBuilder>(getStream(), entity->getAnimatedVertices().value(),
+			                                                             entity->mesh->dIndices);
+			continue;
+		}
+
+		/////////////////////////
+		// Non-animated entity //
+		/////////////////////////
+		// Skip if GAS already built
+		if (gasBuilderForEntities.contains(entity)) {
+			continue;
+		}
+
+		// Build GAS if static mesh doesn't have it yet
+		const auto& mesh = entity->mesh;
+		if (!gasBuilderForStaticMeshes.contains(mesh)) {
+			gasBuilderForStaticMeshes[mesh] = std::make_shared<GASBuilder>(getStream(), mesh->dVertices, mesh->dIndices);
+		}
+		// Assign static mesh GAS to the Entity
+		gasBuilderForEntities[entity] = gasBuilderForStaticMeshes[mesh];
+	}
+}

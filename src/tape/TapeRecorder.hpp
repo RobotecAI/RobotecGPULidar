@@ -83,16 +83,16 @@ private: // Methods
 	YAML::EMITTER_MANIP emitArgs() { return YAML::Auto; }
 
 	uintptr_t valueToYaml(void* value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
-	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_node_t* value) { return (uintptr_t) *value; }
-	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_node_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_mesh_t* value) { return (uintptr_t) *value; }
-	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
+	uintptr_t valueToYaml(rgl_mesh_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_scene_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_scene_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_entity_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_entity_t value) { return (uintptr_t) value; }
 	uintptr_t valueToYaml(rgl_texture_t* value) { return (uintptr_t) *value; }
+	uintptr_t valueToYaml(rgl_texture_t value) { return (uintptr_t) value; }
 	size_t valueToYaml(const rgl_vec3f* value) { return writeToBin(value, 1); }
 	size_t valueToYaml(const rgl_mat3x4f* value) { return writeToBin(value, 1); }
 

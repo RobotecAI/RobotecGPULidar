@@ -38,7 +38,7 @@ struct GaussianPoseIndependentTest : public RGLTest
 
 		// Setup scene
 		cube = makeEntity(makeCubeMesh());
-		EXPECT_RGL_SUCCESS(rgl_entity_set_pose(cube, &identity));
+		EXPECT_RGL_SUCCESS(rgl_entity_set_transform(cube, &identity));
 
 		// Create nodes
 		EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRays, lidarRays.data(), lidarRays.size()));
@@ -61,7 +61,7 @@ struct GaussianPoseIndependentTest : public RGLTest
 		for (auto&& cubeTf : cubePoses) {
 			rgl_mat3x4f lidarTf = cubeTf.toRGL();
 			rgl_mat3x4f lidarTfInv = cubeTf.inverse().toRGL();
-			ASSERT_RGL_SUCCESS(rgl_entity_set_pose(cube, &lidarTf));
+			ASSERT_RGL_SUCCESS(rgl_entity_set_transform(cube, &lidarTf));
 			ASSERT_RGL_SUCCESS(rgl_node_rays_transform(&lidarPose, &lidarTf));
 			ASSERT_RGL_SUCCESS(rgl_node_points_transform(&toLidarFrame, &lidarTfInv));
 			ASSERT_RGL_SUCCESS(rgl_graph_run(raytrace));

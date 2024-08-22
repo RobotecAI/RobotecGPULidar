@@ -157,3 +157,20 @@ struct fmt::formatter<rgl_radar_scope_t>
 		                      v.radial_speed_separation_threshold, v.azimuth_separation_threshold);
 	}
 };
+
+template<>
+struct fmt::formatter<rgl_bone_weights_t>
+{
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template<typename FormatContext>
+	auto format(const rgl_bone_weights_t& v, FormatContext& ctx)
+	{
+		return fmt::format_to(ctx.out(), "(b=({},{},{},{}), w=({},{},{},{})", v.bone_indexes[0], v.bone_indexes[1],
+		                      v.bone_indexes[2], v.bone_indexes[3], v.weights[0], v.weights[1], v.weights[2], v.weights[3]);
+	}
+};

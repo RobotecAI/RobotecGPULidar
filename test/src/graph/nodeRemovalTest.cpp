@@ -18,7 +18,7 @@ TEST_F(GraphNodeRemovalTest, NodeRemoval)
 
 	auto entity = makeEntity(mesh);
 	rgl_mat3x4f entityPoseTf = Mat3x4f::identity().toRGL();
-	ASSERT_RGL_SUCCESS(rgl_entity_set_pose(entity, &entityPoseTf));
+	ASSERT_RGL_SUCCESS(rgl_entity_set_transform(entity, &entityPoseTf));
 
 	rgl_node_t useRays = nullptr, raytrace = nullptr, lidarPose = nullptr, transformPts = nullptr, compact = nullptr,
 	           downsample = nullptr;

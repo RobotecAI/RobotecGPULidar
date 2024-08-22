@@ -152,6 +152,31 @@ static_assert(std::is_standard_layout<rgl_radar_scope_t>::value);
 #endif
 
 /**
+ * Describes 4 bone weights affecting a mesh vertex.
+ * The sum of all weights for a given vertex should equal 1 (RGL do not normalize them).
+ * If a vertex is affected by fewer than 4 bones, each of the remaining weight values must be 0.
+ * bone_indexes for unused bones must still be valid (filled with the existing bone indexes).
+ */
+typedef struct
+{
+	/**
+	 * Array for skinning weights.
+	 * The weight at each index corresponds to the bone_idx with the same index.
+	 */
+	float weights[4];
+	/**
+	 * Array for 4 bone indexes affecting a vertex.
+	 */
+	int32_t bone_indexes[4];
+} rgl_bone_weights_t;
+
+#ifdef __cplusplus
+static_assert(sizeof(rgl_bone_weights_t) == 4 * sizeof(float) + 4 * sizeof(int32_t));
+static_assert(std::is_trivial<rgl_bone_weights_t>::value);
+static_assert(std::is_standard_layout<rgl_bone_weights_t>::value);
+#endif
+
+/**
  * Radar object class used in object tracking.
  */
 typedef enum : int32_t
@@ -369,7 +394,8 @@ typedef enum : int32_t
 	 * - linear velocity
 	 * - angular velocity
 	 * - mesh deformations (e.g. skinning)
-	 * The aforementioned are inferred from calls to `rgl_entity_set_pose`, `rgl_scene_set_time` and `rgl_mesh_update_vertices`.
+	 * The aforementioned are inferred from calls to
+	 *  `rgl_entity_set_transform`, `rgl_scene_set_time` and `rgl_entity_apply_external_animation`, `rgl_entity_set_pose_world`.
 	 */
 	RGL_FIELD_ABSOLUTE_VELOCITY_VEC3_F32,
 
@@ -557,21 +583,33 @@ RGL_API rgl_status_t rgl_mesh_create(rgl_mesh_t* out_mesh, const rgl_vec3f* vert
 RGL_API rgl_status_t rgl_mesh_set_texture_coords(rgl_mesh_t mesh, const rgl_vec2f* uvs, int32_t uv_count);
 
 /**
+ * Assign bone weights to given Mesh.
+ *
+ * @param mesh Mesh to modify.
+ * @param bone_weights An array of rgl_bone_weights_t objects that associate vertices with the bones affecting them.
+                       The bone weights object at each index corresponds to the vertex with the same index (`vertices` array of `rgl_mesh_create` API call).
+ * @param bone_weights_count Number of elements in the bone_weights array. It must be equal to the vertex count of the Mesh!
+ */
+RGL_API rgl_status_t rgl_mesh_set_bone_weights(rgl_mesh_t mesh, const rgl_bone_weights_t* bone_weights,
+                                               int32_t bone_weights_count);
+
+/**
+ * Assign restposes to given Mesh.
+ *
+ * @param mesh Mesh to modify.
+ * @param restposes An array containing inverse of the transformation matrix of the bone in restpose for each bone.
+ *                  Restpose at each index in the array corresponds to the bone with the same index.
+ *                  Typically, the restpose is the same as the bindpose.
+ * @param bones_count Number of elements in the restposes array.
+ */
+RGL_API rgl_status_t rgl_mesh_set_restposes(rgl_mesh_t mesh, const rgl_mat3x4f* restposes, int32_t bones_count);
+
+/**
  * Informs that the given Mesh will be no longer used.
  * The Mesh will be destroyed after all referring Entities are destroyed.
  * @param mesh Mesh to be marked as no longer needed
  */
 RGL_API rgl_status_t rgl_mesh_destroy(rgl_mesh_t mesh);
-
-/**
- * Updates Mesh vertex data. The number of vertices must not change.
- * This function is intended to update animated Meshes.
- * Should be called after rgl_scene_set_time to ensure proper velocity computation.
- * @param mesh Mesh to modify
- * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
- * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
- */
-RGL_API rgl_status_t rgl_mesh_update_vertices(rgl_mesh_t mesh, const rgl_vec3f* vertices, int32_t vertex_count);
 
 /**
  * Assigns value true to out_alive if the given mesh is known and has not been destroyed,
@@ -605,7 +643,20 @@ RGL_API rgl_status_t rgl_entity_destroy(rgl_entity_t entity);
  * @param entity Entity to modify
  * @param transform Pointer to rgl_mat3x4f (or binary-compatible data) representing desired (Entity -> world) coordinate system transform.
  */
-RGL_API rgl_status_t rgl_entity_set_pose(rgl_entity_t entity, const rgl_mat3x4f* transform);
+RGL_API rgl_status_t rgl_entity_set_transform(rgl_entity_t entity, const rgl_mat3x4f* transform);
+
+/**
+ * Set the current pose of the given Entity in world coordinates.
+ * The pose stands for bone transforms used in skeleton animation.
+ * The mesh associated with this entity must have bone weights and restposes assigned.
+ * Since it is expected the pose is already in world coordinates, the API call `rgl_entity_set_transform` should no longer be called on this entity.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
+ * @param entity Entity to modify.
+ * @param pose An array containing transformation matrices of the bones in world coordinates.
+ *             Bone transform at each index corresponds to the bone with the same index.
+ * @param bones_count Number of elements in the pose array. It must be equal to restposes count in the associated mesh!
+ */
+RGL_API rgl_status_t rgl_entity_set_pose_world(rgl_entity_t entity, const rgl_mat3x4f* pose, int32_t bones_count);
 
 /**
  * Set instance ID of the given Entity.
@@ -629,6 +680,17 @@ RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_t
  * @param retro Laser retro value to set.
  */
 RGL_API rgl_status_t rgl_entity_set_laser_retro(rgl_entity_t entity, float retro);
+
+/**
+ * Provides updated vertices to the Entity resulted from external animation system.
+ * It does not modify Mesh API object bound to the Entity.
+ * The number of vertices must not change.
+ * Should be called after rgl_scene_set_time to ensure proper velocity computation.
+ * @param entity Entity to modify
+ * @param vertices An array of rgl_vec3f or binary-compatible data representing Mesh vertices
+ * @param vertex_count Number of elements in the vertices array. It must be equal to the original vertex count!
+ */
+RGL_API rgl_status_t rgl_entity_apply_external_animation(rgl_entity_t entity, const rgl_vec3f* vertices, int32_t vertex_count);
 
 /**
  * Assigns value true to out_alive if the given entity is known and has not been destroyed,
@@ -767,7 +829,7 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
  * Necessary for velocity distortion or calculating fields: RGL_FIELD_RELATIVE_VELOCITY_VEC3_F32 and RGL_FIELD_RADIAL_SPEED_F32.
  * Relative velocity calculation:
  * To calculate relative velocity the pipeline must allow to compute absolute velocities. For more details refer to API calls documentation:
- * `rgl_scene_set_time`, `rgl_entity_set_pose`, and `rgl_mesh_update_vertices`
+ * `rgl_scene_set_time`, `rgl_entity_set_transform`, `rgl_entity_set_pose_world`, and `rgl_entity_apply_external_animation`
  * @param node RaytraceNode to modify
  * @param linear_velocity 3D vector for linear velocity in units per second.
  * @param angular_velocity 3D vector for angular velocity in radians per second (roll, pitch, yaw).

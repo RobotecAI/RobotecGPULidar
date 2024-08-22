@@ -16,6 +16,13 @@
 
 API_OBJECT_INSTANCE(Entity);
 
+// Helper class to combine multiple callables into one overload set for std::visit.
+template<typename... Callable>
+struct Visitor : Callable...
+{
+	using Callable::operator()...;
+};
+
 std::shared_ptr<Entity> Entity::create(std::shared_ptr<Mesh> mesh)
 {
 	auto entity = APIObject<Entity>::create(mesh);
@@ -76,4 +83,55 @@ std::optional<Mat3x4f> Entity::getPreviousFrameLocalToWorldTransform() const
 	}
 
 	return formerTransformInfo.matrix;
+}
+
+void Entity::applyExternalAnimation(const Vec3f* vertices, std::size_t vertexCount)
+{
+	if (!std::holds_alternative<ExternalAnimator>(animator)) {
+		animator = ExternalAnimator(mesh->dVertices);
+	}
+	auto externalAnimator = std::get<ExternalAnimator>(animator);
+	externalAnimator.animate(vertices, vertexCount);
+	updateAnimationTime();
+}
+
+void Entity::setPoseAndAnimate(const Mat3x4f* pose, std::size_t bonesCount)
+{
+	if (!std::holds_alternative<SkeletonAnimator>(animator)) {
+		animator = SkeletonAnimator(mesh);
+	}
+	auto skeletonAnimator = std::get<SkeletonAnimator>(animator);
+	skeletonAnimator.animate(pose, bonesCount);
+	updateAnimationTime();
+}
+
+void Entity::updateAnimationTime()
+{
+	formerAnimationTime = currentAnimationTime;
+	currentAnimationTime = Scene::instance().getTime();
+	Scene::instance().requestASRebuild();  // Vertices themselves
+	Scene::instance().requestSBTRebuild(); // Vertices displacement
+}
+
+const Vec3f* Entity::getVertexDisplacementSincePrevFrame()
+{
+	if (!formerAnimationTime.has_value() || formerAnimationTime != Scene::instance().getPrevTime()) {
+		return nullptr;
+	}
+
+	using ReturnT = const Vec3f*;
+	return std::visit(
+	    Visitor<decltype([](std::monostate a) -> ReturnT { return nullptr; }),
+	            decltype([](const ExternalAnimator& a) -> ReturnT { return a.dVertexAnimationDisplacement->getReadPtr(); }),
+	            decltype([](const SkeletonAnimator& a) -> ReturnT { return a.dVertexAnimationDisplacement->getReadPtr(); })>{},
+	    animator);
+}
+
+std::optional<DeviceSyncArray<Vec3f>::Ptr> Entity::getAnimatedVertices()
+{
+	using ReturnT = std::optional<DeviceSyncArray<Vec3f>::Ptr>;
+	return std::visit(Visitor<decltype([](std::monostate a) -> ReturnT { return std::nullopt; }),
+	                          decltype([](const ExternalAnimator& a) -> ReturnT { return a.dAnimatedVertices; }),
+	                          decltype([](const SkeletonAnimator& a) -> ReturnT { return a.dAnimatedVertices; })>{},
+	                  animator);
 }
