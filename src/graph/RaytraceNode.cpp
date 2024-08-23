@@ -30,6 +30,7 @@ void RaytraceNode::validateImpl()
 {
 	// It should be viewed as a temporary solution. Will change in v14.
 	setFields(findFieldsToCompute());
+	mrSampleData.adjustToFields(fieldData, arrayMgr);
 
 	raysNode = getExactlyOneInputOfType<IRaysNode>();
 
@@ -66,14 +67,15 @@ auto RaytraceNode::getPtrTo()
 
 void RaytraceNode::enqueueExecImpl()
 {
+	const auto returnCount = getReturnCount();
 	for (auto const& [_, data] : fieldData) {
-		data->resize(raysNode->getRayCount(), false, false);
+		data->resize(returnCount * raysNode->getRayCount(), false, false);
 	}
-
-	// TODO(prybicki): don't update this when not needed
-	mrSamples.resize(MULTI_RETURN_BEAM_SAMPLES * raysNode->getRayCount());
-	mrFirst.resize(raysNode->getRayCount());
-	mrLast.resize(raysNode->getRayCount());
+	// TODO(Pawel): This should be updated at some point for a case without divergence - only single ray will be casted per
+	// beam, so only one sample would be necessary. Or, this may even be handles without samples, basically skipping
+	// gpuReduceDivergentBeams call at the bottom of this method. However, this will make the pipeline less clear and will
+	// require more tests.
+	mrSampleData.resize(MULTI_RETURN_BEAM_SAMPLES * raysNode->getRayCount());
 
 	// Even though we are in graph thread here, we can access Scene class (see comment there)
 	const Mat3x4f* raysPtr = raysNode->getRays()->asSubclass<DeviceAsyncArray>()->getReadPtr();
@@ -113,6 +115,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .isHit = getPtrTo<IS_HIT_I32>(),
 	    .rayIdx = getPtrTo<RAY_IDX_U32>(),
 	    .ringIdx = getPtrTo<RING_ID_U16>(),
+	    .returnType = getPtrTo<RETURN_TYPE_U8>(),
 	    .distance = getPtrTo<DISTANCE_F32>(),
 	    .intensityF32 = getPtrTo<INTENSITY_F32>(),
 	    .intensityU8 = getPtrTo<INTENSITY_U8>(),
@@ -127,9 +130,10 @@ void RaytraceNode::enqueueExecImpl()
 	    .elevation = getPtrTo<ELEVATION_F32>(),
 	    .normal = getPtrTo<NORMAL_VEC3_F32>(),
 	    .incidentAngle = getPtrTo<INCIDENT_ANGLE_F32>(),
+	    .mrSamples = mrSampleData.getPointers(),
+	    .returnCount = static_cast<int>(returnCount),
 	    .hBeamHalfDivergenceRad = hBeamHalfDivergenceRad,
 	    .vBeamHalfDivergenceRad = vBeamHalfDivergenceRad,
-	    .mrSamples = mrSamples.getPointers(),
 	};
 	requestCtxDev->copyFrom(requestCtxHst);
 	CUdeviceptr pipelineArgsPtr = requestCtxDev->getDeviceReadPtr();
@@ -137,31 +141,8 @@ void RaytraceNode::enqueueExecImpl()
 	CHECK_OPTIX(optixLaunch(Optix::getOrCreate().pipeline, getStreamHandle(), pipelineArgsPtr, pipelineArgsSize, &sceneSBT,
 	                        launchDims.x, launchDims.y, launchDims.y));
 
-	if (hBeamHalfDivergenceRad > 0.0f && vBeamHalfDivergenceRad > 0.0f) {
-		gpuProcessBeamSamplesFirstLast(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES,
-		                               mrSamples.getPointers(), mrFirst.getPointers(), mrLast.getPointers(), raysPtr);
-	}
-}
-
-IAnyArray::ConstPtr RaytraceNode::getFieldDataMultiReturn(rgl_field_t field, rgl_return_type_t type)
-{
-	if (type == RGL_RETURN_TYPE_FIRST) {
-		switch (field) {
-			case XYZ_VEC3_F32: return mrFirst.xyz;
-			case DISTANCE_F32: return mrFirst.distance;
-			case IS_HIT_I32: return mrFirst.isHit;
-			default: return getFieldData(field);
-		}
-	}
-	if (type == RGL_RETURN_TYPE_LAST) {
-		switch (field) {
-			case XYZ_VEC3_F32: return mrLast.xyz;
-			case DISTANCE_F32: return mrLast.distance;
-			case IS_HIT_I32: return mrLast.isHit;
-			default: return getFieldData(field);
-		}
-	}
-	throw InvalidPipeline(fmt::format("Unknown multi-return type ({})", type));
+	gpuReduceDivergentBeams(getStreamHandle(), raysNode->getRayCount(), MULTI_RETURN_BEAM_SAMPLES, returnMode,
+	                        requestCtxDev->getReadPtr());
 }
 
 void RaytraceNode::setFields(const std::set<rgl_field_t>& fields)

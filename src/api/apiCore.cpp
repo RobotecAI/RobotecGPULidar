@@ -1066,6 +1066,27 @@ void TapeCore::tape_node_raytrace_configure_default_intensity(const YAML::Node& 
 	rgl_node_raytrace_configure_default_intensity(node, yamlNode[1].as<float>());
 }
 
+RGL_API rgl_status_t rgl_node_raytrace_configure_return_mode(rgl_node_t node, rgl_return_mode_t return_mode)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_return_mode(node={}, return_mode={})", repr(node), return_mode);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(return_mode != RGL_RETURN_UNKNOWN);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setReturnMode(return_mode);
+	});
+	TAPE_HOOK(node, return_mode);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_return_mode(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	auto returnMode = static_cast<rgl_return_mode_t>(yamlNode[1].as<int>());
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
+	rgl_node_raytrace_configure_return_mode(node, returnMode);
+}
+
 RGL_API rgl_status_t rgl_node_points_format(rgl_node_t* node, const rgl_field_t* fields, int32_t field_count)
 {
 	auto status = rglSafeCall([&]() {
@@ -1419,27 +1440,6 @@ void TapeCore::tape_node_gaussian_noise_distance(const YAML::Node& yamlNode, Pla
 	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
 	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
 	rgl_node_gaussian_noise_distance(&node, yamlNode[1].as<float>(), yamlNode[2].as<float>(), yamlNode[3].as<float>());
-	state.nodes.insert({nodeId, node});
-}
-
-RGL_API rgl_status_t rgl_node_multi_return_switch(rgl_node_t* node, rgl_return_type_t return_type)
-{
-	auto status = rglSafeCall([&]() {
-		RGL_API_LOG("rgl_node_multi_return_switch(node={}, return_type={})", repr(node), return_type);
-		CHECK_ARG(node != nullptr);
-
-		createOrUpdateNode<MultiReturnSwitchNode>(node, return_type);
-	});
-	TAPE_HOOK(node, return_type);
-	return status;
-}
-
-void TapeCore::tape_node_multi_return_switch(const YAML::Node& yamlNode, PlaybackState& state)
-{
-	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
-	auto return_type = static_cast<rgl_return_type_t>(yamlNode[1].as<int>());
-	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes.at(nodeId) : nullptr;
-	rgl_node_multi_return_switch(&node, return_type);
 	state.nodes.insert({nodeId, node});
 }
 

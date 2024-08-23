@@ -34,6 +34,7 @@
 #include <math/Aabb.h>
 #include <math/RunningStats.hpp>
 #include <gpu/MultiReturn.hpp>
+#include <returnModeUtils.h>
 #include <Time.hpp>
 
 
@@ -113,35 +114,125 @@ struct RaytraceNode : IPointsNode
 	// Point cloud description
 	bool isDense() const override { return false; }
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
-	size_t getWidth() const override { return raysNode ? raysNode->getRayCount() : 0; }
+	size_t getWidth() const override { return raysNode ? getReturnCount() * raysNode->getRayCount() : 0; }
 	size_t getHeight() const override { return 1; } // TODO: implement height in use_rays
+	rgl_return_mode_t getReturnMode() const override { return returnMode; }
+	size_t getReturnCount() const override { return ::getReturnCount(returnMode); }
 
 	Mat3x4f getLookAtOriginTransform() const override { return raysNode->getCumulativeRayTransfrom().inverse(); }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
 	{
+		// TODO(Pawel): Watch for this - in case of dual return mode this will probably return smaller field array than expected.
 		if (field == RAY_POSE_MAT3x4_F32) {
+			assert(getReturnCount() == 1);
 			return raysNode->getRays();
 		}
 		return std::const_pointer_cast<const IAnyArray>(fieldData.at(field));
 	}
-
-	IAnyArray::ConstPtr getFieldDataMultiReturn(rgl_field_t field, rgl_return_type_t);
 
 	// RaytraceNode specific
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
+	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
+	void setReturnMode(rgl_return_mode_t mode)
+	{
+		if (mode == RGL_RETURN_UNKNOWN) {
+			return;
+		}
+		returnMode = mode;
+	}
 	void setBeamDivergence(float hDivergenceRad, float vDivergenceRad)
 	{
 		hBeamHalfDivergenceRad = hDivergenceRad / 2.0f;
 		vBeamHalfDivergenceRad = vDivergenceRad / 2.0f;
 	}
-	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
 
 private:
+	struct MultiReturnSamples
+	{
+		explicit MultiReturnSamples(StreamBoundObjectsManager& arrayMgr)
+		  : isHit(DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr)),
+		    distance(DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr)),
+		    intensity(DeviceAsyncArray<Field<INTENSITY_F32>::type>::create(arrayMgr))
+		{}
+
+		void adjustToFields(const std::unordered_map<rgl_field_t, IAnyArray::Ptr>& inFieldData,
+		                    StreamBoundObjectsManager& arrayMgr)
+		{
+			// TODO(Pawel): Consider if it will not be better to:
+			// - only resize on adjustToFields for arrays that were already present,
+			// - instead of creating new arrays with each adjustToFields if fields are present.
+			// clang-format off
+			laserRetro = inFieldData.contains(LASER_RETRO_F32) ? DeviceAsyncArray<Field<LASER_RETRO_F32>::type>::create(arrayMgr) : nullptr;
+			entityId = inFieldData.contains(ENTITY_ID_I32) ? DeviceAsyncArray<Field<ENTITY_ID_I32>::type>::create(arrayMgr) : nullptr;
+			absVelocity = inFieldData.contains(ABSOLUTE_VELOCITY_VEC3_F32) ? DeviceAsyncArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::create(arrayMgr) : nullptr;
+			relVelocity = inFieldData.contains(RELATIVE_VELOCITY_VEC3_F32) ? DeviceAsyncArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create(arrayMgr) : nullptr;
+			radialSpeed = inFieldData.contains(RADIAL_SPEED_F32) ? DeviceAsyncArray<Field<RADIAL_SPEED_F32>::type>::create(arrayMgr) : nullptr;
+			normal = inFieldData.contains(NORMAL_VEC3_F32) ? DeviceAsyncArray<Field<NORMAL_VEC3_F32>::type>::create(arrayMgr) : nullptr;
+			incidentAngle = inFieldData.contains(INCIDENT_ANGLE_F32) ? DeviceAsyncArray<Field<INCIDENT_ANGLE_F32>::type>::create(arrayMgr) : nullptr;
+			// clang-format on
+		}
+
+		void resize(size_t size)
+		{
+			isHit->resize(size, false, false);
+			distance->resize(size, false, false);
+			intensity->resize(size, false, false);
+			resizeField(laserRetro, size);
+			resizeField(entityId, size);
+			resizeField(absVelocity, size);
+			resizeField(relVelocity, size);
+			resizeField(radialSpeed, size);
+			resizeField(normal, size);
+			resizeField(incidentAngle, size);
+		}
+
+		MultiReturnSamplesPointers getPointers() const
+		{
+			return MultiReturnSamplesPointers{
+			    // TODO(Pawel): If getWritePtr() returns nullptr, I would not have to do the checkout below.
+			    // clang-format off
+					.isHit = isHit->getWritePtr(),
+					.distance = distance->getWritePtr(),
+					.intensity = intensity->getWritePtr(),
+					.laserRetro = laserRetro ? laserRetro->getWritePtr() : nullptr,
+					.entityId = entityId ? entityId->getWritePtr() : nullptr,
+					.absVelocity = absVelocity ? absVelocity->getWritePtr() : nullptr,
+					.relVelocity = relVelocity ? relVelocity->getWritePtr() : nullptr,
+					.radialSpeed = radialSpeed ? radialSpeed->getWritePtr() : nullptr,
+					.normal = normal ? normal->getWritePtr() : nullptr,
+					.incidentAngle = incidentAngle ? incidentAngle->getWritePtr() : nullptr
+			    // clang-format on
+			};
+		}
+
+	private:
+		void resizeField(IAnyArray::Ptr field, size_t size)
+		{
+			if (field) {
+				field->resize(size, false, false);
+			}
+		}
+
+		// Necessary for multi-return samples aggregation.
+		DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr isHit;
+		DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr distance;
+		DeviceAsyncArray<Field<INTENSITY_F32>::type>::Ptr intensity;
+
+		// Additional field data for multi-return samples.
+		DeviceAsyncArray<Field<LASER_RETRO_F32>::type>::Ptr laserRetro;
+		DeviceAsyncArray<Field<ENTITY_ID_I32>::type>::Ptr entityId;
+		DeviceAsyncArray<Field<ABSOLUTE_VELOCITY_VEC3_F32>::type>::Ptr absVelocity;
+		DeviceAsyncArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::Ptr relVelocity;
+		DeviceAsyncArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeed;
+		DeviceAsyncArray<Field<NORMAL_VEC3_F32>::type>::Ptr normal;
+		DeviceAsyncArray<Field<INCIDENT_ANGLE_F32>::type>::Ptr incidentAngle;
+	};
+
 	IRaysNode::Ptr raysNode;
 
 	DeviceAsyncArray<Vec2f>::Ptr defaultRange = DeviceAsyncArray<Vec2f>::create(arrayMgr);
@@ -151,9 +242,12 @@ private:
 
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
+	float defaultIntensity = 0.0f;
+
+	MultiReturnSamples mrSampleData = MultiReturnSamples{arrayMgr};
+	rgl_return_mode_t returnMode = RGL_RETURN_FIRST;
 	float hBeamHalfDivergenceRad = 0.0f;
 	float vBeamHalfDivergenceRad = 0.0f;
-	float defaultIntensity = 0.0f;
 
 	DeviceAsyncArray<int8_t>::Ptr rayMask;
 
@@ -162,71 +256,11 @@ private:
 
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
 
-	struct MultiReturnFields
-	{
-		MultiReturnFields(StreamBoundObjectsManager& arrayMgr)
-		  : isHit(DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr)),
-		    xyz(DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::create(arrayMgr)),
-		    distance(DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr))
-		{}
-		void resize(size_t size)
-		{
-			isHit->resize(size, false, false);
-			xyz->resize(size, false, false);
-			distance->resize(size, false, false);
-		}
-		MultiReturnPointers getPointers()
-		{
-			return MultiReturnPointers{
-			    .isHit = isHit->getWritePtr(),
-			    .xyz = xyz->getWritePtr(),
-			    .distance = distance->getWritePtr(),
-			};
-		}
-		DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr isHit;
-		DeviceAsyncArray<Field<XYZ_VEC3_F32>::type>::Ptr xyz;
-		DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr distance;
-	};
-
-
-	MultiReturnFields mrSamples = MultiReturnFields{arrayMgr};
-	MultiReturnFields mrFirst = MultiReturnFields{arrayMgr};
-	MultiReturnFields mrLast = MultiReturnFields{arrayMgr};
-
-
 	template<rgl_field_t>
 	auto getPtrTo();
 
 	std::set<rgl_field_t> findFieldsToCompute();
 	void setFields(const std::set<rgl_field_t>& fields);
-};
-
-struct MultiReturnSwitchNode : IPointsNodeSingleInput
-{
-	using Ptr = std::shared_ptr<MultiReturnSwitchNode>;
-	void setParameters(rgl_return_type_t returnType) { this->returnType = returnType; }
-
-	// Node
-	void validateImpl() override
-	{
-		IPointsNodeSingleInput::validateImpl();
-		rtxInput = getExactlyOneInputOfType<RaytraceNode>();
-	}
-
-	void enqueueExecImpl() override {}
-
-	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
-	{
-		if (returnType == RGL_RETURN_TYPE_NOT_DIVERGENT) {
-			return rtxInput->getFieldData(field);
-		}
-		return rtxInput->getFieldDataMultiReturn(field, returnType);
-	}
-
-private:
-	rgl_return_type_t returnType;
-	RaytraceNode::Ptr rtxInput;
 };
 
 struct TransformPointsNode : IPointsNodeSingleInput
@@ -396,6 +430,8 @@ struct SpatialMergePointsNode : IPointsNode
 	bool hasField(rgl_field_t field) const override { return mergedData.contains(field); }
 	std::size_t getWidth() const override { return width; }
 	std::size_t getHeight() const override { return 1; }
+	rgl_return_mode_t getReturnMode() const override { return RGL_RETURN_UNKNOWN; }
+	std::size_t getReturnCount() const override { return 1; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
@@ -456,6 +492,8 @@ struct FromArrayPointsNode : IPointsNode, INoInputNode
 	bool hasField(rgl_field_t field) const override { return fieldData.contains(field); }
 	size_t getWidth() const override { return width; }
 	size_t getHeight() const override { return 1; }
+	rgl_return_mode_t getReturnMode() const override { return RGL_RETURN_UNKNOWN; }
+	size_t getReturnCount() const override { return 1; }
 
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override
