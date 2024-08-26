@@ -185,8 +185,17 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart_static
     CUDA::cuda_driver
-    CUDA::nvToolsExt
 )
+
+if (${CUDAToolkit_VERSION} VERSION_GREATER "10.0")
+    target_link_libraries(RobotecGPULidar PUBLIC
+        CUDA::nvtx3
+    )
+else ()
+    target_link_libraries(RobotecGPULidar PUBLIC
+        CUDA::nvToolsExt
+    )
+endif ()
 
 # Create a CMake list with available log levels (rgl_log_level_t)
 set(RGL_AVAILABLE_LOG_LEVELS

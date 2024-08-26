@@ -419,6 +419,9 @@ __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_
 	}
 }
 
+extern "C"
+{
+
 void gpuFindCompaction(cudaStream_t stream, size_t pointCount, const int32_t* shouldCompact,
                        CompactionIndexType* hitCountInclusive, size_t* outHitCount)
 {
@@ -495,4 +498,6 @@ void gpuReduceDivergentBeams(cudaStream_t stream, size_t beamCount, int samplesP
                              const RaytraceRequestContext* ctx)
 {
 	run(kReduceDivergentBeams, stream, beamCount, samplesPerBeam, returnMode, ctx);
+}
+
 }
