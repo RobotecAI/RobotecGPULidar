@@ -32,6 +32,9 @@
 // This could be defined in CompactNode, however such include here causes mess because nvcc does not support C++20.
 using CompactionIndexType = int32_t;
 
+extern "C"
+{
+
 void gpuFindCompaction(cudaStream_t, size_t pointCount, const int32_t* shouldCompact, CompactionIndexType* hitCountInclusive,
                        size_t* outHitCount);
 void gpuFormatSoaToAos(cudaStream_t, size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* soaInData,
@@ -55,3 +58,5 @@ void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthSt
                            const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor);
 void gpuReduceDivergentBeams(cudaStream_t stream, size_t beamCount, int samplesPerBeam, rgl_return_mode_t returnMode,
                              const RaytraceRequestContext* ctx);
+
+}
