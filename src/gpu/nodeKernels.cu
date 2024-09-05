@@ -150,14 +150,14 @@ __device__ void saveReturnAsHit(const RaytraceRequestContext* ctx, int beamIdx, 
 	}
 }
 
-__device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int beamIdx, int returnPointIdx,
+__device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int firstSampleInBeamIdx, int beamIdx, int returnPointIdx,
                                    rgl_return_type_t returnType)
 {
 	// Arbitrary decision - if all samples are non hits, I just take the distance from center ray. This distance will be either
 	// ctx.nearNonHitDistance or ctx.farNonHitDistance, based on optix kernel processing - check optixPrograms.cu. This provides
-	// being able to set below minRange, above maxRange and non hit results with the same code. Moreover, results for sample
-	// at idx 0 are always present with current implementation.
-	const auto nonHitDistance = ctx->mrSamples.distance[0];
+	// being able to set below minRange, above maxRange and non hit results with the same code. Moreover, results for
+	// first sample in beam are always present with current implementation.
+	const auto nonHitDistance = ctx->mrSamples.distance[firstSampleInBeamIdx];
 
 	if (ctx->xyz != nullptr) {
 		const Mat3x4f ray = ctx->raysWorld[beamIdx];
@@ -358,7 +358,7 @@ __global__ void kReduceDivergentBeams(size_t beamCount, int samplesPerBeam, rgl_
 		for (int returnIdx = 0; returnIdx < returnCount; ++returnIdx) {
 			const auto returnPointIdx = beamIdx * returnCount + returnIdx;
 			const auto returnType = getReturnType(returnMode, returnIdx);
-			saveReturnAsNonHit(ctx, beamIdx, returnPointIdx, returnType);
+			saveReturnAsNonHit(ctx, firstSampleInBeamIdx, beamIdx, returnPointIdx, returnType);
 		}
 		return;
 	}
