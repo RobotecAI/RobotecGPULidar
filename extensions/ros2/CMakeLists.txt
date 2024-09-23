@@ -1,6 +1,9 @@
 
-if (NOT $ENV{ROS_DISTRO} STREQUAL "humble")
-    message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Only humble is available.")
+set(SUPPORTED_ROS_DISTROS humble jazzy)
+
+list(FIND SUPPORTED_ROS_DISTROS $ENV{ROS_DISTRO} ROS_DISTRO_INDEX)
+if (ROS_DISTRO_INDEX EQUAL -1)
+    message(FATAL_ERROR "ROS $ENV{ROS_DISTRO} not supported. Choose one of: '${SUPPORTED_ROS_DISTROS}'.")
 endif()
 
 find_package(rclcpp REQUIRED)

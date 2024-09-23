@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 class Config:
-    SUPPORTED_ROS_DISTROS = ["humble"]
+    SUPPORTED_ROS_DISTROS = ["humble", "jazzy"]
 
     # Paths relative to project root
     RADAR_MSGS_DIR = os.path.join("external", "radar_msgs")

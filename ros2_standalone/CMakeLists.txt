@@ -17,6 +17,7 @@ set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
 set(REQ_STANDALONE_DLLS "")
 
 set(INSTALL_DESTINATION_DIR "lib/ros2_standalone")
+set(ROS_DISTRO "$ENV{ROS_DISTRO}")
 
 # Extend REQ_THIRD_PARTY_STANDALONE_LIBS with _library_name third party dependencies
 macro(get_standalone_third_party_dependencies _library_name)
@@ -102,6 +103,12 @@ macro(get_standalone_dependencies _library_name)
                   ${iceoryx_hoofs_iceoryx_hoofs_LIB_PATH}
                   ${iceoryx_hoofs_iceoryx_platform_LIB_PATH})
             endif()
+        endif()
+
+        # Get rosidl_dynamic_typesupport_fastrtps
+        if(UNIX AND "${_library_name}" STREQUAL "rosidl_dynamic_typesupport_fastrtps")
+            fetch_target_lib(rosidl_dynamic_typesupport_fastrtps::rosidl_dynamic_typesupport_fastrtps)
+            list(APPEND REQ_STANDALONE_LIBS ${rosidl_dynamic_typesupport_fastrtps_rosidl_dynamic_typesupport_fastrtps_LIB_PATH})
         endif()
 
         # If library is msgs, fetch all targets to get libraries for dynamic type support
@@ -225,12 +232,19 @@ set(ros2_standalone_libs
   rosidl_typesupport_introspection_cpp
   spdlog
   tracetools
-  yaml
   tinyxml2
 )
 
 if(UNIX)
     list(APPEND ros2_standalone_libs iceoryx_binding_c iceoryx_posh iceoryx_hoofs)
+endif()
+
+if(ROS_DISTRO STREQUAL "humble")
+    list(APPEND ros2_standalone_libs yaml)
+endif()
+
+if(ROS_DISTRO STREQUAL "jazzy")
+    list(APPEND ros2_standalone_libs rcl_logging_spdlog rcl_interfaces rosidl_dynamic_typesupport_fastrtps)
 endif()
 
 foreach(ros2_standalone_lib ${ros2_standalone_libs})
