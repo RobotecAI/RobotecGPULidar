@@ -21,7 +21,7 @@
 #include <gpu/GPUFieldDesc.hpp>
 #include <math/Mat3x4f.hpp>
 #include <RGLFields.hpp>
-#include <thrust/complex.h>
+#include <cuda/std/complex>
 #include <gpu/MultiReturn.hpp>
 #include <gpu/RaytraceRequestContext.hpp>
 
@@ -52,6 +52,6 @@ void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f s
 void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                            Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                            const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
-                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor);
+                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, cuda::std::complex<float>>* outBUBRFactor);
 void gpuReduceDivergentBeams(cudaStream_t stream, size_t beamCount, int samplesPerBeam, rgl_return_mode_t returnMode,
                              const RaytraceRequestContext* ctx);
