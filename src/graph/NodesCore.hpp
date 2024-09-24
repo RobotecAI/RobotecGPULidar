@@ -399,6 +399,9 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
+	// Point cloud description
+	bool hasField(rgl_field_t field) const override { return results.contains(field); }
+
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return results.at(field); }
 
