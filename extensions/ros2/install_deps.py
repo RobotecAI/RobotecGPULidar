@@ -39,7 +39,6 @@ def install_ros2_deps(cfg):
             run_subprocess_command("sudo apt-get install -y python3-colcon-common-extensions")
     # Clone radar msgs
     if not os.path.isdir(cfg.RADAR_MSGS_DIR):
-        run_subprocess_command("ls")
         run_subprocess_command(
             f"git clone --single-branch --depth 1 https://github.com/ros-perception/radar_msgs.git {cfg.RADAR_MSGS_DIR}")
         run_subprocess_command(f"cd {cfg.RADAR_MSGS_DIR} && git checkout {cfg.RADAR_MSGS_COMMIT} && cd ..")
