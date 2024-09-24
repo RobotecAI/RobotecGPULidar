@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+#include <cuda/std/complex>
+
 #include <gpu/kernelUtils.hpp>
 #include <gpu/nodeKernels.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <macros/cuda.hpp>
 #include <returnModeUtils.h>
-
-#include <thrust/device_ptr.h>
-#include <thrust/scan.h>
-#include <cuda/std/complex>
 
 __global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* soaInData,
                                 char* aosOutData)
@@ -209,7 +209,8 @@ __device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int firstS
 __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                                     Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                                     const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
-                                    const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, cuda::std::complex<float>>* outBUBRFactor)
+                                    const Field<XYZ_VEC3_F32>::type* hitPos,
+                                    Vector<3, cuda::std::complex<float>>* outBUBRFactor)
 {
 	LIMIT(count);
 
@@ -300,9 +301,10 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	const cuda::std::complex<float> BR = refField2.dot(reflectedDir);
 	//	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
 	//	                                      exp(-i * waveNum * hitDistance);
-	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0, ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) /
-	                                                                   (4.0f * static_cast<float>(M_PI)))) *
-	                                      exp(-i * waveNum * hitDistance);
+	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0,
+	                                                                   ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) /
+	                                                                    (4.0f * static_cast<float>(M_PI)))) *
+	                                         exp(-i * waveNum * hitDistance);
 	//	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
 	//	                                      exp(-i * vecK.dot(hitPosLocal));
 
@@ -485,7 +487,7 @@ void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f s
 void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                            Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                            const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
-                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, cuda::std::complex<float>>* outBUBRFactor)
+                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, std::complex<float>>* outBUBRFactor)
 {
 	run(kRadarComputeEnergy, stream, count, rayAzimuthStepRad, rayElevationStepRad, freq, lookAtOriginTransform, rayPose,
 	    hitDist, hitNorm, hitPos, outBUBRFactor);

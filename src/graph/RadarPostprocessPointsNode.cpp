@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <numbers>
+#include <complex>
 
 #include <repr.hpp>
 #include <graph/NodesCore.hpp>
@@ -364,8 +365,10 @@ void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& ot
 	minMaxDistance[1] = std::max(minMaxDistance[1], other.minMaxDistance[1]);
 	minMaxAzimuth[0] = std::min(minMaxAzimuth[0], other.minMaxAzimuth[0]);
 	minMaxAzimuth[1] = std::max(minMaxAzimuth[1], other.minMaxAzimuth[1]);
-	minMaxRadialSpeed[0] = std::isnan(other.minMaxRadialSpeed[0]) ? minMaxRadialSpeed[0] : std::min(other.minMaxRadialSpeed[0], minMaxRadialSpeed[0]);
-	minMaxRadialSpeed[1] = std::isnan(other.minMaxRadialSpeed[1]) ? minMaxRadialSpeed[1] : std::min(other.minMaxRadialSpeed[1], minMaxRadialSpeed[1]);
+	minMaxRadialSpeed[0] = std::isnan(other.minMaxRadialSpeed[0]) ? minMaxRadialSpeed[0] :
+	                                                                std::min(other.minMaxRadialSpeed[0], minMaxRadialSpeed[0]);
+	minMaxRadialSpeed[1] = std::isnan(other.minMaxRadialSpeed[1]) ? minMaxRadialSpeed[1] :
+	                                                                std::min(other.minMaxRadialSpeed[1], minMaxRadialSpeed[1]);
 	minMaxElevation[0] = std::min(minMaxElevation[0], other.minMaxElevation[0]);
 	minMaxElevation[1] = std::max(minMaxElevation[1], other.minMaxElevation[1]);
 
