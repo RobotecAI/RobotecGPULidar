@@ -84,7 +84,7 @@ struct CompactByFieldPointsNode : IPointsNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32, IS_GROUND_I32}; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {fieldToCompactBy}; }
 
 	// Point cloud description
 	bool isDense() const override { return true; }
