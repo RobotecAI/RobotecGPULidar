@@ -158,6 +158,9 @@ if (RGL_BUILD_PCL_EXTENSION)
 endif()
 
 if (RGL_BUILD_ROS2_EXTENSION)
+    if (WIN32) # Workaround for compilation on Windows. fastcdr must be found from the top-level of cmake.
+        find_package(fastcdr REQUIRED)
+    endif()
     add_subdirectory(extensions/ros2)
 endif()
 
