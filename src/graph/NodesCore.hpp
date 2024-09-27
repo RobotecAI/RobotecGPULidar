@@ -400,10 +400,14 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
 	// Point cloud description
-	bool hasField(rgl_field_t field) const override { return results.contains(field); }
+	bool hasField(rgl_field_t field) const override
+	{
+		// The `results` map cannot be relied on because the hasField() may be called before the node has finished executing.
+		return std::find(fields.begin(), fields.end(), field) != fields.end();
+	}
 
 	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return results.at(field); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr getXYZCache() { return xyzHostCache; }
 
