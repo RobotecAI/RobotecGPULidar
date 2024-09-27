@@ -1,5 +1,45 @@
 # Change Log
 
+## [0.19.0] 27 September 2024
+
+### Added
+
+- Added skeleton animation (mesh skinning) performed on GPU
+  - Added API call to assign bone weights to the mesh
+    - `rgl_mesh_set_bone_weights`
+  - Added API call to assign restposes to the mesh
+    - `rgl_mesh_set_restposes`
+  - Added API call to set the current pose of the given Entity in world coordinates
+    - `rgl_entity_set_pose_world`
+- Added multi-return outputs
+  - Multi-return point clouds can be post-processed and outputted by RGL
+  - Added more return modes supported (second, strongest, second strongest)
+  - Added API call to configure return mode
+    - `rgl_node_raytrace_configure_return_mode`
+- Added support for ROS 2 Jazzy
+
+### Changed
+- Changed API calls for handling animations resulted from external animation system
+  - Removed API call to update vertices of the mesh
+    - `rgl_mesh_update_vertices`
+  - Added API call to update vertices of the entity
+    - `rgl_entity_apply_external_animation`
+  - In current implementation, meshes that are animated can be shared between entities
+    - Previously, such meshes must be duplicated because vertices were updated in the mesh object
+    - Now, the entity holds its copy of animated vertices
+- Renamed API call for setting transform of the entity
+  - `rgl_entity_set_pose` -> `rgl_entity_set_transform`
+  - Pose is considered as set of skeleton bones transforms
+
+### Fixed
+- Fixed error message from yield node when trying to get field data that was not requested
+
+### Removed
+
+- Removed API call to switch between return modes:
+  - `rgl_node_multi_return_switch`
+  - Replaced by `rgl_node_raytrace_configure_return_mode`
+
 ## [0.18.0] 24 July 2024
 
 ### Added
