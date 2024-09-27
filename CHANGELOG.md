@@ -13,12 +13,13 @@
     - `rgl_entity_set_pose_world`
 - Added multi-return outputs
   - Multi-return point clouds can be post-processed and outputted by RGL
-  - Added more return modes supported (second, strongest, second strongest)
+  - Added more return types supported (second, strongest, second strongest)
   - Added API call to configure return mode
     - `rgl_node_raytrace_configure_return_mode`
 - Added support for ROS 2 Jazzy
 
 ### Changed
+
 - Changed API calls for handling animations resulted from external animation system
   - Removed API call to update vertices of the mesh
     - `rgl_mesh_update_vertices`
@@ -32,6 +33,7 @@
   - Pose is considered as set of skeleton bones transforms
 
 ### Fixed
+
 - Fixed error message from yield node when trying to get field data that was not requested
 
 ### Removed
