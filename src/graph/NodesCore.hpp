@@ -84,7 +84,7 @@ struct CompactByFieldPointsNode : IPointsNodeSingleInput
 	void enqueueExecImpl() override;
 
 	// Node requirements
-	std::vector<rgl_field_t> getRequiredFieldList() const override { return {IS_HIT_I32, IS_GROUND_I32}; }
+	std::vector<rgl_field_t> getRequiredFieldList() const override { return {fieldToCompactBy}; }
 
 	// Point cloud description
 	bool isDense() const override { return true; }
@@ -399,8 +399,15 @@ struct YieldPointsNode : IPointsNodeSingleInput
 	// Node requirements
 	std::vector<rgl_field_t> getRequiredFieldList() const override { return fields; }
 
+	// Point cloud description
+	bool hasField(rgl_field_t field) const override
+	{
+		// The `results` map cannot be relied on because the hasField() may be called before the node has finished executing.
+		return std::find(fields.begin(), fields.end(), field) != fields.end();
+	}
+
 	// Data getters
-	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override { return results.at(field); }
+	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
 	HostPinnedArray<Field<XYZ_VEC3_F32>::type>::Ptr getXYZCache() { return xyzHostCache; }
 

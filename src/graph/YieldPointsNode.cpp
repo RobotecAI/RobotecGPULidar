@@ -16,6 +16,7 @@
 
 void YieldPointsNode::setParameters(const std::vector<rgl_field_t>& fields)
 {
+	results.clear();
 	if (std::find(fields.begin(), fields.end(), RGL_FIELD_DYNAMIC_FORMAT) != fields.end()) {
 		throw InvalidAPIArgument("cannot yield field 'RGL_FIELD_DYNAMIC_FORMAT'"); // TODO: Yeah, but dummies are OK?
 	}
@@ -32,4 +33,12 @@ void YieldPointsNode::enqueueExecImpl()
 		CHECK_CUDA(cudaMemcpyAsync(xyzHostCache->getWritePtr(), results[XYZ_VEC3_F32]->getRawReadPtr(),
 		                           xyzHostCache->getCount() * xyzHostCache->getSizeOf(), cudaMemcpyDefault, getStreamHandle()));
 	}
+}
+
+IAnyArray::ConstPtr YieldPointsNode::getFieldData(rgl_field_t field)
+{
+	if (!results.contains(field)) {
+		throw std::runtime_error("Field data is not ready yet. It was requested without waiting for results.");
+	}
+	return results.at(field);
 }
