@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <complex>
 #include <vector>
 #include <set>
 #include <memory>
@@ -630,10 +631,10 @@ private:
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedInputHost =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
 	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationInputHost = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
-	DeviceAsyncArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorDev =
-	    DeviceAsyncArray<Vector<3, thrust::complex<float>>>::create(arrayMgr);
-	HostPinnedArray<Vector<3, thrust::complex<float>>>::Ptr outBUBRFactorHost =
-	    HostPinnedArray<Vector<3, thrust::complex<float>>>::create();
+	DeviceAsyncArray<Vector<3, std::complex<float>>>::Ptr outBUBRFactorDev =
+	    DeviceAsyncArray<Vector<3, std::complex<float>>>::create(arrayMgr);
+	HostPinnedArray<Vector<3, std::complex<float>>>::Ptr outBUBRFactorHost =
+	    HostPinnedArray<Vector<3, std::complex<float>>>::create();
 
 	HostPageableArray<Field<RCS_F32>::type>::Ptr clusterRcsHost = HostPageableArray<Field<RCS_F32>::type>::create();
 	HostPageableArray<Field<POWER_F32>::type>::Ptr clusterPowerHost = HostPageableArray<Field<POWER_F32>::type>::create();

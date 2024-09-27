@@ -17,6 +17,7 @@ set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
 set(REQ_STANDALONE_DLLS "")
 
 set(INSTALL_DESTINATION_DIR "lib/ros2_standalone")
+set(ROS_DISTRO "$ENV{ROS_DISTRO}")
 
 # Extend REQ_THIRD_PARTY_STANDALONE_LIBS with _library_name third party dependencies
 macro(get_standalone_third_party_dependencies _library_name)
@@ -104,6 +105,12 @@ macro(get_standalone_dependencies _library_name)
             endif()
         endif()
 
+        # Get rosidl_dynamic_typesupport_fastrtps
+        if("${_library_name}" STREQUAL "rosidl_dynamic_typesupport_fastrtps")
+            fetch_target_lib(rosidl_dynamic_typesupport_fastrtps::rosidl_dynamic_typesupport_fastrtps)
+            list(APPEND REQ_STANDALONE_LIBS ${rosidl_dynamic_typesupport_fastrtps_rosidl_dynamic_typesupport_fastrtps_LIB_PATH})
+        endif()
+
         # If library is msgs, fetch all targets to get libraries for dynamic type support
         # Those libraries are not listed in <XX>_LIBRARIES (which stands for libraries to link against to use <XX>)
         if(${_library_name} MATCHES ".*\_msgs$")
@@ -116,12 +123,20 @@ macro(get_standalone_dependencies _library_name)
         endif()
 
         # Get spdlog and dependency
-        if(UNIX AND "${_library_name}" STREQUAL "spdlog")
+        if("${_library_name}" STREQUAL "spdlog")
             include(${${_library_name}_CONFIG})
             fetch_target_lib(spdlog::spdlog)
             list(APPEND REQ_STANDALONE_LIBS ${spdlog_spdlog_LIB_PATH})
-            fetch_target_lib(fmt::fmt)
-            list(APPEND REQ_STANDALONE_LIBS ${fmt_fmt_LIB_PATH})
+            if(UNIX)
+                fetch_target_lib(fmt::fmt)
+                list(APPEND REQ_STANDALONE_LIBS ${fmt_fmt_LIB_PATH})
+            endif()
+        endif()
+
+        # Get yaml
+        if(WIN32 AND "${_library_name}" STREQUAL "yaml")
+            fetch_target_lib(yaml)
+            list(APPEND REQ_STANDALONE_LIBS ${yaml_LIB_PATH})
         endif()
 
         # We skip python libs
@@ -223,14 +238,23 @@ set(ros2_standalone_libs
   rosidl_typesupport_cpp
   rosidl_typesupport_introspection_c
   rosidl_typesupport_introspection_cpp
-  spdlog
   tracetools
-  yaml
   tinyxml2
 )
 
 if(UNIX)
-    list(APPEND ros2_standalone_libs iceoryx_binding_c iceoryx_posh iceoryx_hoofs)
+    list(APPEND ros2_standalone_libs spdlog iceoryx_binding_c iceoryx_posh iceoryx_hoofs)
+endif()
+
+if(ROS_DISTRO STREQUAL "humble")
+    list(APPEND ros2_standalone_libs yaml)
+endif()
+
+if(ROS_DISTRO STREQUAL "jazzy")
+    list(APPEND ros2_standalone_libs rcl_logging_spdlog rcl_interfaces rosidl_dynamic_typesupport_fastrtps)
+    if(WIN32)
+        list(APPEND ros2_standalone_libs yaml spdlog)
+    endif()
 endif()
 
 foreach(ros2_standalone_lib ${ros2_standalone_libs})

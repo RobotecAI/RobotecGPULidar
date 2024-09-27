@@ -45,14 +45,13 @@ And more:
 
 ## Runtime requirements
 
-|Hardware|Requirement|
-|:--|:--|
-|GPU|CUDA-enabled|
+| Hardware | Requirement  |
+|:---------|:-------------|
+| GPU      | CUDA-enabled |
 
-|Software|Requirement|
-|:--|:--|
-|Nvidia Driver (Linux)|>=515.43.04|
-|Nvidia Driver (Windows)|>=472.50|
+| Software      | Requirement                                                                                      |
+|:--------------|:-------------------------------------------------------------------------------------------------|
+| Nvidia Driver | - Ubuntu 22.04 `>=515.43.04` <br/> - Ubuntu 24.04 `>=555.42.02` <br/> - Windows 10/11 `>=472.50` |
 
 ## Usage
 
@@ -62,8 +61,8 @@ An introduction to the RGL API along with an example can be found [here](docs/Us
 
 `RobotecGPULidar` library can be built with extensions enhancing RGL with additional functions:
 - `PCL` - adds nodes and functions for point cloud processing that uses [Point Cloud Library](https://pointclouds.org/). See [documentation](docs/PclExtension.md).
-- `ROS2` - adds a node to publish point cloud messages to [ROS2](https://www.ros.org/). Check [ROS2 extension doc](docs/Ros2Extension.md) for more information, build instructions, and usage.
-- `UDP` - adds a node to publish raw lidar packets, as emitted by physical lidar. Only available in the closed-source version.
+- `ROS2` - adds a nodes for point cloud publishing to [ROS2](https://www.ros.org/). See [documentation](docs/Ros2Extension.md).
+- `UDP` - adds a nodes for raw lidar packets publishing, as emitted by physical lidar. Only available in the closed-source version.
 
 ## Building in Docker (Linux)
 
@@ -94,9 +93,11 @@ docker build \
    --output=build .
 ```
 
-## Building on Ubuntu 22
+## Building on Ubuntu 22/24
 
-1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) **11.7+**.
+1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)
+    - Ubuntu 22.04: **11.7+**
+    - Ubuntu 24.04: **12.6+**
 2. Download [NVidia OptiX](https://developer.nvidia.com/designworks/optix/downloads/legacy) **7.2**.
     1. You may be asked to create a Nvidia account to download
 3. Export environment variable:

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+#include <cuda/std/complex>
+
 #include <gpu/kernelUtils.hpp>
 #include <gpu/nodeKernels.hpp>
 #include <gpu/GPUFieldDesc.hpp>
 #include <macros/cuda.hpp>
 #include <returnModeUtils.h>
-
-#include <thrust/device_ptr.h>
-#include <thrust/scan.h>
-#include <thrust/complex.h>
 
 __global__ void kFormatSoaToAos(size_t pointCount, size_t pointSize, size_t fieldCount, const GPUFieldDesc* soaInData,
                                 char* aosOutData)
@@ -209,7 +209,8 @@ __device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int firstS
 __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                                     Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                                     const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
-                                    const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor)
+                                    const Field<XYZ_VEC3_F32>::type* hitPos,
+                                    Vector<3, cuda::std::complex<float>>* outBUBRFactor)
 {
 	LIMIT(count);
 
@@ -219,7 +220,7 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 	constexpr float reflectionCoef = 1.0f; // TODO
 	const float waveLen = c0 / freq;
 	const float waveNum = 2.0f * static_cast<float>(M_PI) / waveLen;
-	const thrust::complex<float> i = {0, 1.0};
+	const cuda::std::complex<float> i = {0, 1.0};
 	const Vec3f dirX = {1, 0, 0};
 	const Vec3f dirY = {0, 1, 0};
 	const Vec3f dirZ = {0, 0, 1};
@@ -255,15 +256,15 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 
 	const Vec3f reflectedDir = (rayDir - hitNormalLocal * (2 * rayDir.dot(hitNormalLocal))).normalized();
 	const Vec3f reflectedPol = reflectPolarization(rayPol, hitNormalLocal, rayDir);
-	const Vector<3, thrust::complex<float>> reflectedPolCplx = {reflectedPol.x(), reflectedPol.y(), reflectedPol.z()};
+	const Vector<3, cuda::std::complex<float>> reflectedPolCplx = {reflectedPol.x(), reflectedPol.y(), reflectedPol.z()};
 	const float kr = waveNum * hitDistance;
 
 	if (log)
 		printf("reflectedDir: (%.4f %.4f %.4f) reflectedPol: (%.4f %.4f %.4f)\n", reflectedDir.x(), reflectedDir.y(),
 		       reflectedDir.z(), reflectedPol.x(), reflectedPol.y(), reflectedPol.z());
 
-	const Vector<3, thrust::complex<float>> apE = reflectionCoef * exp(i * kr) * reflectedPolCplx;
-	const Vector<3, thrust::complex<float>> apH = -apE.cross(reflectedDir);
+	const Vector<3, cuda::std::complex<float>> apE = reflectionCoef * exp(i * kr) * reflectedPolCplx;
+	const Vector<3, cuda::std::complex<float>> apH = -apE.cross(reflectedDir);
 
 	if (log)
 		printf("apE: [(%.2f + %.2fi) (%.2f + %.2fi) (%.2f + %.2fi)]\n", apE.x().real(), apE.x().imag(), apE.y().real(),
@@ -272,9 +273,9 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 		printf("apH: [(%.2f + %.2fi) (%.2f + %.2fi) (%.2f + %.2fi)]\n", apH.x().real(), apH.x().imag(), apH.y().real(),
 		       apH.y().imag(), apH.z().real(), apH.z().imag());
 
-	const Vector<3, thrust::complex<float>> BU1 = apE.cross(-dirP);
-	const Vector<3, thrust::complex<float>> BU2 = apH.cross(dirT);
-	const Vector<3, thrust::complex<float>> refField1 = (-(BU1 + BU2));
+	const Vector<3, cuda::std::complex<float>> BU1 = apE.cross(-dirP);
+	const Vector<3, cuda::std::complex<float>> BU2 = apH.cross(dirT);
+	const Vector<3, cuda::std::complex<float>> refField1 = (-(BU1 + BU2));
 
 	if (log)
 		printf("BU1: [(%.2f + %.2fi) (%.2f + %.2fi) (%.2f + %.2fi)]\n"
@@ -284,9 +285,9 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 		       BU2.x().imag(), BU2.y().real(), BU2.y().imag(), BU2.z().real(), BU2.z().imag(), refField1.x().real(),
 		       refField1.x().imag(), refField1.y().real(), refField1.y().imag(), refField1.z().real(), refField1.z().imag());
 
-	const Vector<3, thrust::complex<float>> BR1 = apE.cross(dirT);
-	const Vector<3, thrust::complex<float>> BR2 = apH.cross(dirP);
-	const Vector<3, thrust::complex<float>> refField2 = (-(BR1 + BR2));
+	const Vector<3, cuda::std::complex<float>> BR1 = apE.cross(dirT);
+	const Vector<3, cuda::std::complex<float>> BR2 = apH.cross(dirP);
+	const Vector<3, cuda::std::complex<float>> refField2 = (-(BR1 + BR2));
 
 	if (log)
 		printf("BR1: [(%.2f + %.2fi) (%.2f + %.2fi) (%.2f + %.2fi)]\n"
@@ -296,14 +297,15 @@ __global__ void kRadarComputeEnergy(size_t count, float rayAzimuthStepRad, float
 		       BR2.x().imag(), BR2.y().real(), BR2.y().imag(), BR2.z().real(), BR2.z().imag(), refField2.x().real(),
 		       refField2.x().imag(), refField2.y().real(), refField2.y().imag(), refField2.z().real(), refField2.z().imag());
 
-	const thrust::complex<float> BU = refField1.dot(reflectedDir);
-	const thrust::complex<float> BR = refField2.dot(reflectedDir);
-	//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
+	const cuda::std::complex<float> BU = refField1.dot(reflectedDir);
+	const cuda::std::complex<float> BR = refField2.dot(reflectedDir);
+	//	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
 	//	                                      exp(-i * waveNum * hitDistance);
-	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) /
-	                                                                   (4.0f * static_cast<float>(M_PI)))) *
-	                                      exp(-i * waveNum * hitDistance);
-	//	const thrust::complex<float> factor = thrust::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
+	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0,
+	                                                                   ((waveNum * rayArea * reflectedDir.dot(hitNormalLocal)) /
+	                                                                    (4.0f * static_cast<float>(M_PI)))) *
+	                                         exp(-i * waveNum * hitDistance);
+	//	const cuda::std::complex<float> factor = cuda::std::complex<float>(0.0, ((waveNum * rayArea) / (4.0f * static_cast<float>(M_PI)))) *
 	//	                                      exp(-i * vecK.dot(hitPosLocal));
 
 	const auto BUf = BU * factor;
@@ -485,7 +487,7 @@ void gpuFilterGroundPoints(cudaStream_t stream, size_t pointCount, const Vec3f s
 void gpuRadarComputeEnergy(cudaStream_t stream, size_t count, float rayAzimuthStepRad, float rayElevationStepRad, float freq,
                            Mat3x4f lookAtOriginTransform, const Field<RAY_POSE_MAT3x4_F32>::type* rayPose,
                            const Field<DISTANCE_F32>::type* hitDist, const Field<NORMAL_VEC3_F32>::type* hitNorm,
-                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, thrust::complex<float>>* outBUBRFactor)
+                           const Field<XYZ_VEC3_F32>::type* hitPos, Vector<3, std::complex<float>>* outBUBRFactor)
 {
 	run(kRadarComputeEnergy, stream, count, rayAzimuthStepRad, rayElevationStepRad, freq, lookAtOriginTransform, rayPose,
 	    hitDist, hitNorm, hitPos, outBUBRFactor);
