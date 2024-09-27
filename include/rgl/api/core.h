@@ -50,7 +50,7 @@
 #define RGL_API NO_MANGLING RGL_VISIBLE
 
 #define RGL_VERSION_MAJOR 0
-#define RGL_VERSION_MINOR 18
+#define RGL_VERSION_MINOR 19
 #define RGL_VERSION_PATCH 0
 
 // Invalid Entity ID is assign to rays that does not hit any Entity.
