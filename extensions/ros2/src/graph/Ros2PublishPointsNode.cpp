@@ -62,7 +62,6 @@ void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 	ros2Publisher->publish(ros2Message);
 }
 
-
 void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense)
 {
 	ros2Message.fields.clear();

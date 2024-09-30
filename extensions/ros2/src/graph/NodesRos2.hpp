@@ -26,6 +26,7 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <Ros2InitGuard.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
 
 struct Ros2Node : IPointsNodeSingleInput
 {
@@ -121,4 +122,32 @@ private:
 	rclcpp::Publisher<radar_msgs::msg::RadarScan>::SharedPtr ros2Publisher;
 	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
 	GPUFieldDescBuilder fieldDescBuilder;
+};
+
+struct Ros2PublishLaserScanNode : Ros2Node
+{
+	void setParameters(const char* topicName, const char* frameId,
+	                   rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
+	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10);
+
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{
+		return {AZIMUTH_F32, DISTANCE_F32, TIME_STAMP_F64, INTENSITY_F32};
+	}
+
+	// Ros2Node
+	void ros2ValidateImpl() override;
+	void ros2EnqueueExecImpl() override;
+
+private:
+	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
+
+	sensor_msgs::msg::LaserScan ros2Message;
+	rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr ros2Publisher;
+
+	HostPinnedArray<Field<AZIMUTH_F32>::type>::Ptr angles = HostPinnedArray<Field<AZIMUTH_F32>::type>::create();
+	HostPinnedArray<Field<TIME_STAMP_F64>::type>::Ptr times = HostPinnedArray<Field<TIME_STAMP_F64>::type>::create();
+	HostPinnedArray<Field<DISTANCE_F32>::type>::Ptr ranges = HostPinnedArray<Field<DISTANCE_F32>::type>::create();
+	HostPinnedArray<Field<INTENSITY_F32>::type>::Ptr intensities = HostPinnedArray<Field<INTENSITY_F32>::type>::create();
 };

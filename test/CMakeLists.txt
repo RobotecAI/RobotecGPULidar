@@ -60,6 +60,7 @@ if (RGL_BUILD_ROS2_EXTENSION)
         src/graph/Ros2NodesTest.cpp
         src/graph/nodes/Ros2PublishRadarScanNodeTest.cpp
         src/graph/nodes/Ros2PublishPointsNodeTest.cpp
+        src/graph/nodes/Ros2PublishLaserScanNodeTest.cpp
         src/scene/radarTest.cpp
     )
 endif()
@@ -114,7 +115,9 @@ if (RGL_BUILD_ROS2_EXTENSION)
     # It is needed by EntityVelocity test, which makes a use of non-public Ros2 node.
     find_package(rclcpp REQUIRED)
     find_package(radar_msgs REQUIRED)
+    find_package(sensor_msgs REQUIRED)
     list(REMOVE_DUPLICATES radar_msgs_LIBRARIES)
+    list(REMOVE_DUPLICATES sensor_msgs_LIBRARIES)
     target_include_directories(RobotecGPULidar_test PRIVATE
         ${CMAKE_SOURCE_DIR}/extensions/ros2/src
         ${rclcpp_INCLUDE_DIRS}
@@ -122,6 +125,7 @@ if (RGL_BUILD_ROS2_EXTENSION)
     target_link_libraries(RobotecGPULidar_test PRIVATE
         ${rclcpp_LIBRARIES}
         ${radar_msgs_LIBRARIES}
+        ${sensor_msgs_LIBRARIES}
     )
 endif()
 
