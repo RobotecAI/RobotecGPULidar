@@ -193,7 +193,7 @@ extern "C" __global__ void __closesthit__()
 			const Vec3f& vA = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.x()];
 			const Vec3f& vB = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.y()];
 			const Vec3f& vC = objectToWorld.rotation() * entityData.vertexDisplacementSincePrevFrame[triangleIndices.z()];
-			displacementFromSkinning = objectToWorld.scaleVec() * Vec3f((1 - u - v) * vA + u * vB + v * vC);
+			displacementFromSkinning = Vec3f((1 - u - v) * vA + u * vB + v * vC);
 		}
 
 		absPointVelocity = (displacementFromTransformChange + displacementFromSkinning) /
