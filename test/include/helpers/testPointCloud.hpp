@@ -289,6 +289,7 @@ private:
 		{ENTITY_ID_I32, [&](std::size_t count) {setFieldValues<ENTITY_ID_I32>(generateFieldValues(count, genEntityId));}},
 		{INTENSITY_F32, [&](std::size_t count) {setFieldValues<INTENSITY_F32>(generateFieldValues(count, genIntensityF32));}},
 		{INTENSITY_U8, [&](std::size_t count) {setFieldValues<INTENSITY_U8>(generateFieldValues(count, genIntensityU8));}},
+		{REFLECTIVITY_F32, [&](std::size_t count) {setFieldValues<REFLECTIVITY_F32>(generateFieldValues(count, genReflectivityF32));}},
 		{LASER_RETRO_F32, [&](std::size_t count) {setFieldValues<LASER_RETRO_F32>(generateFieldValues(count, genLaserRetro));}},
 		{RING_ID_U16, [&](std::size_t count) {setFieldValues<RING_ID_U16>(generateFieldValues(count, genRingId));}},
 		{AZIMUTH_F32, [&](std::size_t count) {setFieldValues<AZIMUTH_F32>(generateFieldValues(count, genAzimuth));}},

@@ -27,6 +27,7 @@ struct MultiReturnSamplesPointers
 	Field<IS_HIT_I32>::type* isHit;
 	Field<DISTANCE_F32>::type* distance;
 	Field<INTENSITY_F32>::type* intensity;
+	Field<REFLECTIVITY_F32>::type* reflectivity;
 	Field<LASER_RETRO_F32>::type* laserRetro;
 	Field<ENTITY_ID_I32>::type* entityId;
 	Field<ABSOLUTE_VELOCITY_VEC3_F32>::type* absVelocity;

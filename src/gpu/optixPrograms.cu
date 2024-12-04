@@ -34,7 +34,7 @@ extern "C" static __constant__ RaytraceRequestContext ctx;
 
 // Helper functions
 __device__ void saveSampleAsNonHit(int sampleIdx, float nonHitDistance);
-__device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, float laserRetro, int objectID,
+__device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, float reflectivity, float laserRetro, int objectID,
                                 const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal,
                                 float incidentAngle);
 __device__ void saveNonHitBeamSamples(int beamIdx, float nonHitDistance);
@@ -166,6 +166,9 @@ extern "C" __global__ void __closesthit__()
 	}
 	intensity *= cosIncidentAngle;
 
+	float reflectivityAlpha = 0.1f;
+	float reflectivity = reflectivityAlpha * intensity * distance * distance;
+
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
 	float radialSpeed{NAN};
@@ -211,7 +214,7 @@ extern "C" __global__ void __closesthit__()
 		radialSpeed = hitRays.normalized().dot(relPointVelocity);
 	}
 
-	saveSampleAsHit(mrSampleIdx, distance, intensity, laserRetro, entityId, absPointVelocity, relPointVelocity, radialSpeed,
+	saveSampleAsHit(mrSampleIdx, distance, intensity, reflectivity, laserRetro, entityId, absPointVelocity, relPointVelocity, radialSpeed,
 	                wNormal, incidentAngle);
 }
 
@@ -253,13 +256,14 @@ __device__ void saveSampleAsNonHit(int sampleIdx, float nonHitDistance)
 	ctx.mrSamples.distance[sampleIdx] = nonHitDistance;
 }
 
-__device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, float laserRetro, int objectID,
+__device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity,float reflectivity, float laserRetro, int objectID,
                                 const Vec3f& absVelocity, const Vec3f& relVelocity, float radialSpeed, const Vec3f& normal,
                                 float incidentAngle)
 {
 	ctx.mrSamples.isHit[sampleIdx] = true;
 	ctx.mrSamples.distance[sampleIdx] = distance;
 	ctx.mrSamples.intensity[sampleIdx] = intensity;
+	ctx.mrSamples.reflectivity[sampleIdx] = reflectivity;
 
 	if (ctx.mrSamples.laserRetro != nullptr) {
 		ctx.mrSamples.laserRetro[sampleIdx] = laserRetro;

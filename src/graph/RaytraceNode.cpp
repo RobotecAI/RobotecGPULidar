@@ -119,6 +119,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .distance = getPtrTo<DISTANCE_F32>(),
 	    .intensityF32 = getPtrTo<INTENSITY_F32>(),
 	    .intensityU8 = getPtrTo<INTENSITY_U8>(),
+	    .reflectivityF32 = getPtrTo<REFLECTIVITY_F32>(),
 	    .laserRetro = getPtrTo<LASER_RETRO_F32>(),
 	    .timestampF64 = getPtrTo<TIME_STAMP_F64>(),
 	    .timestampU32 = getPtrTo<TIME_STAMP_U32>(),

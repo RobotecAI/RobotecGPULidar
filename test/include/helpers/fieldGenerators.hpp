@@ -36,6 +36,9 @@ static std::function<Field<INTENSITY_F32>::type(int)> genIntensityF32 = [](int i
 static std::function<Field<INTENSITY_U8>::type(int)> genIntensityU8 = [](int i) {
 	return i % std::numeric_limits<Field<INTENSITY_U8>::type>::max();
 };
+static std::function<Field<REFLECTIVITY_F32>::type(int)> genReflectivityF32 = [](int i) {
+	return static_cast<float>(i) / (static_cast<float>(i + 1));
+};
 static std::function<Field<LASER_RETRO_F32>::type(int)> genLaserRetro = [](int i) {
 	return static_cast<float>(i) / (static_cast<float>(i + 1));
 };

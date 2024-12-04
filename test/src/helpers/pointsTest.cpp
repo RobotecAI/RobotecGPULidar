@@ -5,18 +5,20 @@
 class PointCloudTest : public ::testing::TestWithParam<int>
 {
 protected:
-	std::vector<rgl_field_t> allNotDummyFields = {XYZ_VEC3_F32, IS_HIT_I32,  RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,
-	                                              RING_ID_U16,  AZIMUTH_F32, DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64};
+	std::vector<rgl_field_t> allNotDummyFields = {XYZ_VEC3_F32,  IS_HIT_I32,       RAY_IDX_U32,   ENTITY_ID_I32,
+	                                              INTENSITY_F32, REFLECTIVITY_F32, RING_ID_U16,   AZIMUTH_F32,
+	                                              DISTANCE_F32,  RETURN_TYPE_U8,   TIME_STAMP_F64};
 
-	std::vector<rgl_field_t> fieldsWithPaddings = {PADDING_32,   XYZ_VEC3_F32,   PADDING_16,     IS_HIT_I32,  PADDING_8,
-	                                               RAY_IDX_U32,  ENTITY_ID_I32,  INTENSITY_F32,  RING_ID_U16, AZIMUTH_F32,
-	                                               DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64, PADDING_16,  PADDING_32};
+	std::vector<rgl_field_t> fieldsWithPaddings = {
+	    PADDING_32,       XYZ_VEC3_F32, PADDING_16,  IS_HIT_I32,   PADDING_8,      RAY_IDX_U32,    ENTITY_ID_I32, INTENSITY_F32,
+	    REFLECTIVITY_F32, RING_ID_U16,  AZIMUTH_F32, DISTANCE_F32, RETURN_TYPE_U8, TIME_STAMP_F64, PADDING_16,    PADDING_32};
 
 	std::vector<Field<XYZ_VEC3_F32>::type> pointCoord;
 	std::vector<Field<IS_HIT_I32>::type> isHit;
 	std::vector<Field<RAY_IDX_U32>::type> rayIdx;
 	std::vector<Field<ENTITY_ID_I32>::type> entityId;
 	std::vector<Field<INTENSITY_F32>::type> intensity;
+	std::vector<Field<REFLECTIVITY_F32>::type> reflectivity;
 	std::vector<Field<RING_ID_U16>::type> ringId;
 	std::vector<Field<AZIMUTH_F32>::type> azimuth;
 	std::vector<Field<DISTANCE_F32>::type> distance;
@@ -31,6 +33,7 @@ protected:
 		Field<RAY_IDX_U32>::type rayIdx;
 		Field<ENTITY_ID_I32>::type entityId;
 		Field<INTENSITY_F32>::type intensity;
+		Field<REFLECTIVITY_F32>::type reflectivity;
 		Field<RING_ID_U16>::type ringId;
 		Field<AZIMUTH_F32>::type azimuth;
 		Field<DISTANCE_F32>::type distance;
@@ -45,8 +48,8 @@ protected:
 		points.reserve(pointsCount);
 		for (int i = 0; i < pointsCount; i++) {
 			points.emplace_back(TestPointStruct{genCoord(i), genHalfHit(i), genRayIdx(i), genEntityId(i), genIntensityF32(i),
-			                                    genRingId(i), genAzimuth(i), genDistance(i), genReturnType(i),
-			                                    genTimeStampF64(i)});
+			                                    genReflectivityF32(i), genRingId(i), genAzimuth(i), genDistance(i),
+			                                    genReturnType(i), genTimeStampF64(i)});
 		}
 		return points;
 	}
@@ -58,6 +61,7 @@ protected:
 		rayIdx = generateFieldValues(pointsCount, genRayIdx);
 		entityId = generateFieldValues(pointsCount, genEntityId);
 		intensity = generateFieldValues(pointsCount, genIntensityF32);
+		reflectivity = generateFieldValues(pointsCount, genReflectivityF32);
 		ringId = generateFieldValues(pointsCount, genRingId);
 		azimuth = generateFieldValues(pointsCount, genAzimuth);
 		distance = generateFieldValues(pointsCount, genDistance);
@@ -72,6 +76,7 @@ protected:
 		pointCloud.setFieldValues<RAY_IDX_U32>(rayIdx);
 		pointCloud.setFieldValues<ENTITY_ID_I32>(entityId);
 		pointCloud.setFieldValues<INTENSITY_F32>(intensity);
+		pointCloud.setFieldValues<REFLECTIVITY_F32>(reflectivity);
 		pointCloud.setFieldValues<RING_ID_U16>(ringId);
 		pointCloud.setFieldValues<AZIMUTH_F32>(azimuth);
 		pointCloud.setFieldValues<DISTANCE_F32>(distance);
@@ -92,6 +97,7 @@ protected:
 		EXPECT_EQ(pointCloud.getFieldValues<RAY_IDX_U32>(), rayIdx);
 		EXPECT_EQ(pointCloud.getFieldValues<ENTITY_ID_I32>(), entityId);
 		EXPECT_EQ(pointCloud.getFieldValues<INTENSITY_F32>(), intensity);
+		EXPECT_EQ(pointCloud.getFieldValues<REFLECTIVITY_F32>(), reflectivity);
 		EXPECT_EQ(pointCloud.getFieldValues<RING_ID_U16>(), ringId);
 		EXPECT_EQ(pointCloud.getFieldValues<AZIMUTH_F32>(), azimuth);
 		EXPECT_EQ(pointCloud.getFieldValues<DISTANCE_F32>(), distance);
