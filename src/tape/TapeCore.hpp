@@ -123,7 +123,7 @@ class TapeCore
 		                      TapeCore::tape_node_raytrace_configure_beam_divergence),
 		    TAPE_CALL_MAPPING("rgl_node_raytrace_configure_default_intensity",
 		                      TapeCore::tape_node_raytrace_configure_default_intensity),
-			TAPE_CALL_MAPPING("tape_node_raytrace_configure_reflectivity_alpha",
+			TAPE_CALL_MAPPING("rgl_node_raytrace_configure_reflectivity_alpha",
 				      TapeCore::tape_node_raytrace_configure_reflectivity_alpha),
 		    TAPE_CALL_MAPPING("rgl_node_raytrace_configure_return_mode",
 		                      TapeCore::tape_node_raytrace_configure_return_mode),

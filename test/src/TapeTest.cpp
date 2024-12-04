@@ -252,6 +252,9 @@ TEST_F(TapeTest, RecordPlayAllCalls)
 	float defaultIntensity = 1.1f;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_default_intensity(raytrace, defaultIntensity));
 
+	float reflectivityAlpha = 0.1;
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_reflectivity_alpha(raytrace, reflectivityAlpha));
+
 	rgl_return_mode_t returnMode = RGL_RETURN_FIRST;
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_return_mode(raytrace, returnMode));
 
