@@ -98,6 +98,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .nearNonHitDistance = nearNonHitDistance,
 	    .farNonHitDistance = farNonHitDistance,
 	    .defaultIntensity = defaultIntensity,
+	    .reflectivityAlpha = reflectivityAlpha,
 	    .raysWorld = raysPtr,
 	    .rayCount = raysNode->getRayCount(),
 	    .rayOriginToWorld = raysNode->getCumulativeRayTransfrom(),

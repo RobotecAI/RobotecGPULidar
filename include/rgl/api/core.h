@@ -894,6 +894,15 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node
 RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t node, float default_intensity);
 
 /**
+ * Modifies RaytraceNode to set reflectivity alpha.
+ * Reflectivity alpha is used to calculate reflectivity of the hit point. This value is const for every hit point.
+ * Default reflectivity alpha is set to 1.0f.
+ * @param node RaytraceNode to modify.
+ * @param reflectivity_alpha Reflectivity alpha to set.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_reflectivity_alpha(rgl_node_t node, float reflectivity_alpha);
+
+/**
  * Modifies RaytraceNode to set return mode.
  * Point return types (RGL_FIELD_RETURN_TYPE_U8) will be set to corresponding rgl_return_type_t values, e.g. return mode
  * RGL_RETURN_FIRST_LAST will result in point return types to be set to RGL_RETURN_TYPE_FIRST or RGL_RETURN_TYPE_LAST,

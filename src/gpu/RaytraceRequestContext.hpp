@@ -29,6 +29,7 @@ struct RaytraceRequestContext
 	float farNonHitDistance;
 
 	float defaultIntensity;
+	float reflectivityAlpha;
 
 	const Mat3x4f* raysWorld;
 	size_t rayCount;
