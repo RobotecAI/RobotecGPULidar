@@ -59,7 +59,7 @@ TEST_P(TextureTest, rgl_texture_reading)
 	std::vector<rgl_mat3x4f> rays = {// Ray must be incident perpendicular to the surface to receive all intensity
 	                                 Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}).toRGL()};
 
-	std::vector<rgl_field_t> yieldFields = {INTENSITY_F32, REFLECTIVITY_F32};
+	std::vector<rgl_field_t> yieldFields = {INTENSITY_F32};
 
 	EXPECT_RGL_SUCCESS(rgl_node_rays_from_mat3x4f(&useRaysNode, rays.data(), rays.size()));
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace(&raytraceNode, nullptr));
