@@ -895,8 +895,8 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t no
 
 /**
  * Modifies RaytraceNode to set reflectivity alpha.
- * Reflectivity alpha is used to calculate reflectivity of the hit point. This value is const for every hit point.
- * Default reflectivity alpha is set to 1.0f.
+ * Reflectivity alpha is used to calculate reflectivity of the hit point. This value is constant for every hit point.
+ * Default reflectivity alpha is set to 0.1f.
  * @param node RaytraceNode to modify.
  * @param reflectivity_alpha Reflectivity alpha to set.
  */

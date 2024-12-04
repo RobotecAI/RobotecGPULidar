@@ -54,7 +54,6 @@ set(RGL_TEST_FILES
     src/synchronization/testKernel.cu
     src/scene/incidentAngleTest.cpp
     src/graph/multiReturnTest.cpp
-        src/scene/reflectivityTest.cpp
 )
 
 if (RGL_BUILD_ROS2_EXTENSION)

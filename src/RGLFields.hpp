@@ -74,7 +74,7 @@ inline const std::set<rgl_field_t>& getAllRealFields()
 	    ENTITY_ID_I32,
 	    INTENSITY_F32,
 	    INTENSITY_U8,
-		REFLECTIVITY_F32,
+	    REFLECTIVITY_F32,
 	    LASER_RETRO_F32,
 	    RING_ID_U16,
 	    AZIMUTH_F32,
