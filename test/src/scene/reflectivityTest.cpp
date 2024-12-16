@@ -81,9 +81,9 @@ TEST_P(ReflectivityTest, read_value)
 
 	for (int i = 0; i < outCount; ++i) {
 		EXPECT_NEAR(((float) value), outIntensity.at(i), EPSILON_F);
-		float outDistance = outDistance.at(i);
+		float outDistanceValue = outDistance.at(i);
 		float intensity = outIntensity.at(i);
-		float reflectivityValue = alpha * outDistance * outDistance * intensity;
+		float reflectivityValue = alpha * outDistanceValue * outDistanceValue * intensity;
 
 		// Reflectivity test is conducted with greater epsilon.
 		// This is due to lack of distance impact on intensity.

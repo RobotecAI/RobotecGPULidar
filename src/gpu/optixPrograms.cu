@@ -166,8 +166,6 @@ extern "C" __global__ void __closesthit__()
 	}
 	intensity *= cosIncidentAngle;
 
-	float reflectivityAlpha = ctx.reflectivityAlpha;
-
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};
 	float radialSpeed{NAN};
