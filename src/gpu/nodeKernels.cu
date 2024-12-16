@@ -128,7 +128,8 @@ __device__ void saveReturnAsHit(const RaytraceRequestContext* ctx, int beamIdx, 
 		                                       UINT8_MAX;
 	}
 	if (ctx->reflectivityF32 != nullptr) {
-		ctx->reflectivityF32[returnPointIdx] = ctx->mrSamples.reflectivity[sampleIdx];
+		const auto distance2 = ctx->mrSamples.distance[sampleIdx] * ctx->mrSamples.distance[sampleIdx];
+		ctx->reflectivityF32[returnPointIdx] = ctx->reflectivityAlpha * ctx->mrSamples.intensity[sampleIdx] * distance2;
 	}
 	if (ctx->entityId != nullptr) {
 		ctx->entityId[returnPointIdx] = ctx->mrSamples.entityId[sampleIdx];

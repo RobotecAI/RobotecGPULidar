@@ -5,15 +5,19 @@
 #include <helpers/textureHelpers.hpp>
 
 #include <RGLFields.hpp>
-struct ReflectivityTest : public RGLTestWithParam<std::tuple<float, unsigned char>>
+struct ReflectivityTest : public RGLTestWithParam<std::tuple<float, unsigned char, float>>
 {};
 
 INSTANTIATE_TEST_SUITE_P(Parametrized, ReflectivityTest,
-						 testing::Combine(testing::Values(0.0f, 0.1f, 10.0f), testing::Values(u_char(0), u_char(127), u_char(255))));
+						 testing::Combine(
+						 	testing::Values(0.012f, 0.12f, 1.23f),
+						 	testing::Values(u_char(0), u_char(127), u_char(255)),
+						 	testing::Values(0.012, 0.123, 1.23)
+						 	));
 
 TEST_P(ReflectivityTest, read_value)
 {
-	auto [alpha, value] = GetParam();
+	auto [alpha, value, distance] = GetParam();
 
 	int textureWidth = 100;
 	int textureHeight = 100;
@@ -28,6 +32,10 @@ TEST_P(ReflectivityTest, read_value)
 
 	EXPECT_RGL_SUCCESS(rgl_entity_create(&entity, nullptr, mesh));
 	EXPECT_RGL_SUCCESS(rgl_entity_set_intensity_texture(entity, texture));
+
+	// Scale the cube in order to test different distances
+	rgl_mat3x4f cubeTransform = Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}, {distance, distance, distance}).toRGL();
+	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(entity, &cubeTransform));
 
 	// Create RGL graph pipeline.
 	rgl_node_t useRaysNode = nullptr, raytraceNode = nullptr, compactNode = nullptr, yieldNode = nullptr;
@@ -74,9 +82,14 @@ TEST_P(ReflectivityTest, read_value)
 
 	for (int i = 0; i < outCount; ++i) {
 		EXPECT_NEAR(((float) value), outIntensity.at(i), EPSILON_F);
-		float distance = outDistance.at(i);
+		float outDdistance = outDistance.at(i);
 		float intensity = outIntensity.at(i);
-		float reflectivityValue = alpha * distance * distance * intensity;
-		EXPECT_NEAR(reflectivityValue, outReflectivity.at(i), EPSILON_F);
+		float reflectivityValue = alpha * outDdistance * outDdistance * intensity;
+		printf("Distance: %f, Intensity: %f, Reflectivity: %f, Alpha: %f\n", outDdistance, intensity, reflectivityValue, alpha);
+
+		// Reflectivity test is conducted with greater epsilon.
+		// This is due to lack of distance impact on intensity.
+		// As long as distance is not included into intensity calculations, reflectivity value will grow relatively fast with the distance.
+		EXPECT_NEAR(reflectivityValue, outReflectivity.at(i), 1e-3f);
 	}
 }

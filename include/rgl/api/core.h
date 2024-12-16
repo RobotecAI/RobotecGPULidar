@@ -358,7 +358,6 @@ typedef enum : int32_t
 	 * Same as RGL_FIELD_INTENSITY_F32, but uint8_t type.
 	 */
 	RGL_FIELD_INTENSITY_U8,
-	RGL_FIELD_REFLECTIVITY_F32,
 	RGL_FIELD_IS_HIT_I32,
 	RGL_FIELD_IS_GROUND_I32,
 	RGL_FIELD_RAY_IDX_U32,
@@ -441,6 +440,13 @@ typedef enum : int32_t
 	 * For non-hit points zero is assigned.
 	 */
 	RGL_FIELD_LASER_RETRO_F32,
+
+	/**
+     * Reflectivity of the hit point.
+     * Reflectivity is a scalar value that describes how much light is reflected by the hit point.
+     * Reflectivity is a property of the material of the hit point.
+     */
+	RGL_FIELD_REFLECTIVITY_F32,
 
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,

@@ -159,8 +159,7 @@ private:
 		explicit MultiReturnSamples(StreamBoundObjectsManager& arrayMgr)
 		  : isHit(DeviceAsyncArray<Field<IS_HIT_I32>::type>::create(arrayMgr)),
 		    distance(DeviceAsyncArray<Field<DISTANCE_F32>::type>::create(arrayMgr)),
-		    intensity(DeviceAsyncArray<Field<INTENSITY_F32>::type>::create(arrayMgr)),
-		    reflectivity(DeviceAsyncArray<Field<REFLECTIVITY_F32>::type>::create(arrayMgr))
+		    intensity(DeviceAsyncArray<Field<INTENSITY_F32>::type>::create(arrayMgr))
 		{}
 
 		void adjustToFields(const std::unordered_map<rgl_field_t, IAnyArray::Ptr>& inFieldData,
@@ -185,7 +184,6 @@ private:
 			isHit->resize(size, false, false);
 			distance->resize(size, false, false);
 			intensity->resize(size, false, false);
-			reflectivity->resize(size, false, false);
 			resizeField(laserRetro, size);
 			resizeField(entityId, size);
 			resizeField(absVelocity, size);
@@ -203,7 +201,6 @@ private:
 					.isHit = isHit->getWritePtr(),
 					.distance = distance->getWritePtr(),
 					.intensity = intensity->getWritePtr(),
-					.reflectivity = reflectivity->getWritePtr(),
 					.laserRetro = laserRetro ? laserRetro->getWritePtr() : nullptr,
 					.entityId = entityId ? entityId->getWritePtr() : nullptr,
 					.absVelocity = absVelocity ? absVelocity->getWritePtr() : nullptr,
@@ -227,7 +224,6 @@ private:
 		DeviceAsyncArray<Field<IS_HIT_I32>::type>::Ptr isHit;
 		DeviceAsyncArray<Field<DISTANCE_F32>::type>::Ptr distance;
 		DeviceAsyncArray<Field<INTENSITY_F32>::type>::Ptr intensity;
-		DeviceAsyncArray<Field<REFLECTIVITY_F32>::type>::Ptr reflectivity;
 
 		// Additional field data for multi-return samples.
 		DeviceAsyncArray<Field<LASER_RETRO_F32>::type>::Ptr laserRetro;
