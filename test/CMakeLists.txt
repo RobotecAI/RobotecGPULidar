@@ -48,6 +48,7 @@ set(RGL_TEST_FILES
     src/scene/entityVelocityTest.cpp
     src/scene/meshAPITest.cpp
     src/scene/textureTest.cpp
+    src/scene/reflectivityTest.cpp
     src/synchronization/graphAndCopyStream.cpp
     src/synchronization/graphThreadSynchronization.cpp
     src/synchronization/testKernel.cu

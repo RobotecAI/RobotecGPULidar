@@ -441,6 +441,13 @@ typedef enum : int32_t
 	 */
 	RGL_FIELD_LASER_RETRO_F32,
 
+	/**
+	*  Reflectivity of the hit point.
+	 * Reflectivity is a scalar value that describes how much light is reflected by the hit point.
+	 * Reflectivity is a property of the material of the hit point.
+	 */
+	RGL_FIELD_REFLECTIVITY_F32,
+
 	// Dummy fields
 	RGL_FIELD_PADDING_8 = 1024,
 	RGL_FIELD_PADDING_16,
@@ -891,6 +898,15 @@ RGL_API rgl_status_t rgl_node_raytrace_configure_beam_divergence(rgl_node_t node
  * @param default_intensity Default intensity to set (cannot be a negative number).
  */
 RGL_API rgl_status_t rgl_node_raytrace_configure_default_intensity(rgl_node_t node, float default_intensity);
+
+/**
+ * Modifies RaytraceNode to set reflectivity alpha.
+ * Reflectivity alpha is used to calculate reflectivity of the hit point. This value is constant for every hit point.
+ * Default reflectivity alpha is set to 0.1f.
+ * @param node RaytraceNode to modify.
+ * @param reflectivity_alpha Reflectivity alpha to set.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_reflectivity_alpha(rgl_node_t node, float reflectivity_alpha);
 
 /**
  * Modifies RaytraceNode to set return mode.

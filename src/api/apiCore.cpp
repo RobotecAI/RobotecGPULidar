@@ -1066,6 +1066,27 @@ void TapeCore::tape_node_raytrace_configure_default_intensity(const YAML::Node& 
 	rgl_node_raytrace_configure_default_intensity(node, yamlNode[1].as<float>());
 }
 
+RGL_API rgl_status_t rgl_node_raytrace_configure_reflectivity_alpha(rgl_node_t node, float reflectivity_alpha)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_reflectivity_alpha(node={}, default_intensity={})", repr(node),
+					reflectivity_alpha);
+		CHECK_ARG(node != nullptr);
+		CHECK_ARG(reflectivity_alpha >= 0.0f);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setReflectivityAlpha(reflectivity_alpha);
+	});
+	TAPE_HOOK(node, reflectivity_alpha);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_reflectivity_alpha(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_reflectivity_alpha(node, yamlNode[1].as<float>());
+}
+
 RGL_API rgl_status_t rgl_node_raytrace_configure_return_mode(rgl_node_t node, rgl_return_mode_t return_mode)
 {
 	auto status = rglSafeCall([&]() {

@@ -139,6 +139,7 @@ struct RaytraceNode : IPointsNode
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
 	void setDefaultIntensity(float intensity) { defaultIntensity = intensity; }
+	void setReflectivityAlpha(float reflectivity_alpha) { reflectivityAlpha = reflectivity_alpha; }
 	void setReturnMode(rgl_return_mode_t mode)
 	{
 		if (mode == RGL_RETURN_UNKNOWN) {
@@ -244,6 +245,7 @@ private:
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};
 	float defaultIntensity = 0.0f;
+	float reflectivityAlpha = 0.1f;
 
 	MultiReturnSamples mrSampleData = MultiReturnSamples{arrayMgr};
 	rgl_return_mode_t returnMode = RGL_RETURN_FIRST;

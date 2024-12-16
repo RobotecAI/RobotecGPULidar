@@ -29,6 +29,7 @@ struct RaytraceRequestContext
 	float farNonHitDistance;
 
 	float defaultIntensity;
+	float reflectivityAlpha;
 
 	const Mat3x4f* raysWorld;
 	size_t rayCount;
@@ -58,6 +59,7 @@ struct RaytraceRequestContext
 	Field<DISTANCE_F32>::type* distance;
 	Field<INTENSITY_F32>::type* intensityF32;
 	Field<INTENSITY_U8>::type* intensityU8;
+	Field<REFLECTIVITY_F32>::type* reflectivityF32;
 	Field<LASER_RETRO_F32>::type* laserRetro;
 	Field<TIME_STAMP_F64>::type* timestampF64;
 	Field<TIME_STAMP_U32>::type* timestampU32;

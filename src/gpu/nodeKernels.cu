@@ -127,6 +127,10 @@ __device__ void saveReturnAsHit(const RaytraceRequestContext* ctx, int beamIdx, 
 		                                       static_cast<uint8_t>(std::round(ctx->mrSamples.intensity[sampleIdx])) :
 		                                       UINT8_MAX;
 	}
+	if (ctx->reflectivityF32 != nullptr) {
+		const auto distance2 = ctx->mrSamples.distance[sampleIdx] * ctx->mrSamples.distance[sampleIdx];
+		ctx->reflectivityF32[returnPointIdx] = ctx->reflectivityAlpha * ctx->mrSamples.intensity[sampleIdx] * distance2;
+	}
 	if (ctx->entityId != nullptr) {
 		ctx->entityId[returnPointIdx] = ctx->mrSamples.entityId[sampleIdx];
 	}
@@ -182,6 +186,9 @@ __device__ void saveReturnAsNonHit(const RaytraceRequestContext* ctx, int firstS
 	}
 	if (ctx->intensityU8 != nullptr) {
 		ctx->intensityU8[returnPointIdx] = 0;
+	}
+	if (ctx->reflectivityF32 != nullptr) {
+		ctx->reflectivityF32[returnPointIdx] = 0;
 	}
 	if (ctx->entityId != nullptr) {
 		ctx->entityId[returnPointIdx] = RGL_ENTITY_INVALID_ID;
