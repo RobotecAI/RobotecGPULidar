@@ -11,7 +11,7 @@ struct ReflectivityTest : public RGLTestWithParam<std::tuple<float, unsigned cha
 INSTANTIATE_TEST_SUITE_P(Parametrized, ReflectivityTest,
 						 testing::Combine(
 						 	testing::Values(0.012f, 0.12f, 1.23f),
-						 	testing::Values(u_char(0), u_char(127), u_char(255)),
+						 	testing::Values(static_cast<unsigned char>(0), static_cast<unsigned char>(127), static_cast<unsigned char>(255)),
 						 	testing::Values(0.012, 0.123, 1.23)));
 
 TEST_P(ReflectivityTest, read_value)
