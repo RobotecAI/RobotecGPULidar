@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.20.0] 17 December 2024
+
+### Added
+
+- Added concept of reflectivity calculated as (alpha * intensity * distance^2)
+  - Added a new field
+    - `RGL_FIELD_REFLECTIVITY_F32`
+  - Added a new API call to configure reflectivity alpha values for RaytraceNode
+    - `rgl_node_raytrace_configure_reflectivity_alpha`
+
+### Fixed
+
+- Fixed hit point displacement calculation resulting from the animation
+
 ## [0.19.0] 27 September 2024
 
 ### Added
