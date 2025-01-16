@@ -14,7 +14,10 @@ if(NOT CMAKE_DEBUG_POSTFIX)
       "Choose the debug postfix used when building Debug configuration")
 endif()
 
-project(RobotecGPULidar C CXX CUDA)
+project (
+    RobotecGPULidar
+    LANGUAGES C CXX CUDA
+)
 
 # Logging default settings (can be changed via API call)
 set(RGL_LOG_STDOUT ON CACHE BOOL
@@ -147,6 +150,7 @@ endif ()
 
 set_property(TARGET RobotecGPULidar PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET RobotecGPULidar PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET RobotecGPULidar PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
