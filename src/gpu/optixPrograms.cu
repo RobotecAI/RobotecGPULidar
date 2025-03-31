@@ -112,10 +112,12 @@ extern "C" __global__ void __closesthit__()
 
 	// Ray
 	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
-	const int beamSampleRayIdx = static_cast<int>(optixGetPayload_0());
-	const int mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
+	const unsigned int beamSampleRayIdx = optixGetPayload_0();
+	unsigned int mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
 	const Vec3f beamSampleOrigin = optixGetWorldRayOrigin();
 	const int entityId = static_cast<int>(optixGetInstanceId());
+	const int entitySensorID = entityData.entitySensorId;
+	const int sensorId = ctx.sensorId;
 	const float laserRetro = entityData.laserRetro;
 
 	// Hitpoint
@@ -132,6 +134,25 @@ extern "C" __global__ void __closesthit__()
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
 		saveSampleAsNonHit(mrSampleIdx, ctx.nearNonHitDistance);
+		return;
+	}
+
+	if (ctx.mrSamples.distance[mrSampleIdx] == ctx.farNonHitDistance) {
+		ctx.mrSamples.distance[mrSampleIdx]  = 0.0f;
+	}
+	// Ignore entities with corresponding IDs.
+	if (entitySensorID == sensorId) {
+		constexpr auto epsilon = 1.19209e-06f;
+		const Vec3f dir = optixGetWorldRayDirection();
+		const Vec3f iterationRelativeHitOffset = dir * distance;
+
+		ctx.mrSamples.distance[mrSampleIdx] += iterationRelativeHitOffset.length() + epsilon;
+		const auto sumRelativeOffset = dir * ctx.mrSamples.distance[mrSampleIdx];
+		const Vec3f origin = hitWorldRaytraced - sumRelativeOffset;
+		const float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[mrSampleIdx].y();
+
+		optixTrace(ctx.scene, origin + sumRelativeOffset, dir, epsilon, maxRange, 0.0f, OptixVisibilityMask(255),
+			OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, mrSampleIdx);
 		return;
 	}
 
@@ -258,7 +279,7 @@ __device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, 
                                 float incidentAngle)
 {
 	ctx.mrSamples.isHit[sampleIdx] = true;
-	ctx.mrSamples.distance[sampleIdx] = distance;
+	ctx.mrSamples.distance[sampleIdx] += distance;
 	ctx.mrSamples.intensity[sampleIdx] = intensity;
 
 	if (ctx.mrSamples.laserRetro != nullptr) {

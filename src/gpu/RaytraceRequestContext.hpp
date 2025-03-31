@@ -24,6 +24,7 @@ struct RaytraceRequestContext
 	Vec3f sensorLinearVelocityXYZ;
 	Vec3f sensorAngularVelocityRPY;
 	bool doApplyDistortion;
+	int sensorId;
 
 	float nearNonHitDistance;
 	float farNonHitDistance;

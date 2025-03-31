@@ -51,6 +51,12 @@ void Entity::setId(int newId)
 	Scene::instance().requestASRebuild(); // Update instanceId field in AS
 }
 
+void Entity::setSensorId(int newSensorId)
+{
+    sensorId = newSensorId;
+    Scene::instance().requestSBTRebuild();
+}
+
 void Entity::setLaserRetro(float retro)
 {
 	laserRetro = retro;

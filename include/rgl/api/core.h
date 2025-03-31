@@ -61,6 +61,14 @@
 // It is assigned by default if the user does not specify it.
 #define RGL_DEFAULT_ENTITY_ID 268435455
 
+// Default Entity-Sensor ID is the largest positive 28-bit integer (OptiX limit).
+// It is assigned by default if the user does not specify it.
+#define RGL_DEFAULT_ENTITY_SENSOR_ID 268435455
+
+// Default Sensor ID. It is assigned by default if the user does not specify it.
+// It is used to identify the sensor in the scene and omit hitpoints on objects with the same ID.
+#define RGL_DEFAULT_SENSOR_ID -1
+
 /**
  * Two consecutive 32-bit floats.
  */
@@ -673,6 +681,13 @@ RGL_API rgl_status_t rgl_entity_set_pose_world(rgl_entity_t entity, const rgl_ma
 RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 
 /**
+ * Set sensor ID of the given Entity. This ID is used to identify the sensor in the scene and omit hitpoints on objects with the same ID.
+ * @param entity Entity to modify
+ * @param sensor_id ID to set. If not set, value of the Entity sensor id will be automatically generated as a DEFAULT_SENSOR_ID.
+ */
+RGL_API rgl_status_t rgl_entity_set_sensor_id(rgl_entity_t entity, int32_t sensor_id);
+
+/**
  * Assign intensity texture to the given Entity. The assumption is that the Entity can hold only one intensity texture.
  * @param entity Entity to modify.
  * @param texture Texture to assign.
@@ -843,6 +858,15 @@ RGL_API rgl_status_t rgl_node_raytrace(rgl_node_t* node, rgl_scene_t scene);
  */
 RGL_API rgl_status_t rgl_node_raytrace_configure_velocity(rgl_node_t node, const rgl_vec3f* linear_velocity,
                                                           const rgl_vec3f* angular_velocity);
+
+/**
+ * Modifies RaytraceNode to apply sensor identifier.
+ * This id will correlate with the entities ids in the scene. Entities with the same id as the sensor will be ignored.
+ * Can be used to ignore the sensor itself in the raytracing.
+ * @param node RaytraceNode to modify
+ * @param id Sensor identifier to set. Default value is 0 and will not ignore any entity.
+ */
+RGL_API rgl_status_t rgl_node_raytrace_configure_id(rgl_node_t node, int32_t id);
 
 /**
  * Modifies RaytraceNode to apply sensor distortion.
