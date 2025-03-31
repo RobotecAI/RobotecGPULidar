@@ -17,11 +17,12 @@ TEST_F(LidarVisibilityTest, UseCase)
 	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(smallCube, &smallCubePose));
 
 	rgl_entity_t midCube = makeEntity(makeCubeMesh());
-	rgl_mat3x4f midCubePose = Mat3x4f::TRS(Vec3f(0, 0, 0), Vec3f(0, 0, 0), Vec3f(2, 2, 2)).toRGL();
+	rgl_mat3x4f midCubePose = Mat3x4f::TRS(Vec3f(0, 0, 4), Vec3f(0, 0, 0), Vec3f(1, 1, 1)).toRGL();
 	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(midCube, &midCubePose));
 
+
 	rgl_entity_t bigCube = makeEntity(makeCubeMesh());
-	rgl_mat3x4f bigCubePose = Mat3x4f::TRS(Vec3f(0, 0, 0), Vec3f(0, 0, 0), Vec3f(3, 3, 3)).toRGL();
+	rgl_mat3x4f bigCubePose = Mat3x4f::TRS(Vec3f(0, 0, 11), Vec3f(0, 0, 0), Vec3f(1, 1, 1)).toRGL();
 	EXPECT_RGL_SUCCESS(rgl_entity_set_transform(bigCube, &bigCubePose));
 
 	// Rays
@@ -42,10 +43,10 @@ TEST_F(LidarVisibilityTest, UseCase)
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(raytraceNode, compactNode));
 	EXPECT_RGL_SUCCESS(rgl_graph_node_add_child(compactNode, yieldNode));
 
-	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_id(raytraceNode, 1));
-	EXPECT_RGL_SUCCESS(rgl_entity_set_sensor_id(smallCube, 1));
-	// Mid cube with unset sensor_Id
-	EXPECT_RGL_SUCCESS(rgl_entity_set_sensor_id(bigCube, 2));
+	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_id(raytraceNode, -2));
+
+	EXPECT_RGL_SUCCESS(rgl_entity_set_sensor_id(smallCube, -2));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_sensor_id(midCube, -2));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 
@@ -54,5 +55,5 @@ TEST_F(LidarVisibilityTest, UseCase)
 	EXPECT_EQ(cloudSize, 1);
 
 	auto distances = outputPointCloud.getFieldValues<DISTANCE_F32>();
-	EXPECT_NEAR(distances[0], 2.0, 0.0001);
+	EXPECT_NEAR(distances[0], 10.0, 0.0001);
 }
