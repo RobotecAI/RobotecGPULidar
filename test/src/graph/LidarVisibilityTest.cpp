@@ -45,8 +45,8 @@ TEST_F(LidarVisibilityTest, UseCase)
 
 	EXPECT_RGL_SUCCESS(rgl_node_raytrace_configure_id(raytraceNode, -2));
 
-	EXPECT_RGL_SUCCESS(rgl_entity_set_sensor_id(smallCube, -2));
-	EXPECT_RGL_SUCCESS(rgl_entity_set_sensor_id(midCube, -2));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_ignored_by_sensor(smallCube, -2));
+	EXPECT_RGL_SUCCESS(rgl_entity_set_ignored_by_sensor(midCube, -2));
 
 	EXPECT_RGL_SUCCESS(rgl_graph_run(raytraceNode));
 

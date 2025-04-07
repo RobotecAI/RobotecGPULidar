@@ -61,13 +61,8 @@
 // It is assigned by default if the user does not specify it.
 #define RGL_DEFAULT_ENTITY_ID 268435455
 
-// Default Entity-Sensor ID is the largest positive 28-bit integer (OptiX limit).
-// It is assigned by default if the user does not specify it.
-#define RGL_DEFAULT_ENTITY_SENSOR_ID 268435455
-
-// Default Sensor ID. It is assigned by default if the user does not specify it.
-// It is used to identify the sensor in the scene and omit hitpoints on objects with the same ID.
-#define RGL_DEFAULT_SENSOR_ID -1
+#define RGL_SENSOR_ID_DEFAULT (0)
+#define RGL_SENSOR_ID_NONE (-2147483648)
 
 /**
  * Two consecutive 32-bit floats.
@@ -681,11 +676,13 @@ RGL_API rgl_status_t rgl_entity_set_pose_world(rgl_entity_t entity, const rgl_ma
 RGL_API rgl_status_t rgl_entity_set_id(rgl_entity_t entity, int32_t id);
 
 /**
- * Set sensor ID of the given Entity. This ID is used to identify the sensor in the scene and omit hitpoints on objects with the same ID.
- * @param entity Entity to modify
- * @param sensor_id ID to set. If not set, value of the Entity sensor id will be automatically generated as a DEFAULT_SENSOR_ID.
+ * Sets the sensor id that will ignore this Entity in raytracing.
+ * By default, the Entity will be visible to all sensors.
+ * To restore the default behavior, set RGL_SENSOR_ID_NONE as the sensor_id.
+ * @param entity Handle to the Entity instance.
+ * @param sensor_id ID of the sensor that will ignore this Entity.
  */
-RGL_API rgl_status_t rgl_entity_set_sensor_id(rgl_entity_t entity, int32_t sensor_id);
+RGL_API rgl_status_t rgl_entity_set_ignored_by_sensor(rgl_entity_t entity, int32_t sensor_id);
 
 /**
  * Assign intensity texture to the given Entity. The assumption is that the Entity can hold only one intensity texture.

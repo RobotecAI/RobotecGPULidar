@@ -19,7 +19,7 @@ struct EntitySBTData
 	size_t textureCoordsCount;
 	cudaTextureObject_t texture;
 	float laserRetro;
-	int entitySensorId;
+	int ignoredBySensorId;
 
 	// Info about the previous frame:
 	Mat3x4f prevFrameLocalToWorld; // Must not be used if !hasPrevFrameLocalToWorld

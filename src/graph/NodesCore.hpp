@@ -243,7 +243,7 @@ private:
 	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
 	Vec3f sensorAngularVelocityRPY{0, 0, 0};
 
-	int id{RGL_DEFAULT_SENSOR_ID};
+	int id{RGL_SENSOR_ID_DEFAULT};
 
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};

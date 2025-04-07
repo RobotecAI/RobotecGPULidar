@@ -51,9 +51,9 @@ void Entity::setId(int newId)
 	Scene::instance().requestASRebuild(); // Update instanceId field in AS
 }
 
-void Entity::setSensorId(int newSensorId)
+void Entity::setIgnoredBySensor(int sensorId)
 {
-    sensorId = newSensorId;
+    ignoredBySensorId = sensorId;
     Scene::instance().requestSBTRebuild();
 }
 

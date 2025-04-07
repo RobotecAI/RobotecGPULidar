@@ -53,7 +53,7 @@ struct Entity : APIObject<Entity>
 	/**
 	 * Sets sensor ID that will be skipped when a ray hits this entity. Default is RGL_DEFAULT_SENSOR_ID.
 	 */
-	void setSensorId(int newSensorId);
+	void setIgnoredBySensor(int sensorId);
 
 	/**
 	 * Sets or updates Entity's transform.
@@ -133,7 +133,7 @@ private:
 	TransformWithTime formerTransformInfo{Mat3x4f::identity(), std::nullopt};
 
 	Field<ENTITY_ID_I32>::type id{RGL_DEFAULT_ENTITY_ID};
-	int sensorId{RGL_DEFAULT_ENTITY_SENSOR_ID};
+	int ignoredBySensorId{RGL_SENSOR_ID_NONE};
 
 	float laserRetro{};
 

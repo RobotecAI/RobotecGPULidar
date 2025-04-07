@@ -113,10 +113,10 @@ extern "C" __global__ void __closesthit__()
 	// Ray
 	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
 	unsigned int beamSampleRayIdx = optixGetPayload_0();
-	unsigned int mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
+	const unsigned int mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
 	const Vec3f beamSampleOrigin = optixGetWorldRayOrigin();
 	const int entityId = static_cast<int>(optixGetInstanceId());
-	const int entitySensorID = entityData.entitySensorId;
+	const int ignoredBySensorId = entityData.ignoredBySensorId;
 	const int sensorId = ctx.sensorId;
 	const float laserRetro = entityData.laserRetro;
 
@@ -130,22 +130,24 @@ extern "C" __global__ void __closesthit__()
 	const Vector<3, double> hso = beamSampleOrigin;
 	const double distance = (hwrd - hso).length();
 
+	// If the hit entity is the sensor, we need to trace the ray further.
+	if (ignoredBySensorId == sensorId) {
+		constexpr auto epsilon = 1e-06f;
+		const Vec3f dir = optixGetWorldRayDirection();
+		ctx.mrSamples.distance[mrSampleIdx] += distance + epsilon; // We need to add epsilon to avoid hitting the same triangle
+
+		const float maxRange = ctx.rayRanges[(ctx.rayRangesCount == 1 ? 0 : mrSampleIdx)].y() - ctx.mrSamples.distance[mrSampleIdx];
+
+		// Re-trace a new ray behind the ignored entity
+		optixTrace(ctx.scene, hitWorldRaytraced + epsilon * dir, dir, 0, maxRange, 0.0f, OptixVisibilityMask(255),
+			OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, beamSampleRayIdx);
+		return;
+	}
+
 	// Early out for points that are too close to the sensor
 	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
 		saveSampleAsNonHit(mrSampleIdx, ctx.nearNonHitDistance);
-		return;
-	}
-
-	// Ignore entities with corresponding IDs.
-	if (entitySensorID == sensorId) {
-		constexpr auto epsilon = 1.19209e-06f;
-		const Vec3f dir = optixGetWorldRayDirection();
-		ctx.mrSamples.distance[mrSampleIdx] += distance + epsilon;
-		const float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[mrSampleIdx].y();
-
-		optixTrace(ctx.scene, hitWorldRaytraced + epsilon * dir, dir, epsilon, maxRange, 0.0f, OptixVisibilityMask(255),
-			OPTIX_RAY_FLAG_NONE, 0, 1, 0, beamSampleRayIdx);
 		return;
 	}
 
