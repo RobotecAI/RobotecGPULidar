@@ -95,6 +95,7 @@ void RaytraceNode::enqueueExecImpl()
 	    .sensorLinearVelocityXYZ = sensorLinearVelocityXYZ,
 	    .sensorAngularVelocityRPY = sensorAngularVelocityRPY,
 	    .doApplyDistortion = doApplyDistortion,
+		.sensorId = id,
 	    .nearNonHitDistance = nearNonHitDistance,
 	    .farNonHitDistance = farNonHitDistance,
 	    .defaultIntensity = defaultIntensity,

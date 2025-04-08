@@ -388,6 +388,24 @@ void TapeCore::tape_entity_set_id(const YAML::Node& yamlNode, PlaybackState& sta
 	rgl_entity_set_id(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()), yamlNode[1].as<Field<ENTITY_ID_I32>::type>());
 }
 
+RGL_API rgl_status_t rgl_entity_set_ignored_by_sensor(rgl_entity_t entity, int32_t sensor_id)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_entity_set_ignored_by_sensor(entity={}, sensor_id={})", (void*) entity, sensor_id);
+		CHECK_ARG(entity != nullptr);
+		GraphRunCtx::synchronizeAll();
+		Entity::validatePtr(entity)->setIgnoredBySensor(sensor_id);
+	});
+	TAPE_HOOK(entity, sensor_id);
+	return status;
+}
+
+void TapeCore::tape_entity_set_ignored_by_sensor(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	rgl_entity_set_ignored_by_sensor(state.entities.at(yamlNode[0].as<TapeAPIObjectID>()),
+	                         yamlNode[1].as<int>());
+}
+
 RGL_API rgl_status_t rgl_entity_set_intensity_texture(rgl_entity_t entity, rgl_texture_t texture)
 {
 	auto status = rglSafeCall([&]() {
@@ -959,6 +977,25 @@ void TapeCore::tape_node_raytrace_configure_velocity(const YAML::Node& yamlNode,
 	rgl_node_t node = state.nodes.at(nodeId);
 	rgl_node_raytrace_configure_velocity(state.nodes.at(nodeId), state.getPtr<const rgl_vec3f>(yamlNode[1]),
 	                                     state.getPtr<const rgl_vec3f>(yamlNode[2]));
+}
+
+RGL_API rgl_status_t rgl_node_raytrace_configure_id(rgl_node_t node, int32_t id)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_API_LOG("rgl_node_raytrace_configure_id(node={}, id={})", repr(node), id);
+		CHECK_ARG(node != nullptr);
+		RaytraceNode::Ptr raytraceNode = Node::validatePtr<RaytraceNode>(node);
+		raytraceNode->setId(id);
+	});
+	TAPE_HOOK(node, id);
+	return status;
+}
+
+void TapeCore::tape_node_raytrace_configure_id(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.at(nodeId);
+	rgl_node_raytrace_configure_id(node, yamlNode[1].as<int32_t>());
 }
 
 RGL_API rgl_status_t rgl_node_raytrace_configure_distortion(rgl_node_t node, bool enable)

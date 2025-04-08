@@ -202,7 +202,7 @@ void Optix::initializeStaticOptixStructures()
 	};
 
 	OptixPipelineLinkOptions pipelineLinkOptions = {
-	    .maxTraceDepth = 2,
+	    .maxTraceDepth = 4, // it is required to handle recasting rays safely in entity skip feature
 #ifdef NDEBUG
 	    .debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE,
 #else
@@ -244,10 +244,11 @@ void Optix::initializeStaticOptixStructures()
 	CHECK_OPTIX(optixPipelineCreate(context, &pipelineCompileOptions, &pipelineLinkOptions, programGroups,
 	                                sizeof(programGroups) / sizeof(programGroups[0]), nullptr, nullptr, &pipeline));
 
+	const unsigned traversableGraphDepth =
+	    31; // 31 is the maximum depth for new gen GPUs. Should not affect performance in a major way. Allows for multiple levels of recursion in closesthit.
 	CHECK_OPTIX(optixPipelineSetStackSize(pipeline,
 	                                      2 * 1024, // directCallableStackSizeFromTraversal
 	                                      2 * 1024, // directCallableStackSizeFromState
-	                                      2 * 1024, // continuationStackSize
-	                                      3         // maxTraversableGraphDepth
-	                                      ));
+	                                      4 * 1024, // continuationStackSize
+	                                      traversableGraphDepth));
 }

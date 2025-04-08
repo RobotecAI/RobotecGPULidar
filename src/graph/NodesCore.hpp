@@ -135,6 +135,7 @@ struct RaytraceNode : IPointsNode
 
 	// RaytraceNode specific
 	void setVelocity(const Vec3f& linearVelocity, const Vec3f& angularVelocity);
+	void setId(int newId) { id = newId; }
 	void enableRayDistortion(bool enabled) { doApplyDistortion = enabled; }
 	void setNonHitDistanceValues(float nearDistance, float farDistance);
 	void setNonHitsMask(const int8_t* maskRaw, size_t maskPointCount);
@@ -241,6 +242,8 @@ private:
 	bool doApplyDistortion{false};
 	Vec3f sensorLinearVelocityXYZ{0, 0, 0};
 	Vec3f sensorAngularVelocityRPY{0, 0, 0};
+
+	int id{RGL_SENSOR_ID_DEFAULT};
 
 	float nearNonHitDistance{std::numeric_limits<float>::infinity()};
 	float farNonHitDistance{std::numeric_limits<float>::infinity()};

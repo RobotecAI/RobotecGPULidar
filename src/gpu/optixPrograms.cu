@@ -52,7 +52,7 @@ extern "C" __global__ void __raygen__()
 	    ray; // TODO(prybicki): instead of computing inverse, we should pass rays in local CF and then transform them to world CF.
 
 	// Saving data for non-hit samples is necessary here - otherwise this data will not be initialized.
-	saveNonHitBeamSamples(rayIdx, ctx.farNonHitDistance);
+	saveNonHitBeamSamples(rayIdx, 0.0f);
 	saveBeamSharedData(rayIdx, rayLocal);
 	if (ctx.rayMask != nullptr && ctx.rayMask[rayIdx] == 0) {
 		return;
@@ -112,10 +112,12 @@ extern "C" __global__ void __closesthit__()
 
 	// Ray
 	const int beamIdx = static_cast<int>(optixGetLaunchIndex().x);
-	const int beamSampleRayIdx = static_cast<int>(optixGetPayload_0());
-	const int mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
+	unsigned int beamSampleRayIdx = optixGetPayload_0();
+	const unsigned int mrSampleIdx = beamIdx * MULTI_RETURN_BEAM_SAMPLES + beamSampleRayIdx;
 	const Vec3f beamSampleOrigin = optixGetWorldRayOrigin();
 	const int entityId = static_cast<int>(optixGetInstanceId());
+	const int ignoredBySensorId = entityData.ignoredBySensorId;
+	const int sensorId = ctx.sensorId;
 	const float laserRetro = entityData.laserRetro;
 
 	// Hitpoint
@@ -126,10 +128,30 @@ extern "C" __global__ void __closesthit__()
 	// it was a precision issue at some point in the past.
 	const Vector<3, double> hwrd = hitWorldRaytraced;
 	const Vector<3, double> hso = beamSampleOrigin;
-	const double distance = (hwrd - hso).length();
+	const double distance = ctx.mrSamples.distance[mrSampleIdx] + (hwrd - hso).length();
+
+	const float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
+	const float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[optixGetLaunchIndex().x].y();
+
+	// If the hit entity is the sensor, we need to trace the ray further.
+	if (ignoredBySensorId == sensorId) {
+		constexpr auto epsilon = 1e-04f;
+		const Vec3f dir = optixGetWorldRayDirection();
+		ctx.mrSamples.distance[mrSampleIdx] = distance + epsilon; // We need to add epsilon to avoid hitting the same triangle
+
+		const float maxRangeUpdated = maxRange - ctx.mrSamples.distance[mrSampleIdx];
+		if (maxRangeUpdated <= 0) {
+			saveSampleAsNonHit(mrSampleIdx, ctx.farNonHitDistance);
+			return;
+		}
+
+		// Re-trace a new ray behind the ignored entity
+		optixTrace(ctx.scene, hitWorldRaytraced + epsilon * dir, dir, 0, maxRangeUpdated, 0.0f, OptixVisibilityMask(255),
+		           OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, beamSampleRayIdx);
+		return;
+	}
 
 	// Early out for points that are too close to the sensor
-	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
 		saveSampleAsNonHit(mrSampleIdx, ctx.nearNonHitDistance);
 		return;
