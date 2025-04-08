@@ -128,24 +128,30 @@ extern "C" __global__ void __closesthit__()
 	// it was a precision issue at some point in the past.
 	const Vector<3, double> hwrd = hitWorldRaytraced;
 	const Vector<3, double> hso = beamSampleOrigin;
-	const double distance = (hwrd - hso).length();
+	const double distance = ctx.mrSamples.distance[mrSampleIdx] + (hwrd - hso).length();
+
+	const float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
+	const float maxRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].y() : ctx.rayRanges[optixGetLaunchIndex().x].y();
 
 	// If the hit entity is the sensor, we need to trace the ray further.
 	if (ignoredBySensorId == sensorId) {
-		constexpr auto epsilon = 1e-06f;
+		constexpr auto epsilon = 1e-04f;
 		const Vec3f dir = optixGetWorldRayDirection();
-		ctx.mrSamples.distance[mrSampleIdx] += distance + epsilon; // We need to add epsilon to avoid hitting the same triangle
+		ctx.mrSamples.distance[mrSampleIdx] = distance + epsilon; // We need to add epsilon to avoid hitting the same triangle
 
-		const float maxRange = ctx.rayRanges[(ctx.rayRangesCount == 1 ? 0 : mrSampleIdx)].y() - ctx.mrSamples.distance[mrSampleIdx];
+		const float maxRangeUpdated = maxRange - ctx.mrSamples.distance[mrSampleIdx];
+		if (maxRangeUpdated <= 0) {
+			saveSampleAsNonHit(mrSampleIdx, ctx.farNonHitDistance);
+			return;
+		}
 
 		// Re-trace a new ray behind the ignored entity
-		optixTrace(ctx.scene, hitWorldRaytraced + epsilon * dir, dir, 0, maxRange, 0.0f, OptixVisibilityMask(255),
-			OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, beamSampleRayIdx);
+		optixTrace(ctx.scene, hitWorldRaytraced + epsilon * dir, dir, 0, maxRangeUpdated, 0.0f, OptixVisibilityMask(255),
+		           OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, beamSampleRayIdx);
 		return;
 	}
 
 	// Early out for points that are too close to the sensor
-	float minRange = ctx.rayRangesCount == 1 ? ctx.rayRanges[0].x() : ctx.rayRanges[optixGetLaunchIndex().x].x();
 	if (distance < minRange) {
 		saveSampleAsNonHit(mrSampleIdx, ctx.nearNonHitDistance);
 		return;
@@ -274,7 +280,7 @@ __device__ void saveSampleAsHit(int sampleIdx, float distance, float intensity, 
                                 float incidentAngle)
 {
 	ctx.mrSamples.isHit[sampleIdx] = true;
-	ctx.mrSamples.distance[sampleIdx] += distance;
+	ctx.mrSamples.distance[sampleIdx] = distance;
 	ctx.mrSamples.intensity[sampleIdx] = intensity;
 
 	if (ctx.mrSamples.laserRetro != nullptr) {
