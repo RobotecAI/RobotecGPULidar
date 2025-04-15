@@ -135,9 +135,10 @@ extern "C" __global__ void __closesthit__()
 
 	// If the hit entity is the sensor, we need to trace the ray further.
 	if (ignoredBySensorId == sensorId) {
-		constexpr auto epsilon = 1e-04f;
+		constexpr auto iterationOffset = 1e-3f;
 		const Vec3f dir = optixGetWorldRayDirection();
-		ctx.mrSamples.distance[mrSampleIdx] = distance + epsilon; // We need to add epsilon to avoid hitting the same triangle
+		ctx.mrSamples.distance[mrSampleIdx] = distance +
+		                                      iterationOffset; // We need to add epsilon to avoid hitting the same triangle
 
 		const float maxRangeUpdated = maxRange - ctx.mrSamples.distance[mrSampleIdx];
 		if (maxRangeUpdated <= 0) {
@@ -146,8 +147,8 @@ extern "C" __global__ void __closesthit__()
 		}
 
 		// Re-trace a new ray behind the ignored entity
-		optixTrace(ctx.scene, hitWorldRaytraced + epsilon * dir, dir, 0, maxRangeUpdated, 0.0f, OptixVisibilityMask(255),
-		           OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, beamSampleRayIdx);
+		optixTrace(ctx.scene, hitWorldRaytraced + iterationOffset * dir, dir, 0, maxRangeUpdated, 0.0f,
+		           OptixVisibilityMask(255), OPTIX_RAY_FLAG_DISABLE_ANYHIT, 0, 1, 0, beamSampleRayIdx);
 		return;
 	}
 
