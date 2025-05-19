@@ -98,3 +98,7 @@ void Ros2PublishPointsNode::updateRos2MessageFields(sensor_msgs::msg::PointCloud
 	}
 	ros2Message.point_step = offset;
 }
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+void Ros2PublishPointsNode::configureAgnocast(bool enable) { throw std::runtime_error("Not implemented"); }
+#endif

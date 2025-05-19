@@ -47,6 +47,20 @@ struct Ros2Node : IPointsNodeSingleInput
 		ros2ValidateImpl();
 	}
 
+	/**
+	 * Configures usage of Agnocast middleware.
+	 * Default implementation provide no support for this feature.
+	 * Override this method to provide Agnocast support for your RGL node.
+	 */
+	virtual void configureAgnocast(bool enable)
+	{
+#if RGL_BUILD_AGNOCAST_EXTENSION
+		throw std::invalid_argument("Unable to configure Agnocast because requested RGL node does not support it.");
+#else
+		throw std::invalid_argument("Unable to configure Agnocast because the library was not built with Agnocast extension.");
+#endif
+	}
+
 	virtual ~Ros2Node() = default;
 
 protected:
@@ -68,6 +82,10 @@ struct Ros2PublishPointsNode : Ros2Node
 	// Ros2Node
 	void ros2ValidateImpl() override;
 	void ros2EnqueueExecImpl() override;
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocast(bool enable) override;
+#endif
 
 	~Ros2PublishPointsNode() override = default;
 
@@ -94,6 +112,10 @@ struct Ros2PublishPointVelocityMarkersNode : Ros2Node
 	void ros2ValidateImpl() override;
 	void ros2EnqueueExecImpl() override;
 
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocast(bool enable) override;
+#endif
+
 	~Ros2PublishPointVelocityMarkersNode() override = default;
 
 private:
@@ -119,6 +141,10 @@ struct Ros2PublishRadarScanNode : Ros2Node
 	// Ros2Node
 	void ros2ValidateImpl() override;
 	void ros2EnqueueExecImpl() override;
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocast(bool enable) override;
+#endif
 
 private:
 	using MessageT = radar_msgs::msg::RadarScan;

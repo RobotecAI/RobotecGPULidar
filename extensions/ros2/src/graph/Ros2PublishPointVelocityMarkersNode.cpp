@@ -69,3 +69,7 @@ void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 
 	messagePublisher->publish();
 }
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+void Ros2PublishPointVelocityMarkersNode::configureAgnocast(bool enable) { throw std::runtime_error("Not implemented"); }
+#endif

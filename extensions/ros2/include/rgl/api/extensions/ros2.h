@@ -106,3 +106,17 @@ RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const cha
                                                      rgl_qos_policy_reliability_t qos_reliability,
                                                      rgl_qos_policy_durability_t qos_durability,
                                                      rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);
+
+/**
+ * Modifies ROS 2 publishing RGL node to use Agnocast.
+ * Agnocast is novel True Zero-Copy middleware coexisting with ROS 2 developed by TierIV.
+ * See: https://github.com/orgs/autowarefoundation/discussions/5835
+ *
+ * This API call is available only if RGL is built with RGL_BUILD_AGNOCAST_EXTENSION enabled.
+ *
+ * By default, Agnocast is disabled.
+ *
+ * @param node Node to modify.
+ * @param enable If true, Agnocast will be used instead of standard ROS 2 publisher.
+ */
+RGL_API rgl_status_t rgl_node_configure_agnocast(rgl_node_t node, bool enable);

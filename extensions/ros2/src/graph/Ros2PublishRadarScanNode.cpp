@@ -52,3 +52,7 @@ void Ros2PublishRadarScanNode::ros2EnqueueExecImpl()
 	CHECK_CUDA(cudaStreamSynchronize(formattedData->getStream()->getHandle()));
 	messagePublisher->publish();
 }
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+void Ros2PublishRadarScanNode::configureAgnocast(bool enable) { throw std::runtime_error("Not implemented"); }
+#endif
