@@ -26,7 +26,7 @@ void Ros2PublishPointsNode::setParameters(const char* topicName, const char* fra
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
 	qos.history(static_cast<rmw_qos_history_policy_t>(qosHistory));
-	ros2Publisher = ros2InitGuard->createUniquePublisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
+	ros2Publisher = ros2InitGuard->getNode().create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
 }
 
 void Ros2PublishPointsNode::ros2ValidateImpl()

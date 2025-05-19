@@ -20,7 +20,6 @@
 /**
  * Wrapper around RGL-specific ROS2 resources shared between RGL Nodes.
  * - Handles (de)initialization of rclcpp and creation of ROS2 node
- * - Keeps track of ROS2 publishers to avoid creating duplicates
  */
 struct Ros2InitGuard
 {
@@ -37,18 +36,6 @@ struct Ros2InitGuard
 			weak = shared;
 		}
 		return shared;
-	}
-
-	template<typename T>
-	rclcpp::Publisher<T>::SharedPtr createUniquePublisher(const std::string& topicName, const rclcpp::QoS& qos)
-	{
-		if (hasTopic(topicName)) {
-			auto msg = fmt::format("ROS2 publisher with the same topic name ({}) already exist!", topicName);
-			throw InvalidAPIArgument(msg);
-		}
-		auto publisher = node->create_publisher<T>(topicName, qos);
-		publishers.insert({topicName, publisher});
-		return publisher;
 	}
 
 	~Ros2InitGuard()
@@ -70,17 +57,8 @@ private:
 		node = std::make_shared<rclcpp::Node>(nodeName);
 	}
 
-	bool hasTopic(const std::string& query)
-	{
-		for (auto it = publishers.begin(); it != publishers.end();) {
-			it = it->second.expired() ? publishers.erase(it) : ++it;
-		}
-		return publishers.contains(query);
-	}
-
 private:
 	rclcpp::Node::SharedPtr node;
 	bool isRclcppInitializedByRGL{false};
-	std::map<std::string, std::weak_ptr<rclcpp::PublisherBase>> publishers;
 	inline static std::string nodeName = "RobotecGPULidar";
 };

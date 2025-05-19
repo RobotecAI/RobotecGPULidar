@@ -25,7 +25,7 @@ void Ros2PublishRadarScanNode::setParameters(const char* topicName, const char* 
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
 	qos.history(static_cast<rmw_qos_history_policy_t>(qosHistory));
-	ros2Publisher = ros2InitGuard->createUniquePublisher<radar_msgs::msg::RadarScan>(topicName, qos);
+	ros2Publisher = ros2InitGuard->getNode().create_publisher<radar_msgs::msg::RadarScan>(topicName, qos);
 }
 
 void Ros2PublishRadarScanNode::ros2ValidateImpl()

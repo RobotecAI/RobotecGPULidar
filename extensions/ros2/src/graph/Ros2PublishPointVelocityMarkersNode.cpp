@@ -25,7 +25,7 @@ void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, c
 	}
 	this->frameId = frameId;
 	auto qos = rclcpp::QoS(10); // Use system default QoS
-	linesPublisher = ros2InitGuard->createUniquePublisher<visualization_msgs::msg::Marker>(topicName, qos);
+	linesPublisher = ros2InitGuard->getNode().create_publisher<visualization_msgs::msg::Marker>(topicName, qos);
 	this->velocityField = velocityField;
 }
 
