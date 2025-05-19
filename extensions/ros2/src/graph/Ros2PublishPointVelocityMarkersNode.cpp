@@ -25,7 +25,7 @@ void Ros2PublishPointVelocityMarkersNode::setParameters(const char* topicName, c
 	}
 	this->frameId = frameId;
 	auto qos = rclcpp::QoS(10); // Use system default QoS
-	linesPublisher = ros2InitGuard->getNode().create_publisher<visualization_msgs::msg::Marker>(topicName, qos);
+	messagePublisher = std::make_unique<Ros2MessagePublisher<MessageT>>(ros2InitGuard->getNode(), topicName, qos);
 	this->velocityField = velocityField;
 }
 
@@ -35,19 +35,18 @@ void Ros2PublishPointVelocityMarkersNode::ros2ValidateImpl()
 		throw InvalidPipeline(fmt::format("{} requires a compacted point cloud (dense)", getName()));
 	}
 }
+
 void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 {
 	pos->copyFrom(input->getFieldData(RGL_FIELD_XYZ_VEC3_F32));
 	vel->copyFrom(input->getFieldData(velocityField));
-	linesPublisher->publish(makeLinesMarker());
-}
 
-const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::makeLinesMarker()
-{
+	auto& marker = messagePublisher->getMessage();
+
 	marker.header.stamp = Scene::instance().getTime().has_value() ?
 	                          Scene::instance().getTime().value().asRos2Msg() :
 	                          static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
-	marker.header.frame_id = this->frameId;
+	marker.header.frame_id = frameId;
 	marker.action = visualization_msgs::msg::Marker::ADD;
 	marker.color.r = 1.0;
 	marker.color.g = 1.0;
@@ -67,5 +66,6 @@ const visualization_msgs::msg::Marker& Ros2PublishPointVelocityMarkersNode::make
 		marker.points[2 * i] = origin;
 		marker.points[2 * i + 1] = end;
 	}
-	return marker;
+
+	messagePublisher->publish();
 }

@@ -16,17 +16,18 @@
 #include <scene/Scene.hpp>
 #include <RGLFields.hpp>
 
-void Ros2PublishPointsNode::setParameters(const char* topicName, const char* frameId,
+void Ros2PublishPointsNode::setParameters(const char* topicName, const char* messageFrameId,
                                           rgl_qos_policy_reliability_t qosReliability,
                                           rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory,
                                           int32_t qosHistoryDepth)
 {
-	ros2Message.header.frame_id = frameId;
+	frameId = messageFrameId;
 	auto qos = rclcpp::QoS(qosHistoryDepth);
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
 	qos.history(static_cast<rmw_qos_history_policy_t>(qosHistory));
-	ros2Publisher = ros2InitGuard->getNode().create_publisher<sensor_msgs::msg::PointCloud2>(topicName, qos);
+
+	messagePublisher = std::make_unique<Ros2MessagePublisher<MessageT>>(ros2InitGuard->getNode(), topicName, qos);
 }
 
 void Ros2PublishPointsNode::ros2ValidateImpl()
@@ -39,12 +40,14 @@ void Ros2PublishPointsNode::ros2ValidateImpl()
 		auto msg = fmt::format("{} requires a formatted point cloud", getName());
 		throw InvalidPipeline(msg);
 	}
-
-	updateRos2Message(input->getRequiredFieldList(), input->isDense());
 }
 
 void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 {
+	auto& ros2Message = messagePublisher->getMessage();
+
+	updateRos2MessageFields(ros2Message, input->getRequiredFieldList());
+
 	auto fieldData = input->getFieldData(RGL_FIELD_DYNAMIC_FORMAT)->asTyped<char>()->asSubclass<HostArray>();
 	int count = input->getPointCount();
 	ros2Message.data.resize(ros2Message.point_step * count);
@@ -52,21 +55,28 @@ void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 	size_t size = fieldData->getCount() * fieldData->getSizeOf();
 	CHECK_CUDA(cudaMemcpyAsync(ros2Message.data.data(), src, size, cudaMemcpyDefault, getStreamHandle()));
 	CHECK_CUDA(cudaStreamSynchronize(getStreamHandle()));
+
+	ros2Message.height = 1;
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
+	ros2Message.is_dense = input->isDense();
+	ros2Message.is_bigendian = false;
+
+	ros2Message.header.frame_id = frameId;
 	// TODO(msz-rai): Assign scene to the Graph.
 	// For now, only default scene is supported.
 	ros2Message.header.stamp = Scene::instance().getTime().has_value() ?
 	                               Scene::instance().getTime()->asRos2Msg() :
 	                               static_cast<builtin_interfaces::msg::Time>(ros2InitGuard->getNode().get_clock()->now());
-	ros2Publisher->publish(ros2Message);
+	messagePublisher->publish();
 }
 
 
-void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense)
+void Ros2PublishPointsNode::updateRos2MessageFields(sensor_msgs::msg::PointCloud2& ros2Message,
+                                                    const std::vector<rgl_field_t>& fields)
 {
 	ros2Message.fields.clear();
-	int offset = 0;
+	size_t offset = 0;
 	for (const auto& field : fields) {
 		auto ros2fields = toRos2Fields(field);
 		auto ros2names = toRos2Names(field);
@@ -86,8 +96,5 @@ void Ros2PublishPointsNode::updateRos2Message(const std::vector<rgl_field_t>& fi
 			offset += ros2sizes[i];
 		}
 	}
-	ros2Message.height = 1;
 	ros2Message.point_step = offset;
-	ros2Message.is_dense = isDense;
-	ros2Message.is_bigendian = false;
 }
