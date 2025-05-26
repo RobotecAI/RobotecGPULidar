@@ -71,5 +71,21 @@ void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 }
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-void Ros2PublishPointVelocityMarkersNode::configureAgnocast(bool enable) { throw std::runtime_error("Not implemented"); }
+void Ros2PublishPointVelocityMarkersNode::configureAgnocast(bool enable)
+{
+	bool isAlreadyAgnocast = dynamic_cast<AgnocastMessagePublisher<MessageT>*>(messagePublisher.get()) != nullptr;
+
+	if (enable == isAlreadyAgnocast) {
+		return; // The current configuration is correct
+	}
+
+	if (enable) {
+		messagePublisher = std::make_unique<AgnocastMessagePublisher<MessageT>>(
+		    ros2InitGuard->getNode(), messagePublisher->getTopicName(), messagePublisher->getQos());
+		return;
+	}
+	// else
+	messagePublisher = std::make_unique<Ros2MessagePublisher<MessageT>>(
+	    ros2InitGuard->getNode(), messagePublisher->getTopicName(), messagePublisher->getQos());
+}
 #endif
