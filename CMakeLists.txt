@@ -171,6 +171,10 @@ if (RGL_BUILD_ROS2_EXTENSION)
     add_subdirectory(extensions/ros2)
 endif()
 
+if (RGL_BUILD_AGNOCAST_EXTENSION AND WIN32)
+    message(FATAL_ERROR "Agnocast extension is not supported on Windows")
+endif()
+
 if (RGL_BUILD_UDP_EXTENSION)
     add_subdirectory(extensions/udp)
 endif()
