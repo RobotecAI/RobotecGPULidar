@@ -54,7 +54,7 @@ void Ros2PublishRadarScanNode::ros2EnqueueExecImpl()
 }
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-void Ros2PublishRadarScanNode::configureAgnocast(bool enable)
+void Ros2PublishRadarScanNode::configureAgnocastImpl(bool enable)
 {
 	bool isAlreadyAgnocast = dynamic_cast<AgnocastMessagePublisher<MessageT>*>(messagePublisher.get()) != nullptr;
 

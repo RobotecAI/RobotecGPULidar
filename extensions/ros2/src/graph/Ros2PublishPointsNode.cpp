@@ -100,7 +100,7 @@ void Ros2PublishPointsNode::updateRos2MessageFields(sensor_msgs::msg::PointCloud
 }
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-void Ros2PublishPointsNode::configureAgnocast(bool enable)
+void Ros2PublishPointsNode::configureAgnocastImpl(bool enable)
 {
 	bool isAlreadyAgnocast = dynamic_cast<AgnocastMessagePublisher<MessageT>*>(messagePublisher.get()) != nullptr;
 

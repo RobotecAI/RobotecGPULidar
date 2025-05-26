@@ -71,7 +71,7 @@ void Ros2PublishPointVelocityMarkersNode::ros2EnqueueExecImpl()
 }
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-void Ros2PublishPointVelocityMarkersNode::configureAgnocast(bool enable)
+void Ros2PublishPointVelocityMarkersNode::configureAgnocastImpl(bool enable)
 {
 	bool isAlreadyAgnocast = dynamic_cast<AgnocastMessagePublisher<MessageT>*>(messagePublisher.get()) != nullptr;
 

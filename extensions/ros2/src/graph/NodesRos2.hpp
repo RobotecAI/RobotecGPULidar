@@ -49,13 +49,21 @@ struct Ros2Node : IPointsNodeSingleInput
 
 	/**
 	 * Configures usage of Agnocast middleware.
-	 * Default implementation provide no support for this feature.
-	 * Override this method to provide Agnocast support for your RGL node.
 	 */
-	virtual void configureAgnocast(bool enable)
+	void configureAgnocast(bool enable)
 	{
 #if RGL_BUILD_AGNOCAST_EXTENSION
-		throw std::invalid_argument("Unable to configure Agnocast because requested RGL node does not support it.");
+		// Verify that the Agnocast heaphook library is preloaded before initialization.
+		// This library must be loaded via LD_PRELOAD for Agnocast's shared memory functionality to work correctly.
+		// While Agnocast internally performs this same validation, it calls std::exit on failure,
+		// so we check here to provide a more graceful error.
+		const char* preloadEnv = std::getenv("LD_PRELOAD");
+		const std::string preloads = preloadEnv ? std::string(preloadEnv) : std::string();
+		if (preloads.find("libagnocast_heaphook.so") == std::string::npos) {
+			throw std::invalid_argument(
+			    "Unable to configure Agnocast because libagnocast_heaphook.so is not found in LD_PRELOAD.");
+		}
+		configureAgnocastImpl(enable);
 #else
 		throw std::invalid_argument("Unable to configure Agnocast because the library was not built with Agnocast extension.");
 #endif
@@ -68,6 +76,10 @@ protected:
 
 	virtual void ros2EnqueueExecImpl() = 0;
 	virtual void ros2ValidateImpl() = 0;
+	virtual void configureAgnocastImpl(bool enable)
+	{
+		throw std::invalid_argument("Unable to configure Agnocast because requested RGL node does not support it.");
+	};
 };
 
 struct Ros2PublishPointsNode : Ros2Node
@@ -84,7 +96,7 @@ struct Ros2PublishPointsNode : Ros2Node
 	void ros2EnqueueExecImpl() override;
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-	void configureAgnocast(bool enable) override;
+	void configureAgnocastImpl(bool enable) override;
 #endif
 
 	~Ros2PublishPointsNode() override = default;
@@ -113,7 +125,7 @@ struct Ros2PublishPointVelocityMarkersNode : Ros2Node
 	void ros2EnqueueExecImpl() override;
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-	void configureAgnocast(bool enable) override;
+	void configureAgnocastImpl(bool enable) override;
 #endif
 
 	~Ros2PublishPointVelocityMarkersNode() override = default;
@@ -143,7 +155,7 @@ struct Ros2PublishRadarScanNode : Ros2Node
 	void ros2EnqueueExecImpl() override;
 
 #if RGL_BUILD_AGNOCAST_EXTENSION
-	void configureAgnocast(bool enable) override;
+	void configureAgnocastImpl(bool enable) override;
 #endif
 
 private:
