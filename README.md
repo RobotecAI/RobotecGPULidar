@@ -45,9 +45,9 @@ And more:
 
 ## Runtime requirements
 
-| Hardware | Requirement  |
-|:---------|:-------------|
-| GPU      | CUDA-enabled |
+| Hardware | Requirement                                   |
+|:---------|:----------------------------------------------|
+| GPU      | `>=Nvidia Turing` (GeForce RTX 2060 or newer) |
 
 | Software      | Requirement                                                                                      |
 |:--------------|:-------------------------------------------------------------------------------------------------|

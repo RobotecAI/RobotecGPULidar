@@ -16,6 +16,10 @@ endif()
 
 project(RobotecGPULidar C CXX CUDA)
 
+# Target NVIDIA Turing as it is the oldest supported architecture
+# Forward compatibility ensures operation with newer architectures as well
+set(CMAKE_CUDA_ARCHITECTURES 75)
+
 # Logging default settings (can be changed via API call)
 set(RGL_LOG_STDOUT ON CACHE BOOL
     "Enables logging to STDOUT")
@@ -188,7 +192,6 @@ target_link_libraries(RobotecGPULidar PUBLIC
     CUDA::nvml
     CUDA::cudart_static
     CUDA::cuda_driver
-    CUDA::nvToolsExt
 )
 
 # Create a CMake list with available log levels (rgl_log_level_t)
