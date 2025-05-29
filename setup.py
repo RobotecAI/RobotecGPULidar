@@ -10,8 +10,9 @@ import shutil
 import argparse
 
 import install_deps as core_deps
-from extensions.ros2 import install_deps as ros2_deps
 from extensions.pcl import install_deps as pcl_deps
+from extensions.ros2 import install_deps as ros2_deps
+from extensions.ros2 import install_agnocast_deps as agnocast_deps
 
 
 class Config:
@@ -45,6 +46,8 @@ def main():
                         help="Install dependencies for PCL extension and exit")
     parser.add_argument("--install-ros2-deps", action='store_true',
                         help="Install dependencies for ROS2 extension and exit")
+    parser.add_argument("--install-agnocast-deps", action='store_true',
+                        help="Install dependencies for Agnocast extension and exit")
     parser.add_argument("--fetch-rgl-blobs", action='store_true',
                         help="Fetch RGL blobs and exit (repo used for storing closed-source testing data)")
     parser.add_argument("--clean-build", action='store_true',
@@ -96,6 +99,11 @@ def main():
     if args.install_ros2_deps:
         ros2_deps.install_deps()
         return 0
+    
+    # Install dependencies for Agnocast extension
+    if args.install_agnocast_deps:
+        agnocast_deps.install_deps()
+        return 0
 
     # Install dependencies for ROS2 extension
     if args.fetch_rgl_blobs:
@@ -124,6 +132,15 @@ def main():
         raise RuntimeError(
             "ROS2 extension requires radar_msgs to be built: run this script with --install-ros2-deps flag")
 
+    if args.with_agnocast:
+        if on_windows():
+            raise RuntimeError("Agnocast extension is not supported on Windows")
+        if not args.with_ros2:
+            raise RuntimeError("Agnocast extension requires ROS2 extension to be also built")
+        if not agnocast_deps.are_deps_installed():
+            raise RuntimeError(
+                "Agnocast extension requires agnocast package to be built: run this script with --install-agnocast-deps flag")
+
     # Prepare build directory
     if args.clean_build and os.path.isdir(args.build_dir):
         shutil.rmtree(args.build_dir, ignore_errors=True)
@@ -141,6 +158,11 @@ def main():
         ros2_deps.check_ros2_version()
         setup = "setup.bat" if on_windows() else "setup.sh"
         source_environment(os.path.join(os.getcwd(), cfg_ros2.RADAR_MSGS_INSTALL_DIR, setup))
+
+    if args.with_agnocast:
+        cfg_agnocast = agnocast_deps.Config()
+        # Source environment for additional packages
+        source_environment(os.path.join(os.getcwd(), cfg_agnocast.AGNOCAST_INSTALL_DIR, "setup.sh"))
 
     # Build
     cmake_args = [
