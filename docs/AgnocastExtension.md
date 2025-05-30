@@ -1,6 +1,6 @@
 # RGL Agnocast extension
 
-The extension Agnocast enables ROS2 publishing RGL nodes to utilize Agnocast for enhanced performance and capabilities.
+The extension Agnocast enables ROS2 publishing RGL nodes to utilize Agnocast for zero-copy communication.
 
 ## About Agnocast
 
@@ -31,7 +31,7 @@ Two components require manual installation:
 - `agnocast-kmod`
 
 **Installation steps:**
-1. Follow the setup script: [Agnocast setup script](https://github.com/tier4/agnocast/blob/2.1.1/scripts/setup)
+1. Follow commands from the setup script (`#agnocast-heaphook and agnocast-kmod` part only): [Agnocast setup script](https://github.com/tier4/agnocast/blob/2.1.1/scripts/setup)
 2. **Version compatibility:** Ensure you use the same version specified in the [install_deps script](https://github.com/RobotecAI/RobotecGPULidar/blob/develop/extensions/ros2/install_agnocast_deps.py)
 
 ### Building the Extension
@@ -44,6 +44,25 @@ setup.py --with-agnocast
 **Note:** The ROS2 extension must also be enabled during the build process.
 
 **Note:** Agnocast libraries will be also installed for ROS2 standalone build.
+
+## Run
+
+To run the application that uses Agnocast, there is some additional system setup required:
+
+1. Insert kernel module.
+    ```bash
+    sudo modprobe agnocast
+    ```
+2. Setup `LD_PRELOAD` environment variable ([Agnocast reference](https://github.com/tier4/agnocast/blob/2.1.1/docs/how_to_set_environment_variables.md))
+    ```bash
+    export LD_PRELOAD="libagnocast_heaphook.so${LD_PRELOAD:+:${LD_PRELOAD}}"
+    ```
+   *Note: The `libagnocast_heaphook` library is originally located in the ROS 2 libraries directory (/opt/ros/$ROS_DISTRO/lib). Make sure to source ROS 2 before using it.*
+   *Alternatively, if you're working with a standalone build, the library can be found alongside the other installed ROS 2 libraries.*
+3. Setup `AGNOCAST_MEMPOOL_SIZE` environment variable (adjust the size for your needs)
+    ```bash
+    export AGNOCAST_MEMPOOL_SIZE=16777216 # 16MB
+    ```
 
 ## Usage
 
