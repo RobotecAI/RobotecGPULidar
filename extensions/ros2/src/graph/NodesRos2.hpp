@@ -53,15 +53,17 @@ struct Ros2Node : IPointsNodeSingleInput
 	void configureAgnocast(bool enable)
 	{
 #if RGL_BUILD_AGNOCAST_EXTENSION
-		// Verify that the Agnocast heaphook library is preloaded before initialization.
-		// This library must be loaded via LD_PRELOAD for Agnocast's shared memory functionality to work correctly.
-		// While Agnocast internally performs this same validation, it calls std::exit on failure,
-		// so we check here to provide a more graceful error.
-		const char* preloadEnv = std::getenv("LD_PRELOAD");
-		const std::string preloads = preloadEnv ? std::string(preloadEnv) : std::string();
-		if (preloads.find("libagnocast_heaphook.so") == std::string::npos) {
-			throw std::invalid_argument(
-			    "Unable to configure Agnocast because libagnocast_heaphook.so is not found in LD_PRELOAD.");
+		if (enable) {
+			// Verify that the Agnocast heaphook library is preloaded before initialization.
+			// This library must be loaded via LD_PRELOAD for Agnocast's shared memory functionality to work correctly.
+			// While Agnocast internally performs this same validation, it calls std::exit on failure,
+			// so we check here to provide a more graceful error.
+			const char* preloadEnv = std::getenv("LD_PRELOAD");
+			const std::string preloads = preloadEnv ? std::string(preloadEnv) : std::string();
+			if (preloads.find("libagnocast_heaphook.so") == std::string::npos) {
+				throw std::invalid_argument(
+				    "Unable to configure Agnocast because libagnocast_heaphook.so is not found in LD_PRELOAD.");
+			}
 		}
 		configureAgnocastImpl(enable);
 #else
