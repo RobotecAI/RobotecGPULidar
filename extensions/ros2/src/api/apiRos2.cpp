@@ -125,4 +125,27 @@ void TapeRos2::tape_node_publish_ros2_radarscan(const YAML::Node& yamlNode, Play
 	                                (rgl_qos_policy_history_t) yamlNode[5].as<int>(), yamlNode[6].as<int32_t>());
 	state.nodes.insert(std::make_pair(nodeId, node));
 }
+
+RGL_API rgl_status_t rgl_node_publish_ros2_laserscan(rgl_node_t* node, const char* topic_name, const char* frame_id)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_publish_ros2_laserscan(node={}, topic_name={}, frame_id={})", repr(node), topic_name, frame_id);
+		CHECK_ARG(topic_name != nullptr);
+		CHECK_ARG(topic_name[0] != '\0');
+		CHECK_ARG(frame_id != nullptr);
+		CHECK_ARG(frame_id[0] != '\0');
+
+		createOrUpdateNode<Ros2PublishLaserScanNode>(node, topic_name, frame_id);
+	});
+	TAPE_HOOK(node, topic_name, frame_id);
+	return status;
+}
+
+void TapeRos2::tape_node_publish_ros2_laserscan(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
+	rgl_node_publish_ros2_laserscan(&node, yamlNode[1].as<std::string>().c_str(), yamlNode[2].as<std::string>().c_str());
+	state.nodes.insert(std::make_pair(nodeId, node));
+}
 }

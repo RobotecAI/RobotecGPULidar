@@ -22,6 +22,7 @@ class TapeRos2
 	static void tape_node_points_ros2_publish(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_points_ros2_publish_with_qos(const YAML::Node& yamlNode, PlaybackState& state);
 	static void tape_node_publish_ros2_radarscan(const YAML::Node& yamlNode, PlaybackState& state);
+	static void tape_node_publish_ros2_laserscan(const YAML::Node& yamlNode, PlaybackState& state);
 
 	// Called once in the translation unit
 	static inline bool autoExtendTapeFunctions = std::invoke([]() {
@@ -29,6 +30,7 @@ class TapeRos2
 		    TAPE_CALL_MAPPING("rgl_node_points_ros2_publish", TapeRos2::tape_node_points_ros2_publish),
 		    TAPE_CALL_MAPPING("rgl_node_points_ros2_publish_with_qos", TapeRos2::tape_node_points_ros2_publish_with_qos),
 		    TAPE_CALL_MAPPING("rgl_node_publish_ros2_radarscan", TapeRos2::tape_node_publish_ros2_radarscan),
+		    TAPE_CALL_MAPPING("tape_node_publish_ros2_laserscan", TapeRos2::tape_node_publish_ros2_laserscan)
 		};
 		TapePlayer::extendTapeFunctions(tapeFunctions);
 		return true;
