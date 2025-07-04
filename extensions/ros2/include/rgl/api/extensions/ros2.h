@@ -112,7 +112,7 @@ RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const cha
  * Agnocast is novel True Zero-Copy middleware coexisting with ROS 2 developed by TierIV.
  * See: https://github.com/orgs/autowarefoundation/discussions/5835
  *
- * This API call is available only if RGL is built with RGL_BUILD_AGNOCAST_EXTENSION enabled.
+ * If RGL is built without RGL_BUILD_AGNOCAST_EXTENSION enabled, this API call always results in an error.
  *
  * By default, Agnocast is disabled.
  *

@@ -40,9 +40,8 @@ def install_agnocast_deps(cfg):
     if not os.path.isdir(cfg.AGNOCAST_INSTALL_DIR):
         original_path = Path.cwd()
         os.chdir(cfg.AGNOCAST_DIR)
-        run_subprocess_command(f"colcon build")
+        run_subprocess_command(f"colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release")
         os.chdir(original_path)
-    # Install 
 
 
 def run_subprocess_command(command: str, shell=True, stderr=sys.stderr, stdout=sys.stdout):
@@ -51,12 +50,6 @@ def run_subprocess_command(command: str, shell=True, stderr=sys.stderr, stdout=s
     process.wait()
     if process.returncode != 0:
         raise RuntimeError(f"Failed to execute command: '{command}'")
-
-
-def is_command_available(command):
-    process = subprocess.Popen(f"{command}", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    process.wait()
-    return process.returncode == 0
 
 
 if __name__ == "__main__":

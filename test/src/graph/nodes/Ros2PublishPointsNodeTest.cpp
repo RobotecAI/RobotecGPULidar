@@ -99,7 +99,7 @@ TEST_F(Ros2PublishPointsNodeTest, should_receive_sent_data)
 
 	// Create nodes
 	rgl_node_t inputNode = input.createUsePointsNode(), pointcloud2Node = nullptr, format = nullptr;
-	EXPECT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
+	ASSERT_RGL_SUCCESS(rgl_node_points_format(&format, fields.data(), fields.size()));
 	ASSERT_RGL_SUCCESS(
 	    rgl_node_points_ros2_publish_with_qos(&pointcloud2Node, TOPIC_NAME, FRAME_ID, QOS_POLICY_RELIABILITY_RELIABLE,
 	                                          QOS_POLICY_DURABILITY_SYSTEM_DEFAULT, QOS_POLICY_HISTORY_SYSTEM_DEFAULT, 0));
@@ -126,7 +126,7 @@ TEST_F(Ros2PublishPointsNodeTest, should_receive_sent_data)
 		    for (int i = 0; i < POINT_COUNT; ++i) {
 			    EXPECT_EQ(reinterpret_cast<const float*>(msg->data.data())[i], input.getFieldValue<DISTANCE_F32>(i));
 		    }
-		    ++messageCount;
+		    messageCount.fetch_add(1);
 	    });
 
 	// Run
@@ -140,8 +140,8 @@ TEST_F(Ros2PublishPointsNodeTest, should_receive_sent_data)
 		do {
 			rclcpp::spin_some(node);
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		} while (messageCount != MESSAGE_REPEATS &&
+		} while (messageCount.load() != MESSAGE_REPEATS &&
 		         std::chrono::steady_clock::now() - start < std::chrono::seconds(WAIT_TIME_SECS));
-		ASSERT_EQ(messageCount, MESSAGE_REPEATS);
+		ASSERT_EQ(messageCount.load(), MESSAGE_REPEATS);
 	}
 }

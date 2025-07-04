@@ -78,7 +78,7 @@ protected:
 
 	virtual void ros2EnqueueExecImpl() = 0;
 	virtual void ros2ValidateImpl() = 0;
-	virtual void configureAgnocastImpl(bool enable)
+	virtual void configureAgnocastImpl([[maybe_unused]] bool enable)
 	{
 		throw std::invalid_argument("Unable to configure Agnocast because requested RGL node does not support it.");
 	};
@@ -106,7 +106,7 @@ struct Ros2PublishPointsNode : Ros2Node
 private:
 	using MessageT = sensor_msgs::msg::PointCloud2;
 
-	static void updateRos2MessageFields(sensor_msgs::msg::PointCloud2& ros2Message, const std::vector<rgl_field_t>& fields);
+	static void updateRos2MessageFields(MessageT& ros2Message, const std::vector<rgl_field_t>& fields);
 
 	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
 

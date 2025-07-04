@@ -164,15 +164,21 @@ if (RGL_BUILD_PCL_EXTENSION)
     add_subdirectory(extensions/pcl)
 endif()
 
+if (RGL_BUILD_AGNOCAST_EXTENSION)
+    if (WIN32)
+        message(FATAL_ERROR "Agnocast extension is not supported on Windows")
+    endif()
+
+    if (NOT RGL_BUILD_ROS2_EXTENSION)
+        message(FATAL_ERROR "Agnocast extension requires ROS2 extension to be also built")
+    endif()
+endif()
+
 if (RGL_BUILD_ROS2_EXTENSION)
     if (WIN32) # Workaround for compilation on Windows. fastcdr must be found from the top-level of cmake.
         find_package(fastcdr REQUIRED)
     endif()
     add_subdirectory(extensions/ros2)
-endif()
-
-if (RGL_BUILD_AGNOCAST_EXTENSION AND WIN32)
-    message(FATAL_ERROR "Agnocast extension is not supported on Windows")
 endif()
 
 if (RGL_BUILD_UDP_EXTENSION)
