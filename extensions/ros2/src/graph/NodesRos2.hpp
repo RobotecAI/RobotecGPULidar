@@ -16,16 +16,18 @@
 
 #include <rgl/api/extensions/ros2.h>
 
-#include <graph/Node.hpp>
-#include <graph/NodesCore.hpp>
-#include <graph/Interfaces.hpp>
-
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <Ros2InitGuard.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
+
+#include <graph/Node.hpp>
+#include <graph/NodesCore.hpp>
+#include <graph/Interfaces.hpp>
+
+#include <Ros2InitGuard.hpp>
+#include <MessagePublisher.hpp>
 
 struct Ros2Node : IPointsNodeSingleInput
 {
@@ -45,6 +47,30 @@ struct Ros2Node : IPointsNodeSingleInput
 		ros2ValidateImpl();
 	}
 
+	/**
+	 * Configures usage of Agnocast middleware.
+	 */
+	void configureAgnocast(bool enable)
+	{
+#if RGL_BUILD_AGNOCAST_EXTENSION
+		if (enable) {
+			// Verify that the Agnocast heaphook library is preloaded before initialization.
+			// This library must be loaded via LD_PRELOAD for Agnocast's shared memory functionality to work correctly.
+			// While Agnocast internally performs this same validation, it calls std::exit on failure,
+			// so we check here to provide a more graceful error.
+			const char* preloadEnv = std::getenv("LD_PRELOAD");
+			const std::string preloads = preloadEnv ? std::string(preloadEnv) : std::string();
+			if (preloads.find("libagnocast_heaphook.so") == std::string::npos) {
+				throw std::invalid_argument(
+				    "Unable to configure Agnocast because libagnocast_heaphook.so is not found in LD_PRELOAD.");
+			}
+		}
+		configureAgnocastImpl(enable);
+#else
+		throw std::invalid_argument("Unable to configure Agnocast because the library was not built with Agnocast extension.");
+#endif
+	}
+
 	virtual ~Ros2Node() = default;
 
 protected:
@@ -52,13 +78,17 @@ protected:
 
 	virtual void ros2EnqueueExecImpl() = 0;
 	virtual void ros2ValidateImpl() = 0;
+	virtual void configureAgnocastImpl([[maybe_unused]] bool enable)
+	{
+		throw std::invalid_argument("Unable to configure Agnocast because requested RGL node does not support it.");
+	};
 };
 
 struct Ros2PublishPointsNode : Ros2Node
 {
 	using Ptr = std::shared_ptr<Ros2PublishPointsNode>;
 
-	void setParameters(const char* topicName, const char* frameId,
+	void setParameters(const char* topicName, const char* messageFrameId,
 	                   rgl_qos_policy_reliability_t qosReliability = QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
 	                   rgl_qos_policy_durability_t qosDurability = QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
 	                   rgl_qos_policy_history_t qosHistory = QOS_POLICY_HISTORY_SYSTEM_DEFAULT, int32_t qosHistoryDepth = 10);
@@ -67,15 +97,21 @@ struct Ros2PublishPointsNode : Ros2Node
 	void ros2ValidateImpl() override;
 	void ros2EnqueueExecImpl() override;
 
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocastImpl(bool enable) override;
+#endif
+
 	~Ros2PublishPointsNode() override = default;
 
 private:
+	using MessageT = sensor_msgs::msg::PointCloud2;
+
+	static void updateRos2MessageFields(MessageT& ros2Message, const std::vector<rgl_field_t>& fields);
+
 	DeviceAsyncArray<char>::Ptr inputFmtData = DeviceAsyncArray<char>::create(arrayMgr);
 
-	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ros2Publisher;
-	sensor_msgs::msg::PointCloud2 ros2Message;
-
-	void updateRos2Message(const std::vector<rgl_field_t>& fields, bool isDense);
+	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
+	std::string frameId{};
 };
 
 
@@ -90,22 +126,26 @@ struct Ros2PublishPointVelocityMarkersNode : Ros2Node
 	void ros2ValidateImpl() override;
 	void ros2EnqueueExecImpl() override;
 
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocastImpl(bool enable) override;
+#endif
+
 	~Ros2PublishPointVelocityMarkersNode() override = default;
 
 private:
+	using MessageT = visualization_msgs::msg::Marker;
+
 	std::string frameId;
-	rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr linesPublisher;
+	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
+
 	HostPinnedArray<Vec3f>::Ptr pos = HostPinnedArray<Vec3f>::create();
 	HostPinnedArray<Vec3f>::Ptr vel = HostPinnedArray<Vec3f>::create();
-	visualization_msgs::msg::Marker marker;
 	rgl_field_t velocityField;
-
-	const visualization_msgs::msg::Marker& makeLinesMarker();
 };
 
 struct Ros2PublishRadarScanNode : Ros2Node
 {
-	void setParameters(const char* topicName, const char* frameId, rgl_qos_policy_reliability_t qosReliability,
+	void setParameters(const char* topicName, const char* messageFrameId, rgl_qos_policy_reliability_t qosReliability,
 	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
 	std::vector<rgl_field_t> getRequiredFieldList() const override
 	{
@@ -116,9 +156,16 @@ struct Ros2PublishRadarScanNode : Ros2Node
 	void ros2ValidateImpl() override;
 	void ros2EnqueueExecImpl() override;
 
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocastImpl(bool enable) override;
+#endif
+
 private:
-	radar_msgs::msg::RadarScan ros2Message;
-	rclcpp::Publisher<radar_msgs::msg::RadarScan>::SharedPtr ros2Publisher;
+	using MessageT = radar_msgs::msg::RadarScan;
+
+	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
+	std::string frameId{};
+
 	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
 	GPUFieldDescBuilder fieldDescBuilder;
 };

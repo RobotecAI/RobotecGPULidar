@@ -125,4 +125,23 @@ void TapeRos2::tape_node_publish_ros2_radarscan(const YAML::Node& yamlNode, Play
 	                                (rgl_qos_policy_history_t) yamlNode[5].as<int>(), yamlNode[6].as<int32_t>());
 	state.nodes.insert(std::make_pair(nodeId, node));
 }
+
+RGL_API rgl_status_t rgl_node_configure_agnocast(rgl_node_t node, bool enable)
+{
+	auto status = rglSafeCall([&]() {
+		RGL_DEBUG("rgl_node_configure_agnocast(node={}, enable={})", repr(node), enable);
+		CHECK_ARG(node != nullptr);
+
+		Node::validatePtr<Ros2Node>(node)->configureAgnocast(enable);
+	});
+	TAPE_HOOK(node, enable);
+	return status;
+}
+
+void TapeRos2::tape_node_configure_agnocast(const YAML::Node& yamlNode, PlaybackState& state)
+{
+	auto nodeId = yamlNode[0].as<TapeAPIObjectID>();
+	rgl_node_t node = state.nodes.contains(nodeId) ? state.nodes[nodeId] : nullptr;
+	rgl_node_configure_agnocast(node, yamlNode[1].as<bool>());
+}
 }

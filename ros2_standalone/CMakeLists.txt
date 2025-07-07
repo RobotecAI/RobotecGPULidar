@@ -111,6 +111,20 @@ macro(get_standalone_dependencies _library_name)
             list(APPEND REQ_STANDALONE_LIBS ${rosidl_dynamic_typesupport_fastrtps_rosidl_dynamic_typesupport_fastrtps_LIB_PATH})
         endif()
 
+        # Get agnocastlib
+        if("${_library_name}" STREQUAL "agnocastlib")
+            fetch_target_lib(agnocastlib::agnocast)
+            list(APPEND REQ_STANDALONE_LIBS ${agnocastlib_agnocast_LIB_PATH})
+
+            # Heaphook is not listed as a separate package; it is installed as a standalone library through apt
+            set(AGNOCAST_HEAPHOOK_LIB_PATH "/opt/ros/${ROS_DISTRO}/lib/libagnocast_heaphook.so")
+            if(EXISTS ${AGNOCAST_HEAPHOOK_LIB_PATH})
+                list(APPEND REQ_STANDALONE_LIBS ${AGNOCAST_HEAPHOOK_LIB_PATH})
+            else()
+                message(FATAL_ERROR "libagnocast_heaphook.so not found. It was expected in '${AGNOCAST_HEAPHOOK_LIB_PATH}'")
+            endif()
+        endif()
+
         # If library is msgs, fetch all targets to get libraries for dynamic type support
         # Those libraries are not listed in <XX>_LIBRARIES (which stands for libraries to link against to use <XX>)
         if(${_library_name} MATCHES ".*\_msgs$")
@@ -244,6 +258,10 @@ set(ros2_standalone_libs
 
 if(UNIX)
     list(APPEND ros2_standalone_libs spdlog iceoryx_binding_c iceoryx_posh iceoryx_hoofs)
+endif()
+
+if(RGL_BUILD_AGNOCAST_EXTENSION)
+    list(APPEND ros2_standalone_libs agnocastlib)
 endif()
 
 if(ROS_DISTRO STREQUAL "humble")

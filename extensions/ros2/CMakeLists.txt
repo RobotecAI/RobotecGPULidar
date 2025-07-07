@@ -43,3 +43,9 @@ target_include_directories(RobotecGPULidar
     PUBLIC include
     PRIVATE src
 )
+
+if (RGL_BUILD_AGNOCAST_EXTENSION)
+    find_package(agnocastlib REQUIRED)
+    target_link_libraries(RobotecGPULidar PRIVATE agnocastlib::agnocast)
+    target_include_directories(RobotecGPULidar PUBLIC ${agnocastlib_INCLUDE_DIRS})
+endif()

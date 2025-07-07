@@ -48,6 +48,8 @@ set(RGL_BUILD_PCL_EXTENSION OFF CACHE BOOL
     "Enables building PCL extension.")
 set(RGL_BUILD_ROS2_EXTENSION OFF CACHE BOOL
     "Enables building ROS2 extension. It requires installed and sourced ROS2.")
+set(RGL_BUILD_AGNOCAST_EXTENSION OFF CACHE BOOL
+    "Enables building Agnocast extension. It requires ROS2 extension to be enabled and sourced Agnocast package.")
 set(RGL_BUILD_UDP_EXTENSION OFF CACHE BOOL
     "Enables building UDP extension.")
 set(RGL_BUILD_WEATHER_EXTENSION OFF CACHE BOOL
@@ -154,11 +156,22 @@ set_property(TARGET RobotecGPULidar PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_PCL_EXTENSION=$<BOOL:${RGL_BUILD_PCL_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_ROS2_EXTENSION=$<BOOL:${RGL_BUILD_ROS2_EXTENSION}>)
+target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_AGNOCAST_EXTENSION=$<BOOL:${RGL_BUILD_AGNOCAST_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_UDP_EXTENSION=$<BOOL:${RGL_BUILD_UDP_EXTENSION}>)
 target_compile_definitions(RobotecGPULidar PUBLIC RGL_BUILD_WEATHER_EXTENSION=$<BOOL:${RGL_BUILD_WEATHER_EXTENSION}>)
 
 if (RGL_BUILD_PCL_EXTENSION)
     add_subdirectory(extensions/pcl)
+endif()
+
+if (RGL_BUILD_AGNOCAST_EXTENSION)
+    if (WIN32)
+        message(FATAL_ERROR "Agnocast extension is not supported on Windows")
+    endif()
+
+    if (NOT RGL_BUILD_ROS2_EXTENSION)
+        message(FATAL_ERROR "Agnocast extension requires ROS2 extension to be also built")
+    endif()
 endif()
 
 if (RGL_BUILD_ROS2_EXTENSION)

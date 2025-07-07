@@ -10,8 +10,9 @@ import shutil
 import argparse
 
 import install_deps as core_deps
-from extensions.ros2 import install_deps as ros2_deps
 from extensions.pcl import install_deps as pcl_deps
+from extensions.ros2 import install_deps as ros2_deps
+from extensions.ros2 import install_agnocast_deps as agnocast_deps
 
 
 class Config:
@@ -45,6 +46,8 @@ def main():
                         help="Install dependencies for PCL extension and exit")
     parser.add_argument("--install-ros2-deps", action='store_true',
                         help="Install dependencies for ROS2 extension and exit")
+    parser.add_argument("--install-agnocast-deps", action='store_true',
+                        help="Install dependencies for Agnocast extension and exit")
     parser.add_argument("--fetch-rgl-blobs", action='store_true',
                         help="Fetch RGL blobs and exit (repo used for storing closed-source testing data)")
     parser.add_argument("--clean-build", action='store_true',
@@ -55,6 +58,8 @@ def main():
                         help="Build RGL with ROS2 extension")
     parser.add_argument("--with-ros2-standalone", action='store_true',
                         help="Build RGL with ROS2 extension and install all dependent ROS2 libraries additionally")
+    parser.add_argument("--with-agnocast", action='store_true',
+                        help="Build RGL with Agnocast extension")
     parser.add_argument("--with-udp", action='store_true',
                         help="Build RGL with UDP extension (closed-source extension)")
     parser.add_argument("--with-weather", action='store_true',
@@ -94,6 +99,11 @@ def main():
     if args.install_ros2_deps:
         ros2_deps.install_deps()
         return 0
+    
+    # Install dependencies for Agnocast extension
+    if args.install_agnocast_deps:
+        agnocast_deps.install_deps()
+        return 0
 
     # Install dependencies for ROS2 extension
     if args.fetch_rgl_blobs:
@@ -122,6 +132,15 @@ def main():
         raise RuntimeError(
             "ROS2 extension requires radar_msgs to be built: run this script with --install-ros2-deps flag")
 
+    if args.with_agnocast:
+        if on_windows():
+            raise RuntimeError("Agnocast extension is not supported on Windows")
+        if not args.with_ros2:
+            raise RuntimeError("Agnocast extension requires ROS2 extension to be also built")
+        if not agnocast_deps.are_deps_installed():
+            raise RuntimeError(
+                "Agnocast extension requires agnocast package to be built: run this script with --install-agnocast-deps flag")
+
     # Prepare build directory
     if args.clean_build and os.path.isdir(args.build_dir):
         shutil.rmtree(args.build_dir, ignore_errors=True)
@@ -140,12 +159,18 @@ def main():
         setup = "setup.bat" if on_windows() else "setup.sh"
         source_environment(os.path.join(os.getcwd(), cfg_ros2.RADAR_MSGS_INSTALL_DIR, setup))
 
+    if args.with_agnocast:
+        cfg_agnocast = agnocast_deps.Config()
+        # Source environment for additional packages
+        source_environment(os.path.join(os.getcwd(), cfg_agnocast.AGNOCAST_INSTALL_DIR, "setup.sh"))
+
     # Build
     cmake_args = [
         f"-DCMAKE_TOOLCHAIN_FILE={os.path.join(pcl_deps.Config().VCPKG_DIR, 'scripts', 'buildsystems', 'vcpkg.cmake') if args.with_pcl else ''}",
         f"-DVCPKG_TARGET_TRIPLET={pcl_deps.Config().VCPKG_TRIPLET if args.with_pcl else ''}",
         f"-DRGL_BUILD_PCL_EXTENSION={'ON' if args.with_pcl else 'OFF'}",
         f"-DRGL_BUILD_ROS2_EXTENSION={'ON' if args.with_ros2 else 'OFF'}",
+        f"-DRGL_BUILD_AGNOCAST_EXTENSION={'ON' if args.with_agnocast else 'OFF'}",
         f"-DRGL_BUILD_UDP_EXTENSION={'ON' if args.with_udp else 'OFF'}",
         f"-DRGL_BUILD_WEATHER_EXTENSION={'ON' if args.with_weather else 'OFF'}"
     ]
@@ -173,7 +198,11 @@ def main():
         # dependencies. It cannot be added as a subdirectory of RobotecGPULidar project because there is a conflict in
         # the same libraries required by RGL and ROS2 RGL takes them from vcpkg as statically linked objects while
         # ROS2 standalone required them as a shared objects
-        ros2_standalone_cmake_args = f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}"
+        ros2_standalone_cmake_args = [
+            f"-DCMAKE_INSTALL_PREFIX={os.path.join(os.getcwd(), args.build_dir)}",
+            f"-DRGL_BUILD_AGNOCAST_EXTENSION={'ON' if args.with_agnocast else 'OFF'}"
+        ]
+        ros2_standalone_cmake_args = " ".join(ros2_standalone_cmake_args)
         run_subprocess_command(
             f"cmake ros2_standalone -B {args.build_dir}/ros2_standalone -G {cfg.CMAKE_GENERATOR} {ros2_standalone_cmake_args}")
         run_subprocess_command(f"cmake --install {args.build_dir}/ros2_standalone")
