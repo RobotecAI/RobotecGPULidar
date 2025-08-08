@@ -605,6 +605,15 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 {
 	using Ptr = std::shared_ptr<RadarPostprocessPointsNode>;
 
+	struct ClusterStats
+	{
+		Aabb3Df aabb{};
+		float azimuthStd{0.0f};
+		float elevationStd{0.0f};
+		float distanceStd{0.0f};
+		float radialSpeedStd{0.0f};
+	};
+
 	void setParameters(const std::vector<rgl_radar_scope_t>& radarScopes, float rayAzimuthStepRad, float rayElevationStepRad,
 	                   float frequency, float powerTransmitted, float cumulativeDeviceGain, float receivedNoiseMean,
 	                   float receivedNoiseStDev);
@@ -623,7 +632,7 @@ struct RadarPostprocessPointsNode : IPointsNodeSingleInput
 	// Data getters
 	IAnyArray::ConstPtr getFieldData(rgl_field_t field) override;
 
-	const std::vector<Aabb3Df>& getClusterAabbs() const { return clusterAabbs; }
+	const std::vector<ClusterStats>& getClustersStats() const { return clustersStats; }
 
 private:
 	// Data containers
@@ -660,7 +669,7 @@ private:
 	float receivedNoiseStDevDb;
 
 	std::vector<rgl_radar_scope_t> radarScopes;
-	std::vector<Aabb3Df> clusterAabbs;
+	std::vector<ClusterStats> clustersStats;
 
 	std::random_device randomDevice;
 
@@ -681,11 +690,24 @@ private:
 		Field<RAY_IDX_U32>::type findDirectionalCenterIndex(const Field<AZIMUTH_F32>::type* azimuths,
 		                                                    const Field<ELEVATION_F32>::type* elevations) const;
 
+		Field<DISTANCE_F32>::type getMeanDistance() const;
+		Field<AZIMUTH_F32>::type getMeanAzimuth() const;
+		Field<RADIAL_SPEED_F32>::type getMeanRadialSpeed() const;
+		Field<ELEVATION_F32>::type getMeanElevation() const;
+
 		std::vector<Field<RAY_IDX_U32>::type> indices;
 		Vector<2, Field<DISTANCE_F32>::type> minMaxDistance;
 		Vector<2, Field<AZIMUTH_F32>::type> minMaxAzimuth;
 		Vector<2, Field<RADIAL_SPEED_F32>::type> minMaxRadialSpeed;
 		Vector<2, Field<ELEVATION_F32>::type> minMaxElevation; // For finding directional center only
+
+	private:
+		// These fields are utilized only for mean calculation.
+		Field<DISTANCE_F32>::type sumOfDistances;
+		Field<AZIMUTH_F32>::type sumOfAzimuths;
+		Field<RADIAL_SPEED_F32>::type sumOfRadialSpeeds;
+		Field<ELEVATION_F32>::type sumOfElevations;
+		uint32_t radialSpeedSamples = 0;
 	};
 };
 

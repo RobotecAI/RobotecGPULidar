@@ -61,10 +61,12 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 
 	// TODO(Pawel): Reconsider approach below.
 	// At this moment, I would like to check input this way, because it will keep RadarTrackObjectsNode testable without
-	// an input being RadarPostprocessPointsNode. If I have nullptr here, I simply do not process bounding boxes for detections.
+	// an input being RadarPostprocessPointsNode. If I have nullptr here, I simply do not process bounding boxes for detections clusters.
+	// Cluster stats are passed further as is.
 	auto radarPostprocessPointsNode = std::dynamic_pointer_cast<RadarPostprocessPointsNode>(input);
-	const auto detectionAabbs = radarPostprocessPointsNode ? radarPostprocessPointsNode->getClusterAabbs() :
-	                                                         std::vector<Aabb3Df>(input->getPointCount());
+	const auto clustersStats = radarPostprocessPointsNode ?
+	                               radarPostprocessPointsNode->getClustersStats() :
+	                               std::vector<RadarPostprocessPointsNode::ClusterStats>(input->getPointCount());
 
 	// Top level in this list is for objects. Bottom level is for detections that belong to specific objects. Below is an initialization of a helper
 	// structure for region growing, which starts with a while-loop.
@@ -123,9 +125,11 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		for (const auto detectionIndex : separateObjectIndices) {
 			++entityIdHist[entityIdHostPtr->at(detectionIndex)];
 			objectBounds.position += xyzHostPtr->at(detectionIndex);
-			objectBounds.aabb += detectionAabbs[detectionIndex];
+			objectBounds.aabb += clustersStats[detectionIndex].aabb;
 			objectBounds.relVelocity += velocityRelHostPtr->at(detectionIndex);
 			objectBounds.absVelocity += velocityAbsHostPtr->at(detectionIndex);
+
+			// I need STD values -> these have to be calculated in RadarPostprocessPointsNode and propagated like getClusterAabbs().
 		}
 		// Most common detection entity id is assigned as object id.
 		int maxIdCount = -1;
