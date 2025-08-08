@@ -730,6 +730,21 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Invalid = 255
 	};
 
+	struct DetectionState
+	{
+		float azimuth{};
+		float azimuthStd{};
+		float elevation{};
+		float elevationStd{};
+		float distance{};
+		float distanceStd{};
+		float radialSpeed{};
+		float radialSpeedStd{};
+		float rcs{0};
+		uint32_t detectionId{0};
+		uint32_t objectId{0};
+	};
+
 	struct ObjectBounds
 	{
 		Field<ENTITY_ID_I32>::type mostCommonEntityId = RGL_ENTITY_INVALID_ID;
@@ -737,6 +752,7 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 		Aabb3Df aabb{};
 		Vec3f absVelocity{};
 		Vec3f relVelocity{};
+		std::list<int> detectionIndices{};
 	};
 
 	struct ClassificationProbabilities
@@ -794,17 +810,19 @@ struct RadarTrackObjectsNode : IPointsNodeSingleInput
 	size_t getWidth() const override { return fieldData.empty() ? 0 : fieldData.begin()->second->getCount(); }
 	size_t getHeight() const override { return 1; } // In fact, this will be only a 1-dimensional array.
 
+	const std::vector<DetectionState>& getDetectionStates() const { return detectionStates; }
 	const std::list<ObjectState>& getObjectStates() const { return objectStates; }
 
 private:
 	Vec3f predictObjectPosition(const ObjectState& objectState, double deltaTimeMs) const;
 	void parseEntityIdToClassProbability(Field<ENTITY_ID_I32>::type entityId, ClassificationProbabilities& probabilities);
-	void createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
+	const ObjectState& createObjectState(const ObjectBounds& objectBounds, double currentTimeMs);
 	void updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition, const Aabb3Df& updatedAabb,
 	                       ObjectStatus objectStatus, double currentTimeMs, double deltaTimeMs, const Vec3f& absVelocity,
 	                       const Vec3f& relVelocity);
 	void updateOutputData();
 
+	std::vector<DetectionState> detectionStates;
 	std::list<ObjectState> objectStates;
 	std::unordered_map<Field<ENTITY_ID_I32>::type, rgl_radar_object_class_t> entityIdsToClasses;
 	std::unordered_map<rgl_field_t, IAnyArray::Ptr> fieldData; // All should be DeviceAsyncArray
@@ -833,6 +851,7 @@ private:
 	HostPinnedArray<Field<ELEVATION_F32>::type>::Ptr elevationHostPtr = HostPinnedArray<Field<ELEVATION_F32>::type>::create();
 	HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::Ptr radialSpeedHostPtr =
 	    HostPinnedArray<Field<RADIAL_SPEED_F32>::type>::create();
+	HostPinnedArray<Field<RCS_F32>::type>::Ptr rcsHostPtr = HostPinnedArray<Field<RCS_F32>::type>::create();
 	HostPinnedArray<Field<ENTITY_ID_I32>::type>::Ptr entityIdHostPtr = HostPinnedArray<Field<ENTITY_ID_I32>::type>::create();
 	HostPinnedArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::Ptr velocityRelHostPtr =
 	    HostPinnedArray<Field<RELATIVE_VELOCITY_VEC3_F32>::type>::create();
