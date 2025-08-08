@@ -133,7 +133,6 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 			objectBounds.absVelocity += velocityAbsHostPtr->at(detectionIndex);
 			objectBounds.detectionIndices.push_back(detectionIndex);
 
-			// I need STD values -> these have to be calculated in RadarPostprocessPointsNode and propagated like getClusterAabbs().
 			auto& detectionState = detectionStates[detectionIndex];
 			detectionState.azimuth = azimuthHostPtr->at(detectionIndex);
 			detectionState.azimuthStd = clustersStats[detectionIndex].azimuthStd;
