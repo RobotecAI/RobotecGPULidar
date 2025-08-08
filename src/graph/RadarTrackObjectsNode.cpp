@@ -180,7 +180,7 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		}
 
 		// objectState do not have a match in newly detected object positions and it was also on ObjectStatus::Predicted last frame -
-		// not this object is considered lost and is removed from object list. Also remove its ID to poll.
+		// now this object is considered lost and is removed from object list. Also remove its ID to poll.
 		objectIDPoll.push(objectState.id);
 		objectStateIt = objectStates.erase(objectStateIt);
 	}
@@ -341,7 +341,7 @@ void RadarTrackObjectsNode::updateOutputData()
 	for (const auto& objectState : objectStates) {
 		assert(objectState.id <= std::numeric_limits<Field<ENTITY_ID_I32>::type>::max());
 		xyzPtr[objectIndex] = objectState.position.getLastSample();
-		idPtr[objectIndex] = objectState.id;
+		idPtr[objectIndex] = static_cast<Field<ENTITY_ID_I32>::type>(objectState.id);
 		++objectIndex;
 	}
 

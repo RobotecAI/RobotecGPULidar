@@ -50,7 +50,7 @@ void RadarPostprocessPointsNode::validateImpl()
 	IPointsNodeSingleInput::validateImpl();
 
 	if (!input->isDense()) {
-		throw InvalidPipeline("RadarComputeEnergyPointsNode requires dense input");
+		throw InvalidPipeline("RadarPostprocessPointsNode requires dense input");
 	}
 
 	// Needed to clear cache because fields in the pipeline may have changed
