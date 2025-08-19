@@ -55,16 +55,20 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 	azimuthHostPtr->copyFrom(input->getFieldData(AZIMUTH_F32));
 	elevationHostPtr->copyFrom(input->getFieldData(ELEVATION_F32));
 	radialSpeedHostPtr->copyFrom(input->getFieldData(RADIAL_SPEED_F32));
+	rcsHostPtr->copyFrom(input->getFieldData(RCS_F32));
 	entityIdHostPtr->copyFrom(input->getFieldData(ENTITY_ID_I32));
 	velocityRelHostPtr->copyFrom(input->getFieldData(RELATIVE_VELOCITY_VEC3_F32));
 	velocityAbsHostPtr->copyFrom(input->getFieldData(ABSOLUTE_VELOCITY_VEC3_F32));
 
 	// TODO(Pawel): Reconsider approach below.
 	// At this moment, I would like to check input this way, because it will keep RadarTrackObjectsNode testable without
-	// an input being RadarPostprocessPointsNode. If I have nullptr here, I simply do not process bounding boxes for detections.
+	// an input being RadarPostprocessPointsNode. If I have nullptr here, I simply do not process bounding boxes for detections clusters.
+	// Cluster stats are passed further as is.
 	auto radarPostprocessPointsNode = std::dynamic_pointer_cast<RadarPostprocessPointsNode>(input);
-	const auto detectionAabbs = radarPostprocessPointsNode ? radarPostprocessPointsNode->getClusterAabbs() :
-	                                                         std::vector<Aabb3Df>(input->getPointCount());
+	const auto clustersStats = radarPostprocessPointsNode ?
+	                               radarPostprocessPointsNode->getClustersStats() :
+	                               std::vector<RadarPostprocessPointsNode::ClusterStats>(input->getPointCount());
+	assert(clustersStats.size() == input->getPointCount());
 
 	// Top level in this list is for objects. Bottom level is for detections that belong to specific objects. Below is an initialization of a helper
 	// structure for region growing, which starts with a while-loop.
@@ -115,7 +119,8 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		}
 	}
 
-	// Calculate positions of objects detected in current frame.
+	// Calculate positions of objects detected in current frame. Additionally, calculate detection states.
+	detectionStates.resize(input->getPointCount());
 	std::list<ObjectBounds> newObjectBounds;
 	for (const auto& separateObjectIndices : objectIndices) {
 		auto& objectBounds = newObjectBounds.emplace_back();
@@ -123,9 +128,22 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		for (const auto detectionIndex : separateObjectIndices) {
 			++entityIdHist[entityIdHostPtr->at(detectionIndex)];
 			objectBounds.position += xyzHostPtr->at(detectionIndex);
-			objectBounds.aabb += detectionAabbs[detectionIndex];
+			objectBounds.aabb += clustersStats[detectionIndex].aabb;
 			objectBounds.relVelocity += velocityRelHostPtr->at(detectionIndex);
 			objectBounds.absVelocity += velocityAbsHostPtr->at(detectionIndex);
+			objectBounds.detectionIndices.push_back(detectionIndex);
+
+			auto& detectionState = detectionStates[detectionIndex];
+			detectionState.azimuth = azimuthHostPtr->at(detectionIndex);
+			detectionState.azimuthStd = clustersStats[detectionIndex].azimuthStd;
+			detectionState.elevation = elevationHostPtr->at(detectionIndex);
+			detectionState.elevationStd = clustersStats[detectionIndex].elevationStd;
+			detectionState.distance = distanceHostPtr->at(detectionIndex);
+			detectionState.distanceStd = clustersStats[detectionIndex].distanceStd;
+			detectionState.radialSpeed = radialSpeedHostPtr->at(detectionIndex);
+			detectionState.radialSpeedStd = clustersStats[detectionIndex].radialSpeedStd;
+			detectionState.rcs = rcsHostPtr->at(detectionIndex);
+			detectionState.detectionId = static_cast<uint32_t>(detectionIndex);
 		}
 		// Most common detection entity id is assigned as object id.
 		int maxIdCount = -1;
@@ -160,6 +178,9 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		    (predictedPosition - closestObject.position).length() < maxMatchingDistance) {
 			updateObjectState(objectState, closestObject.position, closestObject.aabb, ObjectStatus::Measured, currentTime,
 			                  deltaTime, closestObject.absVelocity, closestObject.relVelocity);
+			for (const auto detectionIndex : closestObject.detectionIndices) {
+				detectionStates[detectionIndex].objectId = objectState.id;
+			}
 			newObjectBounds.erase(closestObjectIt);
 			++objectStateIt;
 			continue;
@@ -176,14 +197,17 @@ void RadarTrackObjectsNode::enqueueExecImpl()
 		}
 
 		// objectState do not have a match in newly detected object positions and it was also on ObjectStatus::Predicted last frame -
-		// not this object is considered lost and is removed from object list. Also remove its ID to poll.
+		// now this object is considered lost and is removed from object list. Also remove its ID to poll.
 		objectIDPoll.push(objectState.id);
 		objectStateIt = objectStates.erase(objectStateIt);
 	}
 
 	// All newly detected object position that do not have a match in previous frame - create new object state.
 	for (const auto& newObject : newObjectBounds) {
-		createObjectState(newObject, currentTime);
+		const auto& newObjectState = createObjectState(newObject, currentTime);
+		for (const auto detectionIndex : newObject.detectionIndices) {
+			detectionStates[detectionIndex].objectId = newObjectState.id;
+		}
 	}
 
 	updateOutputData();
@@ -196,6 +220,7 @@ std::vector<rgl_field_t> RadarTrackObjectsNode::getRequiredFieldList() const
 	        AZIMUTH_F32,
 	        ELEVATION_F32,
 	        RADIAL_SPEED_F32,
+	        RCS_F32,
 	        ENTITY_ID_I32,
 	        RELATIVE_VELOCITY_VEC3_F32,
 	        ABSOLUTE_VELOCITY_VEC3_F32};
@@ -240,7 +265,7 @@ void RadarTrackObjectsNode::parseEntityIdToClassProbability(Field<ENTITY_ID_I32>
 	}
 }
 
-void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, double currentTimeMs)
+const RadarTrackObjectsNode::ObjectState& RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, double currentTimeMs)
 {
 	auto& objectState = objectStates.emplace_back();
 	if (objectIDPoll.empty()) {
@@ -274,6 +299,7 @@ void RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, 
 	objectState.width.addSample((-objectBounds.aabb.maxCorner().x()) - (-objectBounds.aabb.minCorner().x()));
 
 	objectState.positionSensorFrame = lookAtSensorFrameTransform * objectState.position.getLastSample();
+	return objectState;
 }
 
 void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Vec3f& updatedPosition,
@@ -337,7 +363,7 @@ void RadarTrackObjectsNode::updateOutputData()
 	for (const auto& objectState : objectStates) {
 		assert(objectState.id <= std::numeric_limits<Field<ENTITY_ID_I32>::type>::max());
 		xyzPtr[objectIndex] = objectState.position.getLastSample();
-		idPtr[objectIndex] = objectState.id;
+		idPtr[objectIndex] = static_cast<Field<ENTITY_ID_I32>::type>(objectState.id);
 		++objectIndex;
 	}
 

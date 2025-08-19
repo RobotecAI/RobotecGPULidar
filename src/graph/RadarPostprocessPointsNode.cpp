@@ -50,7 +50,7 @@ void RadarPostprocessPointsNode::validateImpl()
 	IPointsNodeSingleInput::validateImpl();
 
 	if (!input->isDense()) {
-		throw InvalidPipeline("RadarComputeEnergyPointsNode requires dense input");
+		throw InvalidPipeline("RadarPostprocessPointsNode requires dense input");
 	}
 
 	// Needed to clear cache because fields in the pipeline may have changed
@@ -147,17 +147,36 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 	clusterSnrHost->resize(filteredIndicesHost.size(), false, false);
 
 	std::normal_distribution<float> gaussianNoise(receivedNoiseMeanDb, receivedNoiseStDevDb);
-	clusterAabbs.resize(clusters.size());
+	clustersStats.resize(clusters.size());
 
 	for (int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
 		std::complex<float> AU = 0;
 		std::complex<float> AR = 0;
 		auto& cluster = clusters[clusterIdx];
-		auto& clusterAabb = clusterAabbs[clusterIdx];
-		clusterAabb.reset();
+		auto& clusterStats = clustersStats[clusterIdx];
+
+		clusterStats.aabb.reset();
+		clusterStats.azimuthStd = 0.0f;
+		clusterStats.elevationStd = 0.0f;
+		clusterStats.distanceStd = 0.0f;
+		clusterStats.radialSpeedStd = 0.0f;
+
+		const auto meanAzimuth = cluster.getMeanAzimuth();
+		const auto meanElevation = cluster.getMeanElevation();
+		const auto meanDistance = cluster.getMeanDistance();
+		const auto meanRadialSpeed = cluster.getMeanRadialSpeed();
+		uint32_t radialSpeedSamples = 0;
 
 		for (const auto pointInCluster : cluster.indices) {
-			clusterAabb.expand(xyzInputHost->at(pointInCluster));
+			clusterStats.aabb.expand(xyzInputHost->at(pointInCluster));
+			clusterStats.azimuthStd += std::pow(azimuthInputHost->at(pointInCluster) - meanAzimuth, 2.0f);
+			clusterStats.elevationStd += std::pow(elevationInputHost->at(pointInCluster) - meanElevation, 2.0f);
+			clusterStats.distanceStd += std::pow(distanceInputHost->at(pointInCluster) - meanDistance, 2.0f);
+			if (const auto radialSpeed = radialSpeedInputHost->at(pointInCluster); !std::isnan(radialSpeed)) {
+				clusterStats.radialSpeedStd += std::pow(radialSpeed - meanRadialSpeed, 2.0f);
+				++radialSpeedSamples;
+			}
+
 			std::complex<float> BU = {outBUBRFactorHost->at(pointInCluster)[0].real(),
 			                          outBUBRFactorHost->at(pointInCluster)[0].imag()};
 			std::complex<float> BR = {outBUBRFactorHost->at(pointInCluster)[1].real(),
@@ -166,6 +185,16 @@ void RadarPostprocessPointsNode::enqueueExecImpl()
 			                              outBUBRFactorHost->at(pointInCluster)[2].imag()};
 			AU += BU * factor;
 			AR += BR * factor;
+		}
+
+		if (!cluster.indices.empty()) {
+			clusterStats.azimuthStd = std::sqrt(clusterStats.azimuthStd / static_cast<float>(cluster.indices.size()));
+			clusterStats.elevationStd = std::sqrt(clusterStats.elevationStd / static_cast<float>(cluster.indices.size()));
+			clusterStats.distanceStd = std::sqrt(clusterStats.distanceStd / static_cast<float>(cluster.indices.size()));
+		}
+
+		if (radialSpeedSamples > 0) {
+			clusterStats.radialSpeedStd = std::sqrt(clusterStats.radialSpeedStd / static_cast<float>(radialSpeedSamples));
 		}
 
 		// https://en.wikipedia.org/wiki/Radar_cross_section#Formulation
@@ -269,6 +298,16 @@ RadarPostprocessPointsNode::RadarCluster::RadarCluster(Field<RAY_IDX_U32>::type 
 	minMaxAzimuth = {azimuth, azimuth};
 	minMaxRadialSpeed = {radialSpeed, radialSpeed};
 	minMaxElevation = {elevation, elevation};
+
+	sumOfDistances = distance;
+	sumOfAzimuths = azimuth;
+	sumOfElevations = elevation;
+
+	// This is not necessary for minMaxRadialSpeed, because adding and merging points handles that case.
+	if (!std::isnan(radialSpeed)) {
+		sumOfRadialSpeeds = radialSpeed;
+		radialSpeedSamples = 1;
+	}
 }
 
 void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type index, float distance, float azimuth,
@@ -295,6 +334,17 @@ void RadarPostprocessPointsNode::RadarCluster::addPoint(Field<RAY_IDX_U32>::type
 
 	minMaxElevation[0] = std::min(minMaxElevation[0], elevation);
 	minMaxElevation[1] = std::max(minMaxElevation[1], elevation);
+
+	sumOfDistances += distance;
+	sumOfAzimuths += azimuth;
+	sumOfElevations += elevation;
+
+	// Check comment above for more details. Radial speed can have nan values and this may result in lower number of samples
+	// included in sumOfRadialSpeeds (compared to other sums). For this reason, additional counter is necessary.
+	if (!std::isnan(radialSpeed)) {
+		sumOfRadialSpeeds += radialSpeed;
+		++radialSpeedSamples;
+	}
 }
 
 inline bool RadarPostprocessPointsNode::RadarCluster::isCandidate(float distance, float azimuth, float radialSpeed,
@@ -372,6 +422,11 @@ void RadarPostprocessPointsNode::RadarCluster::takeIndicesFrom(RadarCluster&& ot
 	minMaxElevation[0] = std::min(minMaxElevation[0], other.minMaxElevation[0]);
 	minMaxElevation[1] = std::max(minMaxElevation[1], other.minMaxElevation[1]);
 
+	sumOfDistances += other.sumOfDistances;
+	sumOfAzimuths += other.sumOfAzimuths;
+	sumOfRadialSpeeds += other.sumOfRadialSpeeds;
+	sumOfElevations += other.sumOfElevations;
+
 	// Move indices
 	std::size_t n = indices.size();
 	indices.resize(indices.size() + other.indices.size());
@@ -395,4 +450,28 @@ Field<RAY_IDX_U32>::type RadarPostprocessPointsNode::RadarCluster::findDirection
 		}
 	}
 	return minIndex;
+}
+
+Field<DISTANCE_F32>::type RadarPostprocessPointsNode::RadarCluster::getMeanDistance() const
+{
+	return sumOfDistances / static_cast<Field<DISTANCE_F32>::type>(indices.size());
+}
+
+Field<AZIMUTH_F32>::type RadarPostprocessPointsNode::RadarCluster::getMeanAzimuth() const
+{
+	return sumOfAzimuths / static_cast<Field<AZIMUTH_F32>::type>(indices.size());
+}
+
+Field<RADIAL_SPEED_F32>::type RadarPostprocessPointsNode::RadarCluster::getMeanRadialSpeed() const
+{
+	// Returning mean radial speed is the only case when number of samples may be 0. This is explained in RadarCluster constructor.
+	if (radialSpeedSamples == 0) {
+		return static_cast<Field<RADIAL_SPEED_F32>::type>(0);
+	}
+	return sumOfRadialSpeeds / static_cast<Field<RADIAL_SPEED_F32>::type>(radialSpeedSamples);
+}
+
+Field<ELEVATION_F32>::type RadarPostprocessPointsNode::RadarCluster::getMeanElevation() const
+{
+	return sumOfElevations / static_cast<Field<ELEVATION_F32>::type>(indices.size());
 }
