@@ -175,10 +175,6 @@ struct Ros2PublishRadarTracksNode : Ros2Node
 {
 	void setParameters(const char* topicName, const char* messageFrameId, rgl_qos_policy_reliability_t qosReliability,
 	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
-	std::vector<rgl_field_t> getRequiredFieldList() const override
-	{
-		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, /* placeholder for amplitude */ PADDING_32};
-	}
 
 	// Ros2Node
 	void ros2ValidateImpl() override;
