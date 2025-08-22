@@ -21,6 +21,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
+#include <radar_msgs/msg/radar_tracks.hpp>
 
 #include <graph/Node.hpp>
 #include <graph/NodesCore.hpp>
@@ -162,6 +163,33 @@ struct Ros2PublishRadarScanNode : Ros2Node
 
 private:
 	using MessageT = radar_msgs::msg::RadarScan;
+
+	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
+	std::string frameId{};
+
+	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
+	GPUFieldDescBuilder fieldDescBuilder;
+};
+
+struct Ros2PublishRadarTracksNode : Ros2Node
+{
+	void setParameters(const char* topicName, const char* messageFrameId, rgl_qos_policy_reliability_t qosReliability,
+	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
+	std::vector<rgl_field_t> getRequiredFieldList() const override
+	{
+		return {DISTANCE_F32, AZIMUTH_F32, ELEVATION_F32, RADIAL_SPEED_F32, /* placeholder for amplitude */ PADDING_32};
+	}
+
+	// Ros2Node
+	void ros2ValidateImpl() override;
+	void ros2EnqueueExecImpl() override;
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocastImpl(bool enable) override;
+#endif
+
+private:
+	using MessageT = radar_msgs::msg::RadarTracks;
 
 	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
 	std::string frameId{};
