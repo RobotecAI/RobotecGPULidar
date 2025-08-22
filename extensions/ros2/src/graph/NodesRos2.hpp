@@ -196,4 +196,20 @@ private:
 
 	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
 	GPUFieldDescBuilder fieldDescBuilder;
+
+	radar_msgs::msg::RadarTrack::_classification_type ProcessObjectProbabilities(
+	    const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const;
+
+	template<typename TrackVecT>
+	TrackVecT ProcessObjectStat(const RunningStats<Vec3f>& objectStat) const
+	{
+		const auto& statRef = objectStat.getLastSample();
+		TrackVecT trackStat{};
+		trackStat.set__x(statRef.x());
+		trackStat.set__y(statRef.y());
+		trackStat.set__z(statRef.z());
+		return trackStat;
+	}
+
+	std::array<float, 6> ProcessObjectStatCov(const RunningStats<Vec3f>& objectStat) const;
 };

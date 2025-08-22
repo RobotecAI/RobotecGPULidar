@@ -53,63 +53,24 @@ void Ros2PublishRadarTracksNode::ros2EnqueueExecImpl()
 	int i = 0;
 	for (const auto& objectState : objectStates) {
 		auto& radarTrack = ros2Message.tracks[i];
-		radarTrack.uuid.set__uuid({});
 
-		{
-			const auto& objectPosition = objectState.position.getLastSample();
-			radarTrack.position.set__x(objectPosition.x());
-			radarTrack.position.set__y(objectPosition.y());
-			radarTrack.position.set__z(objectPosition.z());
-		}
-		{
-			const auto& objectVelocity = objectState.relVelocity.getLastSample();
-			radarTrack.velocity.set__x(objectVelocity.x());
-			radarTrack.velocity.set__y(objectVelocity.y());
-			radarTrack.velocity.set__z(objectVelocity.z());
-		}
-		{
-			const auto objectAcceleration = objectState.relAccel.getLastSample();
-			radarTrack.acceleration.set__x(objectAcceleration.x());
-			radarTrack.acceleration.set__y(objectAcceleration.y());
-			radarTrack.acceleration.set__z(objectAcceleration.z());
-		}
-		{
-			const Vec3f size = {};
-			radarTrack.size.set__x(size.x());
-			radarTrack.size.set__y(size.y());
-			radarTrack.size.set__z(size.z());
-		}
+		assert(sizeof(objectState.id) == 4); // Be sure that uuid matches object ID.
+		radarTrack.uuid.uuid[0] = static_cast<uint8_t>(objectState.id & 0xff);
+		radarTrack.uuid.uuid[1] = static_cast<uint8_t>((objectState.id >> 8) & 0xff);
+		radarTrack.uuid.uuid[2] = static_cast<uint8_t>((objectState.id >> 16) & 0xff);
+		radarTrack.uuid.uuid[3] = static_cast<uint8_t>((objectState.id >> 24) & 0xff);
 
-		radarTrack.classification = radar_msgs::msg::RadarTrack::
-		    NO_CLASSIFICATION; // TODO(Pawel): Decide if we do not want to classify it based on e.g. velocity (STATIC or DYNAMIC object)
+		radarTrack.position = ProcessObjectStat<decltype(radarTrack.position)>(objectState.position);
+		radarTrack.velocity = ProcessObjectStat<decltype(radarTrack.velocity)>(objectState.absVelocity);
+		radarTrack.acceleration = ProcessObjectStat<decltype(radarTrack.acceleration)>(objectState.absAccel);
+		//radarTrack.size = ProcessObjectStat<decltype(radarTrack.size)>(objectState.dimensions);
 
-		//radarTrack.position_covariance[0] = objectState.position.getCovarianceXX();
-		radarTrack.position_covariance[1] = objectState.position.getCovarianceXY();
-		radarTrack.position_covariance[2] = objectState.position.getCovarianceZX();
-		//radarTrack.position_covariance[3] = objectState.position.getCovarianceYY();
-		radarTrack.position_covariance[4] = objectState.position.getCovarianceYZ();
-		//radarTrack.position_covariance[5] = objectState.position.getCovarianceZZ();
+		radarTrack.classification = ProcessObjectProbabilities(objectState.classificationProbabilities);
 
-		//radarTrack.velocity_covariance[0] = objectState.relVelocity.getCovarianceXX();
-		radarTrack.velocity_covariance[1] = objectState.relVelocity.getCovarianceXY();
-		radarTrack.velocity_covariance[2] = objectState.relVelocity.getCovarianceZX();
-		//radarTrack.velocity_covariance[3] = objectState.relVelocity.getCovarianceYY();
-		radarTrack.velocity_covariance[4] = objectState.relVelocity.getCovarianceYZ();
-		//radarTrack.velocity_covariance[5] = objectState.relVelocity.getCovarianceZZ();
-
-		//radarTrack.acceleration_covariance[0] = objectState.relAccel.getCovarianceXX();
-		radarTrack.acceleration_covariance[1] = objectState.relAccel.getCovarianceXY();
-		radarTrack.acceleration_covariance[2] = objectState.relAccel.getCovarianceZX();
-		//radarTrack.acceleration_covariance[3] = objectState.relAccel.getCovarianceYY();
-		radarTrack.acceleration_covariance[4] = objectState.relAccel.getCovarianceYZ();
-		//radarTrack.acceleration_covariance[5] = objectState.relAccel.getCovarianceZZ();
-
-		//radarTrack.size_covariance[0] = objectState.dimensions.getCovarianceXX();
-		//radarTrack.size_covariance[1] = objectState.dimensions.getCovarianceXY();
-		//radarTrack.size_covariance[2] = objectState.dimensions.getCovarianceZX();
-		//radarTrack.size_covariance[3] = objectState.dimensions.getCovarianceYY();
-		//radarTrack.size_covariance[4] = objectState.dimensions.getCovarianceYZ();
-		//radarTrack.size_covariance[5] = objectState.dimensions.getCovarianceZZ();
+		radarTrack.position_covariance = ProcessObjectStatCov(objectState.position);
+		radarTrack.velocity_covariance = ProcessObjectStatCov(objectState.relVelocity);
+		radarTrack.acceleration_covariance = ProcessObjectStatCov(objectState.relAccel);
+		//radarTrack.size_covariance = ProcessObjectStatCov(objectState.dimensions);
 
 		++i;
 	}
@@ -136,3 +97,53 @@ void Ros2PublishRadarTracksNode::configureAgnocastImpl(bool enable)
 	    ros2InitGuard->getNode(), messagePublisher->getTopicName(), messagePublisher->getQos());
 }
 #endif
+
+radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::ProcessObjectProbabilities(
+    const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const
+{
+	constexpr int16_t unknownID = 32000;
+	constexpr int16_t carID = 32001;
+	constexpr int16_t truckID = 32002;
+	constexpr int16_t motorcycleID = 32005;
+	constexpr int16_t bicycleID = 32006;
+	constexpr int16_t pedestrianID = 32007;
+
+	auto maxScore = probabilities.classUnknown;
+	radar_msgs::msg::RadarTrack::_classification_type outputClass = unknownID;
+
+	if (probabilities.classCar > maxScore) {
+		maxScore = probabilities.classCar;
+		outputClass = carID;
+	}
+	if (probabilities.classTruck > maxScore) {
+		maxScore = probabilities.classTruck;
+		outputClass = truckID;
+	}
+	if (probabilities.classMotorcycle > maxScore) {
+		maxScore = probabilities.classMotorcycle;
+		outputClass = motorcycleID;
+	}
+	if (probabilities.classBicycle > maxScore) {
+		maxScore = probabilities.classBicycle;
+		outputClass = bicycleID;
+	}
+	if (probabilities.classPedestrian > maxScore) {
+		maxScore = probabilities.classPedestrian;
+		outputClass = pedestrianID;
+	}
+
+	return outputClass;
+}
+
+std::array<float, 6> Ros2PublishRadarTracksNode::ProcessObjectStatCov(const RunningStats<Vec3f>& objectStat) const
+{
+	const auto& statStd = objectStat.getStdDev();
+	std::array<float, 6> trackStatCov{};
+	trackStatCov[0] = statStd.x() * statStd.x();
+	trackStatCov[1] = objectStat.getCovarianceXY();
+	trackStatCov[2] = 0.0f;
+	trackStatCov[3] = statStd.y() * statStd.y();
+	trackStatCov[4] = 0.0f;
+	trackStatCov[5] = statStd.z() * statStd.z();
+	return trackStatCov;
+}
