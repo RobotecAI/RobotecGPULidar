@@ -30,7 +30,6 @@ void Ros2PublishRadarTracksNode::setParameters(const char* topicName, const char
 
 void Ros2PublishRadarTracksNode::ros2ValidateImpl()
 {
-	Ros2Node::validateImpl();
 	input = getExactlyOneInputOfType<RadarTrackObjectsNode>(); // Make sure RadarTrackObjectsNode is on the input
 
 	if (input->getHeight() != 1) {
