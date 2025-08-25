@@ -60,17 +60,27 @@ void Ros2PublishRadarTracksNode::ros2EnqueueExecImpl()
 		radarTrack.uuid.uuid[2] = static_cast<uint8_t>((objectState.id >> 16) & 0xff);
 		radarTrack.uuid.uuid[3] = static_cast<uint8_t>((objectState.id >> 24) & 0xff);
 
+		// TODO(Pawel): Check reference point for position (objectSate positionReference fixed to POSITION_REFERENCE_SIGNAL_UNFILLED).
 		radarTrack.position = ProcessObjectStat<decltype(radarTrack.position)>(objectState.position);
 		radarTrack.velocity = ProcessObjectStat<decltype(radarTrack.velocity)>(objectState.absVelocity);
 		radarTrack.acceleration = ProcessObjectStat<decltype(radarTrack.acceleration)>(objectState.absAccel);
-		//radarTrack.size = ProcessObjectStat<decltype(radarTrack.size)>(objectState.dimensions);
+		radarTrack.size.set__x(objectState.length.getMean());
+		radarTrack.size.set__y(objectState.width.getMean());
+		radarTrack.size.set__z(1.0f);
 
 		radarTrack.classification = ProcessObjectProbabilities(objectState.classificationProbabilities);
 
 		radarTrack.position_covariance = ProcessObjectStatCov(objectState.position);
 		radarTrack.velocity_covariance = ProcessObjectStatCov(objectState.relVelocity);
 		radarTrack.acceleration_covariance = ProcessObjectStatCov(objectState.relAccel);
-		//radarTrack.size_covariance = ProcessObjectStatCov(objectState.dimensions);
+
+		constexpr float invalidCovariance = 1e6f;
+		radarTrack.size_covariance[0] = invalidCovariance;
+		radarTrack.size_covariance[1] = 0.0f;
+		radarTrack.size_covariance[2] = 0.0f;
+		radarTrack.size_covariance[3] = invalidCovariance;
+		radarTrack.size_covariance[4] = 0.0f;
+		radarTrack.size_covariance[5] = invalidCovariance;
 
 		++i;
 	}
