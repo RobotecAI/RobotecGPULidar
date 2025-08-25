@@ -76,13 +76,13 @@ void Ros2PublishRadarTracksNode::ros2EnqueueExecImpl()
 		radarTrack.velocity_covariance = ProcessObjectStatCov(objectState.relVelocity);
 		radarTrack.acceleration_covariance = ProcessObjectStatCov(objectState.relAccel);
 
-		constexpr float invalidCovariance = 1e6f;
-		radarTrack.size_covariance[0] = invalidCovariance;
-		radarTrack.size_covariance[1] = 0.0f;
+		// Height (Z coordinate) is not available in objectState - related covariances are set to 0.
+		radarTrack.size_covariance[0] = objectState.length.getVariance();
+		radarTrack.size_covariance[1] = objectState.length.getStdDev() * objectState.width.getStdDev();
 		radarTrack.size_covariance[2] = 0.0f;
-		radarTrack.size_covariance[3] = invalidCovariance;
+		radarTrack.size_covariance[3] = objectState.width.getVariance();
 		radarTrack.size_covariance[4] = 0.0f;
-		radarTrack.size_covariance[5] = invalidCovariance;
+		radarTrack.size_covariance[5] = 0.0f;
 
 		++i;
 	}
@@ -180,13 +180,13 @@ radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::Pr
 
 std::array<float, 6> Ros2PublishRadarTracksNode::ProcessObjectStatCov(const RunningStats<Vec3f>& objectStat) const
 {
-	const auto& statStd = objectStat.getStdDev();
+	const auto& statVariance = objectStat.getVariance();
 	std::array<float, 6> trackStatCov{};
-	trackStatCov[0] = statStd.x() * statStd.x();
+	trackStatCov[0] = statVariance.x();
 	trackStatCov[1] = objectStat.getCovarianceXY();
-	trackStatCov[2] = 0.0f;
-	trackStatCov[3] = statStd.y() * statStd.y();
-	trackStatCov[4] = 0.0f;
-	trackStatCov[5] = statStd.z() * statStd.z();
+	trackStatCov[2] = objectStat.getCovarianceZX();
+	trackStatCov[3] = statVariance.y();
+	trackStatCov[4] = objectStat.getCovarianceYZ();
+	trackStatCov[5] = statVariance.z();
 	return trackStatCov;
 }
