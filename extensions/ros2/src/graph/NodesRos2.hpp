@@ -193,6 +193,9 @@ private:
 	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
 	GPUFieldDescBuilder fieldDescBuilder;
 
+	geometry_msgs::msg::Point ProcessReferencePoint(const geometry_msgs::msg::Point& referencePoint, float yaw, float length,
+	                                                float width, int referenceIndex) const;
+
 	radar_msgs::msg::RadarTrack::_classification_type ProcessObjectProbabilities(
 	    const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const;
 

@@ -60,8 +60,10 @@ void Ros2PublishRadarTracksNode::ros2EnqueueExecImpl()
 		radarTrack.uuid.uuid[2] = static_cast<uint8_t>((objectState.id >> 16) & 0xff);
 		radarTrack.uuid.uuid[3] = static_cast<uint8_t>((objectState.id >> 24) & 0xff);
 
-		// TODO(Pawel): Check reference point for position (objectSate positionReference fixed to POSITION_REFERENCE_SIGNAL_UNFILLED).
+		constexpr int signalUnfilled = 255; // According to documentation.
 		radarTrack.position = ProcessObjectStat<decltype(radarTrack.position)>(objectState.position);
+		radarTrack.position = ProcessReferencePoint(radarTrack.position, objectState.orientation.getLastSample(),
+		                                            objectState.length.getMean(), objectState.width.getMean(), signalUnfilled);
 		radarTrack.velocity = ProcessObjectStat<decltype(radarTrack.velocity)>(objectState.absVelocity);
 		radarTrack.acceleration = ProcessObjectStat<decltype(radarTrack.acceleration)>(objectState.absAccel);
 		radarTrack.size.set__x(objectState.length.getMean());
@@ -107,6 +109,37 @@ void Ros2PublishRadarTracksNode::configureAgnocastImpl(bool enable)
 	    ros2InitGuard->getNode(), messagePublisher->getTopicName(), messagePublisher->getQos());
 }
 #endif
+
+geometry_msgs::msg::Point Ros2PublishRadarTracksNode::ProcessReferencePoint(const geometry_msgs::msg::Point& referencePoint,
+                                                                            float yaw, float length, float width,
+                                                                            int referenceIndex) const
+{
+	constexpr int referencePointsCount = 9;
+	constexpr std::array<std::array<float, 2>, referencePointsCount> referenceToCenter = {
+	    {{{-1.0f, -1.0f}},
+	     {{-1.0f, 0.0f}},
+	     {{-1.0f, 1.0f}},
+	     {{0.0f, 1.0f}},
+	     {{1.0f, 1.0f}},
+	     {{1.0f, 0.0f}},
+	     {{1.0f, -1.0f}},
+	     {{0.0f, -1.0f}},
+	     {{0.0f, 0.0f}}}
+    };
+
+	const auto halfLength = 0.5f * length;
+	const auto halfWidth = 0.5f * width;
+	referenceIndex = std::clamp(referenceIndex, 0, referencePointsCount - 1);
+
+	geometry_msgs::msg::Point center;
+	center.set__x(referencePoint.x + std::cos(yaw) * halfLength * referenceToCenter[referenceIndex][0] -
+	              std::sin(yaw) * halfWidth * referenceToCenter[referenceIndex][1]);
+	center.y = referencePoint.y + std::sin(yaw) * halfLength * referenceToCenter[referenceIndex][0] +
+	           std::cos(yaw) * halfWidth * referenceToCenter[referenceIndex][1];
+	center.z = referencePoint.z;
+
+	return center;
+}
 
 radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::ProcessObjectProbabilities(
     const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const
