@@ -174,7 +174,8 @@ private:
 struct Ros2PublishRadarTracksNode : Ros2Node
 {
 	void setParameters(const char* topicName, const char* messageFrameId, rgl_qos_policy_reliability_t qosReliability,
-	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth);
+	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth,
+	                   const Mat3x4f& changeOfBasisTf_);
 
 	// Ros2Node
 	void ros2ValidateImpl() override;
@@ -190,8 +191,7 @@ private:
 	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
 	std::string frameId{};
 
-	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
-	GPUFieldDescBuilder fieldDescBuilder;
+	Mat3x4f changeOfBasisTf;
 
 	geometry_msgs::msg::Point ProcessReferencePoint(const geometry_msgs::msg::Point& referencePoint, float yaw, float length,
 	                                                float width, int referenceIndex) const;
@@ -202,7 +202,7 @@ private:
 	template<typename TrackVecT>
 	TrackVecT ProcessObjectStat(const RunningStats<Vec3f>& objectStat) const
 	{
-		const auto& statRef = objectStat.getLastSample();
+		const auto& statRef = changeOfBasisTf.rotation() * objectStat.getLastSample();
 		TrackVecT trackStat{};
 		trackStat.set__x(statRef.x());
 		trackStat.set__y(statRef.y());

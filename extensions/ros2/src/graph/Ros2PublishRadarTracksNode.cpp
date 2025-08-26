@@ -18,9 +18,10 @@
 void Ros2PublishRadarTracksNode::setParameters(const char* topicName, const char* messageFrameId,
                                                rgl_qos_policy_reliability_t qosReliability,
                                                rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory,
-                                               int32_t qosHistoryDepth)
+                                               int32_t qosHistoryDepth, const Mat3x4f& changeOfBasisTf_)
 {
 	frameId = messageFrameId;
+	changeOfBasisTf = changeOfBasisTf_;
 	auto qos = rclcpp::QoS(qosHistoryDepth);
 	qos.reliability(static_cast<rmw_qos_reliability_policy_t>(qosReliability));
 	qos.durability(static_cast<rmw_qos_durability_policy_t>(qosDurability));
@@ -60,7 +61,10 @@ void Ros2PublishRadarTracksNode::ros2EnqueueExecImpl()
 		radarTrack.uuid.uuid[3] = static_cast<uint8_t>((objectState.id >> 24) & 0xff);
 
 		constexpr int signalUnfilled = 255; // According to documentation.
-		radarTrack.position = ProcessObjectStat<decltype(radarTrack.position)>(objectState.position);
+		const auto position = changeOfBasisTf.rotation() * objectState.positionSensorFrame;
+		radarTrack.position.x = position.x();
+		radarTrack.position.y = position.y();
+		radarTrack.position.z = position.z();
 		radarTrack.position = ProcessReferencePoint(radarTrack.position, objectState.orientation.getLastSample(),
 		                                            objectState.length.getMean(), objectState.width.getMean(), signalUnfilled);
 		radarTrack.velocity = ProcessObjectStat<decltype(radarTrack.velocity)>(objectState.absVelocity);
@@ -179,13 +183,15 @@ radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::Pr
 
 std::array<float, 6> Ros2PublishRadarTracksNode::ProcessObjectStatCov(const RunningStats<Vec3f>& objectStat) const
 {
-	const auto& statVariance = objectStat.getVariance();
+	const auto& statVariance = changeOfBasisTf.rotation() * objectStat.getVariance();
+	const auto& statStdDev = changeOfBasisTf.rotation() * objectStat.getStdDev();
+
 	std::array<float, 6> trackStatCov{};
 	trackStatCov[0] = statVariance.x();
-	trackStatCov[1] = objectStat.getCovarianceXY();
-	trackStatCov[2] = objectStat.getCovarianceZX();
+	trackStatCov[1] = statStdDev.x() * statStdDev.y();
+	trackStatCov[2] = statStdDev.z() * statStdDev.x();
 	trackStatCov[3] = statVariance.y();
-	trackStatCov[4] = objectStat.getCovarianceYZ();
+	trackStatCov[4] = statStdDev.y() * statStdDev.z();
 	trackStatCov[5] = statVariance.z();
 	return trackStatCov;
 }

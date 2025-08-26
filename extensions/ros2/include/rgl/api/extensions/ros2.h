@@ -120,11 +120,13 @@ RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const cha
  * @param qos_durability QoS durability policy.
  * @param qos_history QoS history policy.
  * @param qos_history_depth QoS history depth. If history policy is KEEP_ALL, depth is ignored but must always be non-negative.
+ * @param changeOfBasisTf Pointer to rgl_mat3x4f representing coordinate frame basis change to apply before publishing (e.g., Engine to ROS2).
  */
 RGL_API rgl_status_t rgl_node_publish_ros2_radartracks(rgl_node_t* node, const char* topic_name, const char* frame_id,
-                                                     rgl_qos_policy_reliability_t qos_reliability,
-                                                     rgl_qos_policy_durability_t qos_durability,
-                                                     rgl_qos_policy_history_t qos_history, int32_t qos_history_depth);
+                                                       rgl_qos_policy_reliability_t qos_reliability,
+                                                       rgl_qos_policy_durability_t qos_durability,
+                                                       rgl_qos_policy_history_t qos_history, int32_t qos_history_depth,
+                                                       const rgl_mat3x4f* changeOfBasisTf);
 
 /**
  * Modifies ROS 2 publishing RGL node to use Agnocast.
