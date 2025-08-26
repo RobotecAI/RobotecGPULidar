@@ -65,19 +65,19 @@ void Ros2PublishRadarTracksNode::ros2EnqueueExecImpl()
 		radarTrack.position.x = position.x();
 		radarTrack.position.y = position.y();
 		radarTrack.position.z = position.z();
-		radarTrack.position = ProcessReferencePoint(radarTrack.position, objectState.orientation.getLastSample(),
+		radarTrack.position = processReferencePoint(radarTrack.position, objectState.orientation.getLastSample(),
 		                                            objectState.length.getMean(), objectState.width.getMean(), signalUnfilled);
-		radarTrack.velocity = ProcessObjectStat<decltype(radarTrack.velocity)>(objectState.absVelocity);
-		radarTrack.acceleration = ProcessObjectStat<decltype(radarTrack.acceleration)>(objectState.absAccel);
+		radarTrack.velocity = processObjectStat<decltype(radarTrack.velocity)>(objectState.absVelocity);
+		radarTrack.acceleration = processObjectStat<decltype(radarTrack.acceleration)>(objectState.absAccel);
 		radarTrack.size.set__x(objectState.length.getMean());
 		radarTrack.size.set__y(objectState.width.getMean());
 		radarTrack.size.set__z(1.0f);
 
-		radarTrack.classification = ProcessObjectProbabilities(objectState.classificationProbabilities);
+		radarTrack.classification = processObjectProbabilities(objectState.classificationProbabilities);
 
-		radarTrack.position_covariance = ProcessObjectStatCov(objectState.position);
-		radarTrack.velocity_covariance = ProcessObjectStatCov(objectState.relVelocity);
-		radarTrack.acceleration_covariance = ProcessObjectStatCov(objectState.relAccel);
+		radarTrack.position_covariance = processObjectStatCov(objectState.position);
+		radarTrack.velocity_covariance = processObjectStatCov(objectState.relVelocity);
+		radarTrack.acceleration_covariance = processObjectStatCov(objectState.relAccel);
 
 		// Height (Z coordinate) is not available in objectState - related covariances are set to 0.
 		radarTrack.size_covariance[0] = objectState.length.getVariance();
@@ -113,7 +113,7 @@ void Ros2PublishRadarTracksNode::configureAgnocastImpl(bool enable)
 }
 #endif
 
-geometry_msgs::msg::Point Ros2PublishRadarTracksNode::ProcessReferencePoint(const geometry_msgs::msg::Point& referencePoint,
+geometry_msgs::msg::Point Ros2PublishRadarTracksNode::processReferencePoint(const geometry_msgs::msg::Point& referencePoint,
                                                                             float yaw, float length, float width,
                                                                             int referenceIndex) const
 {
@@ -144,7 +144,7 @@ geometry_msgs::msg::Point Ros2PublishRadarTracksNode::ProcessReferencePoint(cons
 	return center;
 }
 
-radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::ProcessObjectProbabilities(
+radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::processObjectProbabilities(
     const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const
 {
 	constexpr int16_t unknownID = 32000;
@@ -181,7 +181,7 @@ radar_msgs::msg::RadarTrack::_classification_type Ros2PublishRadarTracksNode::Pr
 	return outputClass;
 }
 
-std::array<float, 6> Ros2PublishRadarTracksNode::ProcessObjectStatCov(const RunningStats<Vec3f>& objectStat) const
+std::array<float, 6> Ros2PublishRadarTracksNode::processObjectStatCov(const RunningStats<Vec3f>& objectStat) const
 {
 	const auto& statVariance = changeOfBasisTf.rotation() * objectStat.getVariance();
 	const auto& statStdDev = changeOfBasisTf.rotation() * objectStat.getStdDev();

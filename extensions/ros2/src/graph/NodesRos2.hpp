@@ -193,14 +193,14 @@ private:
 
 	Mat3x4f changeOfBasisTf;
 
-	geometry_msgs::msg::Point ProcessReferencePoint(const geometry_msgs::msg::Point& referencePoint, float yaw, float length,
+	geometry_msgs::msg::Point processReferencePoint(const geometry_msgs::msg::Point& referencePoint, float yaw, float length,
 	                                                float width, int referenceIndex) const;
 
-	radar_msgs::msg::RadarTrack::_classification_type ProcessObjectProbabilities(
+	radar_msgs::msg::RadarTrack::_classification_type processObjectProbabilities(
 	    const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const;
 
 	template<typename TrackVecT>
-	TrackVecT ProcessObjectStat(const RunningStats<Vec3f>& objectStat) const
+	TrackVecT processObjectStat(const RunningStats<Vec3f>& objectStat) const
 	{
 		const auto& statRef = changeOfBasisTf.rotation() * objectStat.getLastSample();
 		TrackVecT trackStat{};
@@ -210,5 +210,5 @@ private:
 		return trackStat;
 	}
 
-	std::array<float, 6> ProcessObjectStatCov(const RunningStats<Vec3f>& objectStat) const;
+	std::array<float, 6> processObjectStatCov(const RunningStats<Vec3f>& objectStat) const;
 };
