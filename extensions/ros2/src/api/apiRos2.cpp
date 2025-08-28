@@ -98,10 +98,9 @@ RGL_API rgl_status_t rgl_node_publish_ros2_radarscan(rgl_node_t* node, const cha
                                                      rgl_qos_policy_history_t qos_history, int32_t qos_history_depth)
 {
 	auto status = rglSafeCall([&]() {
-		RGL_DEBUG(
-		    "tape_node_publish_ros2_radarscan(node={}, topic_name={}, frame_id={}, qos_reliability={}, qos_durability={}, "
-		    "qos_history={}, qos_history_depth={})",
-		    repr(node), topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
+		RGL_DEBUG("rgl_node_publish_ros2_radarscan(node={}, topic_name={}, frame_id={}, qos_reliability={}, qos_durability={}, "
+		          "qos_history={}, qos_history_depth={})",
+		          repr(node), topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth);
 		CHECK_ARG(topic_name != nullptr);
 		CHECK_ARG(topic_name[0] != '\0');
 		CHECK_ARG(frame_id != nullptr);
@@ -134,7 +133,7 @@ RGL_API rgl_status_t rgl_node_publish_ros2_radartracks(rgl_node_t* node, const c
 {
 	auto status = rglSafeCall([&]() {
 		RGL_DEBUG(
-		    "tape_node_publish_ros2_radartracks(node={}, topic_name={}, frame_id={}, qos_reliability={}, qos_durability={}, "
+		    "rgl_node_publish_ros2_radartracks(node={}, topic_name={}, frame_id={}, qos_reliability={}, qos_durability={}, "
 		    "qos_history={}, qos_history_depth={}, changeOfBasisTf={})",
 		    repr(node), topic_name, frame_id, qos_reliability, qos_durability, qos_history, qos_history_depth,
 		    repr(changeOfBasisTf, 1));
