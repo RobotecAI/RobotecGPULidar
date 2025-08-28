@@ -21,6 +21,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
+#include <radar_msgs/msg/radar_tracks.hpp>
 
 #include <graph/Node.hpp>
 #include <graph/NodesCore.hpp>
@@ -168,4 +169,46 @@ private:
 
 	DeviceAsyncArray<char>::Ptr formattedData = DeviceAsyncArray<char>::create(arrayMgr);
 	GPUFieldDescBuilder fieldDescBuilder;
+};
+
+struct Ros2PublishRadarTracksNode : Ros2Node
+{
+	void setParameters(const char* topicName, const char* messageFrameId, rgl_qos_policy_reliability_t qosReliability,
+	                   rgl_qos_policy_durability_t qosDurability, rgl_qos_policy_history_t qosHistory, int32_t qosHistoryDepth,
+	                   const Mat3x4f& changeOfBasisTf_);
+
+	// Ros2Node
+	void ros2ValidateImpl() override;
+	void ros2EnqueueExecImpl() override;
+
+#if RGL_BUILD_AGNOCAST_EXTENSION
+	void configureAgnocastImpl(bool enable) override;
+#endif
+
+private:
+	using MessageT = radar_msgs::msg::RadarTracks;
+
+	std::unique_ptr<MessagePublisher<MessageT>> messagePublisher;
+	std::string frameId{};
+
+	Mat3x4f changeOfBasisTf;
+
+	geometry_msgs::msg::Point processReferencePoint(const geometry_msgs::msg::Point& referencePoint, float yaw, float length,
+	                                                float width, int referenceIndex) const;
+
+	radar_msgs::msg::RadarTrack::_classification_type processObjectProbabilities(
+	    const RadarTrackObjectsNode::ClassificationProbabilities& probabilities) const;
+
+	template<typename TrackVecT>
+	TrackVecT processObjectStat(const RunningStats<Vec3f>& objectStat) const
+	{
+		const auto& statRef = changeOfBasisTf.rotation() * objectStat.getLastSample();
+		TrackVecT trackStat{};
+		trackStat.set__x(statRef.x());
+		trackStat.set__y(statRef.y());
+		trackStat.set__z(statRef.z());
+		return trackStat;
+	}
+
+	std::array<float, 6> processObjectStatCov(const RunningStats<Vec3f>& objectStat) const;
 };

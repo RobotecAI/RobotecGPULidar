@@ -265,7 +265,8 @@ void RadarTrackObjectsNode::parseEntityIdToClassProbability(Field<ENTITY_ID_I32>
 	}
 }
 
-const RadarTrackObjectsNode::ObjectState& RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds, double currentTimeMs)
+const RadarTrackObjectsNode::ObjectState& RadarTrackObjectsNode::createObjectState(const ObjectBounds& objectBounds,
+                                                                                   double currentTimeMs)
 {
 	auto& objectState = objectStates.emplace_back();
 	if (objectIDPoll.empty()) {
@@ -296,7 +297,7 @@ const RadarTrackObjectsNode::ObjectState& RadarTrackObjectsNode::createObjectSta
 	// At this moment I just assume that object length is alongside forward axis, and its width is alongside left axis. Note also that
 	// length and width does not have to be correlated to object orientation.
 	objectState.length.addSample(objectBounds.aabb.maxCorner().z() - objectBounds.aabb.minCorner().z());
-	objectState.width.addSample((-objectBounds.aabb.maxCorner().x()) - (-objectBounds.aabb.minCorner().x()));
+	objectState.width.addSample(objectBounds.aabb.maxCorner().x() - objectBounds.aabb.minCorner().x());
 
 	objectState.positionSensorFrame = lookAtSensorFrameTransform * objectState.position.getLastSample();
 	return objectState;
@@ -342,7 +343,7 @@ void RadarTrackObjectsNode::updateObjectState(ObjectState& objectState, const Ve
 
 	if (objectStatus == ObjectStatus::Measured) {
 		objectState.length.addSample(updatedAabb.maxCorner().z() - updatedAabb.minCorner().z());
-		objectState.width.addSample((-updatedAabb.maxCorner().x()) - (-updatedAabb.minCorner().x()));
+		objectState.width.addSample(updatedAabb.maxCorner().x() - updatedAabb.minCorner().x());
 	} else {
 		objectState.length.addSample(objectState.length.getLastSample());
 		objectState.width.addSample(objectState.width.getLastSample());

@@ -31,7 +31,7 @@ void Ros2PublishRadarScanNode::setParameters(const char* topicName, const char* 
 void Ros2PublishRadarScanNode::ros2ValidateImpl()
 {
 	if (input->getHeight() != 1) {
-		throw InvalidPipeline("ROS2 radar publish supports unorganized pointclouds only");
+		throw InvalidPipeline("ROS2 radar scan publish supports unorganized pointclouds only");
 	}
 }
 

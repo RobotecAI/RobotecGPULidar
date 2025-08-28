@@ -16,6 +16,7 @@ target_sources(RobotecGPULidar PRIVATE
     src/graph/Ros2PublishPointsNode.cpp
     src/graph/Ros2PublishPointVelocityMarkersNode.cpp
     src/graph/Ros2PublishRadarScanNode.cpp
+    src/graph/Ros2PublishRadarTracksNode.cpp
 )
 
 target_include_directories(RobotecGPULidar PUBLIC
