@@ -59,7 +59,7 @@ void Ros2PublishPointsNode::ros2EnqueueExecImpl()
 	ros2Message.height = 1;
 	ros2Message.width = count;
 	ros2Message.row_step = ros2Message.point_step * ros2Message.width;
-	ros2Message.is_dense = input->isDense();
+	ros2Message.is_dense = true;
 	ros2Message.is_bigendian = std::endian::native == std::endian::big;
 
 	ros2Message.header.frame_id = frameId;
