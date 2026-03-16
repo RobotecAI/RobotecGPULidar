@@ -10,13 +10,13 @@ class Config:
     SPDLOG_VERSION = "v1.9.2"
 
     CMAKE_GIT_VERSION_TRACKING_DIR = os.path.join("external", "cmake_git_version_tracking")
-    CMAKE_GIT_VERSION_TRACKING_VERSION = "904dbda1336ba4b9a1415a68d5f203f576b696bb"
+    CMAKE_GIT_VERSION_TRACKING_VERSION = "18065b734ee59f7628235b2d16546666fff56a93"
 
     YAML_CPP_DIR = os.path.join("external", "yaml-cpp")
-    YAML_CPP_VERSION = "yaml-cpp-0.7.0"
+    YAML_CPP_VERSION = "yaml-cpp-0.9.0"
 
     GOOGLETEST_DIR = os.path.join("external", "googletest")
-    GOOGLETEST_VERSION = "release-1.11.0"
+    GOOGLETEST_VERSION = "v1.17.0"
 
 
 def install_deps():

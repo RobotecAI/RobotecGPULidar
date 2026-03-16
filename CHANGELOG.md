@@ -1,5 +1,45 @@
 # Change Log
 
+## [0.21.0] 16 March 2026
+
+### Added
+
+- Added lidar visibility feature (sensors can now ignore specific entities during raytracing)
+  - Added new constants for sensor identification:
+    - `RGL_SENSOR_ID_DEFAULT`
+    - `RGL_SENSOR_ID_NONE`
+  - Added API call to set a sensor ID that will ignore a given entity in raytracing:
+    - `rgl_entity_set_ignored_by_sensor`
+  - Added API call to assign a sensor identifier to RaytraceNode:
+    - `rgl_node_raytrace_configure_id`
+- Added Agnocast extension enabling zero-copy ROS2 publishing via shared memory
+  - Added build option in CMakeLists:
+    - `RGL_BUILD_AGNOCAST_EXTENSION`
+  - Added API call to configure Agnocast on a ROS2 publishing node:
+    - `rgl_node_configure_agnocast`
+- Added detection states to radar nodes
+  - Extended `RadarPostprocessPointsNode` cluster statistics with standard deviations of azimuth, elevation, distance, and radial speed
+  - Added per-detection state data (azimuth, elevation, distance, radial speed with their standard deviations, RCS, detection ID, object ID) to `RadarTrackObjectsNode`
+- Added ROS2 RadarTracks publishing
+  - Added API call to publish [RadarTracks](https://github.com/ros-perception/radar_msgs) message into ROS2 topic:
+    - `rgl_node_publish_ros2_radartracks`
+
+### Changed
+
+- Bumped minimum supported GPU architecture to NVIDIA Turing (GeForce RTX 2000 series, sm_75)
+  - Removed support for older deprecated CUDA architectures
+  - Updated runtime requirements documentation accordingly
+  - This was required to resolve runtime errors observed when running RGL binaries built against the deprecated architecture on the latest NVIDIA drivers
+- Removed tracking of ROS2 publishers in `Ros2InitGuard`
+  - Creating multiple publishers for the same topic is now allowed
+
+### Fixed
+
+- Fixed recursion when retracing rays through ignored entities moving along a triangle surface
+  - Increased the ray iteration offset to reliably avoid re-hitting the same triangle
+- Fixed incorrect error message in `RadarPostprocessPointsNode` validation
+- Fixed object width calculation in `RadarTrackObjectsNode`
+
 ## [0.20.0] 17 December 2024
 
 ### Added
