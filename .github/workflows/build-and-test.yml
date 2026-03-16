@@ -2,13 +2,14 @@ name: build-and-test
 
 run-name: Build & test for ${{ github.ref_name }} on ${{ github.sha }}
 
-on:
-  push:
-    branches:
-      - 'main'
-      - 'develop'
-  pull_request:
-    types: [opened, synchronize, reopened]
+# The workflow has been disabled because the self-hosted computer has been taken out of service for this project.
+#on:
+#  push:
+#    branches:
+#      - 'main'
+#      - 'develop'
+#  pull_request:
+#    types: [opened, synchronize, reopened]
 
 # Cancel previous runs if new changes on PR/branch
 concurrency:
