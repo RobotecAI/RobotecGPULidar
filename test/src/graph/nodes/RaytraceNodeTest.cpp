@@ -277,8 +277,9 @@ TEST_F(RaytraceNodeTest, config_default_intensity_should_correctly_change_output
 	spawnCubeOnScene(Mat3x4f::TRS({0, 0, 0}));
 
 	std::vector<rgl_mat3x4f> rays = {
-	    Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}).toRGL(),                  // hit point
-	    Mat3x4f::TRS({CUBE_HALF_EDGE * 3, 0, 0}, {0, 0, 0}).toRGL(), // non-hit point
+	    Mat3x4f::TRS({0, 0, 0}, {0, 0, 0}).toRGL(),                   // hit at distance 1
+	    Mat3x4f::TRS({CUBE_HALF_EDGE * 3, 0, 0}, {0, 0, 0}).toRGL(),  // non-hit point
+	    Mat3x4f::TRS({0, 0, -CUBE_HALF_EDGE * 3}, {0, 0, 0}).toRGL(), // hit at distance 2
 	};
 
 	float defaultIntensity = 100.0f;
@@ -314,6 +315,10 @@ TEST_F(RaytraceNodeTest, config_default_intensity_should_correctly_change_output
 		// Non-hit point
 		EXPECT_EQ(outIsHits[1], 0);
 		EXPECT_EQ(outIntensities[1], expectedIntensityForNonHit);
+
+		// The same surface is four times weaker from twice the distance.
+		EXPECT_EQ(outIsHits[2], 1);
+		EXPECT_NEAR(outIntensities[2], defaultIntensity / 4.0f, EPSILON_F);
 	};
 
 	validateOutput();

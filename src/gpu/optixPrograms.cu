@@ -187,7 +187,11 @@ extern "C" __global__ void __closesthit__()
 
 		intensity = tex2D<TextureTexelFormat>(entityData.texture, uv[0], uv[1]);
 	}
-	intensity *= cosIncidentAngle;
+	// Approximate the geometric spreading of the reflected signal with the
+	// inverse-square law. A zero-distance hit is outside the physical operating
+	// range of a LiDAR and must not produce an infinite intensity.
+	const double distanceSquared = distance * distance;
+	intensity = distanceSquared > 0.0 ? intensity * cosIncidentAngle / static_cast<float>(distanceSquared) : 0.0f;
 
 	Vec3f absPointVelocity{NAN};
 	Vec3f relPointVelocity{NAN};

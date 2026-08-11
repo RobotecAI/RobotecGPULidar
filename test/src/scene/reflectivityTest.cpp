@@ -9,10 +9,10 @@ struct ReflectivityTest : public RGLTestWithParam<std::tuple<float, unsigned cha
 {};
 
 INSTANTIATE_TEST_SUITE_P(Parametrized, ReflectivityTest,
-						 testing::Combine(
-						 	testing::Values(0.012f, 0.12f, 1.23f),
-						 	testing::Values(static_cast<unsigned char>(0), static_cast<unsigned char>(127), static_cast<unsigned char>(255)),
-						 	testing::Values(0.012, 0.123, 1.23)));
+                         testing::Combine(testing::Values(0.012f, 0.12f, 1.23f),
+                                          testing::Values(static_cast<unsigned char>(0), static_cast<unsigned char>(127),
+                                                          static_cast<unsigned char>(255)),
+                                          testing::Values(0.012, 0.123, 1.23)));
 
 TEST_P(ReflectivityTest, read_value)
 {
@@ -80,14 +80,12 @@ TEST_P(ReflectivityTest, read_value)
 	EXPECT_RGL_SUCCESS(rgl_graph_get_result_data(yieldNode, DISTANCE_F32, outDistance.data()));
 
 	for (int i = 0; i < outCount; ++i) {
-		EXPECT_NEAR(((float) value), outIntensity.at(i), EPSILON_F);
 		float outDistanceValue = outDistance.at(i);
 		float intensity = outIntensity.at(i);
-		float reflectivityValue = alpha * outDistanceValue * outDistanceValue * intensity;
+		float expectedIntensity = static_cast<float>(value) / (outDistanceValue * outDistanceValue);
+		float expectedReflectivity = alpha * static_cast<float>(value);
 
-		// Reflectivity test is conducted with greater epsilon.
-		// This is due to lack of distance impact on intensity.
-		// As long as distance is not included into intensity calculations, reflectivity value will grow relatively fast with the distance.
-		EXPECT_NEAR(reflectivityValue, outReflectivity.at(i), 1e-3f);
+		EXPECT_NEAR(expectedIntensity, intensity, EPSILON_F * expectedIntensity);
+		EXPECT_NEAR(expectedReflectivity, outReflectivity.at(i), 1e-3f);
 	}
 }

@@ -21,7 +21,7 @@ In order to create an Entity, it is required to provide a Mesh, which must be cr
 Entities can share the same Mesh.
 
 ### Texture
-A Texture is a handle for the on-GPU data of a 2D image provided by the user. It is used to calculate the intensity of a hit point. It is expected to be a grayscale image in 8-bit red channel data. The intensity is calculated by sampling the Texture at the Mesh's Texture coordinates. If the Texture coordinates are not present, the Texture will not be sampled.
+A Texture is a handle for the on-GPU data of a 2D image provided by the user. It is used to calculate the intensity of a hit point. It is expected to be a grayscale image in 8-bit red channel data. The intensity is calculated by sampling the Texture at the Mesh's Texture coordinates, applying the cosine of the incident angle and inverse-square attenuation with distance. If the Texture coordinates are not present, the Texture will not be sampled.
  
 The Texture coordinates are calculated by interpolating the Texture coordinates of the hitpoint's triangle vertices. The Texture coordinates of the triangle vertices are provided by the user when creating the Mesh and should be assigned via API call. The Texture coordinates are expected to be in the range [0, 1]. If the range is exceeded, then the Texture will be tiled. 
 
