@@ -1,0 +1,12 @@
+RobotecGPULidar
+Copyright 2019-2026 Robotec.ai sp. z o.o.
+
+The RobotecGPULidar library binaries include the following third-party components:
+- spdlog (MIT), Copyright (c) 2016 - present, Gabi Melman and spdlog contributors,
+  https://github.com/gabime/spdlog, including the bundled {fmt} library (MIT),
+  Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors.
+- yaml-cpp (MIT), Copyright (c) 2008-2015 Jesse Beder, https://github.com/jbeder/yaml-cpp
+- cmake-git-version-tracking (MIT), Copyright (c) 2022 Andrew Hardin,
+  https://github.com/andrew-hardin/cmake-git-version-tracking
+- NVIDIA CUDA runtime (statically linked) and OptiX device programs built with the NVIDIA
+  OptiX SDK headers, subject to the NVIDIA CUDA Toolkit EULA and the NVIDIA OptiX SDK licence.
