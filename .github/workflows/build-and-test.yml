@@ -2,227 +2,48 @@ name: build-and-test
 
 run-name: Build & test for ${{ github.ref_name }} on ${{ github.sha }}
 
-# The workflow has been disabled because the self-hosted computer has been taken out of service for this project.
-#on:
-#  push:
-#    branches:
-#      - 'main'
-#      - 'develop'
-#  pull_request:
-#    types: [opened, synchronize, reopened]
+# No pull_request trigger because the jobs run on self-hosted runners
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  workflow_dispatch:
 
-# Cancel previous runs if new changes on PR/branch
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-###### PREPARE WORKFLOW ######
-  checkout-repository:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
-        with:
-          clean: false
-      - name: Clean repository excluding RGL blobs repo
-        run: git clean -ffdx -e external/rgl_blobs
-      - name: Import private extensions
-        run: vcs import < extensions.repos
-      - name: Install taped test runtime dependencies
-        run: ./setup.py --fetch-rgl-blobs
-
-  load-env:
-    uses: ./.github/workflows/load-env-subworkflow.yml
-
-###### BUILD USING RGL DOCKER ######
+  # Forks have neither the self-hosted runners nor the OptiX secret
   build-core:
-    needs: [checkout-repository, load-env]
-    runs-on: self-hosted
-    steps:
-      - run: '
-        docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
-        --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="./setup.py"
-        --target=exporter --output=bin-core .'
-
-  build-pcl:
-    needs: [checkout-repository, load-env]
-    runs-on: self-hosted
-    steps:
-      - run: '
-        docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
-        --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="./setup.py --with-pcl --build-taped-test"
-        --target=exporter --output=bin-pcl .'
+    if: github.repository == 'RobotecAI/RobotecGPULidar'
+    uses: ./.github/workflows/build-subworkflow.yml
+    with:
+      artifact-name: rgl-core
+    secrets:
+      OPTIX_URL: ${{ secrets.OPTIX_URL }}
 
   build-ros2:
-    needs: [ checkout-repository, load-env ]
-    runs-on: self-hosted
-    steps:
-      - run: '
-        docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
-        --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD=". /opt/ros/\$ROS_DISTRO/setup.sh && ./setup.py --with-ros2-standalone"
-        --target=exporter --output=bin-ros2 .'
+    if: github.repository == 'RobotecAI/RobotecGPULidar'
+    uses: ./.github/workflows/build-subworkflow.yml
+    with:
+      with-ros2: true
+      artifact-name: rgl-ros2
+    secrets:
+      OPTIX_URL: ${{ secrets.OPTIX_URL }}
 
-  build-udp:
-    needs: [ checkout-repository, load-env ]
-    runs-on: self-hosted
-    steps:
-      - run: '
-        docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
-        --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="./setup.py --with-udp"
-        --target=exporter --output=bin-udp .'
+  test-core:
+    needs: [build-core]
+    uses: ./.github/workflows/test-subworkflow.yml
+    with:
+      artifact-name: rgl-core
 
-  build-weather:
-    needs: [ checkout-repository, load-env ]
-    runs-on: self-hosted
-    steps:
-      - run: '
-        docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
-        --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD="./setup.py --with-weather"
-        --target=exporter --output=bin-weather .'
-
-  build-all:
-    needs: [ checkout-repository, load-env ]
-    runs-on: self-hosted
-    steps:
-      - run: '
-        docker build --build-context optix=${{ needs.load-env.outputs.optix-install-dir }}
-        --build-arg WITH_PCL=1 --build-arg WITH_ROS2=1
-        --build-arg BUILD_CMD=". /opt/ros/\$ROS_DISTRO/setup.sh && ./setup.py --with-pcl --with-ros2-standalone --with-udp --with-weather --build-taped-test"
-        --target=exporter --output=bin-all .'
-
-# Testing disabled since self-hosted machine has an outdated GPU architecture. Uncomment tests below after GPU update.
-####### TEST WITH RGL DOCKER IMAGE ######
-#  test-core-dev:
-#    needs: [build-core]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        cd bin-core/bin/test && ./RobotecGPULidar_test'
-#      docker-image: localhost:5000/robotecgpulidar-all:latest
-#
-#  test-pcl-dev:
-#    needs: [ build-pcl ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-#        cd bin-pcl/bin/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
-#      docker-image: localhost:5000/robotecgpulidar-all:latest
-#
-#  test-ros2-dev:
-#    needs: [ build-ros2 ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      # Source ROS2 and radar_msgs, standalone build is tested in prod environment
-#      # Run tests twice, each for different RMW implementation
-#      test-command: '
-#        . /opt/ros/$ROS_DISTRO/setup.sh &&
-#        . /opt/rgl/external/radar_msgs/install/setup.sh &&
-#        cd bin-ros2/bin/test &&
-#        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
-#        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
-#      docker-image: localhost:5000/robotecgpulidar-all:latest
-#
-#  test-udp-dev:
-#    needs: [ build-udp ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        cd bin-udp/bin/test && ./RobotecGPULidar_test'
-#      docker-image: localhost:5000/robotecgpulidar-all:latest
-#
-#  test-weather-dev:
-#    needs: [ build-weather ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        cd bin-weather/bin/test && ./RobotecGPULidar_test'
-#      docker-image: localhost:5000/robotecgpulidar-all:latest
-#
-#  test-all-dev:
-#    needs: [ build-all ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      # Source ROS2 and radar_msgs, standalone build is tested in prod environment
-#      # Set `RGL_TEST_VLP16_CALIB_FILE` for UDP-ROS2 integration test
-#      # Run tests twice, each for different RMW implementation
-#      test-command: '
-#        . /opt/ros/$ROS_DISTRO/setup.sh &&
-#        . /opt/rgl/external/radar_msgs/install/setup.sh &&
-#        export RGL_TEST_VLP16_CALIB_FILE=$(pwd)/extensions/udp/test/resources/Ros2Vlp16Calib.yaml &&
-#        export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-#        cd bin-all/bin/test &&
-#        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
-#        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
-#      docker-image: localhost:5000/robotecgpulidar-all:latest
-#
-######## TEST WITH CLEAN UBUNTU DOCKER IMAGE ######
-#  test-core-prod:
-#    needs: [build-core]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        cd bin-core/bin/test && ./RobotecGPULidar_test'
-#      docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
-#
-#  test-pcl-prod:
-#    needs: [ build-pcl ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      # Additionally, install PCL extension dependent libraries for runtime
-#      test-command: '
-#        apt update && apt install -y libxcursor1 libgl1 &&
-#        export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-#        cd bin-pcl/bin/test && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
-#      docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
-#
-#  test-ros2-prod:
-#    needs: [ build-ros2 ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      # Copy ROS2 libraries to be visible for libRobotecGPULidar.so
-#      # Run tests twice, each for different RMW implementation
-#      test-command: '
-#        cp -p bin-ros2/lib/ros2_standalone/* bin-ros2/lib &&
-#        cd bin-ros2/bin/test &&
-#        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test &&
-#        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test'
-#      docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
-#
-#  test-udp-prod:
-#    needs: [ build-udp ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        cd bin-udp/bin/test && ./RobotecGPULidar_test'
-#      docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
-#
-#  test-weather-prod:
-#    needs: [ build-weather ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      test-command: '
-#        cd bin-weather/bin/test && ./RobotecGPULidar_test'
-#      docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
-#
-#  test-all-prod:
-#    needs: [ build-all ]
-#    uses: ./.github/workflows/test-subworkflow.yml
-#    with:
-#      # Install PCL extension dependent libraries for runtime
-#      # Copy ROS2 libraries to be visible for libRobotecGPULidar.so
-#      # Run tests twice, each for different RMW implementation
-#      test-command: '
-#        apt update && apt install -y libxcursor1 libgl1 &&
-#        export RGL_TAPED_TEST_DATA_DIR=$(pwd)/external/rgl_blobs &&
-#        cp -p bin-all/lib/ros2_standalone/* bin-all/lib &&
-#        cd bin-all/bin/test &&
-#        export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test &&
-#        export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && ./RobotecGPULidar_test && ./RobotecGPULidar_taped_test'
-#      docker-image: nvidia/cuda:11.7.1-base-ubuntu22.04
+  test-ros2:
+    needs: [build-ros2]
+    uses: ./.github/workflows/test-subworkflow.yml
+    with:
+      with-ros2: true
+      artifact-name: rgl-ros2

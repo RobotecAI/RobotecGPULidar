@@ -1,5 +1,9 @@
 # Contribution guidelines and standards
 
+## Continuous integration
+
+The build-and-test workflow runs on self-hosted GPU runners for pushes to branches of this repository only; it does not run for pull requests from forks. To test a pull request from a fork, a maintainer pushes its changes to a branch of this repository.
+
 ## C++ coding style
 
 ### ClangFormat
