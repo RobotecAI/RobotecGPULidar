@@ -1,0 +1,103 @@
+name: build-subworkflow
+
+on:
+  workflow_call:
+    inputs:
+      with-ros2:
+        description: "Build with the ROS2 extension and the ROS2 standalone libraries"
+        required: false
+        default: false
+        type: boolean
+      artifact-name:
+        description: "Name of the uploaded RGL binaries artifact"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    container:
+      image: nvidia/cuda:11.7.1-devel-ubuntu22.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      ROS_DISTRO: humble
+      OptiX_INSTALL_DIR: /opt/optix
+    steps:
+      # git must be present before checkout, otherwise checkout downloads a tarball without git metadata
+      - name: Install bootstrap tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends cmake git python3 sudo
+
+      - name: Checkout repository code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          clean: true
+          show-progress: false
+          persist-credentials: false
+
+      # cmake-git-version-tracking runs git in the workspace, which is owned by a different user than the container's root
+      - name: Mark workspace as safe for git
+        run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+      - name: Install core dependencies
+        run: ./install_deps.py
+
+      - name: Install ROS2 and ROS2 extension dependencies
+        if: ${{ inputs.with-ros2 }}
+        run: |
+          . /etc/os-release
+          echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list
+          apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            patchelf \
+            pkg-config \
+            ros-${ROS_DISTRO}-cyclonedds \
+            ros-${ROS_DISTRO}-fastrtps \
+            ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+            ros-${ROS_DISTRO}-rmw-fastrtps-cpp \
+            ros-${ROS_DISTRO}-ros-core
+          . /opt/ros/${ROS_DISTRO}/setup.sh
+          ./extensions/ros2/install_deps.py
+
+      # The build needs only the OptiX SDK headers; this is the commit of tag v7.2.0
+      - name: Install OptiX SDK headers
+        env:
+          OPTIX_HEADERS_COMMIT: ee764be0d5d52fcc9fded1614bc83968742be028
+        run: |
+          git init --quiet "${OptiX_INSTALL_DIR}"
+          git -C "${OptiX_INSTALL_DIR}" fetch --quiet --depth 1 https://github.com/NVIDIA/optix-dev "${OPTIX_HEADERS_COMMIT}"
+          git -C "${OptiX_INSTALL_DIR}" checkout --quiet FETCH_HEAD
+
+      - name: Build RGL
+        env:
+          WITH_ROS2: ${{ inputs.with-ros2 }}
+        run: |
+          if [ "${WITH_ROS2}" == "true" ]; then
+            . /opt/ros/${ROS_DISTRO}/setup.sh
+            ./setup.py --with-ros2-standalone
+          else
+            ./setup.py
+          fi
+
+      # Packed into a tarball because upload-artifact does not preserve file permissions
+      - name: Pack RGL binaries
+        run: tar -czf rgl-binaries.tar.gz -C build bin lib
+
+      - name: Upload RGL binaries artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: rgl-binaries.tar.gz
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7

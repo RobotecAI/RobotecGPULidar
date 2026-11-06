@@ -3,29 +3,63 @@ name: test-subworkflow
 on:
   workflow_call:
     inputs:
-      test-command:
-        required: true
-        type: string
-      docker-image:
+      with-ros2:
+        description: "Test a build with the ROS2 extension, once per RMW implementation"
+        required: false
+        default: false
+        type: boolean
+      artifact-name:
+        description: "Name of the RGL binaries artifact to test"
         required: true
         type: string
 
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
-    defaults:
-      run:
-        shell: bash
-    runs-on: self-hosted
+    # Runs on the GPU runner require maintainer approval
+    environment: gpu-ci
+    runs-on:
+      group: public-repo-approved
+      labels: robo-srv-020-gpu-t4
+    # The GPU runner is billed per minute; a full test run takes a few minutes
+    timeout-minutes: 15
     container:
-      image: ${{ inputs.docker-image }}
+      image: nvidia/cuda:11.7.1-base-ubuntu22.04
       env:
         NVIDIA_DRIVER_CAPABILITIES: all
-      options:
-        --rm
-        --gpus all
+      options: --runtime=nvidia --gpus all
     steps:
-      - name: test
-        run: ${{ inputs.test-command }}
+      - name: Clean workspace
+        run: rm -rf rgl rgl-binaries.tar.gz
+
+      - name: Download RGL binaries artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ inputs.artifact-name }}
+
+      - name: Unpack RGL binaries
+        run: |
+          mkdir -p rgl
+          tar -xzf rgl-binaries.tar.gz -C rgl
+
+      - name: Run tests
+        working-directory: ./rgl
+        env:
+          WITH_ROS2: ${{ inputs.with-ros2 }}
+        run: |
+          if [ "${WITH_ROS2}" == "true" ]; then
+            # libRobotecGPULidar.so finds the ROS2 standalone libraries via its $ORIGIN RPATH
+            cp -p lib/ros2_standalone/* lib
+            cd bin/test
+            RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./RobotecGPULidar_test
+            RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ./RobotecGPULidar_test
+          else
+            cd bin/test
+            ./RobotecGPULidar_test
+          fi

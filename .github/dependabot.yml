@@ -3,12 +3,23 @@ updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    # Delays updates to new releases as a guard against compromised ones
+    cooldown:
+      default-days: 7
+    groups:
+      docker:
+        patterns: ["*"]
     commit-message:
       prefix: "🐳 "
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
     commit-message:
       prefix: "🛠️ "
