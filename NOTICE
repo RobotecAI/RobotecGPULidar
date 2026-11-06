@@ -10,3 +10,215 @@ The RobotecGPULidar library binaries include the following third-party component
   https://github.com/andrew-hardin/cmake-git-version-tracking
 - NVIDIA CUDA runtime (statically linked) and OptiX device programs built with the NVIDIA
   OptiX SDK headers, subject to the NVIDIA CUDA Toolkit EULA and the NVIDIA OptiX SDK licence.
+
+ROS 2 standalone build (ros2_standalone/, `--with-ros2-standalone`)
+-------------------------------------------------------------------
+ros2_standalone/CMakeLists.txt is derived from ros2cs (Apache-2.0),
+https://github.com/RobotecAI/ros2cs. The ros2cs NOTICE:
+
+    ros2cs
+    Copyright 2019-2026 Robotec.ai sp. z o.o.
+
+    This product includes software developed by
+    Esteve Fernandez (esteve@apache.org)
+    Samuel Lindgren (samuel@dynorobotics.se)
+    Adam Dabrowski (adam.dabrowski@robotec.ai, adamdbrw@gmail.com)
+
+    Originated from ros2_dotnet/ros2_dotnet and later co-developed in adambrw/ros2_dotnet fork by Adam Dabrowski and Samuel Lidgren.
+    Since then, a closed source version was developed by Robotec.ai, including major changes to almost all parts of the project, before
+    being released back into open source as ros2cs.
+
+Binary releases built with the ROS 2 standalone option bundle the shared libraries below, and the
+ROS 2 libraries they depend on (such as rcutils, rcpputils, rcl_yaml_param_parser, rcl_logging and
+the message packages they use). They are copied from the ROS 2 distribution of the build (Humble or
+Jazzy); the versions are those of that distribution.
+- rcl, rclcpp, rmw, rmw_implementation, rmw_dds_common, rmw_fastrtps_cpp, rmw_cyclonedds_cpp
+  (Apache-2.0), https://github.com/ros2
+- rosidl runtime and typesupport libraries, rosidl_dynamic_typesupport_fastrtps (Jazzy)
+  (Apache-2.0), https://github.com/ros2
+- tracetools, rcl_logging_spdlog and rcl_interfaces (Jazzy) (Apache-2.0), https://github.com/ros2
+- rcpputils (Apache-2.0 and BSD-3-Clause, as its package.xml declares), https://github.com/ros2/rcpputils
+- LTTng-UST (liblttng-ust, liblttng-ust-common, liblttng-ust-tracepoint; LGPL-2.1, Copyright
+  2009-2012 Mathieu Desnoyers and others), https://lttng.org, when the tracetools of the build links
+  them (Jazzy on Ubuntu 24.04). The libraries are bundled unmodified as shared libraries; their
+  source is that of the distribution package (Ubuntu `lttng-ust`, https://launchpad.net/ubuntu/+source/lttng-ust)
+  and of https://github.com/lttng/lttng-ust, and the LGPL-2.1 text is at
+  https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt. They may be replaced by a compatible build.
+- sensor_msgs, visualization_msgs and their message dependencies (Apache-2.0),
+  https://github.com/ros2/common_interfaces
+- radar_msgs (Apache-2.0), https://github.com/ros-perception/radar_msgs
+- Fast DDS (Fast RTPS) and Fast CDR (Apache-2.0), https://github.com/eProsima/Fast-DDS,
+  https://github.com/eProsima/Fast-CDR; foonathan/memory (Zlib), https://github.com/foonathan/memory
+- Eclipse Cyclone DDS (EPL-2.0 OR BSD-3-Clause; distributed under BSD-3-Clause),
+  https://github.com/eclipse-cyclonedds/cyclonedds
+- Eclipse iceoryx (Linux) (Apache-2.0), https://github.com/eclipse-iceoryx/iceoryx
+- TinyXML-2 (Zlib), https://github.com/leethomason/tinyxml2
+- spdlog (MIT) and its {fmt} (MIT) (Linux; Windows with Jazzy), https://github.com/gabime/spdlog
+- LibYAML (MIT) (Humble; Windows with Jazzy), https://github.com/yaml/libyaml
+- Windows only: OpenSSL 1.1 DLLs (OpenSSL License and Original SSLeay License),
+  https://www.openssl.org; Microsoft Visual C++ runtime DLLs (Microsoft Visual C++
+  Redistributable licence terms)
+The ROS 2 core packages, Fast DDS and Fast CDR ship no NOTICE file. Fast DDS incorporates further
+third-party code listed in its upstream thirdparty/ directory. The NOTICE files of Eclipse iceoryx
+and Eclipse Cyclone DDS follow.
+
+Eclipse iceoryx NOTICE:
+
+    # Notices for Eclipse iceoryx
+
+    This content is produced and maintained by the Eclipse iceoryx project.
+
+    * Project home: <https://projects.eclipse.org/projects/technology.iceoryx>
+
+    ## Trademarks
+
+     Eclipse iceoryx is a trademark of the Eclipse Foundation.
+
+    ## Copyright
+
+    All content is the property of the respective authors or their employers. For
+    more information regarding authorship of content, please consult the listed
+    source code repository logs.
+
+    ## Declared Project Licenses
+
+    This program and the accompanying materials are made available under the terms
+    of the Apache License, Version 2.0 which is available at
+    <https://www.apache.org/licenses/LICENSE-2.0>.
+
+    SPDX-License-Identifier: Apache-2.0
+
+    ## Source Code
+
+    The project maintains the following source code repositories:
+
+    * <https://github.com/eclipse-iceoryx/iceoryx>
+
+    ## Third-party Dependencies
+
+    This project leverages the following third party content.
+    The corresponding license files can be found at <https://github.com/eclipse-iceoryx/iceoryx/tree/v2.0.0/doc/3rd_party_licenses> or in the folder `share/doc/iceoryx/3rd_party_licenses` of your local iceoryx installation.
+
+    ### System Libraries
+
+    libacl library
+
+    * Usage: as-is, dynamic-linking
+    * Notes: system-header `<sys/acl.h>` is used.
+
+    libncurses library
+
+    * Usage: as-is, dynamic-linking
+    * Notes: system-header `<ncurses.h>` is used.
+
+    ### Optional Build Dependencies
+
+    cpptoml library (v0.1.1)
+
+    * License: MIT
+    * Project: <https://github.com/skystrife/cpptoml>
+    * Source: <https://github.com/skystrife/cpptoml/tree/v0.1.1>
+    * Usage: as-is, static-linking
+    * enabled by default build
+
+    Eclipse Cyclone DDS (Branch master)
+
+    * License: Eclipse Public License v. 2.0 or the Eclipse Distribution License v. 1.0
+    * Project: <https://projects.eclipse.org/projects/iot.cyclonedds>
+    * Source: <https://github.com/eclipse-cyclonedds/cyclonedds>
+    * Usage: as-is, static-linking
+
+    C++ binding for Eclipse Cyclone DDS (Branch master)
+
+    * License: Eclipse Public License v. 2.0 or the Eclipse Distribution License v. 1.0
+    * Project: <https://projects.eclipse.org/projects/iot.cyclonedds>
+    * Source: <https://github.com/eclipse-cyclonedds/cyclonedds-cxx>
+    * Usage: as-is, static-linking
+
+    ### Tools used by iceoryx
+
+    Google Test (release-1.10.0)
+
+    * License: BSD 3-Clause "New" or "Revised" License
+    * Project: <https://github.com/google/googletest>
+    * Source: <https://github.com/google/googletest/tree/release-1.10.0>
+    * Usage: as-is, static-linking
+
+    ## Cryptography
+
+    Content may contain encryption software. The country in which you are currently
+    may have restrictions on the import, possession, and use, and/or re-export to
+    another country, of encryption software. BEFORE using any encryption software,
+    please check the country's laws, regulations and policies concerning the import,
+    possession, or use, and re-export of encryption software, to see if this is
+    permitted.
+
+Eclipse Cyclone DDS NOTICE:
+
+    # Notices for Eclipse Cyclone DDS
+
+    This content is produced and maintained by the Eclipse Cyclone DDS project.
+
+    * Project home: https://projects.eclipse.org/projects/iot.cyclonedds
+
+    ## Trademarks
+
+    Eclipse Cyclone DDS is a trademark of the Eclipse Foundation.
+
+    ## Copyright
+
+    All content is the property of the respective authors or their employers. For
+    more information regarding authorship of content, please consult the listed
+    source code repository logs.
+
+    ## Declared Project Licenses
+
+    This program and the accompanying materials are made available under the terms
+    of the Eclipse Public License v. 2.0 which is available at
+    http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License v. 1.0
+    which is available at http://www.eclipse.org/org/documents/edl-v10.php.
+
+    SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
+
+    ## Source Code
+
+    The project maintains the following source code repositories:
+
+    * https://github.com/eclipse/cyclonedds
+
+    ## Third-party Content
+
+    libmd5-rfc (2002-04-13)
+
+    * License: Zlib
+
+    getopt 1.5 (1998-03-11)
+
+    * License: Public domain
+
+    ## Cryptography
+
+    Content may contain encryption software. The country in which you are currently
+    may have restrictions on the import, possession, and use, and/or re-export to
+    another country, of encryption software. BEFORE using any encryption software,
+    please check the country's laws, regulations and policies concerning the import,
+    possession, or use, and re-export of encryption software, to see if this is
+    permitted.
+
+Optional extensions
+-------------------
+- PCL extension (`--with-pcl`): the Point Cloud Library 1.13.1 (BSD-3-Clause),
+  https://github.com/PointCloudLibrary/pcl, built by vcpkg 2023.08.09 (extensions/pcl/install_deps.py,
+  `pcl[core,visualization]`, triplet x64-linux / x64-windows) and linked into the library with the
+  parts of its dependencies that PCL uses: Boost 1.82.0 (BSL-1.0), Eigen 3.4.0 (MPL-2.0; source at
+  https://gitlab.com/libeigen/eigen), FLANN (BSD-3-Clause), Qhull 8.0.2 (Qhull licence), libpng 1.6.39
+  (libpng-2.0), zlib 1.2.13 (Zlib), LZ4 1.9.4 (BSD-2-Clause; the GPL-2.0 part of LZ4 is its command
+  line tools, not linked), and VTK 9.2.0 (BSD-3-Clause) with the libraries the vcpkg vtk port builds
+  (double-conversion, expat, exprtk, {fmt}, FreeType, GLEW, HDF5, JsonCpp, libharu, libjpeg-turbo,
+  liblzma, libogg, libtheora, libxml2, NetCDF-C, PEGTL, PROJ, pugixml, SEACAS, SQLite, libtiff,
+  utfcpp, verdict). The exact set and the licence text of each is in the copyright files vcpkg
+  installs with a build: external/vcpkg/installed/<triplet>/share/<port>/copyright.
+- Agnocast extension (`--with-agnocast`, ROS 2 extension): Agnocast 2.1.1 by TIER IV, Inc.
+  (agnocastlib and agnocast_heaphook: Apache-2.0), https://github.com/tier4/agnocast; with the ROS 2
+  standalone option, libagnocast and libagnocast_heaphook are bundled. Its kernel module
+  (agnocast_kmod, Dual BSD/GPL) is installed on the target system separately and is not bundled.

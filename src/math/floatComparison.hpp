@@ -14,29 +14,46 @@
 
 #include <cmath>
 
-// src: The Art of Computer Programming: Seminumerical algorithms
-// also: https://stackoverflow.com/a/253874
+// Relative comparisons of floating-point values after D. E. Knuth, The Art of Computer Programming, Vol. 2:
+// Seminumerical Algorithms, section 4.2.2. The tolerance is epsilon scaled by the larger magnitude of the two
+// values, or by the smaller one for essentiallyEqual, which is the stricter test.
+
+template<typename T>
+auto largerMagnitude(T a, T b)
+{
+	const auto absA = fabs(a);
+	const auto absB = fabs(b);
+	return absA < absB ? absB : absA;
+}
+
+template<typename T>
+auto smallerMagnitude(T a, T b)
+{
+	const auto absA = fabs(a);
+	const auto absB = fabs(b);
+	return absB < absA ? absB : absA;
+}
 
 template<typename T>
 bool approximatelyEqual(T a, T b, T epsilon)
 {
-	return fabs(a - b) <= ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return fabs(a - b) <= largerMagnitude(a, b) * epsilon;
 }
 
 template<typename T>
 bool essentiallyEqual(T a, T b, T epsilon)
 {
-	return fabs(a - b) <= ((fabs(a) > fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return fabs(a - b) <= smallerMagnitude(a, b) * epsilon;
 }
 
 template<typename T>
 bool definitelyGreaterThan(T a, T b, T epsilon)
 {
-	return (a - b) > ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return (a - b) > largerMagnitude(a, b) * epsilon;
 }
 
 template<typename T>
 bool definitelyLessThan(T a, T b, T epsilon)
 {
-	return (b - a) > ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+	return (b - a) > largerMagnitude(a, b) * epsilon;
 }
