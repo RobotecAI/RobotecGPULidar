@@ -17,8 +17,8 @@
 #include <gpu/kernelUtils.hpp>
 #include <gpu/helpersKernels.hpp>
 
-// Philox algorithm chosen based on performance
-// https://stackoverflow.com/questions/18506697/curand-properties-of-generators
+// Philox4_32_10 is counter-based: a state for any subsequence is set up in constant time,
+// so one subsequence per thread costs no skip-ahead, unlike XORWOW.
 __global__ void kSetupRandomNumberGenerator(size_t pointCount, unsigned int seed, curandStatePhilox4_32_10_t* states)
 {
 	LIMIT(pointCount);
