@@ -2,9 +2,12 @@ name: build-and-test
 
 run-name: Build & test for ${{ github.ref_name }} on ${{ github.sha }}
 
-# No pull_request trigger: pushes to branches of this repository already run it
 on:
   push:
+    branches:
+      - "main"
+      - "develop"
+  pull_request:
   workflow_dispatch:
 
 concurrency:
